@@ -22,34 +22,16 @@ public class SuperModel {
         this.models = Collections.emptyMap();
     }
 
-    // TODO: Remove when oldest model used is 6.309 or newer
-    public SuperModel(Map<TenantName, Map<ApplicationId, ApplicationInfo>> models) {
-        this.models = new LinkedHashMap<>();
-        models.values().forEach(entry -> entry.forEach(this.models::put));
+    public SuperModel(Map<ApplicationId, ApplicationInfo> models) {
+        this.models = models;
     }
 
     // TODO: The ignored parameter is just to circumvent the fact that you cannot have
     // two constructors with same type erasure, the above will be removed and this one can
     // be fixed
+    // TODO: Remove when oldest model used is 6.315 or newer
     public SuperModel(Map<ApplicationId, ApplicationInfo> models, boolean ignored) {
         this.models = models;
-    }
-
-    /**
-     * Do NOT mutate the returned map.
-     * TODO: Make the returned map immutable (and type to Map&lt;ApplicationId, ApplicationInfo&gt;)
-     */
-    // TODO: Remove when oldest model used is 6.310 or newer
-    public Map<TenantName, Map<ApplicationId, ApplicationInfo>> getAllModels() {
-        Map<TenantName, Map<ApplicationId, ApplicationInfo>> newModels = new LinkedHashMap<>();
-
-        this.models.forEach((key, value) -> {
-            if (!newModels.containsKey(key.tenant())) {
-                newModels.put(key.tenant(), new LinkedHashMap<>());
-            }
-            newModels.get(key.tenant()).put(key, value);
-        });
-        return newModels ;
     }
 
     public Map<TenantName, Set<ApplicationInfo>> getModelsPerTenant() {
@@ -81,14 +63,14 @@ public class SuperModel {
         Map<ApplicationId, ApplicationInfo> newModels = cloneModels(models);
         newModels.put(application.getApplicationId(), application);
 
-        return new SuperModel(newModels, false);
+        return new SuperModel(newModels);
     }
 
     public SuperModel cloneAndRemoveApplication(ApplicationId applicationId) {
         Map<ApplicationId, ApplicationInfo> newModels = cloneModels(models);
         newModels.remove(applicationId);
 
-        return new SuperModel(newModels, false);
+        return new SuperModel(newModels);
     }
 
     private static Map<ApplicationId, ApplicationInfo> cloneModels(Map<ApplicationId, ApplicationInfo> models) {

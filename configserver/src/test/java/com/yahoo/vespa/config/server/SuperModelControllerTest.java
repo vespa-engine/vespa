@@ -53,7 +53,7 @@ public class SuperModelControllerTest {
         ApplicationId app = ApplicationId.from(TenantName.from("a"),
                                                ApplicationName.from("foo"), InstanceName.defaultName());
         models.put(app, new ApplicationInfo(app, 4l, new VespaModel(FilesApplicationPackage.fromFile(testApp))));
-        SuperModel superModel = new SuperModel(models, false);
+        SuperModel superModel = new SuperModel(models);
         handler = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
     }
     
@@ -96,7 +96,7 @@ public class SuperModelControllerTest {
         models.put(advanced, createApplicationInfo(testApp2, advanced, 4l));
         models.put(tooAdvanced, createApplicationInfo(testApp3, tooAdvanced, 4l));
 
-        SuperModel superModel = new SuperModel(models, false);
+        SuperModel superModel = new SuperModel(models);
         SuperModelController han = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
         LbServicesConfig.Builder lb = new LbServicesConfig.Builder();
         han.getSuperModel().getConfig(lb);
@@ -124,7 +124,7 @@ public class SuperModelControllerTest {
         models.put(advanced, createApplicationInfo(testApp2, advanced, 4l));
         models.put(tooAdvanced, createApplicationInfo(testApp3, tooAdvanced, 4l));
 
-        SuperModel superModel = new SuperModel(models, false);
+        SuperModel superModel = new SuperModel(models);
         SuperModelController han = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
         LbServicesConfig.Builder lb = new LbServicesConfig.Builder();
         han.getSuperModel().getConfig(lb);
