@@ -1450,7 +1450,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         }
         public void serialize(String docId) {
             new Document(docType, DocumentId.createFromSerialized(docId))
-                    .serialize(DocumentSerializerFactory.createHead(buffer));
+                    .serialize(DocumentSerializerFactory.create6(buffer));
             buffer.flip();
         }
         public Document deserialize() {

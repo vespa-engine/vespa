@@ -12,10 +12,26 @@ public class DocumentSerializerFactory {
 
     /**
      * Creates a serializer for the current head document format.
-     * This format is an extension of the 4.2 format.
+     * This format is an extension of the 6.x format.
      */
     public static DocumentSerializer createHead(GrowableByteBuffer buf) {
         return new VespaDocumentSerializerHead(buf);
+    }
+
+    /**
+     * Creates a serializer for the 6.x document format.
+     * This format is an extension of the 4.2 format.
+     */
+    public static DocumentSerializer create6(GrowableByteBuffer buf) {
+        return new VespaDocumentSerializer6(buf);
+    }
+
+    /**
+     * Creates a serializer for the 6.x document format.
+     * This format is an extension of the 4.2 format.
+     */
+    public static DocumentSerializer create6() {
+        return new VespaDocumentSerializer6(new GrowableByteBuffer());
     }
 
     /**

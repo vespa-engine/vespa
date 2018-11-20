@@ -52,7 +52,7 @@ public abstract class FieldValue extends Identifiable implements Comparable<Fiel
     }
 
     final public void serialize(GrowableByteBuffer buf) {
-        serialize(DocumentSerializerFactory.create42(buf));
+        serialize(DocumentSerializerFactory.create6(buf));
     }
 
     public abstract void printXml(XmlStream xml);
@@ -140,9 +140,9 @@ public abstract class FieldValue extends Identifiable implements Comparable<Fiel
         if (target instanceof FieldWriter) {
             serialize(null, (FieldWriter) target);
         } else if (target instanceof BufferSerializer) {
-            serialize(null, DocumentSerializerFactory.create42(((BufferSerializer) target).getBuf()));
+            serialize(null, DocumentSerializerFactory.create6(((BufferSerializer) target).getBuf()));
         } else {
-            DocumentSerializer fw = DocumentSerializerFactory.create42(new GrowableByteBuffer());
+            DocumentSerializer fw = DocumentSerializerFactory.create6(new GrowableByteBuffer());
             serialize(null, fw);
             target.put(null, fw.getBuf().getByteBuffer());
         }
