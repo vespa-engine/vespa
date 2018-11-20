@@ -11,14 +11,14 @@ import com.yahoo.metrics.MetricsPresentationConfig;
 
 
 /**
- * <p>The purpose of this class it to be the only provider for the <tt>MetricConsumer</tt> interface in a component
+ * <p>The purpose of this class it to be the only provider for the <code>MetricConsumer</code> interface in a component
  * graph. This component is automatically registered in the graph by the config server. Configuring a different
- * <tt>MetricConsumer</tt> is done by registering one or more {@link MetricConsumerFactory} in the services-file.</p>
+ * <code>MetricConsumer</code> is done by registering one or more {@link MetricConsumerFactory} in the services-file.</p>
  *
  * <p>Because this class depends on the {@link ComponentRegistry} of {@link MetricConsumerFactory}, any added or removed
  * {@link MetricConsumerFactory} will cause this component to be reconfigured. Because {@link MetricProvider} depends on
- * this class, which means any component that uses <tt>Metric</tt> will be reconfigured. Any component that depends
- * directly on <tt>MetricConsumer</tt> will also be reconfigured.</p>
+ * this class, which means any component that uses <code>Metric</code> will be reconfigured. Any component that depends
+ * directly on <code>MetricConsumer</code> will also be reconfigured.</p>
  *
  * @author Simon Thoresen Hult
  */
