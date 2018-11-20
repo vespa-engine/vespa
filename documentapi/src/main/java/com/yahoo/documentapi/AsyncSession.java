@@ -73,7 +73,7 @@ public interface AsyncSession extends Session {
      * @throws UnsupportedOperationException if this access implementation does not support retrieving
      * @deprecated the 'headersonly' flag has no effect
      */
-    @Deprecated
+    @Deprecated // TODO: Remove on Vespa 8
     Result get(DocumentId id, boolean headersOnly, DocumentProtocol.Priority priority);
 
     /**
