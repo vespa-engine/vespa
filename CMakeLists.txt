@@ -15,8 +15,11 @@ endif()
 find_package(JNI REQUIRED)
 
 # TODO move to find_package(Python3 REQUIRED COMPONENTS Interpreter) when on CMake >= 3.12
-set(Python_ADDITIONAL_VERSIONS 3.6)
+set(Python_ADDITIONAL_VERSIONS 3.6 3.7)
 find_package(PythonInterp REQUIRED)
+if (PYTHON_VERSION_MAJOR LESS 3)
+    message(FATAL_ERROR "Building Vespa requires Python 3, found ${PYTHON_VERSION_STRING}")
+endif()
 
 include(functions.cmake)
 include(build_settings.cmake)
