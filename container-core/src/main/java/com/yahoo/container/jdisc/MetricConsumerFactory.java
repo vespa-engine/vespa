@@ -4,7 +4,7 @@ package com.yahoo.container.jdisc;
 import com.yahoo.jdisc.application.MetricConsumer;
 
 /**
- * <p>This is the interface to implement if one wishes to configure a non-default <tt>MetricConsumer</tt>. Simply
+ * <p>This is the interface to implement if one wishes to configure a non-default <code>MetricConsumer</code>. Simply
  * add the implementing class as a component in your services.xml file.</p>
  *
  * @author Simon Thoresen Hult

@@ -27,7 +27,7 @@ public abstract class ValueGroupId<T> extends GroupId {
      *
      * @param type       The type of this id's value.
      * @param value      The identifying value.
-     * @param valueImage The String representation of the <tt>value</tt> argument.
+     * @param valueImage The String representation of the <code>value</code> argument.
      */
     public ValueGroupId(String type, T value, String valueImage) {
         super(type, valueImage);
