@@ -280,28 +280,6 @@
     </build>
     <profiles>
         <profile>
-            <!-- TODO: move config into pluginManagement when we don't have to support older jdks -->
-            <id>jdk10</id>
-            <activation>
-                <jdk>[10, )</jdk>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <configuration>
-                                <quiet>true</quiet>
-                                <!-- Avoid javadoc warning ".. not specified the version of HTML .." -->
-                                <additionalJOption>-html4</additionalJOption>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
             <id>attach-sources</id>
             <activation>
                 <property>

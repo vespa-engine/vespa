@@ -39,7 +39,7 @@ import java.util.Map;
 public interface MetricConsumer {
 
     /**
-     * <p>Consume a call to <tt>Metric.set(String, Number, Metric.Context)</tt>.</p>
+     * <p>Consume a call to <code>Metric.set(String, Number, Metric.Context)</code>.</p>
      *
      * @param key The name of the metric to modify.
      * @param val The value to assign to the named metric.
@@ -48,7 +48,7 @@ public interface MetricConsumer {
     public void set(String key, Number val, Metric.Context ctx);
 
     /**
-     * <p>Consume a call to <tt>Metric.add(String, Number, Metric.Context)</tt>.</p>
+     * <p>Consume a call to <code>Metric.add(String, Number, Metric.Context)</code>.</p>
      *
      * @param key The name of the metric to modify.
      * @param val The value to add to the named metric.
@@ -57,9 +57,9 @@ public interface MetricConsumer {
     public void add(String key, Number val, Metric.Context ctx);
 
     /**
-     * <p>Creates a <tt>Metric.Context</tt> object that encapsulates the given properties. The returned Context object
-     * will be passed along every future call to <tt>set(String, Number, Metric.Context)</tt> and
-     * <tt>add(String, Number, Metric.Context)</tt> where the properties match those given here.</p>
+     * <p>Creates a <code>Metric.Context</code> object that encapsulates the given properties. The returned Context object
+     * will be passed along every future call to <code>set(String, Number, Metric.Context)</code> and
+     * <code>add(String, Number, Metric.Context)</code> where the properties match those given here.</p>
      *
      * @param properties The properties to incorporate in the context.
      * @return The created context.

@@ -209,7 +209,7 @@ public class Grouping extends Identifiable {
      *
      * @param level The level to add.
      * @return This, to allow chaining.
-     * @throws NullPointerException If <tt>level</tt> argument is null.
+     * @throws NullPointerException If <code>level</code> argument is null.
      */
     public Grouping addLevel(GroupingLevel level) {
         level.getClass(); // throws NullPointerException
@@ -231,7 +231,7 @@ public class Grouping extends Identifiable {
      *
      * @param root The group to set as root.
      * @return This, to allow chaining.
-     * @throws NullPointerException If <tt>root</tt> argument is null.
+     * @throws NullPointerException If <code>root</code> argument is null.
      */
     public Grouping setRoot(Group root) {
         root.getClass(); // throws NullPointerException
@@ -249,7 +249,7 @@ public class Grouping extends Identifiable {
     }
 
     /**
-     * <p>Sets whether or not grouping should be forced to execute in a single pass. If false, this <tt>Grouping</tt>
+     * <p>Sets whether or not grouping should be forced to execute in a single pass. If false, this <code>Grouping</code>
      * might still execute in a single pass due to other constraints.</p>
      *
      * @param forceSinglePass True to force execution in single pass.
