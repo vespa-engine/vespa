@@ -127,7 +127,7 @@ public class SystemTestCase {
         DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
         serializer.write(inDocument);
         buffer.flip();
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(manager, buffer);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(manager, buffer);
 
         Document outDocument = new Document(deserializer);
         consume(outDocument);
