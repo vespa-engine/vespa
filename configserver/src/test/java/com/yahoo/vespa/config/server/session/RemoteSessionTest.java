@@ -42,6 +42,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
+ * @author bratseth
  */
 public class RemoteSessionTest {
 
@@ -185,6 +186,30 @@ public class RemoteSessionTest {
         session.loadPrepared();
 
         // Does not cause an error because model version 3 is skipped
+    }
+
+    @Test
+    public void require_that_an_application_package_can_limit_to_one_higher_major_version() {
+        ApplicationPackage application =
+                new MockApplicationPackage.Builder().withServices("<services version='1.0'/>")
+                                                    .withDeploymentSpec("<deployment version='1.0' major-version='3'/>")
+                                                    .build();
+        assertTrue(application.getMajorVersion().isPresent());
+        assertEquals(3, (int)application.getMajorVersion().get());
+
+        MockModelFactory failingFactory = new MockModelFactory();
+        failingFactory.vespaVersion = Version.fromIntValues(4, 0, 0);
+        failingFactory.throwErrorOnLoad = true;
+
+        MockModelFactory okFactory = new MockModelFactory();
+        okFactory.vespaVersion = Version.fromIntValues(2, 0, 0);
+        okFactory.throwErrorOnLoad = false;
+
+        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, 3, application);
+        RemoteSession session = createSession(4, zkc, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
+        session.loadPrepared();
+
+        // Does not cause an error because model version 4 is skipped
     }
 
     @Test
