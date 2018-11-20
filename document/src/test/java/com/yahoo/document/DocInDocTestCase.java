@@ -37,7 +37,7 @@ public class DocInDocTestCase {
         Document outer = new Document(manager.getDocumentType("outerdoc"), "doc:outer:the:only:one");
         outer.setFieldValue("innerdocuments", innerArray);
 
-        DocumentSerializer serializer = DocumentSerializerFactory.create42();
+        DocumentSerializer serializer = DocumentSerializerFactory.create6();
         serializer.write(outer);
 
         GrowableByteBuffer buf = serializer.getBuf();

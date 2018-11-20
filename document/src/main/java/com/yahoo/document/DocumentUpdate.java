@@ -336,7 +336,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     }
 
     public final void serialize(GrowableByteBuffer buf) {
-        serialize(DocumentSerializerFactory.create42(buf));
+        serialize(DocumentSerializerFactory.create6(buf));
     }
 
     public void serialize(DocumentUpdateWriter data) {

@@ -43,7 +43,7 @@ public class Bug6394548TestCase {
         String annotationsBefore = dumpAllAnnotations(tree);
 
         GrowableByteBuffer buffer = new GrowableByteBuffer();
-        DocumentSerializer serializer = DocumentSerializerFactory.create42(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
         serializer.write(doc);
 
         buffer.flip();
