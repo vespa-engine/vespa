@@ -66,7 +66,7 @@ public class AlternateSpanListTestCase extends AbstractTypesTest {
         }
         AlternateSpanList alternateSpanList2;
         {
-            DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(man, buffer);
+            DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(man, buffer);
             StringFieldValue value = new StringFieldValue();
             deserializer.read(null, value);
             alternateSpanList2 = (AlternateSpanList)value.getSpanTree("bababa").getRoot();
