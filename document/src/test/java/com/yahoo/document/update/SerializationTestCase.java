@@ -30,7 +30,7 @@ public class SerializationTestCase {
     @Test
     public void testAddSerialization() {
         FieldUpdate update = FieldUpdate.createAdd(field, new StringFieldValue("value1"));
-        DocumentSerializer buffer = DocumentSerializerFactory.create42();
+        DocumentSerializer buffer = DocumentSerializerFactory.create6();
         update.serialize(buffer);
 
         buffer.getBuf().rewind();
@@ -48,7 +48,7 @@ public class SerializationTestCase {
     @Test
     public void testClearSerialization() {
         FieldUpdate update = FieldUpdate.createClear(field);
-        DocumentSerializer buffer = DocumentSerializerFactory.create42();
+        DocumentSerializer buffer = DocumentSerializerFactory.create6();
         update.serialize(buffer);
 
         buffer.getBuf().rewind();

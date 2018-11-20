@@ -630,7 +630,7 @@ public class DocumentUpdateTestCase {
     public void testRequireThatCreateIfNonExistentFlagIsSerializedAndDeserialized() {
         docUp.setCreateIfNonExistent(true);
 
-        DocumentSerializer serializer = DocumentSerializerFactory.createHead(new GrowableByteBuffer());
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(new GrowableByteBuffer());
         docUp.serialize(serializer);
         serializer.getBuf().flip();
 
@@ -655,7 +655,7 @@ public class DocumentUpdateTestCase {
     @Test
     public void testThatAssignValueUpdateForTensorFieldCanBeSerializedAndDeserialized() {
         DocumentUpdate serializedUpdate = createTensorAssignUpdate();
-        DocumentSerializer serializer = DocumentSerializerFactory.createHead(new GrowableByteBuffer());
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(new GrowableByteBuffer());
         serializedUpdate.serialize(serializer);
         serializer.getBuf().flip();
 
