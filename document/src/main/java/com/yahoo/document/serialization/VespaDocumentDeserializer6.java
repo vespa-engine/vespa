@@ -83,25 +83,15 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     private final Compressor compressor = new Compressor();
     private DocumentTypeManager manager;
-    GrowableByteBuffer body;
     private short version;
     private List<SpanNode> spanNodes;
     private List<Annotation> annotations;
     private int[] stringPositions;
 
-    VespaDocumentDeserializer6(DocumentTypeManager manager, GrowableByteBuffer header, GrowableByteBuffer body, short version) {
-        super(header);
-        this.manager = manager;
-        this.body = body;
-        this.version = version;
-    }
-
     VespaDocumentDeserializer6(DocumentTypeManager manager, GrowableByteBuffer buf) {
-        this(manager, buf, null, Document.SERIALIZED_VERSION);
-    }
-
-    VespaDocumentDeserializer6(DocumentTypeManager manager, GrowableByteBuffer buf, GrowableByteBuffer body) {
-        this(manager, buf, body, Document.SERIALIZED_VERSION);
+        super(buf);
+        this.manager = manager;
+        this.version = Document.SERIALIZED_VERSION;
     }
 
     final public DocumentTypeManager getDocumentTypeManager() { return manager; }
@@ -144,13 +134,6 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
         if ((content & 0x4) != 0) {
             readHeaderBody(b, h);
-        } else if (body != null) {
-            GrowableByteBuffer header = getBuf();
-            setBuf(body);
-            body = null;
-            readHeaderBody(b, h);
-            body = getBuf();
-            setBuf(header);
         }
 
         if (version < 8) {
