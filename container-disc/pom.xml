@@ -137,12 +137,6 @@
       <scope>provided</scope>
     </dependency>
     <!-- end WARNING -->
-    <!-- Athenz -->
-    <dependency>
-      <!-- TODO Vespa 7: verify if necessary. Possibly due to code now moved to vespa-athenz -->
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
