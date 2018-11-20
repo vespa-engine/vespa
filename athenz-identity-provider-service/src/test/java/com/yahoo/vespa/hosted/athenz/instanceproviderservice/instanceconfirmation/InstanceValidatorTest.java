@@ -197,8 +197,7 @@ public class InstanceValidatorTest {
                                                                   ApplicationInfo::getApplicationId,
                                                                   Function.identity()
                                                                    )
-                                                          ),
-                                               false);
+                                                          ));
 
         SuperModelProvider superModelProvider = mock(SuperModelProvider.class);
         when(superModelProvider.getSuperModel()).thenReturn(superModel);
