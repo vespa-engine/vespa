@@ -12,6 +12,6 @@ vespa_add_executable(storageapi_testrunner_app TEST
 # TODO: Test with a larger chunk size to parallelize test suite runs 
 vespa_add_test(
     NAME storageapi_testrunner_app
-    COMMAND python ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:storageapi_testrunner_app>
+    COMMAND "${Python3_EXECUTABLE}" ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:storageapi_testrunner_app>
     DEPENDS storageapi_testrunner_app
 )

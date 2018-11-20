@@ -11,6 +11,6 @@ vespa_add_executable(vdstestlib_testrunner_app TEST
 vespa_add_test(
     NAME vdstestlib_testrunner_app
     NO_VALGRIND
-    COMMAND python ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:vdstestlib_testrunner_app>
+    COMMAND "${Python3_EXECUTABLE}" ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:vdstestlib_testrunner_app>
     DEPENDS vdstestlib_testrunner_app
 )

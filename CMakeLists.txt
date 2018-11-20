@@ -13,6 +13,7 @@ endif()
 
 # TODO: Move this to where it's actually needed
 find_package(JNI REQUIRED)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 include(functions.cmake)
 include(build_settings.cmake)

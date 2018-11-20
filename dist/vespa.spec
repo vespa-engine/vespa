@@ -32,6 +32,7 @@ BuildRequires: libatomic
 BuildRequires: Judy-devel
 %if 0%{?centos}
 BuildRequires: cmake3
+BuildRequires: python36
 BuildRequires: llvm5.0-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
 BuildRequires: vespa-gtest >= 1.8.0-1
