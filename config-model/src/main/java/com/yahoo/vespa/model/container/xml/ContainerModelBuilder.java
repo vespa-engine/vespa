@@ -25,7 +25,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.text.XML;
