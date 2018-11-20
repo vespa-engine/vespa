@@ -9,7 +9,7 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.serialization.DocumentUpdateReader;
-import com.yahoo.document.serialization.VespaDocumentSerializerHead;
+import com.yahoo.document.serialization.VespaDocumentSerializer6;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -237,7 +237,7 @@ public class AssignFieldPathUpdate extends FieldPathUpdate {
     }
 
     @Override
-    public void serialize(VespaDocumentSerializerHead data) {
+    public void serialize(VespaDocumentSerializer6 data) {
         data.write(this);
     }
 
