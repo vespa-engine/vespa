@@ -1238,8 +1238,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private static Optional<OktaAccessToken> getOktaAccessToken(HttpRequest request) {
-        return Optional.ofNullable(request.getHeader(OktaAccessToken.HTTP_HEADER_NAME))
-                .map(OktaAccessToken::new);
+        return Optional.ofNullable(request.getJDiscRequest().context().get("okta.access-token"))
+                .map(attribute -> new OktaAccessToken((String) attribute));
     }
 
     private static ApplicationId appIdFromPath(Path path) {

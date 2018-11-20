@@ -104,6 +104,7 @@ public class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequ
     public Request getUpdatedRequest() {
         Request updatedRequest = new Request(this.request.getUri(), this.request.getBody(), this.request.getMethod(), this.userPrincipal);
         this.request.getHeaders().forEach(updatedRequest.getHeaders()::put);
+        updatedRequest.getAttributes().putAll(this.request.getAttributes());
         return updatedRequest;
     }
 
@@ -190,5 +191,15 @@ public class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequ
     @Override
     public void clearCookies() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Object getAttribute(String name) {
+        return request.getAttributes().get(name);
+    }
+
+    @Override
+    public void setAttribute(String name, Object value) {
+        request.getAttributes().put(name, value);
     }
 }

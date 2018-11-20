@@ -16,6 +16,8 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.yolean.chain.Before;
 
+import java.util.Optional;
+
 /**
  * @author bjorncs
  */
@@ -23,6 +25,7 @@ import com.yahoo.yolean.chain.Before;
 public class AthenzFilterMock implements SecurityRequestFilter {
 
     public static final String IDENTITY_HEADER_NAME = "Athenz-Identity";
+    public static final String OKTA_ACCESS_TOKEN_HEADER_NAME = "Okta-Access-Token";
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -45,6 +48,8 @@ public class AthenzFilterMock implements SecurityRequestFilter {
             AthenzPrincipal principal = new AthenzPrincipal(identity);
             request.setUserPrincipal(principal);
         }
+        Optional.ofNullable(request.getHeader(OKTA_ACCESS_TOKEN_HEADER_NAME))
+                .ifPresent(header -> request.setAttribute("okta.access-token", header));
     }
 
 }

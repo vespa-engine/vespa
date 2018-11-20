@@ -8,8 +8,6 @@ import java.util.Objects;
  */
 public class OktaAccessToken {
 
-    public static final String HTTP_HEADER_NAME = "Okta-Access-Token";
-
     private final String token;
 
     public OktaAccessToken(String token) {
