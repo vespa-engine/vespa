@@ -13,7 +13,10 @@ endif()
 
 # TODO: Move this to where it's actually needed
 find_package(JNI REQUIRED)
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+# TODO move to find_package(Python3 REQUIRED COMPONENTS Interpreter) when on CMake >= 3.12
+set(Python_ADDITIONAL_VERSIONS 3.6)
+find_package(PythonInterp REQUIRED)
 
 include(functions.cmake)
 include(build_settings.cmake)

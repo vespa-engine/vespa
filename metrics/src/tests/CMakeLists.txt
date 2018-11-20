@@ -20,6 +20,6 @@ vespa_add_executable(metrics_testrunner_app TEST
 # TODO: Test with a larger chunk size to parallelize test suite runs 
 vespa_add_test(
     NAME metrics_testrunner_app
-    COMMAND "${Python3_EXECUTABLE}" ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:metrics_testrunner_app>
+    COMMAND "${Python_EXECUTABLE}" ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:metrics_testrunner_app>
     DEPENDS metrics_testrunner_app
 )
