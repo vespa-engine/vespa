@@ -16,6 +16,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.CharacterCodingException;
 
 import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.IDENTITY_HEADER_NAME;
+import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.OKTA_ACCESS_TOKEN_HEADER_NAME;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -156,7 +157,7 @@ public class ControllerContainerTest {
     }
 
     protected static Request addOktaAccessToken(Request request, OktaAccessToken token) {
-        request.getHeaders().put(OktaAccessToken.HTTP_HEADER_NAME, token.token());
+        request.getHeaders().put(OKTA_ACCESS_TOKEN_HEADER_NAME, token.token());
         return request;
     }
 
