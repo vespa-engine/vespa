@@ -345,7 +345,7 @@ public class Document extends StructuredFieldValue {
     }
 
     @SuppressWarnings("deprecation")
-    @Deprecated
+    @Deprecated // remove before Vespa 8
     public void serializeHeader(Serializer data) throws SerializationException {
         if (data instanceof DocumentWriter) {
             if (data instanceof com.yahoo.document.serialization.VespaDocumentSerializer42) {
@@ -361,7 +361,7 @@ public class Document extends StructuredFieldValue {
         }
     }
 
-    @Deprecated
+    @Deprecated // remove before Vespa 8
     public void serializeBody(Serializer data) throws SerializationException {
         if (getBody().getFieldCount() > 0) {
             if (data instanceof FieldWriter) {
