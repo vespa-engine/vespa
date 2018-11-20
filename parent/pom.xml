@@ -156,6 +156,9 @@
                         <doclint>${doclint},-missing</doclint>
                         <quiet>true</quiet>
                         <show>protected</show>
+
+                        <!-- TODO: remove this setting when the plugin looks for element-list (JDK 10+) instead of package-list. -->
+                        <detectOfflineLinks>false</detectOfflineLinks>
                     </configuration>
                     <version>3.0.1</version>
                 </plugin>
