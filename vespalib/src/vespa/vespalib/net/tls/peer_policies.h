@@ -21,7 +21,7 @@ public:
         CN, SAN_DNS
     };
 private:
-    Field _field;
+    Field _field = Field::SAN_DNS;
     vespalib::string _original_pattern;
     std::shared_ptr<const HostGlobPattern> _match_pattern;
 public:
@@ -61,27 +61,27 @@ public:
     }
 };
 
-class AllowedPeers {
-    // A peer will be allowed iff it matches _one or more_ policies.
+class AuthorizedPeers {
+    // A peer will be authorized iff it matches _one or more_ policies.
     std::vector<PeerPolicy> _peer_policies;
     bool _allow_all_if_empty = false;
 
-    AllowedPeers(bool allow_all_if_empty)
+    explicit AuthorizedPeers(bool allow_all_if_empty)
         : _peer_policies(),
           _allow_all_if_empty(allow_all_if_empty)
     {}
 public:
-    AllowedPeers() = default;
-    explicit AllowedPeers(std::vector<PeerPolicy> peer_policies_)
+    AuthorizedPeers() = default;
+    explicit AuthorizedPeers(std::vector<PeerPolicy> peer_policies_)
         : _peer_policies(std::move(peer_policies_)),
           _allow_all_if_empty(false)
     {}
 
-    static AllowedPeers allow_all_authenticated() {
-        return AllowedPeers(true);
+    static AuthorizedPeers allow_all_authenticated() {
+        return AuthorizedPeers(true);
     }
 
-    bool operator==(const AllowedPeers& rhs) const {
+    bool operator==(const AuthorizedPeers& rhs) const {
         return (_peer_policies == rhs._peer_policies);
     }
     bool allows_all_authenticated() const noexcept {
@@ -92,6 +92,6 @@ public:
 
 std::ostream& operator<<(std::ostream&, const RequiredPeerCredential&);
 std::ostream& operator<<(std::ostream&, const PeerPolicy&);
-std::ostream& operator<<(std::ostream&, const AllowedPeers&);
+std::ostream& operator<<(std::ostream&, const AuthorizedPeers&);
 
 } // vespalib::net::tls

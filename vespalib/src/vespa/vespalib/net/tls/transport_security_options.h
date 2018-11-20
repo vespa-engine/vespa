@@ -12,7 +12,7 @@ class TransportSecurityOptions {
     vespalib::string _ca_certs_pem;
     vespalib::string _cert_chain_pem;
     vespalib::string _private_key_pem;
-    AllowedPeers     _allowed_peers;
+    AuthorizedPeers  _authorized_peers;
 public:
     TransportSecurityOptions() = default;
 
@@ -20,12 +20,12 @@ public:
         vespalib::string _ca_certs_pem;
         vespalib::string _cert_chain_pem;
         vespalib::string _private_key_pem;
-        AllowedPeers     _allowed_peers;
+        AuthorizedPeers  _authorized_peers;
 
         Builder& ca_certs_pem(vespalib::stringref pem) { _ca_certs_pem = pem; return *this; }
         Builder& cert_chain_pem(vespalib::stringref pem) { _cert_chain_pem = pem; return *this; }
         Builder& private_key_pem(vespalib::stringref pem) { _private_key_pem = pem; return *this; }
-        Builder& allowed_peers(AllowedPeers allowed) { _allowed_peers = std::move(allowed); return *this; }
+        Builder& authorized_peers(AuthorizedPeers auth) { _authorized_peers = std::move(auth); return *this; }
     };
 
     explicit TransportSecurityOptions(Builder builder);
@@ -37,14 +37,14 @@ public:
     TransportSecurityOptions(vespalib::string ca_certs_pem,
                              vespalib::string cert_chain_pem,
                              vespalib::string private_key_pem,
-                             AllowedPeers allowed_peers);
+                             AuthorizedPeers authorized_peers);
 
     ~TransportSecurityOptions();
 
     const vespalib::string& ca_certs_pem() const noexcept { return _ca_certs_pem; }
     const vespalib::string& cert_chain_pem() const noexcept { return _cert_chain_pem; }
     const vespalib::string& private_key_pem() const noexcept { return _private_key_pem; }
-    const AllowedPeers& allowed_peers() const noexcept { return _allowed_peers; }
+    const AuthorizedPeers& authorized_peers() const noexcept { return _authorized_peers; }
 };
 
 } // vespalib::net::tls

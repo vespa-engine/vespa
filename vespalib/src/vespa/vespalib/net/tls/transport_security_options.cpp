@@ -10,7 +10,7 @@ TransportSecurityOptions::TransportSecurityOptions(Builder builder)
     : _ca_certs_pem(std::move(builder._ca_certs_pem)),
       _cert_chain_pem(std::move(builder._cert_chain_pem)),
       _private_key_pem(std::move(builder._private_key_pem)),
-      _allowed_peers(std::move(builder._allowed_peers))
+      _authorized_peers(std::move(builder._authorized_peers))
 {
 }
 
@@ -20,18 +20,18 @@ TransportSecurityOptions::TransportSecurityOptions(vespalib::string ca_certs_pem
     : _ca_certs_pem(std::move(ca_certs_pem)),
       _cert_chain_pem(std::move(cert_chain_pem)),
       _private_key_pem(std::move(private_key_pem)),
-      _allowed_peers(AllowedPeers::allow_all_authenticated())
+      _authorized_peers(AuthorizedPeers::allow_all_authenticated())
 {
 }
 
 TransportSecurityOptions::TransportSecurityOptions(vespalib::string ca_certs_pem,
                                                    vespalib::string cert_chain_pem,
                                                    vespalib::string private_key_pem,
-                                                   AllowedPeers allowed_peers)
+                                                   AuthorizedPeers authorized_peers)
     : _ca_certs_pem(std::move(ca_certs_pem)),
       _cert_chain_pem(std::move(cert_chain_pem)),
       _private_key_pem(std::move(private_key_pem)),
-      _allowed_peers(std::move(allowed_peers))
+      _authorized_peers(std::move(authorized_peers))
 {
 }
 

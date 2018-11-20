@@ -76,109 +76,109 @@ PeerCredentials creds_with_cn(vespalib::stringref cn) {
     return creds;
 }
 
-bool verify(AllowedPeers allowed_peers, const PeerCredentials& peer_creds) {
-    auto verifier = create_verify_callback_from(std::move(allowed_peers));
+bool verify(AuthorizedPeers authorized_peers, const PeerCredentials& peer_creds) {
+    auto verifier = create_verify_callback_from(std::move(authorized_peers));
     return verifier->verify(peer_creds);
 }
 
-TEST("Default-constructed AllowedPeers does not allow all authenticated peers") {
-    EXPECT_FALSE(AllowedPeers().allows_all_authenticated());
+TEST("Default-constructed AuthorizedPeers does not allow all authenticated peers") {
+    EXPECT_FALSE(AuthorizedPeers().allows_all_authenticated());
 }
 
 TEST("Specially constructed set of policies allows all authenticated peers") {
-    auto allow_all = AllowedPeers::allow_all_authenticated();
+    auto allow_all = AuthorizedPeers::allow_all_authenticated();
     EXPECT_TRUE(allow_all.allows_all_authenticated());
     EXPECT_TRUE(verify(allow_all, creds_with_dns_sans({{"anything.goes"}})));
 }
 
 TEST("Non-empty policies do not allow all authenticated peers") {
-    auto allow_not_all = allowed_peers({policy_with({required_san_dns("hello.world")})});
+    auto allow_not_all = authorized_peers({policy_with({required_san_dns("hello.world")})});
     EXPECT_FALSE(allow_not_all.allows_all_authenticated());
 }
 
 TEST("SAN requirement without glob pattern is matched as exact string") {
-    auto allowed = allowed_peers({policy_with({required_san_dns("hello.world")})});
-    EXPECT_TRUE(verify(allowed,  creds_with_dns_sans({{"hello.world"}})));
-    EXPECT_FALSE(verify(allowed, creds_with_dns_sans({{"foo.bar"}})));
-    EXPECT_FALSE(verify(allowed, creds_with_dns_sans({{"hello.worlds"}})));
-    EXPECT_FALSE(verify(allowed, creds_with_dns_sans({{"hhello.world"}})));
-    EXPECT_FALSE(verify(allowed, creds_with_dns_sans({{"foo.hello.world"}})));
-    EXPECT_FALSE(verify(allowed, creds_with_dns_sans({{"hello.world.bar"}})));
+    auto authorized = authorized_peers({policy_with({required_san_dns("hello.world")})});
+    EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"hello.world"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"foo.bar"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"hello.worlds"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"hhello.world"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"foo.hello.world"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"hello.world.bar"}})));
 }
 
 TEST("SAN requirement can include glob wildcards") {
-    auto allowed = allowed_peers({policy_with({required_san_dns("*.w?rld")})});
-    EXPECT_TRUE(verify(allowed,  creds_with_dns_sans({{"hello.world"}})));
-    EXPECT_TRUE(verify(allowed,  creds_with_dns_sans({{"greetings.w0rld"}})));
-    EXPECT_FALSE(verify(allowed, creds_with_dns_sans({{"hello.wrld"}})));
-    EXPECT_FALSE(verify(allowed, creds_with_dns_sans({{"world"}})));
+    auto authorized = authorized_peers({policy_with({required_san_dns("*.w?rld")})});
+    EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"hello.world"}})));
+    EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"greetings.w0rld"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"hello.wrld"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"world"}})));
 }
 
 TEST("multi-SAN policy requires all SANs to be present in certificate") {
-    auto allowed = allowed_peers({policy_with({required_san_dns("hello.world"),
-                                               required_san_dns("foo.bar")})});
-    EXPECT_TRUE(verify(allowed,  creds_with_dns_sans({{"hello.world"}, {"foo.bar"}})));
+    auto authorized = authorized_peers({policy_with({required_san_dns("hello.world"),
+                                                     required_san_dns("foo.bar")})});
+    EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"hello.world"}, {"foo.bar"}})));
     // Need both
-    EXPECT_FALSE(verify(allowed, creds_with_dns_sans({{"hello.world"}})));
-    EXPECT_FALSE(verify(allowed, creds_with_dns_sans({{"foo.bar"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"hello.world"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"foo.bar"}})));
     // OK with more SANs that strictly required
-    EXPECT_TRUE(verify(allowed,  creds_with_dns_sans({{"hello.world"}, {"foo.bar"}, {"baz.blorg"}})));
+    EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"hello.world"}, {"foo.bar"}, {"baz.blorg"}})));
 }
 
 TEST("wildcard SAN in certificate is not treated as a wildcard match by policy") {
-    auto allowed = allowed_peers({policy_with({required_san_dns("hello.world")})});
-    EXPECT_FALSE(verify(allowed, creds_with_dns_sans({{"*.world"}})));
+    auto authorized = authorized_peers({policy_with({required_san_dns("hello.world")})});
+    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"*.world"}})));
 }
 
 TEST("wildcard SAN in certificate is still matched by wildcard policy SAN") {
-    auto allowed = allowed_peers({policy_with({required_san_dns("*.world")})});
-    EXPECT_TRUE(verify(allowed, creds_with_dns_sans({{"*.world"}})));
+    auto authorized = authorized_peers({policy_with({required_san_dns("*.world")})});
+    EXPECT_TRUE(verify(authorized, creds_with_dns_sans({{"*.world"}})));
 }
 
 struct MultiPolicyMatchFixture {
-    AllowedPeers allowed;
+    AuthorizedPeers authorized;
     MultiPolicyMatchFixture();
     ~MultiPolicyMatchFixture();
 };
 
 MultiPolicyMatchFixture::MultiPolicyMatchFixture()
-    : allowed(allowed_peers({policy_with({required_san_dns("hello.world")}),
-                             policy_with({required_san_dns("foo.bar")}),
-                             policy_with({required_san_dns("zoid.berg")})}))
+    : authorized(authorized_peers({policy_with({required_san_dns("hello.world")}),
+                                   policy_with({required_san_dns("foo.bar")}),
+                                   policy_with({required_san_dns("zoid.berg")})}))
 {}
 
 MultiPolicyMatchFixture::~MultiPolicyMatchFixture() = default;
 
 TEST_F("peer verifies if it matches at least 1 policy of multiple", MultiPolicyMatchFixture) {
-    EXPECT_TRUE(verify(f.allowed, creds_with_dns_sans({{"hello.world"}})));
-    EXPECT_TRUE(verify(f.allowed, creds_with_dns_sans({{"foo.bar"}})));
-    EXPECT_TRUE(verify(f.allowed, creds_with_dns_sans({{"zoid.berg"}})));
+    EXPECT_TRUE(verify(f.authorized, creds_with_dns_sans({{"hello.world"}})));
+    EXPECT_TRUE(verify(f.authorized, creds_with_dns_sans({{"foo.bar"}})));
+    EXPECT_TRUE(verify(f.authorized, creds_with_dns_sans({{"zoid.berg"}})));
 }
 
 TEST_F("peer verifies if it matches multiple policies", MultiPolicyMatchFixture) {
-    EXPECT_TRUE(verify(f.allowed, creds_with_dns_sans({{"hello.world"}, {"zoid.berg"}})));
+    EXPECT_TRUE(verify(f.authorized, creds_with_dns_sans({{"hello.world"}, {"zoid.berg"}})));
 }
 
 TEST_F("peer must match at least 1 of multiple policies", MultiPolicyMatchFixture) {
-    EXPECT_FALSE(verify(f.allowed, creds_with_dns_sans({{"does.not.exist"}})));
+    EXPECT_FALSE(verify(f.authorized, creds_with_dns_sans({{"does.not.exist"}})));
 }
 
 TEST("CN requirement without glob pattern is matched as exact string") {
-    auto allowed = allowed_peers({policy_with({required_cn("hello.world")})});
-    EXPECT_TRUE(verify(allowed,  creds_with_cn("hello.world")));
-    EXPECT_FALSE(verify(allowed, creds_with_cn("foo.bar")));
-    EXPECT_FALSE(verify(allowed, creds_with_cn("hello.worlds")));
-    EXPECT_FALSE(verify(allowed, creds_with_cn("hhello.world")));
-    EXPECT_FALSE(verify(allowed, creds_with_cn("foo.hello.world")));
-    EXPECT_FALSE(verify(allowed, creds_with_cn("hello.world.bar")));
+    auto authorized = authorized_peers({policy_with({required_cn("hello.world")})});
+    EXPECT_TRUE(verify(authorized,  creds_with_cn("hello.world")));
+    EXPECT_FALSE(verify(authorized, creds_with_cn("foo.bar")));
+    EXPECT_FALSE(verify(authorized, creds_with_cn("hello.worlds")));
+    EXPECT_FALSE(verify(authorized, creds_with_cn("hhello.world")));
+    EXPECT_FALSE(verify(authorized, creds_with_cn("foo.hello.world")));
+    EXPECT_FALSE(verify(authorized, creds_with_cn("hello.world.bar")));
 }
 
 TEST("CN requirement can include glob wildcards") {
-    auto allowed = allowed_peers({policy_with({required_cn("*.w?rld")})});
-    EXPECT_TRUE(verify(allowed,  creds_with_cn("hello.world")));
-    EXPECT_TRUE(verify(allowed,  creds_with_cn("greetings.w0rld")));
-    EXPECT_FALSE(verify(allowed, creds_with_cn("hello.wrld")));
-    EXPECT_FALSE(verify(allowed, creds_with_cn("world")));
+    auto authorized = authorized_peers({policy_with({required_cn("*.w?rld")})});
+    EXPECT_TRUE(verify(authorized,  creds_with_cn("hello.world")));
+    EXPECT_TRUE(verify(authorized,  creds_with_cn("greetings.w0rld")));
+    EXPECT_FALSE(verify(authorized, creds_with_cn("hello.wrld")));
+    EXPECT_FALSE(verify(authorized, creds_with_cn("world")));
 }
 
 // TODO test CN _and_ SAN

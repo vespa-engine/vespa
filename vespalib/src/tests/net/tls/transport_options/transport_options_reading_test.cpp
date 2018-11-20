@@ -66,7 +66,7 @@ vespalib::string json_with_policies(const vespalib::string& policies) {
     const char* fmt = R"({"files":{"private-key":"dummy_privkey.txt",
                                    "certificates":"dummy_certs.txt",
                                    "ca-certificates":"dummy_ca_certs.txt"},
-                          "allowed-peers":[%s]})";
+                          "authorized-peers":[%s]})";
     return vespalib::make_string(fmt, policies.c_str());
 }
 
@@ -74,18 +74,18 @@ TransportSecurityOptions parse_policies(const vespalib::string& policies) {
     return *read_options_from_json_string(json_with_policies(policies));
 }
 
-TEST("config file without allowed-peers accepts all pre-verified certificates") {
+TEST("config file without authorized-peers accepts all pre-verified certificates") {
     const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
                                     "certificates":"dummy_certs.txt",
                                     "ca-certificates":"dummy_ca_certs.txt"}})";
-    EXPECT_TRUE(read_options_from_json_string(json)->allowed_peers().allows_all_authenticated());
+    EXPECT_TRUE(read_options_from_json_string(json)->authorized_peers().allows_all_authenticated());
 }
 
 // Instead of contemplating what the semantics of an empty allow list should be,
 // we do the easy way out and just say it's not allowed in the first place.
 TEST("empty policy array throws exception") {
     EXPECT_EXCEPTION(parse_policies(""), vespalib::IllegalArgumentException,
-                     "\"allowed-peers\" must either be not present (allows "
+                     "\"authorized-peers\" must either be not present (allows "
                      "all peers with valid certificates) or a non-empty array");
 }
 
@@ -95,8 +95,8 @@ TEST("can parse single peer policy with single requirement") {
          {"field": "SAN_DNS", "must-match": "hello.world"}
       ]
     })";
-    EXPECT_EQUAL(allowed_peers({policy_with({required_san_dns("hello.world")})}),
-                 parse_policies(json).allowed_peers());
+    EXPECT_EQUAL(authorized_peers({policy_with({required_san_dns("hello.world")})}),
+                 parse_policies(json).authorized_peers());
 }
 
 TEST("can parse single peer policy with multiple requirements") {
@@ -106,9 +106,9 @@ TEST("can parse single peer policy with multiple requirements") {
          {"field": "CN", "must-match": "goodbye.moon"}
       ]
     })";
-    EXPECT_EQUAL(allowed_peers({policy_with({required_san_dns("hello.world"),
-                                             required_cn("goodbye.moon")})}),
-                 parse_policies(json).allowed_peers());
+    EXPECT_EQUAL(authorized_peers({policy_with({required_san_dns("hello.world"),
+                                                required_cn("goodbye.moon")})}),
+                 parse_policies(json).authorized_peers());
 }
 
 TEST("unknown field type throws exception") {

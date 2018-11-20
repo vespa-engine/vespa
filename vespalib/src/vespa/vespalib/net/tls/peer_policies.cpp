@@ -103,9 +103,9 @@ std::ostream& operator<<(std::ostream& os, const PeerPolicy& policy) {
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const AllowedPeers& allowed){
-    os << "AllowedPeers(";
-    print_joined(os, allowed.peer_policies(), ", ");
+std::ostream& operator<<(std::ostream& os, const AuthorizedPeers& authorized){
+    os << "AuthorizedPeers(";
+    print_joined(os, authorized.peer_policies(), ", ");
     os << ")";
     return os;
 }

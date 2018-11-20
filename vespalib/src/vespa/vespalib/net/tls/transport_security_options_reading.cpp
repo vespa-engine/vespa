@@ -18,27 +18,7 @@ namespace vespalib::net::tls {
     "ca-certificates": "my_cas.pem",
     "certificates": "certs.pem"
   },
-  // for later:
-  "peer-taggers": [
-    {
-      "requirements":[
-        {
-          "field": "SAN"
-          "must-match": "DNS:foo.bar.baz.*"
-        }
-      ],
-      // TODO skip tags for now? just binary decision?
-      "tags": ["cluster-peers", "config-server"] // or "roles"? Avoid ambiguities with Athenz concepts
-    },
-    {
-      "requirements":[
-        { "field":"CN", "must-match": "config.blarg.*"}
-      ],
-      "tags": ["config-server"]
-    }
-  ]
-  // alternative 2:
-  "allowed-peers": [
+  "authorized-peers": [
     {
       "required-credentials":[
         { "field":"CN", "must-match": "*.config.blarg"},
@@ -98,20 +78,20 @@ PeerPolicy parse_peer_policy(const Inspector& peer_entry) {
     return PeerPolicy(std::move(required_creds));
 }
 
-AllowedPeers parse_allowed_peers(const Inspector& allowed_peers) {
-    if (!allowed_peers.valid()) {
-        // If there's no "allowed-peers" object, valid CA signing is sufficient.
-        return AllowedPeers::allow_all_authenticated();
+AuthorizedPeers parse_authorized_peers(const Inspector& authorized_peers) {
+    if (!authorized_peers.valid()) {
+        // If there's no "authorized-peers" object, valid CA signing is sufficient.
+        return AuthorizedPeers::allow_all_authenticated();
     }
-    if (allowed_peers.children() == 0) {
-        throw IllegalArgumentException("\"allowed-peers\" must either be not present (allows "
+    if (authorized_peers.children() == 0) {
+        throw IllegalArgumentException("\"authorized-peers\" must either be not present (allows "
                                        "all peers with valid certificates) or a non-empty array");
     }
     std::vector<PeerPolicy> policies;
-    for (size_t i = 0; i < allowed_peers.children(); ++i) {
-        policies.emplace_back(parse_peer_policy(allowed_peers[i]));
+    for (size_t i = 0; i < authorized_peers.children(); ++i) {
+        policies.emplace_back(parse_peer_policy(authorized_peers[i]));
     }
-    return AllowedPeers(std::move(policies));
+    return AuthorizedPeers(std::move(policies));
 }
 
 std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
@@ -130,10 +110,10 @@ std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
     auto ca_certs = load_file_referenced_by_field(files, "ca-certificates");
     auto certs    = load_file_referenced_by_field(files, "certificates");
     auto priv_key = load_file_referenced_by_field(files, "private-key");
-    auto allowed_peers = parse_allowed_peers(root["allowed-peers"]);
+    auto authorized_peers = parse_authorized_peers(root["authorized-peers"]);
 
     return std::make_unique<TransportSecurityOptions>(std::move(ca_certs), std::move(certs),
-                                                      std::move(priv_key), std::move(allowed_peers));
+                                                      std::move(priv_key), std::move(authorized_peers));
 }
 
 } // anon ns
