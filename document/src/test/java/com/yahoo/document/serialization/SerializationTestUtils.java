@@ -24,7 +24,7 @@ public class SerializationTestUtils {
 
     public static byte[] serializeDocument(Document doc) {
         GrowableByteBuffer out = new GrowableByteBuffer();
-        DocumentSerializerFactory.create42(out).write(doc);
+        DocumentSerializerFactory.create6(out).write(doc);
         out.flip();
         byte[] buf = new byte[out.remaining()];
         out.get(buf);
