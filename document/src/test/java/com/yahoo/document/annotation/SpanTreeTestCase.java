@@ -865,7 +865,7 @@ public class SpanTreeTestCase extends AbstractTypesTest {
 
 
         GrowableByteBuffer buffer = new GrowableByteBuffer(1024);
-        DocumentSerializer serializer = DocumentSerializerFactory.create42(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
 
         serializer.write(new Field("stringfield", DataType.STRING), strfval);
         buffer.flip();
