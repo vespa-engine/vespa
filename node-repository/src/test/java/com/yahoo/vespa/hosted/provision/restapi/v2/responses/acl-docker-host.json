@@ -15,18 +15,12 @@
     {
       "hostname": "dockerhost1.yahoo.com",
       "type": "host",
-      "ipAddress": "::1",
+      "ipAddress": "127.0.0.1",
       "trustedBy": "host4.yahoo.com"
     },
     {
       "hostname": "dockerhost1.yahoo.com",
       "type": "host",
-      "ipAddress": "127.0.0.1",
-      "trustedBy": "host4.yahoo.com"
-    },
-    {
-      "hostname": "dockerhost3.yahoo.com",
-      "type": "host",
       "ipAddress": "::1",
       "trustedBy": "host4.yahoo.com"
     },
@@ -37,8 +31,8 @@
       "trustedBy": "host4.yahoo.com"
     },
     {
-      "hostname": "host4.yahoo.com",
-      "type": "tenant",
+      "hostname": "dockerhost3.yahoo.com",
+      "type": "host",
       "ipAddress": "::1",
       "trustedBy": "host4.yahoo.com"
     },
@@ -46,6 +40,12 @@
       "hostname": "host4.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.0.1",
+      "trustedBy": "host4.yahoo.com"
+    },
+    {
+      "hostname": "host4.yahoo.com",
+      "type": "tenant",
+      "ipAddress": "::1",
       "trustedBy": "host4.yahoo.com"
     },
     {

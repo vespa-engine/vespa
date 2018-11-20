@@ -278,8 +278,8 @@ public class DynamicDockerProvisioningTest {
         tester.activate(application, hosts);
 
         List<Node> activeNodes = tester.nodeRepository().getNodes(application);
-        assertEquals(ImmutableSet.of("::12", "127.0.127.12"), activeNodes.get(0).ipAddresses());
-        assertEquals(ImmutableSet.of("::2", "127.0.127.2"), activeNodes.get(1).ipAddresses());
+        assertEquals(ImmutableSet.of("127.0.127.12", "::12"), activeNodes.get(0).ipAddresses());
+        assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.get(1).ipAddresses());
     }
 
     private ApplicationId makeApplicationId(String tenant, String appName) {
