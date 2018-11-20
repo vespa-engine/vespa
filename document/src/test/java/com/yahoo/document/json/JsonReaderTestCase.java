@@ -323,7 +323,7 @@ public class JsonReaderTestCase {
         assertEquals(2, s.getFieldCount());
         assertEquals(new StringFieldValue("person"), s.getFieldValue(s.getField("sandra")));
         GrowableByteBuffer buf = new GrowableByteBuffer();
-        DocumentSerializer serializer = DocumentSerializerFactory.createHead(buf);
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(buf);
         put.serialize(serializer);
         assertEquals(107, buf.position());
     }
@@ -345,7 +345,7 @@ public class JsonReaderTestCase {
         Struct s = (Struct) avu.getValue();
         assertEquals(0, s.getFieldCount());
         GrowableByteBuffer buf = new GrowableByteBuffer();
-        DocumentSerializer serializer = DocumentSerializerFactory.createHead(buf);
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(buf);
         put.serialize(serializer);
         assertEquals(69, buf.position());
     }
