@@ -299,13 +299,13 @@ public class DocumentUpdateTestCase {
         docUp.addFieldUpdate(assignSingle);
         docUp.addFieldUpdate(addMultiList);
 
-        DocumentDeserializer buf = DocumentDeserializerFactory.create42(docMan, new GrowableByteBuffer());
-        docUp.serialize((DocumentUpdateWriter)buf);
-        buf.getBuf().flip();
+        GrowableByteBuffer buf = new GrowableByteBuffer();
+        docUp.serialize(DocumentSerializerFactory.create42(buf));
+        buf.flip();
 
         try {
             FileOutputStream fos = new FileOutputStream("src/test/files/updateser.dat");
-            fos.write(buf.getBuf().array(), 0, buf.getBuf().remaining());
+            fos.write(buf.array(), 0, buf.remaining());
             fos.close();
         } catch (Exception e) {
         }
@@ -330,10 +330,9 @@ public class DocumentUpdateTestCase {
 
                            + (4  //valueUpdateClassID
                               + (4 + 4 + 4 + (1 + 1 + 2 + 1) + 4 + (1 + 1 + 2 + 1) + 4 + (1 + 1 + 2 + 1))))) //value
-                , buf.getBuf().remaining());
+                , buf.remaining());
 
-        DocumentUpdate docUpDeser = new DocumentUpdate(buf);
-
+        DocumentUpdate docUpDeser = new DocumentUpdate(DocumentDeserializerFactory.create42(docMan, buf));
         assertEquals(docUp.getDocumentType(), docUpDeser.getDocumentType());
         assertEquals(docUp, docUpDeser);
     }
