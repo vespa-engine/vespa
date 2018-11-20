@@ -45,6 +45,10 @@ public class SummaryTestCase {
         String sd =
                 "search disksummary {\n" +
                 "\n" +
+                "  document-summary foobar {\n" +
+                "      summary foo1 type string { source: inmemory }\n" +
+                "      summary foo2 type string { source: ondisk }\n" +
+                "  }\n" +
                 "  document disksummary {\n" +
                 "\n" +
                 "      field inmemory type string {\n" +
@@ -61,7 +65,7 @@ public class SummaryTestCase {
         SearchBuilder.createFromString(sd, logger);
         assertEquals(1, logger.entries.size());
         assertEquals(Level.WARNING, logger.entries.get(0).level);
-        assertEquals("summary field 'ondisk' in document summary 'default' references source field 'ondisk', " +
+        assertEquals("summary field 'foo2' in document summary 'foobar' references source field 'ondisk', " +
                      "which is not an attribute: Using this summary will cause disk accesses. " +
                      "Set 'from-disk' on this summary class to silence this warning.",
                      logger.entries.get(0).message);
@@ -83,7 +87,9 @@ public class SummaryTestCase {
                 "\n" +
                 "  }\n" +
                 "\n" +
-                "  document-summary default {\n" +
+                "  document-summary foobar {\n" +
+                "      summary foo1 type string { source: inmemory }\n" +
+                "      summary foo2 type string { source: ondisk }\n" +
                 "      from-disk\n" +
                 "  }\n" +
                 "\n" +
