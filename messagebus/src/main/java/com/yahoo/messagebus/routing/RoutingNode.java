@@ -258,7 +258,7 @@ public class RoutingNode implements ReplyHandler {
     }
 
     /**
-     * If a reply has been set containing an error, and {@link #shouldIgnoreResult()} returns <tt>true</tt>, this method
+     * If a reply has been set containing an error, and {@link #shouldIgnoreResult()} returns <code>true</code>, this method
      * replaces that reply with one that has no error.
      *
      * @return Whether or not the reply was replaced.

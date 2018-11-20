@@ -529,10 +529,10 @@ public enum Language {
     }
 
     /**
-     * <p>Convenience method for calling <tt>fromLocale(LocaleFactory.fromLanguageTag(languageTag))</tt>.</p>
+     * <p>Convenience method for calling <code>fromLocale(LocaleFactory.fromLanguageTag(languageTag))</code>.</p>
      *
-     * @param languageTag The language tag for which the <tt>Language</tt> to return.
-     * @return the corresponding <tt>Language</tt>, or {@link #UNKNOWN} if not known.
+     * @param languageTag The language tag for which the <code>Language</code> to return.
+     * @return the corresponding <code>Language</code>, or {@link #UNKNOWN} if not known.
      */
     public static Language fromLanguageTag(String languageTag) {
         if (languageTag == null) return UNKNOWN;
@@ -540,7 +540,7 @@ public enum Language {
     }
 
     /**
-     * <p>Returns the <tt>Language</tt> whose {@link #languageCode()} is equal to <tt>locale.getLanguage()</tt>, with
+     * <p>Returns the <code>Language</code> whose {@link #languageCode()} is equal to <code>locale.getLanguage()</code>, with
      * the following additions:</p>
      * <ul>
      * <li>Language code "in" translates to {@link #INDONESIAN}</li>
@@ -551,8 +551,8 @@ public enum Language {
      * is "hans", in which case it translates to {@link #CHINESE_SIMPLIFIED}.</li>
      * </ul>
      *
-     * @param locale The locale for which the <tt>Language</tt> to return.
-     * @return The corresponding <tt>Language</tt>, or {@link #UNKNOWN} if not known.
+     * @param locale The locale for which the <code>Language</code> to return.
+     * @return The corresponding <code>Language</code>, or {@link #UNKNOWN} if not known.
      */
     public static Language fromLocale(Locale locale) {
         String str = locale.getLanguage();
@@ -582,7 +582,7 @@ public enum Language {
     /**
      * Returns the language from an encoding, or {@link #UNKNOWN} if it cannot be determined.
      *
-     * @param encoding The name of the encoding to derive the <tt>Language</tt> from.
+     * @param encoding The name of the encoding to derive the <code>Language</code> from.
      * @return the language given by the encoding, or {@link #UNKNOWN} if not determined.
      */
     public static Language fromEncoding(String encoding) {
