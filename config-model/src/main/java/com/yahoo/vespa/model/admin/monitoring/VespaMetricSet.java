@@ -353,6 +353,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.createiterator.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.visit.sum.count.rate"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_location.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.queuesize.average","diskqueuesize"));
         metrics.add(new Metric("vds.filestor.alldisks.averagequeuewait.sum.average","diskqueuewait"));
 
@@ -368,6 +369,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.createiterator.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.visit.sum.latency.average"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_location.sum.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.splitbuckets.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.joinbuckets.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.deletebuckets.count.rate"));
@@ -407,6 +409,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.idealstate.join_bucket.done_ok.rate","joinok"));
         metrics.add(new Metric("vds.idealstate.join_bucket.done_failed.rate","joinfailed"));
         metrics.add(new Metric("vds.idealstate.join_bucket.pending.average","joinpending"));
+        metrics.add(new Metric("vds.idealstate.garbage_collection.done_ok.rate"));
+        metrics.add(new Metric("vds.idealstate.garbage_collection.done_failed.rate"));
+        metrics.add(new Metric("vds.idealstate.garbage_collection.pending.average"));
 
         metrics.add(new Metric("vds.distributor.puts.sum.latency.average"));
         metrics.add(new Metric("vds.distributor.puts.sum.ok.rate"));
