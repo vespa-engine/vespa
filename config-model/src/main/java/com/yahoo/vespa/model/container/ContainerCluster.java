@@ -26,7 +26,6 @@ import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
-import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.container.jdisc.jrt.DefaultJrtFactory;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.container.jdisc.state.StateHandler;
