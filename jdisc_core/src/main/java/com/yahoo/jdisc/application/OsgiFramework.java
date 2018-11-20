@@ -18,9 +18,9 @@ public interface OsgiFramework {
 
     /**
      * <p>Installs a bundle from the specified location. The specified location identifier will be used as the identity
-     * of the bundle. If a bundle containing the same location identifier is already installed, the <tt>Bundle</tt>
+     * of the bundle. If a bundle containing the same location identifier is already installed, the <code>Bundle</code>
      * object for that bundle is returned. All bundles listed in the {@link OsgiHeader#PREINSTALL_BUNDLE} manifest
-     * header are also installed. The bundle at index 0 of the returned list matches the <tt>bundleLocation</tt>
+     * header are also installed. The bundle at index 0 of the returned list matches the <code>bundleLocation</code>
      * argument.</p>
      *
      * <p><b>NOTE:</b> When this method installs more than one bundle, <em>AND</em> one of those bundles throw an
@@ -29,8 +29,8 @@ public interface OsgiFramework {
      * BundleInstallationException} that contains the list of successfully installed bundles.</p>
      *
      * <p>It would be preferable if this method was exception-safe (that it would roll-back all installed bundles in the
-     * case of an exception), but that can not be implemented thread-safely since an <tt>Application</tt> may choose to
-     * install bundles concurrently through any available <tt>BundleContext</tt>.</p>
+     * case of an exception), but that can not be implemented thread-safely since an <code>Application</code> may choose to
+     * install bundles concurrently through any available <code>BundleContext</code>.</p>
      *
      * @param bundleLocation The location identifier of the bundle to install.
      * @return The list of Bundle objects installed, the object at index 0 matches the given location.
@@ -41,7 +41,7 @@ public interface OsgiFramework {
     List<Bundle> installBundle(String bundleLocation) throws BundleException;
 
     /**
-     * <p>Starts the given {@link Bundle}s. The parameter <tt>privileged</tt> tells the framework whether or not
+     * <p>Starts the given {@link Bundle}s. The parameter <code>privileged</code> tells the framework whether or not
      * privileges are available, and is checked against the {@link OsgiHeader#PRIVILEGED_ACTIVATOR} header of each
      * Bundle being started. Any bundle that is a fragment is silently ignored.</p>
      *
@@ -63,10 +63,10 @@ public interface OsgiFramework {
 
     /**
      * <p>Returns the BundleContext of this framework's system bundle. The returned BundleContext can be used by the
-     * caller to act on behalf of this bundle. This method may return <tt>null</tt> if it has no valid
+     * caller to act on behalf of this bundle. This method may return <code>null</code> if it has no valid
      * BundleContext.</p>
      *
-     * @return A <tt>BundleContext</tt> for the system bundle, or <tt>null</tt>.
+     * @return A <code>BundleContext</code> for the system bundle, or <code>null</code>.
      * @throws SecurityException If the caller does not have the appropriate permissions.
      */
     BundleContext bundleContext();
