@@ -36,6 +36,9 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.predicate.BinaryFormat;
 import com.yahoo.document.update.AddValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate;
@@ -79,6 +82,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         write(new Field(doc.getDataType().getName(), 0, doc.getDataType(), true), doc);
     }
 
+    @SuppressWarnings("deprecation")
     public void write(FieldBase field, Document doc) {
         buf.putShort(Document.SERIALIZED_VERSION);
 
@@ -680,12 +684,12 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @return The size in bytes.
      */
     public static long getSerializedSize(Document doc) {
-        DocumentSerializer serializer = new VespaDocumentSerializerHead(new GrowableByteBuffer());
+        DocumentSerializer serializer = new VespaDocumentSerializer6(new GrowableByteBuffer());
         serializer.write(doc);
         return serializer.getBuf().position();
     }
 
-    private static void writeValue(VespaDocumentSerializer42 serializer, DataType dataType, Object value) {
+    private static void writeValue(VespaDocumentSerializer6 serializer, DataType dataType, Object value) {
         FieldValue fieldValue;
         if (value instanceof FieldValue) {
             fieldValue = (FieldValue)value;
