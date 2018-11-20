@@ -17,7 +17,7 @@ import java.util.*;
 
 /**
  * This processor modifies all indexing scripts so that they output to the owning field by default. It also prevents
- * any output expression from writing to any field except for the owning field. Finally, for <tt>SummaryExpression</tt>,
+ * any output expression from writing to any field except for the owning field. Finally, for <code>SummaryExpression</code>,
  * this processor expands to write all appropriate summary fields.
  *
  * @author Simon Thoresen Hult
