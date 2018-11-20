@@ -42,8 +42,7 @@ public final class IndexModel {
      *
      * @deprecated use the constructor without the third parameter
      */
-    // TODO: Remove Vespa 8
-    @Deprecated
+    @Deprecated // TODO: Remove Vespa 8
     public IndexModel(Map<String, List<String>> masterClusters,
                       Map<String, SearchDefinition> searchDefinitions,
                       SearchDefinition unionSearchDefinition) {
