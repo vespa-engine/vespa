@@ -231,8 +231,8 @@ public class VisitorParameters extends Parameters {
 
     public void setVisitRemoves(boolean visitRemoves) { this.visitRemoves = visitRemoves; }
 
-    /** The 'headersonly' option is removed in Vespa 7 */
-    @Deprecated
+    /** @deprecated this option is ignored */
+    @Deprecated // TODO: Remove on Vespa 8
     public void setVisitHeadersOnly(boolean headersOnly) { }
 
     /** Set field set to use. */
