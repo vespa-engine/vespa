@@ -126,7 +126,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     /**
      * <p>Implement this method if you want to access the {@link Request}'s content using a {@link ContentInputStream}.
      * If you do not override this method, it will dispatch a {@link Response} to the {@link ResponseHandler} with a
-     * <tt>Response.Status.NOT_IMPLEMENTED</tt> status.</p>
+     * <code>Response.Status.NOT_IMPLEMENTED</code> status.</p>
      *
      * @param request         The Request to handle.
      * @param responseHandler The handler to pass the corresponding {@link Response} to.
