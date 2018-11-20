@@ -99,7 +99,7 @@ com.yahoo.config.model.producer.AbstractConfigProducer
     </p>
 
 
-    <h3><a name="plugin_loading">Plugin Loading</a></h3>
+    <h3 id="plugin_loading">Plugin Loading</h3>
 
     <p>Each highest-level node in the setup file from the user's
     application specification corresponds to a {@link
@@ -138,7 +138,7 @@ com.yahoo.config.model.producer.AbstractConfigProducer
     </ul>
 
 
-    <h3><a name="port_allocation">Port Allocation</a></h3>
+    <h3 id="port_allocation">Port Allocation</h3>
 
     <p>Each {@link com.yahoo.vespa.model.Host Host} has an available
     dynamic port range running from {@link

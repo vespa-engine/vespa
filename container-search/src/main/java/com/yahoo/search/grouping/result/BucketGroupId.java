@@ -30,9 +30,9 @@ public abstract class BucketGroupId<T> extends GroupId {
      *
      * @param type      The type of this id's value.
      * @param from      The inclusive-from of the range.
-     * @param fromImage The String representation of the <tt>from</tt> argument.
+     * @param fromImage The String representation of the <code>from</code> argument.
      * @param to        The exclusive-to of the range.
-     * @param toImage   The String representation of the <tt>to</tt> argument.
+     * @param toImage   The String representation of the <code>to</code> argument.
      */
     public BucketGroupId(String type, T from, String fromImage, T to, String toImage) {
         super(type, fromImage, toImage);

@@ -18,7 +18,7 @@ public final class ParserFactory {
     }
 
     /**
-     * Creates a {@link Parser} appropriate for the given <tt>Query.Type</tt>, providing the Parser with access to
+     * Creates a {@link Parser} appropriate for the given <code>Query.Type</code>, providing the Parser with access to
      * the {@link ParserEnvironment} given.
      *
      * @param type        the query type for which to create a Parser

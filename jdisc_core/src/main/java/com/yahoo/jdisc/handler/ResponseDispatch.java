@@ -82,7 +82,7 @@ public abstract class ResponseDispatch extends ForwardingListenableFuture<Boolea
     /**
      * <p>This method calls {@link #connect(ResponseHandler)} to establish a {@link ContentChannel} for the {@link
      * Response}, and then iterates through all the ByteBuffers returned by {@link #responseContent()} and writes them
-     * to that ContentChannel. This method uses a <tt>finally</tt> block to make sure that the ContentChannel is always
+     * to that ContentChannel. This method uses a <code>finally</code> block to make sure that the ContentChannel is always
      * {@link ContentChannel#close(CompletionHandler) closed}.</p>
      * <p>The returned Future will wait for all CompletionHandlers associated with the Response have been
      * completed.</p>
