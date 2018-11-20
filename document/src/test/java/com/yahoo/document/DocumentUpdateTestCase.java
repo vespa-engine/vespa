@@ -633,7 +633,7 @@ public class DocumentUpdateTestCase {
         docUp.serialize(serializer);
         serializer.getBuf().flip();
 
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.createHead(docMan, serializer.getBuf());
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(docMan, serializer.getBuf());
         DocumentUpdate deserialized = new DocumentUpdate(deserializer);
         assertEquals(docUp, deserialized);
         assertTrue(deserialized.getCreateIfNonExistent());
@@ -658,7 +658,7 @@ public class DocumentUpdateTestCase {
         serializedUpdate.serialize(serializer);
         serializer.getBuf().flip();
 
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.createHead(docMan, serializer.getBuf());
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(docMan, serializer.getBuf());
         DocumentUpdate deserializedUpdate = new DocumentUpdate(deserializer);
         assertEquals(serializedUpdate, deserializedUpdate);
     }

@@ -583,7 +583,7 @@ public class DocumentPathUpdateTestCase {
         GrowableByteBuffer buffer = new GrowableByteBuffer();
         docUp.serialize(DocumentSerializerFactory.create6(buffer));
         buffer.flip();
-        DocumentUpdate docUp2 = new DocumentUpdate(DocumentDeserializerFactory.createHead(docMan, buffer));
+        DocumentUpdate docUp2 = new DocumentUpdate(DocumentDeserializerFactory.create6(docMan, buffer));
 
         assertEquals(docUp, docUp2);
     }
@@ -601,7 +601,7 @@ public class DocumentPathUpdateTestCase {
         GrowableByteBuffer buffer = new GrowableByteBuffer();
         docUp.serialize(DocumentSerializerFactory.create6(buffer));
         buffer.flip();
-        DocumentUpdate docUp2 = new DocumentUpdate(DocumentDeserializerFactory.createHead(docMan, buffer));
+        DocumentUpdate docUp2 = new DocumentUpdate(DocumentDeserializerFactory.create6(docMan, buffer));
 
         assertEquals(docUp, docUp2);
     }
@@ -615,7 +615,7 @@ public class DocumentPathUpdateTestCase {
         GrowableByteBuffer buffer = new GrowableByteBuffer();
         docUp.serialize(DocumentSerializerFactory.create6(buffer));
         buffer.flip();
-        DocumentUpdate docUp2 = new DocumentUpdate(DocumentDeserializerFactory.createHead(docMan, buffer));
+        DocumentUpdate docUp2 = new DocumentUpdate(DocumentDeserializerFactory.create6(docMan, buffer));
 
         assertEquals(docUp, docUp2);
     }
@@ -672,7 +672,7 @@ public class DocumentPathUpdateTestCase {
     public void testReadSerializedFile() throws IOException {
         docMan = DocumentTestCase.setUpCppDocType();
         byte[] data = DocumentTestCase.readFile("src/tests/data/serialize-fieldpathupdate-cpp.dat");
-        DocumentDeserializer buf = DocumentDeserializerFactory.createHead(docMan, GrowableByteBuffer.wrap(data));
+        DocumentDeserializer buf = DocumentDeserializerFactory.create6(docMan, GrowableByteBuffer.wrap(data));
 
         DocumentUpdate upd = new DocumentUpdate(buf);
 
