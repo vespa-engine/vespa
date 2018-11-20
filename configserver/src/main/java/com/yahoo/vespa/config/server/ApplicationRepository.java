@@ -409,10 +409,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         // Find all file references in use
         Set<String> fileReferencesInUse = new HashSet<>();
         Set<ApplicationId> applicationIds = listApplications();
-        applicationIds.forEach(applicationId -> fileReferencesInUse.addAll(getApplication(applicationId).getModel().fileReferences()
-                                           .stream()
-                                           .map(FileReference::value)
-                                           .collect(Collectors.toSet())));
+        applicationIds.forEach(applicationId -> {
+            try {
+                Set<String> fileReferences = getApplication(applicationId).getModel().fileReferences()
+                        .stream()
+                        .map(FileReference::value)
+                        .collect(Collectors.toSet());
+                fileReferencesInUse.addAll(fileReferences);
+            } catch (IllegalArgumentException e) {
+                log.log(LogLevel.WARNING, "Failed deleting unused file references for ': " + applicationId + "'", e);
+            }
+        });
         log.log(LogLevel.DEBUG, "File references in use : " + fileReferencesInUse);
 
         // Find those on disk that are not in use
@@ -447,6 +454,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Application getApplication(ApplicationId applicationId) {
         try {
             Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+            if (tenant == null) throw new IllegalArgumentException("Tenant '" + applicationId.tenant() + "' not found");
             long sessionId = getSessionIdForApplication(tenant, applicationId);
             RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
             return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty(), clock.instant());
@@ -513,7 +521,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public long getSessionIdForApplication(Tenant tenant, ApplicationId applicationId) {
-        return tenant.getApplicationRepo().getSessionIdForApplication(applicationId);
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
+        if (applicationRepo == null)
+            throw new IllegalArgumentException("Application repo for tenant '" + tenant.getName() + "' not found");
+
+        return applicationRepo.getSessionIdForApplication(applicationId);
     }
 
     public void validateThatRemoteSessionIsNotActive(Tenant tenant, long sessionId) {
@@ -563,13 +575,27 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public void deleteExpiredLocalSessions() {
-        listApplications().forEach(app -> tenantRepository.getTenant(app.tenant()).getLocalSessionRepo().purgeOldSessions());
+        listApplications().forEach(app -> {
+            Tenant tenant = tenantRepository.getTenant(app.tenant());
+            if (tenant == null)
+                log.log(LogLevel.WARNING, "Cannot delete expired local sessions for tenant '" + app.tenant() + "', tenant not found");
+            else
+                tenant.getLocalSessionRepo().purgeOldSessions();
+        });
     }
 
     public int deleteExpiredRemoteSessions(Duration expiryTime) {
         return listApplications()
                 .stream()
-                .map(app -> tenantRepository.getTenant(app.tenant()).getRemoteSessionRepo().deleteExpiredSessions(expiryTime))
+                .map(app -> {
+                    Tenant tenant = tenantRepository.getTenant(app.tenant());
+                    if (tenant == null) {
+                        log.log(LogLevel.WARNING, "Cannot delete expired remote sessions for tenant '" + app.tenant() + "', tenant not found");
+                        return 0;
+                    } else {
+                        return tenant.getRemoteSessionRepo().deleteExpiredSessions(expiryTime);
+                    }
+                })
                 .mapToInt(i -> i)
                 .sum();
     }
