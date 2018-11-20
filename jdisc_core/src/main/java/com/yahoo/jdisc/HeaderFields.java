@@ -8,7 +8,7 @@ import java.util.*;
 /**
  * This is an encapsulation of the header fields that belong to either a {@link Request} or a {@link Response}. It is
  * a multimap from String to String, with some additional methods for convenience. The keys of this map are compared by
- * ignoring their case, so that <tt>get("foo")</tt> returns the same entry as <tt>get("FOO")</tt>.
+ * ignoring their case, so that <code>get("foo")</code> returns the same entry as <code>get("FOO")</code>.
  *
  * @author Simon Thoresen Hult
  */
@@ -121,7 +121,7 @@ public class HeaderFields implements Map<String, List<String>> {
 
     /**
      * <p>Adds all the entries of the given map to this. This is the same as calling {@link #add(String, List)} for each
-     * entry in <tt>values</tt>.</p>
+     * entry in <code>values</code>.</p>
      *
      * @param values The values to be added to this.
      */
@@ -137,8 +137,8 @@ public class HeaderFields implements Map<String, List<String>> {
      *
      * @param key   The key of the entry to put.
      * @param value The value to put.
-     * @return The previous value associated with <tt>key</tt>, or <tt>null</tt> if there was no mapping for
-     *         <tt>key</tt>.
+     * @return The previous value associated with <code>key</code>, or <code>null</code> if there was no mapping for
+     *         <code>key</code>.
      */
     public List<String> put(String key, String value) {
         ArrayList<String> list = new ArrayList<String>(1);
