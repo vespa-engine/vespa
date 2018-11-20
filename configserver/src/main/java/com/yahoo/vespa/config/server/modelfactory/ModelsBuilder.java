@@ -78,10 +78,14 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                          Instant now) {
         Set<Version> versions = modelFactoryRegistry.allVersions();
 
-        // If the application specifies a major, load models only for that
+        // If the application specifies a major, skip models on a newer major
         Optional<Integer> requestedMajorVersion = applicationPackage.getMajorVersion();
-        if (requestedMajorVersion.isPresent())
-            versions = filterByMajorVersion(requestedMajorVersion.get(), versions);
+        if (requestedMajorVersion.isPresent()) {
+            versions = keepUpToMajorVersion(requestedMajorVersion.get(), versions);
+            if (versions.isEmpty())
+                throw new UnknownVespaVersionException("No Vespa versions on or before major version " +
+                                                       requestedMajorVersion.get() + " are present");
+        }
 
         // Load models by one major version at the time as new major versions are allowed to be non-loadable
         // in the case where an existing application is incompatible with a new major version
@@ -95,7 +99,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         List<MODELRESULT> allApplicationModels = new ArrayList<>();
         for (int i = 0; i < majorVersions.size(); i++) {
             try {
-                allApplicationModels.addAll(buildModelVersions(filterByMajorVersion(majorVersions.get(i), versions),
+                allApplicationModels.addAll(buildModelVersions(keepMajorVersion(majorVersions.get(i), versions),
                                                                applicationId, wantedNodeVespaVersion, applicationPackage,
                                                                allocatedHosts, now));
 
@@ -181,11 +185,12 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         return versions;
     }
 
-    private Set<Version> filterByMajorVersion(int majorVersion, Set<Version> versions) {
-        Set<Version> filteredVersions = versions.stream().filter(v -> v.getMajor() == majorVersion).collect(Collectors.toSet());
-        if (filteredVersions.isEmpty())
-            throw new UnknownVespaVersionException("No Vespa versions matching major version " + majorVersion + " are present");
-        return filteredVersions;
+    private Set<Version> keepMajorVersion(int majorVersion, Set<Version> versions) {
+        return versions.stream().filter(v -> v.getMajor() == majorVersion).collect(Collectors.toSet());
+    }
+
+    private Set<Version> keepUpToMajorVersion(int majorVersion, Set<Version> versions) {
+        return versions.stream().filter(v -> v.getMajor() <= majorVersion).collect(Collectors.toSet());
     }
 
     private Version findLatest(Set<Version> versionSet) {
