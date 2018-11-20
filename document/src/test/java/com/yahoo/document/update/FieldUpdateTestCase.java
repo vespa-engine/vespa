@@ -189,7 +189,7 @@ public class FieldUpdateTestCase {
         DocumentSerializer buffer = DocumentSerializerFactory.create6();
         source.serialize(buffer);
         buffer.getBuf().flip();
-        FieldUpdate copy = new FieldUpdate(DocumentDeserializerFactory.create42(docman, buffer.getBuf()), docType, Document.SERIALIZED_VERSION);
+        FieldUpdate copy = new FieldUpdate(DocumentDeserializerFactory.create6(docman, buffer.getBuf()), docType, Document.SERIALIZED_VERSION);
         assertEquals(source, copy);
         return copy;
     }

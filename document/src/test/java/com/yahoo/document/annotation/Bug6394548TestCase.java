@@ -47,7 +47,7 @@ public class Bug6394548TestCase {
         serializer.write(doc);
 
         buffer.flip();
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(manager, buffer);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(manager, buffer);
         Document doc2 = new Document(deserializer);
 
         System.out.println(doc2.toXml());
