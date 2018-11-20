@@ -67,7 +67,7 @@ import static com.yahoo.text.Utf8.calculateBytePositions;
  * @deprecated use {@link com.yahoo.document.serialization.VespaDocumentSerializerHead} instead for new code
  * @author baldersheim
  */
-@Deprecated // Remove before Vespa 8
+@Deprecated // TODO: Remove on Vespa 8
 // When removing: Move content into VespaDocumentSerializerHead
 public class VespaDocumentSerializer42 extends BufferSerializer implements DocumentSerializer {
 
