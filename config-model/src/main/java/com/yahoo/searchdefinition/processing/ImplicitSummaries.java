@@ -32,6 +32,7 @@ public class ImplicitSummaries extends Processor {
         DocumentSummary defaultSummary = search.getSummary("default");
         if (defaultSummary == null) {
             defaultSummary = new DocumentSummary("default");
+            defaultSummary.setFromDisk(true);
             search.addSummary(defaultSummary);
         }
 
