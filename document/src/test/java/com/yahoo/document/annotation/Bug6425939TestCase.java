@@ -43,7 +43,7 @@ public class Bug6425939TestCase {
         buffer.flip();
 
         // Should not throw exception if bug 6425939 is fixed:
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(man, buffer);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(man, buffer);
         StringFieldValue deserializedString = new StringFieldValue();
         deserializer.read(strField, deserializedString);
 
