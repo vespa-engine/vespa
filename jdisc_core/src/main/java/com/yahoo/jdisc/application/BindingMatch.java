@@ -49,7 +49,7 @@ public class BindingMatch<T> {
      * empty string. This method never returns null.</p>
      *
      * @param idx The index of the group to return.
-     * @return The (possibly empty) substring captured by the group during matching, never <tt>null</tt>.
+     * @return The (possibly empty) substring captured by the group during matching, never <code>null</code>.
      * @throws IndexOutOfBoundsException If there is no group in the match with the given index.
      */
     public String group(int idx) {

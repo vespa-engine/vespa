@@ -87,8 +87,8 @@ public final class ResourcePool extends AbstractResource implements AutoCloseabl
      * destroyed, it will release the main reference to the resource (by calling {@link SharedResource#release()}).</p>
      *
      * @param t   The SharedResource to add.
-     * @param <T> The class of parameter <tt>t</tt>.
-     * @return The parameter <tt>t</tt>, to allow inlined calls to this function.
+     * @param <T> The class of parameter <code>t</code>.
+     * @return The parameter <code>t</code>, to allow inlined calls to this function.
      */
     public <T extends SharedResource> T add(T t) {
         try {
@@ -147,8 +147,8 @@ public final class ResourcePool extends AbstractResource implements AutoCloseabl
      * {@link SharedResource#refer()} call.</p>
      *
      * @param t   The SharedResource to retain and add.
-     * @param <T> The class of parameter <tt>t</tt>.
-     * @return The parameter <tt>t</tt>, to allow inlined calls to this function.
+     * @param <T> The class of parameter <code>t</code>.
+     * @return The parameter <code>t</code>, to allow inlined calls to this function.
      */
     public <T extends SharedResource> T retain(T t) {
         resources.add(t.refer());

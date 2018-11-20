@@ -73,7 +73,7 @@ public abstract class RequestDispatch implements ListenableFuture<Response>, Res
 
     /**
      * <p>This methods calls {@link #newRequest()} to create a new {@link Request}, and then calls {@link
-     * Request#connect(ResponseHandler)} on that. This method uses a <tt>finally</tt> block to make sure that the
+     * Request#connect(ResponseHandler)} on that. This method uses a <code>finally</code> block to make sure that the
      * Request is always {@link Request#release() released}.</p>
      *
      * @return The ContentChannel to write the Request's content to.
@@ -98,7 +98,7 @@ public abstract class RequestDispatch implements ListenableFuture<Response>, Res
     /**
      * <p>This method calls {@link #connect()} to establish a {@link ContentChannel} for the {@link Request}, and then
      * iterates through all the ByteBuffers returned by {@link #requestContent()} and writes them to that
-     * ContentChannel. This method uses a <tt>finally</tt> block to make sure that the ContentChannel is always {@link
+     * ContentChannel. This method uses a <code>finally</code> block to make sure that the ContentChannel is always {@link
      * ContentChannel#close(CompletionHandler) closed}.</p>
      *
      * <p>The returned Future will wait for all CompletionHandlers associated with the Request have been completed, and
