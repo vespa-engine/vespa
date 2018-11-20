@@ -26,10 +26,10 @@ import java.util.Set;
  * implicitly acquiring their fields as it's own. If a document is not set to inherit
  * any document, it will always inherit the document "document.0".</p>
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  * @author bratseth
  */
-// TODO Vespa 8 Remove header/body concept
+// TODO: Remove header/body concept on Vespa 8
 public class DocumentType extends StructuredDataType {
 
     public static final int classId = registerClass(Ids.document + 58, DocumentType.class);
@@ -102,19 +102,21 @@ public class DocumentType extends StructuredDataType {
 
     /**
      * Provides the Struct describing the fields in the document.
-     * @return Struct describing the document fields.
+     *
+     * @return a struct describing the document fields.
      */
     public StructDataType contentStruct() {
         return headerType;
     }
 
-    // Use contentStruct instead
-    @Deprecated
+    /** @deprecated use contentStruct instead */
+    @Deprecated // TODO: Remove on Vespa 8
     public StructDataType getHeaderType() {
         return contentStruct();
     }
 
-    @Deprecated
+    @Deprecated // TODO: Remove on Vespa 8
+    /** @deprecated use contentStruct instead */
     public StructDataType getBodyType() {
         return bodyType;
     }

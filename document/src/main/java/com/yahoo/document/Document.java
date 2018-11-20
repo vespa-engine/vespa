@@ -99,9 +99,12 @@ public class Document extends StructuredFieldValue {
         docId = id;
     }
 
-    @Deprecated
+    /** @deprecated do not use: Use getField(), getFieldValue() or iterator() instead */
+    @Deprecated // TODO: Remove on Vespa 8
     public Struct getHeader() { return header; }
-    @Deprecated
+
+    /** @deprecated do not use: Use getField(), getFieldValue() or iterator() instead */
+    @Deprecated // TODO: Remove on Vespa 8
     public Struct getBody() { return body; }
 
     @Override

@@ -39,10 +39,7 @@ public abstract class ConfigModel {
      * This default implementation does nothing.
      *
      * @param configModelRepo The ConfigModelRepo of the VespaModel
-     * @deprecated This will go away in the next Vespa major release. Instead, inject the models you depend on
-     * in your config model constructor.
      */
-    @Deprecated
     public void initialize(ConfigModelRepo configModelRepo) { return; }
 
     /**
