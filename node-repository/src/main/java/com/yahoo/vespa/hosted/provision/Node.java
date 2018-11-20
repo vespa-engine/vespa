@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
@@ -11,8 +11,8 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -79,7 +79,7 @@ public final class Node {
         Objects.requireNonNull(type, "A null node type is not permitted");
 
         this.id = hostname;
-        this.ipAddresses = ImmutableSet.copyOf(ipAddresses);
+        this.ipAddresses = ImmutableSortedSet.copyOf(IP.naturalOrder, ipAddresses);
         this.ipAddressPool = new IP.AddressPool(this, ipAddressPool);
         this.hostname = hostname;
         this.parentHostname = parentHostname;

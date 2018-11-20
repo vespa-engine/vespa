@@ -1,8 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.net.InetAddresses;
+import com.google.common.primitives.UnsignedBytes;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
@@ -10,6 +11,7 @@ import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,6 +24,31 @@ import java.util.Set;
  */
 public class IP {
 
+    /** Comparator for sorting IP addresses by their natural order */
+    public static final Comparator<String> naturalOrder = (ip1, ip2) -> {
+        byte[] address1 = InetAddresses.forString(ip1).getAddress();
+        byte[] address2 = InetAddresses.forString(ip2).getAddress();
+
+        // IPv4 always sorts before IPv6
+        if (address1.length < address2.length) return -1;
+        if (address1.length > address2.length) return 1;
+
+        // Compare each octet
+        for (int i = 0; i < address1.length; i++) {
+            int b1 = UnsignedBytes.toInt(address1[i]);
+            int b2 = UnsignedBytes.toInt(address2[i]);
+            if (b1 == b2) {
+                continue;
+            }
+            if (b1 < b2) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
+        return 0;
+    };
+
     /** A pool of available IP addresses */
     public static class AddressPool {
 
@@ -30,7 +57,7 @@ public class IP {
 
         public AddressPool(Node owner, Set<String> addresses) {
             this.owner = Objects.requireNonNull(owner, "owner must be non-null");
-            this.addresses = ImmutableSet.copyOf(requireAddresses(addresses));
+            this.addresses = ImmutableSortedSet.copyOf(naturalOrder, requireAddresses(addresses));
         }
 
         /**
@@ -138,7 +165,7 @@ public class IP {
 
         /** All IP addresses in this */
         public Set<String> addresses() {
-            ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+            ImmutableSortedSet.Builder<String> builder = ImmutableSortedSet.orderedBy(naturalOrder);
             builder.add(ipv6Address);
             ipv4Address.ifPresent(builder::add);
             return builder.build();
