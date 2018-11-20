@@ -8,8 +8,8 @@ import com.yahoo.jdisc.application.MetricConsumer;
 import java.util.Map;
 
 /**
- * <p>If more than one {@link MetricConsumerFactory} is registered in a container, calls to <tt>Metric</tt> need to be
- * forwarded to all the underlying <tt>MetricConsumers</tt>. That is the responsibility of this class. Instances of this
+ * <p>If more than one {@link MetricConsumerFactory} is registered in a container, calls to <code>Metric</code> need to be
+ * forwarded to all the underlying <code>MetricConsumers</code>. That is the responsibility of this class. Instances of this
  * class is created by the {@link MetricConsumerProvider} in those cases.</p>
  *
  * @author Simon Thoresen Hult
