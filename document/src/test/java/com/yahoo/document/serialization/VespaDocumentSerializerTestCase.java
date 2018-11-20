@@ -53,7 +53,7 @@ public class VespaDocumentSerializerTestCase {
         PredicateFieldValue predicate = Mockito.mock(PredicateFieldValue.class);
         doc.setFieldValue("my_predicate", predicate);
 
-        DocumentSerializerFactory.create42(new GrowableByteBuffer()).write(doc);
+        DocumentSerializerFactory.create6(new GrowableByteBuffer()).write(doc);
         Mockito.verify(predicate, Mockito.times(1)).serialize(Mockito.same(field), Mockito.any(FieldWriter.class));
     }
 

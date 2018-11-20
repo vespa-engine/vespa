@@ -37,7 +37,7 @@ public class Bug6425939TestCase {
         emptyString.setSpanTree(createSpanTree());
 
         GrowableByteBuffer buffer = new GrowableByteBuffer(1024);
-        DocumentSerializer serializer = DocumentSerializerFactory.create42(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
         Field strField = new Field("flarn", DataType.STRING);
         serializer.write(strField, emptyString);
         buffer.flip();
