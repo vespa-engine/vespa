@@ -146,7 +146,7 @@ public class StringTestCase extends AbstractTypesTest {
         Field f = new Field("text", DataType.STRING);
 
         GrowableByteBuffer buffer = new GrowableByteBuffer(1024);
-        DocumentSerializer serializer = DocumentSerializerFactory.create42(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
         serializer.write(f, stringFieldValue);
         buffer.flip();
 
@@ -183,7 +183,7 @@ public class StringTestCase extends AbstractTypesTest {
         innerTree.annotate(innerSpan, new Annotation(type));
 
         GrowableByteBuffer buffer = new GrowableByteBuffer(1024);
-        DocumentSerializer serializer = DocumentSerializerFactory.create42(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
 
         try {
             serializer.write(null, outerString);
@@ -216,7 +216,7 @@ public class StringTestCase extends AbstractTypesTest {
 
     private Document serializeAndDeserialize(Document doc, DocumentTypeManager manager) {
         GrowableByteBuffer buffer = new GrowableByteBuffer(1024);
-        DocumentSerializer serializer = DocumentSerializerFactory.create42(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
         serializer.write(doc);
         buffer.flip();
 

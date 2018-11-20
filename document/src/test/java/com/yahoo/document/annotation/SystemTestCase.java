@@ -124,7 +124,7 @@ public class SystemTestCase {
         annotate(inDocument);
 
         GrowableByteBuffer buffer = new GrowableByteBuffer();
-        DocumentSerializer serializer = DocumentSerializerFactory.create42(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
         serializer.write(inDocument);
         buffer.flip();
         DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(manager, buffer);

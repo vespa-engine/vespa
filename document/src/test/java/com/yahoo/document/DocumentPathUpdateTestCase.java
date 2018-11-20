@@ -581,7 +581,7 @@ public class DocumentPathUpdateTestCase {
         docUp.addFieldPathUpdate(ass);
 
         GrowableByteBuffer buffer = new GrowableByteBuffer();
-        docUp.serialize(DocumentSerializerFactory.createHead(buffer));
+        docUp.serialize(DocumentSerializerFactory.create6(buffer));
         buffer.flip();
         DocumentUpdate docUp2 = new DocumentUpdate(DocumentDeserializerFactory.createHead(docMan, buffer));
 
@@ -599,7 +599,7 @@ public class DocumentPathUpdateTestCase {
         docUp.addFieldPathUpdate(add);
 
         GrowableByteBuffer buffer = new GrowableByteBuffer();
-        docUp.serialize(DocumentSerializerFactory.createHead(buffer));
+        docUp.serialize(DocumentSerializerFactory.create6(buffer));
         buffer.flip();
         DocumentUpdate docUp2 = new DocumentUpdate(DocumentDeserializerFactory.createHead(docMan, buffer));
 
@@ -613,7 +613,7 @@ public class DocumentPathUpdateTestCase {
         docUp.addFieldPathUpdate(remove);
 
         GrowableByteBuffer buffer = new GrowableByteBuffer();
-        docUp.serialize(DocumentSerializerFactory.createHead(buffer));
+        docUp.serialize(DocumentSerializerFactory.create6(buffer));
         buffer.flip();
         DocumentUpdate docUp2 = new DocumentUpdate(DocumentDeserializerFactory.createHead(docMan, buffer));
 
@@ -658,7 +658,7 @@ public class DocumentPathUpdateTestCase {
         DocumentUpdate docUp = createDocumentUpdateForSerialization();
 
         GrowableByteBuffer buffer = new GrowableByteBuffer();
-        docUp.serialize(DocumentSerializerFactory.createHead(buffer));
+        docUp.serialize(DocumentSerializerFactory.create6(buffer));
 
         int size = buffer.position();
         buffer.position(0);
