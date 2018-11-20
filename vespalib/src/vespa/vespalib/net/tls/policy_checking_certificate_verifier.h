@@ -6,6 +6,6 @@
 
 namespace vespalib::net::tls {
 
-std::shared_ptr<CertificateVerificationCallback> create_verify_callback_from(AllowedPeers allowed_peers);
+std::shared_ptr<CertificateVerificationCallback> create_verify_callback_from(AuthorizedPeers authorized_peers);
 
 }

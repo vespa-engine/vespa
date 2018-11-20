@@ -418,9 +418,9 @@ struct CertFixture : Fixture {
         return {std::move(cert), std::move(key)};
     }
 
-    void reset_client_with_cert_opts(const CertKeyWrapper& ck, AllowedPeers allowed) {
+    void reset_client_with_cert_opts(const CertKeyWrapper& ck, AuthorizedPeers authorized) {
         TransportSecurityOptions client_opts(root_ca.cert->to_pem(), ck.cert->to_pem(),
-                                             ck.key->private_to_pem(), std::move(allowed));
+                                             ck.key->private_to_pem(), std::move(authorized));
         client = create_openssl_codec(client_opts, CryptoCodec::Mode::Client);
     }
 
@@ -429,9 +429,9 @@ struct CertFixture : Fixture {
         client = create_openssl_codec(client_opts, std::move(cert_cb), CryptoCodec::Mode::Client);
     }
 
-    void reset_server_with_cert_opts(const CertKeyWrapper& ck, AllowedPeers allowed) {
+    void reset_server_with_cert_opts(const CertKeyWrapper& ck, AuthorizedPeers authorized) {
         TransportSecurityOptions server_opts(root_ca.cert->to_pem(), ck.cert->to_pem(),
-                                             ck.key->private_to_pem(), std::move(allowed));
+                                             ck.key->private_to_pem(), std::move(authorized));
         server = create_openssl_codec(server_opts, CryptoCodec::Mode::Server);
     }
 
@@ -541,46 +541,46 @@ TEST_F("Only DNS SANs are enumerated", CertFixture) {
 
 TEST_F("Client rejects server with certificate that DOES NOT match peer policy", CertFixture) {
     auto client_ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
-    auto allowed = allowed_peers({policy_with({required_san_dns("crash.wile.example.com")})});
-    f.reset_client_with_cert_opts(client_ck, std::move(allowed));
+    auto authorized = authorized_peers({policy_with({required_san_dns("crash.wile.example.com")})});
+    f.reset_client_with_cert_opts(client_ck, std::move(authorized));
     // crash.wile.example.com not present in certificate
     auto server_ck = f.create_ca_issued_peer_cert(
             {}, {{"DNS:birdseed.wile.example.com"}, {"DNS:roadrunner.wile.example.com"}});
-    f.reset_server_with_cert_opts(server_ck, AllowedPeers::allow_all_authenticated());
+    f.reset_server_with_cert_opts(server_ck, AuthorizedPeers::allow_all_authenticated());
 
     EXPECT_FALSE(f.handshake());
 }
 
 TEST_F("Client allows server with certificate that DOES match peer policy", CertFixture) {
     auto client_ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
-    auto allowed = allowed_peers({policy_with({required_san_dns("crash.wile.example.com")})});
-    f.reset_client_with_cert_opts(client_ck, std::move(allowed));
+    auto authorized = authorized_peers({policy_with({required_san_dns("crash.wile.example.com")})});
+    f.reset_client_with_cert_opts(client_ck, std::move(authorized));
     auto server_ck = f.create_ca_issued_peer_cert(
             {}, {{"DNS:birdseed.wile.example.com"}, {"DNS:crash.wile.example.com"}});
-    f.reset_server_with_cert_opts(server_ck, AllowedPeers::allow_all_authenticated());
+    f.reset_server_with_cert_opts(server_ck, AuthorizedPeers::allow_all_authenticated());
 
     EXPECT_TRUE(f.handshake());
 }
 
 TEST_F("Server rejects client with certificate that DOES NOT match peer policy", CertFixture) {
     auto server_ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
-    auto allowed = allowed_peers({policy_with({required_san_dns("crash.wile.example.com")})});
-    f.reset_server_with_cert_opts(server_ck, std::move(allowed));
+    auto authorized = authorized_peers({policy_with({required_san_dns("crash.wile.example.com")})});
+    f.reset_server_with_cert_opts(server_ck, std::move(authorized));
     // crash.wile.example.com not present in certificate
     auto client_ck = f.create_ca_issued_peer_cert(
             {}, {{"DNS:birdseed.wile.example.com"}, {"DNS:roadrunner.wile.example.com"}});
-    f.reset_client_with_cert_opts(client_ck, AllowedPeers::allow_all_authenticated());
+    f.reset_client_with_cert_opts(client_ck, AuthorizedPeers::allow_all_authenticated());
 
     EXPECT_FALSE(f.handshake());
 }
 
 TEST_F("Server allows client with certificate that DOES match peer policy", CertFixture) {
     auto server_ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
-    auto allowed = allowed_peers({policy_with({required_san_dns("crash.wile.example.com")})});
-    f.reset_server_with_cert_opts(server_ck, std::move(allowed));
+    auto authorized = authorized_peers({policy_with({required_san_dns("crash.wile.example.com")})});
+    f.reset_server_with_cert_opts(server_ck, std::move(authorized));
     auto client_ck = f.create_ca_issued_peer_cert(
             {}, {{"DNS:birdseed.wile.example.com"}, {"DNS:crash.wile.example.com"}});
-    f.reset_client_with_cert_opts(client_ck, AllowedPeers::allow_all_authenticated());
+    f.reset_client_with_cert_opts(client_ck, AuthorizedPeers::allow_all_authenticated());
 
     EXPECT_TRUE(f.handshake());
 }

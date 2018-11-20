@@ -7,7 +7,7 @@
 namespace vespalib::net::tls {
 
 std::shared_ptr<TlsContext> TlsContext::create_default_context(const TransportSecurityOptions& opts) {
-    auto verifier = create_verify_callback_from(opts.allowed_peers());
+    auto verifier = create_verify_callback_from(opts.authorized_peers());
     return std::make_shared<impl::OpenSslTlsContextImpl>(opts, std::move(verifier));
 }
 

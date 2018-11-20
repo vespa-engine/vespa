@@ -16,8 +16,8 @@ PeerPolicy policy_with(std::vector<RequiredPeerCredential> creds) {
     return PeerPolicy(std::move(creds));
 }
 
-AllowedPeers allowed_peers(std::vector<PeerPolicy> peer_policies) {
-    return AllowedPeers(std::move(peer_policies));
+AuthorizedPeers authorized_peers(std::vector<PeerPolicy> peer_policies) {
+    return AuthorizedPeers(std::move(peer_policies));
 }
 
 }

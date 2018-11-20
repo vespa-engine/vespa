@@ -41,25 +41,25 @@ bool matches_all_policy_requirements(const PeerCredentials& peer_creds, const Pe
 } // anon ns
 
 class PolicyConfiguredCertificateVerifier : public CertificateVerificationCallback {
-    AllowedPeers _allowed_peers;
+    AuthorizedPeers _authorized_peers;
 public:
-    explicit PolicyConfiguredCertificateVerifier(AllowedPeers allowed_peers);
+    explicit PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers);
 
     ~PolicyConfiguredCertificateVerifier() override;
 
     bool verify(const PeerCredentials& peer_creds) const override;
 };
 
-PolicyConfiguredCertificateVerifier::PolicyConfiguredCertificateVerifier(AllowedPeers allowed_peers)
-    : _allowed_peers(std::move(allowed_peers)) {}
+PolicyConfiguredCertificateVerifier::PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers)
+    : _authorized_peers(std::move(authorized_peers)) {}
 
 PolicyConfiguredCertificateVerifier::~PolicyConfiguredCertificateVerifier() = default;
 
 bool PolicyConfiguredCertificateVerifier::verify(const PeerCredentials& peer_creds) const {
-    if (_allowed_peers.allows_all_authenticated()) {
+    if (_authorized_peers.allows_all_authenticated()) {
         return true;
     }
-    for (const auto& policy : _allowed_peers.peer_policies()) {
+    for (const auto& policy : _authorized_peers.peer_policies()) {
         if (matches_all_policy_requirements(peer_creds, policy)) {
             return true;
         }
@@ -67,8 +67,8 @@ bool PolicyConfiguredCertificateVerifier::verify(const PeerCredentials& peer_cre
     return false;
 }
 
-std::shared_ptr<CertificateVerificationCallback> create_verify_callback_from(AllowedPeers allowed_peers) {
-    return std::make_shared<PolicyConfiguredCertificateVerifier>(std::move(allowed_peers));
+std::shared_ptr<CertificateVerificationCallback> create_verify_callback_from(AuthorizedPeers authorized_peers) {
+    return std::make_shared<PolicyConfiguredCertificateVerifier>(std::move(authorized_peers));
 }
 
 } // vespalib::net::tls
