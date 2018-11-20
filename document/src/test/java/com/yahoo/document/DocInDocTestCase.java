@@ -43,7 +43,7 @@ public class DocInDocTestCase {
         GrowableByteBuffer buf = serializer.getBuf();
         buf.flip();
 
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(manager, buf);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(manager, buf);
         Document outerDeserialized = new Document(deserializer);
 
         assertEquals(outer, outerDeserialized);
