@@ -88,7 +88,7 @@ public class SpanTestCase extends AbstractTypesTest {
         }
         Span span2;
         {
-            DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(man, buffer);
+            DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(man, buffer);
             StringFieldValue value = new StringFieldValue();
             deserializer.read(null, value);
             span2 = (Span)value.getSpanTree("bababa").getRoot();
