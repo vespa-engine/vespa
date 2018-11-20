@@ -1454,7 +1454,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
             buffer.flip();
         }
         public Document deserialize() {
-            return new Document(DocumentDeserializerFactory.createHead(docMan, buffer));
+            return new Document(DocumentDeserializerFactory.create6(docMan, buffer));
         }
     }
 
