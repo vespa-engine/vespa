@@ -60,18 +60,14 @@ public class ClustersStatus extends AbstractComponent {
         }
     }
 
-    /**
-     @deprecated Use setUp(String) instead
-     */
-    @Deprecated
+    /** @deprecated use setUp(String) instead */
+    @Deprecated // TODO: Remove on Vespa 8
     public void setUp(Object clusterIdentifier) {
         setUp((String) clusterIdentifier);
     }
 
-    /**
-     @deprecated Use setDown(String) instead
-     */
-    @Deprecated
+    /** @deprecated use setDown(String) instead */
+    @Deprecated // TODO: Remove on Vespa 8
     public void setDown(Object clusterIdentifier) {
         setDown((String) clusterIdentifier);
     }

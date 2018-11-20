@@ -4,15 +4,11 @@ package com.yahoo.document.fieldset;
 import com.yahoo.document.Field;
 
 /**
- * Created with IntelliJ IDEA.
- * User: thomasg
- * Date: 4/25/12
- * Time: 3:18 PM
- * To change this template use File | Settings | File Templates.
+ * @deprecated do not use
  */
-//TODO Vespa 8 Remove
-@Deprecated
+@Deprecated // TODO: Remove on Vespa 8
 public class HeaderFields implements FieldSet {
+
     @Override
     public boolean contains(FieldSet o) {
         if (o instanceof HeaderFields || o instanceof DocIdOnly || o instanceof NoFields) {
@@ -41,4 +37,5 @@ public class HeaderFields implements FieldSet {
     public FieldSet clone() throws CloneNotSupportedException {
         return new HeaderFields();
     }
+
 }

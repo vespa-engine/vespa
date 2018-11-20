@@ -10,9 +10,10 @@ import java.util.Map;
 import static com.yahoo.container.core.ChainsConfig.Chains.Type;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocprocChain extends Chain<DocumentProcessor> {
+
     private Map<Pair<String, String>, String> fieldNameSchemaMap;
     private static final Type.Enum TYPE = Type.Enum.DOCPROC;
 
@@ -40,4 +41,5 @@ public class DocprocChain extends Chain<DocumentProcessor> {
     public Type.Enum getType() {
         return TYPE;
     }
+
 }

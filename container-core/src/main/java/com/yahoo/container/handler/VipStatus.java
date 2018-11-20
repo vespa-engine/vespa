@@ -58,14 +58,14 @@ public class VipStatus {
         clustersStatus.setDown(clusterIdentifier);
     }
 
-    /** @deprecated Use addToRotation(String) instead  */
-    @Deprecated
+    /** @deprecated use addToRotation(String) instead  */
+    @Deprecated // TODO: Remove on Vespa 8
     public void addToRotation(Object clusterIdentifier) {
         addToRotation((String) clusterIdentifier);
     }
 
-    /** @deprecated Use removeFromRotation(String) instead  */
-    @Deprecated
+    /** @deprecated use removeFromRotation(String) instead  */
+    @Deprecated // TODO: Remove on Vespa 8
     public void removeFromRotation(Object clusterIdentifier) {
         removeFromRotation((String) clusterIdentifier);
     }

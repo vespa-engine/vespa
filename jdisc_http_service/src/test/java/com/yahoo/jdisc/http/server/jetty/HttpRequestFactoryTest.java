@@ -45,7 +45,7 @@ import static org.testng.AssertJUnit.fail;
 
 /**
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class HttpRequestFactoryTest {
 

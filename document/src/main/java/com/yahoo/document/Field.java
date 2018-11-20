@@ -16,7 +16,7 @@ import java.io.Serializable;
  * @author Thomas Gundersen
  * @author bratseth
  */
-//TODO Vespa 8 Remove header/body concept
+// TODO: Remove header/body concept on Vespa 8
 public class Field extends FieldBase implements FieldSet, Comparable, Serializable {
 
     protected DataType dataType;
@@ -176,7 +176,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
         }
     }
 
-    /** @return Returns the datatype of the field */
+    /** Returns the datatype of the field */
     public final DataType getDataType() {
         return dataType;
     }
@@ -184,10 +184,10 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
     /**
      * Set the data type of the field. This will cause recalculation of fieldid for version 7+.
      *
-     * @deprecated do not use
      * @param type The new type of the field.
+     * @deprecated do not use
      */
-    @Deprecated // Do not remove on Vespa 6
+    @Deprecated // TODO: Remove on Vespa 8
     public void setDataType(DataType type) {
         dataType = type;
         fieldId = calculateIdV7(null);
@@ -215,20 +215,14 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
         return forcedId;
     }
 
-    /**
-     * NB: Has no longer any semantic meaning as this is no longer an aspect with a field.
-     * @return Returns true if this field should be a part of "header" serializations.
-     */
-    @Deprecated
+    /** @deprecated this has no longer any semantic meaning as this is no longer an aspect with a field */
+    @Deprecated // TODO: Remove on Vespa 8
     public boolean isHeader() {
         return isHeader;
     }
 
-    /**
-     *  NB: Has no longer any semantic meaning as this is no longer an aspect with a field.
-     *  Sets whether this is a header field
-     */
-    @Deprecated
+    /** @deprecated this has no longer any semantic meaning as this is no longer an aspect with a field */
+    @Deprecated // TODO: Remove on Vespa 8
     public void setHeader(boolean header) {
         this.isHeader = header;
     }
