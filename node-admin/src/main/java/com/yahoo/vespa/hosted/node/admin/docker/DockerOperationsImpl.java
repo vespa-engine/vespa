@@ -98,7 +98,8 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withUlimit("nproc", 409_600, 409_600)
                 .withUlimit("core", -1, -1)
                 .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
-                .withAddCapability("SYS_ADMIN"); // Needed for perf
+                .withAddCapability("SYS_ADMIN")  // Needed for perf
+                .withAddCapability("SYS_NICE");  // Needed for set_mempolicy to work
 
 
         DockerNetworking networking = context.dockerNetworking();
