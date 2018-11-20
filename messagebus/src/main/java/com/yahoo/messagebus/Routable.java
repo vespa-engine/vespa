@@ -60,7 +60,7 @@ public abstract class Routable {
 
     /**
      * <p>This is a convenience method for calling {@link CallStack#pop(Routable)} on the {@link CallStack} of this
-     * Routable. It equals calling <tt>routable.getCallStack().pop(routable)</tt>.</p>
+     * Routable. It equals calling <code>routable.getCallStack().pop(routable)</code>.</p>
      *
      * @return The handler that was popped.
      * @see CallStack#pop(Routable)
