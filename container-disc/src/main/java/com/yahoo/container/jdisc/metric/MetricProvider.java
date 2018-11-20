@@ -6,9 +6,9 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.MetricConsumer;
 
 /**
- * <p>This class implements a {@link Provider} component of <tt>Metric</tt>. Because this class depends on {@link
+ * <p>This class implements a {@link Provider} component of <code>Metric</code>. Because this class depends on {@link
  * MetricConsumerProvider}, any change to the consumer configuration will trigger reconfiguration of this component,
- * which in turn triggers reconfiguration of any component that depends on <tt>Metric</tt>.</p>
+ * which in turn triggers reconfiguration of any component that depends on <code>Metric</code>.</p>
  *
  * @author Simon Thoresen Hult
  */

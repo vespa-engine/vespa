@@ -11,7 +11,7 @@ import java.util.concurrent.*;
 
 /**
  * <p>This class implements a Future&lt;Boolean&gt; that is conjunction of zero or more other Future&lt;Boolean&gt;s,
- * i.e. it evaluates to <tt>true</tt> if, and only if, all its operands evaluate to <tt>true</tt>. To use this class,
+ * i.e. it evaluates to <code>true</code> if, and only if, all its operands evaluate to <code>true</code>. To use this class,
  * simply create an instance of it and add operands to it using the {@link #addOperand(ListenableFuture)} method.</p>
  * TODO: consider rewriting usage of FutureConjunction to use CompletableFuture instead.
  *

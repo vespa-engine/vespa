@@ -9,7 +9,7 @@ import java.util.concurrent.Callable;
  * This is a convenient subclass of {@link ResponseDispatch} that implements the {@link Callable} interface. This
  * should be used in place of {@link ResponseDispatch} if you intend to schedule its execution. Because {@link #call()}
  * does not return until the entirety of the {@link Response} and its content have been consumed, you can use the
- * <tt>Future</tt> return value of <tt>ExecutorService.submit(Callable)</tt> to wait for it to complete.
+ * <code>Future</code> return value of <code>ExecutorService.submit(Callable)</code> to wait for it to complete.
  *
  * @author Simon Thoresen Hult
  */
