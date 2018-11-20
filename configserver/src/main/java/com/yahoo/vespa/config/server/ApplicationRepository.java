@@ -406,20 +406,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public Set<String> deleteUnusedFiledistributionReferences(File fileReferencesPath) {
         if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
 
-        // Find all file references in use
         Set<String> fileReferencesInUse = new HashSet<>();
-        Set<ApplicationId> applicationIds = listApplications();
-        applicationIds.forEach(applicationId -> {
-            try {
-                Set<String> fileReferences = getApplication(applicationId).getModel().fileReferences()
-                        .stream()
-                        .map(FileReference::value)
-                        .collect(Collectors.toSet());
-                fileReferencesInUse.addAll(fileReferences);
-            } catch (IllegalArgumentException e) {
-                log.log(LogLevel.WARNING, "Failed deleting unused file references for ': " + applicationId + "'", e);
-            }
-        });
+        // Intentionally skip applications that we for some reason do not find
+        listApplications().stream()
+                .map(this::getOptionalApplication)
+                .map(Optional::get)
+                .forEach(application -> fileReferencesInUse.addAll(application.getModel().fileReferences().stream()
+                                                                           .map(FileReference::value)
+                                                                           .collect(Collectors.toSet())));
         log.log(LogLevel.DEBUG, "File references in use : " + fileReferencesInUse);
 
         // Find those on disk that are not in use
@@ -461,6 +455,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "'", e);
             throw e;
+        }
+    }
+
+    private Optional<Application> getOptionalApplication(ApplicationId applicationId) {
+        try {
+            return Optional.of(getApplication(applicationId));
+        } catch (Exception e) {
+            return Optional.empty();
         }
     }
 
@@ -575,27 +577,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public void deleteExpiredLocalSessions() {
-        listApplications().forEach(app -> {
-            Tenant tenant = tenantRepository.getTenant(app.tenant());
-            if (tenant == null)
-                log.log(LogLevel.WARNING, "Cannot delete expired local sessions for tenant '" + app.tenant() + "', tenant not found");
-            else
-                tenant.getLocalSessionRepo().purgeOldSessions();
-        });
+        tenantRepository.getAllTenants().forEach(tenant -> tenant.getLocalSessionRepo().purgeOldSessions());
     }
 
     public int deleteExpiredRemoteSessions(Duration expiryTime) {
-        return listApplications()
+        return tenantRepository.getAllTenants()
                 .stream()
-                .map(app -> {
-                    Tenant tenant = tenantRepository.getTenant(app.tenant());
-                    if (tenant == null) {
-                        log.log(LogLevel.WARNING, "Cannot delete expired remote sessions for tenant '" + app.tenant() + "', tenant not found");
-                        return 0;
-                    } else {
-                        return tenant.getRemoteSessionRepo().deleteExpiredSessions(expiryTime);
-                    }
-                })
+                .map(tenant -> tenant.getRemoteSessionRepo().deleteExpiredSessions(expiryTime))
                 .mapToInt(i -> i)
                 .sum();
     }
