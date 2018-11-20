@@ -79,7 +79,7 @@ public class SerializeAnnotationsTestCase {
         assertEquals(serialized.limit(), serializedFromFile.limit());
 
         StringFieldValue valueFromFile = new StringFieldValue();
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(docMan, new GrowableByteBuffer(serializedFromFile));
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(docMan, new GrowableByteBuffer(serializedFromFile));
         deserializer.read(null, valueFromFile);
         assertEquals(value, valueFromFile);
     }
@@ -182,7 +182,7 @@ public class SerializeAnnotationsTestCase {
         assertEquals(serialized.limit(), serializedFromFile.limit());
 
         StringFieldValue valueFromFile = new StringFieldValue();
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(docMan, new GrowableByteBuffer(serializedFromFile));
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(docMan, new GrowableByteBuffer(serializedFromFile));
         deserializer.read(null, valueFromFile);
         assertEquals(value, valueFromFile);
     }

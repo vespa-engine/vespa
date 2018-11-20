@@ -1000,7 +1000,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         BufferSerializer buf = new BufferSerializer();
         try {
-            new Document(DocumentDeserializerFactory.create42(docMan, buf.getBuf()));
+            new Document(DocumentDeserializerFactory.create6(docMan, buf.getBuf()));
             assertTrue(false);
         } catch (Exception e) {
             assertTrue(true);
@@ -1008,7 +1008,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         buf = BufferSerializer.wrap("Hello world".getBytes());
         try {
-            new Document(DocumentDeserializerFactory.create42(docMan, buf.getBuf()));
+            new Document(DocumentDeserializerFactory.create6(docMan, buf.getBuf()));
             assertTrue(false);
         } catch (Exception e) {
             assertTrue(true);

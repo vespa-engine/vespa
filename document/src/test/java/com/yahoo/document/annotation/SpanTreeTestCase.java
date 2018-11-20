@@ -870,7 +870,7 @@ public class SpanTreeTestCase extends AbstractTypesTest {
         serializer.write(new Field("stringfield", DataType.STRING), strfval);
         buffer.flip();
 
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(docMan, buffer);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(docMan, buffer);
         StringFieldValue stringFieldValue2 = new StringFieldValue();
         deserializer.read(new Field("stringfield", DataType.STRING), stringFieldValue2);
 
