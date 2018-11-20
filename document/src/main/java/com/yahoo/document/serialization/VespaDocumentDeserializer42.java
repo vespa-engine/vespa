@@ -63,6 +63,7 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.text.Utf8String;
+import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.FieldBase;
 
 import java.nio.ByteBuffer;
@@ -82,7 +83,7 @@ import static com.yahoo.text.Utf8.calculateStringPositions;
  */
 @Deprecated // TODO: Remove on Vespa 8
 // When removing: Move content of this class into VespaDocumentDeserializerHead
-public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 implements DocumentDeserializer {
+public class VespaDocumentDeserializer42 extends BufferSerializer implements DocumentDeserializer {
 
     private final Compressor compressor = new Compressor();
     private DocumentTypeManager manager;
