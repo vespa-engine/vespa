@@ -74,7 +74,7 @@ public class LocalAsyncSession implements AsyncSession {
     }
 
     @Override
-    @Deprecated
+    @Deprecated // TODO: Remove on Vespa 8
     public Result get(DocumentId id, boolean headersOnly, DocumentProtocol.Priority pri) {
         return get(id, pri);
     }
