@@ -187,7 +187,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      * @deprecated do not use
      * @param type The new type of the field.
      */
-    @Deprecated // Do not remove on Vespa 6
+    @Deprecated // todo - refactor SD processing to avoid needing this
     public void setDataType(DataType type) {
         dataType = type;
         fieldId = calculateIdV7(null);
@@ -219,7 +219,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      * NB: Has no longer any semantic meaning as this is no longer an aspect with a field.
      * @return Returns true if this field should be a part of "header" serializations.
      */
-    @Deprecated
+    @Deprecated // remove before Vespa 8
     public boolean isHeader() {
         return isHeader;
     }
@@ -228,7 +228,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      *  NB: Has no longer any semantic meaning as this is no longer an aspect with a field.
      *  Sets whether this is a header field
      */
-    @Deprecated
+    @Deprecated // remove before Vespa 8
     public void setHeader(boolean header) {
         this.isHeader = header;
     }

@@ -109,12 +109,12 @@ public class DocumentType extends StructuredDataType {
     }
 
     // Use contentStruct instead
-    @Deprecated
+    @Deprecated  // remove before Vespa 8
     public StructDataType getHeaderType() {
         return contentStruct();
     }
 
-    @Deprecated
+    @Deprecated // remove before Vespa 8
     public StructDataType getBodyType() {
         return bodyType;
     }
