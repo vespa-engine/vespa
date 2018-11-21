@@ -318,12 +318,7 @@ public class JobController {
     Optional<URI> testerEndpoint(RunId id) {
         ApplicationId tester = id.tester().id();
         return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, id.type().zone(controller.system())))
-                         .flatMap(uris -> uris.stream()
-                                              .filter(uri -> uri.getHost().contains(String.format("%s--%s--%s.",
-                                                                                                  tester.instance().value(),
-                                                                                                  tester.application().value(),
-                                                                                                  tester.tenant().value())))
-                                              .findAny());
+                         .flatMap(uris -> uris.stream().findAny());
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this, at least when this is the only build service.
