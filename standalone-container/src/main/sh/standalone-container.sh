@@ -161,6 +161,7 @@ StartCommand() {
         -XX:HeapDumpPath="$VESPA_HOME/var/crash" \
         -XX:+ExitOnOutOfMemoryError \
         --illegal-access=warn \
+        --add-opens=java.base/java.io=ALL-UNNAMED \
         --add-opens=java.base/java.lang=ALL-UNNAMED \
         --add-opens=java.base/java.net=ALL-UNNAMED \
         --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED \
