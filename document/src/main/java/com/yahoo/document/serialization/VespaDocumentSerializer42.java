@@ -71,7 +71,6 @@ import static com.yahoo.text.Utf8.calculateBytePositions;
 // When removing: Move content into VespaDocumentSerializerHead
 public class VespaDocumentSerializer42 extends BufferSerializer implements DocumentSerializer {
 
-    private boolean headerOnly;
     private int spanNodeCounter = -1;
     private int[] bytePositions;
 
@@ -81,15 +80,6 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
 
     VespaDocumentSerializer42() {
         super();
-    }
-
-    VespaDocumentSerializer42(GrowableByteBuffer buf, boolean headerOnly) {
-        this(buf);
-        this.headerOnly = headerOnly;
-    }
-
-    public void setHeaderOnly(boolean headerOnly) {
-        this.headerOnly = headerOnly;
     }
 
     public void write(Document doc) {
@@ -109,7 +99,7 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
         Struct head = doc.getHeader();
         Struct body = doc.getBody();
         boolean hasHead = (head.getFieldCount() != 0);
-        boolean hasBody = (body.getFieldCount() != 0) && !headerOnly;
+        boolean hasBody = (body.getFieldCount() != 0);
 
         byte contents = 0x01; // Indicating we have document type which we always have
         if (hasHead) {
