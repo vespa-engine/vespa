@@ -462,16 +462,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static String buildJvmGCOptions(Zone zone, String jvmGCOPtions, boolean isHostedVespa) {
         if (jvmGCOPtions != null) {
             return jvmGCOPtions;
-        } else if (zone.system() == SystemName.dev) {
+        } else if ((zone.system() == SystemName.dev) || isHostedVespa) {
             return ContainerCluster.G1GC;
-        } else if (isHostedVespa) {
-            return ((zone.environment() != Environment.prod) || RegionName.from("us-east-3").equals(zone.region()))
-                    ? ContainerCluster.G1GC : ContainerCluster.CMS;
         } else {
             return ContainerCluster.CMS;
         }
     }
-    private String getJvmOptions(ContainerCluster cluster, Element nodesElement, DeployLogger deployLogger) {
+    private static String getJvmOptions(ContainerCluster cluster, Element nodesElement, DeployLogger deployLogger) {
         String jvmOptions = "";
         if (nodesElement.hasAttribute(VespaDomBuilder.JVM_OPTIONS)) {
             jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVM_OPTIONS);
