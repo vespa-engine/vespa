@@ -4,9 +4,8 @@ package com.yahoo.documentapi;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.Message;
-import com.yahoo.vdslib.DocumentList;
-import com.yahoo.vdslib.Entry;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -18,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * implements the <code>getNext</code> methods, thus implementing the polling
  * API defined in VisitorDataHandler.
  * <p>
- * Visitor responses containing document lists should be polled for with the
+ * Visitor responses should be polled for with the
  * <code>getNext</code> methods and need to be acked when processed for
  * visiting not to halt. The class is thread safe.
  *
@@ -41,8 +40,7 @@ public class VisitorDataQueue extends VisitorDataHandler {
     }
 
     private void appendSingleOpToPendingList(final DocumentOperation op, final AckToken token) {
-        final DocumentList docList = DocumentList.create(Entry.create(op));
-        final DocumentListVisitorResponse response = new DocumentListVisitorResponse(docList, token);
+        final DocumentOpVisitorResponse response = new DocumentOpVisitorResponse(op, token);
         pendingResponses.add(response);
     }
 
