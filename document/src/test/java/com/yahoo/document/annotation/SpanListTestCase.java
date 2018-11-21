@@ -46,7 +46,7 @@ public class SpanListTestCase extends AbstractTypesTest {
         GrowableByteBuffer buffer;
         {
             buffer = new GrowableByteBuffer(1024);
-            DocumentSerializer serializer = DocumentSerializerFactory.create42(buffer);
+            DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
             StringFieldValue value = new StringFieldValue("lkj lkj lkj lkj lkj lkj lkj lkj lkj lkj lkj lkj lkj lkj lk");
             SpanTree tree = new SpanTree("bababa", spanList);
             value.setSpanTree(tree);
@@ -55,7 +55,7 @@ public class SpanListTestCase extends AbstractTypesTest {
         }
         SpanList spanList2;
         {
-            DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(man, buffer);
+            DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(man, buffer);
             StringFieldValue value = new StringFieldValue();
             deserializer.read(null, value);
             spanList2 = (SpanList)value.getSpanTree("bababa").getRoot();

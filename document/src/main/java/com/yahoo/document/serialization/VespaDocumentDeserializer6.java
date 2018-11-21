@@ -4,19 +4,6 @@ package com.yahoo.document.serialization;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
-import com.yahoo.document.ArrayDataType;
-import com.yahoo.document.CollectionDataType;
-import com.yahoo.document.DataType;
-import com.yahoo.document.DataTypeName;
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentId;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.Field;
-import com.yahoo.document.MapDataType;
-import com.yahoo.document.StructDataType;
-import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AlternateSpanList;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationReference;
@@ -26,6 +13,10 @@ import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanNode;
 import com.yahoo.document.annotation.SpanNodeParent;
 import com.yahoo.document.annotation.SpanTree;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.CollectionDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.DataTypeName;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.CollectionFieldValue;
@@ -43,12 +34,20 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.Field;
 import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
+import com.yahoo.document.MapDataType;
 import com.yahoo.document.predicate.BinaryFormat;
 import com.yahoo.document.select.parser.ParseException;
+import com.yahoo.document.StructDataType;
 import com.yahoo.document.update.AddValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate;
 import com.yahoo.document.update.AssignValueUpdate;
@@ -57,6 +56,7 @@ import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.RemoveValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
@@ -75,36 +75,23 @@ import java.util.Optional;
 import static com.yahoo.text.Utf8.calculateStringPositions;
 
 /**
- * Class used for de-serializing documents on the Vespa 4.2 document format.
+ * Class used for de-serializing documents on the Vespa 6.x document format.
  *
- * @deprecated Please use {@link com.yahoo.document.serialization.VespaDocumentDeserializerHead} instead for new code.
  * @author baldersheim
  */
-@Deprecated // TODO: Remove on Vespa 8
-// When removing: Move content of this class into VespaDocumentDeserializerHead
-public class VespaDocumentDeserializer42 extends BufferSerializer implements DocumentDeserializer {
+public class VespaDocumentDeserializer6 extends BufferSerializer implements DocumentDeserializer {
 
     private final Compressor compressor = new Compressor();
     private DocumentTypeManager manager;
-    GrowableByteBuffer body;
     private short version;
     private List<SpanNode> spanNodes;
     private List<Annotation> annotations;
     private int[] stringPositions;
 
-    VespaDocumentDeserializer42(DocumentTypeManager manager, GrowableByteBuffer header, GrowableByteBuffer body, short version) {
-        super(header);
+    VespaDocumentDeserializer6(DocumentTypeManager manager, GrowableByteBuffer buf) {
+        super(buf);
         this.manager = manager;
-        this.body = body;
-        this.version = version;
-    }
-
-    VespaDocumentDeserializer42(DocumentTypeManager manager, GrowableByteBuffer buf) {
-        this(manager, buf, null, Document.SERIALIZED_VERSION);
-    }
-
-    VespaDocumentDeserializer42(DocumentTypeManager manager, GrowableByteBuffer buf, GrowableByteBuffer body) {
-        this(manager, buf, body, Document.SERIALIZED_VERSION);
+        this.version = Document.SERIALIZED_VERSION;
     }
 
     final public DocumentTypeManager getDocumentTypeManager() { return manager; }
@@ -112,8 +99,9 @@ public class VespaDocumentDeserializer42 extends BufferSerializer implements Doc
     public void read(Document document) {
          read(null, document);
     }
-    public void read(FieldBase field, Document doc) {
 
+    @SuppressWarnings("deprecation")
+    public void read(FieldBase field, Document doc) {
         // Verify that we have correct version
         version = getShort(null);
         if (version < 6 || version > Document.SERIALIZED_VERSION) {
@@ -146,13 +134,6 @@ public class VespaDocumentDeserializer42 extends BufferSerializer implements Doc
         }
         if ((content & 0x4) != 0) {
             readHeaderBody(b, h);
-        } else if (body != null) {
-            GrowableByteBuffer header = getBuf();
-            setBuf(body);
-            body = null;
-            readHeaderBody(b, h);
-            body = getBuf();
-            setBuf(header);
         }
 
         if (version < 8) {
@@ -549,24 +530,26 @@ public class VespaDocumentDeserializer42 extends BufferSerializer implements Doc
     }
 
     public void read(DocumentUpdate update) {
-        short serializationVersion = getShort(null);
-
         update.setId(new DocumentId(this));
-
-        byte contents = getByte(null);
-
-        if ((contents & 0x1) == 0) {
-            throw new DeserializationException("Cannot deserialize DocumentUpdate without doctype");
-        }
-
         update.setDocumentType(readDocumentType());
 
         int size = getInt(null);
 
         for (int i = 0; i < size; i++) {
-            update.addFieldUpdate(new FieldUpdate(this, update.getDocumentType(), serializationVersion));
+            update.addFieldUpdate(new FieldUpdate(this, update.getDocumentType(), 8));
+        }
+
+        int sizeAndFlags = getInt(null);
+        update.setCreateIfNonExistent(DocumentUpdateFlags.extractFlags(sizeAndFlags).getCreateIfNonExistent());
+        size = DocumentUpdateFlags.extractValue(sizeAndFlags);
+
+        for (int i = 0; i < size; i++) {
+            int type = getByte(null);
+            update.addFieldPathUpdate(FieldPathUpdate.create(FieldPathUpdate.Type.valueOf(type),
+                                      update.getDocumentType(), this));
         }
     }
+
 
     public void read(FieldPathUpdate update) {
         String fieldPath = getString(null);

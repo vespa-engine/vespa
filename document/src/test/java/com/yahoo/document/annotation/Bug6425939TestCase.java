@@ -37,13 +37,13 @@ public class Bug6425939TestCase {
         emptyString.setSpanTree(createSpanTree());
 
         GrowableByteBuffer buffer = new GrowableByteBuffer(1024);
-        DocumentSerializer serializer = DocumentSerializerFactory.create42(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
         Field strField = new Field("flarn", DataType.STRING);
         serializer.write(strField, emptyString);
         buffer.flip();
 
         // Should not throw exception if bug 6425939 is fixed:
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(man, buffer);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(man, buffer);
         StringFieldValue deserializedString = new StringFieldValue();
         deserializer.read(strField, deserializedString);
 

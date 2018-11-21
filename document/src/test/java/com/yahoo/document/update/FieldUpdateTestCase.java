@@ -186,10 +186,10 @@ public class FieldUpdateTestCase {
 
     // Copy all field updates using serialization to verify that it is supported
     private FieldUpdate serializedCopy(FieldUpdate source, DocumentType docType) {
-        DocumentSerializer buffer = DocumentSerializerFactory.create42();
+        DocumentSerializer buffer = DocumentSerializerFactory.create6();
         source.serialize(buffer);
         buffer.getBuf().flip();
-        FieldUpdate copy = new FieldUpdate(DocumentDeserializerFactory.create42(docman, buffer.getBuf()), docType, Document.SERIALIZED_VERSION);
+        FieldUpdate copy = new FieldUpdate(DocumentDeserializerFactory.create6(docman, buffer.getBuf()), docType, Document.SERIALIZED_VERSION);
         assertEquals(source, copy);
         return copy;
     }

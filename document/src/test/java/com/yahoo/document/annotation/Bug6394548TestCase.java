@@ -43,11 +43,11 @@ public class Bug6394548TestCase {
         String annotationsBefore = dumpAllAnnotations(tree);
 
         GrowableByteBuffer buffer = new GrowableByteBuffer();
-        DocumentSerializer serializer = DocumentSerializerFactory.create42(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
         serializer.write(doc);
 
         buffer.flip();
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(manager, buffer);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(manager, buffer);
         Document doc2 = new Document(deserializer);
 
         System.out.println(doc2.toXml());

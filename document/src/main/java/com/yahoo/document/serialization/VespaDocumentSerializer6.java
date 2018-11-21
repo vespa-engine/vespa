@@ -36,6 +36,9 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.predicate.BinaryFormat;
 import com.yahoo.document.update.AddValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate;
@@ -62,44 +65,28 @@ import java.util.logging.Logger;
 import static com.yahoo.text.Utf8.calculateBytePositions;
 
 /**
- * Class used for serializing documents on the Vespa 4.2 document format.
+ * Class used for serializing documents on the Vespa 6.x document format.
  *
- * @deprecated Please use {@link com.yahoo.document.serialization.VespaDocumentSerializerHead} instead for new code.
  * @author baldersheim
- */
-@Deprecated // TODO: Remove on Vespa 8
-// When removing: Move content into VespaDocumentSerializerHead
-public class VespaDocumentSerializer42 extends BufferSerializer implements DocumentSerializer {
+ **/
+public class VespaDocumentSerializer6 extends BufferSerializer implements DocumentSerializer {
 
-    private boolean headerOnly;
     private int spanNodeCounter = -1;
     private int[] bytePositions;
 
-    VespaDocumentSerializer42(GrowableByteBuffer buf) {
+    VespaDocumentSerializer6(GrowableByteBuffer buf) {
         super(buf);
-    }
-
-    VespaDocumentSerializer42() {
-        super();
-    }
-
-    VespaDocumentSerializer42(GrowableByteBuffer buf, boolean headerOnly) {
-        this(buf);
-        this.headerOnly = headerOnly;
-    }
-
-    public void setHeaderOnly(boolean headerOnly) {
-        this.headerOnly = headerOnly;
     }
 
     public void write(Document doc) {
         write(new Field(doc.getDataType().getName(), 0, doc.getDataType(), true), doc);
     }
 
+    @SuppressWarnings("deprecation")
     public void write(FieldBase field, Document doc) {
         buf.putShort(Document.SERIALIZED_VERSION);
 
-        //save the starting position in the buffer
+        //save the position of the length in the buffer
         int lenPos = buf.position();
         // Temporary length, fill in after serialization is done.
         buf.putInt(0);
@@ -109,7 +96,7 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
         Struct head = doc.getHeader();
         Struct body = doc.getBody();
         boolean hasHead = (head.getFieldCount() != 0);
-        boolean hasBody = (body.getFieldCount() != 0) && !headerOnly;
+        boolean hasBody = (body.getFieldCount() != 0);
 
         byte contents = 0x01; // Indicating we have document type which we always have
         if (hasHead) {
@@ -580,11 +567,8 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
 
     @Override
     public void write(DocumentUpdate update) {
-        putShort(null, Document.SERIALIZED_VERSION);
         update.getId().serialize(this);
 
-        byte contents = 0x1; // Legacy to say we have document type
-        putByte(null, contents);
         update.getDocumentType().serialize(this);
 
         putInt(null, update.fieldUpdates().size());
@@ -592,6 +576,44 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
         for (FieldUpdate up : update.fieldUpdates()) {
             up.serialize(this);
         }
+
+        DocumentUpdateFlags flags = new DocumentUpdateFlags();
+        flags.setCreateIfNonExistent(update.getCreateIfNonExistent());
+        putInt(null, flags.injectInto(update.fieldPathUpdates().size()));
+
+        for (FieldPathUpdate up : update.fieldPathUpdates()) {
+            up.serialize(this);
+        }
+    }
+
+    public void write(FieldPathUpdate update) {
+        putByte(null, (byte)update.getUpdateType().getCode());
+        put(null, update.getOriginalFieldPath());
+        put(null, update.getOriginalWhereClause());
+    }
+
+    public void write(AssignFieldPathUpdate update) {
+        write((FieldPathUpdate)update);
+        byte flags = 0;
+        if (update.getRemoveIfZero()) {
+            flags |= AssignFieldPathUpdate.REMOVE_IF_ZERO;
+        }
+        if (update.getCreateMissingPath()) {
+            flags |= AssignFieldPathUpdate.CREATE_MISSING_PATH;
+        }
+        if (update.isArithmetic()) {
+            flags |= AssignFieldPathUpdate.ARITHMETIC_EXPRESSION;
+            putByte(null, flags);
+            put(null, update.getExpression());
+        } else {
+            putByte(null, flags);
+            update.getFieldValue().serialize(this);
+        }
+    }
+
+    public void write(AddFieldPathUpdate update) {
+        write((FieldPathUpdate)update);
+        update.getNewValues().serialize(this);
     }
 
     @Override
@@ -662,12 +684,12 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
      * @return The size in bytes.
      */
     public static long getSerializedSize(Document doc) {
-        DocumentSerializer serializer = new VespaDocumentSerializerHead(new GrowableByteBuffer());
+        DocumentSerializer serializer = new VespaDocumentSerializer6(new GrowableByteBuffer());
         serializer.write(doc);
         return serializer.getBuf().position();
     }
 
-    private static void writeValue(VespaDocumentSerializer42 serializer, DataType dataType, Object value) {
+    private static void writeValue(VespaDocumentSerializer6 serializer, DataType dataType, Object value) {
         FieldValue fieldValue;
         if (value instanceof FieldValue) {
             fieldValue = (FieldValue)value;

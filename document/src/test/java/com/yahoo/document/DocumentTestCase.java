@@ -995,7 +995,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         BufferSerializer buf = new BufferSerializer();
         try {
-            new Document(DocumentDeserializerFactory.create42(docMan, buf.getBuf()));
+            new Document(DocumentDeserializerFactory.create6(docMan, buf.getBuf()));
             assertTrue(false);
         } catch (Exception e) {
             assertTrue(true);
@@ -1003,7 +1003,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         buf = BufferSerializer.wrap("Hello world".getBytes());
         try {
-            new Document(DocumentDeserializerFactory.create42(docMan, buf.getBuf()));
+            new Document(DocumentDeserializerFactory.create6(docMan, buf.getBuf()));
             assertTrue(false);
         } catch (Exception e) {
             assertTrue(true);
@@ -1445,11 +1445,11 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         }
         public void serialize(String docId) {
             new Document(docType, DocumentId.createFromSerialized(docId))
-                    .serialize(DocumentSerializerFactory.createHead(buffer));
+                    .serialize(DocumentSerializerFactory.create6(buffer));
             buffer.flip();
         }
         public Document deserialize() {
-            return new Document(DocumentDeserializerFactory.createHead(docMan, buffer));
+            return new Document(DocumentDeserializerFactory.create6(docMan, buffer));
         }
     }
 

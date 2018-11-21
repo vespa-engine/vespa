@@ -37,13 +37,13 @@ public class DocInDocTestCase {
         Document outer = new Document(manager.getDocumentType("outerdoc"), "doc:outer:the:only:one");
         outer.setFieldValue("innerdocuments", innerArray);
 
-        DocumentSerializer serializer = DocumentSerializerFactory.create42();
+        DocumentSerializer serializer = DocumentSerializerFactory.create6();
         serializer.write(outer);
 
         GrowableByteBuffer buf = serializer.getBuf();
         buf.flip();
 
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(manager, buf);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(manager, buf);
         Document outerDeserialized = new Document(deserializer);
 
         assertEquals(outer, outerDeserialized);
