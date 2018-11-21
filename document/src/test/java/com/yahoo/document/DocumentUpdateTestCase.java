@@ -401,7 +401,7 @@ public class DocumentUpdateTestCase {
         upd.addFieldUpdate(serAdd);
 
         GrowableByteBuffer buf = new GrowableByteBuffer(100, 2.0f);
-        upd.serialize(buf);
+        upd.serialize(DocumentSerializerFactory.create42(buf));
 
         int size = buf.position();
         buf.position(0);
