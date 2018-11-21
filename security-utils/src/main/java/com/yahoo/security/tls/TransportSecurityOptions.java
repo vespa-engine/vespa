@@ -36,19 +36,19 @@ public class TransportSecurityOptions {
     }
 
     public Optional<Path> getPrivateKeyFile() {
-        return Optional.of(privateKeyFile);
+        return Optional.ofNullable(privateKeyFile);
     }
 
     public Optional<Path> getCertificatesFile() {
-        return Optional.of(certificatesFile);
+        return Optional.ofNullable(certificatesFile);
     }
 
     public Optional<Path> getCaCertificatesFile() {
-        return Optional.of(caCertificatesFile);
+        return Optional.ofNullable(caCertificatesFile);
     }
 
     public Optional<AuthorizedPeers> getAuthorizedPeers() {
-        return Optional.of(authorizedPeers);
+        return Optional.ofNullable(authorizedPeers);
     }
 
     public static TransportSecurityOptions fromJsonFile(Path file) {
