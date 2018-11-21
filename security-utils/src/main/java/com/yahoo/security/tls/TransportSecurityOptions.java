@@ -1,13 +1,18 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security.tls;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.security.tls.json.TransportSecurityOptionsJsonSerializer;
+import com.yahoo.security.tls.policy.AuthorizedPeers;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -18,61 +23,88 @@ import java.util.Optional;
  */
 public class TransportSecurityOptions {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
-
     private final Path privateKeyFile;
     private final Path certificatesFile;
     private final Path caCertificatesFile;
+    private final AuthorizedPeers authorizedPeers;
 
-    public TransportSecurityOptions(String privateKeyFile, String certificatesFile, String caCertificatesFile) {
-        this(Paths.get(privateKeyFile), Paths.get(certificatesFile), Paths.get(caCertificatesFile));
+    private TransportSecurityOptions(Builder builder) {
+        this.privateKeyFile = builder.privateKeyFile;
+        this.certificatesFile = builder.certificatesFile;
+        this.caCertificatesFile = builder.caCertificatesFile;
+        this.authorizedPeers = builder.authorizedPeers;
     }
 
-    public TransportSecurityOptions(Path privateKeyFile, Path certificatesFile, Path caCertificatesFile) {
-        this.privateKeyFile = privateKeyFile;
-        this.certificatesFile = certificatesFile;
-        this.caCertificatesFile = caCertificatesFile;
+    public Optional<Path> getPrivateKeyFile() {
+        return Optional.of(privateKeyFile);
     }
 
-    public Path getPrivateKeyFile() {
-        return privateKeyFile;
+    public Optional<Path> getCertificatesFile() {
+        return Optional.of(certificatesFile);
     }
 
-    public Path getCertificatesFile() {
-        return certificatesFile;
+    public Optional<Path> getCaCertificatesFile() {
+        return Optional.of(caCertificatesFile);
     }
 
-    public Path getCaCertificatesFile() {
-        return caCertificatesFile;
+    public Optional<AuthorizedPeers> getAuthorizedPeers() {
+        return Optional.of(authorizedPeers);
     }
 
     public static TransportSecurityOptions fromJsonFile(Path file) {
-        try {
-            return fromJsonNode(mapper.readTree(file.toFile()));
+        try (InputStream in = Files.newInputStream(file)) {
+            return new TransportSecurityOptionsJsonSerializer().deserialize(in);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
     public static TransportSecurityOptions fromJson(String json) {
-        try {
-            return fromJsonNode(mapper.readTree(json));
+        return new TransportSecurityOptionsJsonSerializer()
+                .deserialize(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    public String toJson() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        new TransportSecurityOptionsJsonSerializer().serialize(out, this);
+        return new String(out.toByteArray(), StandardCharsets.UTF_8);
+    }
+
+    public void toJsonFile(Path file) {
+        try (OutputStream out = Files.newOutputStream(file)) {
+            new TransportSecurityOptionsJsonSerializer().serialize(out, this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private static TransportSecurityOptions fromJsonNode(JsonNode root) {
-        JsonNode filesNode = getField(root, "files");
-        String privateKeyFile = getField(filesNode, "private-key").asText();
-        String certificatesFile = getField(filesNode, "certificates").asText();
-        String caCertificatesFile = getField(filesNode, "ca-certificates").asText();
-        return new TransportSecurityOptions(privateKeyFile, certificatesFile, caCertificatesFile);
-    }
+    public static class Builder {
+        private Path privateKeyFile;
+        private Path certificatesFile;
+        private Path caCertificatesFile;
+        private AuthorizedPeers authorizedPeers;
 
-    private static JsonNode getField(JsonNode root, String fieldName) {
-        return Optional.ofNullable(root.get(fieldName))
-                .orElseThrow(() -> new IllegalArgumentException(String.format("'%s' field missing", fieldName)));
+        public Builder() {}
+
+        public Builder withCertificates(Path certificatesFile, Path privateKeyFile) {
+            this.certificatesFile = certificatesFile;
+            this.privateKeyFile = privateKeyFile;
+            return this;
+        }
+
+        public Builder withCaCertificates(Path caCertificatesFile) {
+            this.caCertificatesFile = caCertificatesFile;
+            return this;
+        }
+
+        public Builder withAuthorizedPeers(AuthorizedPeers authorizedPeers) {
+            this.authorizedPeers = authorizedPeers;
+            return this;
+        }
+
+        public TransportSecurityOptions build() {
+            return new TransportSecurityOptions(this);
+        }
     }
 
     @Override
@@ -81,6 +113,7 @@ public class TransportSecurityOptions {
                 "privateKeyFile=" + privateKeyFile +
                 ", certificatesFile=" + certificatesFile +
                 ", caCertificatesFile=" + caCertificatesFile +
+                ", authorizedPeers=" + authorizedPeers +
                 '}';
     }
 
@@ -91,11 +124,12 @@ public class TransportSecurityOptions {
         TransportSecurityOptions that = (TransportSecurityOptions) o;
         return Objects.equals(privateKeyFile, that.privateKeyFile) &&
                 Objects.equals(certificatesFile, that.certificatesFile) &&
-                Objects.equals(caCertificatesFile, that.caCertificatesFile);
+                Objects.equals(caCertificatesFile, that.caCertificatesFile) &&
+                Objects.equals(authorizedPeers, that.authorizedPeers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(privateKeyFile, certificatesFile, caCertificatesFile);
+        return Objects.hash(privateKeyFile, certificatesFile, caCertificatesFile, authorizedPeers);
     }
 }

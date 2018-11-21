@@ -17,20 +17,22 @@ import static org.junit.Assert.*;
 public class TransportSecurityOptionsTest {
 
     private static final Path TEST_CONFIG_FILE = Paths.get("src/test/resources/transport-security-options.json");
+    private static final TransportSecurityOptions OPTIONS = new TransportSecurityOptions.Builder()
+            .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
+            .withCaCertificates(Paths.get("my_cas.pem"))
+            .build();
 
     @Test
     public void can_read_options_from_json_file() {
-        TransportSecurityOptions expectedOptions = new TransportSecurityOptions("myhost.key", "certs.pem", "my_cas.pem");
         TransportSecurityOptions actualOptions =  TransportSecurityOptions.fromJsonFile(TEST_CONFIG_FILE);
-        assertEquals(expectedOptions, actualOptions);
+        assertEquals(OPTIONS, actualOptions);
     }
 
     @Test
     public void can_read_options_from_json() throws IOException {
         String tlsJson = new String(Files.readAllBytes(TEST_CONFIG_FILE), StandardCharsets.UTF_8);
-        TransportSecurityOptions expectedOptions = new TransportSecurityOptions("myhost.key", "certs.pem", "my_cas.pem");
         TransportSecurityOptions actualOptions = TransportSecurityOptions.fromJson(tlsJson);
-        assertEquals(expectedOptions, actualOptions);
+        assertEquals(OPTIONS, actualOptions);
     }
 
 }
