@@ -101,30 +101,36 @@ public class ClusterTest {
 
     private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml, boolean globalDocType) throws ParseException {
         ApplicationPackage app = new MockApplicationPackage.Builder()
-                .withHosts(joinLines("<hosts>",
-                                "  <host name='localhost'><alias>my_host</alias></host>",
-                                "</hosts>"))
-                .withServices(joinLines("<services version='1.0'>",
-                                "  <admin version='2.0'>",
-                                "    <adminserver hostalias='my_host' />",
-                                "  </admin>",
-                                "  <content version='1.0'>",
-                                "    <redundancy>3</redundancy>",
-                                "    <documents>",
-                                "    " + getDocumentXml(globalDocType),
-                                "    </documents>",
-                                "    <engine>",
-                                "      <proton>",
-                                "        <searchable-copies>2</searchable-copies>",
-                                searchNodeTuningXml,
-                                "      </proton>",
-                                "    </engine>",
-                                "    <group>",
-                                "      <node hostalias='my_host' distribution-key='0' />",
-                                "    </group>",
-                                contentSearchXml,
-                                "  </content>",
-                                "</services>"))
+                .withHosts(joinLines(
+                        "<hosts>",
+                        "  <host name='localhost'><alias>my_host</alias></host>",
+                        "</hosts>"))
+                .withServices(joinLines(
+                        "<services version='1.0'>",
+                        "  <admin version='2.0'>",
+                        "    <adminserver hostalias='my_host' />",
+                        "  </admin>",
+                        "<jdisc id='foo' version='1.0'>",
+                        "  <search />",
+                        "  <nodes><node hostalias='my_host' /></nodes>",
+                        "</jdisc>",
+                        "  <content version='1.0'>",
+                        "    <redundancy>3</redundancy>",
+                        "    <documents>",
+                        "    " + getDocumentXml(globalDocType),
+                        "    </documents>",
+                        "    <engine>",
+                        "      <proton>",
+                        "        <searchable-copies>2</searchable-copies>",
+                        searchNodeTuningXml,
+                        "      </proton>",
+                        "    </engine>",
+                        "    <group>",
+                        "      <node hostalias='my_host' distribution-key='0' />",
+                        "    </group>",
+                        contentSearchXml,
+                        "  </content>",
+                        "</services>"))
                 .withSearchDefinitions(ApplicationPackageUtils.generateSearchDefinition("my_document"))
                 .build();
         List<Content> contents = new TestDriver().buildModel(app).getConfigModels(Content.class);
