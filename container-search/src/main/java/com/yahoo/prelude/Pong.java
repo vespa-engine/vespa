@@ -9,7 +9,6 @@ import java.util.Optional;
 import com.yahoo.fs4.PongPacket;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.statistics.ElapsedTime;
-import com.yahoo.container.protect.Error;
 
 /**
  * An answer from Ping.
@@ -47,15 +46,6 @@ public class Pong {
     public int getErrorSize() {
         return errors.size();
     }
-
-    /** 
-     * Returns the package causing this to exist, or empty if none 
-     * 
-     * @deprecated do not use
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public Optional<PongPacket> getPongPacket() { return pongPacket; }
     
     /** Returns the number of active documents in the backend responding in this Pong, if available */
     public Optional<Long> activeDocuments() {
