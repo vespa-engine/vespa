@@ -1,7 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.messagebus.routing.*;
+import com.yahoo.messagebus.routing.Hop;
+import com.yahoo.messagebus.routing.HopBlueprint;
+import com.yahoo.messagebus.routing.PolicyDirective;
+import com.yahoo.messagebus.routing.Route;
+import com.yahoo.messagebus.routing.RoutingTable;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -16,7 +20,12 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertNotNull;
