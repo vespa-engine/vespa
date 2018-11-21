@@ -7,8 +7,6 @@ import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.protocol.*;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Message;
-import com.yahoo.vdslib.DocumentList;
-import com.yahoo.vdslib.Entry;
 
 import java.util.logging.Logger;
 
