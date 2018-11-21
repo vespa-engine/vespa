@@ -10,7 +10,7 @@ using metrics::MetricSet;
 DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
     : MetricSet("distributor", {{"distributor"}}, ""),
       puts(lt, PersistenceOperationMetricSet("puts"), this),
-      updates(lt, PersistenceOperationMetricSet("updates"), this),
+      updates(lt, UpdateMetricSet(), this),
       update_puts(lt, PersistenceOperationMetricSet("update_puts"), this),
       update_gets(lt, PersistenceOperationMetricSet("update_gets"), this),
       removes(lt, PersistenceOperationMetricSet("removes"), this),

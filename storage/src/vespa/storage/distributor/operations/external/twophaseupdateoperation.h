@@ -18,6 +18,8 @@ class UpdateCommand;
 class CreateBucketReply;
 }
 
+class UpdateMetricSet;
+
 namespace distributor {
 
 class DistributorBucketSpace;
@@ -120,7 +122,7 @@ private:
     void replyWithTasFailure(DistributorMessageSender& sender,
                              vespalib::stringref message);
 
-    PersistenceOperationMetricSet& _updateMetric;
+    UpdateMetricSet& _updateMetric;
     PersistenceOperationMetricSet& _putMetric;
     PersistenceOperationMetricSet& _getMetric;
     std::shared_ptr<api::UpdateCommand> _updateCmd;

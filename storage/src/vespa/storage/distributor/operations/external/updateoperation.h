@@ -15,6 +15,8 @@ class UpdateCommand;
 class CreateBucketReply;
 }
 
+class UpdateMetricSet;
+
 namespace distributor {
 
 class DistributorBucketSpace;
@@ -25,7 +27,7 @@ public:
     UpdateOperation(DistributorComponent& manager,
                     DistributorBucketSpace &bucketSpace,
                     const std::shared_ptr<api::UpdateCommand> & msg,
-                    PersistenceOperationMetricSet& metric);
+                    UpdateMetricSet& metric);
 
     void onStart(DistributorMessageSender& sender) override;
     const char* getName() const override { return "update"; };
@@ -59,6 +61,7 @@ private:
     };
 
     std::vector<OldTimestamp> _results;
+    UpdateMetricSet& _metrics;
 };
 
 }
