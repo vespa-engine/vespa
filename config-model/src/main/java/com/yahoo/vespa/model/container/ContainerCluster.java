@@ -641,6 +641,8 @@ public final class ContainerCluster
         }
         if (jvmGCOptions != null) {
             jvmBuilder.gcopts(jvmGCOptions);
+        } else {
+            jvmBuilder.gcopts(G1GC);
         }
         builder.jvm(jvmBuilder);
     }

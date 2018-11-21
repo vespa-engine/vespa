@@ -463,7 +463,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (jvmGCOPtions != null) {
             return jvmGCOPtions;
         } else if ((zone.system() == SystemName.dev) || isHostedVespa) {
-            return ContainerCluster.G1GC;
+            return null;
         } else {
             return ContainerCluster.CMS;
         }
