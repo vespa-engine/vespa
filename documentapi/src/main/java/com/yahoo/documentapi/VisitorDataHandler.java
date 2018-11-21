@@ -5,8 +5,6 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.documentapi.messagebus.protocol.*;
 import com.yahoo.messagebus.Message;
-import com.yahoo.vdslib.DocumentList;
-import com.yahoo.vdslib.Entry;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.document.BucketId;
