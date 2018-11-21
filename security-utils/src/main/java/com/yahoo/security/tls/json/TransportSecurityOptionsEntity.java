@@ -16,7 +16,7 @@ import java.util.List;
 class TransportSecurityOptionsEntity {
 
     @JsonProperty("files") Files files;
-    @JsonProperty("allowed-peers") List<AuthorizedPeer> authorizedPeers = new ArrayList<>();
+    @JsonProperty("authorized-peers") List<AuthorizedPeer> authorizedPeers = new ArrayList<>();
 
     static class Files {
         @JsonProperty("private-key") String privateKeyFile;
