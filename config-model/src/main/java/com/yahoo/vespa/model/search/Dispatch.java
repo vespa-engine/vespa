@@ -32,7 +32,6 @@ public class Dispatch extends AbstractService implements SearchInterface,
     private final int dispatchLevel;
     private final boolean preferLocalRow;
     private final boolean isTopLevel;
-    private TuningDispatch.DispatchPolicy dispatchPolicy = TuningDispatch.DispatchPolicy.ROUNDROBIN;
 
     private Dispatch(DispatchGroup dispatchGroup, AbstractConfigProducer parent, String subConfigId,
                      NodeSpec nodeSpec, int dispatchLevel, boolean preferLocalRow, boolean isTopLevel) {
@@ -48,11 +47,6 @@ public class Dispatch extends AbstractService implements SearchInterface,
         setProp("clustertype", "search")
                 .setProp("clustername", dispatchGroup.getClusterName())
                 .setProp("index", nodeSpec.groupIndex());
-    }
-
-    public Dispatch setDispatchPolicy(TuningDispatch.DispatchPolicy dispatchPolicy) {
-        this.dispatchPolicy = dispatchPolicy;
-        return this;
     }
 
     public static Dispatch createTld(DispatchGroup dispatchGroup, AbstractConfigProducer parent, int rowId) {
@@ -140,8 +134,7 @@ public class Dispatch extends AbstractService implements SearchInterface,
                 refcost(1).
                 rowbits(rowbits).
                 numparts(dispatchGroup.getNumPartitions()).
-                mpp(dispatchGroup.getMinNodesPerColumn()).
-                useroundrobinforfixedrow(dispatchPolicy == TuningDispatch.DispatchPolicy.ROUNDROBIN);
+                mpp(dispatchGroup.getMinNodesPerColumn());
         if (dispatchGroup.useFixedRowInDispatch()) {
             datasetBuilder.querydistribution(PartitionsConfig.Dataset.Querydistribution.Enum.FIXEDROW);
             datasetBuilder.maxnodesdownperfixedrow(dispatchGroup.getMaxNodesDownPerFixedRow());

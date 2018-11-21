@@ -33,7 +33,7 @@ public class TuningDispatch {
     public static class Builder {
 
         private Integer maxHitsPerPartition;
-        private DispatchPolicy dispatchPolicy = DispatchPolicy.ADAPTIVE;
+        private DispatchPolicy dispatchPolicy = DispatchPolicy.ROUNDROBIN;
         private Boolean useLocalNode;
         private Double minGroupCoverage;
         private Double minActiveDocsCoverage;
