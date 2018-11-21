@@ -97,41 +97,40 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
     }
 
     public void write(FieldBase field, Document doc) {
-        //save the starting position in the buffer
-        int startPos = buf.position();
-
         buf.putShort(Document.SERIALIZED_VERSION);
 
+        //save the starting position in the buffer
+        int lenPos = buf.position();
         // Temporary length, fill in after serialization is done.
         buf.putInt(0);
 
         doc.getId().serialize(this);
 
+        Struct head = doc.getHeader();
+        Struct body = doc.getBody();
+        boolean hasHead = (head.getFieldCount() != 0);
+        boolean hasBody = (body.getFieldCount() != 0) && !headerOnly;
+
         byte contents = 0x01; // Indicating we have document type which we always have
-        if (doc.getHeader().getFieldCount() > 0) {
+        if (hasHead) {
             contents |= 0x2; // Indicate we have header
         }
-        if (!headerOnly && doc.getBody().getFieldCount() > 0) {
+        if (hasBody) {
             contents |= 0x4; // Indicate we have a body
         }
         buf.put(contents);
 
         doc.getDataType().serialize(this);
-
-        if (doc.getHeader().getFieldCount() > 0) {
-            doc.getHeader().serialize(doc.getDataType().getField("header"), this);
+        if (hasHead) {
+            head.serialize(null, this);
         }
-
-        if (!headerOnly && doc.getBody().getFieldCount() > 0) {
-            doc.getBody().serialize(doc.getDataType().getField("body"), this);
+        if (hasBody) {
+            body.serialize(null, this);
         }
-
         int finalPos = buf.position();
-
-        buf.position(startPos + 2);
-        buf.putInt(finalPos - startPos - 2 - 4); // Don't include the length itself or the version
+        buf.position(lenPos);
+        buf.putInt(finalPos - lenPos - 4); // Don't include the length itself or the version
         buf.position(finalPos);
-
     }
 
     /**
