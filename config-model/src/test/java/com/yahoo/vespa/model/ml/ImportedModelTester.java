@@ -1,11 +1,17 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.ApplicationPackageTester;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.RankingConstant;
+import com.yahoo.searchlib.rankingexpression.integration.ml.importer.ModelImporter;
+import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
+import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
+import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.model.VespaModel;
@@ -26,6 +32,10 @@ import static org.junit.Assert.assertEquals;
  */
 public class ImportedModelTester {
 
+    private final ImmutableList<ModelImporter> importers = ImmutableList.of(new TensorFlowImporter(),
+                                                                            new OnnxImporter(),
+                                                                            new XGBoostImporter());
+
     private final String modelName;
     private final Path applicationDir;
 
@@ -36,7 +46,10 @@ public class ImportedModelTester {
 
     public VespaModel createVespaModel() {
         try {
-            return new VespaModel(ApplicationPackageTester.create(applicationDir.toString()).app());
+            DeployState.Builder state = new DeployState.Builder();
+            state.applicationPackage(ApplicationPackageTester.create(applicationDir.toString()).app());
+            state.modelImporters(importers);
+            return new VespaModel(state.build());
         }
         catch (SAXException | IOException e) {
             throw new RuntimeException(e);

@@ -180,7 +180,7 @@ public abstract class IntermediateOperation {
 
     /**
      * An interface mapping operation attributes to Vespa Values.
-     * Adapter for differences in ONNX/TensorFlow.
+     * Adapter for differences in different model types.
      */
     public interface AttributeMap {
         Optional<Value> get(String key);

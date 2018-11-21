@@ -286,6 +286,7 @@ public class Document extends StructuredFieldValue {
 
     /**
      * Get JSON representation of the document root and its children contained in a JSON object
+     *
      * @return JSON representation of document
      */
     public String toJson() {
