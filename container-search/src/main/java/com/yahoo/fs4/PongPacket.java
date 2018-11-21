@@ -12,9 +12,6 @@ import java.util.Optional;
  */
 public class PongPacket extends BasicPacket {
 
-    @SuppressWarnings("unused")
-    private int lowPartitionId; // ignored (historical field)
-
     private int dispatchTimestamp;
 
     @SuppressWarnings("unused")
@@ -40,7 +37,7 @@ public class PongPacket extends BasicPacket {
 
     public void decodeBody(ByteBuffer buffer) {
         int features = buffer.getInt();
-        lowPartitionId = buffer.getInt();
+        buffer.getInt();  // Unused lowPartitionId
         dispatchTimestamp = buffer.getInt();
         if ((features & MRF_MLD) != 0) {
             totalNodes = buffer.getInt();
