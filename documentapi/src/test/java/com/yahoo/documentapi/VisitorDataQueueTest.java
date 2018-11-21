@@ -10,7 +10,6 @@ import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
-import com.yahoo.vdslib.Entry;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,17 +41,15 @@ public class VisitorDataQueueTest {
         return new AckToken(new Object());
     }
 
-    private static void assertNonNullDocumentListResponse(final VisitorResponse response) {
+    private static void assertNonNullDocumentOpResponse(final VisitorResponse response) {
         assertThat(response, notNullValue());
-        assertThat(response, instanceOf(DocumentListVisitorResponse.class));
+        assertThat(response, instanceOf(DocumentOpVisitorResponse.class));
     }
 
     private static void assertResponseHasSinglePut(final VisitorResponse response, final DocumentPut expectedInstance) {
-        assertNonNullDocumentListResponse(response);
-        final DocumentListVisitorResponse visitorResponse = (DocumentListVisitorResponse)response;
-        assertThat(visitorResponse.getDocumentList().size(), equalTo(1));
-        final Entry entry = visitorResponse.getDocumentList().get(0);
-        assertThat(entry.getDocumentOperation(), is(expectedInstance));
+        assertNonNullDocumentOpResponse(response);
+        final DocumentOpVisitorResponse visitorResponse = (DocumentOpVisitorResponse)response;
+        assertThat(visitorResponse.getDocumentOperation(), is(expectedInstance));
     }
 
     @Test
@@ -78,13 +75,10 @@ public class VisitorDataQueueTest {
     }
 
     private static void assertResponseHasSingleRemove(final VisitorResponse response, final String docId) {
-        assertNonNullDocumentListResponse(response);
-        final DocumentListVisitorResponse visitorResponse = (DocumentListVisitorResponse)response;
-        assertThat(visitorResponse.getDocumentList().size(), equalTo(1));
-        final Entry entry = visitorResponse.getDocumentList().get(0);
-        assertThat(entry.isRemoveEntry(), is(true));
-        assertThat(entry.getDocumentOperation(), instanceOf(DocumentRemove.class));
-        assertThat(entry.getDocumentOperation().getId(), equalTo(new DocumentId(docId)));
+        assertNonNullDocumentOpResponse(response);
+        final DocumentOpVisitorResponse visitorResponse = (DocumentOpVisitorResponse)response;
+        assertThat(visitorResponse.getDocumentOperation(), instanceOf(DocumentRemove.class));
+        assertThat(visitorResponse.getDocumentOperation().getId(), equalTo(new DocumentId(docId)));
     }
 
     @Test
