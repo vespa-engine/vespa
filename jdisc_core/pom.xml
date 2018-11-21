@@ -239,6 +239,7 @@
                         <configuration>
                             <executable>java</executable>
                             <arguments>
+                                <argument>--add-opens=java.base/java.net=ALL-UNNAMED</argument>
                                 <argument>-classpath</argument>
                                 <classpath />
                                 <argument>com.yahoo.jdisc.core.ExportPackages</argument>
