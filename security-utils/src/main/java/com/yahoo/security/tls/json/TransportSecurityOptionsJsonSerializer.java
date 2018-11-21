@@ -52,12 +52,12 @@ public class TransportSecurityOptionsJsonSerializer {
         Files files = entity.files;
         if (files != null) {
             if (files.certificatesFile != null && files.privateKeyFile != null) {
-                builder.withCertificate(Paths.get(files.certificatesFile), Paths.get(files.privateKeyFile));
+                builder.withCertificates(Paths.get(files.certificatesFile), Paths.get(files.privateKeyFile));
             } else if (files.certificatesFile != null || files.privateKeyFile != null) {
                 throw new IllegalArgumentException("Both 'private-key' and 'certificates' must be configured together");
             }
             if (files.caCertificatesFile != null) {
-                builder.withCaCertificate(Paths.get(files.caCertificatesFile));
+                builder.withCaCertificates(Paths.get(files.caCertificatesFile));
             }
         }
         List<AuthorizedPeer> authorizedPeersEntity = entity.authorizedPeers;
@@ -91,10 +91,10 @@ public class TransportSecurityOptionsJsonSerializer {
 
     private static RequiredPeerCredential toRequiredPeerCredential(RequiredCredential requiredCredential) {
         if (requiredCredential.field == null) {
-            throw new IllegalArgumentException("field");
+            throw missingFieldException("field");
         }
         if (requiredCredential.matchExpression == null) {
-            throw new IllegalArgumentException("must-match");
+            throw missingFieldException("must-match");
         }
         return new RequiredPeerCredential(toField(requiredCredential.field), new HostGlobPattern(requiredCredential.matchExpression));
     }

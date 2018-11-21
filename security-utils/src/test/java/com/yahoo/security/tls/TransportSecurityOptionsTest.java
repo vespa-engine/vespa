@@ -18,8 +18,8 @@ public class TransportSecurityOptionsTest {
 
     private static final Path TEST_CONFIG_FILE = Paths.get("src/test/resources/transport-security-options.json");
     private static final TransportSecurityOptions OPTIONS = new TransportSecurityOptions.Builder()
-            .withCertificate(Paths.get("certs.pem"), Paths.get("myhost.key"))
-            .withCaCertificate(Paths.get("my_cas.pem"))
+            .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
+            .withCaCertificates(Paths.get("my_cas.pem"))
             .build();
 
     @Test

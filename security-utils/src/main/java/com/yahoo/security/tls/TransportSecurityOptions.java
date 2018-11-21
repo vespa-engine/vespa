@@ -70,13 +70,12 @@ public class TransportSecurityOptions {
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 
-    public void toJsonFile(Path caCertificatesFile) {
-        try (OutputStream out = Files.newOutputStream(caCertificatesFile)) {
+    public void toJsonFile(Path file) {
+        try (OutputStream out = Files.newOutputStream(file)) {
             new TransportSecurityOptionsJsonSerializer().serialize(out, this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
     }
 
     public static class Builder {
@@ -87,13 +86,13 @@ public class TransportSecurityOptions {
 
         public Builder() {}
 
-        public Builder withCertificate(Path certificatesFile, Path privateKeyFile) {
+        public Builder withCertificates(Path certificatesFile, Path privateKeyFile) {
             this.certificatesFile = certificatesFile;
             this.privateKeyFile = privateKeyFile;
             return this;
         }
 
-        public Builder withCaCertificate(Path caCertificatesFile) {
+        public Builder withCaCertificates(Path caCertificatesFile) {
             this.caCertificatesFile = caCertificatesFile;
             return this;
         }

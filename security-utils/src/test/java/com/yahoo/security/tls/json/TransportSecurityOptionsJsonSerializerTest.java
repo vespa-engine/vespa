@@ -25,8 +25,8 @@ public class TransportSecurityOptionsJsonSerializerTest {
     @Test
     public void can_serialize_and_deserialize_transport_security_options() {
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
-                .withCaCertificate(Paths.get("/path/to/ca-certs.pem"))
-                .withCertificate(Paths.get("/path/to/cert.pem"), Paths.get("/path/to/key.pem"))
+                .withCaCertificates(Paths.get("/path/to/ca-certs.pem"))
+                .withCertificates(Paths.get("/path/to/cert.pem"), Paths.get("/path/to/key.pem"))
                 .withAuthorizedPeers(
                         new AuthorizedPeers(
                                 new HashSet<>(Arrays.asList(
