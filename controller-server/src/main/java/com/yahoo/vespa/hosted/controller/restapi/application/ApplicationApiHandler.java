@@ -71,7 +71,6 @@ import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
-import com.yahoo.vespa.hosted.controller.restapi.filter.SetBouncerPassthruHeaderFilter;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -169,7 +168,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant-pipeline")) return tenantPipelines();
         if (path.matches("/application/v4/athensDomain")) return athenzDomains(request);
         if (path.matches("/application/v4/property")) return properties();
-        if (path.matches("/application/v4/cookiefreshness")) return cookieFreshness(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
@@ -244,7 +242,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse root(HttpRequest request) {
         return recurseOverTenants(request)
                 ? recursiveRoot(request)
-                : new ResourceResponse(request, "user", "tenant", "tenant-pipeline", "athensDomain", "property", "cookiefreshness");
+                : new ResourceResponse(request, "user", "tenant", "tenant-pipeline", "athensDomain", "property");
     }
 
     private HttpResponse authenticatedUser(HttpRequest request) {
@@ -313,14 +311,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             propertyObject.setString("propertyid", entry.getKey().id());
             propertyObject.setString("property", entry.getValue().id());
         }
-        return new SlimeJsonResponse(slime);
-    }
-
-    private HttpResponse cookieFreshness(HttpRequest request) {
-        Slime slime = new Slime();
-        String passThruHeader = request.getHeader(SetBouncerPassthruHeaderFilter.BOUNCER_PASSTHRU_HEADER_FIELD);
-        slime.setObject().setBool("shouldRefreshCookie",
-                                  ! SetBouncerPassthruHeaderFilter.BOUNCER_PASSTHRU_COOKIE_OK.equals(passThruHeader));
         return new SlimeJsonResponse(slime);
     }
 
