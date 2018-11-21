@@ -162,7 +162,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
-        verifyJvmGCOptions(false, Zone.defaultZone(),ContainerCluster.CMS);
+        verifyJvmGCOptions(false, Zone.defaultZone(),ContainerCluster.G1GC);
         verifyJvmGCOptions(true, Zone.defaultZone(), ContainerCluster.G1GC);
     }
 
