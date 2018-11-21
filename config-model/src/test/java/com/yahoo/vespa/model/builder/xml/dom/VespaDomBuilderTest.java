@@ -12,9 +12,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.io.StringReader;
 
 import static org.hamcrest.CoreMatchers.is;

@@ -412,8 +412,8 @@ public class IndexedSearchCluster extends SearchCluster
             builder.minGroupCoverage(tuning.dispatch.minGroupCoverage);
         if (tuning.dispatch.policy != null) {
             switch (tuning.dispatch.policy) {
-                case RANDOM:
-                    builder.distributionPolicy(DistributionPolicy.RANDOM);
+                case ADAPTIVE:
+                    builder.distributionPolicy(DistributionPolicy.ADAPTIVE);
                     break;
                 case ROUNDROBIN:
                     builder.distributionPolicy(DistributionPolicy.ROUNDROBIN);
