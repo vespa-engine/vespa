@@ -5,7 +5,6 @@ import com.google.common.annotations.Beta;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.SchemaValidators;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
