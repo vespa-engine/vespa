@@ -50,6 +50,7 @@ public class ClusterTest {
                 "    <max-wait-after-coverage-factor>0.58</max-wait-after-coverage-factor>",
                 "  </coverage>",
                 "</search>"));
+        assertEquals(1, cluster.getSearch().getIndexed().getTLDs().size());
         for (Dispatch tld : cluster.getSearch().getIndexed().getTLDs()) {
             PartitionsConfig.Builder builder = new PartitionsConfig.Builder();
             tld.getConfig(builder);
@@ -67,6 +68,7 @@ public class ClusterTest {
         ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
                 joinLines("<tuning>",
                         "</tuning>"));
+        assertEquals(1, cluster.getSearch().getIndexed().getTLDs().size());
         for (Dispatch tld : cluster.getSearch().getIndexed().getTLDs()) {
             PartitionsConfig.Builder builder = new PartitionsConfig.Builder();
             tld.getConfig(builder);
