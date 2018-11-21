@@ -43,7 +43,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             }
             for (PartitionsConfig.Dataset.Builder dataset : builder.dataset) {
                 switch (policy) {
-                    case RANDOM:
+                    case ADAPTIVE:
                         dataset.useroundrobinforfixedrow(false);
                         break;
                     case ROUNDROBIN:
