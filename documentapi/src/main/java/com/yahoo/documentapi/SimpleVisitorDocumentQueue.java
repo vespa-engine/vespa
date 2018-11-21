@@ -3,7 +3,6 @@ package com.yahoo.documentapi;
 
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
-import com.yahoo.vdslib.DocumentList;
 
 import java.util.LinkedList;
 import java.util.List;
