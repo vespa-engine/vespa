@@ -20,6 +20,7 @@ import java.util.List;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -57,6 +58,21 @@ public class ClusterTest {
             assertEquals(0.23, config.dataset(0).higher_coverage_minsearchwait(), 1E-6);
             assertEquals(0.58, config.dataset(0).higher_coverage_maxsearchwait(), 1E-6);
             assertEquals(2, config.dataset(0).searchablecopies());
+            assertTrue(config.dataset(0).useroundrobinforfixedrow());
+        }
+    }
+
+    @Test
+    public void requireThatDispatchTuningIsApplied() throws ParseException {
+        ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
+                joinLines("<tuning>",
+                        "</tuning>"));
+        for (Dispatch tld : cluster.getSearch().getIndexed().getTLDs()) {
+            PartitionsConfig.Builder builder = new PartitionsConfig.Builder();
+            tld.getConfig(builder);
+            PartitionsConfig config = new PartitionsConfig(builder);
+            assertEquals(2, config.dataset(0).searchablecopies());
+            assertTrue(config.dataset(0).useroundrobinforfixedrow());
         }
     }
 
@@ -70,10 +86,18 @@ public class ClusterTest {
     }
 
     private static ContentCluster newContentCluster(String contentSearchXml) throws ParseException {
-        return newContentCluster(contentSearchXml, false);
+        return newContentCluster(contentSearchXml, "", false);
+    }
+
+    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml) throws ParseException {
+        return newContentCluster(contentSearchXml, searchNodeTuningXml, false);
     }
 
     private static ContentCluster newContentCluster(String contentSearchXml, boolean globalDocType) throws ParseException {
+        return newContentCluster(contentSearchXml, "", globalDocType);
+    }
+
+    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml, boolean globalDocType) throws ParseException {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withHosts(joinLines("<hosts>",
                                 "  <host name='localhost'><alias>my_host</alias></host>",
@@ -90,6 +114,7 @@ public class ClusterTest {
                                 "    <engine>",
                                 "      <proton>",
                                 "        <searchable-copies>2</searchable-copies>",
+                                searchNodeTuningXml,
                                 "      </proton>",
                                 "    </engine>",
                                 "    <group>",
