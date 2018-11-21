@@ -4,12 +4,10 @@ package com.yahoo.vespa.hosted.node.admin.component;
 import com.yahoo.vespa.athenz.api.AthenzService;
 
 import java.net.URI;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
-
-import static java.util.stream.Collectors.toMap;
+import java.util.stream.Collectors;
 
 /**
  * Information necessary to e.g. establish communication with the config servers
@@ -19,15 +17,19 @@ import static java.util.stream.Collectors.toMap;
 public class ConfigServerInfo {
     private final List<String> configServerHostNames;
     private final URI loadBalancerEndpoint;
-    private final Map<String, URI> configServerURIs;
     private final AthenzService configServerIdentity;
+    private final Function<String, URI> configServerHostnameToUriMapper;
+    private final List<URI> configServerURIs;
 
     public ConfigServerInfo(String loadBalancerHostName, List<String> configServerHostNames,
                             String scheme, int port, AthenzService configServerAthenzIdentity) {
         this.configServerHostNames = configServerHostNames;
-        this.configServerURIs = createConfigServerUris(scheme, configServerHostNames, port);
         this.loadBalancerEndpoint = createLoadBalancerEndpoint(loadBalancerHostName, scheme, port);
         this.configServerIdentity = configServerAthenzIdentity;
+        this.configServerHostnameToUriMapper = hostname -> URI.create(scheme + "://" + hostname + ":" + port);
+        this.configServerURIs = configServerHostNames.stream()
+                .map(configServerHostnameToUriMapper)
+                .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
     private static URI createLoadBalancerEndpoint(String loadBalancerHost, String scheme, int port) {
@@ -39,16 +41,11 @@ public class ConfigServerInfo {
     }
 
     public List<URI> getConfigServerUris() {
-        return new ArrayList<>(configServerURIs.values());
+        return configServerURIs;
     }
 
     public URI getConfigServerUri(String hostname) {
-        URI uri = configServerURIs.get(hostname);
-        if (uri == null) {
-            throw new IllegalArgumentException("There is no config server '" + hostname + "'");
-        }
-
-        return uri;
+        return configServerHostnameToUriMapper.apply(hostname);
     }
 
     public URI getLoadBalancerEndpoint() {
@@ -58,14 +55,4 @@ public class ConfigServerInfo {
     public AthenzService getConfigServerIdentity() {
         return configServerIdentity;
     }
-
-    private static Map<String, URI> createConfigServerUris(
-            String scheme,
-            List<String> configServerHosts,
-            int port) {
-        return configServerHosts.stream().collect(toMap(
-                Function.identity(),
-                hostname -> URI.create(scheme + "://" + hostname + ":" + port)));
-    }
-
 }
