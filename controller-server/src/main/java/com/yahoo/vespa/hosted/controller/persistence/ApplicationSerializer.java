@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -61,6 +62,7 @@ public class ApplicationSerializer {
     private final String deployingField = "deployingField";
     private final String outstandingChangeField = "outstandingChangeField";
     private final String ownershipIssueIdField = "ownershipIssueId";
+    private final String ownerField = "confirmedOwner";
     private final String writeQualityField = "writeQuality";
     private final String queryQualityField = "queryQuality";
     private final String rotationField = "rotation";
@@ -146,6 +148,7 @@ public class ApplicationSerializer {
         toSlime(application.change(), root, deployingField);
         toSlime(application.outstandingChange(), root, outstandingChangeField);
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
+        application.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         application.rotation().ifPresent(rotation -> root.setString(rotationField, rotation.asString()));
@@ -301,13 +304,14 @@ public class ApplicationSerializer {
         Change deploying = changeFromSlime(root.field(deployingField));
         Change outstandingChange = changeFromSlime(root.field(outstandingChangeField));
         Optional<IssueId> ownershipIssueId = optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
+        Optional<User> owner = optionalString(root.field(ownerField)).map(User::from);
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
         Optional<RotationId> rotation = rotationFromSlime(root.field(rotationField));
         Map<HostName, RotationStatus> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs, deploying,
-                               outstandingChange, ownershipIssueId, metrics, rotation, rotationStatus);
+                               outstandingChange, ownershipIssueId, owner, metrics, rotation, rotationStatus);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {

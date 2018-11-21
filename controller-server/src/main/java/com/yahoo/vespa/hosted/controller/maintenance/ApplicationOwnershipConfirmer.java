@@ -38,6 +38,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     protected void maintain() {
         confirmApplicationOwnerships();
         ensureConfirmationResponses();
+        updateConfirmedApplicationOwners();
     }
 
     /** File an ownership issue with the owners of all applications we know about. */
@@ -79,6 +80,22 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                     log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
                 }
             });
+    }
+
+    private void updateConfirmedApplicationOwners() {
+        ApplicationList.from(controller().applications().asList())
+                .withProjectId()
+                .hasProductionDeployment()
+                .asList()
+                .stream()
+                .filter(application -> application.ownershipIssueId().isPresent())
+                .forEach(application -> {
+                    IssueId ownershipIssueId = application.ownershipIssueId().get();
+                    ownershipIssues.getConfirmedOwner(ownershipIssueId).ifPresent(owner -> {
+                        controller().applications().lockIfPresent(application.id(), lockedApplication ->
+                                controller().applications().store(lockedApplication.withOwner(owner)));
+                    });
+                });
     }
 
     private Tenant ownerOf(ApplicationId applicationId) {

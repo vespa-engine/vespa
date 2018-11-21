@@ -21,4 +21,8 @@ public class DummyOwnershipIssues implements OwnershipIssues {
 
     }
 
+    @Override
+    public Optional<User> getConfirmedOwner(IssueId issueId) {
+        return Optional.empty();
+    }
 }

@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
@@ -505,7 +506,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private void addIssues(ContainerControllerTester tester, ApplicationId id) {
         tester.controller().applications().lockOrThrow(id, application ->
                 tester.controller().applications().store(application.withDeploymentIssueId(IssueId.from("123"))
-                                                                    .withOwnershipIssueId(IssueId.from("321"))));
+                                                                    .withOwnershipIssueId(IssueId.from("321"))
+                                                                    .withOwner(User.from("owner-username"))));
     }
 
     @Test

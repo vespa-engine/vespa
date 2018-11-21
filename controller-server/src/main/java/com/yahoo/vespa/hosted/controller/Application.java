@@ -11,6 +11,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -50,6 +51,7 @@ public class Application {
     private final Change change;
     private final Change outstandingChange;
     private final Optional<IssueId> ownershipIssueId;
+    private final Optional<User> owner;
     private final ApplicationMetrics metrics;
     private final Optional<RotationId> rotation;
     private final Map<HostName, RotationStatus> rotationStatus;
@@ -58,23 +60,23 @@ public class Application {
     public Application(ApplicationId id, Instant now) {
         this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
              new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty(), false),
-             Change.empty(), Change.empty(), Optional.empty(), new ApplicationMetrics(0, 0),
+             Change.empty(), Change.empty(), Optional.empty(), Optional.empty(), new ApplicationMetrics(0, 0),
              Optional.empty(), Collections.emptyMap());
     }
 
     /** Used from persistence layer: Do not use */
     public Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
-                       Change outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
+                       Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner, ApplicationMetrics metrics,
                        Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
         this(id, createdAt, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, d -> d)),
-             deploymentJobs, change, outstandingChange, ownershipIssueId, metrics, rotation, rotationStatus);
+             deploymentJobs, change, outstandingChange, ownershipIssueId, owner, metrics, rotation, rotationStatus);
     }
 
     Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                 Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
-                Change outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
+                Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner, ApplicationMetrics metrics,
                 Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
@@ -85,6 +87,7 @@ public class Application {
         this.change = Objects.requireNonNull(change, "change cannot be null");
         this.outstandingChange = Objects.requireNonNull(outstandingChange, "outstandingChange cannot be null");
         this.ownershipIssueId = Objects.requireNonNull(ownershipIssueId, "ownershipIssueId cannot be null");
+        this.owner = Objects.requireNonNull(owner, "owner cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
         this.rotation = Objects.requireNonNull(rotation, "rotation cannot be null");
         this.rotationStatus = ImmutableMap.copyOf(Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null"));
@@ -137,6 +140,10 @@ public class Application {
     /** Returns ID of the last ownership issue filed for this */
     public Optional<IssueId> ownershipIssueId() {
         return ownershipIssueId;
+    }
+
+    public Optional<User> owner() {
+        return owner;
     }
 
     /** Returns metrics for this */

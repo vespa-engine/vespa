@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -106,6 +107,7 @@ public class ApplicationSerializerTest {
                                                Change.of(Version.fromString("6.7")),
                                                Change.of(ApplicationVersion.from(new SourceRevision("repo", "master", "deadcafe"), 42)),
                                                Optional.of(IssueId.from("1234")),
+                                               Optional.of(User.from("by-username")),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of(new RotationId("my-rotation")),
                                                rotationStatus);
@@ -138,6 +140,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.outstandingChange(), serialized.outstandingChange());
 
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
+        assertEquals(original.owner(), serialized.owner());
 
         assertEquals(original.change(), serialized.change());
         assertEquals(original.rotation().get(), serialized.rotation().get());

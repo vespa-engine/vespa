@@ -35,4 +35,10 @@ public interface OwnershipIssues {
      */
     void ensureResponse(IssueId issueId, Optional<Contact> contact);
 
+    /**
+     * Get the owner of an application, given its ownership issue ID.
+     * @param issueId ID of the ownership issue.
+     * @return The owner of the application, if it has been confirmed.
+     */
+    Optional<User> getConfirmedOwner(IssueId issueId);
 }
