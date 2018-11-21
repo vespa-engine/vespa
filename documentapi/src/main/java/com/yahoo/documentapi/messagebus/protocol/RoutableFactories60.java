@@ -14,7 +14,6 @@ import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Routable;
-import com.yahoo.vdslib.DocumentList;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
