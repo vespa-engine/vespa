@@ -7,11 +7,10 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
-import com.yahoo.document.*;
-import com.yahoo.document.serialization.*;
+import com.yahoo.document.BucketId;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.objects.Serializer;
+import com.yahoo.vespa.objects.BufferSerializer;
 
 /**
  * Token to use to keep track of progress for visiting. Can be used to resume
@@ -213,7 +212,7 @@ public class ProgressToken {
     }
 
     public ProgressToken(byte[] serialized) {
-        DocumentDeserializer in = DocumentDeserializerFactory.create42(null, GrowableByteBuffer.wrap(serialized));
+        BufferSerializer in = new BufferSerializer(GrowableByteBuffer.wrap(serialized));
         distributionBits = in.getInt(null);
         bucketCursor = in.getLong(null);
         finishedBucketCount = in.getLong(null);
@@ -228,7 +227,7 @@ public class ProgressToken {
     }
 
     public byte[] serialize() {
-        DocumentSerializer out = DocumentSerializerFactory.create42(new GrowableByteBuffer());
+        BufferSerializer out = new BufferSerializer(new GrowableByteBuffer());
         out.putInt(null, distributionBits);
         out.putLong(null, bucketCursor);
         out.putLong(null, finishedBucketCount);
