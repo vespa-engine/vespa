@@ -40,6 +40,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -172,21 +173,23 @@ public class InternalStepRunner implements StepRunner {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();
             if ( ! prepareResponse.configChangeActions.refeedActions.stream().allMatch(action -> action.allowed)) {
-                logger.log("Deploy failed due to non-compatible changes that require re-feed. " +
-                                        "Your options are: \n" +
-                                        "1. Revert the incompatible changes.\n" +
-                                        "2. If you think it is safe in your case, you can override this validation, see\n" +
-                                        "   http://docs.vespa.ai/documentation/reference/validation-overrides.html\n" +
-                                        "3. Deploy as a new application under a different name.\n" +
-                                        "Illegal actions:\n" +
-                                        prepareResponse.configChangeActions.refeedActions.stream()
-                                                                                         .filter(action -> ! action.allowed)
-                                                                                         .flatMap(action -> action.messages.stream())
-                                                                                         .collect(Collectors.joining("\n")) + "\n" +
-                                        "Details:\n" +
-                                        prepareResponse.log.stream()
-                                                           .map(entry -> entry.message)
-                                                           .collect(Collectors.joining("\n")));
+                List<String> messages = new ArrayList<>();
+                messages.add("Deploy failed due to non-compatible changes that require re-feed.");
+                messages.add("Your options are:");
+                messages.add("1. Revert the incompatible changes.");
+                messages.add("2. If you think it is safe in your case, you can override this validation, see");
+                messages.add("   http://docs.vespa.ai/documentation/reference/validation-overrides.html");
+                messages.add("3. Deploy as a new application under a different name.");
+                messages.add("Illegal actions:");
+                prepareResponse.configChangeActions.refeedActions.stream()
+                                                                 .filter(action -> ! action.allowed)
+                                                                 .flatMap(action -> action.messages.stream())
+                                                                 .forEach(messages::add);
+                messages.add("Details:");
+                prepareResponse.log.stream()
+                                   .map(entry -> entry.message)
+                                   .forEach(messages::add);
+                logger.log(messages);
                 return Optional.of(deploymentFailed);
             }
 
@@ -327,13 +330,13 @@ public class InternalStepRunner implements StepRunner {
 
         logger.log("Attempting to find endpoints ...");
         Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id.application(), zones);
-        logger.log("Found endpoints:\n" +
-                         endpoints.entrySet().stream()
-                                  .map(zoneEndpoints -> "- " + zoneEndpoints.getKey() + ":\n" +
-                                                        zoneEndpoints.getValue().stream()
-                                                                     .map(uri -> " |-- " + uri)
-                                                                     .collect(Collectors.joining("\n")))
-                                  .collect(Collectors.joining("\n")));
+        List<String> messages = new ArrayList<>();
+        messages.add("Found endpoints");
+        endpoints.forEach((zone, uris) -> {
+            messages.add("- " + zone);
+            uris.forEach(uri -> messages.add(" |-- " + uri));
+        });
+        logger.log(messages);
         if ( ! endpoints.containsKey(id.type().zone(controller.system()))) {
             if (timedOut(deployment.get(), endpointTimeout)) {
                 logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
