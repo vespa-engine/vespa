@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -335,8 +337,19 @@ public class SearchBuilder {
         return createFromFile(fileName, new BaseDeployLogger());
     }
 
+    /**
+     * Convenience factory methdd to create a SearchBuilder from multiple SD files. Only for testing.
+     */
+    public static SearchBuilder createFromFiles(Collection<String> fileNames) throws IOException, ParseException {
+        return createFromFiles(fileNames, new BaseDeployLogger());
+    }
+
     public static SearchBuilder createFromFile(String fileName, DeployLogger logger) throws IOException, ParseException {
         return createFromFile(fileName, logger, new RankProfileRegistry(), new QueryProfileRegistry());
+    }
+
+    public static SearchBuilder createFromFiles(Collection<String> fileNames, DeployLogger logger) throws IOException, ParseException {
+        return createFromFiles(fileNames, logger, new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
     /**
@@ -354,10 +367,24 @@ public class SearchBuilder {
                                                RankProfileRegistry rankProfileRegistry,
                                                QueryProfileRegistry queryprofileRegistry)
             throws IOException, ParseException {
+        return createFromFiles(Collections.singletonList(fileName), deployLogger,
+                               rankProfileRegistry, queryprofileRegistry);
+    }
+
+    /**
+     * Convenience factory methdd to create a SearchBuilder from multiple SD files..
+     */
+    public static SearchBuilder createFromFiles(Collection<String> fileNames,
+                                                DeployLogger deployLogger,
+                                                RankProfileRegistry rankProfileRegistry,
+                                                QueryProfileRegistry queryprofileRegistry)
+            throws IOException, ParseException {
         SearchBuilder builder = new SearchBuilder(MockApplicationPackage.createEmpty(),
                                                   rankProfileRegistry,
                                                   queryprofileRegistry);
-        builder.importFile(fileName);
+        for (String fileName : fileNames) {
+            builder.importFile(fileName);
+        }
         builder.build(true, deployLogger);
         return builder;
     }
