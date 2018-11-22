@@ -145,6 +145,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET OpsDB properties
         tester.assertResponse(request("/application/v4/property/", GET).userIdentity(USER_ID),
                               new File("property-list.json"));
+        // GET cookie freshness
+        tester.assertResponse(request("/application/v4/cookiefreshness/", GET).userIdentity(USER_ID),
+                              new File("cookiefreshness.json"));
         // POST (add) a tenant without property ID
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .userIdentity(USER_ID)
