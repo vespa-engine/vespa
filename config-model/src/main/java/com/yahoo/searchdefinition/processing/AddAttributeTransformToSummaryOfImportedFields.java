@@ -8,6 +8,7 @@ import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
+import com.yahoo.searchdefinition.document.ImmutableImportedSDField;
 
 import java.util.stream.Stream;
 
@@ -31,6 +32,11 @@ public class AddAttributeTransformToSummaryOfImportedFields extends Processor {
         search.allImportedFields()
                 .flatMap(this::getSummaryFieldsForImportedField)
                 .forEach(AddAttributeTransformToSummaryOfImportedFields::setAttributeTransform);
+        search.importedFields().map(fields -> fields.complexFields().values().stream()).
+                orElse(Stream.empty()).
+                map(ImmutableImportedSDField::new).
+                flatMap(this::getSummaryFieldsForImportedField).
+                forEach(AddAttributeTransformToSummaryOfImportedFields::setAttributeCombinerTransform);
     }
 
     private Stream<SummaryField> getSummaryFieldsForImportedField(ImmutableSDField importedField) {
@@ -39,5 +45,9 @@ public class AddAttributeTransformToSummaryOfImportedFields extends Processor {
 
     private static void setAttributeTransform(SummaryField summaryField) {
         summaryField.setTransform(SummaryTransform.ATTRIBUTE);
+    }
+
+    private static void setAttributeCombinerTransform(SummaryField summaryField) {
+        summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
     }
 }

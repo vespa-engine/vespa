@@ -1,0 +1,43 @@
+# Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search parent {
+  document parent {
+    struct elem {
+      field name type string {}
+      field weight type int {}
+    }
+    field elem_array type array<elem> {
+      indexing: summary
+      struct-field name {
+        indexing: attribute
+        attribute: fast-search
+      }
+      struct-field weight {
+        indexing: attribute
+      }
+    }
+    field elem_map type map<string, elem> {
+      indexing: summary
+      struct-field key {
+        indexing: attribute
+        attribute: fast-search
+      }
+      struct-field value.name {
+        indexing: attribute
+        attribute: fast-search
+      }
+      struct-field value.weight {
+        indexing: attribute
+      }
+    }
+    field str_int_map type map<string, int> {
+      indexing: summary
+      struct-field key {
+        indexing: attribute
+        attribute: fast-search
+      }
+      struct-field value {
+        indexing: attribute
+      }
+    }
+  }
+}

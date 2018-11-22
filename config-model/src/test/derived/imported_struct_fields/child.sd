@@ -1,0 +1,19 @@
+# Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search child {
+  document child {
+    field parent_ref type reference<parent> {
+      indexing: attribute | summary
+    }
+  }
+  import field parent_ref.elem_array as my_elem_array {}
+  import field parent_ref.elem_map as my_elem_map {}
+  import field parent_ref.str_int_map as my_str_int_map {}
+
+  document-summary mysummary {
+    summary documentid type string {}
+    summary my_elem_array type array<elem> {}
+    summary my_elem_map type map<string, elem> {}
+    summary my_str_int_map type map<string, int> {}
+  }
+}
+
