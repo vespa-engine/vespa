@@ -40,6 +40,9 @@ public class BuiltInFieldSets extends Processor {
 
     private void addDocumentFieldSet() {
         for (Field docField : search.getDocument().fieldSet()) {
+            if (docField instanceof SDField && ((SDField) docField).isExtraField()) {
+                continue; // skip
+            }
             search.fieldSets().addBuiltInFieldSetItem(DOC_FIELDSET_NAME, docField.getName());
         }
     }
