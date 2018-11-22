@@ -16,6 +16,8 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
@@ -34,6 +36,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toMap;
+
 /**
  * Client which reads and writes nodes to a curator database.
  * Nodes are stored in files named <code>/provision/v1/[nodestate]/[hostname]</code>.
@@ -49,6 +54,7 @@ public class CuratorDatabaseClient {
 
     private static final Path root = Path.fromString("/provision/v1");
     private static final Path lockRoot = root.append("locks");
+    private static final Path loadBalancersRoot = root.append("loadBalancers");
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
     private final NodeSerializer nodeSerializer;
@@ -76,6 +82,7 @@ public class CuratorDatabaseClient {
         curatorDatabase.create(inactiveJobsPath());
         curatorDatabase.create(infrastructureVersionsPath());
         curatorDatabase.create(osVersionsPath());
+        curatorDatabase.create(loadBalancersRoot);
     }
 
     /**
@@ -400,4 +407,50 @@ public class CuratorDatabaseClient {
     private Path osVersionsPath() {
         return root.append("osVersions");
     }
+
+    public Map<LoadBalancerId, LoadBalancer> readLoadBalancers() {
+        return curatorDatabase.getChildren(loadBalancersRoot).stream()
+                              .map(LoadBalancerId::fromSerializedForm)
+                              .map(this::readLoadBalancer)
+                              .filter(Optional::isPresent)
+                              .map(Optional::get)
+                              .collect(collectingAndThen(toMap(LoadBalancer::id, Function.identity()),
+                                                         Collections::unmodifiableMap));
+    }
+
+    public List<LoadBalancer> readLoadBalancers(ApplicationId application) {
+        return readLoadBalancers().values().stream()
+                                  .filter(lb -> lb.id().application().equals(application))
+                                  .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+    }
+
+    public Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
+        return read(loadBalancerPath(id), LoadBalancerSerializer::fromJson);
+    }
+
+    public void writeLoadBalancer(LoadBalancer loadBalancer) {
+        Path path = loadBalancerPath(loadBalancer.id());
+        curatorDatabase.create(path);
+        NestedTransaction transaction = new NestedTransaction();
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        curatorTransaction.add(CuratorOperations.setData(path.getAbsolute(),
+                                                         LoadBalancerSerializer.toJson(loadBalancer)));
+        transaction.commit();
+    }
+
+    public void removeLoadBalancer(LoadBalancer loadBalancer) {
+        NestedTransaction transaction = new NestedTransaction();
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        curatorTransaction.add(CuratorOperations.delete(loadBalancerPath(loadBalancer.id()).getAbsolute()));
+        transaction.commit();
+    }
+
+    public Lock lockLoadBalancers() {
+        return lock(lockRoot.append("loadBalancersLock"), defaultLockTimeout);
+    }
+
+    private Path loadBalancerPath(LoadBalancerId id) {
+        return loadBalancersRoot.append(id.serializedForm());
+    }
+
 }
