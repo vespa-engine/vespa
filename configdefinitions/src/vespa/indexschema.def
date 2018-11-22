@@ -4,10 +4,8 @@ namespace=vespa.config.search
 
 ## The name of the index field.
 indexfield[].name string
-## This is the type of an index. Currently only rise and vespa are supported
-indexfield[].indextype enum {VESPA, RISE} default=VESPA
 ## The data type of the index field.
-indexfield[].datatype enum { STRING, INT64, BOOLEANTREE } default=STRING
+indexfield[].datatype enum { STRING, INT64 } default=STRING
 ## The collection type of the index field.
 indexfield[].collectiontype enum { SINGLE, ARRAY, WEIGHTEDSET } default=SINGLE
 ## Whether the index should support prefix searches.
