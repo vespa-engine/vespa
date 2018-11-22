@@ -3,9 +3,10 @@ package com.yahoo.component;
 
 
 /**
- * A named, versioned, identifiable component.
- * Components can by default be ordered by their id order. Their identity is defined by the id.
- * Prefer extending AbstractComponent instead of implementing this interface directly.
+ * <p>A named, versioned, identifiable component.
+ * Components can by default be ordered by their id order. Their identity is defined by the id.</p>
+ *
+ * <p>Container components to be created via dependency injection do not need to implement this interface.</p>
  *
  * @author bratseth
  */
