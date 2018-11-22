@@ -3,6 +3,6 @@
  * Model integration
  */
 @ExportPackage
-package com.yahoo.searchlib.rankingexpression.integration.ml.importer;
+package com.yahoo.searchlib.rankingexpression.integration.ml;
 
 import com.yahoo.osgi.annotation.ExportPackage;

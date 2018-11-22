@@ -3,7 +3,7 @@
 package ai.vespa.rankingexpression.importer.onnx;
 
 import com.google.protobuf.ByteString;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.integration.ml.OrderedTensorType;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import onnx.Onnx;

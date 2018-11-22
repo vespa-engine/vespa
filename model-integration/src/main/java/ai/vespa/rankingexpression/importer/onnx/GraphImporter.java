@@ -3,19 +3,19 @@
 package ai.vespa.rankingexpression.importer.onnx;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.IntermediateGraph;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.OrderedTensorType;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.Argument;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.ConcatV2;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.Constant;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.Identity;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.IntermediateOperation;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.Join;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.Map;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.MatMul;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.NoOp;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.Reshape;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.Shape;
+import com.yahoo.searchlib.rankingexpression.integration.ml.IntermediateGraph;
+import com.yahoo.searchlib.rankingexpression.integration.ml.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.Argument;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.ConcatV2;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.Constant;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.Identity;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.IntermediateOperation;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.Join;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.Map;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.MatMul;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.NoOp;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.Reshape;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.Shape;
 import com.yahoo.tensor.functions.ScalarFunctions;
 import onnx.Onnx;
 

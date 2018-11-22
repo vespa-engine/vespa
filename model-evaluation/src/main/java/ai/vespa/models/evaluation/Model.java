@@ -7,7 +7,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 import com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.IntermediateOperation;
+import com.yahoo.searchlib.rankingexpression.integration.ml.operations.IntermediateOperation;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;

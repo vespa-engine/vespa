@@ -1,8 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations;
+package com.yahoo.searchlib.rankingexpression.integration.ml.operations;
 
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.DimensionRenamer;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.integration.ml.DimensionRenamer;
+import com.yahoo.searchlib.rankingexpression.integration.ml.OrderedTensorType;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.ScalarFunctions;
@@ -11,8 +11,8 @@ import com.yahoo.tensor.functions.TensorFunction;
 import java.util.List;
 import java.util.function.DoubleBinaryOperator;
 
-import static com.yahoo.searchlib.rankingexpression.integration.ml.importer.OrderedTensorType.dimensionSize;
-import static com.yahoo.searchlib.rankingexpression.integration.ml.importer.OrderedTensorType.tensorSize;
+import static com.yahoo.searchlib.rankingexpression.integration.ml.OrderedTensorType.dimensionSize;
+import static com.yahoo.searchlib.rankingexpression.integration.ml.OrderedTensorType.tensorSize;
 
 public class Select extends IntermediateOperation {
 

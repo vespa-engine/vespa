@@ -2,7 +2,7 @@
 package ai.vespa.rankingexpression.importer.tensorflow;
 
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.ImportedModel;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Assert;

@@ -2,8 +2,8 @@
 package ai.vespa.rankingexpression.importer.xgboost;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.ImportedModel;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.ModelImporter;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ModelImporter;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 
 import java.io.File;

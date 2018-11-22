@@ -2,7 +2,7 @@
 
 package ai.vespa.rankingexpression.importer.onnx;
 
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.integration.ml.OrderedTensorType;
 import com.yahoo.tensor.TensorType;
 import onnx.Onnx;
 

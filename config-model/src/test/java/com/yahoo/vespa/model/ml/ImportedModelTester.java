@@ -8,7 +8,7 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.RankingConstant;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.ModelImporter;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ModelImporter;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;

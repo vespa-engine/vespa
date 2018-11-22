@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations;
+package com.yahoo.searchlib.rankingexpression.integration.ml.operations;
 
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.integration.ml.OrderedTensorType;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.Collections;

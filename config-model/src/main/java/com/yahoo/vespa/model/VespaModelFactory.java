@@ -21,7 +21,7 @@ import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.searchlib.rankingexpression.integration.ml.importer.ModelImporter;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ModelImporter;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
 
