@@ -24,17 +24,22 @@ public class AbstractComponent implements Component {
     protected final boolean isDeconstructable;
 
     /**
+     * Creates a new component which is invalid until {@link #initId} is called on it.
+     * The dependency injection framework (DI) will always set the id, so components to be created
+     * via DI do not have to implement other constructors, and should not set the id themselves.
+     */
+    protected AbstractComponent() {
+        isDeconstructable = setIsDeconstructable();
+    }
+
+    /**
      * Creates a new component with an id.
+     * Only for testing and components that are not created via dependency injection.
      *
      * @throws NullPointerException if the given id is null
      */
     protected AbstractComponent(ComponentId id) {
         initId(id);
-        isDeconstructable = setIsDeconstructable();
-    }
-
-    /** Creates a new component which is invalid until {@link #initId} is called on it. */
-    protected AbstractComponent() {
         isDeconstructable = setIsDeconstructable();
     }
 
