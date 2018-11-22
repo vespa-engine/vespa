@@ -32,8 +32,6 @@ convertIndexDataType(const IndexschemaConfig::Indexfield::Datatype &type)
         return DataType::STRING;
     case IndexschemaConfig::Indexfield::INT64:
         return DataType::INT64;
-    case IndexschemaConfig::Indexfield::BOOLEANTREE:
-        return DataType::BOOLEANTREE;
     }
     return DataType::STRING;
 }
@@ -144,20 +142,12 @@ SchemaBuilder::build(const IndexschemaConfig &cfg, Schema &schema)
 {
     for (size_t i = 0; i < cfg.indexfield.size(); ++i) {
         const IndexschemaConfig::Indexfield & f = cfg.indexfield[i];
-        if ((f.datatype == IndexschemaConfig::Indexfield::BOOLEANTREE &&
-            f.collectiontype == IndexschemaConfig::Indexfield::SINGLE) ||
-            (f.indextype == IndexschemaConfig::Indexfield::RISE))
-        {
-            LOG(warning, "Your field '%s' is a rise index. Those are no longer supported as of Vespa-5.89.\n"
-                         " Redeploy and follow instructions to mitigate.", f.name.c_str());
-        } else {
-            schema.addIndexField(Schema::IndexField(f.name, convertIndexDataType(f.datatype),
-                                                    convertIndexCollectionType(f.collectiontype)).
-                                 setPrefix(f.prefix).
-                                 setPhrases(f.phrases).
-                                 setPositions(f.positions).
-                                 setAvgElemLen(f.averageelementlen));
-        }
+        schema.addIndexField(Schema::IndexField(f.name, convertIndexDataType(f.datatype),
+                                                convertIndexCollectionType(f.collectiontype)).
+                setPrefix(f.prefix).
+                setPhrases(f.phrases).
+                setPositions(f.positions).
+                setAvgElemLen(f.averageelementlen));
     }
     for (size_t i = 0; i < cfg.fieldset.size(); ++i) {
         const IndexschemaConfig::Fieldset &fs = cfg.fieldset[i];
