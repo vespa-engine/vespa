@@ -16,8 +16,8 @@ namespace fdispatch {
 class RowState {
 public:
     RowState(double initialValue, uint64_t decayRate) :
+        _decayRate(std::max(1ul, decayRate)),
         _avgSearchTime(initialValue),
-        _decayRate(decayRate),
         _sumActiveDocs(0),
         _numQueries(0)
     { }
@@ -31,8 +31,8 @@ public:
         _sumActiveDocs = tmp;
     }
 private:
+    const uint64_t _decayRate;
     double   _avgSearchTime;
-    uint64_t _decayRate;
     uint64_t _sumActiveDocs;
     uint64_t _numQueries;
 };

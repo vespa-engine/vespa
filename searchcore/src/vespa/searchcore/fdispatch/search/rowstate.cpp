@@ -7,7 +7,7 @@ namespace fdispatch {
 void RowState::updateSearchTime(double searchTime)
 {
     _numQueries++;
-    double decayRate = std::max(1ul, std::min(_numQueries, _decayRate));
+    double decayRate = std::min(_numQueries, _decayRate);
     _avgSearchTime = (searchTime + (decayRate-1)*_avgSearchTime)/decayRate;
 }
 
