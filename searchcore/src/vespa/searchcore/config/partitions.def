@@ -206,4 +206,4 @@ dataset[].min_activedocs_coverage double default=97.0
 
 ## Decay rate used when loadbalancing between groups.
 ## Lower number will react faster to changes in cluster.
-dataset[].latency_decay_rate double default=10000
+dataset[].latency_decay_rate double default=1000
