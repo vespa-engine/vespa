@@ -4,22 +4,29 @@ package com.yahoo.security.tls.policy;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * @author bjorncs
  */
 public class PeerPolicy {
 
-    private final String peerName;
+    private final String policyName;
+    private final Set<Role> assumedRoles;
     private final List<RequiredPeerCredential> requiredCredentials;
 
-    public PeerPolicy(String peerName, List<RequiredPeerCredential> requiredCredentials) {
-        this.peerName = peerName;
+    public PeerPolicy(String policyName, Set<Role> assumedRoles, List<RequiredPeerCredential> requiredCredentials) {
+        this.policyName = policyName;
+        this.assumedRoles = assumedRoles;
         this.requiredCredentials = Collections.unmodifiableList(requiredCredentials);
     }
 
-    public String peerName() {
-        return peerName;
+    public String policyName() {
+        return policyName;
+    }
+
+    public Set<Role> assumedRoles() {
+        return assumedRoles;
     }
 
     public List<RequiredPeerCredential> requiredCredentials() {
@@ -29,7 +36,8 @@ public class PeerPolicy {
     @Override
     public String toString() {
         return "PeerPolicy{" +
-                "peerName='" + peerName + '\'' +
+                "policyName='" + policyName + '\'' +
+                ", assumedRoles=" + assumedRoles +
                 ", requiredCredentials=" + requiredCredentials +
                 '}';
     }
@@ -39,12 +47,13 @@ public class PeerPolicy {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PeerPolicy that = (PeerPolicy) o;
-        return Objects.equals(peerName, that.peerName) &&
+        return Objects.equals(policyName, that.policyName) &&
+                Objects.equals(assumedRoles, that.assumedRoles) &&
                 Objects.equals(requiredCredentials, that.requiredCredentials);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(peerName, requiredCredentials);
+        return Objects.hash(policyName, assumedRoles, requiredCredentials);
     }
 }

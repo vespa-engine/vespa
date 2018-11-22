@@ -26,6 +26,10 @@ public class TransportSecurityUtils {
             this.configValue = configValue;
         }
 
+        public String configValue() {
+            return configValue;
+        }
+
         static MixedMode fromConfigValue(String configValue) {
             return Arrays.stream(values())
                     .filter(v -> v.configValue.equals(configValue))
