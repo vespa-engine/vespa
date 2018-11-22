@@ -35,7 +35,6 @@ LogDataStore::Config::Config()
       _maxBucketSpread(2.5),
       _minFileSizeFactor(0.2),
       _skipCrcOnRead(false),
-      _compact2ActiveFile(true),
       _compactCompression(CompressionConfig::LZ4),
       _fileConfig()
 { }
@@ -46,7 +45,6 @@ LogDataStore::Config::operator == (const Config & rhs) const {
             (_maxDiskBloatFactor == rhs._maxDiskBloatFactor) &&
             (_maxFileSize == rhs._maxFileSize) &&
             (_minFileSizeFactor == rhs._minFileSizeFactor) &&
-            (_compact2ActiveFile == rhs._compact2ActiveFile) &&
             (_skipCrcOnRead == rhs._skipCrcOnRead) &&
             (_compactCompression == rhs._compactCompression) &&
             (_fileConfig == rhs._fileConfig);
@@ -449,8 +447,7 @@ void LogDataStore::flushActiveAndWait(SerialNum syncToken) {
 }
 
 bool LogDataStore::shouldCompactToActiveFile(size_t compactedSize) const {
-    return _config.compact2ActiveFile()
-           || (_config.getMinFileSizeFactor() * _config.getMaxFileSize() > compactedSize);
+    return (_config.getMinFileSizeFactor() * _config.getMaxFileSize() > compactedSize);
 }
 
 void LogDataStore::setNewFileChunk(const LockGuard & guard, FileChunk::UP file)
@@ -748,9 +745,7 @@ LogDataStore::verifyModificationTime(const NameIdSet & partList)
         if ( ! FastOS_File::Stat(idxName.c_str(), &idxStat)) {
             throw runtime_error(make_string("Failed to Stat '%s'\nDirectory =\n%s", idxName.c_str(), ls(partList).c_str()));
         }
-        ns_log::Logger::LogLevel logLevel = _config.compact2ActiveFile()
-                                            ? ns_log::Logger::warning
-                                            : ns_log::Logger::debug;
+        ns_log::Logger::LogLevel logLevel = ns_log::Logger::debug;
         if ((datStat._modifiedTimeNS < prevDatStat._modifiedTimeNS) && hasNonHeaderData(datName)) {
             VLOG(logLevel, "Older file '%s' is newer (%ld) than file '%s' (%ld)\nDirectory =\n%s",
                          prevDatNam.c_str(), prevDatStat._modifiedTimeNS,
