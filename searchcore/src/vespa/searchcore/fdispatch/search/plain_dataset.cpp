@@ -126,8 +126,7 @@ FastS_PartitionMap::LinkIn(FastS_EngineBase *engine)
     _childmaxnodesSinceReload = std::max(_childmaxnodesSinceReload, _childmaxnodesNow);
     _childnodes += engine->_reported._actNodes;
     if (part._maxpartsNow <= engine->_reported._maxParts) {
-        _childmaxpartsNow += engine->_reported._maxParts
-                             - part._maxpartsNow;
+        _childmaxpartsNow += engine->_reported._maxParts - part._maxpartsNow;
         _childmaxpartsSinceReload += std::max(_childmaxpartsSinceReload, _childmaxpartsNow);
         part._maxpartsNow = engine->_reported._maxParts;
     }
@@ -196,7 +195,7 @@ FastS_PlainDataSet::FastS_PlainDataSet(FastS_AppContext *appCtx,
                                        FastS_DataSetDesc *desc)
     : FastS_DataSetBase(appCtx, desc),
       _partMap(desc),
-      _stateOfRows(_partMap.getNumRows(), 1.0, desc->GetQueryDistributionMode().getLatencyDecayRate()),
+      _stateOfRows(_partMap.getNumRows(), 0.001, desc->GetQueryDistributionMode().getLatencyDecayRate()),
       _MHPN_log(),
       _slowQueryLimitFactor(desc->GetSlowQueryLimitFactor()),
       _slowQueryLimitBias(desc->GetSlowQueryLimitBias()),

@@ -15,10 +15,11 @@ namespace fdispatch {
  **/
 class RowState {
 public:
-    RowState(double initialValue, double decayRate) :
+    RowState(double initialValue, uint64_t decayRate) :
+        _decayRate(std::max(1ul, decayRate)),
         _avgSearchTime(initialValue),
-        _decayRate(decayRate),
-        _sumActiveDocs(0)
+        _sumActiveDocs(0),
+        _numQueries(0)
     { }
     double getAverageSearchTime() const { return _avgSearchTime; }
     double getAverageSearchTimeInverse() const { return 1.0/_avgSearchTime; }
@@ -30,9 +31,10 @@ public:
         _sumActiveDocs = tmp;
     }
 private:
-    double _avgSearchTime;
-    double _decayRate;
+    const uint64_t _decayRate;
+    double   _avgSearchTime;
     uint64_t _sumActiveDocs;
+    uint64_t _numQueries;
 };
 
 /**
@@ -43,7 +45,7 @@ private:
  **/
 class StateOfRows {
 public:
-    StateOfRows(size_t numRows, double initial, double decayRate);
+    StateOfRows(size_t numRows, double initial, uint64_t decayRate);
     void updateSearchTime(double searchTime, uint32_t rowId);
     const RowState & getRowState(uint32_t rowId) const { return _rows[rowId]; }
     RowState & getRowState(uint32_t rowId) { return _rows[rowId]; }
@@ -56,8 +58,8 @@ public:
     bool activeDocsValid() const { return _invalidActiveDocsCounter == 0; }
 private:
     std::vector<RowState> _rows;
-    uint64_t _sumActiveDocs;
-    size_t _invalidActiveDocsCounter;
+    uint64_t              _sumActiveDocs;
+    size_t                _invalidActiveDocsCounter;
 };
 
 }

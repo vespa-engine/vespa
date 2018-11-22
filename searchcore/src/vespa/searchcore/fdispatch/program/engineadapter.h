@@ -35,12 +35,11 @@ public:
     typedef search::engine::DocsumClient DocsumClient;
     typedef search::engine::MonitorClient MonitorClient;
 
-    EngineAdapter(FastS_AppContext *appCtx,
-                  FastOS_ThreadPool *threadPool);
+    EngineAdapter(FastS_AppContext *appCtx, FastOS_ThreadPool *threadPool);
 
-    virtual SearchReply::UP search(SearchRequest::Source request, SearchClient &client) override;
-    virtual DocsumReply::UP getDocsums(DocsumRequest::Source request, DocsumClient &client) override;
-    virtual MonitorReply::UP ping(MonitorRequest::UP request, MonitorClient &client) override;
+    SearchReply::UP search(SearchRequest::Source request, SearchClient &client) override;
+    DocsumReply::UP getDocsums(DocsumRequest::Source request, DocsumClient &client) override;
+    MonitorReply::UP ping(MonitorRequest::UP request, MonitorClient &client) override;
 };
 
 } // namespace fdispatch
