@@ -6,8 +6,8 @@ import com.yahoo.collections.MethodCache;
 import java.lang.reflect.Method;
 
 /**
- * Superclass of components. You must use this instead of subclassing Component if your component
- * needs to be called on destruction.
+ * Superclass of destructible components. Container components to be created via dependency injection
+ * do not have to extend this class unless they need to implement {@link #deconstruct}.
  *
  * @author bratseth
  */
