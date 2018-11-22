@@ -6,6 +6,7 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -14,6 +15,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import static org.junit.Assert.*;
@@ -24,6 +26,17 @@ import static org.junit.Assert.*;
  * @author hmusum
  */
 public class PositionTestCase {
+
+    @Test
+    public void inherited_position_zcurve_field_is_not_added_to_document_fieldset() throws Exception {
+        SearchBuilder sb = SearchBuilder.createFromFiles(Arrays.asList(
+                "src/test/examples/position_base.sd",
+                "src/test/examples/position_inherited.sd"));
+
+        Search search = sb.getSearch("position_inherited");
+        FieldSet fieldSet = search.getDocument().getFieldSets().builtInFieldSets().get("[document]"); // TODO why is this not public in BuiltInFieldSets?
+        assertFalse(fieldSet.getFieldNames().contains(PositionDataType.getZCurveFieldName("pos")));
+    }
 
     @Test
     public void requireThatPositionCanBeAttribute() throws Exception {

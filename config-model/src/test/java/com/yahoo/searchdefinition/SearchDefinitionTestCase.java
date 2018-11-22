@@ -32,6 +32,8 @@ public abstract class SearchDefinitionTestCase {
                 writer.newLine();
                 writer.flush();
                 writer.close();
+                System.err.println(e.getMessage() + " [not equal files: >>>"+expectedFile+"<<< and >>>"+cfgFile+"<<< in assertConfigFiles]");
+                return;
             }
             throw new AssertionError(e.getMessage() + " [not equal files: >>>"+expectedFile+"<<< and >>>"+cfgFile+"<<< in assertConfigFiles]", e);
         }
