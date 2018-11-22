@@ -114,9 +114,6 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
                 .prefix(f.hasPrefix())
                 .phrases(f.hasPhrases())
                 .positions(f.hasPositions());
-            if (f.getSdType() !=null && !f.getSdType().equals(com.yahoo.searchdefinition.Index.Type.VESPA)) {
-                ifB.indextype(IndexschemaConfig.Indexfield.Indextype.Enum.valueOf(f.getSdType().toString()));
-            }
             if (!f.getCollectionType().equals("SINGLE")) {
                 ifB.collectiontype(IndexschemaConfig.Indexfield.Collectiontype.Enum.valueOf(f.getCollectionType()));
             }
@@ -194,10 +191,7 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         public Index.Type getRawType() { return type; }
         public String getType() {
             return type.equals(Index.Type.INT64)
-                    ? "INT64"
-                    : type.equals(Index.Type.BOOLEANTREE)
-                        ? "BOOLEANTREE"
-                        : "STRING";
+                    ? "INT64" : "STRING";
         }
 	    public String getCollectionType() {
 	        return (sdFieldType == null)
