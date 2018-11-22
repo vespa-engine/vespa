@@ -195,7 +195,7 @@ FastS_PlainDataSet::FastS_PlainDataSet(FastS_AppContext *appCtx,
                                        FastS_DataSetDesc *desc)
     : FastS_DataSetBase(appCtx, desc),
       _partMap(desc),
-      _stateOfRows(_partMap.getNumRows(), 0.010, desc->GetQueryDistributionMode().getLatencyDecayRate()),
+      _stateOfRows(_partMap.getNumRows(), 0.001, desc->GetQueryDistributionMode().getLatencyDecayRate()),
       _MHPN_log(),
       _slowQueryLimitFactor(desc->GetSlowQueryLimitFactor()),
       _slowQueryLimitBias(desc->GetSlowQueryLimitBias()),
