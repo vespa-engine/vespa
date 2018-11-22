@@ -221,7 +221,6 @@ TOKEN :
 | < WEIGHT: "weight" >
 | < TYPE: "type" >
 | < INDEX: "index" >
-| < RISE: "rise" >
 | < MTOKEN: "token" >
 | < TEXT: "text" >
 | < WORD: "word" >
@@ -1777,11 +1776,6 @@ Object indexBody(IndexOperation index) :
     ( <PREFIX>                                   { index.setPrefix(true); }
       | <ALIAS> <COLON> str = identifier()       { index.addAlias(str); }
       | <STEMMING> <COLON> str = identifier()    { index.setStemming(str); }
-      | <RISE> {
-              if (true) throw new ParseException("'index:rise' is no longer an option. Use 'indexing:attribute' instead. " +
-                                       "If it is a weighted set field you should also add 'attribute:fast-search'." +
-                                       "This change will require refeeding.");
-          }
       | <ARITY> <COLON> arity = integer()                              { index.setArity(arity); }
       | <LOWERBOUND> <COLON> num = consumeLong()                       { index.setLowerBound(num); }
       | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }
@@ -2555,7 +2549,6 @@ String identifier() : { }
       | <REFERENCE>
       | <REMOVEIFZERO>
       | <RERANKCOUNT>
-      | <RISE>
       | <SEARCH>
       | <SECONDARY>
       | <SECONDPHASE>
