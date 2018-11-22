@@ -52,12 +52,10 @@ public:
         double getMinFileSizeFactor() const { return _minFileSizeFactor; }
 
         bool crcOnReadDisabled() const { return _skipCrcOnRead; }
-        bool compact2ActiveFile() const { return _compact2ActiveFile; }
         const CompressionConfig & compactCompression() const { return _compactCompression; }
 
         const WriteableFileChunk::Config & getFileConfig() const { return _fileConfig; }
         Config & disableCrcOnRead(bool v) { _skipCrcOnRead = v; return *this;}
-        Config & compact2ActiveFile(bool v) { _compact2ActiveFile = v; return *this; }
 
         bool operator == (const Config &) const;
     private:
@@ -66,7 +64,6 @@ public:
         double                      _maxBucketSpread;
         double                      _minFileSizeFactor;
         bool                        _skipCrcOnRead;
-        bool                        _compact2ActiveFile;
         CompressionConfig           _compactCompression;
         WriteableFileChunk::Config  _fileConfig;
     };
