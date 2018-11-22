@@ -13,7 +13,18 @@ public class AuthorizedPeers {
     private final Set<PeerPolicy> peerPolicies;
 
     public AuthorizedPeers(Set<PeerPolicy> peerPolicies) {
-        this.peerPolicies = Collections.unmodifiableSet(peerPolicies);
+        this.peerPolicies = verifyPeerPolicies(peerPolicies);
+    }
+
+    private Set<PeerPolicy> verifyPeerPolicies(Set<PeerPolicy> peerPolicies) {
+        long distinctNames = peerPolicies.stream()
+                .map(PeerPolicy::policyName)
+                .distinct()
+                .count();
+        if (distinctNames != peerPolicies.size()) {
+            throw new IllegalArgumentException("'authorized-peers' contains entries with duplicate names");
+        }
+        return Collections.unmodifiableSet(peerPolicies);
     }
 
     public Set<PeerPolicy> peerPolicies() {

@@ -11,6 +11,7 @@ import com.yahoo.security.tls.policy.AuthorizedPeers;
 import com.yahoo.security.tls.policy.HostGlobPattern;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
+import com.yahoo.security.tls.policy.Role;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -80,7 +81,16 @@ public class TransportSecurityOptionsJsonSerializer {
         if (authorizedPeer.requiredCredentials.isEmpty()) {
             throw missingFieldException("required-credentials");
         }
-        return new PeerPolicy(authorizedPeer.name, toRequestPeerCredentials(authorizedPeer.requiredCredentials));
+        if (authorizedPeer.roles.isEmpty()) {
+            throw missingFieldException("roles");
+        }
+        return new PeerPolicy(authorizedPeer.name, toRoles(authorizedPeer.roles), toRequestPeerCredentials(authorizedPeer.requiredCredentials));
+    }
+
+    private static Set<Role> toRoles(List<String> roles) {
+        return roles.stream()
+                .map(Role::new)
+                .collect(toSet());
     }
 
     private static List<RequiredPeerCredential> toRequestPeerCredentials(List<RequiredCredential> requiredCredentials) {
@@ -116,13 +126,14 @@ public class TransportSecurityOptionsJsonSerializer {
         options.getAuthorizedPeers().ifPresent( authorizedPeers -> {
             for (PeerPolicy peerPolicy : authorizedPeers.peerPolicies()) {
                 AuthorizedPeer authorizedPeer = new AuthorizedPeer();
-                authorizedPeer.name = peerPolicy.peerName();
+                authorizedPeer.name = peerPolicy.policyName();
                 for (RequiredPeerCredential requiredPeerCredential : peerPolicy.requiredCredentials()) {
                     RequiredCredential requiredCredential = new RequiredCredential();
                     requiredCredential.field = toField(requiredPeerCredential.field());
                     requiredCredential.matchExpression = requiredPeerCredential.pattern().asString();
                     authorizedPeer.requiredCredentials.add(requiredCredential);
                 }
+                peerPolicy.assumedRoles().forEach(role -> authorizedPeer.roles.add(role.name()));
                 entity.authorizedPeers.add(authorizedPeer);
             }
         });
