@@ -5,8 +5,8 @@ import com.yahoo.searchlib.rankingexpression.evaluation.BooleanValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.integration.ml.OrderedTensorType;
-import com.yahoo.searchlib.rankingexpression.integration.ml.operations.IntermediateOperation;
+import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import ai.vespa.rankingexpression.importer.operations.IntermediateOperation;
 import org.tensorflow.framework.AttrValue;
 import org.tensorflow.framework.NodeDef;
 

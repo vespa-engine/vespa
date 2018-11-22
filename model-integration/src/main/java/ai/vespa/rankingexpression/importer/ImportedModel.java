@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.searchlib.rankingexpression.integration.ml;
+package ai.vespa.rankingexpression.importer;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.Pair;
@@ -112,9 +112,9 @@ public class ImportedModel {
         List<Pair<String, ExpressionFunction>> expressions = new ArrayList<>();
         for (Map.Entry<String, Signature> signatureEntry : signatures().entrySet()) {
             for (Map.Entry<String, String> outputEntry : signatureEntry.getValue().outputs().entrySet())
-                expressions.add(new Pair<>(signatureEntry.getKey() + "" + outputEntry.getKey(),
+                expressions.add(new Pair<>(signatureEntry.getKey() + "." + outputEntry.getKey(),
                                            signatureEntry.getValue().outputExpression(outputEntry.getKey())
-                                                         .withName(signatureEntry.getKey() + "" + outputEntry.getKey())));
+                                                         .withName(signatureEntry.getKey() + "." + outputEntry.getKey())));
             if (signatureEntry.getValue().outputs().isEmpty()) // fallback: Signature without outputs
                 expressions.add(new Pair<>(signatureEntry.getKey(),
                                            new ExpressionFunction(signatureEntry.getKey(),
@@ -161,14 +161,14 @@ public class ImportedModel {
         private final Map<String, String> skippedOutputs = new HashMap<>();
         private final List<String> importWarnings = new ArrayList<>();
 
-        public Signature(String name) {
+        Signature(String name) {
             this.name = name;
         }
 
         public String name() { return name; }
 
         /** Returns the result this is part of */
-        public ImportedModel owner() { return ImportedModel.this; }
+        ImportedModel owner() { return ImportedModel.this; }
 
         /**
          * Returns an immutable map of the inputs (evaluation context) of this. This is a map from input name
@@ -177,7 +177,7 @@ public class ImportedModel {
         public Map<String, String> inputs() { return Collections.unmodifiableMap(inputs); }
 
         /** Returns the name and type of all inputs in this signature as an immutable map */
-        public Map<String, TensorType> inputMap() {
+        Map<String, TensorType> inputMap() {
             ImmutableMap.Builder<String, TensorType> inputs = new ImmutableMap.Builder<>();
             // Note: We're naming inputs by their actual name (used in the expression, given by what the input maps *to*
             // in the model, as these are the names which must actually be bound, if we are to avoid creating an

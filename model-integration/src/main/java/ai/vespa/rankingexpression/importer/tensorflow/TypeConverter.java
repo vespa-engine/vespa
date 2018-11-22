@@ -2,7 +2,7 @@
 
 package ai.vespa.rankingexpression.importer.tensorflow;
 
-import com.yahoo.searchlib.rankingexpression.integration.ml.OrderedTensorType;
+import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.tensor.TensorType;
 import org.tensorflow.framework.AttrValue;
 import org.tensorflow.framework.NodeDef;

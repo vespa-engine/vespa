@@ -5,7 +5,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
+import ai.vespa.rankingexpression.importer.ImportedModels;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

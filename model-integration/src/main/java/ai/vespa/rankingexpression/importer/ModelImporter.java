@@ -1,11 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.searchlib.rankingexpression.integration.ml;
+package ai.vespa.rankingexpression.importer;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.integration.ml.operations.Constant;
-import com.yahoo.searchlib.rankingexpression.integration.ml.operations.IntermediateOperation;
+import ai.vespa.rankingexpression.importer.operations.Constant;
+import ai.vespa.rankingexpression.importer.operations.IntermediateOperation;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.functions.Rename;
@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
- * Base class for importing ML models (ONNX/TensorFlow) as native Vespa
+ * Base class for importing ML models (ONNX/TensorFlow etc.) as native Vespa
  * ranking expressions. The general mechanism for import is for the
  * specific ML platform import implementations to create an
  * IntermediateGraph. This class offers common code to convert the
@@ -37,7 +37,7 @@ public abstract class ModelImporter {
     /** Imports the given model */
     public abstract ImportedModel importModel(String modelName, String modelPath);
 
-    public final ImportedModel importModel(String modelName, File modelPath) {
+    final ImportedModel importModel(String modelName, File modelPath) {
         return importModel(modelName, modelPath.toString());
     }
 
@@ -45,7 +45,7 @@ public abstract class ModelImporter {
      * Takes an IntermediateGraph and converts it to a ImportedModel containing
      * the actual Vespa ranking expressions.
      */
-    public static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph, String modelSource) {
+    protected static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph, String modelSource) {
         ImportedModel model = new ImportedModel(graph.name(), modelSource);
 
         graph.optimize();
@@ -70,17 +70,6 @@ public abstract class ModelImporter {
         }
     }
 
-    private static boolean isSignatureInput(ImportedModel model, IntermediateOperation operation) {
-        for (ImportedModel.Signature signature : model.signatures().values()) {
-            for (String inputName : signature.inputs().values()) {
-                if (inputName.equals(operation.name())) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     private static boolean isSignatureOutput(ImportedModel model, IntermediateOperation operation) {
         for (ImportedModel.Signature signature : model.signatures().values()) {
             for (String outputName : signature.outputs().values()) {
@@ -95,7 +84,7 @@ public abstract class ModelImporter {
     /**
      * Convert intermediate representation to Vespa ranking expressions.
      */
-    static void importExpressions(IntermediateGraph graph, ImportedModel model) {
+    private static void importExpressions(IntermediateGraph graph, ImportedModel model) {
         for (ImportedModel.Signature signature : model.signatures().values()) {
             for (String outputName : signature.outputs().values()) {
                 try {
@@ -176,7 +165,7 @@ public abstract class ModelImporter {
                 }
                 catch (ParseException e) {
                     throw new RuntimeException("Imported function " + function +
-                            " cannot be parsed as a ranking expression", e);
+                                               " cannot be parsed as a ranking expression", e);
                 }
             }
         }
@@ -199,7 +188,7 @@ public abstract class ModelImporter {
                                                      function.toString()));
             }
             catch (ParseException e) {
-                throw new RuntimeException("Tensorflow function " + function +
+                throw new RuntimeException("Model function " + function +
                                            " cannot be parsed as a ranking expression", e);
             }
         }
@@ -226,7 +215,7 @@ public abstract class ModelImporter {
     }
 
     /**
-     * Log all TensorFlow Variables (i.e file constants) imported as part of this with their ordered type.
+     * Log all model Variables (i.e file constants) imported as part of this with their ordered type.
      * This allows users to learn the exact types (including dimension order after renaming) of the Variables
      * such that these can be converted and fed to a parent document independently of the rest of the model
      * for fast model weight updates.
@@ -235,7 +224,7 @@ public abstract class ModelImporter {
         for (IntermediateOperation operation : graph.operations()) {
             if ( ! (operation instanceof Constant)) continue;
             if ( ! operation.type().isPresent()) continue; // will not happen
-            log.info("Importing TensorFlow variable " + operation.name() + " as " + operation.vespaName() +
+            log.info("Importing model variable " + operation.name() + " as " + operation.vespaName() +
                     " of type " + operation.type().get());
         }
     }

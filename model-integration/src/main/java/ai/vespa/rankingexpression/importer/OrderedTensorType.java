@@ -1,6 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-package com.yahoo.searchlib.rankingexpression.integration.ml;
+package ai.vespa.rankingexpression.importer;
 
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.TensorTypeParser;
@@ -200,7 +200,7 @@ public class OrderedTensorType {
         return fromDimensionList(dims, "d");  // standard naming convention: d0, d1, ...
     }
 
-    public static OrderedTensorType fromDimensionList(List<Long> dims, String dimensionPrefix) {
+    private static OrderedTensorType fromDimensionList(List<Long> dims, String dimensionPrefix) {
         OrderedTensorType.Builder builder = new OrderedTensorType.Builder();
         for (int i = 0; i < dims.size(); ++ i) {
             String dimensionName = dimensionPrefix + i;

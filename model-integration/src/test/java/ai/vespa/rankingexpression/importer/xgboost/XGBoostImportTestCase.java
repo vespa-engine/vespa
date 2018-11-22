@@ -1,7 +1,7 @@
 package ai.vespa.rankingexpression.importer.xgboost;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
+import ai.vespa.rankingexpression.importer.ImportedModel;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

@@ -17,7 +17,7 @@ import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
 /**
  * Functional test for point persistence layer.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class DimensionsCacheTest {
 

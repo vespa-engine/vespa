@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.searchlib.rankingexpression.integration.ml;
+package ai.vespa.rankingexpression.importer;
 
-import com.yahoo.searchlib.rankingexpression.integration.ml.operations.IntermediateOperation;
+import ai.vespa.rankingexpression.importer.operations.IntermediateOperation;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -77,7 +77,7 @@ public class DimensionRenamer {
      * algorithm below needs to be adapted with a backtracking (tree) search
      * to find solutions.
      */
-    public void solve(int maxIterations) {
+    private void solve(int maxIterations) {
         initialize();
 
         // Todo: evaluate possible improved efficiency by using a heuristic such as min-conflicts
@@ -104,7 +104,7 @@ public class DimensionRenamer {
         // Then run this algorithm again.
     }
 
-    public void solve() {
+    void solve() {
         solve(100000);
     }
 

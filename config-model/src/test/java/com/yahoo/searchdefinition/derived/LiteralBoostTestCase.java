@@ -11,7 +11,7 @@ import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processing;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
+import ai.vespa.rankingexpression.importer.ImportedModels;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 

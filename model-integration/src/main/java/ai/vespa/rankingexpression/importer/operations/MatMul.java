@@ -1,8 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.searchlib.rankingexpression.integration.ml.operations;
+package ai.vespa.rankingexpression.importer.operations;
 
-import com.yahoo.searchlib.rankingexpression.integration.ml.DimensionRenamer;
-import com.yahoo.searchlib.rankingexpression.integration.ml.OrderedTensorType;
+import ai.vespa.rankingexpression.importer.DimensionRenamer;
+import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
 

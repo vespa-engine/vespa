@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.searchlib.rankingexpression.integration.ml;
+package ai.vespa.rankingexpression.importer;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.path.Path;
@@ -91,7 +91,7 @@ public class ImportedModels {
     }
 
     private static Path stripFileEnding(Path path) {
-        int dotIndex = path.last().lastIndexOf("");
+        int dotIndex = path.last().lastIndexOf(".");
         if (dotIndex <= 0) return path;
         return path.withLast(path.last().substring(0, dotIndex));
     }

@@ -1,8 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-package com.yahoo.searchlib.rankingexpression.integration.ml;
+package ai.vespa.rankingexpression.importer;
 
-import com.yahoo.searchlib.rankingexpression.integration.ml.operations.IntermediateOperation;
+import ai.vespa.rankingexpression.importer.operations.IntermediateOperation;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -68,7 +68,7 @@ public class IntermediateGraph {
         return index.values();
     }
 
-    public void optimize() {
+    void optimize() {
         renameDimensions();
     }
 

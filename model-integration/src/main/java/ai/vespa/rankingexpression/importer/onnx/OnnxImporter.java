@@ -2,9 +2,9 @@
 
 package ai.vespa.rankingexpression.importer.onnx;
 
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
-import com.yahoo.searchlib.rankingexpression.integration.ml.IntermediateGraph;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ModelImporter;
+import ai.vespa.rankingexpression.importer.ImportedModel;
+import ai.vespa.rankingexpression.importer.IntermediateGraph;
+import ai.vespa.rankingexpression.importer.ModelImporter;
 import onnx.Onnx;
 
 import java.io.File;
