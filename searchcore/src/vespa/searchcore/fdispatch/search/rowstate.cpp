@@ -6,10 +6,12 @@ namespace fdispatch {
 
 void RowState::updateSearchTime(double searchTime)
 {
-    _avgSearchTime = (searchTime + (_decayRate-1)*_avgSearchTime)/_decayRate;
+    _numQueries++;
+    double decayRate = std::max(1ul, std::min(_numQueries, _decayRate));
+    _avgSearchTime = (searchTime + (decayRate-1)*_avgSearchTime)/decayRate;
 }
 
-StateOfRows::StateOfRows(size_t numRows, double initialValue, double decayRate) :
+StateOfRows::StateOfRows(size_t numRows, double initialValue, uint64_t decayRate) :
    _rows(numRows, RowState(initialValue, decayRate)),
    _sumActiveDocs(0), _invalidActiveDocsCounter(0)
 {
