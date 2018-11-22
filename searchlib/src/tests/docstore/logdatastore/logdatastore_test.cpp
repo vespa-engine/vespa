@@ -206,7 +206,7 @@ TEST("testGrowing") {
     LogDataStore::Config config; //(100000, 0.1, 3.0, 0.2, 8, true, CompressionConfig::LZ4,
                                 // WriteableFileChunk::Config(CompressionConfig(CompressionConfig::LZ4, 9, 60), 1000));
     config.setMaxFileSize(100000).setMaxDiskBloatFactor(0.1).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
-            .compact2ActiveFile(true).compactCompression({CompressionConfig::LZ4})
+            .compactCompression({CompressionConfig::LZ4})
             .setFileConfig({{CompressionConfig::LZ4, 9, 60}, 1000});
     vespalib::ThreadStackExecutor executor(8, 128*1024);
     DummyFileHeaderContext fileHeaderContext;
@@ -1054,7 +1054,6 @@ TEST("require that config equality operator detects inequality") {
     EXPECT_FALSE(C() == C().setMinFileSizeFactor(0.3));
     EXPECT_FALSE(C() == C().setFileConfig(WriteableFileChunk::Config({}, 70)));
     EXPECT_FALSE(C() == C().disableCrcOnRead(true));
-    EXPECT_FALSE(C() == C().compact2ActiveFile(false));
     EXPECT_FALSE(C() == C().compactCompression({CompressionConfig::ZSTD}));
 }
 
