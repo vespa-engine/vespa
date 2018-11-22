@@ -254,10 +254,6 @@ summary.log.chunk.maxbytes int default=65536
 ## Skip crc32 check on read.
 summary.log.chunk.skipcrconread bool default=false
 
-## Control how compaction is done, write to the front or to new const file.
-## TODO: Remove, will always be false
-summary.log.compact2activefile bool default=false
-
 ## Max size per summary file.
 summary.log.maxfilesize long default=1000000000
 
@@ -284,10 +280,6 @@ summary.read.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
 
 ## Advise to give to os when mapping memory.
 summary.read.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
-
-## Enable compact for bucket oriented access.
-## TODO: Unused, always bucket order.
-summary.compact2buckets bool default=true restart
 
 ## The name of the input document type
 documentdb[].inputdoctypename string
