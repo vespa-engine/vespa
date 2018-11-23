@@ -156,10 +156,6 @@ index.cache.size long default=0 restart
 ## Control io options during flushing of attributes.
 attribute.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
 
-## Control options for io during search.
-## Dictionary is always MMAP.
-search.io enum {NORMAL, DIRECTIO, MMAP } default=MMAP restart
-
 ## Multiple optional options for use with mmap
 search.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
 
