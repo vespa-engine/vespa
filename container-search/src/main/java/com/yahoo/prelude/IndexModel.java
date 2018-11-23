@@ -92,7 +92,6 @@ public final class IndexModel {
                 IndexInfoConfig.Indexinfo.Command command = j.next();
                 sd.addCommand(command.indexname(),command.command());
             }
-            sd.fillMatchGroups();
             searchDefinitions.put(info.name(), sd);
         }
 
@@ -129,7 +128,6 @@ public final class IndexModel {
             }
 
         }
-        union.fillMatchGroups();
         return union;
     }
 
