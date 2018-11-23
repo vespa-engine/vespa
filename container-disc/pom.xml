@@ -128,10 +128,6 @@
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>config</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.tensorflow</groupId>
-          <artifactId>tensorflow</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
