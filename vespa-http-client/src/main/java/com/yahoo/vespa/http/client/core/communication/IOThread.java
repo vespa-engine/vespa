@@ -300,7 +300,7 @@ class IOThread implements Runnable, AutoCloseable {
         return processResponse;
     }
 
-    private ThreadState cycle(final ThreadState threadState) {
+    private ThreadState cycle(ThreadState threadState) {
         switch(threadState) {
             case DISCONNECTED:
                 try {
@@ -359,7 +359,6 @@ class IOThread implements Runnable, AutoCloseable {
     }
 
     private void sleepIfProblemsGettingSyncedConnection(ThreadState newState, ThreadState oldState) {
-
         if (newState == ThreadState.SESSION_SYNCED) return;
         if (newState == ThreadState.CONNECTED && oldState == ThreadState.DISCONNECTED) return;
         try {
@@ -393,8 +392,8 @@ class IOThread implements Runnable, AutoCloseable {
             }
             EndpointResult endpointResult = EndPointResultFactory.createTransientError(
                     endpoint, document.get().getOperationId(),
-                    new Exception("Not sending document operation, timed out in queue after "
-                            + document.get().timeInQueueMillis() + " ms."));
+                    new Exception("Not sending document operation, timed out in queue after " +
+                                  document.get().timeInQueueMillis() + " ms."));
             resultQueue.failOperation(endpointResult, clusterId);
         }
     }
