@@ -22,9 +22,7 @@ public class FeedProtocolException extends FeedEndpointException {
         this.httpResponseMessage = httpResponseMessage;
     }
 
-    private static String createMessage(int httpStatusCode,
-                                        String httpResponseMessage,
-                                        Endpoint endpoint) {
+    private static String createMessage(int httpStatusCode, String httpResponseMessage, Endpoint endpoint) {
         return String.format("Endpoint '%s:%d' returned an error on handshake: %d - %s",
                              endpoint.getHostname(),
                              endpoint.getPort(),
@@ -39,4 +37,5 @@ public class FeedProtocolException extends FeedEndpointException {
     public String getHttpResponseMessage() {
         return httpResponseMessage;
     }
+
 }

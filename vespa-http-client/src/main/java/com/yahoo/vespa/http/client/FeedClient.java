@@ -42,30 +42,6 @@ public interface FeedClient extends AutoCloseable {
      */
     void stream(String documentId, CharSequence documentData, Object context);
 
-
-    /**
-     * This callback is executed when new results are arriving or an error occur.
-     * Don't do any heavy lifting in this thread (no IO, disk, or heavy CPU usage).
-     * This call back will run in a different thread than your main program so use e.g.
-     * AtomicInteger for counters and follow general guides for thread-safe programming.
-     * There is an example implementation in class SimpleLoggerResultCallback.
-     */
-    interface ResultCallback {
-        void onCompletion(String docId, Result documentResult);
-
-        /**
-         * Called with an exception whenever an endpoint specific error occurs during feeding.
-         * The error may or may not be transient - the operation will in both cases be retried until it's successful.
-         * This callback is intended for application level monitoring (logging, metrics, altering etc).
-         * Document specific errors will be reported back through {@link #onCompletion(String, Result)}.
-         *
-         * @see FeedEndpointException
-         * @param exception An exception specifying endpoint and cause. See {@link FeedEndpointException} for details.
-         */
-        // TODO Vespa 7: Remove empty default implementation
-        default void onEndpointException(FeedEndpointException exception) {}
-    }
-
     /**
      * Waits for all results to arrive and closes the FeedClient. Don't call any other method after calling close().
      * Does not throw any exceptions.
@@ -106,6 +82,31 @@ public interface FeedClient extends AutoCloseable {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * This callback is executed when new results are arriving or an error occur.
+     * Don't do any heavy lifting in this thread (no IO, disk, or heavy CPU usage).
+     * This call back will run in a different thread than your main program so use e.g.
+     * AtomicInteger for counters and follow general guides for thread-safe programming.
+     * There is an example implementation in class SimpleLoggerResultCallback.
+     */
+    interface ResultCallback {
+
+        void onCompletion(String docId, Result documentResult);
+
+        /**
+         * Called with an exception whenever an endpoint specific error occurs during feeding.
+         * The error may or may not be transient - the operation will in both cases be retried until it's successful.
+         * This callback is intended for application level monitoring (logging, metrics, altering etc).
+         * Document specific errors will be reported back through {@link #onCompletion(String, Result)}.
+         *
+         * @see FeedEndpointException
+         * @param exception An exception specifying endpoint and cause. See {@link FeedEndpointException} for details.
+         */
+        // TODO Vespa 7: Remove empty default implementation
+        default void onEndpointException(FeedEndpointException exception) {}
+
     }
 
 }

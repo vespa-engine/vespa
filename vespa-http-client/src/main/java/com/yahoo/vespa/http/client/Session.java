@@ -54,10 +54,7 @@ public interface Session extends AutoCloseable {
      */
     void close();
 
-    /**
-     * Returns stats about the cluster.
-     * @return JSON string with information about cluster.
-     */
+    /** Returns a JSON string containing information about cluster */
     String getStatsAsJson();
 
 }

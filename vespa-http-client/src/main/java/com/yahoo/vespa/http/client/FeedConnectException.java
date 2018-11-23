@@ -20,4 +20,5 @@ public class FeedConnectException extends FeedEndpointException {
                              endpoint.getPort(),
                              cause.getMessage());
     }
+
 }

@@ -88,11 +88,11 @@ public class ProcessingUpdateTestCase {
         }
 
         @Override
-        public void process(DocumentUpdate upd) {
-            FieldUpdate bodyFieldUpdate = upd.getFieldUpdate("body");
+        public void process(DocumentUpdate update) {
+            FieldUpdate bodyFieldUpdate = update.getFieldUpdate("body");
             AssignValueUpdate au = (AssignValueUpdate) bodyFieldUpdate.getValueUpdate(0);
-            FieldUpdate titleUpd = FieldUpdate.createAssign(upd.getType().getField("title"), new StringFieldValue(extractTitle(((StringFieldValue) au.getValue()).getString())));
-            upd.addFieldUpdate(titleUpd);
+            FieldUpdate titleUpd = FieldUpdate.createAssign(update.getType().getField("title"), new StringFieldValue(extractTitle(((StringFieldValue) au.getValue()).getString())));
+            update.addFieldUpdate(titleUpd);
         }
 
         private String extractTitle(String body) {

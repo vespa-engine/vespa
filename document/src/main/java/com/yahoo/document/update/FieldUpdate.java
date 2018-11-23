@@ -49,7 +49,7 @@ import java.util.List;
  * FieldUpdate field=FieldUpdate.createIncrement(new Field("myattribute",DataType.INT),130);
  * </pre>
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @see com.yahoo.document.update.ValueUpdate
  * @see com.yahoo.document.DocumentUpdate
  */

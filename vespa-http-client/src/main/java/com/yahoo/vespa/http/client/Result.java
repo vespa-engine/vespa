@@ -4,7 +4,6 @@ package com.yahoo.vespa.http.client;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.Exceptions;
-import net.jcip.annotations.Immutable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,7 +17,6 @@ import java.util.List;
  *
  * @author Einar M R Rosenvinge
  */
-// This should be an interface, but in order to be binary compatible during refactoring we made it abstract.
 public class Result {
 
     public enum ResultType {
@@ -49,27 +47,17 @@ public class Result {
     }
 
 
-    /**
-     * Returns the document ID that this Result is for.
-     *
-     * @return the document ID that this Result is for.
-     */
+    /** Returns the document ID that this Result is for */
     public String getDocumentId() {
         return document.getDocumentId();
     }
 
-    /**
-     * Returns the document data.
-     * @return data as bytebuffer.
-     */
+    /** Returns the document data */
     public CharSequence getDocumentDataAsCharSequence() {
         return document.getDataAsString();
     }
 
-    /**
-     * Returns the context of the object if any.
-     * @return context.
-     */
+    /** Returns the context of the object if any */
     public Object getContext() {
         return document.getContext();
     }
@@ -83,10 +71,11 @@ public class Result {
     public boolean isSuccess() {
         return success;
     }
+
     /**
      * @deprecated use resultType on items getDetails() to check  operations.
-     * Returns true if an error is transient, false if it is permanent. Irrelevant
-     * if {@link #isSuccess()} is true (returns true in those cases).
+     *             Returns true if an error is transient, false if it is permanent. Irrelevant
+     *             if {@link #isSuccess()} is true (returns true in those cases).
      *
      * @return true if an error is transient (or there is no error), false otherwise.
      */
@@ -97,18 +86,18 @@ public class Result {
 
     public List<Detail> getDetails() { return details; }
 
-    /**
-     * Checks if operation has been set up with local tracing.
-     * @return true if operation has local trace.
-     */
+    /** Returns whether the operation has been set up with local tracing */
     public boolean hasLocalTrace() {
         return localTrace != null;
     }
 
-    /**
-     * Information in a Result for a single operation sent to a single endpoint.
-     */
-    @Immutable
+    @Override
+    public String toString() {
+        return "Result for '" + document.getDocumentId() + "'" +
+               (localTrace != null ? " trace='" + localTrace + "'" : "");
+    }
+
+    /** Information in a Result for a single operation sent to a single endpoint. */
     public static final class Detail {
 
         private final ResultType resultType;
@@ -200,16 +189,6 @@ public class Result {
             b.append(" resultTimeLocally=").append(timeStampMillis).append("\n");
             return b.toString();
         }
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder b = new StringBuilder();
-        b.append("Result for '").append(document.getDocumentId());
-        if (localTrace != null) {
-            b.append(localTrace);
-        }
-        return b.toString();
     }
 
 }
