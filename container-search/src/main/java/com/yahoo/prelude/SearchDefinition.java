@@ -96,19 +96,4 @@ public class SearchDefinition {
         }
     }
 
-    public void fillMatchGroups() {
-        for (Index i : indices.values()) {
-            Attribute[] matchGroup = i.getMatchGroup();
-            if (matchGroup == null) {
-                continue;
-            }
-            for (Attribute a : matchGroup) {
-                Index m = getIndex(a.name);
-                if (m != null) {
-                    a.setTokenizedContent(!m.isAttribute());
-                }
-            }
-        }
-    }
-
 }
