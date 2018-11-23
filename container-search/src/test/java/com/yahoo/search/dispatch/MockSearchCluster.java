@@ -6,9 +6,9 @@ import com.google.common.collect.ImmutableMultimap;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
+import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,7 +22,11 @@ public class MockSearchCluster extends SearchCluster {
     private final ImmutableMultimap<String, Node> nodesByHost;
 
     public MockSearchCluster(String clusterId, int groups, int nodesPerGroup) {
-        super(clusterId, 100, 100, 0, Collections.emptyList(), null, 1, null);
+        this(clusterId, createDispatchConfig(), groups, nodesPerGroup);
+    }
+
+    public MockSearchCluster(String clusterId, DispatchConfig dispatchConfig, int groups, int nodesPerGroup) {
+        super(clusterId, dispatchConfig, null, 1, null);
 
         ImmutableMap.Builder<Integer, Group> groupBuilder = ImmutableMap.builder();
         ImmutableMultimap.Builder<String, Node> hostBuilder = ImmutableMultimap.builder();
@@ -58,7 +62,7 @@ public class MockSearchCluster extends SearchCluster {
     }
 
     public Optional<Group> group(int n) {
-        if(n < numGroups) {
+        if (n < numGroups) {
             return Optional.of(groups.get(n));
         } else {
             return Optional.empty();
@@ -79,5 +83,25 @@ public class MockSearchCluster extends SearchCluster {
 
     public void failed(Node node) {
         node.setWorking(false);
+    }
+
+    public static DispatchConfig createDispatchConfig(Node... nodes) {
+        return createDispatchConfig(100.0, nodes);
+    }
+
+    public static DispatchConfig createDispatchConfig(double minSearchCoverage, Node... nodes) {
+        DispatchConfig.Builder builder = new DispatchConfig.Builder();
+        builder.minActivedocsPercentage(88.0);
+        builder.minGroupCoverage(99.0);
+        builder.maxNodesDownPerGroup(0);
+        builder.minSearchCoverage(minSearchCoverage);
+        if(minSearchCoverage < 100.0) {
+            builder.minWaitAfterCoverageFactor(0);
+            builder.maxWaitAfterCoverageFactor(0.5);
+        }
+        for (Node n : nodes) {
+            builder.node(new DispatchConfig.Node.Builder().key(n.key()).host(n.hostname()).port(n.fs4port()).group(n.group()));
+        }
+        return new DispatchConfig(builder);
     }
 }

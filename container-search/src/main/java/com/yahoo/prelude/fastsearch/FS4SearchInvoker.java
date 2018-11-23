@@ -6,14 +6,13 @@ import com.yahoo.fs4.ChannelTimeoutException;
 import com.yahoo.fs4.Packet;
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.fs4.QueryResultPacket;
-import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.ResponseMonitor;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 
 import java.io.IOException;
@@ -30,29 +29,21 @@ import static java.util.Arrays.asList;
  *
  * @author ollivir
  */
-public class FS4SearchInvoker extends SearchInvoker {
+public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<FS4Channel> {
     private final VespaBackEndSearcher searcher;
     private FS4Channel channel;
-    private final Optional<Node> node;
 
     private ErrorMessage pendingSearchError = null;
     private Query query = null;
     private QueryPacket queryPacket = null;
 
-    public FS4SearchInvoker(VespaBackEndSearcher searcher, Query query, FS4Channel channel, Node node) {
+    public FS4SearchInvoker(VespaBackEndSearcher searcher, Query query, FS4Channel channel, Optional<Node> node) {
+        super(node);
         this.searcher = searcher;
-        this.node = Optional.of(node);
         this.channel = channel;
 
         channel.setQuery(query);
-    }
-
-    // fdispatch code path
-    public FS4SearchInvoker(VespaBackEndSearcher searcher, Query query, Backend backend) {
-        this.searcher = searcher;
-        this.node = Optional.empty();
-        this.channel = backend.openChannel();
-        channel.setQuery(query);
+        channel.setResponseMonitor(this);
     }
 
     @Override
@@ -67,6 +58,8 @@ public class FS4SearchInvoker extends SearchInvoker {
 
         this.query = query;
         this.queryPacket = queryPacket;
+
+        channel.setResponseMonitor(this);
 
         try {
             boolean couldSend = channel.sendPacket(queryPacket);
@@ -115,7 +108,7 @@ public class FS4SearchInvoker extends SearchInvoker {
 
         searcher.addMetaInfo(query, queryPacket.getQueryPacketData(), resultPacket, result);
 
-        searcher.addUnfilledHits(result, resultPacket.getDocuments(), false, queryPacket.getQueryPacketData(), cacheKey, node.map(Node::key));
+        searcher.addUnfilledHits(result, resultPacket.getDocuments(), false, queryPacket.getQueryPacketData(), cacheKey, distributionKey());
         Packet[] packets;
         CacheControl cacheControl = searcher.getCacheControl();
         PacketWrapper packetWrapper = cacheControl.lookup(cacheKey, query);
@@ -130,7 +123,7 @@ public class FS4SearchInvoker extends SearchInvoker {
             } else {
                 packets = new Packet[1];
                 packets[0] = resultPacket;
-                cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets, node.map(Node::key));
+                cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets, distributionKey());
             }
         }
         return asList(result);
@@ -138,10 +131,7 @@ public class FS4SearchInvoker extends SearchInvoker {
 
     private List<Result> errorResult(ErrorMessage errorMessage) {
         Result error = new Result(query, errorMessage);
-        node.ifPresent(n -> {
-            Coverage coverage = new Coverage(0, n.getActiveDocuments(), 0);
-            error.setCoverage(coverage);
-        });
+        getErrorCoverage().ifPresent(error::setCoverage);
         return Arrays.asList(error);
     }
 
@@ -163,5 +153,10 @@ public class FS4SearchInvoker extends SearchInvoker {
 
     private boolean isLoggingFine() {
         return getLogger().isLoggable(Level.FINE);
+    }
+
+    @Override
+    public void responseAvailable(FS4Channel from) {
+        responseAvailable();
     }
 }

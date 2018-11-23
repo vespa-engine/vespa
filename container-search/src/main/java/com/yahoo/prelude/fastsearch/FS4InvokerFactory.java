@@ -50,7 +50,7 @@ public class FS4InvokerFactory {
 
     public SearchInvoker getSearchInvoker(Query query, Node node) {
         Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
-        return new FS4SearchInvoker(searcher, query, backend.openChannel(), node);
+        return new FS4SearchInvoker(searcher, query, backend.openChannel(), Optional.of(node));
     }
 
     /**
@@ -70,14 +70,14 @@ public class FS4InvokerFactory {
      *         list is invalid and the remaining coverage is not sufficient
      */
     public Optional<SearchInvoker> getSearchInvoker(Query query, int groupId, List<Node> nodes, boolean acceptIncompleteCoverage) {
-        Map<Integer, SearchInvoker> invokers = new HashMap<>();
+        List<SearchInvoker> invokers = new ArrayList<>(nodes.size());
         Set<Integer> failed = null;
         for (Node node : nodes) {
             boolean nodeAdded = false;
             if (node.isWorking()) {
                 Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
                 if (backend.probeConnection()) {
-                    invokers.put(node.key(), new FS4SearchInvoker(searcher, query, backend.openChannel(), node));
+                    invokers.add(node.key(), new FS4SearchInvoker(searcher, query, backend.openChannel(), Optional.of(node)));
                     nodeAdded = true;
                 }
             }
@@ -99,7 +99,7 @@ public class FS4InvokerFactory {
             }
             if (!searchCluster.isPartialGroupCoverageSufficient(groupId, success)) {
                 if (acceptIncompleteCoverage) {
-                    createCoverageErrorInvoker(invokers, nodes, failed);
+                    invokers.add(createCoverageErrorInvoker(nodes, failed));
                 } else {
                     return Optional.empty();
                 }
@@ -107,13 +107,13 @@ public class FS4InvokerFactory {
         }
 
         if (invokers.size() == 1) {
-            return Optional.of(invokers.values().iterator().next());
+            return Optional.of(invokers.get(0));
         } else {
-            return Optional.of(new InterleavedSearchInvoker(invokers));
+            return Optional.of(new InterleavedSearchInvoker(invokers, searchCluster));
         }
     }
 
-    private void createCoverageErrorInvoker(Map<Integer, SearchInvoker> invokers, List<Node> nodes, Set<Integer> failed) {
+    private SearchInvoker createCoverageErrorInvoker(List<Node> nodes, Set<Integer> failed) {
         long activeDocuments = 0;
         StringBuilder down = new StringBuilder("Connection failure on nodes with distribution-keys: ");
         Integer key = null;
@@ -129,7 +129,8 @@ public class FS4InvokerFactory {
             }
         }
         Coverage coverage = new Coverage(0, activeDocuments, 0);
-        invokers.put(key, new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError(down.toString()), coverage));
+        coverage.setNodesTried(1);
+        return new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError(down.toString()), coverage);
     }
 
     public FillInvoker getFillInvoker(Query query, Node node) {

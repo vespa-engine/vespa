@@ -222,7 +222,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         if(direct.isPresent()) {
             return fs4InvokerFactory.getSearchInvoker(query, direct.get());
         }
-        return new FS4SearchInvoker(this, query, dispatchBackend);
+        return new FS4SearchInvoker(this, query, dispatchBackend.openChannel(), Optional.empty());
     }
 
     /**
@@ -284,6 +284,7 @@ public class FastSearcher extends VespaBackEndSearcher {
             result.hits().addAll(partialResult.hits().asUnorderedHits());
         }
         if (finalCoverage != null) {
+            adjustCoverageDegradedReason(finalCoverage);
             result.setCoverage(finalCoverage);
         }
 
@@ -299,6 +300,18 @@ public class FastSearcher extends VespaBackEndSearcher {
         }
 
         return result;
+    }
+
+    private void adjustCoverageDegradedReason(Coverage coverage) {
+        int asked = coverage.getNodesTried();
+        int answered = coverage.getNodes();
+        if (asked > answered) {
+            int searchableCopies = (int) dispatcher.searchCluster().dispatchConfig().searchableCopies();
+            int missingNodes = (asked - answered) - (searchableCopies - 1);
+            if (missingNodes > 0) {
+                coverage.setDegradedReason(com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT);
+            }
+        }
     }
 
     private static @NonNull Optional<String> quotedSummaryClass(String summaryClass) {

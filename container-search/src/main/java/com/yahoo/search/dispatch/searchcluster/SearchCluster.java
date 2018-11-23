@@ -36,10 +36,7 @@ public class SearchCluster implements NodeManager<Node> {
 
     private static final Logger log = Logger.getLogger(SearchCluster.class.getName());
 
-    /** The min active docs a group must have to be considered up, as a % of the average active docs of the other groups */
-    private final double minActivedocsCoveragePercentage;
-    private final double minGroupCoverage;
-    private final int maxNodesDownPerGroup;
+    private final DispatchConfig dispatchConfig;
     private final int size;
     private final String clusterId;
     private final ImmutableMap<Integer, Group> groups;
@@ -62,19 +59,13 @@ public class SearchCluster implements NodeManager<Node> {
     private final FS4ResourcePool fs4ResourcePool;
 
     public SearchCluster(String clusterId, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
-        this(clusterId, dispatchConfig.minActivedocsPercentage(), dispatchConfig.minGroupCoverage(), dispatchConfig.maxNodesDownPerGroup(),
-                toNodes(dispatchConfig), fs4ResourcePool, containerClusterSize, vipStatus);
-    }
-
-    public SearchCluster(String clusterId, double minActivedocsCoverage, double minGroupCoverage, int maxNodesDownPerGroup, List<Node> nodes, FS4ResourcePool fs4ResourcePool,
-            int containerClusterSize, VipStatus vipStatus) {
         this.clusterId = clusterId;
-        this.minActivedocsCoveragePercentage = minActivedocsCoverage;
-        this.minGroupCoverage = minGroupCoverage;
-        this.maxNodesDownPerGroup = maxNodesDownPerGroup;
-        this.size = nodes.size();
+        this.dispatchConfig = dispatchConfig;
+        this.size = dispatchConfig.node().size();
         this.fs4ResourcePool = fs4ResourcePool;
         this.vipStatus = vipStatus;
+
+        List<Node> nodes = toNodes(dispatchConfig);
 
         // Create groups
         ImmutableMap.Builder<Integer, Group> groupsBuilder = new ImmutableMap.Builder<>();
@@ -141,6 +132,10 @@ public class SearchCluster implements NodeManager<Node> {
         for (DispatchConfig.Node node : dispatchConfig.node())
             nodesBuilder.add(new Node(node.key(), node.host(), node.fs4port(), node.group()));
         return nodesBuilder.build();
+    }
+
+    public DispatchConfig dispatchConfig() {
+        return dispatchConfig;
     }
 
     /** Returns the number of nodes in this cluster (across all groups) */
@@ -286,7 +281,7 @@ public class SearchCluster implements NodeManager<Node> {
 
         if (averageDocumentsInOtherGroups > 0) {
             double coverage = 100.0 * (double) activeDocuments / averageDocumentsInOtherGroups;
-            sufficientCoverage = coverage >= minActivedocsCoveragePercentage;
+            sufficientCoverage = coverage >= dispatchConfig.minActivedocsPercentage();
         }
         if (sufficientCoverage) {
             sufficientCoverage = isGroupNodeCoverageSufficient(nodes);
@@ -302,7 +297,8 @@ public class SearchCluster implements NodeManager<Node> {
             }
         }
         int numNodes = nodes.size();
-        int nodesAllowedDown = maxNodesDownPerGroup + (int) (((double) numNodes * (100.0 - minGroupCoverage)) / 100.0);
+        int nodesAllowedDown = dispatchConfig.maxNodesDownPerGroup()
+                + (int) (((double) numNodes * (100.0 - dispatchConfig.minGroupCoverage())) / 100.0);
         return nodesUp + nodesAllowedDown >= numNodes;
     }
 
@@ -325,7 +321,7 @@ public class SearchCluster implements NodeManager<Node> {
      */
     public boolean isPartialGroupCoverageSufficient(int groupId, List<Node> nodes) {
         if (orderedGroups.size() == 1) {
-            return nodes.size() >= groupSize() - maxNodesDownPerGroup;
+            return nodes.size() >= groupSize() - dispatchConfig.maxNodesDownPerGroup();
         }
         long sumOfActiveDocuments = 0;
         int otherGroups = 0;

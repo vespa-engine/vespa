@@ -11,6 +11,7 @@ import com.yahoo.search.result.ErrorMessage;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A search invoker that will immediately produce an error that occurred during
@@ -23,8 +24,10 @@ public class SearchErrorInvoker extends SearchInvoker {
     private final ErrorMessage message;
     private Query query;
     private final Coverage coverage;
+    private ResponseMonitor<SearchInvoker> monitor;
 
     public SearchErrorInvoker(ErrorMessage message, Coverage coverage) {
+        super(Optional.empty());
         this.message = message;
         this.coverage = coverage;
     }
@@ -36,6 +39,9 @@ public class SearchErrorInvoker extends SearchInvoker {
     @Override
     protected void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException {
         this.query = query;
+        if(monitor != null) {
+            monitor.responseAvailable(this);
+        }
     }
 
     @Override
@@ -52,4 +58,8 @@ public class SearchErrorInvoker extends SearchInvoker {
         // nothing to do
     }
 
+    @Override
+    protected void setMonitor(ResponseMonitor<SearchInvoker> monitor) {
+        this.monitor = monitor;
+    }
 }

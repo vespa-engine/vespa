@@ -422,6 +422,15 @@ public class IndexedSearchCluster extends SearchCluster
         }
         builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
         builder.useMultilevelDispatch(useMultilevelDispatchSetup());
+        builder.searchableCopies(rootDispatch.getSearchableCopies());
+        if (searchCoverage != null) {
+            if (searchCoverage.getMinimum() != null)
+                builder.minSearchCoverage(searchCoverage.getMinimum());
+            if (searchCoverage.getMinWaitAfterCoverageFactor() != null)
+                builder.minWaitAfterCoverageFactor(searchCoverage.getMinWaitAfterCoverageFactor());
+            if (searchCoverage.getMaxWaitAfterCoverageFactor() != null)
+                builder.maxWaitAfterCoverageFactor(searchCoverage.getMaxWaitAfterCoverageFactor());
+        }
     }
 
     @Override
