@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.vespa.hosted.provision.testutils.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
@@ -68,6 +69,7 @@ public class ProvisioningTester {
     private final NodeRepositoryProvisioner provisioner;
     private final CapacityPolicies capacityPolicies;
     private final ProvisionLogger provisionLogger;
+    private final LoadBalancerServiceMock loadBalancerService;
 
     private int nextHost = 0;
     private int nextIP = 0;
@@ -90,6 +92,7 @@ public class ProvisioningTester {
             this.orchestrator = mock(Orchestrator.class);
             doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
             this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
+            this.loadBalancerService = new LoadBalancerServiceMock();
             this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
             this.provisionLogger = new NullProvisionLogger();
         }
@@ -126,6 +129,7 @@ public class ProvisioningTester {
     public Orchestrator orchestrator() { return orchestrator; }
     public ManualClock clock() { return clock; }
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
+    public LoadBalancerServiceMock loadBalancerService() { return loadBalancerService; }
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return new NodeList(nodeRepository.getNodes(id, inState)); }
 

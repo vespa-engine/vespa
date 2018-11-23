@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
 import com.google.common.collect.ImmutableList;
@@ -52,18 +52,25 @@ public class NodeList {
         return new NodeList(nodes.stream().filter(node -> node.allocation().get().membership().cluster().type().equals(type)).collect(Collectors.toList()));
     }
 
+    /** Returns the subset of nodes that are in the given state */
+    public NodeList in(Node.State state) {
+        return nodes.stream()
+                    .filter(node -> node.state() == state)
+                    .collect(collectingAndThen(Collectors.toList(), NodeList::new));
+    }
+
     /** Returns the subset of nodes owned by the given application */
     public NodeList owner(ApplicationId application) {
         return nodes.stream()
-                .filter(node -> node.allocation().map(a -> a.owner().equals(application)).orElse(false))
-                .collect(collectingAndThen(Collectors.toList(), NodeList::new));
+                    .filter(node -> node.allocation().map(a -> a.owner().equals(application)).orElse(false))
+                    .collect(collectingAndThen(Collectors.toList(), NodeList::new));
     }
 
     /** Returns the subset of nodes matching the given node type */
     public NodeList nodeType(NodeType nodeType) {
         return nodes.stream()
-                .filter(node -> node.type() == nodeType)
-                .collect(collectingAndThen(Collectors.toList(), NodeList::new));
+                    .filter(node -> node.type() == nodeType)
+                    .collect(collectingAndThen(Collectors.toList(), NodeList::new));
     }
 
     /** Returns the parent nodes of the given child nodes */
