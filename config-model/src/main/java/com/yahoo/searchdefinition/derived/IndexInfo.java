@@ -27,7 +27,6 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     private static final String CMD_HIGHLIGHT = "highlight";
     private static final String CMD_INDEX = "index";
     private static final String CMD_LOWERCASE = "lowercase";
-    private static final String CMD_MATCH_GROUP = "match-group ";
     private static final String CMD_NORMALIZE = "normalize";
     private static final String CMD_STEM = "stem";
     private static final String CMD_URLHOST = "urlhost";
@@ -79,13 +78,6 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                 forEach(field -> deriveImportedComplexField(field));
     }
 
-    @Override
-    protected void derive(Index index, Search search) {
-        if (index.getMatchGroup().size() > 0) {
-            addIndexCommand(index.getName(), CMD_MATCH_GROUP + toSpaceSeparated(index.getMatchGroup()));
-        }
-    }
-
     private void deriveImportedComplexField(ImportedField field) {
         String fieldName = field.fieldName();
         if (isPositionField(field.targetField())) {
@@ -97,17 +89,6 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             addIndexCommand(fieldName, CMD_MULTIVALUE);
         }
         addIndexCommand(fieldName, CMD_INDEX);
-    }
-
-    private String toSpaceSeparated(Collection c) {
-        StringBuffer b = new StringBuffer();
-        for (Iterator i = c.iterator(); i.hasNext();) {
-            b.append(i.next());
-            if (i.hasNext()) {
-                b.append(" ");
-            }
-        }
-        return b.toString();
     }
 
     private static boolean isPositionArrayField(ImmutableSDField field) {
