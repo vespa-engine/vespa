@@ -121,7 +121,6 @@ public class FastSearcherTestCase {
         assertEquals(Error.NULL_QUERY.code, message.getCode());
     }
 
-    @Ignore("Temporarily ignore unstable test on Vespa 7. TODO: re-enable")
     @Test
     public void testDispatchDotSummaries() {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
@@ -154,7 +153,7 @@ public class FastSearcherTestCase {
         }
 
         { // direct.summaries due to query cache
-            String query = "?query=sddocname:a&ranking.queryCache";
+            String query = "?query=sddocname:a&ranking.queryCache&timeout=5000ms";
             Result result = doSearch(fastSearcher, new Query(query), 0, 10);
             doFill(fastSearcher, result);
             ErrorMessage error = result.hits().getError();
@@ -163,7 +162,7 @@ public class FastSearcherTestCase {
         }
 
         { // direct.summaries due to no summary features
-            String query = "?query=sddocname:a&dispatch.summaries&summary=simple&ranking=simpler";
+            String query = "?query=sddocname:a&dispatch.summaries&summary=simple&ranking=simpler&timeout=5000ms";
             Result result = doSearch(fastSearcher, new Query(query), 0, 10);
             doFill(fastSearcher, result);
             ErrorMessage error = result.hits().getError();
