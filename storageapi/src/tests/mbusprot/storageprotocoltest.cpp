@@ -56,7 +56,7 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
           _testDoc(_docMan.createDocument()),
           _testDocId(_testDoc->getId()),
           _bucket(makeDocumentBucket(document::BucketId(16, 0x51))),
-          _protocol(_docMan.getTypeRepoSP(), _loadTypes, true)
+          _protocol(_docMan.getTypeRepoSP(), _loadTypes)
     {
         _loadTypes.addLoadType(34, "foo", documentapi::Priority::PRI_NORMAL_2);
     }

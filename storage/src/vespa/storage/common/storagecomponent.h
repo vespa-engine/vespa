@@ -83,7 +83,6 @@ public:
     void setPriorityConfig(const PriorityConfig&);
     void setBucketIdFactory(const document::BucketIdFactory&);
     void setDistribution(DistributionSP);
-    void enableMultipleBucketSpaces(bool value);
 
     StorageComponent(StorageComponentRegister&, vespalib::stringref name);
     virtual ~StorageComponent();
@@ -102,7 +101,6 @@ public:
     uint8_t getPriority(const documentapi::LoadType&) const;
     DistributionSP getDistribution() const;
     NodeStateUpdater& getStateUpdater() const;
-    bool enableMultipleBucketSpaces() const;
 
 private:
     vespalib::string _clusterName;
@@ -115,7 +113,6 @@ private:
     DistributionSP _distribution;
     NodeStateUpdater* _nodeStateUpdater;
     mutable std::mutex _lock;
-    bool _enableMultipleBucketSpaces;
 };
 
 struct StorageComponentRegister : public virtual framework::ComponentRegister

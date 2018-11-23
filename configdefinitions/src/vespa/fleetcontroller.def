@@ -155,9 +155,6 @@ min_node_ratio_per_group double default=0.0
 ## within this duration.
 max_deferred_task_version_wait_time_sec double default=30.0
 
-## Switch to enable multiple bucket spaces in cluster controller.
-enable_multiple_bucket_spaces bool default=false
-
 ## Whether or not the content cluster the controller has responsibility for
 ## contains any document types that are tagged as global. If this is true,
 ## global document-specific behavior is enabled that marks nodes down in the

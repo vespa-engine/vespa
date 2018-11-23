@@ -21,8 +21,7 @@ StorageComponentRegisterImpl::StorageComponentRegisterImpl()
       _bucketIdFactory(),
       _distribution(),
       _nodeStateUpdater(nullptr),
-      _bucketSpacesConfig(),
-      _enableMultipleBucketSpaces(false)
+      _bucketSpacesConfig()
 {
 }
 
@@ -43,7 +42,6 @@ StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)
     smc.setPriorityConfig(_priorityConfig);
     smc.setBucketIdFactory(_bucketIdFactory);
     smc.setDistribution(_distribution);
-    smc.enableMultipleBucketSpaces(_enableMultipleBucketSpaces);
 }
 
 void
@@ -131,21 +129,6 @@ StorageComponentRegisterImpl::setBucketSpacesConfig(const BucketspacesConfig& co
 {
     vespalib::LockGuard lock(_componentLock);
     _bucketSpacesConfig = config;
-}
-
-void StorageComponentRegisterImpl::setEnableMultipleBucketSpaces(bool enabled) {
-    vespalib::LockGuard lock(_componentLock);
-    assert(!_enableMultipleBucketSpaces); // Cannot disable once enabled.
-    _enableMultipleBucketSpaces = enabled;
-    for (auto& component : _components) {
-        component->enableMultipleBucketSpaces(_enableMultipleBucketSpaces);
-    }
-}
-
-bool StorageComponentRegisterImpl::enableMultipleBucketSpaces() const {
-    // We allow reading this outside _componentLock, as it should never be written
-    // again after startup.
-    return _enableMultipleBucketSpaces;
 }
 
 } // storage
