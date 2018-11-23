@@ -100,12 +100,12 @@ public final class PositionDataType {
     }
 
     public static String getPositionSummaryFieldName(String fieldName) {
-        // TODO for 6.0, rename to _position to use a field name that is actually legal
+        // TODO for Vespa 8, consider renaming to _position to use a field name that is actually legal
         return fieldName + ".position";
     }
 
     public static String getDistanceSummaryFieldName(String fieldName) {
-        // TODO for 6.0, rename to _distance to use a field name that is actually legal
+        // TODO for Vespa 8, consider renaming to _distance to use a field name that is actually legal
         return fieldName + ".distance";
     }
 
