@@ -38,7 +38,7 @@ public class OverrideProcessorTest {
                 "      <document mode='index' type='music'/>\n" +
                 "      <document type='music2' mode='index' />\n" +
                 "      <document deploy:environment='prod' deploy:region='us-east-3' mode='index' type='music'/>\n" +
-                "      <document deploy:environment='prod' deploy:region='us-east-3' mode='index' type='music2'/>\n" +
+                "      <document deploy:environment='staging prod' deploy:region='us-east-3' mode='index' type='music2'/>\n" +
                 "      <document deploy:environment='prod' mode='index' type='music3'/>\n" +
                 "      <document deploy:environment='prod' deploy:region='us-west' mode='index' type='music4'/>\n" +
                 "    </documents>" +
@@ -272,6 +272,7 @@ public class OverrideProcessorTest {
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
                         "      <document mode='index' type='music'/>\n" +
+                        "      <document mode='index' type='music2'/>\n" +
                         "      <document type='music2' mode='index' />\n" +
                         "    </documents>" +
                         "    <nodes>" +

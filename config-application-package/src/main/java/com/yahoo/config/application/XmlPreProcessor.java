@@ -61,7 +61,7 @@ public class XmlPreProcessor {
         return input;
     }
 
-    private List<PreProcessor> setupChain() throws IOException {
+    private List<PreProcessor> setupChain() {
         List<PreProcessor> chain = new ArrayList<>();
         chain.add(new IncludeProcessor(applicationDir));
         chain.add(new OverrideProcessor(environment, region));

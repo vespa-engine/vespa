@@ -179,7 +179,6 @@ public class PageTemplatesXmlRenderer extends AsynchronousSectionedRenderer<Resu
 
     private void renderHitGroup(XMLWriter writer, HitGroup hit) {
         if (hit.types().contains("section")) {
-
             renderSection(writer, hit); // Renders /result/section
         }
         else if (hit.types().contains("meta")) {
