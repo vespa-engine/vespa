@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import ai.vespa.rankingexpression.importer.ImportedModels;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.application.api.DeployLogger;
@@ -12,7 +13,6 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.derived.validation.Validation;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 
 import java.io.IOException;
 import java.io.Writer;

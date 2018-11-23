@@ -3,14 +3,11 @@ package com.yahoo.component.provider;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.component.Component;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionSpecification;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -148,7 +145,7 @@ public class ComponentRegistry<COMPONENT> {
      *
      * @return the matching version, or null if there are no matches
      */
-    protected static Version findBestMatch(VersionSpecification versionSpec,Set<Version> versions) {
+    protected static Version findBestMatch(VersionSpecification versionSpec, Set<Version> versions) {
         Version bestMatch=null;
         for (Version version : versions) {
             //No version is set if getSpecifiedMajor() == null

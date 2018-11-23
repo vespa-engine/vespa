@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import ai.vespa.rankingexpression.importer.ModelImporter;
 import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -29,6 +30,8 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -41,19 +44,17 @@ public class VespaModelFactory implements ModelFactory {
 
     private static final Logger log = Logger.getLogger(VespaModelFactory.class.getName());
     private final ConfigModelRegistry configModelRegistry;
+    private final Collection<ModelImporter> modelImporters;
     private final Zone zone;
     private final Clock clock;
     private final Version version;
 
     /** Creates a factory for vespa models for this version of the source */
     @Inject
-    public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry, Zone zone) {
-        this(Version.fromIntValues(VespaVersion.major, VespaVersion.minor, VespaVersion.micro), pluginRegistry, zone);
-    }
-
-    /** Creates a factory for vespa models of a particular version */
-    public VespaModelFactory(Version version, ComponentRegistry<ConfigModelPlugin> pluginRegistry, Zone zone) {
-        this.version = version;
+    public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
+                             ComponentRegistry<ModelImporter> modelImporters,
+                             Zone zone) {
+        this.version = Version.fromIntValues(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder> modelBuilders = new ArrayList<>();
         for (ConfigModelPlugin plugin : pluginRegistry.allComponents()) {
             if (plugin instanceof ConfigModelBuilder) {
@@ -61,6 +62,7 @@ public class VespaModelFactory implements ModelFactory {
             }
         }
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
+        this.modelImporters = modelImporters.allComponents();
         this.zone = zone;
         this.clock = Clock.systemUTC();
     }
@@ -79,6 +81,7 @@ public class VespaModelFactory implements ModelFactory {
         } else {
             this.configModelRegistry = configModelRegistry;
         }
+        this.modelImporters = Collections.emptyList();
         this.zone = Zone.defaultZone();
         this.clock = clock;
     }
@@ -137,6 +140,7 @@ public class VespaModelFactory implements ModelFactory {
             .properties(createDeployProperties(modelContext.properties()))
             .modelHostProvisioner(createHostProvisioner(modelContext))
             .rotations(modelContext.properties().rotations())
+            .modelImporters(modelImporters)
             .zone(zone)
             .now(clock.instant())
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion());

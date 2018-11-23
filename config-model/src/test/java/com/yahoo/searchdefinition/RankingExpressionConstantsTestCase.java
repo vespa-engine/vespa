@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
+import ai.vespa.rankingexpression.importer.ImportedModels;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;

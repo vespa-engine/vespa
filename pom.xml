@@ -94,6 +94,7 @@
         <module>messagebus</module>
         <module>metrics</module>
         <module>model-evaluation</module>
+        <module>model-integration</module>
         <module>node-repository</module>
         <module>node-admin</module>
         <module>node-maintainer</module>

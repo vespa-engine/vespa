@@ -4,9 +4,8 @@ package com.yahoo.searchdefinition;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
+import ai.vespa.rankingexpression.importer.ImportedModels;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

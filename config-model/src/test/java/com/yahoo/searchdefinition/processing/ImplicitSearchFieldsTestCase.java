@@ -6,13 +6,11 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
-import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
-import org.junit.Ignore;
+import ai.vespa.rankingexpression.importer.ImportedModels;
 import org.junit.Test;
-import java.io.File;
+
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;

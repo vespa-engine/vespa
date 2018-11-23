@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
+import ai.vespa.rankingexpression.importer.ImportedModels;
+import ai.vespa.rankingexpression.importer.ModelImporter;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -21,7 +23,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
@@ -39,6 +40,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -80,11 +82,23 @@ public class DeployState implements ConfigDefinitionStore {
         return new Builder().applicationPackage(applicationPackage).build();
     }
 
-    private DeployState(ApplicationPackage applicationPackage, SearchDocumentModel searchDocumentModel, RankProfileRegistry rankProfileRegistry,
-                        FileRegistry fileRegistry, DeployLogger deployLogger, Optional<HostProvisioner> hostProvisioner, DeployProperties properties,
-                        Optional<ApplicationPackage> permanentApplicationPackage, Optional<ConfigDefinitionRepo> configDefinitionRepo,
-                        java.util.Optional<Model> previousModel, Set<Rotation> rotations, Zone zone, QueryProfiles queryProfiles,
-                        SemanticRules semanticRules, Instant now, Version wantedNodeVespaVersion) {
+    private DeployState(ApplicationPackage applicationPackage,
+                        SearchDocumentModel searchDocumentModel,
+                        RankProfileRegistry rankProfileRegistry,
+                        FileRegistry fileRegistry,
+                        DeployLogger deployLogger,
+                        Optional<HostProvisioner> hostProvisioner,
+                        DeployProperties properties,
+                        Optional<ApplicationPackage> permanentApplicationPackage,
+                        Optional<ConfigDefinitionRepo> configDefinitionRepo,
+                        java.util.Optional<Model> previousModel,
+                        Set<Rotation> rotations,
+                        Collection<ModelImporter> modelImporters,
+                        Zone zone,
+                        QueryProfiles queryProfiles,
+                        SemanticRules semanticRules,
+                        Instant now,
+                        Version wantedNodeVespaVersion) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -100,7 +114,8 @@ public class DeployState implements ConfigDefinitionStore {
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
-        this.importedModels = new ImportedModels(applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR));
+        this.importedModels = new ImportedModels(applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR),
+                                                 modelImporters);
 
         this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
@@ -232,6 +247,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Optional<ConfigDefinitionRepo> configDefinitionRepo = Optional.empty();
         private Optional<Model> previousModel = Optional.empty();
         private Set<Rotation> rotations = new HashSet<>();
+        private Collection<ModelImporter> modelImporters = Collections.emptyList();
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
@@ -281,6 +297,11 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
+        public Builder modelImporters(Collection<ModelImporter> modelImporters) {
+            this.modelImporters = modelImporters;
+            return this;
+        }
+
         public Builder zone(Zone zone) {
             this.zone = zone;
             return this;
@@ -305,9 +326,23 @@ public class DeployState implements ConfigDefinitionStore {
             QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
             SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, logger, queryProfiles, validationParameters);
-            return new DeployState(applicationPackage, searchDocumentModel, rankProfileRegistry, fileRegistry, logger, hostProvisioner,
-                                   properties, permanentApplicationPackage, configDefinitionRepo, previousModel, rotations,
-                                   zone, queryProfiles, semanticRules, now, wantedNodeVespaVersion);
+            return new DeployState(applicationPackage,
+                                   searchDocumentModel,
+                                   rankProfileRegistry,
+                                   fileRegistry,
+                                   logger,
+                                   hostProvisioner,
+                                   properties,
+                                   permanentApplicationPackage,
+                                   configDefinitionRepo,
+                                   previousModel,
+                                   rotations,
+                                   modelImporters,
+                                   zone,
+                                   queryProfiles,
+                                   semanticRules,
+                                   now,
+                                   wantedNodeVespaVersion);
         }
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,

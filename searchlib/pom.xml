@@ -35,16 +35,10 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.tensorflow</groupId>
-      <artifactId>proto</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.tensorflow</groupId>
-      <artifactId>tensorflow</artifactId>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>config-model-api</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -114,26 +108,6 @@
             <goals>
               <goal>config-gen</goal>
             </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>com.github.os72</groupId>
-        <artifactId>protoc-jar-maven-plugin</artifactId>
-        <version>3.5.1.1</version>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <addSources>main</addSources>
-              <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
-              <inputDirectories>
-                <include>src/main/protobuf</include>
-              </inputDirectories>
-            </configuration>
           </execution>
         </executions>
       </plugin>
