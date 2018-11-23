@@ -24,7 +24,7 @@ public class LoadBalancerSerializer {
 
     private static final String idField = "id";
     private static final String hostnameField = "hostname";
-    private static final String deletedField = "deleted";
+    private static final String inactiveField = "inactive";
     private static final String portsField = "ports";
     private static final String realsField = "reals";
     private static final String ipAddressField = "ipAddress";
@@ -45,7 +45,7 @@ public class LoadBalancerSerializer {
             realObject.setString(ipAddressField, real.ipAddress());
             realObject.setLong(portField, real.port());
         });
-        root.setBool(deletedField, loadBalancer.deleted());
+        root.setBool(inactiveField, loadBalancer.inactive());
 
         try {
             return SlimeUtils.toJsonBytes(slime);
@@ -72,7 +72,7 @@ public class LoadBalancerSerializer {
                                 HostName.from(object.field(hostnameField).asString()),
                                 ports,
                                 reals,
-                                object.field(deletedField).asBool());
+                                object.field(inactiveField).asBool());
     }
 
 }

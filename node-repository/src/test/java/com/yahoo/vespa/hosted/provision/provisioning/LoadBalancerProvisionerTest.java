@@ -119,7 +119,7 @@ public class LoadBalancerProvisionerTest {
 
         // Removing load balancer with active containers fails
         try {
-            loadBalancerProvisioner.remove(app1);
+            loadBalancerProvisioner.deactivate(app1);
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {}
 
@@ -128,10 +128,10 @@ public class LoadBalancerProvisionerTest {
         tester.provisioner().remove(removeTransaction, app1);
         removeTransaction.commit();
 
-        loadBalancerProvisioner.remove(app1);
+        loadBalancerProvisioner.deactivate(app1);
         List<LoadBalancer> assignedLoadBalancer = tester.nodeRepository().database().readLoadBalancers(app1);
         assertEquals(2, loadBalancers.size());
-        assertTrue("Load balancers marked for deletion", assignedLoadBalancer.stream().allMatch(LoadBalancer::deleted));
+        assertTrue("Load balancers marked for deletion", assignedLoadBalancer.stream().allMatch(LoadBalancer::inactive));
     }
 
     private ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id) {

@@ -38,7 +38,7 @@ public class LoadBalancerSerializerTest {
         assertEquals(loadBalancer.id(), serialized.id());
         assertEquals(loadBalancer.hostname(), serialized.hostname());
         assertEquals(loadBalancer.ports(), serialized.ports());
-        assertEquals(loadBalancer.deleted(), serialized.deleted());
+        assertEquals(loadBalancer.inactive(), serialized.inactive());
         assertEquals(loadBalancer.reals(), serialized.reals());
     }
 

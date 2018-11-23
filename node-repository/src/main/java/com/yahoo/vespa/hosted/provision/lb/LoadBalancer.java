@@ -19,14 +19,14 @@ public class LoadBalancer {
     private final HostName hostname;
     private final List<Integer> ports;
     private final List<Real> reals;
-    private final boolean deleted;
+    private final boolean inactive;
 
-    public LoadBalancer(LoadBalancerId id, HostName hostname, List<Integer> ports, List<Real> reals, boolean deleted) {
+    public LoadBalancer(LoadBalancerId id, HostName hostname, List<Integer> ports, List<Real> reals, boolean inactive) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.ports = Ordering.natural().immutableSortedCopy(requirePorts(ports));
         this.reals = ImmutableList.copyOf(Objects.requireNonNull(reals, "targets must be non-null"));
-        this.deleted = deleted;
+        this.inactive = inactive;
     }
 
     /** An identifier for this load balancer. The ID is unique inside the zone */
@@ -34,7 +34,7 @@ public class LoadBalancer {
         return id;
     }
 
-    /** Fully-qualified domain name of this load balancer. This hostname can be used for query and feed. */
+    /** Fully-qualified domain name of this load balancer. This hostname can be used for query and feed */
     public HostName hostname() {
         return hostname;
     }
@@ -49,13 +49,16 @@ public class LoadBalancer {
         return reals;
     }
 
-    /** Whether this load balancer has been deleted */
-    public boolean deleted() {
-        return deleted;
+    /**
+     * Returns whether this load balancer is inactive. Inactive load balancers cannot be reactivated, and are
+     * eventually deleted
+     */
+    public boolean inactive() {
+        return inactive;
     }
 
-    /** Return a copy of this that is marked as deleted */
-    public LoadBalancer delete() {
+    /** Return a copy of this that is set inactive */
+    public LoadBalancer deactivate() {
         return new LoadBalancer(id, hostname, ports, reals, true);
     }
 

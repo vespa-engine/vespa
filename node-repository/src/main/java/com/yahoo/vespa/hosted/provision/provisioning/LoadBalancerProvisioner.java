@@ -62,16 +62,16 @@ public class LoadBalancerProvisioner {
         }
     }
 
-    /** Mark all load balancers assigned to given application as deleted */
-    public void remove(ApplicationId application) {
+    /** Deactivate all load balancers assigned to given application */
+    public void deactivate(ApplicationId application) {
         try (Mutex applicationLock = nodeRepository.lock(application)) {
             try (Mutex loadBalancersLock = db.lockLoadBalancers()) {
                 if (!activeContainers(application).isEmpty()) {
-                    throw new IllegalArgumentException(application + " has active containers, refusing to remove load balancers");
+                    throw new IllegalArgumentException(application + " has active containers, refusing to deactivate load balancers");
                 }
                 db.readLoadBalancers(application)
                   .stream()
-                  .map(LoadBalancer::delete)
+                  .map(LoadBalancer::deactivate)
                   .forEach(db::writeLoadBalancer);
             }
         }
