@@ -6,6 +6,8 @@
 #include "multivalueattribute.hpp"
 #include "multienumattributesaver.h"
 #include "load_utils.h"
+#include <vespa/vespalib/stllike/hashtable.hpp>
+
 namespace search {
 
 template <typename B, typename M>
@@ -38,7 +40,7 @@ MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, UniqueS
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::reEnumerate()
+MultiValueEnumAttribute<B, M>::reEnumerate(const EnumIndexMap & old2new)
 {
     // update MultiValueMapping with new EnumIndex values.
     this->logEnumStoreEvent("compactfixup", "drain");
@@ -50,9 +52,7 @@ MultiValueEnumAttribute<B, M>::reEnumerate()
             WeightedIndexVector indices(indicesRef.cbegin(), indicesRef.cend());
             for (uint32_t i = 0; i < indices.size(); ++i) {
                 EnumIndex oldIndex = indices[i].value();
-                EnumIndex newIndex;
-                this->_enumStore.getCurrentIndex(oldIndex, newIndex);
-                indices[i] = WeightedIndex(newIndex, indices[i].weight());
+                indices[i] = WeightedIndex(old2new[oldIndex], indices[i].weight());
             }
             std::atomic_thread_fence(std::memory_order_release);
             this->_mvMapping.replace(doc, indices);

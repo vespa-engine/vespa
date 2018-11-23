@@ -48,7 +48,8 @@ protected:
 public:
     typedef EnumStoreT<EnumEntryType>                  EnumStore;
 protected:
-    typedef EnumStoreBase::Index                     EnumIndex;
+    using EnumIndex = EnumStoreBase::Index;
+    using EnumIndexMap = EnumStoreBase::EnumIndexMap;
 
     EnumStore _enumStore;
 
@@ -72,7 +73,7 @@ protected:
      */
     void insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes);
     virtual void considerAttributeChange(const Change & c, UniqueSet & newUniques) = 0;
-    virtual void reEnumerate() = 0;
+    virtual void reEnumerate(const EnumIndexMap &) = 0;
     AddressSpace getEnumStoreAddressSpaceUsage() const override;
 public:
     EnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
