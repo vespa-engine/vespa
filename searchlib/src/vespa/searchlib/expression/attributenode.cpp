@@ -74,7 +74,7 @@ namespace {
 
 std::unique_ptr<AttributeResult> createResult(const IAttributeVector * attribute)
 {
-    return (dynamic_cast<const SingleValueEnumAttributeBase *>(attribute) != NULL)
+    return (dynamic_cast<const SingleValueEnumAttributeBase *>(attribute) != nullptr)
         ? std::make_unique<EnumAttributeResult>(attribute, 0)
         : std::make_unique<AttributeResult>(attribute, 0);
 }
@@ -83,18 +83,18 @@ std::unique_ptr<AttributeResult> createResult(const IAttributeVector * attribute
 
 AttributeNode::AttributeNode() :
     FunctionNode(),
-    _scratchResult(new AttributeResult()),
+    _scratchResult(std::make_unique<AttributeResult>()),
     _hasMultiValue(false),
     _useEnumOptimization(false),
     _handler(),
     _attributeName()
 {}
 
-AttributeNode::~AttributeNode() {}
+AttributeNode::~AttributeNode() = default;
 
 AttributeNode::AttributeNode(vespalib::stringref name) :
     FunctionNode(),
-    _scratchResult(new AttributeResult()),
+    _scratchResult(std::make_unique<AttributeResult>()),
     _hasMultiValue(false),
     _useEnumOptimization(false),
     _handler(),
@@ -136,7 +136,7 @@ AttributeNode & AttributeNode::operator = (const AttributeNode & attr)
 void AttributeNode::onPrepare(bool preserveAccurateTypes)
 {
     const IAttributeVector * attribute = _scratchResult->getAttribute();
-    if (attribute != NULL) {
+    if (attribute != nullptr) {
         BasicType::Type basicType = attribute->getBasicType();
         if (attribute->isIntegerType()) {
             if (_hasMultiValue) {
@@ -277,13 +277,13 @@ bool AttributeNode::onExecute() const
 void AttributeNode::wireAttributes(const IAttributeContext & attrCtx)
 {
     const IAttributeVector * attribute(_scratchResult ? _scratchResult->getAttribute() : nullptr);
-    if (attribute == NULL) {
+    if (attribute == nullptr) {
         if (_useEnumOptimization) {
             attribute = attrCtx.getAttributeStableEnum(_attributeName);
         } else {
             attribute = attrCtx.getAttribute(_attributeName);
         }
-        if (attribute == NULL) {
+        if (attribute == nullptr) {
             throw std::runtime_error(make_string("Failed locating attribute vector '%s'", _attributeName.c_str()));
         }
         _hasMultiValue = attribute->hasMultiValue();

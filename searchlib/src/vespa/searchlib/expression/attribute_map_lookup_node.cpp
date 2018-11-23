@@ -99,9 +99,7 @@ public:
 };
 
 template <typename T, typename KeyType>
-KeyHandlerT<T,KeyType>::~KeyHandlerT()
-{
-}
+KeyHandlerT<T,KeyType>::~KeyHandlerT() = default;
 
 using IntegerKeyHandler = KeyHandlerT<IAttributeVector::largeint_t>;
 using FloatKeyHandler   = KeyHandlerT<double>;
@@ -150,9 +148,7 @@ public:
 };
 
 template <typename T>
-IndirectKeyHandlerT<T>::~IndirectKeyHandlerT()
-{
-}
+IndirectKeyHandlerT<T>::~IndirectKeyHandlerT() = default;
 
 using IndirectIntegerKeyHandler = IndirectKeyHandlerT<IAttributeVector::largeint_t>;
 using IndirectFloatKeyHandler = IndirectKeyHandlerT<double>;
