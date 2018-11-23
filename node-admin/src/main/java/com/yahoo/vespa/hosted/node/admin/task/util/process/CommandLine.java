@@ -180,6 +180,15 @@ public class CommandLine {
     }
 
     /**
+     * By default, a non-zero exit code causes the command execution to fail. This method
+     * will override that predicate.
+     */
+    public CommandLine setSuccessfulExitCodePredicate(Predicate<Integer> successPredicate) {
+        successfulExitCodePredicate = successPredicate;
+        return this;
+    }
+
+    /**
      * By default, the output of the command is parsed as UTF-8. This method will set a
      * different encoding.
      */

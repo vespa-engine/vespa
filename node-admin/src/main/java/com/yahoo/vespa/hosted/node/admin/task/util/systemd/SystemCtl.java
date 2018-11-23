@@ -20,6 +20,9 @@ public class SystemCtl {
     // Valid systemd property names from looking at a couple of services.
     private static final Pattern PROPERTY_NAME_PATTERN = Pattern.compile("^[a-zA-Z]+$");
 
+    // Last line of `systemctl list-unit-files <unit>` prints '0 unit files listed.'
+    private static final Pattern UNIT_FILES_LISTED_PATTERN = Pattern.compile("([0-9]+) unit files listed\\.");
+
     // Patterns matching properties output by the 'systemctl show' command.
     private static final Pattern UNIT_FILE_STATE_PROPERTY_PATTERN = createPropertyPattern("UnitFileState");
     private static final Pattern ACTIVE_STATE_PROPERTY_PATTERN = createPropertyPattern("ActiveState");
@@ -52,6 +55,20 @@ public class SystemCtl {
     public SystemCtlStart start(String unit) { return new SystemCtlStart(unit); }
     public SystemCtlStop stop(String unit) { return new SystemCtlStop(unit); }
     public SystemCtlRestart restart(String unit) { return new SystemCtlRestart(unit); }
+
+    public boolean serviceExists(TaskContext context, String unit) {
+        return terminal.newCommandLine(context)
+                .add("systemctl").add("list-unit-files").add(unit + ".service").executeSilently()
+                .mapOutput(output -> {
+                    // Last line of the form: "1 unit files listed."
+                    Matcher matcher = UNIT_FILES_LISTED_PATTERN.matcher(output);
+                    if (!matcher.find()) {
+                        throw new IllegalArgumentException();
+                    }
+
+                    return !matcher.group(1).equals("0");
+                });
+    }
 
     public class SystemCtlEnable extends SystemCtlCommand {
         private SystemCtlEnable(String unit) {

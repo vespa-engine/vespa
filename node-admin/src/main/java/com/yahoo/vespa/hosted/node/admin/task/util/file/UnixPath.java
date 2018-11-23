@@ -49,16 +49,6 @@ public class UnixPath {
         return path;
     }
 
-    public boolean createParents() {
-        Path parent = path.getParent();
-        if (Files.isDirectory(parent)) {
-            return false;
-        }
-
-        uncheck(() -> Files.createDirectories(parent));
-        return true;
-    }
-
     public String readUtf8File() {
         return new String(readBytes(), StandardCharsets.UTF_8);
     }
@@ -138,6 +128,15 @@ public class UnixPath {
     public UnixPath createNewFile(String permissions) {
         FileAttribute<?> attribute = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(permissions));
         uncheck(() -> Files.createFile(path, attribute));
+        return this;
+    }
+
+    public UnixPath createParents() {
+        Path parent = path.getParent();
+        if (!Files.isDirectory(parent)) {
+            uncheck(() -> Files.createDirectories(parent));
+        }
+
         return this;
     }
 

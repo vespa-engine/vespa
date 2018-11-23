@@ -33,8 +33,9 @@ mkdir -p "$app_dir"/components
 cp node-admin/src/main/application/services.xml "$app_dir"
 
 declare -a jar_components=(
-  node-admin/target/node-admin-jar-with-dependencies.jar
   docker-api/target/docker-api-jar-with-dependencies.jar
+  flags/target/flags-jar-with-dependencies.jar
+  node-admin/target/node-admin-jar-with-dependencies.jar
 )
 for path in "${jar_components[@]}"; do
   cp "$path" "$app_dir"/components
