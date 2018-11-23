@@ -125,8 +125,13 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
 
         for (Element servicesElement : children) {
             String tagName = servicesElement.getTagName();
-            if (tagName.equals("config")) continue;  // TODO: Remove on Vespa 6
-            if (tagName.equals("cluster")) continue; // TODO: Remove on Vespa 6
+            if (tagName.equals("config")) {
+                // TODO: disallow on Vespa 8
+                continue;
+            }
+            if (tagName.equals("cluster")) {
+                throw new IllegalArgumentException("<" + tagName + "> on top-level is not allowed anymore");
+            }
             if ((tagName.equals("clients")) && deployState.isHosted())
                 throw new IllegalArgumentException("<" + tagName + "> is not allowed when running Vespa in a hosted environment");
 
