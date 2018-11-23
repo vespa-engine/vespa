@@ -138,11 +138,13 @@ public class NodeAgentImpl implements NodeAgent {
         this.healthChecker = healthChecker;
 
         this.loopThread = new Thread(() -> {
-            try {
-                while (!terminated.get()) tick();
-            } catch (Throwable t) {
-                numberOfUnhandledException++;
-                context.log(logger, LogLevel.ERROR, "Unhandled throwable, ignoring", t);
+            while (!terminated.get()) {
+                try {
+                    tick();
+                } catch (Throwable t) {
+                    numberOfUnhandledException++;
+                    context.log(logger, LogLevel.ERROR, "Unhandled throwable, ignoring", t);
+                }
             }
         });
         this.loopThread.setName("tick-" + context.hostname());
