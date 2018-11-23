@@ -28,18 +28,5 @@ public abstract class AbstractConcreteDocumentFactory extends com.yahoo.componen
      *
      * @return A concrete document instance
      */
-    public com.yahoo.document.Document getDocumentCopy(java.lang.String type, com.yahoo.document.datatypes.StructuredFieldValue src, com.yahoo.document.DocumentId id) {
-        // Note: This method can't be abstract because it must work with older bundles where the ConcreteDocumentFactory may not implement it.
-        // It is overridden to not use reflection by newer bundles. 
-        // The implementation here is not so good in bundles, since it instantiates the doc using reflection.
-        // TODO: for 6.0: make this method abstract and throw away the code below.
-        Class<? extends Document> concreteClass = documentTypes().get(type);
-        try {
-            Constructor<? extends Document> copyCon = concreteClass.getConstructor(StructuredFieldValue.class, DocumentId.class);
-            return copyCon.newInstance(src, id);
-        } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException e) {            
-            throw new RuntimeException(Exceptions.toMessageString(e), e);
-        }
-    }
-
+    public abstract com.yahoo.document.Document getDocumentCopy(java.lang.String type, com.yahoo.document.datatypes.StructuredFieldValue src, com.yahoo.document.DocumentId id);
 }
