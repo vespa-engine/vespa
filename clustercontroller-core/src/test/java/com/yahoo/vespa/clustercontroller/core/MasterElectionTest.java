@@ -501,7 +501,6 @@ public class MasterElectionTest extends FleetControllerTest {
     public void previously_published_state_is_taken_into_account_for_default_space_when_controller_bootstraps() throws Exception {
         startingTest("MasterElectionTest::previously_published_state_is_taken_into_account_for_default_space_when_controller_bootstraps");
         FleetControllerOptions options = new FleetControllerOptions("mycluster");
-        options.enableMultipleBucketSpaces = true;
         options.clusterHasGlobalDocumentTypes = true;
         options.masterZooKeeperCooldownPeriod = 1;
         options.minTimeBeforeFirstSystemStateBroadcast = 100000;
@@ -545,7 +544,6 @@ public class MasterElectionTest extends FleetControllerTest {
     public void default_space_nodes_not_marked_as_maintenance_when_cluster_has_no_global_document_types() throws Exception {
         startingTest("MasterElectionTest::default_space_nodes_not_marked_as_maintenance_when_cluster_has_no_global_document_types");
         FleetControllerOptions options = new FleetControllerOptions("mycluster");
-        options.enableMultipleBucketSpaces = true;
         options.clusterHasGlobalDocumentTypes = false;
         options.masterZooKeeperCooldownPeriod = 1;
         options.minTimeBeforeFirstSystemStateBroadcast = 100000;

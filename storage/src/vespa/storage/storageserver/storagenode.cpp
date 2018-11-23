@@ -146,11 +146,6 @@ StorageNode::initialize()
     // and store them away, while having the config lock.
     subscribeToConfigs();
 
-    // Multiple bucket spaces can only be enabled on startup and cannot be live reconfigured.
-    // A process restart is required to either enable or disable after the fact.
-    // TODO ensure config is tagged as 'restart' as a consequence
-    _context.getComponentRegister().setEnableMultipleBucketSpaces(_bucketSpacesConfig->enableMultipleBucketSpaces);
-
     updateUpgradeFlag(*_clusterConfig);
 
     // First update some basics that doesn't depend on anything else to be

@@ -62,13 +62,6 @@ StorageComponent::setDistribution(DistributionSP distribution)
 }
 
 void
-StorageComponent::enableMultipleBucketSpaces(bool value)
-{
-    std::lock_guard guard(_lock);
-    _enableMultipleBucketSpaces = value;
-}
-
-void
 StorageComponent::setNodeStateUpdater(NodeStateUpdater& updater)
 {
     std::lock_guard guard(_lock);
@@ -91,8 +84,7 @@ StorageComponent::StorageComponent(StorageComponentRegister& compReg,
       _bucketIdFactory(),
       _distribution(),
       _nodeStateUpdater(nullptr),
-      _lock(),
-      _enableMultipleBucketSpaces(false)
+      _lock()
 {
     compReg.registerStorageComponent(*this);
 }
@@ -143,13 +135,6 @@ StorageComponent::getDistribution() const
 {
     std::lock_guard guard(_lock);
     return _distribution;
-}
-
-bool
-StorageComponent::enableMultipleBucketSpaces() const
-{
-    std::lock_guard guard(_lock);
-    return _enableMultipleBucketSpaces;
 }
 
 } // storage

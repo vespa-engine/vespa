@@ -15,8 +15,7 @@ public:
     static mbus::string NAME;
 
     StorageProtocol(const std::shared_ptr<const document::DocumentTypeRepo>,
-                    const documentapi::LoadTypeSet& loadTypes,
-                    bool activateBucketSpaceSerialization = false);
+                    const documentapi::LoadTypeSet& loadTypes);
     ~StorageProtocol();
 
     const mbus::string& getName() const override { return NAME; }
@@ -29,7 +28,6 @@ private:
     ProtocolSerialization5_1 _serializer5_1;
     ProtocolSerialization5_2 _serializer5_2;
     ProtocolSerialization6_0 _serializer6_0;
-    bool _configForcedBucketSpaceSerialization;
 };
 
 }

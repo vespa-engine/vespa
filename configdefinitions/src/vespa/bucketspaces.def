@@ -10,5 +10,3 @@ documenttype[].name string
 ## The bucket space this document type belongs to.
 documenttype[].bucketspace string
 
-## Switch to enable multiple bucket spaces in content layer and content nodes.
-enable_multiple_bucket_spaces bool default=false

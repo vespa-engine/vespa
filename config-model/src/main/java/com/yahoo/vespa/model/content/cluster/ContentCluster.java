@@ -86,7 +86,6 @@ public class ContentCluster extends AbstractConfigProducer implements
     private final boolean isHostedVespa;
     private final Map<String, NewDocumentType> documentDefinitions;
     private final Set<NewDocumentType> globallyDistributedDocuments;
-    private boolean forceEnableMultipleBucketSpaces = false;
     private com.yahoo.vespa.model.content.StorageGroup rootGroup;
     private StorageCluster storageNodes;
     private DistributorCluster distributorNodes;
@@ -266,10 +265,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         }
 
         private void setupExperimental(ContentCluster cluster, ModelElement experimental) {
-            Boolean enableMultipleBucketSpaces = experimental.childAsBoolean("enable-multiple-bucket-spaces");
-            if (enableMultipleBucketSpaces != null) {
-                cluster.forceEnableMultipleBucketSpaces = enableMultipleBucketSpaces;
-            }
+            // Put handling of experimental flags here
         }
 
         private void validateGroupSiblings(String cluster, StorageGroup group) {
@@ -615,7 +611,6 @@ public class ContentCluster extends AbstractConfigProducer implements
             builder.min_distributor_up_ratio(0);
             builder.min_storage_up_ratio(0);
         }
-        builder.enable_multiple_bucket_spaces(true);
         // Telling the controller whether we actually _have_ global document types lets
         // it selectively enable or disable constraints that aren't needed when these
         // are not are present, even if full protocol and backend support is enabled
@@ -750,9 +745,5 @@ public class ContentCluster extends AbstractConfigProducer implements
             docTypeBuilder.bucketspace(bucketSpace);
             builder.documenttype(docTypeBuilder);
         }
-        // NOTE: this config is kept around to allow the use of multiple bucket spaces
-        // on older versions of Vespa. It is for all intents and purposes a no-op in
-        // newer versions where multiple bucket spaces are enabled by default.
-        builder.enable_multiple_bucket_spaces(forceEnableMultipleBucketSpaces);
     }
 }

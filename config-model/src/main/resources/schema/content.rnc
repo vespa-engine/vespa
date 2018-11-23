@@ -114,9 +114,9 @@ Content = element content {
     Documents? &
     ContentNodes? &
     TopGroup? &
-    Controllers? &
+    Controllers?
     # Contains experimental feature switches
-    Experimental?
+    #Experimental?
 }
 
 Controllers =
@@ -368,9 +368,9 @@ TuningCompression = element compression {
    element level { xsd:nonNegativeInteger }?
 }
 
-Experimental = element experimental {
-    element enable-multiple-bucket-spaces { xsd:boolean }?
-}
+#Experimental = element experimental {
+# Put experimental flags here
+#}
 
 Thread = element thread {
   ## The lowest priority this thread should handle.

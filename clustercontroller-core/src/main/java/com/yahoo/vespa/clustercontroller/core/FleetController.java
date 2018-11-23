@@ -463,14 +463,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             cluster.setSlobrokGenerationCount(0);
         }
 
-        // TODO don't hardcode bucket spaces
-        if (options.enableMultipleBucketSpaces) {
-            configuredBucketSpaces = Collections.unmodifiableSet(
-                    Stream.of(FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace())
-                            .collect(Collectors.toSet()));
-        } else {
-            configuredBucketSpaces = Collections.emptySet();
-        }
+        configuredBucketSpaces = Collections.unmodifiableSet(
+                Stream.of(FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace())
+                        .collect(Collectors.toSet()));
         stateVersionTracker.setMinMergeCompletionRatio(options.minMergeCompletionRatio);
 
         communicator.propagateOptions(options);

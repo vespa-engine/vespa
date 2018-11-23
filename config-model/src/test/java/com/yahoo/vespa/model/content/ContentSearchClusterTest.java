@@ -40,8 +40,11 @@ public class ContentSearchClusterTest {
     }
 
     private static ContentCluster createClusterWithGlobalType() throws Exception {
-        return createCluster(createClusterBuilderWithGlobalType().getXml(),
-                createSearchDefinitions("global", "regular"));
+        return createClusterFromBuilderAndDocTypes(createClusterBuilderWithGlobalType(), "global", "regular");
+    }
+
+    private static ContentCluster createClusterWithoutGlobalType() throws Exception {
+        return createClusterFromBuilderAndDocTypes(createClusterBuilderWithOnlyDefaultTypes(), "marve", "fleksnes");
     }
 
     private static ContentCluster createClusterFromBuilderAndDocTypes(ContentClusterBuilder builder, String... docTypes) throws Exception {
@@ -49,24 +52,8 @@ public class ContentSearchClusterTest {
                 "<node distribution-key='0' hostalias='mockhost'/>",
                 "<node distribution-key='1' hostalias='mockhost'/>",
                 "</group>"));
-        builder.enableMultipleBucketSpaces(true);
         String clusterXml = builder.getXml();
         return createCluster(clusterXml, createSearchDefinitions(docTypes));
-    }
-
-    private static ContentCluster createClusterWithMultipleBucketSpacesEnabled() throws Exception {
-        return createClusterFromBuilderAndDocTypes(createClusterBuilderWithGlobalType(), "global", "regular");
-    }
-
-    private static ContentCluster createClusterWithMultipleBucketSpacesEnabledButNoGlobalDocs() throws Exception {
-        return createClusterFromBuilderAndDocTypes(createClusterBuilderWithOnlyDefaultTypes(), "marve", "fleksnes");
-    }
-
-    private static ContentCluster createClusterWithGlobalDocsButNotMultipleSpacesEnabled() throws Exception {
-        return createCluster(createClusterBuilderWithGlobalType()
-                        .enableMultipleBucketSpaces(false)
-                        .getXml(),
-                createSearchDefinitions("global", "regular"));
     }
 
     private static ContentClusterBuilder createClusterBuilderWithGlobalType() {
@@ -178,41 +165,18 @@ public class ContentSearchClusterTest {
         assertEquals(2, config.documenttype().size());
         assertDocumentType("global", "global", config.documenttype(0));
         assertDocumentType("regular", "default", config.documenttype(1));
-        // Safeguard against flipping the switch
-        assertFalse(config.enable_multiple_bucket_spaces());
-    }
-
-    @Test
-    public void require_that_multiple_bucket_spaces_can_be_force_enabled() throws Exception {
-        ContentCluster cluster = createClusterWithMultipleBucketSpacesEnabled();
-        {
-            BucketspacesConfig config = getBucketspacesConfig(cluster);
-            assertEquals(2, config.documenttype().size());
-            assertDocumentType("global", "global", config.documenttype(0));
-            assertDocumentType("regular", "default", config.documenttype(1));
-            assertTrue(config.enable_multiple_bucket_spaces());
-        }
-        {
-            assertTrue(getFleetcontrollerConfig(cluster).enable_multiple_bucket_spaces());
-        }
     }
 
     @Test
     public void cluster_with_global_document_types_sets_cluster_controller_global_docs_config_option() throws Exception {
-        ContentCluster cluster = createClusterWithMultipleBucketSpacesEnabled();
+        ContentCluster cluster = createClusterWithGlobalType();
         assertTrue(getFleetcontrollerConfig(cluster).cluster_has_global_document_types());
     }
 
     @Test
     public void cluster_without_global_document_types_unsets_cluster_controller_global_docs_config_option() throws Exception {
-        ContentCluster cluster = createClusterWithMultipleBucketSpacesEnabledButNoGlobalDocs();
+        ContentCluster cluster = createClusterWithoutGlobalType();
         assertFalse(getFleetcontrollerConfig(cluster).cluster_has_global_document_types());
-    }
-
-    @Test
-    public void controller_global_documents_config_always_enabled_even_without_experimental_flag_set() throws Exception {
-        ContentCluster cluster = createClusterWithGlobalDocsButNotMultipleSpacesEnabled();
-        assertTrue(getFleetcontrollerConfig(cluster).cluster_has_global_document_types());
     }
 
 }
