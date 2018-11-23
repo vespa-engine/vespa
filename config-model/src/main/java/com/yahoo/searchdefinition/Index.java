@@ -51,9 +51,6 @@ public class Index implements Cloneable, Serializable {
     /** Whether the content of this index is normalized */
     private boolean normalized=true;
 
-    /** The set of all searchable fields which should be searched with this index. May not null */
-    public Set<String> matchGroup=new LinkedHashSet<>();
-
     private Type type = Type.VESPA;
 
     /** The boolean index definition, if set */
@@ -80,22 +77,6 @@ public class Index implements Cloneable, Serializable {
 
     /** Return the stemming setting of this index, may be null */
     public Stemming getStemming() { return stemming; }
-
-    /**
-     * Returns the (unmodifiable) set of searchable fields which should be searched
-     * when this index is searched. This is useful to specify that some attributes should be
-     * searched as well when an index is searched.
-     * This set is either empty, or if set contains both the name of this index, and some other
-     * indexes.
-     */
-    public Set<String> getMatchGroup() { return Collections.unmodifiableSet(matchGroup); }
-
-    /** Adds a searchable field name to be searched when this index is searched */
-    public void addToMatchGroup(String name) {
-        if (name.equals(this.name)) return;
-        if (matchGroup.size()==0) matchGroup.add(this.name);
-        matchGroup.add(name);
-    }
 
     /**
      * Whether this field should be stemmed in this search definition,
