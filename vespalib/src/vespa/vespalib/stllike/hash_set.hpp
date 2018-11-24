@@ -24,7 +24,7 @@ hash_set<K, H, EQ, M>::hash_set(std::initializer_list<K> input)
 }
 
 template<typename K, typename H, typename EQ, typename M>
-hash_set<K, H, EQ, M>::~hash_set() {}
+hash_set<K, H, EQ, M>::~hash_set() = default;
 
 template<typename K, typename H, typename EQ, typename M>
 bool
