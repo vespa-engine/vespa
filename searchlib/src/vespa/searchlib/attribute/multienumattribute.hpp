@@ -6,6 +6,8 @@
 #include "multivalueattribute.hpp"
 #include "multienumattributesaver.h"
 #include "load_utils.h"
+#include <vespa/vespalib/stllike/hashtable.hpp>
+
 
 namespace search {
 
@@ -42,8 +44,23 @@ void
 MultiValueEnumAttribute<B, M>::reEnumerate()
 {
     // update MultiValueMapping with new EnumIndex values.
-    this->logEnumStoreEvent("compactfixup", "drain");
+    this->logEnumStoreEvent("compactfixup", "precompute");
+    vespalib::hash_map<EnumIndex, EnumIndex> old2new(this->_enumStore.getNumUniques());
+    for (DocId doc = 0; doc < this->getNumDocs(); ++doc) {
+        vespalib::ConstArrayRef<WeightedIndex> indicesRef(this->_mvMapping.get(doc));
+        WeightedIndexVector indices(indicesRef.cbegin(), indicesRef.cend());
+        for (uint32_t i = 0; i < indices.size(); ++i) {
+            EnumIndex oldIndex = indices[i].value();
+            auto found = old2new.find(oldIndex);
+            if (found == old2new.end()) {
+                EnumIndex newIndex;
+                this->_enumStore.getCurrentIndex(oldIndex, newIndex);
+                old2new[oldIndex] = newIndex;
+            }
+        }
+    }
     {
+        this->logEnumStoreEvent("compactfixup", "drain");
         EnumModifier enumGuard(this->getEnumModifier());
         this->logEnumStoreEvent("compactfixup", "start");
         for (DocId doc = 0; doc < this->getNumDocs(); ++doc) {
@@ -51,9 +68,7 @@ MultiValueEnumAttribute<B, M>::reEnumerate()
             WeightedIndexVector indices(indicesRef.cbegin(), indicesRef.cend());
             for (uint32_t i = 0; i < indices.size(); ++i) {
                 EnumIndex oldIndex = indices[i].value();
-                EnumIndex newIndex;
-                this->_enumStore.getCurrentIndex(oldIndex, newIndex);
-                indices[i] = WeightedIndex(newIndex, indices[i].weight());
+                indices[i] = WeightedIndex(old2new[oldIndex], indices[i].weight());
             }
             std::atomic_thread_fence(std::memory_order_release);
             this->_mvMapping.replace(doc, indices);
