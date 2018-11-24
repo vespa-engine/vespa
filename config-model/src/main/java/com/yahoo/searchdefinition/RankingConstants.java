@@ -1,9 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.config.FileReference;
 import com.yahoo.vespa.model.AbstractService;
-import com.yahoo.vespa.model.utils.FileSender;
 
 import java.util.Collection;
 import java.util.Collections;
