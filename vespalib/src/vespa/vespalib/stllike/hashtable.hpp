@@ -42,25 +42,14 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(size_t rese
 }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(const hashtable & rhs)
-    : _modulator(rhs._modulator),
-      _count(rhs._count),
-      _nodes(rhs._nodes),
-      _hasher(rhs._hasher),
-      _equal(rhs._equal)
-{ }
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(const hashtable &) = default;
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator> &
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::operator = (const hashtable & rhs) {
-    hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>(rhs).swap(*this);
-    return *this;
-}
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::operator = (const hashtable &) = default;
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::~hashtable()
-{
-}
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::~hashtable() = default;
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
