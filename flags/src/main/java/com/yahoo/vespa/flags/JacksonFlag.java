@@ -14,7 +14,7 @@ public class JacksonFlag<T> implements Flag {
     private final static ObjectMapper mapper = new ObjectMapper();
 
     private final FlagId id;
-    private final Class<? extends T> jacksonClass;
+    private final Class<T> jacksonClass;
     private final T defaultValue;
     private final FlagSource source;
 
