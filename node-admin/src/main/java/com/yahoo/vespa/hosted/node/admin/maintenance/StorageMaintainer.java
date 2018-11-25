@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.olderThan;
-import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig.nodeTypeToRole;
 
 /**

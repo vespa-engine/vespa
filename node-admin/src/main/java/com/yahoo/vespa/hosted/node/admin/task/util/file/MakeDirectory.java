@@ -49,7 +49,7 @@ public class MakeDirectory {
             }
         } else {
             if (createParents) {
-                // We'll skip logginer system modification here, as we'll log about the creation
+                // We'll skip logging system modification here, as we'll log about the creation
                 // of the directory next.
                 path.createParents();
             }

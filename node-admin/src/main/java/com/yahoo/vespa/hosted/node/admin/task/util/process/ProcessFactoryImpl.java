@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author hakonhall

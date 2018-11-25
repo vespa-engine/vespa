@@ -26,7 +26,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
+import static com.yahoo.yolean.Exceptions.ifExists;
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Thin wrapper around java.nio.file.Path, especially nice for UNIX-specific features.
@@ -127,7 +128,7 @@ public class UnixPath {
     }
 
     public Optional<FileAttributes> getAttributesIfExists() {
-        return IOExceptionUtil.ifExists(this::getAttributes);
+        return ifExists(this::getAttributes);
     }
 
     public UnixPath createNewFile() {

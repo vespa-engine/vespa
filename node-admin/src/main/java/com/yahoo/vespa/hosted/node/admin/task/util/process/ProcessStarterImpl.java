@@ -6,7 +6,7 @@ import com.yahoo.log.LogLevel;
 
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author hakonhall

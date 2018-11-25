@@ -79,6 +79,11 @@ public class Exceptions {
             runnable.run();
         } catch (NoSuchFileException e) {
             // Do nothing - OK
+        } catch (UncheckedIOException e) {
+            if (! (e.getCause() instanceof NoSuchFileException)) {
+                throw e;
+            }
+            // Do nothing - OK
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -118,6 +123,11 @@ public class Exceptions {
             return Optional.ofNullable(supplier.get());
         } catch (NoSuchFileException e) {
             return Optional.empty();
+        } catch (UncheckedIOException e) {
+            if (e.getCause() instanceof NoSuchFileException) {
+                return Optional.empty();
+            }
+            throw e;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -9,6 +9,8 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
+
 /**
  * Uses the Velocity engine to render a template, to and from both String and Path objects.
  *
@@ -30,7 +32,7 @@ public class Template {
     }
 
     public static Template at(Path templatePath) {
-        return of(IOExceptionUtil.uncheck(() -> new String(Files.readAllBytes(templatePath))));
+        return of(uncheck(() -> new String(Files.readAllBytes(templatePath))));
     }
 
     public static Template of(String template) {
