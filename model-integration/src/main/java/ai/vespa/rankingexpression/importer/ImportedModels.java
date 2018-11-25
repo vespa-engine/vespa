@@ -69,6 +69,7 @@ public class ImportedModels {
      *                  models directory works
      * @return the model at this path or null if none
      */
+    // CFG
     public ImportedModel get(File modelPath) {
         return importedModels.get(toName(modelPath));
     }
@@ -78,6 +79,7 @@ public class ImportedModels {
     }
 
     /** Returns an immutable collection of all the imported models */
+    // CFG
     public Collection<ImportedModel> all() {
         return importedModels.values();
     }

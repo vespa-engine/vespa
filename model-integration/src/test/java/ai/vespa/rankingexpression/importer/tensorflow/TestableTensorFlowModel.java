@@ -93,8 +93,8 @@ public class TestableTensorFlowModel {
 
     static Context contextFrom(ImportedModel result) {
         TestableModelContext context = new TestableModelContext();
-        result.largeConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
-        result.smallConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
+        result.largeConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(Tensor.from(tensor))));
+        result.smallConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(Tensor.from(tensor))));
         return context;
     }
 
@@ -108,7 +108,7 @@ public class TestableTensorFlowModel {
 
     private void evaluateFunction(Context context, ImportedModel model, String functionName) {
         if (!context.names().contains(functionName)) {
-            RankingExpression e = model.functions().get(functionName);
+            RankingExpression e = RankingExpression.from(model.functions().get(functionName));
             evaluateFunctionDependencies(context, model, e.getRoot());
             context.put(functionName, new TensorValue(e.evaluate(context).asTensor()));
         }
