@@ -1,10 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
-
 import javax.inject.Inject;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -52,7 +51,7 @@ public class FileFlagSource implements FlagSource {
         } catch (NoSuchFileException e) {
             return Optional.empty();
         } catch (IOException e) {
-            throw new UncheckedTimeoutException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
