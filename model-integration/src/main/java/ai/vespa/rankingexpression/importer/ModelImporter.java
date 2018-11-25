@@ -121,7 +121,7 @@ public abstract class ModelImporter {
 
     private static Optional<TensorFunction> importConstant(IntermediateOperation operation, ImportedModel model) {
         String name = operation.vespaName();
-        if (model.largeConstants().containsKey(name) || model.smallConstants().containsKey(name)) {
+        if (model.hasLargeConstant(name) || model.hasSmallConstant(name)) {
             return operation.function();
         }
 

@@ -230,7 +230,7 @@ public interface Tensor {
      * @return the tensor on the standard string format
      */
     static String toStandardString(Tensor tensor) {
-        if (tensor.isEmpty() && ! tensor.type().dimensions().isEmpty()) // explicitly output type TODO: Never do that?
+        if (tensor.isEmpty() && ! tensor.type().dimensions().isEmpty()) // explicitly output type TODO: Always do that
             return tensor.type() + ":" + contentToString(tensor);
         else
             return contentToString(tensor);

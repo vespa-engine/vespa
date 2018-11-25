@@ -76,30 +76,39 @@ class TensorParser {
     }
 
     private static Tensor fromCellString(Tensor.Builder builder, String s) {
-        s = s.trim().substring(1).trim();
-        while (s.length() > 1) {
-            int keyOrTensorEnd = s.indexOf('}');
+        int index = 1;
+        index = skipSpace(index, s);
+        while (index + 1 < s.length()) {
+            int keyOrTensorEnd = s.indexOf('}', index);
             TensorAddress.Builder addressBuilder = new TensorAddress.Builder(builder.type());
-            if (keyOrTensorEnd < s.length() - 1) { // Key end: This has a key - otherwise TensorAdress is empty
-                addLabels(s.substring(0, keyOrTensorEnd + 1), addressBuilder);
-                s = s.substring(keyOrTensorEnd + 1).trim();
-                if ( ! s.startsWith(":"))
-                    throw new IllegalArgumentException("Expecting a ':' after " + s + ", got '" + s + "'");
-                s = s.substring(1);
+            if (keyOrTensorEnd < s.length() - 1) { // Key end: This has a key - otherwise TensorAddress is empty
+                addLabels(s.substring(index, keyOrTensorEnd + 1), addressBuilder);
+                index = keyOrTensorEnd + 1;
+                index = skipSpace(index, s);
+                if ( s.charAt(index) != ':')
+                    throw new IllegalArgumentException("Expecting a ':' after " + s.substring(index) + ", got '" + s + "'");
+                index++;
             }
-            int valueEnd = s.indexOf(',');
+            int valueEnd = s.indexOf(',', index);
             if (valueEnd < 0) { // last value
-                valueEnd = s.indexOf("}");
+                valueEnd = s.indexOf('}', index);
                 if (valueEnd < 0)
                     throw new IllegalArgumentException("A tensor string must end by '}'");
             }
 
             TensorAddress address = addressBuilder.build();
-            Double value = asDouble(address, s.substring(0, valueEnd).trim());
+            Double value = asDouble(address, s.substring(index, valueEnd).trim());
             builder.cell(address, value);
-            s = s.substring(valueEnd+1).trim();
+            index = valueEnd+1;
+            index = skipSpace(index, s);
         }
         return builder.build();
+    }
+
+    private static int skipSpace(int index, String s) {
+        while (index < s.length() && s.charAt(index) == ' ')
+            index++;
+        return index;
     }
 
     /** Creates a tenor address from a string on the form {dimension1:label1,dimension2:label2,...} */
