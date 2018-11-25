@@ -3,6 +3,8 @@ package com.yahoo.yolean;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.NoSuchFileException;
+import java.util.Optional;
 
 /**
  * Helper methods for handling exceptions
@@ -70,6 +72,18 @@ public class Exceptions {
         }
     }
 
+
+    /** Similar to uncheck() except NoSuchFileException is silently ignored. */
+    public static void ifExists(RunnableThrowingIOException runnable) {
+        try {
+            runnable.run();
+        } catch (NoSuchFileException e) {
+            // Do nothing - OK
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     @FunctionalInterface
     public interface RunnableThrowingIOException {
         void run() throws IOException;
@@ -95,6 +109,17 @@ public class Exceptions {
         } catch (IOException e) {
             String message = String.format(format, (Object[]) args);
             throw new UncheckedIOException(message, e);
+        }
+    }
+
+    /** Similar to uncheck() except the return value is wrapped in an Optional, and empty is returned on NoSuchFileException. */
+    public static <T> Optional<T> ifExists(SupplierThrowingIOException<T> supplier) {
+        try {
+            return Optional.ofNullable(supplier.get());
+        } catch (NoSuchFileException e) {
+            return Optional.empty();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

@@ -5,8 +5,10 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.NoSuchFileException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author bratseth
@@ -27,35 +29,38 @@ public class ExceptionsTestCase {
     @Test
     public void testUnchecks() {
         try {
-            Exceptions.uncheck(this::throwIO);
+            Exceptions.uncheck(this::throwNoSuchFileException);
         } catch (UncheckedIOException e) {
             assertEquals("root cause", e.getCause().getMessage());
         }
 
         try {
-            Exceptions.uncheck(this::throwIO, "additional %s", "info");
+            Exceptions.uncheck(this::throwNoSuchFileException, "additional %s", "info");
         } catch (UncheckedIOException e) {
             assertEquals("additional info", e.getMessage());
         }
 
         try {
-            int i = Exceptions.uncheck(this::throwIOWithReturnValue);
+            int i = Exceptions.uncheck(this::throwNoSuchFileExceptionSupplier);
         } catch (UncheckedIOException e) {
             assertEquals("root cause", e.getCause().getMessage());
         }
 
         try {
-            int i = Exceptions.uncheck(this::throwIOWithReturnValue, "additional %s", "info");
+            int i = Exceptions.uncheck(this::throwNoSuchFileExceptionSupplier, "additional %s", "info");
         } catch (UncheckedIOException e) {
             assertEquals("additional info", e.getMessage());
         }
+
+        Exceptions.ifExists(this::throwNoSuchFileException);
+        assertFalse(Exceptions.ifExists(this::throwNoSuchFileExceptionSupplier).isPresent());
     }
 
-    private void throwIO() throws IOException {
-        throw new IOException("root cause");
+    private void throwNoSuchFileException() throws IOException {
+        throw new NoSuchFileException("root cause");
     }
 
-    private int throwIOWithReturnValue() throws IOException {
-        throw new IOException("root cause");
+    private int throwNoSuchFileExceptionSupplier() throws IOException {
+        throw new NoSuchFileException("root cause");
     }
 }
