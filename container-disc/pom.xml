@@ -165,6 +165,7 @@
         <configuration>
           <discApplicationClass>com.yahoo.container.jdisc.ConfiguredApplication</discApplicationClass>
             <discPreInstallBundle>
+                config-model-api-jar-with-dependencies.jar,
                 config-bundle-jar-with-dependencies.jar,
                 configdefinitions-jar-with-dependencies.jar,
                 container-jersey2-jar-with-dependencies.jar,
