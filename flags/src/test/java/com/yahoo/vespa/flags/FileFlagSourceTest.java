@@ -22,8 +22,8 @@ public class FileFlagSourceTest {
 
     @Test
     public void testFeatureLikeFlags() throws IOException {
-        FeatureFlag featureFlag = new FeatureFlag(id, source);
-        FeatureFlag byDefaultTrue = featureFlag.defaultToTrue();
+        FeatureFlag featureFlag = new FeatureFlag(id, false, source);
+        FeatureFlag byDefaultTrue = new FeatureFlag(id, true, source);
 
         assertFalse(featureFlag.value());
         assertTrue(byDefaultTrue.value());
@@ -60,7 +60,7 @@ public class FileFlagSourceTest {
 
     @Test
     public void parseFailure() throws IOException {
-        FeatureFlag featureFlag = new FeatureFlag(id, source);
+        FeatureFlag featureFlag = new FeatureFlag(id, false, source);
         writeFlag(featureFlag.id().toString(), "garbage");
 
         try {

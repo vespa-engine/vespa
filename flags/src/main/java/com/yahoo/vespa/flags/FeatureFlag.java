@@ -4,7 +4,7 @@ package com.yahoo.vespa.flags;
 import java.util.function.Function;
 
 /**
- * A FeatureFlag defaults to false (but see {@link #defaultToTrue()}).
+ * A FeatureFlag is a boolean flag.
  *
  * @author hakonhall
  */
@@ -21,22 +21,14 @@ public class FeatureFlag implements Flag {
         return source -> new FeatureFlag(id, defaultValue, source);
     }
 
-    public FeatureFlag(String flagId, FlagSource source) {
-        this(new FlagId(flagId), source);
+    public FeatureFlag(String flagId, boolean defaultValue, FlagSource source) {
+        this(new FlagId(flagId), defaultValue, source);
     }
 
-    public FeatureFlag(FlagId id, FlagSource source) {
-        this(id, false, source);
-    }
-
-    private FeatureFlag(FlagId id, boolean defaultValue, FlagSource source) {
+    public FeatureFlag(FlagId id, boolean defaultValue, FlagSource source) {
         this.id = id;
         this.defaultValue = defaultValue;
         this.source = source;
-    }
-
-    public FeatureFlag defaultToTrue() {
-        return new FeatureFlag(id, true, source);
     }
 
     @Override
