@@ -2,6 +2,7 @@
 package com.yahoo.security.tls.policy;
 
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * @author bjorncs
@@ -9,13 +10,44 @@ import java.util.Objects;
 public class HostGlobPattern {
 
     private final String pattern;
+    private final Pattern regexPattern;
 
     public HostGlobPattern(String pattern) {
         this.pattern = pattern;
+        this.regexPattern = toRegexPattern(pattern);
     }
 
     public String asString() {
         return pattern;
+    }
+
+    public boolean matches(String hostString) {
+        return regexPattern.matcher(hostString).matches();
+    }
+
+    private static Pattern toRegexPattern(String pattern) {
+        StringBuilder builder = new StringBuilder("^");
+        for (char c : pattern.toCharArray()) {
+            if (c == '*') {
+                // Note: we explicitly stop matching at a dot separator boundary.
+                // This is to make host name matching less vulnerable to dirty tricks.
+                builder.append("[^.]*");
+            } else if (c == '?') {
+                // Same applies for single chars; they should only match _within_ a dot boundary.
+                builder.append("[^.]");
+            } else if (isRegexMetaCharacter(c)){
+                builder.append("\\");
+                builder.append(c);
+            } else {
+                builder.append(c);
+            }
+        }
+        builder.append('$');
+        return Pattern.compile(builder.toString());
+    }
+
+    private static boolean isRegexMetaCharacter(char c) {
+        return "<([{\\^-=$!|]})?*+.>".indexOf(c) != -1; // note: includes '?' and '*'
     }
 
     @Override

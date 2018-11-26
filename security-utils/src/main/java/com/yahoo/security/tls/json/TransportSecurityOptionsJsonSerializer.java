@@ -18,6 +18,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -42,7 +44,7 @@ public class TransportSecurityOptionsJsonSerializer {
 
     public void serialize(OutputStream out, TransportSecurityOptions options) {
         try {
-            mapper.writeValue(out, toTransportSecurityOptionsEntity(options));
+            mapper.writerWithDefaultPrettyPrinter().writeValue(out, toTransportSecurityOptionsEntity(options));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -62,7 +64,10 @@ public class TransportSecurityOptionsJsonSerializer {
             }
         }
         List<AuthorizedPeer> authorizedPeersEntity = entity.authorizedPeers;
-        if (authorizedPeersEntity.size() > 0) {
+        if (authorizedPeersEntity != null) {
+            if (authorizedPeersEntity.size() == 0) {
+                throw new IllegalArgumentException("'authorized-peers' cannot be empty");
+            }
             builder.withAuthorizedPeers(new AuthorizedPeers(toPeerPolicies(authorizedPeersEntity)));
         }
         return builder.build();
@@ -78,16 +83,14 @@ public class TransportSecurityOptionsJsonSerializer {
         if (authorizedPeer.name == null) {
             throw missingFieldException("name");
         }
-        if (authorizedPeer.requiredCredentials.isEmpty()) {
+        if (authorizedPeer.requiredCredentials == null) {
             throw missingFieldException("required-credentials");
-        }
-        if (authorizedPeer.roles.isEmpty()) {
-            throw missingFieldException("roles");
         }
         return new PeerPolicy(authorizedPeer.name, toRoles(authorizedPeer.roles), toRequestPeerCredentials(authorizedPeer.requiredCredentials));
     }
 
     private static Set<Role> toRoles(List<String> roles) {
+        if (roles == null) return Collections.emptySet();
         return roles.stream()
                 .map(Role::new)
                 .collect(toSet());
@@ -124,16 +127,21 @@ public class TransportSecurityOptionsJsonSerializer {
         options.getCertificatesFile().ifPresent(value -> entity.files.certificatesFile = value.toString());
         options.getPrivateKeyFile().ifPresent(value -> entity.files.privateKeyFile = value.toString());
         options.getAuthorizedPeers().ifPresent( authorizedPeers -> {
+            entity.authorizedPeers = new ArrayList<>();
             for (PeerPolicy peerPolicy : authorizedPeers.peerPolicies()) {
                 AuthorizedPeer authorizedPeer = new AuthorizedPeer();
                 authorizedPeer.name = peerPolicy.policyName();
+                authorizedPeer.requiredCredentials = new ArrayList<>();
                 for (RequiredPeerCredential requiredPeerCredential : peerPolicy.requiredCredentials()) {
                     RequiredCredential requiredCredential = new RequiredCredential();
                     requiredCredential.field = toField(requiredPeerCredential.field());
                     requiredCredential.matchExpression = requiredPeerCredential.pattern().asString();
                     authorizedPeer.requiredCredentials.add(requiredCredential);
                 }
-                peerPolicy.assumedRoles().forEach(role -> authorizedPeer.roles.add(role.name()));
+                if (!peerPolicy.assumedRoles().isEmpty()) {
+                    authorizedPeer.roles = new ArrayList<>();
+                    peerPolicy.assumedRoles().forEach(role -> authorizedPeer.roles.add(role.name()));
+                }
                 entity.authorizedPeers.add(authorizedPeer);
             }
         });

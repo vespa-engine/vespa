@@ -2,10 +2,12 @@
 package com.yahoo.security.tls.json;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 /**
  * Jackson bindings for transport security options
@@ -16,7 +18,7 @@ import java.util.List;
 class TransportSecurityOptionsEntity {
 
     @JsonProperty("files") Files files;
-    @JsonProperty("authorized-peers") List<AuthorizedPeer> authorizedPeers = new ArrayList<>();
+    @JsonProperty("authorized-peers") @JsonInclude(NON_EMPTY) List<AuthorizedPeer> authorizedPeers;
 
     static class Files {
         @JsonProperty("private-key") String privateKeyFile;
@@ -25,9 +27,9 @@ class TransportSecurityOptionsEntity {
     }
 
     static class AuthorizedPeer {
-        @JsonProperty("required-credentials") List<RequiredCredential> requiredCredentials = new ArrayList<>();
+        @JsonProperty("required-credentials") List<RequiredCredential> requiredCredentials;
         @JsonProperty("name") String name;
-        @JsonProperty("roles") List<String> roles = new ArrayList<>();
+        @JsonProperty("roles") @JsonInclude(NON_EMPTY) List<String> roles;
     }
 
     static class RequiredCredential {
