@@ -36,11 +36,6 @@ public class FileFlagSource implements FlagSource {
     }
 
     @Override
-    public boolean hasFeature(FlagId id) {
-        return Files.exists(getPath(id));
-    }
-
-    @Override
     public Optional<String> getString(FlagId id) {
         return getBytes(id).map(bytes -> new String(bytes, StandardCharsets.UTF_8));
     }

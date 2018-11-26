@@ -9,8 +9,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -19,7 +17,6 @@ public class JacksonFlagTest {
     private final ExampleJacksonClass defaultValue = new ExampleJacksonClass();
     private final FlagSource source = mock(FlagSource.class);
     private final JacksonFlag<ExampleJacksonClass> jacksonFlag = new JacksonFlag<>(id.toString(), ExampleJacksonClass.class, defaultValue, source);
-    private final OptionalJacksonFlag<ExampleJacksonClass> optionalJacksonFlag = new OptionalJacksonFlag<>(id, ExampleJacksonClass.class, source);
 
     @Test
     public void unsetThenSet() {
@@ -28,7 +25,6 @@ public class JacksonFlagTest {
         assertEquals(1, value.integer);
         assertEquals("2", value.string);
         assertEquals("3", value.dummy);
-        assertFalse(optionalJacksonFlag.value().isPresent());
 
         when(source.getString(id)).thenReturn(Optional.of("{\"integer\": 4, \"string\": \"foo\", \"stray\": 6}"));
         value = jacksonFlag.value();
@@ -36,8 +32,6 @@ public class JacksonFlagTest {
         assertEquals("foo", value.string);
         assertEquals("3", value.dummy);
 
-        assertTrue(optionalJacksonFlag.value().isPresent());
-        value = optionalJacksonFlag.value().get();
         assertEquals(4, value.integer);
         assertEquals("foo", value.string);
         assertEquals("3", value.dummy);

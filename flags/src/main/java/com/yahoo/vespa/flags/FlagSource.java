@@ -7,9 +7,6 @@ import java.util.Optional;
  * @author hakonhall
  */
 public interface FlagSource {
-    /** Whether the source has the feature flag with the given id. */
-    boolean hasFeature(FlagId id);
-
-    /** The String value of a flag. */
+    /** The String value of a flag, or empty if not set by the source. */
     Optional<String> getString(FlagId id);
 }
