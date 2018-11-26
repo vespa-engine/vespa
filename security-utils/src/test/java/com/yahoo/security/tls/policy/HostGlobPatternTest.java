@@ -59,8 +59,8 @@ public class HostGlobPatternTest {
     }
 
     @Test
-    public void regex_special_characters_are_matched_as_literal_characters() {
-        assertTrue(globMatches("\\.[]{}()<>+-=^$|", "\\.[]{}()<>+-=^$|"));
+    public void other_regex_meta_characters_are_matched_as_literal_characters() {
+        assertTrue(globMatches("<([{\\^-=$!|]})+.>", "<([{\\^-=$!|]})+.>"));
     }
 
     private static boolean globMatches(String pattern, String value) {

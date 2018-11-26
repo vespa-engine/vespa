@@ -35,7 +35,7 @@ public class HostGlobPattern {
             } else if (c == '?') {
                 // Same applies for single chars; they should only match _within_ a dot boundary.
                 builder.append("[^.]");
-            } else if (isSpecialCharacter(c)){
+            } else if (isRegexMetaCharacter(c)){
                 builder.append("\\");
                 builder.append(c);
             } else {
@@ -46,8 +46,8 @@ public class HostGlobPattern {
         return Pattern.compile(builder.toString());
     }
 
-    private static boolean isSpecialCharacter(char c) {
-        return "\\.[]{}()<>*+-=?^$|".indexOf(c) != -1;
+    private static boolean isRegexMetaCharacter(char c) {
+        return "<([{\\^-=$!|]})?*+.>".indexOf(c) != -1; // note: includes '?' and '*'
     }
 
     @Override
