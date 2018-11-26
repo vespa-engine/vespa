@@ -87,7 +87,8 @@ private:
 
     friend class TestAndSetHelper;
     bool tasConditionExists(const api::TestAndSetCommand & cmd);
-    bool tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker);
+    bool tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
+                             bool missingDocumentImpliesMatch = false);
 };
 
 } // storage

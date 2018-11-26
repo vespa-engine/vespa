@@ -66,8 +66,10 @@ public:
     void conditional_remove_executed_on_condition_match();
     void conditional_update_not_executed_on_condition_mismatch();
     void conditional_update_executed_on_condition_match();
+    void conditional_update_not_executed_when_no_document_and_no_auto_create();
+    void conditional_update_executed_when_no_document_but_auto_create_is_enabled();
     void invalid_document_selection_should_fail();
-    void non_existing_document_should_fail();
+    void conditional_put_to_non_existing_document_should_fail();
     void document_with_no_type_should_fail();
 
     CPPUNIT_TEST_SUITE(TestAndSetTest);
@@ -77,16 +79,17 @@ public:
     CPPUNIT_TEST(conditional_remove_executed_on_condition_match);
     CPPUNIT_TEST(conditional_update_not_executed_on_condition_mismatch);
     CPPUNIT_TEST(conditional_update_executed_on_condition_match);
+    CPPUNIT_TEST(conditional_update_not_executed_when_no_document_and_no_auto_create);
+    CPPUNIT_TEST(conditional_update_executed_when_no_document_but_auto_create_is_enabled);
     CPPUNIT_TEST(invalid_document_selection_should_fail);
-    CPPUNIT_TEST(non_existing_document_should_fail);
+    CPPUNIT_TEST(conditional_put_to_non_existing_document_should_fail);
     CPPUNIT_TEST(document_with_no_type_should_fail);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
     std::unique_ptr<api::UpdateCommand> conditional_update_test(
-        bool matchingHeader,
-        api::Timestamp timestampOne,
-        api::Timestamp timestampTwo);
+        bool createIfMissing,
+        api::Timestamp updateTimestamp);
 
     document::Document::SP createTestDocument();
     document::Document::SP retrieveTestDocument();
@@ -183,18 +186,16 @@ void TestAndSetTest::conditional_remove_executed_on_condition_match()
 }
 
 std::unique_ptr<api::UpdateCommand> TestAndSetTest::conditional_update_test(
-    bool matchingHeader,
-    api::Timestamp timestampOne,
-    api::Timestamp timestampTwo)
+    bool createIfMissing,
+    api::Timestamp updateTimestamp)
 {
-    putTestDocument(matchingHeader, timestampOne);
-
     auto docUpdate = std::make_shared<document::DocumentUpdate>(_env->_testDocMan.getTypeRepo(), testDoc->getType(), testDocId);
     auto fieldUpdate = document::FieldUpdate(testDoc->getField("content"));
     fieldUpdate.addUpdate(document::AssignValueUpdate(NEW_CONTENT));
     docUpdate->addUpdate(fieldUpdate);
+    docUpdate->setCreateIfNonExistent(createIfMissing);
 
-    auto updateUp = std::make_unique<api::UpdateCommand>(makeDocumentBucket(BUCKET_ID), docUpdate, timestampTwo);
+    auto updateUp = std::make_unique<api::UpdateCommand>(makeDocumentBucket(BUCKET_ID), docUpdate, updateTimestamp);
     setTestCondition(*updateUp);
     return updateUp;
 }
@@ -203,11 +204,12 @@ void TestAndSetTest::conditional_update_not_executed_on_condition_mismatch()
 {
     api::Timestamp timestampOne = 0;
     api::Timestamp timestampTwo = 1;
-    auto updateUp = conditional_update_test(false, timestampOne, timestampTwo);
+    putTestDocument(false, timestampOne);
+    auto updateUp = conditional_update_test(false, timestampTwo);
 
     CPPUNIT_ASSERT(thread->handleUpdate(*updateUp)->getResult() == api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
     CPPUNIT_ASSERT_EQUAL(expectedDocEntryString(timestampOne, testDocId),
-                        dumpBucket(BUCKET_ID));
+                         dumpBucket(BUCKET_ID));
 
     assertTestDocumentFoundAndMatchesContent(OLD_CONTENT);
 }
@@ -216,13 +218,31 @@ void TestAndSetTest::conditional_update_executed_on_condition_match()
 {
     api::Timestamp timestampOne = 0;
     api::Timestamp timestampTwo = 1;
-    auto updateUp = conditional_update_test(true, timestampOne, timestampTwo);
+    putTestDocument(true, timestampOne);
+    auto updateUp = conditional_update_test(false, timestampTwo);
 
     CPPUNIT_ASSERT(thread->handleUpdate(*updateUp)->getResult() == api::ReturnCode::Result::OK);
     CPPUNIT_ASSERT_EQUAL(expectedDocEntryString(timestampOne, testDocId) +
                          expectedDocEntryString(timestampTwo, testDocId),
                          dumpBucket(BUCKET_ID));
 
+    assertTestDocumentFoundAndMatchesContent(NEW_CONTENT);
+}
+
+void TestAndSetTest::conditional_update_not_executed_when_no_document_and_no_auto_create() {
+    api::Timestamp updateTimestamp = 200;
+    auto updateUp = conditional_update_test(false, updateTimestamp);
+
+    CPPUNIT_ASSERT(thread->handleUpdate(*updateUp)->getResult() == api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
+    CPPUNIT_ASSERT_EQUAL(""s, dumpBucket(BUCKET_ID));
+}
+
+void TestAndSetTest::conditional_update_executed_when_no_document_but_auto_create_is_enabled() {
+    api::Timestamp updateTimestamp = 200;
+    auto updateUp = conditional_update_test(true, updateTimestamp);
+
+    CPPUNIT_ASSERT(thread->handleUpdate(*updateUp)->getResult() == api::ReturnCode::Result::OK);
+    CPPUNIT_ASSERT_EQUAL(expectedDocEntryString(updateTimestamp, testDocId), dumpBucket(BUCKET_ID));
     assertTestDocumentFoundAndMatchesContent(NEW_CONTENT);
 }
 
@@ -238,7 +258,7 @@ void TestAndSetTest::invalid_document_selection_should_fail()
     CPPUNIT_ASSERT_EQUAL(""s, dumpBucket(BUCKET_ID));
 }
 
-void TestAndSetTest::non_existing_document_should_fail()
+void TestAndSetTest::conditional_put_to_non_existing_document_should_fail()
 {
     // Conditionally replace nonexisting document
     // Fail since no document exists to match with test and set

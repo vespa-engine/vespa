@@ -85,9 +85,10 @@ bool PersistenceThread::tasConditionExists(const api::TestAndSetCommand & cmd) {
     return cmd.getCondition().isPresent();
 }
 
-bool PersistenceThread::tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker) {
+bool PersistenceThread::tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
+                                            bool missingDocumentImpliesMatch) {
     try {
-        TestAndSetHelper helper(*this, cmd);
+        TestAndSetHelper helper(*this, cmd, missingDocumentImpliesMatch);
 
         auto code = helper.retrieveAndMatch();
         if (code.failed()) {
@@ -149,7 +150,7 @@ PersistenceThread::handleUpdate(api::UpdateCommand& cmd)
     auto tracker = std::make_unique<MessageTracker>(metrics, _env._component.getClock());
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker)) {
+    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker, cmd.getUpdate()->getCreateIfNonExistent())) {
         return tracker;
     }
     

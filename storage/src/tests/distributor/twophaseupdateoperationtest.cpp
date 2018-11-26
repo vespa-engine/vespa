@@ -61,7 +61,8 @@ class TwoPhaseUpdateOperationTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(testSafePathConditionMatchSendsPutsWithUpdatedDoc);
     CPPUNIT_TEST(testSafePathConditionParseFailureFailsWithIllegalParamsError);
     CPPUNIT_TEST(testSafePathConditonUnknownDocTypeFailsWithIllegalParamsError);
-    CPPUNIT_TEST(testSafePathConditionWithMissingDocFailsWithTasError);
+    CPPUNIT_TEST(safe_path_condition_with_missing_doc_and_no_auto_create_fails_with_tas_error);
+    CPPUNIT_TEST(safe_path_condition_with_missing_doc_and_auto_create_sends_puts);
     CPPUNIT_TEST(testFastPathCloseEdgeSendsCorrectReply);
     CPPUNIT_TEST(testSafePathCloseEdgeSendsCorrectReply);
     CPPUNIT_TEST_SUITE_END();
@@ -97,7 +98,8 @@ protected:
     void testSafePathConditionMatchSendsPutsWithUpdatedDoc();
     void testSafePathConditionParseFailureFailsWithIllegalParamsError();
     void testSafePathConditonUnknownDocTypeFailsWithIllegalParamsError();
-    void testSafePathConditionWithMissingDocFailsWithTasError();
+    void safe_path_condition_with_missing_doc_and_no_auto_create_fails_with_tas_error();
+    void safe_path_condition_with_missing_doc_and_auto_create_sends_puts();
     void testFastPathCloseEdgeSendsCorrectReply();
     void testSafePathCloseEdgeSendsCorrectReply();
 
@@ -1096,7 +1098,7 @@ TwoPhaseUpdateOperationTest::testSafePathConditonUnknownDocTypeFailsWithIllegalP
 }
 
 void
-TwoPhaseUpdateOperationTest::testSafePathConditionWithMissingDocFailsWithTasError()
+TwoPhaseUpdateOperationTest::safe_path_condition_with_missing_doc_and_no_auto_create_fails_with_tas_error()
 {
     setupDistributor(2, 2, "storage:2 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
@@ -1115,6 +1117,22 @@ TwoPhaseUpdateOperationTest::testSafePathConditionWithMissingDocFailsWithTasErro
                          "ReturnCode(TEST_AND_SET_CONDITION_FAILED, "
                                     "Document did not exist)"s,
             sender.getLastReply(true));
+}
+
+void
+TwoPhaseUpdateOperationTest::safe_path_condition_with_missing_doc_and_auto_create_sends_puts()
+{
+    setupDistributor(2, 2, "storage:2 distributor:1");
+    std::shared_ptr<TwoPhaseUpdateOperation> cb(
+            sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions()
+                    .condition("testdoctype1.headerval==120")
+                    .createIfNonExistent(true)));
+
+    MessageSenderStub sender;
+    cb->start(sender, framework::MilliSecTime(0));
+    replyToGet(*cb, sender, 0, 100, false);
+    replyToGet(*cb, sender, 1, 110, false);
+    CPPUNIT_ASSERT_EQUAL("Put => 1,Put => 0"s, sender.getCommands(true, false, 2));
 }
 
 void
@@ -1176,9 +1194,6 @@ TwoPhaseUpdateOperationTest::testSafePathCloseEdgeSendsCorrectReply()
 // XXX currently differs in behavior from content nodes in that updates for
 // document IDs without explicit doctypes will _not_ be auto-failed on the
 // distributor.
-
-// XXX shouldn't be necessary to have any special handling of create-if... and
-// test-and-set right? They appear fully mutually exclusive.
 
 // XXX: test case where update reply has been sent but callback still
 // has pending messages (e.g. n-of-m case).

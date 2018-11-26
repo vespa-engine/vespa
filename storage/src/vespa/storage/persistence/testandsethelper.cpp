@@ -39,11 +39,13 @@ spi::GetResult TestAndSetHelper::retrieveDocument(const document::FieldSet & fie
         _thread._context);
 }
 
-TestAndSetHelper::TestAndSetHelper(PersistenceThread & thread, const api::TestAndSetCommand & cmd)
+TestAndSetHelper::TestAndSetHelper(PersistenceThread & thread, const api::TestAndSetCommand & cmd,
+                                   bool missingDocumentImpliesMatch)
     : _thread(thread),
       _component(thread._env._component),
       _cmd(cmd),
-      _docId(cmd.getDocumentId())
+      _docId(cmd.getDocumentId()),
+      _missingDocumentImpliesMatch(missingDocumentImpliesMatch)
 {
     getDocumentType();
     parseDocumentSelection();
@@ -68,6 +70,8 @@ api::ReturnCode TestAndSetHelper::retrieveAndMatch() {
         }
 
         // Document matches
+        return api::ReturnCode();
+    } else if (_missingDocumentImpliesMatch) {
         return api::ReturnCode();
     }
 
