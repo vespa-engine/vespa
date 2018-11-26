@@ -39,6 +39,7 @@ public class MakeDefaultSummaryTheSuperSet extends Processor {
         for (SummaryField summaryField : search.getUniqueNamedSummaryFields().values() ) {
             if (defaultSummary.getSummaryField(summaryField.getName()) != null) continue;
             if (summaryField.getTransform() == SummaryTransform.ATTRIBUTE) continue;
+            if (summaryField.getTransform() == SummaryTransform.ATTRIBUTECOMBINER) continue;
 
             defaultSummary.add(summaryField.clone());
         }
