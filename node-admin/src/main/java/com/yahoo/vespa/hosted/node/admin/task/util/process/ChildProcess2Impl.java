@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author hakonhall

@@ -3,6 +3,9 @@ package com.yahoo.yolean;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.NoSuchFileException;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Helper methods for handling exceptions
@@ -70,6 +73,29 @@ public class Exceptions {
         }
     }
 
+    /** Similar to uncheck(), except an exceptionToIgnore exception is silently ignored. */
+    public static <T extends IOException> void uncheckAndIgnore(RunnableThrowingIOException runnable, Class<T> exceptionToIgnore) {
+        try {
+            runnable.run();
+        } catch (UncheckedIOException e) {
+            IOException cause = e.getCause();
+            if (cause == null) throw e;
+            try {
+                cause.getClass().asSubclass(exceptionToIgnore);
+            } catch (ClassCastException f) {
+                throw e;
+            }
+            // Do nothing - OK
+        } catch (IOException e) {
+            try {
+                e.getClass().asSubclass(exceptionToIgnore);
+            } catch (ClassCastException f) {
+                throw new UncheckedIOException(e);
+            }
+            // Do nothing - OK
+        }
+    }
+
     @FunctionalInterface
     public interface RunnableThrowingIOException {
         void run() throws IOException;
@@ -95,6 +121,29 @@ public class Exceptions {
         } catch (IOException e) {
             String message = String.format(format, (Object[]) args);
             throw new UncheckedIOException(message, e);
+        }
+    }
+
+    /** Similar to uncheck(), except null is returned if exceptionToIgnore is thrown. */
+    public static <R, T extends IOException> R uncheckAndIgnore(SupplierThrowingIOException<R> supplier, Class<T> exceptionToIgnore) {
+        try {
+            return supplier.get();
+        } catch (UncheckedIOException e) {
+            IOException cause = e.getCause();
+            if (cause == null) throw e;
+            try {
+                cause.getClass().asSubclass(exceptionToIgnore);
+            } catch (ClassCastException f) {
+                throw e;
+            }
+            return null;
+        } catch (IOException e) {
+            try {
+                e.getClass().asSubclass(exceptionToIgnore);
+            } catch (ClassCastException f) {
+                throw new UncheckedIOException(e);
+            }
+            return null;
         }
     }
 

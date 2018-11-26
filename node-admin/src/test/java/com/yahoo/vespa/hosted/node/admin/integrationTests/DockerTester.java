@@ -34,7 +34,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
