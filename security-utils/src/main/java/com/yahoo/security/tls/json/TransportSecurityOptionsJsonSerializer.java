@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -42,7 +43,7 @@ public class TransportSecurityOptionsJsonSerializer {
 
     public void serialize(OutputStream out, TransportSecurityOptions options) {
         try {
-            mapper.writeValue(out, toTransportSecurityOptionsEntity(options));
+            mapper.writerWithDefaultPrettyPrinter().writeValue(out, toTransportSecurityOptionsEntity(options));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -62,7 +63,10 @@ public class TransportSecurityOptionsJsonSerializer {
             }
         }
         List<AuthorizedPeer> authorizedPeersEntity = entity.authorizedPeers;
-        if (authorizedPeersEntity.size() > 0) {
+        if (authorizedPeersEntity != null) {
+            if (authorizedPeersEntity.size() == 0) {
+                throw new IllegalArgumentException("'authorized-peers' cannot be empty");
+            }
             builder.withAuthorizedPeers(new AuthorizedPeers(toPeerPolicies(authorizedPeersEntity)));
         }
         return builder.build();
@@ -124,6 +128,7 @@ public class TransportSecurityOptionsJsonSerializer {
         options.getCertificatesFile().ifPresent(value -> entity.files.certificatesFile = value.toString());
         options.getPrivateKeyFile().ifPresent(value -> entity.files.privateKeyFile = value.toString());
         options.getAuthorizedPeers().ifPresent( authorizedPeers -> {
+            entity.authorizedPeers = new ArrayList<>();
             for (PeerPolicy peerPolicy : authorizedPeers.peerPolicies()) {
                 AuthorizedPeer authorizedPeer = new AuthorizedPeer();
                 authorizedPeer.name = peerPolicy.policyName();

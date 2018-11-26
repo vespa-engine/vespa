@@ -7,23 +7,36 @@ import com.yahoo.security.tls.policy.HostGlobPattern;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import com.yahoo.security.tls.policy.Role;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 
-import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.*;
+import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.CN;
+import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_DNS;
+import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
 import static java.util.Collections.singleton;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bjorncs
  */
 public class TransportSecurityOptionsJsonSerializerTest {
+
+    @Rule public TemporaryFolder tempDirectory = new TemporaryFolder();
+
+    private static final Path TEST_CONFIG_FILE = Paths.get("src/test/resources/transport-security-options.json");
 
     @Test
     public void can_serialize_and_deserialize_transport_security_options() {
@@ -44,6 +57,21 @@ public class TransportSecurityOptionsJsonSerializerTest {
         serializer.serialize(out, options);
         TransportSecurityOptions deserializedOptions = serializer.deserialize(new ByteArrayInputStream(out.toByteArray()));
         assertEquals(options, deserializedOptions);
+    }
+
+    @Test
+    public void can_serialize_options_without_authorized_peers() throws IOException {
+        TransportSecurityOptions options = new TransportSecurityOptions.Builder()
+                .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
+                .withCaCertificates(Paths.get("my_cas.pem"))
+                .build();
+        File outputFile = tempDirectory.newFile();
+        try (OutputStream out = Files.newOutputStream(outputFile.toPath())) {
+            new TransportSecurityOptionsJsonSerializer().serialize(out, options);
+        }
+        String expectedOutput = new String(Files.readAllBytes(TEST_CONFIG_FILE));
+        String actualOutput = new String(Files.readAllBytes(outputFile.toPath()));
+        assertJsonEquals(expectedOutput, actualOutput);
     }
 
 }
