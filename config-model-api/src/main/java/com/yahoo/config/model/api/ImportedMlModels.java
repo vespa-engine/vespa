@@ -1,12 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.rankingexpression.importer;
+package com.yahoo.config.model.api;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.path.Path;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -18,34 +18,51 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class ImportedModels {
+public class ImportedMlModels {
 
     /** All imported models, indexed by their names */
-    private final ImmutableMap<String, ImportedModel> importedModels;
+    private final Map<String, ImportedMlModel> importedModels;
 
     /** Create a null imported models */
-    public ImportedModels() {
-        importedModels = ImmutableMap.of();
+    public ImportedMlModels() {
+        importedModels = Collections.emptyMap();
     }
 
-    public ImportedModels(File modelsDirectory, Collection<ModelImporter> importers) {
-        Map<String, ImportedModel> models = new HashMap<>();
+    public ImportedMlModels(File modelsDirectory, Collection<MlModelImporter> importers) {
+        Map<String, ImportedMlModel> models = new HashMap<>();
 
         // Find all subdirectories recursively which contains a model we can read
         importRecursively(modelsDirectory, models, importers);
-        importedModels = ImmutableMap.copyOf(models);
+        importedModels = Collections.unmodifiableMap(models);
+    }
+
+    /**
+     * Returns the model at the given location in the application package.
+     *
+     * @param modelPath the path to this model (file or directory, depending on model type)
+     *                  under the application package, both from the root or relative to the
+     *                  models directory works
+     * @return the model at this path or null if none
+     */
+    public ImportedMlModel get(File modelPath) {
+        return importedModels.get(toName(modelPath));
+    }
+
+    /** Returns an immutable collection of all the imported models */
+    public Collection<ImportedMlModel> all() {
+        return importedModels.values();
     }
 
     private static void importRecursively(File dir,
-                                          Map<String, ImportedModel> models,
-                                          Collection<ModelImporter> importers) {
+                                          Map<String, ImportedMlModel> models,
+                                          Collection<MlModelImporter> importers) {
         if ( ! dir.isDirectory()) return;
 
         Arrays.stream(dir.listFiles()).sorted().forEach(child -> {
-            Optional<ModelImporter> importer = findImporterOf(child, importers);
+            Optional<MlModelImporter> importer = findImporterOf(child, importers);
             if (importer.isPresent()) {
                 String name = toName(child);
-                ImportedModel existing = models.get(name);
+                ImportedMlModel existing = models.get(name);
                 if (existing != null)
                     throw new IllegalArgumentException("The models in " + child + " and " + existing.source() +
                                                        " both resolve to the model name '" + name + "'");
@@ -57,31 +74,8 @@ public class ImportedModels {
         });
     }
 
-    private static Optional<ModelImporter> findImporterOf(File path, Collection<ModelImporter> importers) {
+    private static Optional<MlModelImporter> findImporterOf(File path, Collection<MlModelImporter> importers) {
         return importers.stream().filter(item -> item.canImport(path.toString())).findFirst();
-    }
-
-    /**
-     * Returns the model at the given location in the application package.
-     *
-     * @param modelPath the path to this model (file or directory, depending on model type)
-     *                  under the application package, both from the root or relative to the
-     *                  models directory works
-     * @return the model at this path or null if none
-     */
-    // CFG
-    public ImportedModel get(File modelPath) {
-        return importedModels.get(toName(modelPath));
-    }
-
-    public ImportedModel get(String modelName) {
-        return importedModels.get(modelName);
-    }
-
-    /** Returns an immutable collection of all the imported models */
-    // CFG
-    public Collection<ImportedModel> all() {
-        return importedModels.values();
     }
 
     private static String toName(File modelFile) {

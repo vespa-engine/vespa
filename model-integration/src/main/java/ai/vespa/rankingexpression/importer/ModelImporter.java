@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer;
 
+import com.yahoo.config.model.api.MlModelImporter;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -27,19 +28,21 @@ import java.util.logging.Logger;
  *
  * @author lesters
  */
-public abstract class ModelImporter {
+public abstract class ModelImporter implements MlModelImporter {
 
     private static final Logger log = Logger.getLogger(ModelImporter.class.getName());
 
     /** Returns whether the file or directory at the given path is of the type which can be imported by this */
+    @Override
     public abstract boolean canImport(String modelPath);
+
+    @Override
+    public final ImportedModel importModel(String modelName, File modelPath) {
+        return importModel(modelName, modelPath.toString());
+    }
 
     /** Imports the given model */
     public abstract ImportedModel importModel(String modelName, String modelPath);
-
-    final ImportedModel importModel(String modelName, File modelPath) {
-        return importModel(modelName, modelPath.toString());
-    }
 
     /**
      * Takes an IntermediateGraph and converts it to a ImportedModel containing

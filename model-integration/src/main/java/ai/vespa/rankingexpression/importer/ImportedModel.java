@@ -1,9 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.collections.Pair;
+import com.yahoo.config.model.api.ImportedMlFunction;
+import com.yahoo.config.model.api.ImportedMlModel;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.Tensor;
@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  *
  * @author bratseth
  */
-public class ImportedModel {
+public class ImportedModel implements ImportedMlModel {
 
     private static final String defaultSignatureName = "default";
 
@@ -52,15 +52,17 @@ public class ImportedModel {
     }
 
     /** Returns the name of this model, which can only contain the characters in [A-Za-z0-9_] */
+    @Override
     public String name() { return name; }
 
     /** Returns the source path (directory or file) of this model */
+    @Override
     public String source() { return source; }
 
     /** Returns an immutable map of the inputs of this */
     public Map<String, TensorType> inputs() { return Collections.unmodifiableMap(inputs); }
 
-    // CFG
+    @Override
     public Optional<String> inputTypeSpec(String input) {
         return Optional.ofNullable(inputs.get(input)).map(TensorType::toString);
     }
@@ -69,7 +71,7 @@ public class ImportedModel {
      * Returns an immutable map of the small constants of this, represented as strings on the standard tensor form.
      * These should have sizes up to a few kb at most, and correspond to constant values given in the source model.
      */
-    // CFG
+    @Override
     public Map<String, String> smallConstants() { return asTensorStrings(smallConstants); }
 
     boolean hasSmallConstant(String name) { return smallConstants.containsKey(name); }
@@ -79,7 +81,7 @@ public class ImportedModel {
      * These can have sizes in gigabytes and must be distributed to nodes separately from configuration.
      * For TensorFlow this corresponds to Variable files stored separately.
      */
-    // CFG
+    @Override
     public Map<String, String> largeConstants() { return asTensorStrings(largeConstants); }
 
     boolean hasLargeConstant(String name) { return largeConstants.containsKey(name); }
@@ -97,7 +99,7 @@ public class ImportedModel {
      * Returns an immutable map of the functions that are part of this model.
      * Note that the functions themselves are *not* copies and *not* immutable - they must be copied before modification.
      */
-    // CFG
+    @Override
     public Map<String, String> functions() { return asExpressionStrings(functions); }
 
     /** Returns an immutable map of the signatures of this */
@@ -123,36 +125,36 @@ public class ImportedModel {
      * if signatures are used, or the expression name if signatures are not used and there are multiple
      * expressions, and the second is the output name if signature names are used.
      */
-    // CFG
-    public List<ImportedFunction> outputExpressions() {
-        List<ImportedFunction> functions = new ArrayList<>();
+    @Override
+    public List<ImportedMlFunction> outputExpressions() {
+        List<ImportedMlFunction> functions = new ArrayList<>();
         for (Map.Entry<String, Signature> signatureEntry : signatures().entrySet()) {
             for (Map.Entry<String, String> outputEntry : signatureEntry.getValue().outputs().entrySet())
                 functions.add(signatureEntry.getValue().outputFunction(outputEntry.getKey(),
                                                                        signatureEntry.getKey() + "." + outputEntry.getKey()));
             if (signatureEntry.getValue().outputs().isEmpty()) // fallback: Signature without outputs
-                functions.add(new ImportedFunction(signatureEntry.getKey(),
-                                                   new ArrayList<>(signatureEntry.getValue().inputs().values()),
-                                                   expressions().get(signatureEntry.getKey()),
-                                                   signatureEntry.getValue().inputMap(),
-                                                   Optional.empty()));
+                functions.add(new ImportedMlFunction(signatureEntry.getKey(),
+                                                     new ArrayList<>(signatureEntry.getValue().inputs().values()),
+                                                     expressions().get(signatureEntry.getKey()).getRoot().toString(),
+                                                     asTensorTypeStrings(signatureEntry.getValue().inputMap()),
+                                                     Optional.empty()));
         }
         if (signatures().isEmpty()) { // fallback for models without signatures
             if (expressions().size() == 1) {
                 Map.Entry<String, RankingExpression> singleEntry = this.expressions.entrySet().iterator().next();
-                functions.add(new ImportedFunction(singleEntry.getKey(),
-                                                   new ArrayList<>(inputs.keySet()),
-                                                   singleEntry.getValue(),
-                                                   inputs,
-                                                   Optional.empty()));
+                functions.add(new ImportedMlFunction(singleEntry.getKey(),
+                                                     new ArrayList<>(inputs.keySet()),
+                                                     singleEntry.getValue().getRoot().toString(),
+                                                     asTensorTypeStrings(inputs),
+                                                     Optional.empty()));
             }
             else {
                 for (Map.Entry<String, RankingExpression> expressionEntry : expressions().entrySet()) {
-                    functions.add(new ImportedFunction(expressionEntry.getKey(),
-                                                       new ArrayList<>(inputs.keySet()),
-                                                       expressionEntry.getValue(),
-                                                       inputs,
-                                                       Optional.empty()));
+                    functions.add(new ImportedMlFunction(expressionEntry.getKey(),
+                                                         new ArrayList<>(inputs.keySet()),
+                                                         expressionEntry.getValue().getRoot().toString(),
+                                                         asTensorTypeStrings(inputs),
+                                                         Optional.empty()));
                 }
             }
         }
@@ -170,6 +172,13 @@ public class ImportedModel {
                 values.put(entry.getKey(), tensor.type() + ":" + tensor);
         }
         return values;
+    }
+
+    private static Map<String, String> asTensorTypeStrings(Map<String, TensorType> map) {
+        Map<String, String> stringMap = new HashMap<>();
+        for (Map.Entry<String, TensorType> entry : map.entrySet())
+            stringMap.put(entry.getKey(), entry.getValue().toString());
+        return stringMap;
     }
 
     private Map<String, String> asExpressionStrings(Map<String, RankingExpression> map) {
@@ -246,15 +255,13 @@ public class ImportedModel {
         }
 
         /** Returns the expression this output references as an imported function */
-        public ImportedFunction outputFunction(String outputName, String functionName) {
-            return new ImportedFunction(functionName,
-                                        new ArrayList<>(inputs.values()),
-                                        owner().expressions().get(outputs.get(outputName)),
-                                        inputMap(),
-                                        Optional.empty());
+        public ImportedMlFunction outputFunction(String outputName, String functionName) {
+            return new ImportedMlFunction(functionName,
+                                          new ArrayList<>(inputs.values()),
+                                          owner().expressions().get(outputs.get(outputName)).getRoot().toString(),
+                                          asTensorTypeStrings(inputMap()),
+                                          Optional.empty());
         }
-
-        // CFG
 
         @Override
         public String toString() { return "signature '" + name + "'"; }
@@ -263,39 +270,6 @@ public class ImportedModel {
         void output(String name, String expressionName) { outputs.put(name, expressionName); }
         void skippedOutput(String name, String reason) { skippedOutputs.put(name, reason); }
         void importWarning(String warning) { importWarnings.add(warning); }
-
-    }
-
-    // CFG
-    public static class ImportedFunction {
-
-        private final String name;
-        private final List<String> arguments;
-        private final Map<String, String> argumentTypes;
-        private final String  expression;
-        private final Optional<String> returnType;
-
-        public ImportedFunction(String name, List<String> arguments, RankingExpression expression,
-                                Map<String, TensorType> argumentTypes, Optional<TensorType> returnType) {
-            this.name = name;
-            this.arguments = arguments;
-            this.expression = expression.getRoot().toString();
-            this.argumentTypes = asStrings(argumentTypes);
-            this.returnType = returnType.map(TensorType::toString);
-        }
-
-        private static Map<String, String> asStrings(Map<String, TensorType> map) {
-            Map<String, String> stringMap = new HashMap<>();
-            for (Map.Entry<String, TensorType> entry : map.entrySet())
-                stringMap.put(entry.getKey(), entry.getValue().toString());
-            return stringMap;
-        }
-
-        public String name() { return name; }
-        public List<String> arguments() { return Collections.unmodifiableList(arguments); }
-        public Map<String, String> argumentTypes() { return Collections.unmodifiableMap(argumentTypes); }
-        public String expression() { return expression; }
-        public Optional<String> returnType() { return returnType; }
 
     }
 

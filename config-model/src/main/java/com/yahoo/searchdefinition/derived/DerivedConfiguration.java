@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import ai.vespa.rankingexpression.importer.ImportedModels;
+import com.yahoo.config.model.api.ImportedMlModels;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.application.api.DeployLogger;
@@ -49,7 +49,7 @@ public class DerivedConfiguration {
     public DerivedConfiguration(Search search,
                                 RankProfileRegistry rankProfileRegistry,
                                 QueryProfileRegistry queryProfiles,
-                                ImportedModels importedModels) {
+                                ImportedMlModels importedModels) {
         this(search, new BaseDeployLogger(), rankProfileRegistry, queryProfiles, importedModels);
     }
 
@@ -68,7 +68,7 @@ public class DerivedConfiguration {
                                 DeployLogger deployLogger,
                                 RankProfileRegistry rankProfileRegistry,
                                 QueryProfileRegistry queryProfiles,
-                                ImportedModels importedModels) {
+                                ImportedMlModels importedModels) {
         Validator.ensureNotNull("Search definition", search);
         this.search = search;
         if ( ! search.isDocumentsOnly()) {

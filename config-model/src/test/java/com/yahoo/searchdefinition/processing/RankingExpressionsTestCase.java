@@ -8,7 +8,7 @@ import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
-import ai.vespa.rankingexpression.importer.ImportedModels;
+import com.yahoo.config.model.api.ImportedMlModels;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -39,7 +39,7 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
 
         List<Pair<String, String>> rankProperties = new RawRankProfile(functionsRankProfile,
                                                                        new QueryProfileRegistry(),
-                                                                       new ImportedModels(),
+                                                                       new ImportedMlModels(),
                                                                        new AttributeFields(search)).configProperties();
         assertEquals(6, rankProperties.size());
 
@@ -65,7 +65,7 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
         Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressioninfile",
                                                           registry,
                                                           new QueryProfileRegistry()).getSearch();
-        new DerivedConfiguration(search, registry, new QueryProfileRegistry(), new ImportedModels()); // rank profile parsing happens during deriving
+        new DerivedConfiguration(search, registry, new QueryProfileRegistry(), new ImportedMlModels()); // rank profile parsing happens during deriving
     }
 
 }

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import ai.vespa.rankingexpression.importer.ImportedModels;
+import com.yahoo.config.model.api.ImportedMlModels;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstant;
@@ -45,7 +45,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                            AttributeFields attributeFields,
                            RankProfileRegistry rankProfileRegistry,
                            QueryProfileRegistry queryProfiles,
-                           ImportedModels importedModels) {
+                           ImportedMlModels importedModels) {
         setName(search == null ? "default" : search.getName());
         this.rankingConstants = rankingConstants;
         deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields);
@@ -53,7 +53,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
 
     private void deriveRankProfiles(RankProfileRegistry rankProfileRegistry,
                                     QueryProfileRegistry queryProfiles,
-                                    ImportedModels importedModels,
+                                    ImportedMlModels importedModels,
                                     Search search,
                                     AttributeFields attributeFields) {
         if (search != null) { // profiles belonging to a search have a default profile

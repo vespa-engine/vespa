@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import ai.vespa.rankingexpression.importer.ImportedModels;
+import com.yahoo.config.model.api.ImportedMlModels;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
@@ -647,7 +647,7 @@ public class RankProfile implements Serializable, Cloneable {
      * Returns a copy of this where the content is optimized for execution.
      * Compiled profiles should never be modified.
      */
-    public RankProfile compile(QueryProfileRegistry queryProfiles, ImportedModels importedModels) {
+    public RankProfile compile(QueryProfileRegistry queryProfiles, ImportedMlModels importedModels) {
         try {
             RankProfile compiled = this.clone();
             compiled.compileThis(queryProfiles, importedModels);
@@ -658,7 +658,7 @@ public class RankProfile implements Serializable, Cloneable {
         }
     }
 
-    private void compileThis(QueryProfileRegistry queryProfiles, ImportedModels importedModels) {
+    private void compileThis(QueryProfileRegistry queryProfiles, ImportedMlModels importedModels) {
         checkNameCollisions(getFunctions(), getConstants());
         ExpressionTransforms expressionTransforms = new ExpressionTransforms();
 
@@ -688,7 +688,7 @@ public class RankProfile implements Serializable, Cloneable {
 
     private Map<String, RankingExpressionFunction> compileFunctions(Supplier<Map<String, RankingExpressionFunction>> functions,
                                                                     QueryProfileRegistry queryProfiles,
-                                                                    ImportedModels importedModels,
+                                                                    ImportedMlModels importedModels,
                                                                     Map<String, RankingExpressionFunction> inlineFunctions,
                                                                     ExpressionTransforms expressionTransforms) {
         Map<String, RankingExpressionFunction> compiledFunctions = new LinkedHashMap<>();
@@ -716,7 +716,7 @@ public class RankProfile implements Serializable, Cloneable {
 
     private RankingExpression compile(RankingExpression expression,
                                       QueryProfileRegistry queryProfiles,
-                                      ImportedModels importedModels,
+                                      ImportedMlModels importedModels,
                                       Map<String, Value> constants,
                                       Map<String, RankingExpressionFunction> inlineFunctions,
                                       ExpressionTransforms expressionTransforms) {

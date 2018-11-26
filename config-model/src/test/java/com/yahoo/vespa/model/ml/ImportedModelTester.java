@@ -3,12 +3,12 @@ package com.yahoo.vespa.model.ml;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.ApplicationPackageTester;
+import com.yahoo.config.model.api.MlModelImporter;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.RankingConstant;
-import ai.vespa.rankingexpression.importer.ModelImporter;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
@@ -32,9 +32,9 @@ import static org.junit.Assert.assertEquals;
  */
 public class ImportedModelTester {
 
-    private final ImmutableList<ModelImporter> importers = ImmutableList.of(new TensorFlowImporter(),
-                                                                            new OnnxImporter(),
-                                                                            new XGBoostImporter());
+    private final ImmutableList<MlModelImporter> importers = ImmutableList.of(new TensorFlowImporter(),
+                                                                              new OnnxImporter(),
+                                                                              new XGBoostImporter());
 
     private final String modelName;
     private final Path applicationDir;

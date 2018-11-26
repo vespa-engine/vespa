@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import ai.vespa.rankingexpression.importer.ImportedModel;
-import ai.vespa.rankingexpression.importer.ImportedModels;
+import com.yahoo.config.model.api.ImportedMlModel;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
@@ -20,6 +19,7 @@ import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.model.api.ImportedMlModels;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -217,11 +217,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * Creates a rank profile not attached to any search definition, for each imported model in the application package,
      * and adds it to the given rank profile registry.
      */
-    private void createGlobalRankProfiles(DeployLogger deployLogger, ImportedModels importedModels,
+    private void createGlobalRankProfiles(DeployLogger deployLogger, ImportedMlModels importedModels,
                                           RankProfileRegistry rankProfileRegistry,
                                           QueryProfiles queryProfiles) {
         if ( ! importedModels.all().isEmpty()) { // models/ directory is available
-            for (ImportedModel model : importedModels.all()) {
+            for (ImportedMlModel model : importedModels.all()) {
                 RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),

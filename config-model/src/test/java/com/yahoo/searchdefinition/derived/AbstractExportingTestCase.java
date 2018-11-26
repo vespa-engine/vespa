@@ -7,7 +7,7 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
-import ai.vespa.rankingexpression.importer.ImportedModels;
+import com.yahoo.config.model.api.ImportedMlModels;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 
@@ -37,7 +37,7 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
         DerivedConfiguration config = new DerivedConfiguration(builder.getSearch(searchDefinitionName),
                                                                builder.getRankProfileRegistry(),
                                                                builder.getQueryProfileRegistry(),
-                                                               new ImportedModels());
+                                                               new ImportedMlModels());
         return export(dirName, builder, config);
     }
 
@@ -45,7 +45,7 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
         DerivedConfiguration config = new DerivedConfiguration(search,
                                                                builder.getRankProfileRegistry(),
                                                                builder.getQueryProfileRegistry(),
-                                                               new ImportedModels());
+                                                               new ImportedMlModels());
         return export(dirName, builder, config);
     }
 

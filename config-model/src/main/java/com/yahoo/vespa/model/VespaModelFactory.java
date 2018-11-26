@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import ai.vespa.rankingexpression.importer.ModelImporter;
 import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -11,6 +10,7 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigModelPlugin;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.MlModelImporter;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -44,7 +44,7 @@ public class VespaModelFactory implements ModelFactory {
 
     private static final Logger log = Logger.getLogger(VespaModelFactory.class.getName());
     private final ConfigModelRegistry configModelRegistry;
-    private final Collection<ModelImporter> modelImporters;
+    private final Collection<MlModelImporter> modelImporters;
     private final Zone zone;
     private final Clock clock;
     private final Version version;
@@ -52,7 +52,7 @@ public class VespaModelFactory implements ModelFactory {
     /** Creates a factory for vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
-                             ComponentRegistry<ModelImporter> modelImporters,
+                             ComponentRegistry<MlModelImporter> modelImporters,
                              Zone zone) {
         this.version = Version.fromIntValues(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder> modelBuilders = new ArrayList<>();
