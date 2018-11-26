@@ -44,10 +44,8 @@ void
 MultiValueEnumAttribute<B, M>::reEnumerate(const EnumIndexMap & old2new)
 {
     // update MultiValueMapping with new EnumIndex values.
-    this->logEnumStoreEvent("compactfixup", "precompute");
-
+    this->logEnumStoreEvent("compactfixup", "drain");
     {
-        this->logEnumStoreEvent("compactfixup", "drain");
         EnumModifier enumGuard(this->getEnumModifier());
         this->logEnumStoreEvent("compactfixup", "start");
         for (DocId doc = 0; doc < this->getNumDocs(); ++doc) {
