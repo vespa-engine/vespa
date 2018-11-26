@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
@@ -28,7 +27,7 @@ class TransportSecurityOptionsEntity {
     }
 
     static class AuthorizedPeer {
-        @JsonProperty("required-credentials") List<RequiredCredential> requiredCredentials = new ArrayList<>();
+        @JsonProperty("required-credentials") List<RequiredCredential> requiredCredentials;
         @JsonProperty("name") String name;
         @JsonProperty("roles") @JsonInclude(NON_EMPTY) List<String> roles;
     }
