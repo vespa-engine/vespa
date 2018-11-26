@@ -1,11 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
-import ai.vespa.rankingexpression.importer.ImportedModel;
+import com.yahoo.config.model.api.ImportedMlFunction;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.ImportedMlModel;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -70,12 +71,12 @@ public class ConvertedModel {
     private final ImmutableMap<String, ExpressionFunction> expressions;
 
     /** The source importedModel, or empty if this was created from a stored converted model */
-    private final Optional<ImportedModel> sourceModel;
+    private final Optional<ImportedMlModel> sourceModel;
 
     private ConvertedModel(ModelName modelName,
                            String modelDescription,
                            Map<String, ExpressionFunction> expressions,
-                           Optional<ImportedModel> sourceModel) {
+                           Optional<ImportedMlModel> sourceModel) {
         this.modelName = modelName;
         this.modelDescription = modelDescription;
         this.expressions = ImmutableMap.copyOf(expressions);
@@ -90,13 +91,13 @@ public class ConvertedModel {
      * @param pathIsFile true if that path (this kind of model) is stored in a file, false if it is in a directory
      */
     public static ConvertedModel fromSourceOrStore(Path modelPath, boolean pathIsFile, RankProfileTransformContext context) {
-        ImportedModel sourceModel = // TODO: Convert to name here, make sure its done just one way
+        ImportedMlModel sourceModel = // TODO: Convert to name here, make sure its done just one way
                 context.importedModels().get(sourceModelFile(context.rankProfile().applicationPackage(), modelPath));
         ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath, pathIsFile);
 
         if (sourceModel == null && ! new ModelStore(context.rankProfile().applicationPackage(), modelName).exists())
             throw new IllegalArgumentException("No model '" + modelPath + "' is available. Available models: " +
-                                               context.importedModels().all().stream().map(ImportedModel::source).collect(Collectors.joining(", ")));
+                                               context.importedModels().all().stream().map(ImportedMlModel::source).collect(Collectors.joining(", ")));
 
         if (sourceModel != null) {
             return fromSource(modelName,
@@ -116,7 +117,7 @@ public class ConvertedModel {
                                             String modelDescription,
                                             RankProfile rankProfile,
                                             QueryProfileRegistry queryProfileRegistry,
-                                            ImportedModel importedModel) {
+                                            ImportedMlModel importedModel) {
         ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
         return new ConvertedModel(modelName,
                                   modelDescription,
@@ -187,7 +188,7 @@ public class ConvertedModel {
 
     // ----------------------- Static model conversion/storage below here
 
-    private static Map<String, ExpressionFunction> convertAndStore(ImportedModel model,
+    private static Map<String, ExpressionFunction> convertAndStore(ImportedMlModel model,
                                                                    RankProfile profile,
                                                                    QueryProfileRegistry queryProfiles,
                                                                    ModelStore store) {
@@ -202,7 +203,7 @@ public class ConvertedModel {
 
         // Add expressions
         Map<String, ExpressionFunction> expressions = new HashMap<>();
-        for (ImportedModel.ImportedFunction outputFunction : model.outputExpressions()) {
+        for (ImportedMlFunction outputFunction : model.outputExpressions()) {
             ExpressionFunction expression = asExpressionFunction(outputFunction);
             addExpression(expression, expression.getName(),
                           constantsReplacedByFunctions,
@@ -219,7 +220,7 @@ public class ConvertedModel {
         return expressions;
     }
 
-    private static ExpressionFunction asExpressionFunction(ImportedModel.ImportedFunction function) {
+    private static ExpressionFunction asExpressionFunction(ImportedMlFunction function) {
         try {
             Map<String, TensorType> argumentTypes = new HashMap<>();
             for (Map.Entry<String, String> entry : function.argumentTypes().entrySet())
@@ -239,7 +240,7 @@ public class ConvertedModel {
     private static void addExpression(ExpressionFunction expression,
                                       String expressionName,
                                       Set<String> constantsReplacedByFunctions,
-                                      ImportedModel model,
+                                      ImportedMlModel model,
                                       ModelStore store,
                                       RankProfile profile,
                                       QueryProfileRegistry queryProfiles,
@@ -322,7 +323,7 @@ public class ConvertedModel {
      * Verify that the inputs declared in the given expression exists in the given rank profile as functions,
      * and return tensors of the correct types.
      */
-    private static void verifyInputs(RankingExpression expression, ImportedModel model,
+    private static void verifyInputs(RankingExpression expression, ImportedMlModel model,
                                      RankProfile profile, QueryProfileRegistry queryProfiles) {
         Set<String> functionNames = new HashSet<>();
         addFunctionNamesIn(expression.getRoot(), functionNames, model);
@@ -359,7 +360,7 @@ public class ConvertedModel {
     }
 
     /** Add the generated functions to the rank profile */
-    private static void addGeneratedFunctions(ImportedModel model, RankProfile profile) {
+    private static void addGeneratedFunctions(ImportedMlModel model, RankProfile profile) {
         model.functions().forEach((k, v) -> addGeneratedFunctionToProfile(profile, k, RankingExpression.from(v)));
     }
 
@@ -368,7 +369,7 @@ public class ConvertedModel {
      * function specifies that a single exemplar should be evaluated, we can
      * reduce the batch dimension out.
      */
-    private static void reduceBatchDimensions(RankingExpression expression, ImportedModel model,
+    private static void reduceBatchDimensions(RankingExpression expression, ImportedMlModel model,
                                               RankProfile profile, QueryProfileRegistry queryProfiles) {
         TypeContext<Reference> typeContext = profile.typeContext(queryProfiles);
         TensorType typeBeforeReducing = expression.getRoot().type(typeContext);
@@ -396,7 +397,7 @@ public class ConvertedModel {
         expression.setRoot(root);
     }
 
-    private static ExpressionNode reduceBatchDimensionsAtInput(ExpressionNode node, ImportedModel model,
+    private static ExpressionNode reduceBatchDimensionsAtInput(ExpressionNode node, ImportedMlModel model,
                                                                TypeContext<Reference> typeContext) {
         if (node instanceof TensorFunctionNode) {
             TensorFunction tensorFunction = ((TensorFunctionNode) node).function();
@@ -502,7 +503,7 @@ public class ConvertedModel {
         return node;
     }
 
-    private static void addFunctionNamesIn(ExpressionNode node, Set<String> names, ImportedModel model) {
+    private static void addFunctionNamesIn(ExpressionNode node, Set<String> names, ImportedMlModel model) {
         if (node instanceof ReferenceNode) {
             ReferenceNode referenceNode = (ReferenceNode)node;
             if (referenceNode.getOutput() == null) { // function references cannot specify outputs

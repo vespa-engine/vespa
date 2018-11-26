@@ -5,7 +5,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
-import ai.vespa.rankingexpression.importer.ImportedModels;
+import com.yahoo.config.model.api.ImportedMlModels;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -55,7 +55,7 @@ public class RankPropertiesTestCase extends SearchDefinitionTestCase {
             assertEquals("query(a) = 1500", parent.getRankProperties().get(0).toString());
 
             // Check derived model
-            RawRankProfile rawParent = new RawRankProfile(parent, new QueryProfileRegistry(), new ImportedModels(), attributeFields);
+            RawRankProfile rawParent = new RawRankProfile(parent, new QueryProfileRegistry(), new ImportedMlModels(), attributeFields);
             assertEquals("(query(a),1500)", rawParent.configProperties().get(0).toString());
         }
 
@@ -67,7 +67,7 @@ public class RankPropertiesTestCase extends SearchDefinitionTestCase {
             // Check derived model
             RawRankProfile rawChild = new RawRankProfile(rankProfileRegistry.get(search, "child"),
                                                          new QueryProfileRegistry(),
-                                                         new ImportedModels(),
+                                                         new ImportedMlModels(),
                                                          attributeFields);
             assertEquals("(query(a),2000)", rawChild.configProperties().get(0).toString());
         }

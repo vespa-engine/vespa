@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
-import ai.vespa.rankingexpression.importer.ImportedModels;
-import ai.vespa.rankingexpression.importer.ModelImporter;
+import com.yahoo.config.model.api.ImportedMlModels;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -11,6 +10,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.MlModelImporter;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -68,7 +68,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final Zone zone;
     private final QueryProfiles queryProfiles;
     private final SemanticRules semanticRules;
-    private final ImportedModels importedModels;
+    private final ImportedMlModels importedModels;
     private final ValidationOverrides validationOverrides;
     private final Version wantedNodeVespaVersion;
     private final Instant now;
@@ -93,7 +93,7 @@ public class DeployState implements ConfigDefinitionStore {
                         Optional<ConfigDefinitionRepo> configDefinitionRepo,
                         java.util.Optional<Model> previousModel,
                         Set<Rotation> rotations,
-                        Collection<ModelImporter> modelImporters,
+                        Collection<MlModelImporter> modelImporters,
                         Zone zone,
                         QueryProfiles queryProfiles,
                         SemanticRules semanticRules,
@@ -114,8 +114,8 @@ public class DeployState implements ConfigDefinitionStore {
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
-        this.importedModels = new ImportedModels(applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR),
-                                                 modelImporters);
+        this.importedModels = new ImportedMlModels(applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR),
+                                                   modelImporters);
 
         this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
@@ -230,7 +230,7 @@ public class DeployState implements ConfigDefinitionStore {
     public SemanticRules getSemanticRules() { return semanticRules; }
 
     /** The (machine learned) models imported from the models/ directory, as an unmodifiable map indexed by model name */
-    public ImportedModels getImportedModels() { return importedModels; }
+    public ImportedMlModels getImportedModels() { return importedModels; }
 
     public Version getWantedNodeVespaVersion() { return wantedNodeVespaVersion; }
 
@@ -247,7 +247,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Optional<ConfigDefinitionRepo> configDefinitionRepo = Optional.empty();
         private Optional<Model> previousModel = Optional.empty();
         private Set<Rotation> rotations = new HashSet<>();
-        private Collection<ModelImporter> modelImporters = Collections.emptyList();
+        private Collection<MlModelImporter> modelImporters = Collections.emptyList();
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
@@ -297,7 +297,7 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public Builder modelImporters(Collection<ModelImporter> modelImporters) {
+        public Builder modelImporters(Collection<MlModelImporter> modelImporters) {
             this.modelImporters = modelImporters;
             return this;
         }

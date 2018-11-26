@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import ai.vespa.rankingexpression.importer.ImportedModels;
+import com.yahoo.config.model.api.ImportedMlModels;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
@@ -67,19 +67,19 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile parent = rankProfileRegistry.get(s, "parent").compile(queryProfileRegistry, new ImportedModels());
+        RankProfile parent = rankProfileRegistry.get(s, "parent").compile(queryProfileRegistry, new ImportedMlModels());
         assertEquals("0.0", parent.getFirstPhaseRanking().getRoot().toString());
 
-        RankProfile child1 = rankProfileRegistry.get(s, "child1").compile(queryProfileRegistry, new ImportedModels());
+        RankProfile child1 = rankProfileRegistry.get(s, "child1").compile(queryProfileRegistry, new ImportedMlModels());
         assertEquals("6.5", child1.getFirstPhaseRanking().getRoot().toString());
         assertEquals("11.5", child1.getSecondPhaseRanking().getRoot().toString());
 
-        RankProfile child2 = rankProfileRegistry.get(s, "child2").compile(queryProfileRegistry, new ImportedModels());
+        RankProfile child2 = rankProfileRegistry.get(s, "child2").compile(queryProfileRegistry, new ImportedMlModels());
         assertEquals("16.6", child2.getFirstPhaseRanking().getRoot().toString());
         assertEquals("foo: 14.0", child2.getFunctions().get("foo").function().getBody().toString());
         List<Pair<String, String>> rankProperties = new RawRankProfile(child2,
                                                                        queryProfileRegistry,
-                                                                       new ImportedModels(),
+                                                                       new ImportedMlModels(),
                                                                        new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(foo).rankingScript,14.0)", rankProperties.get(0).toString());
         assertEquals("(rankingExpression(firstphase).rankingScript,16.6)", rankProperties.get(2).toString());
@@ -110,7 +110,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         builder.build();
         Search s = builder.getSearch();
         try {
-            rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedModels());
+            rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
             fail("Should have caused an exception");
         }
         catch (IllegalArgumentException e) {
@@ -171,7 +171,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("safeLog(popShareSlowDecaySignal,myValue)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
         assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)",
-                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
+                     profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
     }
 
     @Test
@@ -194,7 +194,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         Search s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("k1 + (k2 + k3) / 100000000.0",
-                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
+                     profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
     }
 
     @Test
@@ -220,7 +220,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         Search s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("0.5 + 50 * (attribute(rating_yelp) - 3)",
-                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
+                     profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
     }
 
 }

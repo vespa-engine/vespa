@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import ai.vespa.rankingexpression.importer.ImportedModels;
+import com.yahoo.config.model.api.ImportedMlModels;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Pair;
 import com.yahoo.compress.Compressor;
@@ -50,7 +50,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     /**
      * Creates a raw rank profile from the given rank profile
      */
-    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedModels importedModels, AttributeFields attributeFields) {
+    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels, AttributeFields attributeFields) {
         this.name = rankProfile.getName();
         compressedProperties = compress(new Deriver(rankProfile, queryProfiles, importedModels, attributeFields).derive());
     }
@@ -148,7 +148,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         /**
          * Creates a raw rank profile from the given rank profile
          */
-        public Deriver(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedModels importedModels, AttributeFields attributeFields) {
+        public Deriver(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels, AttributeFields attributeFields) {
             RankProfile compiled = rankProfile.compile(queryProfiles, importedModels);
             attributeTypes = compiled.getAttributeTypes();
             queryFeatureTypes = compiled.getQueryFeatureTypes();

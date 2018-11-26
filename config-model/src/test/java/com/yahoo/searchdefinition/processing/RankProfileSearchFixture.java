@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.MlModelImporter;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -11,8 +12,7 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
-import ai.vespa.rankingexpression.importer.ImportedModels;
-import ai.vespa.rankingexpression.importer.ModelImporter;
+import com.yahoo.config.model.api.ImportedMlModels;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
@@ -31,9 +31,9 @@ import static org.junit.Assert.assertEquals;
  */
 class RankProfileSearchFixture {
 
-    private final ImmutableList<ModelImporter> importers = ImmutableList.of(new TensorFlowImporter(),
-                                                                            new OnnxImporter(),
-                                                                            new XGBoostImporter());
+    private final ImmutableList<MlModelImporter> importers = ImmutableList.of(new TensorFlowImporter(),
+                                                                              new OnnxImporter(),
+                                                                              new XGBoostImporter());
     private RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
     private final QueryProfileRegistry queryProfileRegistry;
     private Search search;
@@ -92,7 +92,7 @@ class RankProfileSearchFixture {
     public RankProfile compileRankProfile(String rankProfile, Path applicationDir) {
         RankProfile compiled = rankProfileRegistry.get(search, rankProfile)
                                                   .compile(queryProfileRegistry,
-                                                           new ImportedModels(applicationDir.toFile(), importers));
+                                                           new ImportedMlModels(applicationDir.toFile(), importers));
         compiledRankProfiles.put(rankProfile, compiled);
         return compiled;
     }

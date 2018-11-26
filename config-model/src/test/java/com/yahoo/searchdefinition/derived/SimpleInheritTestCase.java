@@ -5,7 +5,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
-import ai.vespa.rankingexpression.importer.ImportedModels;
+import com.yahoo.config.model.api.ImportedMlModels;
 import org.junit.Test;
 
 import java.io.File;
@@ -36,7 +36,7 @@ public class SimpleInheritTestCase extends AbstractExportingTestCase {
         DerivedConfiguration config = new DerivedConfiguration(search,
                                                                builder.getRankProfileRegistry(),
                                                                new QueryProfileRegistry(),
-                                                               new ImportedModels());
+                                                               new ImportedMlModels());
         config.export(toDirName);
 
         checkDir(toDirName, expectedResultsDirName);
