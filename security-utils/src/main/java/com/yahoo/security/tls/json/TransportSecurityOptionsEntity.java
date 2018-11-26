@@ -30,7 +30,7 @@ class TransportSecurityOptionsEntity {
     static class AuthorizedPeer {
         @JsonProperty("required-credentials") List<RequiredCredential> requiredCredentials = new ArrayList<>();
         @JsonProperty("name") String name;
-        @JsonProperty("roles") List<String> roles = new ArrayList<>();
+        @JsonProperty("roles") @JsonInclude(NON_EMPTY) List<String> roles;
     }
 
     static class RequiredCredential {

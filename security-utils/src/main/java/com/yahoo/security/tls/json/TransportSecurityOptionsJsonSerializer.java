@@ -19,6 +19,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -85,13 +86,11 @@ public class TransportSecurityOptionsJsonSerializer {
         if (authorizedPeer.requiredCredentials.isEmpty()) {
             throw missingFieldException("required-credentials");
         }
-        if (authorizedPeer.roles.isEmpty()) {
-            throw missingFieldException("roles");
-        }
         return new PeerPolicy(authorizedPeer.name, toRoles(authorizedPeer.roles), toRequestPeerCredentials(authorizedPeer.requiredCredentials));
     }
 
     private static Set<Role> toRoles(List<String> roles) {
+        if (roles == null) return Collections.emptySet();
         return roles.stream()
                 .map(Role::new)
                 .collect(toSet());
@@ -138,7 +137,10 @@ public class TransportSecurityOptionsJsonSerializer {
                     requiredCredential.matchExpression = requiredPeerCredential.pattern().asString();
                     authorizedPeer.requiredCredentials.add(requiredCredential);
                 }
-                peerPolicy.assumedRoles().forEach(role -> authorizedPeer.roles.add(role.name()));
+                if (!peerPolicy.assumedRoles().isEmpty()) {
+                    authorizedPeer.roles = new ArrayList<>();
+                    peerPolicy.assumedRoles().forEach(role -> authorizedPeer.roles.add(role.name()));
+                }
                 entity.authorizedPeers.add(authorizedPeer);
             }
         });
