@@ -9,6 +9,7 @@ import java.nio.file.NoSuchFileException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author bratseth
@@ -31,7 +32,7 @@ public class ExceptionsTestCase {
         try {
             Exceptions.uncheck(this::throwNoSuchFileException);
         } catch (UncheckedIOException e) {
-            assertEquals("root cause", e.getCause().getMessage());
+            assertEquals("filename", e.getCause().getMessage());
         }
 
         try {
@@ -43,7 +44,7 @@ public class ExceptionsTestCase {
         try {
             int i = Exceptions.uncheck(this::throwNoSuchFileExceptionSupplier);
         } catch (UncheckedIOException e) {
-            assertEquals("root cause", e.getCause().getMessage());
+            assertEquals("filename", e.getCause().getMessage());
         }
 
         try {
@@ -52,15 +53,15 @@ public class ExceptionsTestCase {
             assertEquals("additional info", e.getMessage());
         }
 
-        Exceptions.ifExists(this::throwNoSuchFileException);
-        assertFalse(Exceptions.ifExists(this::throwNoSuchFileExceptionSupplier).isPresent());
+        Exceptions.uncheckAndIgnore(this::throwNoSuchFileException, NoSuchFileException.class);
+        assertNull(Exceptions.uncheckAndIgnore(this::throwNoSuchFileExceptionSupplier, NoSuchFileException.class));
     }
 
     private void throwNoSuchFileException() throws IOException {
-        throw new NoSuchFileException("root cause");
+        throw new NoSuchFileException("filename");
     }
 
     private int throwNoSuchFileExceptionSupplier() throws IOException {
-        throw new NoSuchFileException("root cause");
+        throw new NoSuchFileException("filename");
     }
 }

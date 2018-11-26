@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Helper methods for handling exceptions
@@ -72,20 +73,26 @@ public class Exceptions {
         }
     }
 
-
-    /** Similar to uncheck() except NoSuchFileException is silently ignored. */
-    public static void ifExists(RunnableThrowingIOException runnable) {
+    /** Similar to uncheck(), except an exceptionToIgnore exception is silently ignored. */
+    public static <T extends IOException> void uncheckAndIgnore(RunnableThrowingIOException runnable, Class<T> exceptionToIgnore) {
         try {
             runnable.run();
-        } catch (NoSuchFileException e) {
-            // Do nothing - OK
         } catch (UncheckedIOException e) {
-            if (! (e.getCause() instanceof NoSuchFileException)) {
+            IOException cause = e.getCause();
+            if (cause == null) throw e;
+            try {
+                cause.getClass().asSubclass(exceptionToIgnore);
+            } catch (ClassCastException f) {
                 throw e;
             }
             // Do nothing - OK
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            try {
+                e.getClass().asSubclass(exceptionToIgnore);
+            } catch (ClassCastException f) {
+                throw new UncheckedIOException(e);
+            }
+            // Do nothing - OK
         }
     }
 
@@ -117,19 +124,26 @@ public class Exceptions {
         }
     }
 
-    /** Similar to uncheck() except the return value is wrapped in an Optional, and empty is returned on NoSuchFileException. */
-    public static <T> Optional<T> ifExists(SupplierThrowingIOException<T> supplier) {
+    /** Similar to uncheck(), except null is returned if exceptionToIgnore is thrown. */
+    public static <R, T extends IOException> R uncheckAndIgnore(SupplierThrowingIOException<R> supplier, Class<T> exceptionToIgnore) {
         try {
-            return Optional.ofNullable(supplier.get());
-        } catch (NoSuchFileException e) {
-            return Optional.empty();
+            return supplier.get();
         } catch (UncheckedIOException e) {
-            if (e.getCause() instanceof NoSuchFileException) {
-                return Optional.empty();
+            IOException cause = e.getCause();
+            if (cause == null) throw e;
+            try {
+                cause.getClass().asSubclass(exceptionToIgnore);
+            } catch (ClassCastException f) {
+                throw e;
             }
-            throw e;
+            return null;
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            try {
+                e.getClass().asSubclass(exceptionToIgnore);
+            } catch (ClassCastException f) {
+                throw new UncheckedIOException(e);
+            }
+            return null;
         }
     }
 

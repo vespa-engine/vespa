@@ -26,8 +26,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.yolean.Exceptions.ifExists;
 import static com.yahoo.yolean.Exceptions.uncheck;
+import static com.yahoo.yolean.Exceptions.uncheckAndIgnore;
 
 /**
  * Thin wrapper around java.nio.file.Path, especially nice for UNIX-specific features.
@@ -128,7 +128,7 @@ public class UnixPath {
     }
 
     public Optional<FileAttributes> getAttributesIfExists() {
-        return ifExists(this::getAttributes);
+        return Optional.ofNullable(uncheckAndIgnore(this::getAttributes, NoSuchFileException.class));
     }
 
     public UnixPath createNewFile() {
