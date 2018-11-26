@@ -6,7 +6,9 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.ChildProcessFailureEx
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -132,5 +134,31 @@ public class SystemCtlTest {
     public void restart() {
         terminal.expectCommand("systemctl restart docker 2>&1", 0, "");
         assertTrue(new SystemCtl(terminal).restart("docker").converge(taskContext));
+    }
+
+    @Test
+    public void testUnitExists() {
+        SystemCtl systemCtl = new SystemCtl(terminal);
+
+        terminal.expectCommand("systemctl list-unit-files foo.service 2>&1", 0,
+                "UNIT FILE STATE\n" +
+                        "\n" +
+                        "0 unit files listed.\n");
+        assertFalse(systemCtl.serviceExists(taskContext, "foo"));
+
+        terminal.expectCommand("systemctl list-unit-files foo.service 2>&1", 0,
+                "UNIT FILE           STATE  \n" +
+                        "foo.service enabled\n" +
+                        "\n" +
+                        "1 unit files listed.\n");
+        assertTrue(systemCtl.serviceExists(taskContext, "foo"));
+
+        terminal.expectCommand("systemctl list-unit-files foo.service 2>&1", 0, "garbage");
+        try {
+            systemCtl.serviceExists(taskContext, "foo");
+            fail();
+        } catch (Exception e) {
+            assertThat(e.getMessage(), containsString("garbage"));
+        }
     }
 }
