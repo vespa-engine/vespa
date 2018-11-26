@@ -2,8 +2,8 @@
 package ai.vespa.rankingexpression.importer;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.config.model.api.ImportedMlFunction;
-import com.yahoo.config.model.api.ImportedMlModel;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.Tensor;

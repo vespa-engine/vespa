@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.ml;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.ApplicationPackageTester;
-import com.yahoo.config.model.api.MlModelImporter;
+import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;

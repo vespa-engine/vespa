@@ -1,4 +1,4 @@
-package com.yahoo.config.model.api;
+package ai.vespa.rankingexpression.importer.configmodelview;
 
 import java.io.File;
 
