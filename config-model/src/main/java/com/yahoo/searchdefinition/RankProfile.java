@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.config.model.api.ImportedMlModels;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;

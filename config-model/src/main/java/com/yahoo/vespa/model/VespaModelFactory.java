@@ -10,7 +10,7 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigModelPlugin;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.api.MlModelImporter;
+import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;

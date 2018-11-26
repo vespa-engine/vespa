@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.config.model.api.ImportedMlModel;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
@@ -19,7 +19,7 @@ import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
-import com.yahoo.config.model.api.ImportedMlModels;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;

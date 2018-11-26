@@ -8,7 +8,7 @@ import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.config.model.api.ImportedMlModels;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import org.junit.Test;
 
 import java.io.IOException;

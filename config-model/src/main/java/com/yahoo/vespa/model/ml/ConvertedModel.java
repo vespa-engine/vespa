@@ -1,12 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
-import com.yahoo.config.model.api.ImportedMlFunction;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.api.ImportedMlModel;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
