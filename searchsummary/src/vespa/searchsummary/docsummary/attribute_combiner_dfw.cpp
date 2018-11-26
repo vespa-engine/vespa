@@ -44,18 +44,18 @@ StructFields::StructFields(const vespalib::string &fieldName, const IAttributeMa
       _hasMapKey(false),
       _error(false)
 {
-    // Note: Doesn't handle imported attributes
-    std::vector<AttributeGuard> attrs;
-    attrMgr.getAttributeList(attrs);
+    std::vector<const search::attribute::IAttributeVector *> attrs;
+    auto attrCtx = attrMgr.createContext();
+    attrCtx->getAttributeList(attrs);
     vespalib::string prefix = fieldName + ".";
     vespalib::string keyName = prefix + "key";
     vespalib::string valuePrefix = prefix + "value.";
-    for (const auto &guard : attrs) {
-        vespalib::string name = guard->getName();
+    for (const auto attr : attrs) {
+        vespalib::string name = attr->getName();
         if (name.substr(0, prefix.size()) != prefix) {
             continue;
         }
-        auto collType = guard->getCollectionType();
+        auto collType = attr->getCollectionType();
         if (collType != CollectionType::Type::ARRAY) {
             LOG(warning, "Attribute %s is not an array attribute", name.c_str());
             _error = true;
