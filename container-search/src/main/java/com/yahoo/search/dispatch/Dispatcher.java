@@ -20,7 +20,6 @@ import com.yahoo.vespa.config.search.DispatchConfig;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -134,7 +133,7 @@ public class Dispatcher extends AbstractComponent {
         int max = Integer.min(searchCluster.orderedGroups().size(), MAX_GROUP_SELECTION_ATTEMPTS);
         Set<Integer> rejected = null;
         for (int i = 0; i < max; i++) {
-            Optional<Group> groupInCluster = loadBalancer.takeGroupForQuery(rejected);
+            Optional<Group> groupInCluster = loadBalancer.takeGroup(rejected);
             if (!groupInCluster.isPresent()) {
                 // No groups available
                 break;

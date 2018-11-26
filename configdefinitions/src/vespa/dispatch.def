@@ -19,6 +19,18 @@ distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ROUNDROBIN
 # Is multi-level dispatch configured for this cluster
 useMultilevelDispatch bool default=false
 
+# Number of document copies
+searchableCopies long default=1
+
+# Minimum search coverage required before returning the results of a query
+minSearchCoverage double default=100
+
+# Minimum wait time for full coverage after minimum coverage is achieved, factored based on time left at minimum coverage
+minWaitAfterCoverageFactor double default=0
+
+# Maximum wait time for full coverage after minimum coverage is achieved, factored based on time left at minimum coverage
+maxWaitAfterCoverageFactor double default=1
+
 # The unique key of a search node
 node[].key int
 

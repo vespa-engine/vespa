@@ -28,9 +28,9 @@ public class Coverage {
         EXPLICITLY_FULL, EXPLICITLY_INCOMPLETE, DOCUMENT_COUNT;
     }
 
-    private final static int DEGRADED_BY_MATCH_PHASE = 1;
-    private final static int DEGRADED_BY_TIMEOUT = 2;
-    private final static int DEGRADED_BY_ADAPTIVE_TIMEOUT = 4;
+    public final static int DEGRADED_BY_MATCH_PHASE = 1;
+    public final static int DEGRADED_BY_TIMEOUT = 2;
+    public final static int DEGRADED_BY_ADAPTIVE_TIMEOUT = 4;
 
     /**
      * Build an invalid instance to initiate manually.

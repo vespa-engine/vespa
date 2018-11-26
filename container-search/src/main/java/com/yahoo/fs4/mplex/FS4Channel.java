@@ -1,6 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.fs4.mplex;
 
+import com.yahoo.concurrent.SystemTimer;
+import com.yahoo.fs4.BasicPacket;
+import com.yahoo.fs4.ChannelTimeoutException;
+import com.yahoo.fs4.Packet;
+import com.yahoo.search.Query;
+import com.yahoo.search.dispatch.ResponseMonitor;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,12 +15,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
-import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.fs4.BasicPacket;
-import com.yahoo.fs4.ChannelTimeoutException;
-import com.yahoo.fs4.Packet;
-import com.yahoo.search.Query;
 
 /**
  * This class is used to represent a "channel" in the FS4 protocol.
@@ -34,6 +35,7 @@ public class FS4Channel {
     volatile private BlockingQueue<BasicPacket> responseQueue;
     private Query query;
     private boolean isPingChannel = false;
+    private ResponseMonitor<FS4Channel> monitor;
 
     /** for unit testing.  do not use */
     protected FS4Channel () {
@@ -197,6 +199,9 @@ public class FS4Channel {
         throws InterruptedException, InvalidChannelException
     {
         ensureValidQ().put(packet);
+        if(monitor != null) {
+            monitor.responseAvailable(this);
+        }
     }
 
     /**
@@ -241,4 +246,7 @@ public class FS4Channel {
         return "fs4 channel " + channelId + (isValid() ? " [valid]" : " [invalid]");
     }
 
+    public void setResponseMonitor(ResponseMonitor<FS4Channel> monitor) {
+        this.monitor = monitor;
+    }
 }

@@ -5,9 +5,12 @@ import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.result.Coverage;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * SearchInvoker encapsulates an allocated connection for running a single search query.
@@ -16,6 +19,13 @@ import java.util.List;
  * @author ollivir
  */
 public abstract class SearchInvoker extends CloseableInvoker {
+    private final Optional<Node> node;
+    private ResponseMonitor<SearchInvoker> monitor;
+
+    protected SearchInvoker(Optional<Node> node) {
+        this.node = node;
+    }
+
     /**
      * Retrieve the hits for the given {@link Query}. The invoker may return more than one result, in which case the caller is responsible
      * for merging the results. If multiple results are returned and the search query had a hit offset other than zero, that offset is
@@ -29,4 +39,26 @@ public abstract class SearchInvoker extends CloseableInvoker {
     protected abstract void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException;
 
     protected abstract List<Result> getSearchResults(CacheKey cacheKey) throws IOException;
+
+    protected void setMonitor(ResponseMonitor<SearchInvoker> monitor) {
+        this.monitor = monitor;
+    }
+
+    protected void responseAvailable() {
+        if(monitor != null) {
+            monitor.responseAvailable(this);
+        }
+    }
+
+    protected Optional<Integer> distributionKey() {
+        return node.map(Node::key);
+    }
+
+    protected Optional<Coverage> getErrorCoverage() {
+        if(node.isPresent()) {
+            return Optional.of(new Coverage(0, node.get().getActiveDocuments(), 0));
+        } else {
+            return Optional.empty();
+        }
+    }
 }
