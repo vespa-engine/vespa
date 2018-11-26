@@ -465,7 +465,8 @@ EnumStoreTest::testCompaction(bool hasPostings, bool disableReEnumerate)
     if (disableReEnumerate) {
         ses.disableReEnumerate();
     }
-    EXPECT_TRUE(ses.performCompaction(3 * entrySize));
+    EnumStoreBase::EnumIndexMap old2New;
+    EXPECT_TRUE(ses.performCompaction(3 * entrySize, old2New));
     if (disableReEnumerate) {
         ses.enableReEnumerate();
     }
@@ -488,7 +489,7 @@ EnumStoreTest::testCompaction(bool hasPostings, bool disableReEnumerate)
 
     // compare old and new indices
     for (uint32_t i = 0; i < indices.size(); ++i) {
-        EXPECT_TRUE(ses.getCurrentIndex(indices[i], idx));
+        idx = old2New[indices[i]];
         EXPECT_TRUE(indices[i].bufferId() == 0);
         EXPECT_TRUE(idx.bufferId() == 1);
         EXPECT_TRUE(ses.getValue(indices[i], t));
@@ -497,19 +498,19 @@ EnumStoreTest::testCompaction(bool hasPostings, bool disableReEnumerate)
         EXPECT_TRUE(strcmp(t, s) == 0);
     }
     // EnumIndex(0,0) is reserved so we have 4 bytes extra at the start of buffer 0
-    EXPECT_TRUE(ses.getCurrentIndex(indices[0], idx));
+    idx = old2New[indices[0]];
     EXPECT_EQUAL(entrySize + RESERVED_BYTES, indices[0].offset());
     EXPECT_EQUAL(0u, idx.offset());
-    EXPECT_TRUE(ses.getCurrentIndex(indices[1], idx));
+    idx = old2New[indices[1]];
     EXPECT_EQUAL(entrySize + RESERVED_BYTES, indices[1].offset());
     EXPECT_EQUAL(0u, idx.offset());
-    EXPECT_TRUE(ses.getCurrentIndex(indices[2], idx));
+    idx = old2New[indices[2]];
     EXPECT_EQUAL(2 * entrySize + RESERVED_BYTES, indices[2].offset());
     EXPECT_EQUAL(entrySize, idx.offset());
-    EXPECT_TRUE(ses.getCurrentIndex(indices[3], idx));
+    idx = old2New[indices[3]];
     EXPECT_EQUAL(3 * entrySize + RESERVED_BYTES, indices[3].offset());
     EXPECT_EQUAL(2 * entrySize, idx.offset());
-    EXPECT_TRUE(ses.getCurrentIndex(indices[4], idx));
+    idx = old2New[indices[4]];
     EXPECT_EQUAL(4 * entrySize + RESERVED_BYTES, indices[4].offset());
     EXPECT_EQUAL(3 * entrySize, idx.offset());
 }
@@ -654,7 +655,8 @@ EnumStoreTest::testHoldListAndGeneration()
 
     // perform compaction
     uint32_t newEntrySize = StringEnumStore::alignEntrySize(8 + 1 + 8);
-    EXPECT_TRUE(ses.performCompaction(5 * newEntrySize));
+    EnumStoreBase::EnumIndexMap old2New;
+    EXPECT_TRUE(ses.performCompaction(5 * newEntrySize, old2New));
 
     // check readers again
     checkReaders(ses, sesGen, readers);
@@ -669,7 +671,8 @@ EnumStoreTest::testHoldListAndGeneration()
     }
     EXPECT_LESS(ses.getRemaining(), newEntrySize);
     // buffer on hold list
-    EXPECT_TRUE(!ses.performCompaction(5 * newEntrySize));
+    old2New.clear();
+    EXPECT_TRUE(!ses.performCompaction(5 * newEntrySize, old2New));
 
     checkReaders(ses, sesGen, readers);
     ses.transferHoldLists(sesGen);
@@ -677,7 +680,8 @@ EnumStoreTest::testHoldListAndGeneration()
 
     // buffer no longer on hold list
     EXPECT_LESS(ses.getRemaining(), newEntrySize);
-    EXPECT_TRUE(ses.performCompaction(5 * newEntrySize));
+    old2New.clear();
+    EXPECT_TRUE(ses.performCompaction(5 * newEntrySize, old2New));
     EXPECT_TRUE(ses.getRemaining() >= 5 * newEntrySize);
 }
 
@@ -740,7 +744,8 @@ EnumStoreTest::testMemoryUsage()
     EXPECT_EQUAL((num / 2) * entrySize + RESERVED_BYTES, usage.deadBytes());
     EXPECT_EQUAL(0u, usage.allocatedBytesOnHold());
 
-    ses.performCompaction(400);
+    EnumStoreBase::EnumIndexMap old2New;
+    ses.performCompaction(400, old2New);
 
     // usage after compaction
     MemoryUsage usage2 = ses.getMemoryUsage();

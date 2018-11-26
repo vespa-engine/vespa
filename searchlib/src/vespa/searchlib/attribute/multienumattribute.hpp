@@ -41,24 +41,11 @@ MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, UniqueS
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::reEnumerate()
+MultiValueEnumAttribute<B, M>::reEnumerate(const EnumIndexMap & old2new)
 {
     // update MultiValueMapping with new EnumIndex values.
     this->logEnumStoreEvent("compactfixup", "precompute");
-    vespalib::hash_map<EnumIndex, EnumIndex> old2new(this->_enumStore.getNumUniques());
-    for (DocId doc = 0; doc < this->getNumDocs(); ++doc) {
-        vespalib::ConstArrayRef<WeightedIndex> indicesRef(this->_mvMapping.get(doc));
-        WeightedIndexVector indices(indicesRef.cbegin(), indicesRef.cend());
-        for (uint32_t i = 0; i < indices.size(); ++i) {
-            EnumIndex oldIndex = indices[i].value();
-            auto found = old2new.find(oldIndex);
-            if (found == old2new.end()) {
-                EnumIndex newIndex;
-                this->_enumStore.getCurrentIndex(oldIndex, newIndex);
-                old2new[oldIndex] = newIndex;
-            }
-        }
-    }
+
     {
         this->logEnumStoreEvent("compactfixup", "drain");
         EnumModifier enumGuard(this->getEnumModifier());

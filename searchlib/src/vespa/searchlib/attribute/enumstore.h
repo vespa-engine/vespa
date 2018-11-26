@@ -172,7 +172,7 @@ public:
     void freeUnusedEnums(bool movePostingidx) override;
     void freeUnusedEnums(const IndexVector &toRemove) override;
     void reset(Builder &builder);
-    bool performCompaction(uint64_t bytesNeeded) override;
+    bool performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New) override;
     void printCurrentContent(vespalib::asciistream &os) const;
 
 private:
@@ -183,7 +183,7 @@ private:
     void addEnum(Type value, Index &newIdx, Dictionary &dict);
 
     template <typename Dictionary>
-    void performCompaction(Dictionary &dict);
+    void performCompaction(Dictionary &dict, EnumIndexMap & old2New);
 
     template <typename Dictionary>
     void printCurrentContent(vespalib::asciistream &os, const Dictionary &dict) const;

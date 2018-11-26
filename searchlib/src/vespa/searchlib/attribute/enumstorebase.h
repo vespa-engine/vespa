@@ -7,6 +7,7 @@
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchlib/btree/btree.h>
 #include <set>
 #include <atomic>
@@ -108,7 +109,7 @@ protected:
 public:
     EnumStoreDict(EnumStoreBase &enumStore);
 
-    virtual ~EnumStoreDict();
+    ~EnumStoreDict() override;
 
     const Dictionary &getDictionary() const { return _dict; }
     Dictionary &getDictionary() { return _dict; }
@@ -165,6 +166,7 @@ public:
     typedef EnumStoreIndex         Index;
     typedef EnumStoreIndexVector   IndexVector;
     typedef EnumStoreEnumVector    EnumVector;
+    using EnumIndexMap = vespalib::hash_map<Index, Index>;
 
     class EntryBase {
     protected:
@@ -238,7 +240,6 @@ protected:
     DataStoreType         _store;
     EnumBufferType        _type;
     uint32_t              _nextEnum;
-    IndexVector           _indexMap;
     std::vector<uint32_t> _toHoldBuffers; // used during compaction
     // set before backgound flush, cleared during background flush
     mutable std::atomic<bool> _disabledReEnumerate;
@@ -286,7 +287,6 @@ public:
     template <typename Tree>
     void fixupRefCounts(const EnumVector &hist, Tree &tree);
 
-    void clearIndexMap()                  { IndexVector().swap(_indexMap); }
     uint32_t getLastEnum()          const { return _nextEnum ? _nextEnum - 1 : _nextEnum; }
     uint32_t getNumUniques() const { return _enumDict->getNumUniques(); }
 
@@ -300,8 +300,6 @@ public:
     MemoryUsage getTreeMemoryUsage() const { return _enumDict->getTreeMemoryUsage(); }
 
     AddressSpace getAddressSpaceUsage() const;
-
-    bool getCurrentIndex(Index oldIdx, Index & newIdx) const;
 
     void transferHoldLists(generation_t generation);
     void trimHoldLists(generation_t firstUsed);
@@ -351,7 +349,7 @@ public:
     void fixupRefCounts(const EnumVector &hist) { _enumDict->fixupRefCounts(hist); }
     void freezeTree() { _enumDict->freezeTree(); }
 
-    virtual bool performCompaction(uint64_t bytesNeeded) = 0;
+    virtual bool performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New) = 0;
 
     EnumStoreDictBase &getEnumStoreDict() { return *_enumDict; }
     const EnumStoreDictBase &getEnumStoreDict() const { return *_enumDict; }

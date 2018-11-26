@@ -41,13 +41,14 @@ protected:
     typedef typename MultiValueAttribute<B, M>::DocumentValues DocIndices;
     typedef attribute::LoadedEnumAttributeVector  LoadedEnumAttributeVector;
     typedef attribute::LoadedEnumAttribute        LoadedEnumAttribute;
+    using EnumIndexMap = EnumStoreBase::EnumIndexMap;
 
     // from MultiValueAttribute
     bool extractChangeData(const Change & c, EnumIndex & idx) override; // EnumIndex is ValueType. Use EnumStore
 
     // from EnumAttribute
     void considerAttributeChange(const Change & c, UniqueSet & newUniques) override; // same for both string and numeric
-    void reEnumerate() override; // same for both string and numeric
+    void reEnumerate(const EnumIndexMap &) override; // same for both string and numeric
 
     virtual void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused);
 
