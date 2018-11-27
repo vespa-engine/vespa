@@ -948,7 +948,6 @@ void ConformanceTest::testUpdate() {
         CPPUNIT_ASSERT(!result.hasDocument());
     }
 
-
     {
         UpdateResult result = spi->update(bucket, Timestamp(6), update,
                                           context);
@@ -956,6 +955,32 @@ void ConformanceTest::testUpdate() {
 
         CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
         CPPUNIT_ASSERT_EQUAL(Timestamp(0), result.getExistingTimestamp());
+    }
+
+    {
+        GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
+        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
+        CPPUNIT_ASSERT_EQUAL(Timestamp(0), result.getTimestamp());
+        CPPUNIT_ASSERT(!result.hasDocument());
+    }
+
+    update->setCreateIfNonExistent(true);
+    {
+        // Document does not exist (and therefore its condition cannot match by definition),
+        // but since CreateIfNonExistent is set it should be auto-created anyway.
+        UpdateResult result = spi->update(bucket, Timestamp(7), update, context);
+        spi->flush(bucket, context);
+        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
+        CPPUNIT_ASSERT_EQUAL(Timestamp(7), result.getExistingTimestamp());
+    }
+
+    {
+        GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
+        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
+        CPPUNIT_ASSERT_EQUAL(Timestamp(7), result.getTimestamp());
+        CPPUNIT_ASSERT_EQUAL(document::IntFieldValue(42),
+                             reinterpret_cast<document::IntFieldValue&>(
+                                     *result.getDocument().getValue("headerval")));
     }
 }
 

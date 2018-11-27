@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "abstractpersistenceprovider.h"
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldset/fieldsets.h>
-
+#include <vespa/document/fieldvalue/document.h>
 
 namespace storage {
 
@@ -19,20 +20,27 @@ AbstractPersistenceProvider::update(const Bucket& bucket, Timestamp ts,
         return UpdateResult(getResult.getErrorCode(), getResult.getErrorMessage());
     }
 
-    if (!getResult.hasDocument()) {
-        return UpdateResult();
+    auto docToUpdate = getResult.getDocumentPtr();
+    Timestamp updatedTs = getResult.getTimestamp();
+    if (!docToUpdate) {
+        if (!upd->getCreateIfNonExistent()) {
+            return UpdateResult();
+        } else {
+            docToUpdate = std::make_shared<document::Document>(upd->getType(), upd->getId());
+            updatedTs = ts;
+        }
     }
 
-    upd->applyTo(getResult.getDocument());
+    upd->applyTo(*docToUpdate);
 
-    Result putResult = put(bucket, ts, getResult.getDocumentPtr(), context);
+    Result putResult = put(bucket, ts, docToUpdate, context);
 
     if (putResult.hasError()) {
         return UpdateResult(putResult.getErrorCode(),
                             putResult.getErrorMessage());
     }
 
-    return UpdateResult(getResult.getTimestamp());
+    return UpdateResult(updatedTs);
 }
 
 RemoveResult

@@ -26,13 +26,15 @@ class TestAndSetHelper {
     const document::DocumentId _docId;
     const document::DocumentType * _docTypePtr;
     std::unique_ptr<document::select::Node> _docSelectionUp;
+    bool _missingDocumentImpliesMatch;
 
     void getDocumentType();
     void parseDocumentSelection();
     spi::GetResult retrieveDocument(const document::FieldSet & fieldSet);
 
 public:
-    TestAndSetHelper(PersistenceThread & thread, const api::TestAndSetCommand & cmd);
+    TestAndSetHelper(PersistenceThread & thread, const api::TestAndSetCommand & cmd,
+                     bool missingDocumentImpliesMatch = false);
     ~TestAndSetHelper();
     api::ReturnCode retrieveAndMatch();
 };
