@@ -200,6 +200,11 @@ public class Cookie {
         return new ArrayList<>(response.getHeaders("Set-Cookie"));
     }
 
+    @Deprecated // TODO Vespa 8 Remove
+    public static List<String> toSetCookieHeaderAll(Iterable<? extends Cookie> cookies) {
+        return toSetCookieHeaders(cookies);
+    }
+
     public static Cookie fromSetCookieHeader(String headerVal) {
         return HttpCookie.parse(headerVal).stream()
                 .map(httpCookie -> {
