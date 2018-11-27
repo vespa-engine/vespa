@@ -1,0 +1,123 @@
+package com.yahoo.abicheck.classtree;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+
+public abstract class ClassFileTree implements AutoCloseable {
+
+  public static ClassFileTree fromJar(File file) throws IOException {
+    Map<String, Package> rootPackages = new HashMap<>();
+    JarFile jarFile = new JarFile(file);
+
+    Enumeration<JarEntry> jarEntries = jarFile.entries();
+    while (jarEntries.hasMoreElements()) {
+      JarEntry entry = jarEntries.nextElement();
+      if (!entry.isDirectory() && entry.getName().endsWith(".class")) {
+        Deque<String> parts = new ArrayDeque<>(Arrays.asList(entry.getName().split("/")));
+        String className = parts.removeLast();
+        Package pkg = rootPackages
+            .computeIfAbsent(parts.removeFirst(), name -> new Package(null, name));
+        for (String part : parts) {
+          pkg = pkg.getOrCreateSubPackage(part);
+        }
+        pkg.addClass(new Class(pkg, className) {
+
+          @Override
+          public InputStream getInputStream() throws IOException {
+            return jarFile.getInputStream(entry);
+          }
+        });
+      }
+    }
+
+    return new ClassFileTree() {
+      @Override
+      public Collection<Package> getRootPackages() {
+        return rootPackages.values();
+      }
+
+      @Override
+      public void close() throws IOException {
+        jarFile.close();
+      }
+    };
+  }
+
+  public abstract Collection<Package> getRootPackages();
+
+  public static abstract class Class {
+
+    private final Package parent;
+    private final String name;
+
+    private Class(Package parent, String name) {
+      this.parent = parent;
+      this.name = name;
+    }
+
+    public abstract InputStream getInputStream() throws IOException;
+
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public String toString() {
+      return "Class(" + parent.getFullyQualifiedName() + "." + name + ")";
+    }
+  }
+
+  public static class Package {
+
+    private final Package parent;
+    private final String name;
+    private final Map<String, Package> subPackages = new HashMap<>();
+    private final Set<Class> classes = new HashSet<>();
+
+    private Package(Package parent, String name) {
+      this.parent = parent;
+      this.name = name;
+    }
+
+    private Package getOrCreateSubPackage(String name) {
+      return subPackages.computeIfAbsent(name, n -> new Package(this, n));
+    }
+
+    private void addClass(Class klazz) {
+      classes.add(klazz);
+    }
+
+    public String getFullyQualifiedName() {
+      if (parent == null) {
+        return name;
+      } else {
+        return parent.getFullyQualifiedName() + "." + name;
+      }
+    }
+
+    public Collection<Package> getSubPackages() {
+      return subPackages.values();
+    }
+
+    public Collection<Class> getClasses() {
+      return classes;
+    }
+
+    @Override
+    public String toString() {
+      return "Package(" + getFullyQualifiedName() + ")";
+    }
+  }
+}
