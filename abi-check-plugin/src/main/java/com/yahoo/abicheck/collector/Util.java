@@ -17,9 +17,10 @@ public class Util {
       AccessFlag.make(Opcodes.ACC_ABSTRACT, "abstract"),
       AccessFlag.make(Opcodes.ACC_SYNTHETIC, "synthetic"), // FIXME: Do we want this?
       AccessFlag.make(Opcodes.ACC_ANNOTATION, "annotation"),
-      AccessFlag.make(Opcodes.ACC_ENUM, "enum")
+      AccessFlag.make(Opcodes.ACC_ENUM, "enum"),
 // FIXME: Module support
 //      AccessFlag.make(Opcodes.ACC_MODULE, "module")
+      AccessFlag.ignored(Opcodes.ACC_DEPRECATED)
   );
 
   public static final List<AccessFlag> methodFlags = Arrays.asList(
@@ -34,7 +35,8 @@ public class Util {
       AccessFlag.make(Opcodes.ACC_NATIVE, "native"),
       AccessFlag.make(Opcodes.ACC_ABSTRACT, "abstract"),
       AccessFlag.make(Opcodes.ACC_STRICT, "strict"), // FIXME: Do we want this?
-      AccessFlag.make(Opcodes.ACC_SYNTHETIC, "synthetic") // FIXME: Do we want this?
+      AccessFlag.make(Opcodes.ACC_SYNTHETIC, "synthetic"), // FIXME: Do we want this?
+      AccessFlag.ignored(Opcodes.ACC_DEPRECATED)
   );
 
   public static List<String> convertAccess(int access, List<AccessFlag> flags) {
