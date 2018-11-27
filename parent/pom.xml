@@ -688,6 +688,11 @@
                 <artifactId>tensorflow</artifactId>
                 <version>${tensorflow.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>3.11.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

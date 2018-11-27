@@ -26,7 +26,7 @@ import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.CN;
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_DNS;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -36,21 +36,18 @@ import static org.junit.Assert.assertTrue;
 public class PeerAuthorizerTest {
 
     private static final KeyPair KEY_PAIR = KeyUtils.generateKeypair(KeyAlgorithm.EC);
+    private static final String ROLE_1 = "role-1", ROLE_2 = "role-2", ROLE_3 = "role-3", POLICY_1 = "policy-1", POLICY_2 = "policy-2";
 
     @Test
     public void certificate_must_match_both_san_and_cn_pattern() {
-        String roleName = "role";
-        String policyName = "policy";
         RequiredPeerCredential cnRequirement = createRequiredCredential(CN, "*.matching.cn");
         RequiredPeerCredential sanRequirement = createRequiredCredential(SAN_DNS, "*.matching.san");
-        PeerAuthorizer authorizer = createPeerAuthorizer(createPolicy(policyName, createRoles(roleName), cnRequirement, sanRequirement));
+        PeerAuthorizer authorizer = createPeerAuthorizer(createPolicy(POLICY_1, createRoles(ROLE_1), cnRequirement, sanRequirement));
 
         AuthorizationResult result = authorizer.authorizePeer(createCertificate("foo.matching.cn", "foo.matching.san", "foo.invalid.san"));
         assertAuthorized(result);
-        assertEquals(1, result.assumedRoles().size());
-        assertEquals(roleName, result.assumedRoles().iterator().next().name());
-        assertEquals(1, result.matchedPolicies().size());
-        assertEquals(policyName, result.matchedPolicies().iterator().next());
+        assertThat(result.assumedRoles()).extracting(Role::name).containsOnly(ROLE_1);
+        assertThat(result.matchedPolicies()).containsOnly(POLICY_1);
 
         assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.invalid.cn", "foo.matching.san")));
         assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.invalid.cn", "foo.matching.san", "foo.invalid.san")));
@@ -61,27 +58,28 @@ public class PeerAuthorizerTest {
     public void can_match_multiple_policies() {
         RequiredPeerCredential cnRequirement = createRequiredCredential(CN, "*.matching.cn");
         RequiredPeerCredential sanRequirement = createRequiredCredential(SAN_DNS, "*.matching.san");
+
         PeerAuthorizer peerAuthorizer = createPeerAuthorizer(
-                createPolicy("policy-1", createRoles("role-1", "role-2"), cnRequirement, sanRequirement),
-                createPolicy("policy-2", createRoles("role-2", "role-3"), cnRequirement, sanRequirement));
+                createPolicy(POLICY_1, createRoles(ROLE_1, ROLE_2), cnRequirement, sanRequirement),
+                createPolicy(POLICY_2, createRoles(ROLE_2, ROLE_3), cnRequirement, sanRequirement));
 
         AuthorizationResult result = peerAuthorizer
                 .authorizePeer(createCertificate("foo.matching.cn", "foo.matching.san"));
         assertAuthorized(result);
-        assertEquals(3, result.assumedRoles().size());
-        assertEquals(2, result.matchedPolicies().size());
+        assertThat(result.assumedRoles()).extracting(Role::name).containsOnly(ROLE_1, ROLE_2, ROLE_3);
+        assertThat(result.matchedPolicies()).containsOnly(POLICY_1, POLICY_2);
     }
 
     @Test
     public void can_match_subset_of_policies() {
         PeerAuthorizer peerAuthorizer = createPeerAuthorizer(
-                createPolicy("policy-1", createRoles("role-1"), createRequiredCredential(CN, "*.matching.cn")),
-                createPolicy("policy-2", createRoles("role-1", "role-2"), createRequiredCredential(SAN_DNS, "*.matching.san")));
+                createPolicy(POLICY_1, createRoles(ROLE_1), createRequiredCredential(CN, "*.matching.cn")),
+                createPolicy(POLICY_2, createRoles(ROLE_1, ROLE_2), createRequiredCredential(SAN_DNS, "*.matching.san")));
 
         AuthorizationResult result = peerAuthorizer.authorizePeer(createCertificate("foo.invalid.cn", "foo.matching.san"));
         assertAuthorized(result);
-        assertEquals(2, result.assumedRoles().size());
-        assertEquals(1, result.matchedPolicies().size());
+        assertThat(result.assumedRoles()).extracting(Role::name).containsOnly(ROLE_1, ROLE_2);
+        assertThat(result.matchedPolicies()).containsOnly(POLICY_2);
     }
 
     @Test
@@ -91,7 +89,7 @@ public class PeerAuthorizerTest {
         RequiredPeerCredential sanPrefixRequirement = createRequiredCredential(SAN_DNS, "*.*.matching.suffix.san");
         RequiredPeerCredential sanSuffixRequirement = createRequiredCredential(SAN_DNS, "matching.prefix.*.*.*");
         PeerAuthorizer peerAuthorizer = createPeerAuthorizer(
-                createPolicy("policy", emptySet(), cnSuffixRequirement, cnPrefixRequirement, sanPrefixRequirement, sanSuffixRequirement));
+                createPolicy(POLICY_1, emptySet(), cnSuffixRequirement, cnPrefixRequirement, sanPrefixRequirement, sanSuffixRequirement));
 
         assertAuthorized(peerAuthorizer.authorizePeer(createCertificate("matching.prefix.matching.suffix.cn", "matching.prefix.matching.suffix.san")));
         assertUnauthorized(peerAuthorizer.authorizePeer(createCertificate("matching.prefix.matching.suffix.cn", "matching.prefix.invalid.suffix.san")));
