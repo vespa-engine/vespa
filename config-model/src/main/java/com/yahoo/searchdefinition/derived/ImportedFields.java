@@ -39,11 +39,15 @@ public class ImportedFields extends Derived implements ImportedFieldsConfig.Prod
         }
     }
 
+    private static boolean isNestedFieldName(String fieldName) {
+        return fieldName.indexOf('.') != -1;
+    }
+
     private static void considerField(ImportedFieldsConfig.Builder builder, ImportedField field) {
         ImmutableSDField targetField = field.targetField();
         String targetFieldName = targetField.getName();
-        if (targetFieldName.indexOf('.') == -1) {
-            if (field.targetField().doesAttributing()) {
+        if (!isNestedFieldName(targetFieldName)) {
+            if (targetField.doesAttributing()) {
                 builder.attribute.add(createAttributeBuilder(field));
             }
         } else {

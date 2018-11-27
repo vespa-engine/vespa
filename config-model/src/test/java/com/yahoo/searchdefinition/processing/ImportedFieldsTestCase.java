@@ -9,9 +9,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertNotNull;
@@ -69,7 +66,7 @@ public class ImportedFieldsTestCase {
         return builder.getSearch("ad");
     }
 
-    private static void check_struct_import(ParentSdBuilder parentBuilder) throws ParseException {
+    private static void checkStructImport(ParentSdBuilder parentBuilder) throws ParseException {
         Search search = buildChildSearch(parentBuilder.build(), joinLines("search child {",
                 "  document child {",
                 "    field parent_ref type reference<parent> {",
@@ -92,44 +89,44 @@ public class ImportedFieldsTestCase {
 
     @Test
     public void check_struct_import() throws ParseException {
-        check_struct_import(new ParentSdBuilder());
-        check_struct_import(new ParentSdBuilder().elem_array_weight_attr(false).elem_map_value_weight_attr(false));
-        check_struct_import(new ParentSdBuilder().elem_array_name_attr(false).elem_map_value_name_attr(false));
+        checkStructImport(new ParentSdBuilder());
+        checkStructImport(new ParentSdBuilder().elem_array_weight_attr(false).elem_map_value_weight_attr(false));
+        checkStructImport(new ParentSdBuilder().elem_array_name_attr(false).elem_map_value_name_attr(false));
     }
 
     @Test
-    public void check_illegal_stroct_import_missing_array_of_struct_attributes() throws ParseException {
+    public void check_illegal_struct_import_missing_array_of_struct_attributes() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'child', import field 'my_elem_array' (nested to 'my_elem_array'): Field 'elem_array' via reference field 'parent_ref': Is not a struct containing an attribute field.");
-        check_struct_import(new ParentSdBuilder().elem_array_name_attr(false).elem_array_weight_attr(false));
+        checkStructImport(new ParentSdBuilder().elem_array_name_attr(false).elem_array_weight_attr(false));
     }
 
     @Test
     public void check_illegal_struct_import_missing_map_of_struct_key_attribute() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'child', import field 'my_elem_map' (nested to 'my_elem_map.key'): Field 'elem_map.key' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
-        check_struct_import(new ParentSdBuilder().elem_map_key_attr(false));
+        checkStructImport(new ParentSdBuilder().elem_map_key_attr(false));
     }
 
     @Test
     public void check_illegal_struct_import_missing_map_of_struct_value_attributes() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'child', import field 'my_elem_map' (nested to 'my_elem_map.value'): Field 'elem_map.value' via reference field 'parent_ref': Is not a struct containing an attribute field.");
-        check_struct_import(new ParentSdBuilder().elem_map_value_name_attr(false).elem_map_value_weight_attr(false));
+        checkStructImport(new ParentSdBuilder().elem_map_value_name_attr(false).elem_map_value_weight_attr(false));
     }
 
     @Test
     public void check_illegal_struct_import_missing_map_of_primitive_key_attribute() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'child', import field 'my_str_int_map' (nested to 'my_str_int_map.key'): Field 'str_int_map.key' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
-        check_struct_import(new ParentSdBuilder().str_int_map_key_attr(false));
+        checkStructImport(new ParentSdBuilder().str_int_map_key_attr(false));
     }
 
     @Test
     public void check_illegal_struct_import_missing_map_of_primitive_value_attribute() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'child', import field 'my_str_int_map' (nested to 'my_str_int_map.value'): Field 'str_int_map.value' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
-        check_struct_import(new ParentSdBuilder().str_int_map_value_attr(false));
+        checkStructImport(new ParentSdBuilder().str_int_map_value_attr(false));
     }
 
     private static class ParentSdBuilder {
@@ -169,46 +166,39 @@ public class ImportedFieldsTestCase {
                     "    field elem_array type array<elem> {",
                     "      indexing: summary",
                     "      struct-field name {",
-                    structFieldSpec(elem_array_name_attr, true),
+                    structFieldSpec(elem_array_name_attr),
                     "      }",
                     "      struct-field weight {",
-                    structFieldSpec(elem_array_weight_attr, false),
+                    structFieldSpec(elem_array_weight_attr),
                     "      }",
                     "    }",
                     "    field elem_map type map<string, elem> {",
                     "      indexing: summary",
                     "      struct-field key {",
-                    structFieldSpec(elem_map_key_attr, true),
+                    structFieldSpec(elem_map_key_attr),
                     "      }",
                     "      struct-field value.name {",
-                    structFieldSpec(elem_map_value_name_attr, true),
+                    structFieldSpec(elem_map_value_name_attr),
                     "      }",
                     "      struct-field value.weight {",
-                    structFieldSpec(elem_map_value_weight_attr, false),
+                    structFieldSpec(elem_map_value_weight_attr),
                     "      }",
                     "    }",
                     "    field str_int_map type map<string, int> {",
                     "      indexing: summary",
                     "      struct-field key {",
-                    structFieldSpec(str_int_map_key_attr, true),
+                    structFieldSpec(str_int_map_key_attr),
                     "      }",
                     "      struct-field value {",
-                    structFieldSpec(str_int_map_value_attr, false),
+                    structFieldSpec(str_int_map_value_attr),
                     "      }",
                     "    }",
                     "  }",
                     "}");
         }
 
-        private static String structFieldSpec(boolean isAttribute, boolean isFastSearch) {
-            List<String> result = new ArrayList<String>();
-            if (isAttribute) {
-                result.add("        indexing: attribute");
-                if (isFastSearch) {
-                    result.add("        attribute: fast-search");
-                }
-            }
-            return String.join("\n", result);
+        private static String structFieldSpec(boolean isAttribute) {
+            return isAttribute ? "        indexing: attribute" : "";
         }
 
         private static int b2i(boolean b) {
