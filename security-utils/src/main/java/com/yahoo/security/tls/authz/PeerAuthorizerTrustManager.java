@@ -108,11 +108,11 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
             log.fine(() -> String.format("Verification result: %s", result));
         } else {
             String errorMessage = "Authorization failed: " + createInfoString(certificate, authType, isVerifyingClient);
+            log.warning(errorMessage);
             switch (mode) {
                 case ENFORCE:
                     throw new CertificateException(errorMessage);
                 case DRY_RUN:
-                    log.warning(errorMessage);
                     break;
                 default:
                     throw new UnsupportedOperationException();
