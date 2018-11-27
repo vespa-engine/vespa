@@ -15,4 +15,9 @@ public class ImportedFieldsTestCase extends AbstractExportingTestCase {
     public void configs_for_imported_fields_are_derived() throws IOException, ParseException {
         assertCorrectDeriving("importedfields", "child");
     }
+
+    @Test
+    public void configs_for_imported_struct_fields_are_derived() throws IOException, ParseException {
+        assertCorrectDeriving("imported_struct_fields", "child");
+    }
 }

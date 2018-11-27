@@ -12,12 +12,15 @@ import java.util.Map;
 public class ImportedFields {
 
     private final Map<String, ImportedField> fields;
+    private final Map<String, ImportedField> complexFields;
 
-    public ImportedFields(Map<String, ImportedField> fields) {
+    public ImportedFields(Map<String, ImportedField> fields, Map<String, ImportedField> complexFields) {
         this.fields = fields;
+        this.complexFields = complexFields;
     }
 
     public Map<String, ImportedField> fields() {
         return Collections.unmodifiableMap(fields);
     }
+    public Map<String, ImportedField> complexFields() { return Collections.unmodifiableMap(complexFields); }
 }

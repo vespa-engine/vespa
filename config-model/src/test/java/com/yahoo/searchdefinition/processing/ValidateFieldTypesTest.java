@@ -55,7 +55,7 @@ public class ValidateFieldTypesTest {
         SDField targetField = new SDField("target_field", dataType);
         DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSearch);
         ImportedField importedField = new ImportedField(fieldName, documentReference, targetField);
-        return new ImportedFields(Collections.singletonMap(fieldName, importedField));
+        return new ImportedFields(Collections.singletonMap(fieldName, importedField), Collections.emptyMap());
     }
 
     private static DocumentSummary createDocumentSummary(String fieldName, DataType dataType) {
