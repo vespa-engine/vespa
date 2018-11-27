@@ -37,6 +37,12 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>model-integration</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -86,6 +92,7 @@
               com.yahoo.config.application.api,
               com.yahoo.config.model.api,
               com.yahoo.config.provision,
+              ai.vespa.rankingexpression.importer.configmodelview,
               com.yahoo.io.reader,
               com.yahoo.path,
               com.google.inject, <!-- must use @Inject exported from container -->
