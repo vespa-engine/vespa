@@ -62,41 +62,30 @@ public class Flag {
     }
 
     /** Returns a copy of this with this flag enabled for all dimensions */
-    public Flag enable() {
-        return new Flag(id, true, hostnames, applications);
+    public Flag withEnabled(boolean enabled) {
+        return new Flag(id, enabled, hostnames, applications);
     }
 
-    /** Returns a copy of this with flag enabled for given hostname */
-    public Flag enable(HostName hostname) {
+    /** Returns a copy of this with enabled set for hostname */
+    public Flag withEnabled(HostName hostname, boolean enabled) {
         Set<String> hostnames = new LinkedHashSet<>(this.hostnames);
-        hostnames.add(hostname.value());
-        return new Flag(id, enabled, hostnames, applications);
+        if (enabled) {
+            hostnames.add(hostname.value());
+        } else {
+            hostnames.remove(hostname.value());
+        }
+        return new Flag(id, this.enabled, hostnames, applications);
     }
 
-    /** Returns a copy of this with flag enabled for given application */
-    public Flag enable(ApplicationId application) {
+    /** Returns a copy of this with enabled set for application */
+    public Flag withEnabled(ApplicationId application, boolean enabled) {
         Set<ApplicationId> applications = new LinkedHashSet<>(this.applications);
-        applications.add(application);
-        return new Flag(id, enabled, hostnames, applications);
-    }
-
-    /** Returns a copy of this with flag disabled for given hostname */
-    public Flag disable(HostName hostname) {
-        Set<String> hostnames = new LinkedHashSet<>(this.hostnames);
-        hostnames.remove(hostname.value());
-        return new Flag(id, enabled, hostnames, applications);
-    }
-
-    /** Returns a copy of this with flag disabled for given application */
-    public Flag disable(ApplicationId application) {
-        Set<ApplicationId> applications = new LinkedHashSet<>(this.applications);
-        applications.remove(application);
-        return new Flag(id, enabled, hostnames, applications);
-    }
-
-    /** Returns a copy of this with this flag disabled in all dimensions */
-    public Flag disable() {
-        return new Flag(id, false, hostnames, applications);
+        if (enabled) {
+            applications.add(application);
+        } else {
+            applications.remove(application);
+        }
+        return new Flag(id, this.enabled, hostnames, applications);
     }
 
     @Override

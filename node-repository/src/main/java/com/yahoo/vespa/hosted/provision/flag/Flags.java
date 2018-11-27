@@ -48,29 +48,17 @@ public class Flags {
 
     /** Enable feature flag in this node repository */
     public void setEnabled(FlagId flag, boolean enabled) {
-        if (enabled) {
-            write(flag, Flag::enable);
-        } else {
-            write(flag, Flag::disable);
-        }
+        write(flag, (f) -> f.withEnabled(enabled));
     }
 
     /** Enable feature flag for given application */
     public void setEnabled(FlagId flag, ApplicationId application, boolean enabled) {
-        if (enabled) {
-            write(flag, (f) -> f.enable(application));
-        } else {
-            write(flag, (f) -> f.disable(application));
-        }
+        write(flag, (f) -> f.withEnabled(application, enabled));
     }
 
     /** Enable feature flag for given node */
     public void setEnabled(FlagId flag, HostName hostname, boolean enabled) {
-        if (enabled) {
-            write(flag, (f) -> f.enable(hostname));
-        } else {
-            write(flag, (f) -> f.disable(hostname));
-        }
+        write(flag, (f) -> f.withEnabled(hostname, enabled));
     }
 
     private void write(FlagId id, Function<Flag, Flag> updateFunc) {
