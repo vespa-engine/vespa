@@ -14,7 +14,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
@@ -27,6 +26,7 @@ public class SslContextBuilder {
     private KeyStoreSupplier trustStoreSupplier;
     private KeyStoreSupplier keyStoreSupplier;
     private char[] keyStorePassword;
+    private TrustManagersFactory trustManagersFactory = SslContextBuilder::createDefaultTrustManagers;
 
     public SslContextBuilder() {}
 
@@ -90,11 +90,16 @@ public class SslContextBuilder {
         return this;
     }
 
+    public SslContextBuilder withTrustManagerFactory(TrustManagersFactory trustManagersFactory) {
+        this.trustManagersFactory = trustManagersFactory;
+        return this;
+    }
+
     public SSLContext build() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
             TrustManager[] trustManagers =
-                    trustStoreSupplier != null ? createTrustManagers(trustStoreSupplier) : null;
+                    trustStoreSupplier != null ? createTrustManagers(trustManagersFactory, trustStoreSupplier) : null;
             KeyManager[] keyManagers =
                     keyStoreSupplier != null ? createKeyManagers(keyStoreSupplier, keyStorePassword) : null;
             sslContext.init(keyManagers, trustManagers, null);
@@ -106,11 +111,16 @@ public class SslContextBuilder {
         }
     }
 
-    private static TrustManager[] createTrustManagers(KeyStoreSupplier trustStoreSupplier)
+    private static TrustManager[] createTrustManagers(TrustManagersFactory trustManagersFactory, KeyStoreSupplier trustStoreSupplier)
             throws GeneralSecurityException, IOException {
+        KeyStore truststore = trustStoreSupplier.get();
+        return trustManagersFactory.createTrustManagers(truststore);
+    }
+
+    private static TrustManager[] createDefaultTrustManagers(KeyStore truststore) throws GeneralSecurityException {
         TrustManagerFactory trustManagerFactory =
                 TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        trustManagerFactory.init(trustStoreSupplier.get());
+        trustManagerFactory.init(truststore);
         return trustManagerFactory.getTrustManagers();
     }
 
@@ -132,6 +142,14 @@ public class SslContextBuilder {
 
     private interface KeyStoreSupplier {
         KeyStore get() throws IOException, GeneralSecurityException;
+    }
+
+    /**
+     * A factory interface that is similar to {@link TrustManagerFactory}, but is an interface instead of a class.
+     */
+    @FunctionalInterface
+    public interface TrustManagersFactory {
+        TrustManager[] createTrustManagers(KeyStore truststore) throws GeneralSecurityException;
     }
 
 }
