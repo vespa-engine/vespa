@@ -77,7 +77,7 @@ public class FS4InvokerFactory {
             if (node.isWorking()) {
                 Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
                 if (backend.probeConnection()) {
-                    invokers.add(node.key(), new FS4SearchInvoker(searcher, query, backend.openChannel(), Optional.of(node)));
+                    invokers.add(new FS4SearchInvoker(searcher, query, backend.openChannel(), Optional.of(node)));
                     nodeAdded = true;
                 }
             }

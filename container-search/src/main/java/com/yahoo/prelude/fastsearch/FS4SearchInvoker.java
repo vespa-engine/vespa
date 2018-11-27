@@ -59,8 +59,6 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
         this.query = query;
         this.queryPacket = queryPacket;
 
-        channel.setResponseMonitor(this);
-
         try {
             boolean couldSend = channel.sendPacket(queryPacket);
             if (!couldSend) {
