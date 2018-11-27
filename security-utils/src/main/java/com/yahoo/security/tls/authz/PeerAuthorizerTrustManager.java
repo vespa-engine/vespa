@@ -20,9 +20,10 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-// TODO Propagate verification results
 // Note: Implementation assumes that provided X509ExtendedTrustManager will throw IllegalArgumentException when chain is empty or null
 public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
+
+    public static final String HANDSHAKE_SESSION_AUTHZ_RESULT_PROPERTY = "vespa.tls.authorization.result";
 
     private static final Logger log = Logger.getLogger(PeerAuthorizerTrustManager.class.getName());
 
@@ -59,37 +60,37 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         defaultTrustManager.checkClientTrusted(chain, authType);
-        authorizePeer(chain[0], authType, true);
+        authorizePeer(chain[0], authType, true, null);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         defaultTrustManager.checkServerTrusted(chain, authType);
-        authorizePeer(chain[0], authType, false);
+        authorizePeer(chain[0], authType, false, null);
     }
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
         defaultTrustManager.checkClientTrusted(chain, authType, socket);
-        authorizePeer(chain[0], authType, true);
+        authorizePeer(chain[0], authType, true, null);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
         defaultTrustManager.checkServerTrusted(chain, authType, socket);
-        authorizePeer(chain[0], authType, false);
+        authorizePeer(chain[0], authType, false, null);
     }
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
         defaultTrustManager.checkClientTrusted(chain, authType, sslEngine);
-        authorizePeer(chain[0], authType, true);
+        authorizePeer(chain[0], authType, true, sslEngine);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
         defaultTrustManager.checkServerTrusted(chain, authType, sslEngine);
-        authorizePeer(chain[0], authType, false);
+        authorizePeer(chain[0], authType, false, sslEngine);
     }
 
     @Override
@@ -97,9 +98,12 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
         return defaultTrustManager.getAcceptedIssuers();
     }
 
-    private void authorizePeer(X509Certificate certificate, String authType, boolean isVerifyingClient) throws CertificateException {
+    private void authorizePeer(X509Certificate certificate, String authType, boolean isVerifyingClient, SSLEngine sslEngine) throws CertificateException {
         log.fine(() -> "Verifying certificate: " + createInfoString(certificate, authType, isVerifyingClient));
         AuthorizationResult result = authorizer.authorizePeer(certificate);
+        if (sslEngine != null) { // getHandshakeSession() will never return null in this context
+            sslEngine.getHandshakeSession().putValue(HANDSHAKE_SESSION_AUTHZ_RESULT_PROPERTY, result);
+        }
         if (result.succeeded()) {
             log.fine(() -> String.format("Verification result: %s", result));
         } else {
