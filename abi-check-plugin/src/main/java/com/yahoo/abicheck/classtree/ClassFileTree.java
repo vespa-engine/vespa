@@ -32,7 +32,7 @@ public abstract class ClassFileTree implements AutoCloseable {
         for (String part : parts) {
           pkg = pkg.getOrCreateSubPackage(part);
         }
-        pkg.addClass(new Class(pkg, className) {
+        pkg.addClass(new ClassFile(pkg, className) {
 
           @Override
           public InputStream getInputStream() throws IOException {
@@ -57,12 +57,12 @@ public abstract class ClassFileTree implements AutoCloseable {
 
   public abstract Collection<Package> getRootPackages();
 
-  public static abstract class Class {
+  public static abstract class ClassFile {
 
     private final Package parent;
     private final String name;
 
-    private Class(Package parent, String name) {
+    private ClassFile(Package parent, String name) {
       this.parent = parent;
       this.name = name;
     }
@@ -75,7 +75,7 @@ public abstract class ClassFileTree implements AutoCloseable {
 
     @Override
     public String toString() {
-      return "Class(" + parent.getFullyQualifiedName() + "." + name + ")";
+      return "ClassFile(" + parent.getFullyQualifiedName() + "." + name + ")";
     }
   }
 
@@ -84,7 +84,7 @@ public abstract class ClassFileTree implements AutoCloseable {
     private final Package parent;
     private final String name;
     private final Map<String, Package> subPackages = new HashMap<>();
-    private final Set<Class> classes = new HashSet<>();
+    private final Set<ClassFile> classFiles = new HashSet<>();
 
     private Package(Package parent, String name) {
       this.parent = parent;
@@ -95,8 +95,8 @@ public abstract class ClassFileTree implements AutoCloseable {
       return subPackages.computeIfAbsent(name, n -> new Package(this, n));
     }
 
-    private void addClass(Class klazz) {
-      classes.add(klazz);
+    private void addClass(ClassFile klazz) {
+      classFiles.add(klazz);
     }
 
     public String getFullyQualifiedName() {
@@ -111,8 +111,8 @@ public abstract class ClassFileTree implements AutoCloseable {
       return subPackages.values();
     }
 
-    public Collection<Class> getClasses() {
-      return classes;
+    public Collection<ClassFile> getClassFiles() {
+      return classFiles;
     }
 
     @Override

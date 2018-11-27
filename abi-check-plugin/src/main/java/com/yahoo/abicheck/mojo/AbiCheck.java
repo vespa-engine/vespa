@@ -5,7 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.yahoo.abicheck.classtree.ClassFileTree;
-import com.yahoo.abicheck.classtree.ClassFileTree.Class;
+import com.yahoo.abicheck.classtree.ClassFileTree.ClassFile;
 import com.yahoo.abicheck.classtree.ClassFileTree.Package;
 import com.yahoo.abicheck.collector.AnnotationCollector;
 import com.yahoo.abicheck.collector.PublicSignatureCollector;
@@ -158,7 +158,7 @@ public class AbiCheck extends AbstractMojo {
   }
 
   private boolean isPublicAbiPackage(ClassFileTree.Package pkg) throws IOException {
-    Optional<Class> pkgInfo = pkg.getClasses().stream()
+    Optional<ClassFile> pkgInfo = pkg.getClassFiles().stream()
         .filter(klazz -> klazz.getName().equals(PACKAGE_INFO_CLASS_FILE_NAME)).findFirst();
     if (!pkgInfo.isPresent()) {
       return false;
@@ -176,7 +176,7 @@ public class AbiCheck extends AbstractMojo {
     Map<String, JavaClassSignature> signatures = new LinkedHashMap<>();
     if (isPublicAbiPackage(pkg)) {
       PublicSignatureCollector collector = new PublicSignatureCollector();
-      for (ClassFileTree.Class klazz : pkg.getClasses()) {
+      for (ClassFile klazz : pkg.getClassFiles()) {
         try (InputStream is = klazz.getInputStream()) {
           new ClassReader(is).accept(collector, 0);
         }
