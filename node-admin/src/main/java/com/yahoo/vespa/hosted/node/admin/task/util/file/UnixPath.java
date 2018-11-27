@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.ifExists;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static com.yahoo.yolean.Exceptions.uncheckAndIgnore;
 
@@ -118,7 +119,7 @@ public class UnixPath {
     }
 
     public Optional<FileAttributes> getAttributesIfExists() {
-        return Optional.ofNullable(uncheckAndIgnore(this::getAttributes, NoSuchFileException.class));
+        return ifExists(this::getAttributes);
     }
 
     public UnixPath createNewFile() {
