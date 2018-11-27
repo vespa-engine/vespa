@@ -59,6 +59,18 @@ public class ExportPackages {
         for (int i = 1; i < jars.length; ++i) {
             out.append(",").append(getExportedPackages(jars[i]));
         }
+
+        //TODO: temporary additions for backwards compatibility with Vespa 6. Remove when all apps have been built with 7
+        out.append(", ")
+                .append("javax.annotation, ")
+                .append("javax.activation, ")
+                .append("javax.xml.bind.annotation.adapters, ")
+                .append("javax.xml.bind.annotation, ")
+                .append("javax.xml.bind.attachment, ")
+                .append("javax.xml.bind.helpers, ")
+                .append("javax.xml.bind.util, ")
+                .append("javax.xml.bind");
+
         return out.toString();
     }
 
