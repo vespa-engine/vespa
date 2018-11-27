@@ -11,11 +11,7 @@ BufferWriter::BufferWriter()
 {
 }
 
-
-BufferWriter::~BufferWriter()
-{
-}
-
+BufferWriter::~BufferWriter() = default;
 
 void
 BufferWriter::writeSlow(const void *src, size_t len)
@@ -36,6 +32,5 @@ BufferWriter::writeSlow(const void *src, size_t len)
         flush();
     }
 }
-
 
 } // namespace search

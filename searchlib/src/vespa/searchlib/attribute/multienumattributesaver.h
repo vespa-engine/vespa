@@ -26,12 +26,12 @@ class MultiValueEnumAttributeSaver : public MultiValueAttributeSaver
     const MultiValueMapping &_mvMapping;
     EnumAttributeSaver      _enumSaver;
 public:
-    virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
+    bool onSave(IAttributeSaveTarget &saveTarget) override;
     MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                                  const attribute::AttributeHeader &header,
                                  const MultiValueMapping &mvMapping,
                                  const EnumStoreBase &enumStore);
-    virtual ~MultiValueEnumAttributeSaver();
+    ~MultiValueEnumAttributeSaver() override;
 };
 
 
