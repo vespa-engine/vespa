@@ -1,0 +1,14 @@
+{
+  "flags": [
+    {
+      "id": "exclusive-load-balancer",
+      "enabled": false,
+      "enabledHostnames": [
+        "host1"
+      ],
+      "enabledApplications": [
+        "foo:bar:default"
+      ]
+    }
+  ]
+}

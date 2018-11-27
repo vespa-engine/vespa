@@ -19,6 +19,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 
@@ -104,6 +105,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
     public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
         validate(hosts);
         activator.activate(application, hosts, transaction);
+        if (nodeRepository.flags().get(FlagId.exclusiveLoadBalancer).isEnabled(application)) {
+            // TODO: Provision load balancer
+        }
     }
 
     @Override

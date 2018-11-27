@@ -16,6 +16,8 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.flag.Flag;
+import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -55,6 +57,7 @@ public class CuratorDatabaseClient {
     private static final Path root = Path.fromString("/provision/v1");
     private static final Path lockRoot = root.append("locks");
     private static final Path loadBalancersRoot = root.append("loadBalancers");
+    private static final Path flagsRoot = root.append("flags");
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
     private final NodeSerializer nodeSerializer;
@@ -451,6 +454,28 @@ public class CuratorDatabaseClient {
 
     private Path loadBalancerPath(LoadBalancerId id) {
         return loadBalancersRoot.append(id.serializedForm());
+    }
+
+    public void writeFlag(Flag flag) {
+        Path path = flagPath(flag.id());
+        curatorDatabase.create(path);
+        NestedTransaction transaction = new NestedTransaction();
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        curatorTransaction.add(CuratorOperations.setData(path.getAbsolute(),
+                                                         FlagSerializer.toJson(flag)));
+        transaction.commit();
+    }
+
+    public Optional<Flag> readFlag(FlagId id) {
+        return read(flagPath(id), FlagSerializer::fromJson);
+    }
+
+    public Lock lockFlags() {
+        return lock(lockRoot.append("flagsLock"), defaultLockTimeout);
+    }
+
+    private Path flagPath(FlagId id) {
+        return flagsRoot.append(id.serializedValue());
     }
 
 }
