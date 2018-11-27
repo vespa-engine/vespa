@@ -5,6 +5,14 @@ import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager.Mode;
+import com.yahoo.security.tls.authz.PeerAuthorizerTrustManagersFactory;
+import com.yahoo.security.tls.policy.AuthorizedPeers;
+import com.yahoo.security.tls.policy.HostGlobPattern;
+import com.yahoo.security.tls.policy.PeerPolicy;
+import com.yahoo.security.tls.policy.RequiredPeerCredential;
+import com.yahoo.security.tls.policy.RequiredPeerCredential.Field;
+import com.yahoo.security.tls.policy.Role;
 
 import javax.net.ssl.SSLContext;
 import javax.security.auth.x500.X500Principal;
@@ -19,6 +27,8 @@ import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
 import static com.yahoo.security.X509CertificateBuilder.generateRandomSerialNumber;
 import static java.time.Instant.EPOCH;
 import static java.time.temporal.ChronoUnit.DAYS;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 
 /**
  * @author bjorncs
@@ -35,9 +45,23 @@ class CryptoUtils {
                 .withCertificateEntry("self-signed", certificate)
                 .build();
 
+
         return new SslContextBuilder()
                 .withTrustStore(trustStore)
                 .withKeyStore(keyPair.getPrivate(), certificate)
+                .withTrustManagerFactory(new PeerAuthorizerTrustManagersFactory(createAuthorizedPeers(), Mode.ENFORCE))
                 .build();
+    }
+
+    private static AuthorizedPeers createAuthorizedPeers() {
+        return new AuthorizedPeers(
+                singleton(
+                        new PeerPolicy(
+                                "dummy-policy",
+                                singleton(
+                                        new Role("dummy-role")),
+                                singletonList(
+                                        new RequiredPeerCredential(
+                                                Field.CN, new HostGlobPattern("dummy"))))));
     }
 }
