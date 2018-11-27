@@ -12,7 +12,7 @@ public class Util {
       AccessFlag.make(Opcodes.ACC_PRIVATE, "private"),
       AccessFlag.make(Opcodes.ACC_PROTECTED, "protected"),
       AccessFlag.make(Opcodes.ACC_FINAL, "final"),
-      AccessFlag.make(Opcodes.ACC_SUPER, null), // Ignored, always set by modern Java
+      AccessFlag.ignored(Opcodes.ACC_SUPER), // Ignored, always set by modern Java
       AccessFlag.make(Opcodes.ACC_INTERFACE, "interface"),
       AccessFlag.make(Opcodes.ACC_ABSTRACT, "abstract"),
       AccessFlag.make(Opcodes.ACC_SYNTHETIC, "synthetic"), // FIXME: Do we want this?
@@ -63,6 +63,10 @@ public class Util {
 
     private static AccessFlag make(int bit, String attribute) {
       return new AccessFlag(bit, attribute);
+    }
+
+    private static AccessFlag ignored(int bit) {
+      return new AccessFlag(bit, null);
     }
   }
 }
