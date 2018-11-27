@@ -10,7 +10,6 @@ import com.yahoo.abicheck.classtree.ClassFileTree.Package;
 import com.yahoo.abicheck.collector.AnnotationCollector;
 import com.yahoo.abicheck.collector.PublicSignatureCollector;
 import com.yahoo.abicheck.signature.JavaClassSignature;
-import com.yahoo.abicheck.signature.JavaMethodSignature;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -40,10 +39,9 @@ import org.objectweb.asm.ClassReader;
 )
 public class AbiCheck extends AbstractMojo {
 
+  public static final String PACKAGE_INFO_CLASS_FILE_NAME = "package-info.class";
   private static final String DEFAULT_SPEC_FILE = "abi-spec.json";
   private static final String WRITE_SPEC_PROPERTY = "abicheck.writeSpec";
-  public static final String PACKAGE_INFO_CLASS_FILE_NAME = "package-info.class";
-
   @Parameter(defaultValue = "${project}", readonly = true)
   private MavenProject project = null;
 
@@ -52,6 +50,32 @@ public class AbiCheck extends AbstractMojo {
 
   @Parameter
   private String specFileName = DEFAULT_SPEC_FILE;
+
+  private static String capitalizeFirst(String s) {
+    return s.substring(0, 1).toUpperCase() + s.substring(1);
+  }
+
+  private static <T> boolean matchingItemSets(Set<T> expected, Set<T> actual,
+      Predicate<T> itemsMatch, BiConsumer<T, String> onError) {
+    boolean mismatch = false;
+    Set<T> missing = Sets.difference(expected, actual);
+    for (T name : missing) {
+      mismatch = true;
+      onError.accept(name, "missing");
+    }
+    Set<T> extra = Sets.difference(actual, expected);
+    for (T name : extra) {
+      mismatch = true;
+      onError.accept(name, "extra");
+    }
+    Set<T> both = Sets.intersection(actual, expected);
+    for (T name : both) {
+      if (!itemsMatch.test(name)) {
+        mismatch = true;
+      }
+    }
+    return !mismatch;
+  }
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -94,37 +118,11 @@ public class AbiCheck extends AbstractMojo {
     }
   }
 
-  private static String capitalizeFirst(String s) {
-    return s.substring(0, 1).toUpperCase() + s.substring(1);
-  }
-
   private void writeSpec(Map<String, JavaClassSignature> publicAbiSignatures) throws IOException {
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     try (FileWriter writer = new FileWriter(specFileName)) {
       gson.toJson(publicAbiSignatures, writer);
     }
-  }
-
-  private static <T> boolean matchingItemSets(Set<T> expected, Set<T> actual,
-      Predicate<T> itemsMatch, BiConsumer<T, String> onError) {
-    boolean mismatch = false;
-    Set<T> missing = Sets.difference(expected, actual);
-    for (T name : missing) {
-      mismatch = true;
-      onError.accept(name, "missing");
-    }
-    Set<T> extra = Sets.difference(actual, expected);
-    for (T name : extra) {
-      mismatch = true;
-      onError.accept(name, "extra");
-    }
-    Set<T> both = Sets.intersection(actual, expected);
-    for (T name : both) {
-      if (!itemsMatch.test(name)) {
-        mismatch = true;
-      }
-    }
-    return !mismatch;
   }
 
   private boolean matchingClasses(String className, JavaClassSignature expected,
@@ -135,24 +133,9 @@ public class AbiCheck extends AbstractMojo {
             .format("Class %s: %s attribute %s", className, capitalizeFirst(error), item)))) {
       match = false;
     }
-    if (!matchingItemSets(expected.methods.keySet(), actual.methods.keySet(),
-        item -> matchingMethods(className + "." + item, expected.methods.get(item),
-            actual.methods.get(item)),
-        (item, error) -> getLog().error(
-            String.format("Class %s: %s method %s", className, capitalizeFirst(error), item)))) {
+    if (!matchingItemSets(expected.methods, actual.methods, item -> true, (item, error) -> getLog()
+        .error(String.format("Class %s: %s method %s", className, capitalizeFirst(error), item)))) {
       match = false;
-    }
-    return match;
-  }
-
-  private boolean matchingMethods(String methodName, JavaMethodSignature expected,
-      JavaMethodSignature actual) {
-    boolean match = true;
-    if (!expected.returnType.equals(actual.returnType)) {
-      match = false;
-      getLog().error(String
-          .format("Method %s: Expected return type %s, found %s", methodName, expected.returnType,
-              actual.returnType));
     }
     return match;
   }

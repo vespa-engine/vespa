@@ -1,11 +1,12 @@
 package com.yahoo.abicheck.collector;
 
 import com.yahoo.abicheck.signature.JavaClassSignature;
-import com.yahoo.abicheck.signature.JavaMethodSignature;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -18,18 +19,21 @@ public class PublicSignatureCollector extends ClassVisitor {
 
   private String currentName;
   private int currentAccess;
-  private Map<String, JavaMethodSignature> currentMethods;
+  private Set<String> currentMethods;
 
   public PublicSignatureCollector() {
     super(Opcodes.ASM6);
   }
 
-  private static String methodNameWithArguments(String name, List<String> argumentTypes) {
-    return String.format("%s(%s)", name, String.join(", ", argumentTypes));
-  }
-
   private static boolean testBit(long access, long mask) {
     return (access & mask) != 0;
+  }
+
+  private static String describeMethod(String name, int access, String returnType,
+      List<String> argumentTypes) {
+    String attributes = String.join(" ", Util.convertAccess(access, Util.methodFlags));
+    return String
+        .format("%s %s %s(%s)", attributes, returnType, name, String.join(", ", argumentTypes));
   }
 
   @Override
@@ -37,7 +41,7 @@ public class PublicSignatureCollector extends ClassVisitor {
       String[] interfaces) {
     currentName = Type.getObjectType(name).getClassName();
     currentAccess = access;
-    currentMethods = new LinkedHashMap<>();
+    currentMethods = new LinkedHashSet<>();
   }
 
   @Override
@@ -47,10 +51,8 @@ public class PublicSignatureCollector extends ClassVisitor {
       Type method = Type.getMethodType(descriptor);
       List<String> argumentTypes = Arrays.stream(method.getArgumentTypes()).map(Type::getClassName)
           .collect(Collectors.toList());
-      name = methodNameWithArguments(name, argumentTypes);
-      currentMethods.put(name,
-          new JavaMethodSignature(Util.convertAccess(access, Util.methodFlags),
-              method.getReturnType().getClassName()));
+      currentMethods
+          .add(describeMethod(name, access, method.getReturnType().getClassName(), argumentTypes));
     }
     return null;
   }
