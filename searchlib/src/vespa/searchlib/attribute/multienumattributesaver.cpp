@@ -82,9 +82,7 @@ MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
 
 
 template <typename MultiValueT>
-MultiValueEnumAttributeSaver<MultiValueT>::~MultiValueEnumAttributeSaver()
-{
-}
+MultiValueEnumAttributeSaver<MultiValueT>::~MultiValueEnumAttributeSaver() = default;
 
 template <typename MultiValueT>
 bool

@@ -21,13 +21,10 @@ class EnumAttributeSaver
 
 public:
     EnumAttributeSaver(const EnumStoreBase &enumStore, bool disableReEnumerate);
-
     ~EnumAttributeSaver();
 
     void enableReEnumerate();
-
     void writeUdat(IAttributeSaveTarget &saveTarget);
-
     const EnumStoreBase &getEnumStore() const { return _enumStore; }
 };
 

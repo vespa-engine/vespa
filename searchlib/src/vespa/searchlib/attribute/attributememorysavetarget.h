@@ -3,21 +3,14 @@
 #pragma once
 
 #include "iattributesavetarget.h"
+#include "attributememoryfilewriter.h"
 #include <vespa/searchlib/util/rawbuf.h>
 #include <memory>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include "attributememoryfilewriter.h"
 
-namespace search
-{
+namespace search::common { class FileHeaderContext; }
 
-namespace common
-{
-
-class FileHeaderContext;
-
-}
-
+namespace search {
 class AttributeVector;
 
 /**
@@ -39,7 +32,7 @@ public:
      * Write the underlying buffer(s) to file(s).
      **/
     bool writeToFile(const TuneFileAttributes &tuneFileAttributes,
-                     const search::common::FileHeaderContext &fileHeaderContext);
+                     const common::FileHeaderContext &fileHeaderContext);
 
     bool setup() override { return true; }
     void close() override {}
