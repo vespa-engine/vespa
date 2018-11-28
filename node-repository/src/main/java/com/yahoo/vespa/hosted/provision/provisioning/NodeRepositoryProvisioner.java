@@ -20,6 +20,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.flag.FlagId;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 
@@ -47,13 +48,15 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private final Zone zone;
     private final Preparer preparer;
     private final Activator activator;
+    private final LoadBalancerProvisioner loadBalancerProvisioner;
 
     int getSpareCapacityProd() {
         return SPARE_CAPACITY_PROD;
     }
 
     @Inject
-    public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone) {
+    public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone,
+                                     LoadBalancerService loadBalancerService) {
         this.nodeRepository = nodeRepository;
         this.capacityPolicies = new CapacityPolicies(zone, flavors);
         this.zone = zone;
@@ -61,6 +64,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                 ? SPARE_CAPACITY_PROD
                 : SPARE_CAPACITY_NONPROD);
         this.activator = new Activator(nodeRepository);
+        this.loadBalancerProvisioner = new LoadBalancerProvisioner(nodeRepository, loadBalancerService);
     }
 
     /**
@@ -105,9 +109,16 @@ public class NodeRepositoryProvisioner implements Provisioner {
     public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
         validate(hosts);
         activator.activate(application, hosts, transaction);
-        if (nodeRepository.flags().get(FlagId.exclusiveLoadBalancer).isEnabled(application)) {
-            // TODO: Provision load balancer
-        }
+        transaction.onCommitted(() -> {
+            if (nodeRepository.flags().get(FlagId.exclusiveLoadBalancer).isEnabled(application)) {
+                try {
+                    loadBalancerProvisioner.provision(application);
+                } catch (Exception e) {
+                    log.log(LogLevel.ERROR, "Failed to provision load balancer for application " +
+                                            application.toShortString(), e);
+                }
+            }
+        });
     }
 
     @Override
@@ -118,6 +129,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     @Override
     public void remove(NestedTransaction transaction, ApplicationId application) {
         nodeRepository.deactivate(application, transaction);
+        loadBalancerProvisioner.deactivate(application, transaction);
     }
 
     private List<HostSpec> asSortedHosts(List<Node> nodes) {

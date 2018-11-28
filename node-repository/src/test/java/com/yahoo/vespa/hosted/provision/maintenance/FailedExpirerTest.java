@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
+import com.yahoo.vespa.hosted.provision.testutils.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
@@ -34,7 +35,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -238,7 +238,7 @@ public class FailedExpirerTest {
                                                      new MockNameResolver().mockAnyLookup(),
                                                      new DockerImage("docker-image"),
                                                      true);
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone());
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), new LoadBalancerServiceMock());
             this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30),
                                              new JobControl(nodeRepository.database()));
         }
