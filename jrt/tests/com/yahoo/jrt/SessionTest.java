@@ -9,7 +9,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import static com.yahoo.jrt.CryptoUtils.createTestSslContext;
+import static com.yahoo.jrt.CryptoUtils.createTestTlsContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -19,7 +19,7 @@ public class SessionTest implements SessionHandler {
 
     @Parameter public CryptoEngine crypto;
     @Parameters(name = "{0}") public static Object[] engines() {
-        return new Object[] { new NullCryptoEngine(), new XorCryptoEngine(), new TlsCryptoEngine(createTestSslContext()) };
+        return new Object[] { new NullCryptoEngine(), new XorCryptoEngine(), new TlsCryptoEngine(createTestTlsContext()) };
     }
 
     private static class Session {

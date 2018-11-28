@@ -2,8 +2,11 @@
 package com.yahoo.jrt;
 
 
+import com.yahoo.security.tls.ConfigFileManagedTlsContext;
+import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.security.tls.TransportSecurityUtils.MixedMode;
+import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager.Mode;
 
 import java.nio.channels.SocketChannel;
 
@@ -20,7 +23,8 @@ public interface CryptoEngine {
         if (!TransportSecurityUtils.isTransportSecurityEnabled()) {
             return new NullCryptoEngine();
         }
-        TlsCryptoEngine tlsCryptoEngine = new TlsCryptoEngine(TransportSecurityUtils.getOptions().get());
+        TlsContext tlsContext = new ConfigFileManagedTlsContext(TransportSecurityUtils.getConfigFile().get(), Mode.DRY_RUN);
+        TlsCryptoEngine tlsCryptoEngine = new TlsCryptoEngine(tlsContext);
         if (!TransportSecurityUtils.isInsecureMixedModeEnabled()) {
             return tlsCryptoEngine;
         }

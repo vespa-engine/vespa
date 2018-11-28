@@ -9,7 +9,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import static com.yahoo.jrt.CryptoUtils.createTestSslContext;
+import static com.yahoo.jrt.CryptoUtils.createTestTlsContext;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
@@ -23,9 +23,9 @@ public class EchoTest {
 
     @Parameter public CryptoEngine crypto;
     @Parameters(name = "{0}") public static Object[] engines() {
-        return new Object[] { new NullCryptoEngine(), new XorCryptoEngine(), new TlsCryptoEngine(createTestSslContext()),
-                              new MaybeTlsCryptoEngine(new TlsCryptoEngine(createTestSslContext()), false),
-                              new MaybeTlsCryptoEngine(new TlsCryptoEngine(createTestSslContext()), true) };
+        return new Object[] { new NullCryptoEngine(), new XorCryptoEngine(), new TlsCryptoEngine(createTestTlsContext()),
+                              new MaybeTlsCryptoEngine(new TlsCryptoEngine(createTestTlsContext()), false),
+                              new MaybeTlsCryptoEngine(new TlsCryptoEngine(createTestTlsContext()), true) };
     }
 
     @Before
