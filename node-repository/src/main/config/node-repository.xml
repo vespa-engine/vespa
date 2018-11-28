@@ -5,10 +5,6 @@
 <component id="com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance" bundle="node-repository"/>
 <component id="com.yahoo.config.provision.NodeFlavors" bundle="config-provisioning" />
 
-<rest-api path="hack" jersey2="true">
-    <components bundle="node-repository" />
-</rest-api>
-
 <handler id="com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler" bundle="node-repository">
     <binding>http://*/nodes/v2/*</binding>
     <binding>https://*/nodes/v2/*</binding>
