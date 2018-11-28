@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
@@ -156,14 +157,19 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
         // TODO jvenstad: Consider deploying old version of tester for initial staging feeding?
-        logger.log("Deploying the tester container ...");
+        Version platform = controller.applications().require(id.application())
+                .deploymentJobs().statusOf(id.type())
+                .flatMap(JobStatus::lastTriggered)
+                .map(JobStatus.JobRun::platform)
+                .orElseThrow(() -> new IllegalStateException("Should not be here without a triggering!"));
+        logger.log("Deploying the tester container on platform " + platform + " ...");
         return deploy(id.tester().id(),
                       id.type(),
                       () -> controller.applications().deployTester(id.tester(),
                                                                    testerPackage(id),
                                                                    id.type().zone(controller.system()),
                                                                    new DeployOptions(true,
-                                                                                     Optional.of(controller.systemVersion()),
+                                                                                     Optional.of(platform),
                                                                                      false,
                                                                                      false)),
                       logger);
