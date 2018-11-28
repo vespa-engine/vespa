@@ -22,9 +22,15 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class MockNameResolver implements NameResolver {
 
-    private boolean allowInvocation = true;
-    private boolean mockAnyLookup = false;
     private final Map<String, Set<String>> records = new HashMap<>();
+
+    private boolean mockAnyLookup = false;
+    private boolean explicitReverseRecords = false;
+
+    public MockNameResolver addReverseRecord(String ipAddress, String hostname) {
+        addRecord(ipAddress, hostname);
+        return this;
+    }
 
     public MockNameResolver addRecord(String hostname, String... ipAddress) {
         Objects.requireNonNull(hostname, "hostname must be non-null");
@@ -39,15 +45,8 @@ public class MockNameResolver implements NameResolver {
         return this;
     }
 
-    public MockNameResolver reset() {
-        this.allowInvocation = true;
-        this.mockAnyLookup = false;
-        this.records.clear();
-        return this;
-    }
-
-    public MockNameResolver failIfInvoked() {
-        this.allowInvocation = false;
+    public MockNameResolver removeRecord(String name) {
+        records.remove(name);
         return this;
     }
 
@@ -56,11 +55,13 @@ public class MockNameResolver implements NameResolver {
         return this;
     }
 
+    public MockNameResolver explicitReverseRecords() {
+        this.explicitReverseRecords = true;
+        return this;
+    }
+
     @Override
     public Set<String> getAllByNameOrThrow(String hostname) {
-        if (!allowInvocation) {
-            throw new IllegalStateException("Expected getAllByName to not be invoked for hostname: " + hostname);
-        }
         if (records.containsKey(hostname)) {
             return records.get(hostname);
         }
@@ -74,14 +75,18 @@ public class MockNameResolver implements NameResolver {
 
     @Override
     public Optional<String> getHostname(String ipAddress) {
-        for (String host : records.keySet()) {
-            if (records.get(host).contains(ipAddress)) return Optional.of(host);
+        if (!explicitReverseRecords) {
+            return records.entrySet().stream()
+                          .filter(kv -> kv.getValue().contains(ipAddress))
+                          .map(Map.Entry::getKey)
+                          .findFirst();
         }
         if (mockAnyLookup) {
             String hostname = UUID.randomUUID().toString();
             records.put(hostname, Collections.singleton(ipAddress));
         }
-        return Optional.empty();
+        return Optional.ofNullable(records.get(ipAddress))
+                       .flatMap(values -> values.stream().findFirst());
     }
 
     private static String randomIpAddress() {
@@ -92,4 +97,5 @@ public class MockNameResolver implements NameResolver {
                 random.nextInt(1, 255 + 1),
                 random.nextInt(1, 255 + 1));
     }
+
 }

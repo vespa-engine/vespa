@@ -134,21 +134,19 @@ public class NodePrioritizer {
 
             log.log(LogLevel.DEBUG, "Trying to add new Docker node on " + node);
 
-            Optional<IP.Allocation> allocation = node.ipAddressPool().findAllocation(list);
-            if (!allocation.isPresent()) continue; // No free addresses in this pool
-
-            String hostname;
+            Optional<IP.Allocation> allocation;
             try {
-                hostname = allocation.get().resolveHostname(nameResolver);
-            } catch (IllegalArgumentException e) {
-                log.log(LogLevel.WARNING, "Failed to resolve hostname for allocation: " + allocation.get() + ", skipping", e);
+                allocation = node.ipAddressPool().findAllocation(list, nameResolver);
+                if (!allocation.isPresent()) continue; // No free addresses in this pool
+            } catch (Exception e) {
+                log.log(LogLevel.WARNING, "Failed to resolve hostname for allocation, skipping", e);
                 continue;
             }
 
-            Node newNode = Node.createDockerNode("fake-" + hostname,
+            Node newNode = Node.createDockerNode("fake-" + allocation.get().hostname(),
                                                  allocation.get().addresses(),
                                                  Collections.emptySet(),
-                                                 hostname,
+                                                 allocation.get().hostname(),
                                                  Optional.of(node.hostname()),
                                                  getFlavor(requestedNodes),
                                                  NodeType.tenant);
