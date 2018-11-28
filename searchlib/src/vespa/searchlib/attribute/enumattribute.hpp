@@ -104,7 +104,7 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
             this->_enumStore.getPendingCompact()) {
             this->removeAllOldGenerations();
             this->_enumStore.clearPendingCompact();
-            EnumIndexMap old2New(this->_enumStore.getNumUniques());
+            EnumIndexMap old2New(this->_enumStore.getNumUniques()*3);
             if (!this->_enumStore.performCompaction(extraBytesNeeded, old2New)) {
                 // fallback to resize strategy
                 this->_enumStore.fallbackResize(extraBytesNeeded);
