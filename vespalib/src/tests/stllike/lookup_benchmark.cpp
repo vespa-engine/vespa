@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstddef>
+#include <cstdlib>
+#include <cstdio>
 #include <map>
 #include <set>
 #include <tr1/unordered_set>
@@ -20,6 +20,10 @@ void fill(S & s, size_t count)
 template <typename S>
 size_t lookup_bench(S & s, size_t count, size_t rep)
 {
+    std::vector<uint32_t> keys(count);
+    for (uint32_t & key : keys) {
+        key = rand()%count;
+    }
     size_t sum(0);
     typename S::const_iterator e(s.end());
     for (size_t j(0); j < rep; j++) {
@@ -72,10 +76,10 @@ int main(int argc, char *argv[])
         type = argv[1][0];
     }
     if (argc >= 3) {
-        count = strtoul(argv[2], NULL, 0);
+        count = strtoul(argv[2], nullptr, 0);
     }
     if (argc >= 4) {
-        rep = strtoul(argv[3], NULL, 0);
+        rep = strtoul(argv[3], nullptr, 0);
     }
     std::vector<const char *> description(256);
     description['m'] = "std::set";
