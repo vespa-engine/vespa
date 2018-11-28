@@ -4,16 +4,14 @@
 
 #include "blueprint.h"
 #include "predicate_search.h"
+#include <vespa/searchlib/common/bitvectorcache.h>
+#include <vespa/searchlib/predicate/simple_index.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/searchlib/datastore/entryref.h>
-#include <vector>
-#include <memory>
 
-namespace search {
-namespace query { class PredicateQuery; }
+namespace search::query { class PredicateQuery; }
 
-namespace queryeval {
+namespace search::queryeval {
 /**
  * Blueprint for building predicate searches. It builds search
  * iterators based on PredicateSearch.
@@ -91,6 +89,4 @@ private:
     optional<VectorIterator> _zstar_vector_iterator;
 };
 
-}  // namespace search::queryeval
-}  // namespace search
-
+}

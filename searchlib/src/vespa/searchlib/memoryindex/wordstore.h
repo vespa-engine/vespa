@@ -5,8 +5,7 @@
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
 class WordStore
 {
@@ -36,6 +35,4 @@ public:
     }
 };
 
-} // namespace search::memoryindex
-} // namespace search
-
+}

@@ -7,8 +7,7 @@
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
 /**
  * Class used to store the {wordRef, fieldId, docId} tuples that are inserted
@@ -57,7 +56,7 @@ public:
         Iterator(const uint32_t *buf);
         bool valid() const { return _valid; }
         Iterator &operator++();
-        datastore::EntryRef wordRef() const { return _wordRef; }
+        datastore::EntryRef wordRef() const { return datastore::EntryRef(_wordRef); }
         bool hasBackingBuf() const { return _buf != nullptr; }
     };
 
@@ -98,6 +97,4 @@ public:
     MemoryUsage getMemoryUsage() const;
 };
 
-} // namespace memoryindex
-} // namespace search
-
+}

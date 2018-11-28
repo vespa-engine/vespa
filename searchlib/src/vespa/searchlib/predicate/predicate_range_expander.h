@@ -3,11 +3,9 @@
 #pragma once
 
 #include "predicate_hash.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 /**
  * Helper class for expanding ranges. This functionality is ported from
@@ -117,6 +115,4 @@ public:
     }
 };
 
-}  // namespace predicate
-}  // namespace search
-
+}

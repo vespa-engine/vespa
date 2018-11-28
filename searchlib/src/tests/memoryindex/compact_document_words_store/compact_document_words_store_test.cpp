@@ -104,7 +104,7 @@ TEST("require that a lot of words can be inserted, retrieved and removed")
     for (uint32_t docId = 0; docId < 50; ++docId) {
         Builder b(docId);
         for (uint32_t wordRef = 0; wordRef < 20000; ++wordRef) {
-            b.insert(wordRef);
+            b.insert(EntryRef(wordRef));
         }
         store.insert(b);
         MemoryUsage usage = store.getMemoryUsage();

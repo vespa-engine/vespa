@@ -14,6 +14,7 @@
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
+#include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/tree/location.h>
 #include <vespa/searchlib/query/tree/point.h>

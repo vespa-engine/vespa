@@ -3,10 +3,10 @@
 #pragma once
 
 #include "predicate_posting_list.h"
-#include "predicate_index.h"
+#include "predicate_interval_store.h"
+#include "predicate_interval.h"
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 /**
  * PredicatePostingList implementation for zstar iterators from
@@ -49,8 +49,7 @@ bool PredicateZstarCompressedPostingList<Iterator>::next(uint32_t doc_id) {
         return false;
     }
     Interval single_buf;
-    _current_interval =
-            _interval_store.get(_iterator.getData(), _interval_count, &single_buf);
+    _current_interval = _interval_store.get(_iterator.getData(), _interval_count, &single_buf);
     setDocId(_iterator.getKey());
     setInterval(_current_interval[0].interval);
     _prev_interval = getInterval();
@@ -84,6 +83,4 @@ bool PredicateZstarCompressedPostingList<Iterator>::nextInterval() {
     return false;
 }
 
-}  // namespace predicate
-}  // namespace search
-
+}

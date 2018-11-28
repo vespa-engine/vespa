@@ -1,17 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_features_store.h"
-#include "predicate_index.h"
 #include "predicate_range_expander.h"
-#include "predicate_tree_annotator.h"
-#include <vespa/searchlib/btree/btreenode.h>
-#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <unordered_map>
-#include <vector>
+#include <vespa/searchlib/btree/btree.hpp>
+#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/searchlib/btree/btreenodeallocator.hpp>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.predicate.document_features_store");
+//#include "predicate_index.h"
 
 using search::btree::BTreeNoLeafData;
 using search::datastore::EntryRef;
@@ -20,8 +16,7 @@ using vespalib::stringref;
 using std::unordered_map;
 using std::vector;
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 void
 DocumentFeaturesStore::setCurrent(uint32_t docId, FeatureVector *features) {
@@ -288,5 +283,4 @@ void DocumentFeaturesStore::serialize(DataBuffer &buffer) const {
     serializeDocs(buffer, _docs);
 }
 
-}  // namespace predicate
-}  // namespace search
+}

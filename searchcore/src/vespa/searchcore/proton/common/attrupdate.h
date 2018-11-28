@@ -4,13 +4,14 @@
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/vespalib/util/exception.h>
 
 namespace search {
 
+class PredicateAttribute;
+
 namespace tensor { class TensorAttribute; }
-namespace attribute { class ReferenceAttribute; }
+namespace attribute {class ReferenceAttribute; }
 
 VESPA_DEFINE_EXCEPTION(UpdateException, vespalib::Exception);
 

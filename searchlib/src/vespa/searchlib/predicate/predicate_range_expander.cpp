@@ -6,12 +6,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".predicate_range_expander");
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 void PredicateRangeExpander::debugLog(const char *fmt, const char *msg) {
     LOG(debug, fmt, msg);
 }
 
-}  // namespace predicate
-}  // namespace search
+}

@@ -9,6 +9,8 @@
 #include <vespa/searchlib/common/rcuvector.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.enumstorebase");
@@ -626,37 +628,28 @@ EnumStoreBase::reEnumerate<EnumPostingTree>(const EnumPostingTree &tree);
 
 template
 ssize_t
-EnumStoreBase::deserialize<EnumTree>(const void *src,
-                                     size_t available,
-                                     IndexVector &idx,
-                                     EnumTree &tree);
+EnumStoreBase::deserialize<EnumTree>(const void *src, size_t available, IndexVector &idx, EnumTree &tree);
 
 template
 ssize_t
-EnumStoreBase::deserialize<EnumPostingTree>(const void *src,
-                                            size_t available,
-                                            IndexVector &idx,
-                                            EnumPostingTree &tree);
+EnumStoreBase::deserialize<EnumPostingTree>(const void *src, size_t available, IndexVector &idx, EnumPostingTree &tree);
 
 template
 void
-EnumStoreBase::fixupRefCounts<EnumTree>(const EnumVector &hist,
-                                        EnumTree &tree);
+EnumStoreBase::fixupRefCounts<EnumTree>(const EnumVector &hist, EnumTree &tree);
 
 template
 void
-EnumStoreBase::fixupRefCounts<EnumPostingTree>(
-        const EnumVector &hist,
-        EnumPostingTree &tree);
+EnumStoreBase::fixupRefCounts<EnumPostingTree>(const EnumVector &hist, EnumPostingTree &tree);
 
 template class EnumStoreDict<EnumTree>;
 
 template class EnumStoreDict<EnumPostingTree>;
 
 namespace attribute {
-
     template class RcuVectorBase<EnumStoreIndex>;
-
 }
 
 }
+
+template class vespalib::hash_map<search::EnumStoreIndex, search::EnumStoreIndex>;

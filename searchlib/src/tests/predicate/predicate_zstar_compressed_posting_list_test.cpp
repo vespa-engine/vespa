@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for predicate_zstar_compressed_posting_list.
 
+#include <vespa/searchlib/predicate/predicate_zstar_compressed_posting_list.h>
+#include <vespa/searchlib/predicate/predicate_index.h>
+#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/searchlib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/testkit/testapp.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_zstar_compressed_posting_list_test");
-
-#include <vespa/searchlib/predicate/predicate_tree_annotator.h>
-#include <vespa/searchlib/predicate/predicate_zstar_compressed_posting_list.h>
-#include <vespa/vespalib/testkit/testapp.h>
 
 using namespace search;
 using namespace search::predicate;

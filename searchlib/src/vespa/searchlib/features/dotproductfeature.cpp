@@ -19,8 +19,7 @@ using namespace search::attribute;
 using namespace search::fef;
 using vespalib::hwaccelrated::IAccelrated;
 
-namespace search {
-namespace features {
+namespace search::features {
 namespace dotproduct {
 namespace wset {
 
@@ -679,5 +678,4 @@ DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Sta
     return stash.create<SingleZeroValueExecutor>();
 }
 
-} // namespace features
-} // namespace search
+}

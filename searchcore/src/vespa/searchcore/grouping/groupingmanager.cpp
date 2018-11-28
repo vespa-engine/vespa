@@ -52,7 +52,7 @@ GroupingManager::init(const IAttributeContext &attrCtx)
                     an.useEnumOptimization();
                 }
             }
-            ConfigureStaticParams stuff(&attrCtx, NULL);
+            ConfigureStaticParams stuff(&attrCtx, nullptr);
             grouping.configureStaticStuff(stuff);
             list.push_back(groupingList[i]);
         } catch (const std::exception & e) {

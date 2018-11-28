@@ -35,26 +35,24 @@ namespace proton {
  **/
 class FlushableAttribute::Flusher : public Task {
 private:
-    FlushableAttribute              & _fattr;
-    search::AttributeMemorySaveTarget      _saveTarget;
-    std::unique_ptr<search::AttributeSaver> _saver;
-    uint64_t                          _syncToken;
-    vespalib::string                  _flushFile;
+    FlushableAttribute                      & _fattr;
+    search::AttributeMemorySaveTarget         _saveTarget;
+    std::unique_ptr<search::AttributeSaver>   _saver;
+    uint64_t                                  _syncToken;
+    vespalib::string                          _flushFile;
 
     bool saveAttribute(); // not updating snap info.
 public:
     Flusher(FlushableAttribute & fattr, uint64_t syncToken, AttributeDirectory::Writer &writer);
-    ~Flusher();
+    ~Flusher() override;
     uint64_t getSyncToken() const { return _syncToken; }
     bool flush(AttributeDirectory::Writer &writer);
     void updateStats();
     bool cleanUp(AttributeDirectory::Writer &writer);
     // Implements vespalib::Executor::Task
-    virtual void run() override;
+    void run() override;
 
-    virtual SerialNum
-    getFlushSerial() const override
-    {
+    SerialNum getFlushSerial() const override {
         return _syncToken;
     }
 };
@@ -78,17 +76,13 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
     }
 }
 
-FlushableAttribute::Flusher::~Flusher()
-{
-    // empty
-}
+FlushableAttribute::Flusher::~Flusher() = default;
 
 bool
 FlushableAttribute::Flusher::saveAttribute()
 {
     vespalib::mkdir(vespalib::dirname(_flushFile), false);
-    SerialNumFileHeaderContext fileHeaderContext(_fattr._fileHeaderContext,
-                                                 _syncToken);
+    SerialNumFileHeaderContext fileHeaderContext(_fattr._fileHeaderContext, _syncToken);
     bool saveSuccess = true;
     if (_saver && _saver->hasGenerationGuard() &&
         _fattr._hwInfo.disk().slow()) {
@@ -97,13 +91,11 @@ FlushableAttribute::Flusher::saveAttribute()
     }
     if (saveSuccess) {
         if (_saver) {
-            search::AttributeFileSaveTarget saveTarget(_fattr._tuneFileAttributes,
-                                                       fileHeaderContext);
+            search::AttributeFileSaveTarget saveTarget(_fattr._tuneFileAttributes, fileHeaderContext);
             saveSuccess = _saver->save(saveTarget);
             _saver.reset();
         } else {
-            saveSuccess = _saveTarget.writeToFile(_fattr._tuneFileAttributes,
-                                                  fileHeaderContext);
+            saveSuccess = _saveTarget.writeToFile(_fattr._tuneFileAttributes, fileHeaderContext);
         }
     }
     return saveSuccess;
@@ -114,8 +106,7 @@ FlushableAttribute::Flusher::flush(AttributeDirectory::Writer &writer)
 {
     writer.createInvalidSnapshot(_syncToken);
     if (!saveAttribute()) {
-        LOG(warning, "Could not write attribute vector '%s' to disk",
-            _flushFile.c_str());
+        LOG(warning, "Could not write attribute vector '%s' to disk", _flushFile.c_str());
         return false;
     }
     writer.markValidSnapshot(_syncToken);

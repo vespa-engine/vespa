@@ -16,6 +16,7 @@
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <unordered_set>
 
 #include <vespa/log/log.h>
 LOG_SETUP("document_iterator_test");
@@ -50,7 +51,6 @@ using storage::spi::Timestamp;
 using storage::spi::test::makeSpiBucket;
 
 using namespace proton;
-using namespace search::index;
 
 const uint64_t largeNum = 10000000;
 

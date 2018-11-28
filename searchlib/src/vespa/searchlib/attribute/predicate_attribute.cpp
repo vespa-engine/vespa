@@ -3,6 +3,7 @@
 #include "predicate_attribute.h"
 #include "iattributesavetarget.h"
 #include "attribute_header.h"
+#include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
@@ -80,6 +81,10 @@ PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name,
 PredicateAttribute::~PredicateAttribute()
 {
     getGenerationHolder().clearHoldLists();
+}
+
+void PredicateAttribute::populateIfNeeded() {
+    _index->populateIfNeeded(getNumDocs());
 }
 
 uint32_t

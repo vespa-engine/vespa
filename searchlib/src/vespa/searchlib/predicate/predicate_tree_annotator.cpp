@@ -1,13 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "predicate_tree_annotator.h"
-#include "predicate_index.h"
 #include "predicate_range_expander.h"
 #include "predicate_tree_analyzer.h"
+#include "common.h"
 #include <vespa/document/predicate/predicate.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.predicate.predicate_tree_annotator");
 
 using document::Predicate;
 using std::map;
@@ -15,8 +12,7 @@ using std::string;
 using vespalib::slime::Inspector;
 using vespalib::Memory;
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 using predicate::MIN_INTERVAL;
 using predicate::MAX_INTERVAL;
@@ -83,7 +79,7 @@ PredicateTreeAnnotatorImpl::PredicateTreeAnnotatorImpl(
       _end(interval_range),
       _left_weight(0),
       _result(result),
-      _zStar_hash(PredicateIndex::z_star_compressed_hash),
+      _zStar_hash(Constants::z_star_compressed_hash),
       _negated(false),
       _final_range_used(false),
       _size_map(size_map),
@@ -232,7 +228,8 @@ void PredicateTreeAnnotatorImpl::assignIntervalMarkers(const Inspector &in) {
 PredicateTreeAnnotations::PredicateTreeAnnotations(uint32_t mf, uint16_t ir)
     : min_feature(mf), interval_range(ir)
 {}
-PredicateTreeAnnotations::~PredicateTreeAnnotations(){}
+
+PredicateTreeAnnotations::~PredicateTreeAnnotations() = default;
 
 void PredicateTreeAnnotator::annotate(const Inspector &in,
                                       PredicateTreeAnnotations &result,
@@ -244,12 +241,10 @@ void PredicateTreeAnnotator::annotate(const Inspector &in,
     assert(size <= UINT16_MAX && size > 0);
     uint16_t interval_range = static_cast<uint16_t>(size);
 
-    PredicateTreeAnnotatorImpl
-        annotator(analyzer.getSizeMap(), result, lower, upper, interval_range);
+    PredicateTreeAnnotatorImpl annotator(analyzer.getSizeMap(), result, lower, upper, interval_range);
     annotator.assignIntervalMarkers(in);
     result.min_feature = min_feature;
     result.interval_range = interval_range;
 }
 
-}  // namespace predicate
-}  // namespace search
+}

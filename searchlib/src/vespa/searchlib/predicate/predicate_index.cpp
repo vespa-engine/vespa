@@ -2,38 +2,30 @@
 
 #include "predicate_index.h"
 #include "predicate_hash.h"
+#include <vespa/searchlib/btree/btree.hpp>
+#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/searchlib/btree/btreeiterator.hpp>
+#include <vespa/searchlib/btree/btreestore.hpp>
+#include <vespa/searchlib/btree/btreenodeallocator.hpp>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.predicate.predicate_index");
 
 using search::datastore::EntryRef;
 using vespalib::DataBuffer;
 using std::vector;
 
-namespace search {
-namespace predicate {
-
-const vespalib::string PredicateIndex::z_star_attribute_name("z-star");
-const uint64_t PredicateIndex::z_star_hash(
-        PredicateHash::hash64(PredicateIndex::z_star_attribute_name));
-const vespalib::string PredicateIndex::z_star_compressed_attribute_name("z-star-compressed");
-const uint64_t PredicateIndex::z_star_compressed_hash(
-        PredicateHash::hash64(PredicateIndex::z_star_compressed_attribute_name));
+namespace search::predicate {
 
 template <>
-void PredicateIndex::addPosting<Interval>(
-        uint64_t feature, uint32_t doc_id, EntryRef ref) {
+void PredicateIndex::addPosting<Interval>(uint64_t feature, uint32_t doc_id, EntryRef ref) {
     _interval_index.addPosting(feature, doc_id, ref);
 }
 template <>
-void PredicateIndex::addPosting<IntervalWithBounds>(
-        uint64_t feature, uint32_t doc_id, EntryRef ref) {
+void PredicateIndex::addPosting<IntervalWithBounds>(uint64_t feature, uint32_t doc_id, EntryRef ref) {
     _bounds_index.addPosting(feature, doc_id, ref);
 }
 
 template <typename IntervalT>
-void PredicateIndex::indexDocumentFeatures(
-        uint32_t doc_id, const PredicateIndex::FeatureMap<IntervalT> &interval_map) {
+void PredicateIndex::indexDocumentFeatures(uint32_t doc_id, const PredicateIndex::FeatureMap<IntervalT> &interval_map) {
     if (interval_map.empty()) {
         return;
     }
@@ -134,7 +126,7 @@ PredicateIndex::PredicateIndex(GenerationHandler &generation_handler, Generation
     commit();
 }
 
-PredicateIndex::~PredicateIndex() {}
+PredicateIndex::~PredicateIndex() = default;
 
 void PredicateIndex::serialize(DataBuffer &buffer) const {
     _features_store.serialize(buffer);
@@ -295,5 +287,4 @@ PredicateIndex::adjustDocIdLimit(uint32_t docId)
     _cache.adjustDocIdLimit(docId);
 }
 
-}  // namespace predicate
-}  // namespace search
+}

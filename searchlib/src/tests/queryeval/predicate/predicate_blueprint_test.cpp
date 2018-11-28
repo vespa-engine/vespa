@@ -1,12 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for predicate_blueprint.
 
-#include <vespa/log/log.h>
-LOG_SETUP("predicate_blueprint_test");
-
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
+#include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -15,6 +13,9 @@ LOG_SETUP("predicate_blueprint_test");
 #include <vespa/searchlib/queryeval/predicate_blueprint.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("predicate_blueprint_test");
 
 using namespace search;
 using namespace search::predicate;
@@ -123,8 +124,7 @@ TEST_F("require that blueprint with 'bounds' posting list entry estimates "
 TEST_F("require that blueprint with zstar-compressed estimates non-empty.",
        Fixture) {
     PredicateTreeAnnotations annotations(1);
-    annotations.interval_map[PredicateIndex::z_star_compressed_hash] =
-        std::vector<Interval>{{0xfffe0000}};
+    annotations.interval_map[Constants::z_star_compressed_hash] =std::vector<Interval>{{0xfffe0000}};
     f.indexDocument(doc_id, annotations);
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
     EXPECT_FALSE(blueprint.getState().estimate().empty);
@@ -133,8 +133,7 @@ TEST_F("require that blueprint with zstar-compressed estimates non-empty.",
 
 TEST_F("require that blueprint can create search", Fixture) {
     PredicateTreeAnnotations annotations(1);
-    annotations.interval_map[PredicateHash::hash64("key=value")] =
-        std::vector<Interval>{{interval}};
+    annotations.interval_map[PredicateHash::hash64("key=value")] =std::vector<Interval>{{interval}};
     f.indexDocument(doc_id, annotations);
 
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
@@ -181,8 +180,7 @@ TEST_F("require that blueprint can create more advanced search", Fixture) {
 
 TEST_F("require that blueprint can create NOT search", Fixture) {
     PredicateTreeAnnotations annotations(1);
-    annotations.interval_map[PredicateIndex::z_star_hash] =
-        std::vector<Interval>{{0x00010000}, {0xffff0001}};
+    annotations.interval_map[Constants::z_star_hash] =std::vector<Interval>{{0x00010000}, {0xffff0001}};
     f.indexDocument(doc_id, annotations);
 
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
@@ -198,8 +196,7 @@ TEST_F("require that blueprint can create NOT search", Fixture) {
 
 TEST_F("require that blueprint can create compressed NOT search", Fixture) {
     PredicateTreeAnnotations annotations(1);
-    annotations.interval_map[PredicateIndex::z_star_compressed_hash] =
-        std::vector<Interval>{{0xfffe0000}};
+    annotations.interval_map[Constants::z_star_compressed_hash] =std::vector<Interval>{{0xfffe0000}};
     f.indexDocument(doc_id, annotations);
 
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);

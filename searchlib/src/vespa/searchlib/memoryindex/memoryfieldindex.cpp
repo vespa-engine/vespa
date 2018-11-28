@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memoryfieldindex.h"
+#include "ordereddocumentinserter.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
@@ -11,19 +12,15 @@
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btree.hpp>
-#include "ordereddocumentinserter.h"
 #include <vespa/vespalib/util/array.hpp>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.memoryindex.memory_field_index");
+using search::index::DocIdAndFeatures;
+using search::index::WordDocElementFeatures;
+using search::index::Schema;
 
-namespace search {
+namespace search::memoryindex {
 
-using index::DocIdAndFeatures;
-using index::WordDocElementFeatures;
-using index::Schema;
-
-namespace memoryindex {
+using datastore::EntryRef;
 
 vespalib::asciistream &
 operator<<(vespalib::asciistream & os, const MemoryFieldIndex::WordKey & rhs)
@@ -53,12 +50,12 @@ MemoryFieldIndex::~MemoryFieldIndex()
     // XXX: Kludge
     for (DictionaryTree::Iterator it = _dict.begin();
          it.valid(); ++it) {
-        datastore::EntryRef pidx(it.getData());
+        EntryRef pidx(it.getData());
         if (pidx.valid()) {
             _postingListStore.clear(pidx);
             // Before updating ref
             std::atomic_thread_fence(std::memory_order_release);
-            it.writeData(datastore::EntryRef().ref());
+            it.writeData(EntryRef().ref());
         }
     }
     _postingListStore.clearBuilder();
@@ -74,11 +71,9 @@ MemoryFieldIndex::~MemoryFieldIndex()
 MemoryFieldIndex::PostingList::Iterator
 MemoryFieldIndex::find(const vespalib::stringref word) const
 {
-    DictionaryTree::Iterator itr =
-        _dict.find(WordKey(datastore::EntryRef()),
-                  KeyComp(_wordStore, word));
+    DictionaryTree::Iterator itr = _dict.find(WordKey(EntryRef()), KeyComp(_wordStore, word));
     if (itr.valid()) {
-        return _postingListStore.begin(itr.getData());
+        return _postingListStore.begin(EntryRef(itr.getData()));
     }
     return PostingList::Iterator();
 }
@@ -86,11 +81,9 @@ MemoryFieldIndex::find(const vespalib::stringref word) const
 MemoryFieldIndex::PostingList::ConstIterator
 MemoryFieldIndex::findFrozen(const vespalib::stringref word) const
 {
-    DictionaryTree::ConstIterator itr =
-        _dict.getFrozenView().find(WordKey(datastore::EntryRef()),
-                                   KeyComp(_wordStore, word));
+    DictionaryTree::ConstIterator itr = _dict.getFrozenView().find(WordKey(EntryRef()), KeyComp(_wordStore, word));
     if (itr.valid()) {
-        return _postingListStore.beginFrozen(itr.getData());
+        return _postingListStore.beginFrozen(EntryRef(itr.getData()));
     }
     return PostingList::Iterator();
 }
@@ -105,22 +98,20 @@ MemoryFieldIndex::compactFeatures()
     DictionaryTree::Iterator itr(_dict.begin());
     uint32_t packedIndex = _fieldId;
     for (; itr.valid(); ++itr) {
-        PostingListStore::RefType pidx(itr.getData());
+        PostingListStore::RefType pidx(EntryRef(itr.getData()));
         if (!pidx.valid())
             continue;
         uint32_t clusterSize = _postingListStore.getClusterSize(pidx);
         if (clusterSize == 0) {
-            const PostingList *tree =
-                _postingListStore.getTreeEntry(pidx);
-            PostingList::Iterator
-                it(tree->begin(_postingListStore.getAllocator()));
+            const PostingList *tree = _postingListStore.getTreeEntry(pidx);
+            PostingList::Iterator it(tree->begin(_postingListStore.getAllocator()));
             for (; it.valid(); ++it) {
-                datastore::EntryRef oldFeatures = it.getData();
+                EntryRef oldFeatures(it.getData());
 
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
 
-                datastore::EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, oldFeatures);
+                EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, oldFeatures);
 
                 // Features must be written before reference is updated.
                 std::atomic_thread_fence(std::memory_order_release);
@@ -129,25 +120,22 @@ MemoryFieldIndex::compactFeatures()
                 it.writeData(newFeatures.ref());
             }
         } else {
-            const PostingListKeyDataType *shortArray =
-                _postingListStore.getKeyDataEntry(pidx, clusterSize);
+            const PostingListKeyDataType *shortArray = _postingListStore.getKeyDataEntry(pidx, clusterSize);
             const PostingListKeyDataType *ite = shortArray + clusterSize;
-            for (const PostingListKeyDataType *it = shortArray; it < ite;
-                 ++it) {
-                datastore::EntryRef oldFeatures = it->getData();
+            for (const PostingListKeyDataType *it = shortArray; it < ite; ++it) {
+                EntryRef oldFeatures(it->getData());
 
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
 
-                datastore::EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, oldFeatures);
+                EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, oldFeatures);
 
                 // Features must be written before reference is updated.
                 std::atomic_thread_fence(std::memory_order_release);
 
                 // Ugly, ugly due to const_cast, but new data is
                 // semantically equal to old data
-                const_cast<PostingListKeyDataType *>(it)->
-                    setData(newFeatures.ref());
+                const_cast<PostingListKeyDataType *>(it)->setData(newFeatures.ref());
             }
         }
     }
@@ -167,20 +155,19 @@ MemoryFieldIndex::dump(search::index::IndexBuilder & indexBuilder)
     _featureStore.setupForField(_fieldId, decoder);
     for (DictionaryTree::Iterator itr = _dict.begin(); itr.valid(); ++itr) {
         const WordKey & wk = itr.getKey();
-        PostingListStore::RefType plist(itr.getData());
+        PostingListStore::RefType plist(EntryRef(itr.getData()));
         word = _wordStore.getWord(wk._wordRef);
         if (!plist.valid())
             continue;
         indexBuilder.startWord(word);
         uint32_t clusterSize = _postingListStore.getClusterSize(plist);
         if (clusterSize == 0) {
-            const PostingList *tree =
-                _postingListStore.getTreeEntry(plist);
+            const PostingList *tree = _postingListStore.getTreeEntry(plist);
             PostingList::Iterator pitr = tree->begin(_postingListStore.getAllocator());
             assert(pitr.valid());
             for (; pitr.valid(); ++pitr) {
                 uint32_t docId = pitr.getKey();
-                datastore::EntryRef featureRef = pitr.getData();
+                EntryRef featureRef(pitr.getData());
                 indexBuilder.startDocument(docId);
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
@@ -205,7 +192,7 @@ MemoryFieldIndex::dump(search::index::IndexBuilder & indexBuilder)
             const PostingListKeyDataType *kde = kd + clusterSize;
             for (; kd != kde; ++kd) {
                 uint32_t docId = kd->_key;
-                datastore::EntryRef featureRef = kd->getData();
+                EntryRef featureRef(kd->getData());
                 indexBuilder.startDocument(docId);
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
@@ -217,8 +204,7 @@ MemoryFieldIndex::dump(search::index::IndexBuilder & indexBuilder)
                     indexBuilder.startElement(fef.getElementId(), fef.getWeight(), fef.getElementLen());
                     for (size_t j = 0; j < fef.getNumOccs(); ++j, ++wpIdx) {
                         assert(wpIdx == poff + j);
-                        indexBuilder.addOcc(features.
-                                            _wordPositions[poff + j]);
+                        indexBuilder.addOcc(features._wordPositions[poff + j]);
                     }
                     poff += fef.getNumOccs();
                     indexBuilder.endElement();
@@ -243,18 +229,15 @@ MemoryFieldIndex::getMemoryUsage() const
     return usage;
 }
 
-
 } // namespace search::memoryindex
 
-namespace btree {
+namespace search::btree {
 
 template
-class BTreeNodeDataWrap<memoryindex::MemoryFieldIndex::WordKey,
-                        BTreeDefaultTraits::LEAF_SLOTS>;
+class BTreeNodeDataWrap<memoryindex::MemoryFieldIndex::WordKey, BTreeDefaultTraits::LEAF_SLOTS>;
 
 template
-class BTreeNodeT<memoryindex::MemoryFieldIndex::WordKey,
-                 BTreeDefaultTraits::INTERNAL_SLOTS>;
+class BTreeNodeT<memoryindex::MemoryFieldIndex::WordKey, BTreeDefaultTraits::INTERNAL_SLOTS>;
 
 #if 0
 template
@@ -301,10 +284,10 @@ class BTreeIterator<memoryindex::MemoryFieldIndex::WordKey,
 
 template
 class BTree<memoryindex::MemoryFieldIndex::WordKey,
-                   memoryindex::MemoryFieldIndex::PostingListPtr,
+            memoryindex::MemoryFieldIndex::PostingListPtr,
             search::btree::NoAggregated,
-                   const memoryindex::MemoryFieldIndex::KeyComp,
-                   BTreeDefaultTraits>;
+            const memoryindex::MemoryFieldIndex::KeyComp,
+            BTreeDefaultTraits>;
 
 template
 class BTreeRoot<memoryindex::MemoryFieldIndex::WordKey,
@@ -327,6 +310,4 @@ class BTreeNodeAllocator<memoryindex::MemoryFieldIndex::WordKey,
                          BTreeDefaultTraits::INTERNAL_SLOTS,
                          BTreeDefaultTraits::LEAF_SLOTS>;
 
-
-} // namespace btree
-} // namespace search
+}

@@ -8,8 +8,7 @@
 /**
  * Interface for posting lists used by PredicateSearch.
  */
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 class PredicatePostingList {
     uint32_t _docId;
@@ -48,5 +47,4 @@ public:
     uint64_t getSubquery() const { return _subquery; }
 };
 
-}
 }

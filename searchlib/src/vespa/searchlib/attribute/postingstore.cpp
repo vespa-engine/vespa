@@ -15,8 +15,7 @@ using btree::BTreeNoLeafData;
 // #define FORCE_BITVECTORS
 
 
-PostingStoreBase2::PostingStoreBase2(EnumPostingTree &dict, Status &status,
-                                     const Config &config)
+PostingStoreBase2::PostingStoreBase2(EnumPostingTree &dict, Status &status, const Config &config)
     :
 #ifdef FORCE_BITVECTORS
       _enableBitVectors(true),
@@ -91,7 +90,7 @@ PostingStore<DataT>::removeSparseBitVectors()
     bool res = false;
     bool needscan = false;
     for (auto &i : _bvs) {
-        RefType iRef(i);
+        RefType iRef = EntryRef(i);
         uint32_t typeId = getTypeId(iRef);
         (void) typeId;
         assert(isBitVector(typeId));

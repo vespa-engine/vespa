@@ -10,5 +10,6 @@ vespa_add_library(searchlib_predicate OBJECT
     predicate_tree_annotator.cpp
     predicate_zero_constraint_posting_list.cpp
     simple_index.cpp
+    common.cpp
     DEPENDS
 )

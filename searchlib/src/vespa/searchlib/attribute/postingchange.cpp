@@ -126,9 +126,9 @@ PostingChange<AttributeWeightPosting>::removeDups()
 }
 
 template <typename P>
-PostingChange<P>::PostingChange() { }
+PostingChange<P>::PostingChange() = default;
 template <typename P>
-PostingChange<P>::~PostingChange() { }
+PostingChange<P>::~PostingChange() = default;
 
 template <typename P>
 void
@@ -191,7 +191,7 @@ private:
         if (itr.second) {
             itr.first->second = _mapper.map(unmapped, _compare).ref();
         }
-        return EnumIndex(itr.first->second);
+        return EnumIndex(datastore::EntryRef(itr.first->second));
     }
 
 
@@ -273,7 +273,7 @@ ActualChangeComputer<WeightedIndex>::ActualChangeComputer(const EnumStoreCompara
 { }
 
 template <typename WeightedIndex>
-ActualChangeComputer<WeightedIndex>::~ActualChangeComputer() { }
+ActualChangeComputer<WeightedIndex>::~ActualChangeComputer() = default;
 
 template <typename WeightedIndex>
 void

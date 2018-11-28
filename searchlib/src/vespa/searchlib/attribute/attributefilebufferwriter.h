@@ -5,8 +5,7 @@
 #include "iattributefilewriter.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 
-namespace search
-{
+namespace search {
 
 /*
  * BufferWriter implementation that passes full buffers on to
@@ -27,10 +26,9 @@ public:
     static constexpr size_t BUFFER_SIZE = 4 * 1024 * 1024;
 
     AttributeFileBufferWriter(IAttributeFileWriter &fileWriter);
+    ~AttributeFileBufferWriter() override;
 
-    virtual ~AttributeFileBufferWriter();
-
-    virtual void flush() override;
+    void flush() override;
 
     size_t getBytesWritten() const { return _bytesWritten; }
 };

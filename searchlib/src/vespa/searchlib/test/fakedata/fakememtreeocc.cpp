@@ -150,13 +150,8 @@ FakeMemTreeOccMgr::FakeMemTreeOccMgr(const Schema &schema)
 
 FakeMemTreeOccMgr::~FakeMemTreeOccMgr()
 {
-    std::vector<std::shared_ptr<PostingIdx> >::iterator
-        it(_postingIdxs.begin());
-    std::vector<std::shared_ptr<PostingIdx> >::iterator
-        ite(_postingIdxs.end());
-
-    for (; it != ite; ++it) {
-        (*it)->clear();
+    for (auto & idx : _postingIdxs) {
+        idx->clear();
     }
     sync();
 }
@@ -258,16 +253,15 @@ FakeMemTreeOccMgr::flush()
         Tree &tree = pidx._tree;
         Tree::Iterator &itr = pidx._iterator;
         const FakeWord *fw = _fakeWords[wordIdx];
-        if (wordIdx != lastWord)
+        if (wordIdx != lastWord) {
             itr.lower_bound(docId);
-        else if (itr.valid() && itr.getKey() < docId) {
+        } else if (itr.valid() && itr.getKey() < docId) {
             itr.linearSeek(docId);
         }
         lastWord = wordIdx;
         if (i->getRemove()) {
             if (itr.valid() && itr.getKey() == docId) {
-                uint64_t bits = _featureStore.bitSize(fw->getPackedIndex(),
-                                                      itr.getData());
+                uint64_t bits = _featureStore.bitSize(fw->getPackedIndex(), EntryRef(itr.getData()));
                 _featureSizes[wordIdx] -= RefType::align((bits + 7) / 8) * 8;
                 tree.remove(itr);
             }
@@ -332,10 +326,8 @@ FakeMemTreeOccFactory::make(const FakeWord &fw)
 
     assert(_mgr._postingIdxs.size() > wordIdx);
 
-    return FakePosting::SP(new FakeMemTreeOcc(fw, _mgr._allocator,
-                                   _mgr._postingIdxs[wordIdx]->_tree,
-                                   _mgr._featureSizes[wordIdx],
-                                   _mgr));
+    return std::make_shared<FakeMemTreeOcc>(fw, _mgr._allocator, _mgr._postingIdxs[wordIdx]->_tree,
+                                            _mgr._featureSizes[wordIdx], _mgr);
 }
 
 
@@ -351,9 +343,7 @@ FakeMemTreeOccFactory::setup(const std::vector<const FakeWord *> &fws)
         _mgr._fakeWords.push_back(*fwi);
         _mgr._featureSizes.push_back(0);
         _mgr._fw2WordIdx[*fwi] = wordIdx;
-        _mgr._postingIdxs.push_back(
-                std::shared_ptr<PostingIdx>
-                (new PostingIdx(_mgr._allocator)));
+        _mgr._postingIdxs.push_back(std::make_shared<PostingIdx>(_mgr._allocator));
         r.push_back(FakeWord::RandomizedReader());
         r.back().setup(*fwi, wordIdx);
         ++fwi;
@@ -384,9 +374,7 @@ FakeMemTreeOcc2Factory::FakeMemTreeOcc2Factory(const Schema &schema)
 }
 
 
-FakeMemTreeOcc2Factory::~FakeMemTreeOcc2Factory()
-{
-}
+FakeMemTreeOcc2Factory::~FakeMemTreeOcc2Factory() = default;
 
 
 FakePosting::SP
@@ -402,11 +390,8 @@ FakeMemTreeOcc2Factory::make(const FakeWord &fw)
 
     assert(_mgr._postingIdxs.size() > wordIdx);
 
-    return FakePosting::SP(new FakeMemTreeOcc(fw, _mgr._allocator,
-                                   _mgr._postingIdxs[wordIdx]->_tree,
-                                   _mgr._featureSizes[wordIdx],
-                                   _mgr,
-                                   ".memtreeocc2"));
+    return std::make_shared<FakeMemTreeOcc>(fw, _mgr._allocator, _mgr._postingIdxs[wordIdx]->_tree,
+                                            _mgr._featureSizes[wordIdx], _mgr, ".memtreeocc2");
 }
 
 

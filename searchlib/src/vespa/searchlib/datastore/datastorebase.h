@@ -341,5 +341,4 @@ public:
     std::vector<uint32_t> startCompactWorstBuffers(bool compactMemory, bool compactAddressSpace);
 };
 
-
 }

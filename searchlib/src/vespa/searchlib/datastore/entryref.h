@@ -11,8 +11,9 @@ protected:
     uint32_t _ref;
 public:
     EntryRef() : _ref(0u) { }
-    EntryRef(uint32_t ref_) : _ref(ref_) { }
+    explicit EntryRef(uint32_t ref_) : _ref(ref_) { }
     uint32_t ref() const { return _ref; }
+    uint32_t hash() const { return _ref; }
     bool valid() const { return _ref != 0u; }
     bool operator==(const EntryRef &rhs) const { return _ref == rhs._ref; }
     bool operator!=(const EntryRef &rhs) const { return _ref != rhs._ref; }

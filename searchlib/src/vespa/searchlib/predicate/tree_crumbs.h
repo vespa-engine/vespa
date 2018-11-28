@@ -5,8 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 /**
  * Builds a path from the root of a tree, to be able to describe a
@@ -39,6 +38,4 @@ public:
     }
 };
 
-}  // namespace predicate
-}  // namespace search
-
+}

@@ -5,14 +5,11 @@
 #include "predicate_tree_annotator.h"
 #include <vespa/searchlib/btree/btree.h>
 #include <vespa/searchlib/memoryindex/wordstore.h>
-#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/util/array.h>
 #include <unordered_set>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 /**
  * Class used to track the {featureId, docId} pairs that are inserted
@@ -84,6 +81,4 @@ public:
     void serialize(vespalib::DataBuffer &buffer) const;
 };
 
-}  // namespace predicate
-}  // namespace search
-
+}

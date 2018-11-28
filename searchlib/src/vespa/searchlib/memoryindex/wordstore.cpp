@@ -3,8 +3,7 @@
 #include "wordstore.h"
 #include <vespa/searchlib/datastore/datastore.hpp>
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
 constexpr size_t MIN_CLUSTERS = 1024;
 
@@ -44,7 +43,4 @@ WordStore::addWord(const vespalib::stringref word)
     return result.ref;
 }
 
-
-} // namespace search::memoryindex
-} // namespace search
-
+}

@@ -3,10 +3,9 @@
 #pragma once
 
 #include "predicate_posting_list.h"
-#include "predicate_index.h"
+#include "predicate_interval_store.h"
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 /**
  * PredicatePostingList implementation for regular interval iterators
@@ -57,12 +56,9 @@ bool PredicateIntervalPostingList<Iterator>::next(uint32_t doc_id) {
             return false;
         }
     }
-    _current_interval =
-            _interval_store.get(_iterator.getData(), _interval_count, &_single_buf);
+    _current_interval = _interval_store.get(_iterator.getData(), _interval_count, &_single_buf);
     setDocId(_iterator.getKey());
     return true;
 }
 
-}  // namespace predicate
-}  // namespace search
-
+}

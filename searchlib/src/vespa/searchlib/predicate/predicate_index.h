@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "common.h"
 #include "document_features_store.h"
 #include "predicate_interval_store.h"
 #include "simple_index.h"
@@ -11,8 +12,8 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <unordered_map>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
+
 class PredicateTreeAnnotations;
 
 /**
@@ -24,7 +25,6 @@ class PredicateTreeAnnotations;
 class PredicateIndex : public PopulateInterface {
     typedef SimpleIndex<datastore::EntryRef> IntervalIndex;
     typedef SimpleIndex<datastore::EntryRef> BoundsIndex;
-    typedef btree::BTree<uint32_t, btree::BTreeNoLeafData> BTreeSet;
     template <typename IntervalT>
     using FeatureMap = std::unordered_map<uint64_t, std::vector<IntervalT>>;
     using generation_t = vespalib::GenerationHandler::generation_t;
@@ -32,17 +32,11 @@ class PredicateIndex : public PopulateInterface {
     using optional = std::experimental::optional<T>;
 
 public:
-    using ZeroConstraintDocs = BTreeSet::FrozenView;
     typedef std::unique_ptr<PredicateIndex> UP;
     typedef vespalib::GenerationHandler GenerationHandler;
     typedef vespalib::GenerationHolder GenerationHolder;
     using BTreeIterator = SimpleIndex<datastore::EntryRef>::BTreeIterator;
     using VectorIterator = SimpleIndex<datastore::EntryRef>::VectorIterator;
-    static const vespalib::string z_star_attribute_name;
-    static const uint64_t z_star_hash;
-    static const vespalib::string z_star_compressed_attribute_name;
-    static const uint64_t z_star_compressed_hash;
-
 private:
     uint32_t _arity;
     GenerationHandler &_generation_handler;
@@ -56,8 +50,7 @@ private:
     mutable BitVectorCache  _cache;
 
     template <typename IntervalT>
-    void addPosting(uint64_t feature, uint32_t doc_id,
-                    datastore::EntryRef ref);
+    void addPosting(uint64_t feature, uint32_t doc_id, datastore::EntryRef ref);
 
     template <typename IntervalT>
     void indexDocumentFeatures(uint32_t doc_id, const FeatureMap<IntervalT> &interval_map);
@@ -75,7 +68,7 @@ public:
                    const SimpleIndexConfig &simple_index_config, vespalib::DataBuffer &buffer,
                    SimpleIndexDeserializeObserver<> & observer, uint32_t version);
 
-    ~PredicateIndex();
+    ~PredicateIndex() override;
     void serialize(vespalib::DataBuffer &buffer) const;
     void onDeserializationCompleted();
 
@@ -117,6 +110,4 @@ public:
 
 extern template class SimpleIndex<datastore::EntryRef>;
 
-}  // namespace predicate
-}  // namespace search
-
+}

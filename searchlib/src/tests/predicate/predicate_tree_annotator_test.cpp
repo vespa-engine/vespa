@@ -141,7 +141,7 @@ TEST("require that NOTs get correct intervals") {
     EXPECT_EQUAL(2u, result.interval_map.size());
     checkInterval(result, "key=value",
                   {0x00010001, 0x00020002, 0x00040004, 0x00050005});
-    checkInterval(result, PredicateIndex::z_star_compressed_attribute_name,
+    checkInterval(result, Constants::z_star_compressed_attribute_name,
                   {0x00020001, 0x00050004});
 }
 
@@ -156,7 +156,7 @@ TEST("require that NOT inverts ANDs and ORs") {
     EXPECT_EQUAL(2u, result.interval_map.size());
     checkInterval(result, "key=value",
                   {0x00010002, 0x00010003});
-    checkInterval(result, PredicateIndex::z_star_compressed_attribute_name,
+    checkInterval(result, Constants::z_star_compressed_attribute_name,
                   {0x00020000});
 }
 
@@ -168,7 +168,7 @@ TEST("require that final first NOT-interval is extended") {
     EXPECT_EQUAL(2u, result.interval_range);
     EXPECT_EQUAL(2u, result.interval_map.size());
     checkInterval(result, "key=A", {0x00010001});
-    checkInterval(result, PredicateIndex::z_star_compressed_attribute_name,
+    checkInterval(result, Constants::z_star_compressed_attribute_name,
                   {0x00010000});
 }
 
@@ -188,7 +188,7 @@ TEST("show different types of NOT-intervals") {
     checkInterval(result, "key=B", {0x00020002});
     checkInterval(result, "key=C", {0x00010004});
     checkInterval(result, "key=D", {0x00060006});
-    checkInterval(result, PredicateIndex::z_star_compressed_attribute_name,
+    checkInterval(result, Constants::z_star_compressed_attribute_name,
                   {0x00020001, 0x00000006, 0x00040000});
 
     slime = orNode({neg(featureSet("key", {"A"})),
@@ -200,7 +200,7 @@ TEST("show different types of NOT-intervals") {
     EXPECT_EQUAL(3u, result.interval_map.size());
     checkInterval(result, "key=A", {0x00010003});
     checkInterval(result, "key=B", {0x00010003});
-    checkInterval(result, PredicateIndex::z_star_compressed_attribute_name,
+    checkInterval(result, Constants::z_star_compressed_attribute_name,
                   {0x00030000, 0x00030000});
 
     slime = orNode({andNode({neg(featureSet("key", {"A"})),
@@ -216,7 +216,7 @@ TEST("show different types of NOT-intervals") {
     checkInterval(result, "key=B", {0x00030007});
     checkInterval(result, "key=C", {0x00010005});
     checkInterval(result, "key=D", {0x00070007});
-    checkInterval(result, PredicateIndex::z_star_compressed_attribute_name,
+    checkInterval(result, Constants::z_star_compressed_attribute_name,
                   {0x00010000, 0x00070002, 0x00050000,
                    0x00070006});
 
@@ -333,7 +333,7 @@ TEST("require that z-star feature is only registered once") {
     EXPECT_EQUAL(4u, result.interval_range);
     ASSERT_EQUAL(3u, result.features.size());
     EXPECT_EQUAL(PredicateHash::hash64("key1=value1"), result.features[0]);
-    EXPECT_EQUAL(PredicateIndex::z_star_compressed_hash, result.features[1]);
+    EXPECT_EQUAL(Constants::z_star_compressed_hash, result.features[1]);
     EXPECT_EQUAL(PredicateHash::hash64("key2=10-19"), result.features[2]);
     ASSERT_EQUAL(0u, result.range_features.size());
 }

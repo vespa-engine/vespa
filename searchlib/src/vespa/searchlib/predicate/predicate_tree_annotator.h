@@ -4,7 +4,6 @@
 
 #include "predicate_interval.h"
 #include <vespa/vespalib/data/memory.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <climits>
 #include <vector>
 #include <unordered_map>

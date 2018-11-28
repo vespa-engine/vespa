@@ -5,10 +5,8 @@
 #include "tree_crumbs.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <map>
-#include <string>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 /**
  * Analyzes a predicate tree, in the form of a slime object, to find
@@ -39,6 +37,4 @@ public:
     const std::map<std::string, int> &getSizeMap() const { return _size_map; }
 };
 
-}  // namespace predicate
-}  // namespace search
-
+}
