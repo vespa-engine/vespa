@@ -36,7 +36,7 @@ search tensor {
   rank-profile profile3 {
 
     first-phase {
-      expression: sum(joinedtensors)
+      expression: sum(joinedtensors())
     }
 
     function joinedtensors() {
