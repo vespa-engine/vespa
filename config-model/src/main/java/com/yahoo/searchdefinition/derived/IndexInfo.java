@@ -13,8 +13,6 @@ import com.yahoo.search.config.IndexInfoConfig;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfSimpleStruct;
-
 /**
  * Per-index commands which should be applied to queries prior to searching
  *
@@ -89,17 +87,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     }
 
     private void deriveImportedComplexField(ImportedField field) {
-        ImmutableSDField targetField = field.targetField();
-        while (targetField.isImportedField()) {
-            targetField = targetField.getBackingField();
-        }
-        addStructFieldIndexCommand(field.fieldName());
-        if (isMapOfSimpleStruct(targetField)) {
-            addStructFieldIndexCommand(field.fieldName() + ".value");
-        }
-    }
-
-    private void addStructFieldIndexCommand(String fieldName) {
+        String fieldName = field.fieldName();
         addIndexCommand(fieldName, CMD_MULTIVALUE);
         addIndexCommand(fieldName, CMD_INDEX);
     }
