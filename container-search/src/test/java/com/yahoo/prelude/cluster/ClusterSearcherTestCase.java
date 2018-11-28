@@ -3,6 +3,7 @@ package com.yahoo.prelude.cluster;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.ComponentId;
+import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.search.Fs4Config;
 import com.yahoo.container.search.LegacyEmulationConfig;
@@ -533,7 +534,7 @@ public class ClusterSearcherTestCase {
         QrMonitorConfig monitorCfg = new QrMonitorConfig(new QrMonitorConfig.Builder());
         Statistics statistics = Statistics.nullImplementation;
         Fs4Config fs4Cfg = new Fs4Config(new Fs4Config.Builder());
-        FS4ResourcePool fs4ResourcePool = new FS4ResourcePool(fs4Cfg);
+        FS4ResourcePool fs4ResourcePool = new FS4ResourcePool(fs4Cfg, new QrConfig(new QrConfig.Builder()));
         ClusterSearcher searcher = new ClusterSearcher(id, qrsCfg, clusterCfg, documentDbCfg, emulationCfg, monitorCfg, 
                                                        new DispatchConfig(new DispatchConfig.Builder()), 
                                                        createClusterInfoConfig(),

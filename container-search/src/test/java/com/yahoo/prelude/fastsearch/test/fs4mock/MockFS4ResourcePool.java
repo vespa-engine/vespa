@@ -7,7 +7,6 @@ import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -21,7 +20,7 @@ public class MockFS4ResourcePool extends FS4ResourcePool {
     private final long testingThreadId;
     
     public MockFS4ResourcePool() {
-        super(1);
+        super("container.0", 1);
         this.testingThreadId = Thread.currentThread().getId();
     }
 

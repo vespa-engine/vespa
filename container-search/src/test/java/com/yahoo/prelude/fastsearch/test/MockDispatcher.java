@@ -18,7 +18,7 @@ class MockDispatcher extends Dispatcher {
     }
 
     public MockDispatcher(String clusterId, List<Node> nodes) {
-        this(clusterId, nodes, new FS4ResourcePool(1), 1, new VipStatus());
+        this(clusterId, nodes, new FS4ResourcePool("container.0", 1), 1, new VipStatus());
     }
 
     public MockDispatcher(String clusterId, List<Node> nodes, FS4ResourcePool fs4ResourcePool,
