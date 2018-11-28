@@ -25,7 +25,7 @@ void EnumStoreT<EntryType>::freeUnusedEnum(Index idx, IndexSet & unused)
     if (e.getRefCount() == 0) {
         Type value = e.getValue();
         if (unused.insert(idx).second) {
-            _store.incDead(idx.bufferId(), getEntrySize(value));
+            _store.incDead(idx, getEntrySize(value));
         }
     }
 }
