@@ -17,9 +17,9 @@ public class CacheKeyTestCase {
     @Test
     public void testHitsOffsetEquality() {
         Query a = new Query("/?query=abcd");
-        QueryPacket p1 = QueryPacket.create(a);
+        QueryPacket p1 = QueryPacket.create("container.0", a);
         a.setWindow(100, 1000);
-        QueryPacket p2 = QueryPacket.create(a);
+        QueryPacket p2 = QueryPacket.create("container.0", a);
         CacheKey k1 = new CacheKey(p1);
         CacheKey k2 = new CacheKey(p2);
         assertEquals(k1, k2);
@@ -29,9 +29,9 @@ public class CacheKeyTestCase {
     @Test
     public void testSessionKeyIgnored() {
         Query a = new Query("/?query=abcd");
-        QueryPacket ap = QueryPacket.create(a);
+        QueryPacket ap = QueryPacket.create("container.0", a);
         Query b = new Query("/?query=abcd&ranking.queryCache=true");
-        QueryPacket bp = QueryPacket.create(b);
+        QueryPacket bp = QueryPacket.create("container.0", b);
         CacheKey ak = new CacheKey(ap);
         CacheKey bk = new CacheKey(bp);
         assertEquals(ak, bk);

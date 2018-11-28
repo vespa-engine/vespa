@@ -39,10 +39,10 @@ public class PacketCacheTestCase {
         0,0,0,4, 2,2,2,2,2,2,2,2,2,2,2,2, 0x40,0x35,0,0,0,0,0,0, 0,0,0,8, 0,0,0,37};
     static int length = queryResultPacketData.length; // 4 + 68 + 2*12 bytes
 
-    static CacheKey key1 = new CacheKey(QueryPacket.create(new Query("/?query=key1")));
-    static CacheKey key2 = new CacheKey(QueryPacket.create(new Query("/?query=key2")));
-    static CacheKey key3 = new CacheKey(QueryPacket.create(new Query("/?query=key3")));
-    static CacheKey key4 = new CacheKey(QueryPacket.create(new Query("/?query=key4")));
+    static CacheKey key1 = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key1")));
+    static CacheKey key2 = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key2")));
+    static CacheKey key3 = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key3")));
+    static CacheKey key4 = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key4")));
 
     @Test
     public void testPutAndGet() throws BufferTooSmallException {

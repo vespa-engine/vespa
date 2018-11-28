@@ -394,7 +394,7 @@ public class FastSearcherTestCase {
         Result result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 2);
         Query q = new Query("?query=ignored");
         ((WordItem) q.getModel().getQueryTree().getRoot()).setUniqueID(1);
-        QueryPacket queryPacket = QueryPacket.create(q);
+        QueryPacket queryPacket = QueryPacket.create("container.0", q);
         CacheKey k = new CacheKey(queryPacket);
         PacketWrapper p = c.lookup(k, q);
         assertEquals(1, p.getResultPackets().size());

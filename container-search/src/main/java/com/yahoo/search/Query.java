@@ -1015,14 +1015,27 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      *
      * @param create if true this is created if not already set
      * @return the session id of this query, or null if not set and create is false
+     * @deprecated use getSessionId() or getSessionId(serverId) instead
      */
+    @Deprecated
     public SessionId getSessionId(boolean create) {
-        if (requestId == null && ! create) return null;
+        if ( ! create) return getSessionId();
 
-        if (requestId == null && create) {
+        if (requestId == null)
             requestId = UniqueRequestId.next();
-        }
+        return new SessionId(requestId, getRanking().getProfile());
+    }
 
+    /** Returns the session id of this query, or null if none is assigned */
+    public SessionId getSessionId() {
+        if (requestId == null) return null;
+        return new SessionId(requestId, getRanking().getProfile());
+    }
+
+    /** Returns the session id of this query, and creates and assigns it if not already present */
+    public SessionId getSessionId(String serverId) {
+        if (requestId == null)
+            requestId = UniqueRequestId.next(serverId);
         return new SessionId(requestId, getRanking().getProfile());
     }
 

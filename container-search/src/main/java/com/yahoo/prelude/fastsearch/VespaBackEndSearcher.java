@@ -54,7 +54,9 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     static final CompoundName PACKET_COMPRESSION_LIMIT = new CompoundName("packetcompressionlimit");
     static final CompoundName PACKET_COMPRESSION_TYPE = new CompoundName("packetcompressiontype");
-    protected static final CompoundName TRACE_DISABLE = new CompoundName("trace.disable");
+    private static final CompoundName TRACE_DISABLE = new CompoundName("trace.disable");
+
+    private String serverId;
 
     /** The set of all document databases available in the backend handled by this searcher */
     private Map<String, DocumentDatabase> documentDbs = new LinkedHashMap<>();
@@ -72,7 +74,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     private String name;
 
     /** Cache wrapper */
-    protected CacheControl cacheControl = null;
+    private CacheControl cacheControl = null;
 
     public final String getName() { return name; }
     protected final String getDefaultDocsumClass() { return defaultDocsumClass; }
@@ -144,6 +146,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return result;
     }
 
+    public String getServerId() { return serverId; }
 
     protected DocumentDatabase getDocumentDatabase(Query query) {
         if (query.getModel().getRestrict().size() == 1) {
@@ -163,8 +166,9 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
     }
 
-    public final void init(SummaryParameters docSumParams, ClusterParams clusterParams, CacheParams cacheParams,
-                           DocumentdbInfoConfig documentdbInfoConfig) {
+    public final void init(String serverId, SummaryParameters docSumParams, ClusterParams clusterParams,
+                           CacheParams cacheParams, DocumentdbInfoConfig documentdbInfoConfig) {
+        this.serverId = serverId;
         this.name = clusterParams.searcherName;
 
         Validator.ensureNotNull("Name of Vespa backend integration", getName());
@@ -213,7 +217,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         if (root == null || root instanceof NullItem) // root can become null after resolving and transformation?
             return new Result(query);
 
-        QueryPacket queryPacket = createQueryPacket(query);
+        QueryPacket queryPacket = createQueryPacket(serverId, query);
 
         if (isLoggingFine())
             getLogger().fine("made QueryPacket: " + queryPacket);
@@ -237,8 +241,8 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return result;
     }
 
-    protected QueryPacket createQueryPacket(Query query) {
-        QueryPacket queryPacket = QueryPacket.create(query);
+    protected QueryPacket createQueryPacket(String serverId, Query query) {
+        QueryPacket queryPacket = QueryPacket.create(serverId, query);
         int compressionLimit = query.properties().getInteger(PACKET_COMPRESSION_LIMIT, 0);
         queryPacket.setCompressionLimit(compressionLimit);
         if (compressionLimit != 0)
@@ -368,7 +372,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             s.append(" ranking.queryCache=true");
         }
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
-            s.append(" sessionId=").append(query.getSessionId(true));
+            s.append(" sessionId=").append(query.getSessionId(false));
         }
 
         List<Grouping> grouping = GroupingExecutor.getGroupingList(query);

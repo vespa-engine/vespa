@@ -167,7 +167,7 @@ public class BackendTestCase {
         int channelId = channel.getChannelId();
         server.dispatch.channelId = channelId;
 
-        assertTrue(backend.sendPacket(QueryPacket.create(q), channelId));
+        assertTrue(backend.sendPacket(QueryPacket.create("container.0", q), channelId));
         try {
             b = channel.receivePackets(1000, 1);
         } catch (ChannelTimeoutException e) {

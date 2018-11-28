@@ -25,6 +25,7 @@ import java.util.List;
  */
 public class QueryPacket extends Packet {
 
+    private final String serverId;
     private final Query query;
 
     private QueryPacketData queryPacketData;
@@ -33,7 +34,8 @@ public class QueryPacket extends Packet {
     private int ignoreableOffset = 0; // Start of (hits/offset/timestamp) ignore section for cache key
     private int ignoreableSize = 0;  // Length of (hits/offset/timestamp) ignore section for cache key
 
-    private QueryPacket(Query query) {
+    private QueryPacket(String serverId, Query query) {
+        this.serverId = serverId;
         this.query = query;
     }
 
@@ -47,8 +49,8 @@ public class QueryPacket extends Packet {
      *
      * @param query the query to convert to a packet
      */
-    public static QueryPacket create(Query query) {
-        return new QueryPacket(query);
+    public static QueryPacket create(String serverId, Query query) {
+        return new QueryPacket(serverId, query);
     }
 
 
@@ -162,7 +164,7 @@ public class QueryPacket extends Packet {
 
         sessionOffset = buffer.position() - relativeZero;
         if (sendSessionKey) {
-            Utf8String key = query.getSessionId(true).asUtf8String();
+            Utf8String key = query.getSessionId(serverId).asUtf8String();
             sessionSize = key.getByteLength();
             buffer.putInt(key.getByteLength());
             buffer.put(key.getBytes());

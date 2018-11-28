@@ -29,6 +29,8 @@ import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.hitIterator;
  * @author ollivir
  */
 public class FS4FillInvoker extends FillInvoker {
+
+    private final String serverId;
     private final VespaBackEndSearcher searcher;
     private FS4Channel channel;
 
@@ -36,17 +38,17 @@ public class FS4FillInvoker extends FillInvoker {
     private CacheKey summaryCacheKey = null;
     private DocsumPacketKey[] summaryPacketKeys = null;
 
-    public FS4FillInvoker(VespaBackEndSearcher searcher, Query query, FS4ResourcePool fs4ResourcePool, String hostname, int port,
-            int distributionKey) {
+    public FS4FillInvoker(VespaBackEndSearcher searcher, Query query, FS4ResourcePool fs4ResourcePool, String hostname, int port) {
+        this.serverId = fs4ResourcePool.getServerId();
         this.searcher = searcher;
-
         Backend backend = fs4ResourcePool.getBackend(hostname, port);
         this.channel = backend.openChannel();
         channel.setQuery(query);
     }
 
     // fdispatch code path
-    public FS4FillInvoker(VespaBackEndSearcher searcher, Query query, Backend backend) {
+    public FS4FillInvoker(String serverId, VespaBackEndSearcher searcher, Query query, Backend backend) {
+        this.serverId = serverId;
         this.searcher = searcher;
         this.channel = backend.openChannel();
         channel.setQuery(query);
@@ -58,7 +60,7 @@ public class FS4FillInvoker extends FillInvoker {
         if (searcher.getCacheControl().useCache(channel.getQuery())) {
             summaryCacheKey = fetchCacheKeyFromHits(result.hits(), summaryClass);
             if (summaryCacheKey == null) {
-                QueryPacket queryPacket = QueryPacket.create(channel.getQuery());
+                QueryPacket queryPacket = QueryPacket.create(serverId, channel.getQuery());
                 summaryCacheKey = new CacheKey(queryPacket);
             }
             boolean cacheFound = cacheLookupTwoPhase(summaryCacheKey, result, summaryClass);

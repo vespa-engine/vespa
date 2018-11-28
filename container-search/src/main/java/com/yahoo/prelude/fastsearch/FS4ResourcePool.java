@@ -52,12 +52,10 @@ public class FS4ResourcePool extends AbstractComponent {
         scheduledExecutor = Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory(name + ".scheduled"));
     }
 
-    public ExecutorService getExecutor() {
-        return executor;
-    }
-    public ScheduledExecutorService getScheduledExecutor() {
-        return scheduledExecutor;
-    }
+    /** Returns an unique identifier of the server this runs in */
+    public String getServerId() { return serverId; }
+    public ExecutorService getExecutor() { return executor; }
+    public ScheduledExecutorService getScheduledExecutor() { return scheduledExecutor; }
 
     public Backend getBackend(String host, int port) {
         String key = host + ":" + port;

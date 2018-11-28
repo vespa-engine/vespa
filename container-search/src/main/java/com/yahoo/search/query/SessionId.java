@@ -4,7 +4,7 @@ package com.yahoo.search.query;
 import com.yahoo.text.Utf8String;
 
 /**
- * A id which is unique across this cluster + the extra differentiator.
+ * An id which is unique across the cluster of nodes
  *
  * @author baldersheim
  */
@@ -12,8 +12,8 @@ public class SessionId {
 
     private final Utf8String id;
 
-    public SessionId(UniqueRequestId requestId, String extraDifferentiator) {
-        this.id = new Utf8String(requestId.toString() + "." + extraDifferentiator);
+    public SessionId(UniqueRequestId requestId, String localSessionId) {
+        this.id = new Utf8String(requestId.toString() + "." + localSessionId);
     }
 
     @Override

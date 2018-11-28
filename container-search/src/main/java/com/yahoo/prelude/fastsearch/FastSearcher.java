@@ -77,7 +77,7 @@ public class FastSearcher extends VespaBackEndSearcher {
     public FastSearcher(Backend dispatchBackend, FS4ResourcePool fs4ResourcePool,
                         Dispatcher dispatcher, SummaryParameters docSumParams, ClusterParams clusterParams,
                         CacheParams cacheParams, DocumentdbInfoConfig documentdbInfoConfig) {
-        init(docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
+        init(fs4ResourcePool.getServerId(), docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
         this.dispatchBackend = dispatchBackend;
         this.dispatcher = dispatcher;
         this.fs4InvokerFactory = new FS4InvokerFactory(fs4ResourcePool, dispatcher.searchCluster(), this);
@@ -241,7 +241,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         if (direct.isPresent()) {
             return fs4InvokerFactory.getFillInvoker(query, direct.get());
         }
-        return new FS4FillInvoker(this, query, dispatchBackend);
+        return new FS4FillInvoker(getServerId(), this, query, dispatchBackend);
     }
 
     /**
