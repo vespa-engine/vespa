@@ -30,7 +30,7 @@ public class QueryTestCase {
     public void testEncodePacket() {
         Query query = new Query("/?query=chain&timeout=0");
         query.setWindow(2, 8);
-        QueryPacket packet = QueryPacket.create(query);
+        QueryPacket packet = QueryPacket.create("container.0", query);
         assertEquals(2, packet.getOffset());
         assertEquals(8, packet.getHits());
 
@@ -56,7 +56,7 @@ public class QueryTestCase {
         // we do the sledgehammer dance:
         query.getRanking().setProfile("two");
         query.setWindow(2, 8);
-        QueryPacket packet = QueryPacket.create(query);
+        QueryPacket packet = QueryPacket.create("container.0", query);
         byte[] encoded = packetToBytes(packet);
         byte[] correctBuffer = new byte[] {0,0,0,42,0,0,0,-38,0,0,0,0, // Header
                                           0,0,0,6, // Features
@@ -90,7 +90,7 @@ public class QueryTestCase {
 
         query.prepare();
 
-        QueryPacket packet = QueryPacket.create(query);
+        QueryPacket packet = QueryPacket.create("container.0", query);
         byte[] encoded = packetToBytes(packet);
         byte[] correctBuffer=new byte[] {
             0, 0, 1, 23, 0, 0, 0, -38, 0, 0, 0, 0, 0, 16, 0, -122, 0, 10, ignored, ignored, ignored, ignored, 0, 0, 0x40, 0x03, 3, 't', 'w', 'o', 0, 0, 0, 3, 0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 5, 0, 0, 0, 11, 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', 46, 'p', '2', 0, 0, 0, 2, 'v', '2', 0, 0, 0, 11, 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', 46, 'p', '1', 0, 0, 0, 2, 'v', '1', 0, 0, 0, 3, 'f', 'o', 'o', 0, 0, 0, 4, '3', '0', 46, '3', 0, 0, 0, 3, 'b', 'a', 'r', 0, 0, 0, 1, '0', 0, 0, 0, 9, 'v', 'e', 's', 'p', 'a', 46, 'n', 'o', 'w', 0, 0, 0, 6, '1', '2', '3', '4', '5', '6', 0, 0, 0, 14, 'h', 'i', 'g', 'h', 'l', 'i', 'g', 'h', 't', 't', 'e', 'r', 'm', 's', 0, 0, 0, 3, 0, 0, 0, 6, 'f', 'i', 'e', 'l', 'd', '1', 0, 0, 0, 1, '2', 0, 0, 0, 6, 'f', 'i', 'e', 'l', 'd', '1', 0, 0, 0, 5, 't', 'e', 'r', 'm', '1', 0, 0, 0, 6, 'f', 'i', 'e', 'l', 'd', '1', 0, 0, 0, 5, 't', 'e', 'r', 'm', '2', 0, 0, 0, 5, 'm', 'o', 'd', 'e', 'l', 0, 0, 0, 1, 0, 0, 0, 10, 's', 'e', 'a', 'r', 'c', 'h', 'p', 'a', 't', 'h', 0, 0, 0, 3, '7', 47, '3', 0, 0, 0, 15, 43, 'f', 'i', 'e', 'l', 'd', '1', 32, 45, 'f', 'i', 'e', 'l', 'd', '2', 0, 0, 0, 1, 0, 0, 0, 9, 68, 1, 0, 5, 'c', 'h', 'a', 'i', 'n'
@@ -116,7 +116,7 @@ public class QueryTestCase {
 
         query.prepare();
 
-        QueryPacket packet = QueryPacket.create(query);
+        QueryPacket packet = QueryPacket.create("container.0", query);
         byte[] encoded = packetToBytes(packet);
         byte[] correctBuffer=new byte[] {
             0, 0, 1, 23, 0, 0, 0, -38, 0, 0, 0, 0, 0, 16, 0, -122, 0, 10, ignored, ignored, ignored, ignored, 0, 0, 0x40, 0x03, 3, 't', 'w', 'o', 0, 0, 0, 3, 0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 5, 0, 0, 0, 11, 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', 46, 'p', '2', 0, 0, 0, 2, 'v', '2', 0, 0, 0, 11, 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', 46, 'p', '1', 0, 0, 0, 2, 'v', '1', 0, 0, 0, 3, 'f', 'o', 'o', 0, 0, 0, 4, '3', '0', 46, '3', 0, 0, 0, 3, 'b', 'a', 'r', 0, 0, 0, 1, '0', 0, 0, 0, 9, 'v', 'e', 's', 'p', 'a', 46, 'n', 'o', 'w', 0, 0, 0, 6, '1', '2', '3', '4', '5', '6', 0, 0, 0, 14, 'h', 'i', 'g', 'h', 'l', 'i', 'g', 'h', 't', 't', 'e', 'r', 'm', 's', 0, 0, 0, 3, 0, 0, 0, 6, 'f', 'i', 'e', 'l', 'd', '1', 0, 0, 0, 1, '2', 0, 0, 0, 6, 'f', 'i', 'e', 'l', 'd', '1', 0, 0, 0, 5, 't', 'e', 'r', 'm', '1', 0, 0, 0, 6, 'f', 'i', 'e', 'l', 'd', '1', 0, 0, 0, 5, 't', 'e', 'r', 'm', '2', 0, 0, 0, 5, 'm', 'o', 'd', 'e', 'l', 0, 0, 0, 1, 0, 0, 0, 10, 's', 'e', 'a', 'r', 'c', 'h', 'p', 'a', 't', 'h', 0, 0, 0, 3, '7', 47, '3', 0, 0, 0, 15, 43, 'f', 'i', 'e', 'l', 'd', '1', 32, 45, 'f', 'i', 'e', 'l', 'd', '2', 0, 0, 0, 1, 0, 0, 0, 9, 68, 1, 0, 5, 'c', 'h', 'a', 'i', 'n'
@@ -146,7 +146,7 @@ public class QueryTestCase {
 
         query.prepare();
 
-        QueryPacket packet = QueryPacket.create(query);
+        QueryPacket packet = QueryPacket.create("container.0", query);
         byte[] encoded = packetToBytes(packet);
         byte[] correctBuffer=new byte[] {
                 0, 0, 1, 16, 0, 0, 0, -38, 0, 0, 0, 0, 0, 16, 0, 6, 0, 10, ignored, ignored, ignored, ignored, 0, 0, 0x40, 0x03, 7, 'd', 'e', 'f', 'a', 'u', 'l', 't', 0, 0, 0, 1, 0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 5, 0, 0, 0, 18, 'v', 'e', 's', 'p', 'a', 46, 'l', 'a', 'b', 'e', 'l', 46, 'b', 'a', 'r', 46, 'i', 'd', 0, 0, 0, 1, '1', 0, 0, 0, 22, 'v', 'e', 's', 'p', 'a', 46, 't', 'e', 'r', 'm', 46, '4', 46, 'c', 'o', 'n', 'n', 'e', 'x', 'i', 't', 'y', 0, 0, 0, 1, '3', 0, 0, 0, 22, 'v', 'e', 's', 'p', 'a', 46, 't', 'e', 'r', 'm', 46, '4', 46, 'c', 'o', 'n', 'n', 'e', 'x', 'i', 't', 'y', 0, 0, 0, 4, '0', 46, '1', '5', 0, 0, 0, 25, 'v', 'e', 's', 'p', 'a', 46, 't', 'e', 'r', 'm', 46, '3', 46, 's', 'i', 'g', 'n', 'i', 'f', 'i', 'c', 'a', 'n', 'c', 'e', 0, 0, 0, 4, '0', 46, '3', '7', 0, 0, 0, 25, 'v', 'e', 's', 'p', 'a', 46, 't', 'e', 'r', 'm', 46, '4', 46, 's', 'i', 'g', 'n', 'i', 'f', 'i', 'c', 'a', 'n', 'c', 'e', 0, 0, 0, 4, '0', 46, '8', '1', 0, 0, 0, 5, 0, 0, 0, '4', 1, 4, 79, 1, 0, 6, 'f', 'i', 'e', 'l', 'd', '1', 79, 2, 0, 6, 'f', 'i', 'e', 'l', 'd', '2', 68, 3, 6, 'f', 'i', 'e', 'l', 'd', '3', 5, 'w', 'o', 'r', 'd', '1', 68, 4, 6, 'f', 'i', 'e', 'l', 'd', '3', 5, 'w', 'o', 'r', 'd', 49
@@ -158,7 +158,7 @@ public class QueryTestCase {
     public void testEncodeSortSpec() throws BufferTooSmallException {
         Query query = new Query("/?query=chain&sortspec=%2Ba+-b&timeout=0");
         query.setWindow(2, 8);
-        QueryPacket packet = QueryPacket.create(query);
+        QueryPacket packet = QueryPacket.create("container.0", query);
         ByteBuffer buffer = ByteBuffer.allocate(500);
         buffer.limit(0);
         packet.encode(buffer, 0);
@@ -199,7 +199,7 @@ public class QueryTestCase {
         query.getModel().getQueryTree().setRoot(p);
 
         query.setTimeout(0);
-        QueryPacket queryPacket = QueryPacket.create(query);
+        QueryPacket queryPacket = QueryPacket.create("container.0", query);
 
         ByteBuffer buffer1 = ByteBuffer.allocate(1024);
 
@@ -212,7 +212,7 @@ public class QueryTestCase {
         query.getModel().getQueryTree().setRoot(p);
 
         query.setTimeout(0);
-        queryPacket = QueryPacket.create(query);
+        queryPacket = QueryPacket.create("container.0", query);
         assertNotNull(queryPacket);
 
         ByteBuffer buffer2 = ByteBuffer.allocate(1024);
@@ -232,7 +232,7 @@ public class QueryTestCase {
     public void testPatchInChannelId() {
         Query query = new Query("/?query=chain&timeout=0");
         query.setWindow(2, 8);
-        QueryPacket packet = QueryPacket.create(query);
+        QueryPacket packet = QueryPacket.create("container.0", query);
         assertEquals(2,packet.getOffset());
         assertEquals(8, packet.getHits());
 

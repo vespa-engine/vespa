@@ -144,7 +144,8 @@ public class ClusterSearcher extends Searcher {
         }
 
         if (searchClusterConfig.indexingmode() == STREAMING) {
-            VdsStreamingSearcher searcher = vdsCluster(searchClusterIndex,
+            VdsStreamingSearcher searcher = vdsCluster(fs4ResourcePool.getServerId(),
+                                                       searchClusterIndex,
                                                        searchClusterConfig, cacheParams, emulationConfig, docSumParams,
                                                        documentDbConfig);
             addBackendSearcher(searcher);
@@ -210,7 +211,8 @@ public class ClusterSearcher extends Searcher {
                                 documentdbInfoConfig);
     }
 
-    private static VdsStreamingSearcher vdsCluster(int searchclusterIndex,
+    private static VdsStreamingSearcher vdsCluster(String serverId,
+                                                   int searchclusterIndex,
                                                    QrSearchersConfig.Searchcluster searchClusterConfig,
                                                    CacheParams cacheParams,
                                                    LegacyEmulationConfig emulConfig,
@@ -226,7 +228,7 @@ public class ClusterSearcher extends Searcher {
         searcher.setSearchClusterConfigId(searchClusterConfig.rankprofiles().configid());
         searcher.setDocumentType(searchClusterConfig.searchdef(0));
         searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());
-        searcher.init(docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
+        searcher.init(serverId, docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
         return searcher;
     }
 

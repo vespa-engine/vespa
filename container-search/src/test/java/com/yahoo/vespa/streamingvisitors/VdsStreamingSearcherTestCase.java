@@ -138,7 +138,7 @@ public class VdsStreamingSearcherTestCase {
     }
 
     private static Result executeQuery(VdsStreamingSearcher searcher, Query query) {
-        QueryPacket queryPacket = QueryPacket.create(query);
+        QueryPacket queryPacket = QueryPacket.create("container.0", query);
         CacheKey cacheKey = new CacheKey(queryPacket);
         Execution execution = new Execution(new Execution.Context(null, null, null, null, null));
         return searcher.doSearch2(query, queryPacket, cacheKey, execution);
@@ -204,10 +204,11 @@ public class VdsStreamingSearcherTestCase {
 
         ConfigGetter<DocumentdbInfoConfig> getter = new ConfigGetter<>(DocumentdbInfoConfig.class);
         DocumentdbInfoConfig config = getter.getConfig("file:src/test/java/com/yahoo/prelude/fastsearch/test/documentdb-info.cfg");
-        searcher.init(new SummaryParameters("default"),
-                new ClusterParams("clusterName"),
-                new CacheParams(100, 1e64),
-                config);
+        searcher.init("container.0",
+                      new SummaryParameters("default"),
+                      new ClusterParams("clusterName"),
+                      new CacheParams(100, 1e64),
+                      config);
 
         // Magic query values are used to trigger specific behaviors from mock visitor.
         checkError(searcher, "/?query=noselection",
@@ -282,4 +283,5 @@ public class VdsStreamingSearcherTestCase {
         assertFalse(VdsStreamingSearcher.verifyDocId(orderIdUser2, group1Query, false));
         assertFalse(VdsStreamingSearcher.verifyDocId(badId, group1Query, false));
     }
+
 }

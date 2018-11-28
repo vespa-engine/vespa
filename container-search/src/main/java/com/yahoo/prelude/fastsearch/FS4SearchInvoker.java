@@ -30,6 +30,7 @@ import static java.util.Arrays.asList;
  * @author ollivir
  */
 public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<FS4Channel> {
+
     private final VespaBackEndSearcher searcher;
     private FS4Channel channel;
 
@@ -53,7 +54,7 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
 
         if(queryPacket == null) {
             // query changed for subchannel
-            queryPacket = searcher.createQueryPacket(query);
+            queryPacket = searcher.createQueryPacket(searcher.getServerId(), query);
         }
 
         this.query = query;

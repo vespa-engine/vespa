@@ -4,7 +4,7 @@ package com.yahoo.prelude.fastsearch;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.container.Server;
+import com.yahoo.container.QrConfig;
 import com.yahoo.container.search.Fs4Config;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.ConnectionPool;
@@ -30,6 +30,7 @@ public class FS4ResourcePool extends AbstractComponent {
 
     private static final Logger logger = Logger.getLogger(FS4ResourcePool.class.getName());
     private static final AtomicInteger instanceCounter = new AtomicInteger(0);
+    private final String serverId;
     private final int instanceId;
     private final ListenerPool listeners;
     private final Timer timer = new Timer();  // This is a timer for cleaning the closed connections
@@ -38,11 +39,12 @@ public class FS4ResourcePool extends AbstractComponent {
     private final ScheduledExecutorService scheduledExecutor;
 
     @Inject
-    public FS4ResourcePool(Fs4Config fs4Config) {
-        this(fs4Config.numlistenerthreads());
+    public FS4ResourcePool(Fs4Config fs4Config, QrConfig config) {
+        this(config.discriminator(), fs4Config.numlistenerthreads());
     }
     
-    public FS4ResourcePool(int listenerThreads) {
+    public FS4ResourcePool(String serverId, int listenerThreads) {
+        this.serverId = serverId;
         instanceId = instanceCounter.getAndIncrement();
         String name = "FS4-" + instanceId;
         listeners = new ListenerPool(name, listenerThreads);
@@ -50,19 +52,17 @@ public class FS4ResourcePool extends AbstractComponent {
         scheduledExecutor = Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory(name + ".scheduled"));
     }
 
-    public ExecutorService getExecutor() {
-        return executor;
-    }
-    public ScheduledExecutorService getScheduledExecutor() {
-        return scheduledExecutor;
-    }
+    /** Returns an unique identifier of the server this runs in */
+    public String getServerId() { return serverId; }
+    public ExecutorService getExecutor() { return executor; }
+    public ScheduledExecutorService getScheduledExecutor() { return scheduledExecutor; }
 
     public Backend getBackend(String host, int port) {
         String key = host + ":" + port;
         synchronized (connectionPoolMap) {
             Backend pool = connectionPoolMap.get(key);
             if (pool == null) {
-                pool = new Backend(host, port, Server.get().getServerDiscriminator(), listeners, new ConnectionPool(timer));
+                pool = new Backend(host, port, serverId, listeners, new ConnectionPool(timer));
                 connectionPoolMap.put(key, pool);
             }
             return pool;

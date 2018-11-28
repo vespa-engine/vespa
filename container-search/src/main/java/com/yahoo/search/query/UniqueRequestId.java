@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class UniqueRequestId {
 
-    private static final String serverId = Server.get().getServerDiscriminator();
     private static final AtomicLong sequenceCounter = new AtomicLong();
 
     private final String id;
@@ -28,8 +27,20 @@ public class UniqueRequestId {
     /**
      * Creates a session id which is unique across the cluster this runtime is a member of each time this is called.
      * Calling this causes synchronization.
+     *
+     * @deprecated use nextId(serverId) instead
      */
+    @Deprecated
     public static UniqueRequestId next() {
+        return new UniqueRequestId(Server.get().getServerDiscriminator(), System.currentTimeMillis(), sequenceCounter.getAndIncrement());
+    }
+
+    /**
+     * Creates a session id which is unique across the cluster this runtime is a member of each time this is called.
+     * Calling this causes synchronization.
+     */
+    public static UniqueRequestId next(String serverId) {
         return new UniqueRequestId(serverId, System.currentTimeMillis(), sequenceCounter.getAndIncrement());
     }
+
 }

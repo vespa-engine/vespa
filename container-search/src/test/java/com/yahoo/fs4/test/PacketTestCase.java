@@ -34,7 +34,7 @@ public class PacketTestCase {
         Query query = new Query("/?query=foo");
         assertNotNull(query);
 
-        QueryPacket queryPacket = QueryPacket.create(query);
+        QueryPacket queryPacket = QueryPacket.create("container.0", query);
         assertNotNull(queryPacket);
 
         ByteBuffer buffer = ByteBuffer.allocate(1024);
@@ -67,7 +67,7 @@ public class PacketTestCase {
         Query query = new Query(queryBuffer.toString());
         assertNotNull(query);
 
-        QueryPacket queryPacket = QueryPacket.create(query);
+        QueryPacket queryPacket = QueryPacket.create("container.0", query);
         assertNotNull(queryPacket);
 
         ByteBuffer buffer = ByteBuffer.allocate(100);
@@ -88,7 +88,7 @@ public class PacketTestCase {
 
     @Test
     public void requireThatPacketsCanTurnOnCompression() throws BufferTooSmallException {
-        QueryPacket queryPacket = QueryPacket.create(new Query("/?query=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        QueryPacket queryPacket = QueryPacket.create("container.0", new Query("/?query=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         int channel = 32;
 
@@ -116,7 +116,7 @@ public class PacketTestCase {
 
     @Test
     public void requireThatUncompressablePacketsArentCompressed() throws BufferTooSmallException {
-        QueryPacket queryPacket = QueryPacket.create(new Query("/?query=aaaaaaaaaaaaaaa"));
+        QueryPacket queryPacket = QueryPacket.create("container.0", new Query("/?query=aaaaaaaaaaaaaaa"));
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         int channel = 32;
 

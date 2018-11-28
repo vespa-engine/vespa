@@ -4,6 +4,7 @@ package com.yahoo.prelude.fastsearch.test;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
+import com.yahoo.container.QrConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
 import com.yahoo.container.search.Fs4Config;
@@ -82,7 +83,7 @@ public class FastSearcherTestCase {
     public void testNoNormalizing() {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
-                                                     new FS4ResourcePool(1),
+                                                     new FS4ResourcePool("container.0", 1),
                                                      new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
@@ -103,7 +104,7 @@ public class FastSearcherTestCase {
     public void testNullQuery() {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
-                                                     new FS4ResourcePool(1),
+                                                     new FS4ResourcePool("container.0", 1),
                                                      new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
@@ -176,7 +177,7 @@ public class FastSearcherTestCase {
         DocumentdbInfoConfig documentdbConfigWithOneDb =
             new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("testDb")));
         FastSearcher fastSearcher = new FastSearcher(mockBackend,
-                                                     new FS4ResourcePool(1),
+                                                     new FS4ResourcePool("container.0", 1),
                                                      new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
@@ -368,7 +369,7 @@ public class FastSearcherTestCase {
         MockFSChannel.resetDocstamp();
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         return new FastSearcher(mockBackend,
-                                new FS4ResourcePool(1),
+                                new FS4ResourcePool("container.0", 1),
                                 new MockDispatcher("a", Collections.emptyList()),
                                 new SummaryParameters(null),
                                 new ClusterParams("testhittype"),
@@ -381,7 +382,7 @@ public class FastSearcherTestCase {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         MockFSChannel.resetDocstamp();
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
-                                                     new FS4ResourcePool(1),
+                                                     new FS4ResourcePool("container.0", 1),
                                                      new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
@@ -393,7 +394,7 @@ public class FastSearcherTestCase {
         Result result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 2);
         Query q = new Query("?query=ignored");
         ((WordItem) q.getModel().getQueryTree().getRoot()).setUniqueID(1);
-        QueryPacket queryPacket = QueryPacket.create(q);
+        QueryPacket queryPacket = QueryPacket.create("container.0", q);
         CacheKey k = new CacheKey(queryPacket);
         PacketWrapper p = c.lookup(k, q);
         assertEquals(1, p.getResultPackets().size());
@@ -424,7 +425,7 @@ public class FastSearcherTestCase {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         MockFSChannel.resetDocstamp();
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
-                                                     new FS4ResourcePool(1),
+                                                     new FS4ResourcePool("container.0", 1),
                                                      new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
@@ -455,7 +456,7 @@ public class FastSearcherTestCase {
     @Test
     public void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
-                                                     new FS4ResourcePool(1),
+                                                     new FS4ResourcePool("container.0", 1),
                                                      new MockDispatcher(new Node(0, "host0", 123, 0)),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
@@ -483,7 +484,7 @@ public class FastSearcherTestCase {
                                                     new Node(2, "host1", 123, 0)));
 
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
-                                                     new FS4ResourcePool(1),
+                                                     new FS4ResourcePool("container.0", 1),
                                                      dispatcher,
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
@@ -520,10 +521,10 @@ public class FastSearcherTestCase {
     public void testPing() throws IOException, InterruptedException {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         BackendTestCase.MockServer server = new BackendTestCase.MockServer();
-        FS4ResourcePool listeners = new FS4ResourcePool(new Fs4Config(new Fs4Config.Builder()));
+        FS4ResourcePool listeners = new FS4ResourcePool(new Fs4Config(new Fs4Config.Builder()), new QrConfig(new QrConfig.Builder()));
         Backend backend = listeners.getBackend(server.host.getHostString(),server.host.getPort());
         FastSearcher fastSearcher = new FastSearcher(backend,
-                                                     new FS4ResourcePool(1),
+                                                     new FS4ResourcePool("container.0", 1),
                                                      new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),

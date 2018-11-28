@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.fs4.mplex;
 
+import com.yahoo.container.QrConfig;
 import com.yahoo.container.search.Fs4Config;
 import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.ChannelTimeoutException;
@@ -143,7 +144,7 @@ public class BackendTestCase {
         logger = Logger.getLogger(Backend.class.getName());
         initUseParent = logger.getUseParentHandlers();
         logger.setUseParentHandlers(false);
-        listeners = new FS4ResourcePool(new Fs4Config(new Fs4Config.Builder()));
+        listeners = new FS4ResourcePool(new Fs4Config(new Fs4Config.Builder()), new QrConfig(new QrConfig.Builder()));
 
         server = new MockServer();
         backend = listeners.getBackend(server.host.getHostString(), server.host.getPort());
@@ -166,7 +167,7 @@ public class BackendTestCase {
         int channelId = channel.getChannelId();
         server.dispatch.channelId = channelId;
 
-        assertTrue(backend.sendPacket(QueryPacket.create(q), channelId));
+        assertTrue(backend.sendPacket(QueryPacket.create("container.0", q), channelId));
         try {
             b = channel.receivePackets(1000, 1);
         } catch (ChannelTimeoutException e) {

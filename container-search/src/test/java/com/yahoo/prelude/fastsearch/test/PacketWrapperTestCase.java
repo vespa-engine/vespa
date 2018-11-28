@@ -26,7 +26,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPartialOverlap() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(10, 10, 100);
@@ -84,7 +84,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming1() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(5, 10, 100);
@@ -100,7 +100,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming2() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(5, 10, 100);
@@ -117,7 +117,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming3() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(20, 10, 100);
@@ -134,7 +134,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming4() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(5, 10, 100);
@@ -155,7 +155,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming5() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(5, 10, 100);
@@ -180,7 +180,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming6() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(5, 10, 100);
@@ -206,7 +206,7 @@ public class PacketWrapperTestCase {
     public void testPacketTrimming7() {
         final Query query = new Query("/?query=key");
         query.setWindow(50, 10);
-        CacheKey key = new CacheKey(QueryPacket.create(query));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", query));
         PacketWrapper w = createResult(key, 50, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(10, 10, 100);
@@ -232,7 +232,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming8() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(50, 10, 100);
@@ -249,7 +249,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming9() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(10, 10, 100);
@@ -268,7 +268,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming10() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(0, 11, 100);
@@ -288,7 +288,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming11() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(1, 10, 100);
@@ -316,7 +316,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming12() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(4, 10, 100);
@@ -338,7 +338,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming13() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(4, 10, 100);
@@ -361,7 +361,7 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testPacketTrimming14() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
 
         QueryResultPacket q = createQueryResultPacket(4, 10, 100);
@@ -384,12 +384,12 @@ public class PacketWrapperTestCase {
 
     @Test
     public void testZeroHits() {
-        CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
+        CacheKey key = new CacheKey(QueryPacket.create("container.0", new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 0);
 
         final Query query = new Query("/?query=key");
         query.setWindow(5, 10);
-        key = new CacheKey(QueryPacket.create(query));
+        key = new CacheKey(QueryPacket.create("container.0", query));
 
         QueryResultPacket q = createQueryResultPacket(5, 10, 0);
         w.addResultPacket(q);

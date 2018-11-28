@@ -134,7 +134,7 @@ public class FS4InvokerFactory {
     }
 
     public FillInvoker getFillInvoker(Query query, Node node) {
-        return new FS4FillInvoker(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port(), node.key());
+        return new FS4FillInvoker(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port());
     }
 
     /**
