@@ -14,9 +14,6 @@
     },
     {
       "url":"http://localhost:8080/application/v4/property/"
-    },
-    {
-      "url":"http://localhost:8080/application/v4/cookiefreshness/"
     }
   ]
 }
