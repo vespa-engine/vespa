@@ -6,7 +6,6 @@
 #include "multivalueattribute.hpp"
 #include "multienumattributesaver.h"
 #include "load_utils.h"
-
 namespace search {
 
 template <typename B, typename M>
@@ -16,7 +15,7 @@ MultiValueEnumAttribute<B, M>::extractChangeData(const Change & c, EnumIndex & i
     if (c._enumScratchPad == Change::UNSET_ENUM) {
         return this->_enumStore.findIndex(c._data.raw(), idx);
     }
-    idx = EnumIndex(c._enumScratchPad);
+    idx = EnumIndex(datastore::EntryRef(c._enumScratchPad));
     return true;
 }
 

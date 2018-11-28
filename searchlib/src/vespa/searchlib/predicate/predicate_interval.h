@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/data/databuffer.h>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 /**
  * Stores a simple interval for the boolean constraint interval algorithm.
@@ -60,5 +59,4 @@ struct IntervalWithBounds {
 };
 std::ostream &operator<<(std::ostream &out, const IntervalWithBounds &i);
 
-}  // namespace predicate
 }

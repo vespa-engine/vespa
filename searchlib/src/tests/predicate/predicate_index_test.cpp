@@ -1,13 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for predicate_index.
 
-#include <vespa/log/log.h>
-LOG_SETUP("predicate_index_test");
-
 #include <vespa/searchlib/predicate/predicate_index.h>
+#include <vespa/searchlib/predicate/simple_index.hpp>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/searchlib/btree/btreeiterator.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP("predicate_index_test");
 
 using namespace search;
 using namespace search::predicate;

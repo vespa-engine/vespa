@@ -272,7 +272,7 @@ template <typename B>
 void
 SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit)
 {
-    EnumHandle e;
+    EnumHandle e(0);
     bool findDefaultEnumRes(this->findEnum(this->getDefaultEnumTypeValue(), e));
     if (!findDefaultEnumRes) {
         e = EnumHandle();
@@ -280,7 +280,7 @@ SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit)
     assert(lidLow <= lidLimit);
     assert(lidLimit <= this->getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
-        if (_enumIndices[lid] != e) {
+        if (_enumIndices[lid] != datastore::EntryRef(e)) {
             this->clearDoc(lid);
         }
     }
@@ -291,14 +291,13 @@ template <typename B>
 void
 SingleValueEnumAttribute<B>::onShrinkLidSpace()
 {
-    EnumHandle e;
+    EnumHandle e(0);
     bool findDefaultEnumRes(this->findEnum(this->getDefaultEnumTypeValue(), e));
     assert(findDefaultEnumRes);
     uint32_t committedDocIdLimit = this->getCommittedDocIdLimit();
     assert(_enumIndices.size() >= committedDocIdLimit);
-    attribute::IPostingListAttributeBase *pab = 
-        this->getIPostingListAttributeBase();
-    if (pab != NULL) {
+    attribute::IPostingListAttributeBase *pab = this->getIPostingListAttributeBase();
+    if (pab != nullptr) {
         pab->clearPostings(e, committedDocIdLimit, _enumIndices.size());
     }
     _enumIndices.shrink(committedDocIdLimit);
@@ -318,6 +317,4 @@ SingleValueEnumAttribute<B>::onInitSave(vespalib::stringref fileName)
          this->_enumStore);
 }
 
-
 } // namespace search
-

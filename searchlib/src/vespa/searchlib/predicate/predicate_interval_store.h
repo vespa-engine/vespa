@@ -5,11 +5,9 @@
 #include "predicate_ref_cache.h"
 #include <vespa/searchlib/datastore/bufferstate.h>
 #include <vespa/searchlib/datastore/datastore.h>
-#include <vespa/searchlib/datastore/entryref.h>
 #include <vector>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 class Interval;
 
 /**
@@ -31,9 +29,8 @@ class PredicateIntervalStore {
     public:
         DataStoreAdapter(const DataStoreType &store) : _store(store) {}
         const uint32_t *getBuffer(uint32_t ref) const {
-            RefType entry_ref(ref);
-            return _store.getBufferEntry<uint32_t>(
-                    entry_ref.bufferId(), entry_ref.offset());
+            RefType entry_ref = datastore::EntryRef(ref);
+            return _store.getBufferEntry<uint32_t>(entry_ref.bufferId(), entry_ref.offset());
         }
     };
     DataStoreAdapter _store_adapter;
@@ -97,16 +94,14 @@ public:
                          IntervalT *single_buf) const
     {
         uint32_t size = btree_ref.ref() >> RefCacheType::SIZE_SHIFT;
-        RefType data_ref(btree_ref.ref() & RefCacheType::DATA_REF_MASK);
+        RefType data_ref(datastore::EntryRef(btree_ref.ref() & RefCacheType::DATA_REF_MASK));
         if (__builtin_expect(size == 0, true)) {  // single-interval optimization
             *single_buf = IntervalT();
             single_buf->interval = data_ref.ref();
             size_out = 1;
             return single_buf;
         }
-        const uint32_t *buf =
-            _store.getBufferEntry<uint32_t>(data_ref.bufferId(),
-                                            data_ref.offset());
+        const uint32_t *buf = _store.getBufferEntry<uint32_t>(data_ref.bufferId(), data_ref.offset());
         if (size == RefCacheType::MAX_SIZE) {
             size = *buf++;
         }
@@ -114,6 +109,5 @@ public:
         return reinterpret_cast<const IntervalT *>(buf);
     }
 };
-}  // namespace predicate
-}  // namespace search
 
+}

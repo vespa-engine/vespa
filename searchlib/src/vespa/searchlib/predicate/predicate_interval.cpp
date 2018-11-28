@@ -3,8 +3,7 @@
 #include "predicate_interval.h"
 #include <ostream>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 std::ostream &operator<<(std::ostream &out, const Interval &i) {
     std::ios_base::fmtflags flags = out.flags();
@@ -20,5 +19,4 @@ std::ostream &operator<<(std::ostream &out, const IntervalWithBounds &i) {
     return out;
 }
 
-}  // namespace predicate
 }

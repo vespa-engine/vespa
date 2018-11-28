@@ -3,10 +3,9 @@
 #pragma once
 
 #include "predicate_posting_list.h"
-#include "predicate_index.h"
+#include "predicate_interval_store.h"
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 /**
  * PredicatePostingList implementation for range query edge iterators (bounds)
@@ -22,9 +21,7 @@ class PredicateBoundsPostingList : public PredicatePostingList {
     IntervalWithBounds _single_buf;
 
 public:
-    PredicateBoundsPostingList(const PredicateIntervalStore &interval_store,
-                               Iterator it,
-                               uint32_t value_diff);
+    PredicateBoundsPostingList(const PredicateIntervalStore &interval_store,Iterator it,uint32_t value_diff);
     bool next(uint32_t doc_id) override;
     bool nextInterval() override;
     VESPA_DLL_LOCAL uint32_t getInterval() const override {
@@ -64,8 +61,7 @@ bool PredicateBoundsPostingList<Iterator>::next(uint32_t doc_id) {
         if (!_iterator.valid()) {
             return false;
         }
-        _current_interval = _interval_store.get(_iterator.getData(),
-                                                _interval_count, &_single_buf);
+        _current_interval = _interval_store.get(_iterator.getData(), _interval_count, &_single_buf);
         if (checkBounds(_current_interval->bounds, _value_diff)) {
             break;
         }
@@ -91,6 +87,4 @@ bool PredicateBoundsPostingList<Iterator>::nextInterval() {
     return true;
 }
 
-}  // namespace predicate
-}  // namespace search
-
+}

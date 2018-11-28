@@ -4,6 +4,12 @@
 #include <vespa/searchlib/predicate/simple_index.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
+#include <vespa/searchlib/btree/btree.hpp>
+#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/searchlib/btree/btreeiterator.hpp>
+#include <vespa/searchlib/btree/btreestore.hpp>
+#include <vespa/searchlib/btree/btreenodeallocator.hpp>
+#include <map>
 
 #include <vespa/log/log.h>
 LOG_SETUP("simple_index_test");

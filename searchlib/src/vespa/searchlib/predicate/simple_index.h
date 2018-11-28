@@ -2,25 +2,13 @@
 
 #pragma once
 
+#include "common.h"
 #include <vespa/searchlib/common/rcuvector.h>
-#include <vespa/searchlib/btree/btree.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
-#include <vespa/searchlib/btree/btreenode.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/searchlib/btree/btreenodestore.hpp>
-#include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/btree/btreestore.hpp>
+#include <vespa/searchlib/btree/btreestore.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/macro.h>
-#include <vespa/vespalib/util/generationholder.h>
 #include <experimental/optional>
 
-
-namespace search {
-namespace predicate {
-
+namespace search::predicate {
 
 template <typename Key = uint64_t, typename DocId = uint32_t>
 struct SimpleIndexDeserializeObserver {
@@ -31,8 +19,7 @@ struct SimpleIndexDeserializeObserver {
 template <typename Posting>
 struct PostingSerializer {
     virtual ~PostingSerializer() {}
-    virtual void serialize(const Posting &posting,
-                           vespalib::DataBuffer &buffer) const = 0;
+    virtual void serialize(const Posting &posting, vespalib::DataBuffer &buffer) const = 0;
 };
 
 template <typename Posting>
@@ -41,19 +28,11 @@ struct PostingDeserializer {
     virtual Posting deserialize(vespalib::DataBuffer &buffer) = 0;
 };
 
-struct DocIdLimitProvider {
-    virtual uint32_t getDocIdLimit() const = 0;
-    virtual uint32_t getCommittedDocIdLimit() const = 0;
-    virtual ~DocIdLimitProvider() {}
-};
-
 struct SimpleIndexConfig {
     static constexpr double DEFAULT_UPPER_DOCID_FREQ_THRESHOLD = 0.40;
-    static constexpr double DEFAULT_LOWER_DOCID_FREQ_THRESHOLD =
-            0.8 * DEFAULT_UPPER_DOCID_FREQ_THRESHOLD;
+    static constexpr double DEFAULT_LOWER_DOCID_FREQ_THRESHOLD = 0.8 * DEFAULT_UPPER_DOCID_FREQ_THRESHOLD;
     static constexpr size_t DEFAULT_UPPER_VECTOR_SIZE_THRESHOLD = 10000;
-    static constexpr size_t DEFAULT_LOWER_VECTOR_SIZE_THRESHOLD =
-            static_cast<size_t>(0.8 * DEFAULT_UPPER_VECTOR_SIZE_THRESHOLD);
+    static constexpr size_t DEFAULT_LOWER_VECTOR_SIZE_THRESHOLD = static_cast<size_t>(0.8 * DEFAULT_UPPER_VECTOR_SIZE_THRESHOLD);
     static constexpr size_t DEFAULT_VECTOR_PRUNE_FREQUENCY = 20000;
     static constexpr double DEFAULT_FOREACH_VECTOR_THRESHOLD = 0.25;
 
@@ -257,6 +236,4 @@ void SimpleIndex<Posting, Key, DocId>::foreach_frozen_key(
     }
 }
 
-}  // namespace predicate
-}  // namespace search
-
+}

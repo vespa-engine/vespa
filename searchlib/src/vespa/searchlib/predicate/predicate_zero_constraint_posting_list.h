@@ -3,17 +3,16 @@
 #pragma once
 
 #include "predicate_posting_list.h"
-#include "predicate_index.h"
+#include "common.h"
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 /**
  * PredicatePostingList implementation for zero constraint documents
  * from PredicateIndex.
  */
 class PredicateZeroConstraintPostingList : public PredicatePostingList {
-    using Iterator = PredicateIndex::ZeroConstraintDocs::Iterator;
+    using Iterator = ZeroConstraintDocs::Iterator;
     Iterator _iterator;
 
 public:
@@ -23,6 +22,4 @@ public:
     VESPA_DLL_LOCAL uint32_t getInterval() const override { return 0x00010001; }
 };
 
-}  // namespace predicate
-}  // namespace search
-
+}

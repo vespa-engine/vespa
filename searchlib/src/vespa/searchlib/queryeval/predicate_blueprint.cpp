@@ -6,7 +6,14 @@
 #include <vespa/searchlib/predicate/predicate_zero_constraint_posting_list.h>
 #include <vespa/searchlib/predicate/predicate_zstar_compressed_posting_list.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
+#include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
+#include <vespa/searchlib/btree/btree.hpp>
+#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/searchlib/btree/btreeiterator.hpp>
+#include <vespa/searchlib/btree/btreestore.hpp>
+#include <vespa/searchlib/btree/btreenodeallocator.hpp>
+#include <algorithm>
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.predicate.predicate_blueprint");
 #include <vespa/searchlib/predicate/predicate_range_term_expander.h>
@@ -19,8 +26,7 @@ using std::vector;
 using vespalib::string;
 using namespace search::predicate;
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 namespace {
 typedef PredicateBlueprint::IntervalEntry IntervalEntry;
@@ -79,7 +85,7 @@ void pushRangeDictionaryEntries(
 
 void pushZStarPostingList(const SimpleIndex<datastore::EntryRef> &interval_index,
                           vector<IntervalEntry> &interval_entries) {
-    uint64_t feature = PredicateIndex::z_star_hash;
+    uint64_t feature = Constants::z_star_hash;
     auto iterator = interval_index.lookup(feature);
     if (iterator.valid()) {
         size_t sz = interval_index.getPostingListSize(iterator.getData());
@@ -178,7 +184,7 @@ PredicateBlueprint::PredicateBlueprint(const FieldSpecBase &field,
     }
     _cachedFeatures = _index.lookupCachedSet(keys);
 
-    auto it = interval_index.lookup(PredicateIndex::z_star_compressed_hash);
+    auto it = interval_index.lookup(Constants::z_star_compressed_hash);
     if (it.valid()) {
         _zstar_dict_entry = it.getData();
     }
@@ -237,8 +243,7 @@ void PredicateBlueprint::fetchPostings(bool) {
 
     // Lookup zstar interval iterator
     if (_zstar_dict_entry.valid()) {
-        auto vector_iterator = interval_index.getVectorPostingList(
-                PredicateIndex::z_star_compressed_hash);
+        auto vector_iterator = interval_index.getVectorPostingList(Constants::z_star_compressed_hash);
         if (vector_iterator) {
             _zstar_vector_iterator.emplace(std::move(*vector_iterator));
         } else {
@@ -257,7 +262,7 @@ void PredicateBlueprint::fetchPostings(bool) {
     for (const auto & entry : _interval_dict_entries) {
         addPostingToK(entry.feature);
     }
-    addPostingToK(PredicateIndex::z_star_compressed_hash);
+    addPostingToK(Constants::z_star_compressed_hash);
     addZeroConstraintToK();
 }
 
@@ -338,5 +343,5 @@ std::vector<PredicatePostingList::UP> PredicateBlueprint::createPostingLists() c
     }
     return posting_lists;
 }
-}  // namespace search::queryeval
-}  // namespace search
+
+}

@@ -31,7 +31,10 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP("document_retriever_test");

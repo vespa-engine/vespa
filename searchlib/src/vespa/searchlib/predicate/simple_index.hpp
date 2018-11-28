@@ -2,6 +2,7 @@
 #pragma once
 
 #include "simple_index.h"
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/common/rcuvector.hpp>
 
 namespace search::predicate {

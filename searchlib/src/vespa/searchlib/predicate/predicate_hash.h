@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 /**
  * Hash function used for predicate fields.
  */
@@ -120,6 +119,5 @@ struct PredicateHash {
         return static_cast<uint64_t>(c);
     }
 };
-}  // namespace predicate
-}  // namespace search
 
+}

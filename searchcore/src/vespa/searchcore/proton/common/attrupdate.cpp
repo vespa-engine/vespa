@@ -17,8 +17,10 @@
 #include <vespa/searchlib/common/base.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
+#include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/changevector.hpp>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
 
 #include <vespa/log/log.h>

@@ -3,10 +3,12 @@
 #pragma once
 
 #include "not_implemented_attribute.h"
-#include <vespa/searchlib/predicate/predicate_index.h>
+#include <vespa/searchlib/predicate/common.h>
 #include <vespa/searchlib/common/rcuvector.h>
 
 namespace document { class PredicateFieldValue; }
+
+namespace search::predicate { class PredicateIndex; }
 
 namespace search {
 
@@ -38,10 +40,9 @@ public:
 
     DECLARE_IDENTIFIABLE_ABSTRACT(PredicateAttribute);
 
-    PredicateAttribute(const vespalib::string &base_file_name,
-                       const Config &config);
+    PredicateAttribute(const vespalib::string &base_file_name, const Config &config);
 
-    virtual ~PredicateAttribute();
+    ~PredicateAttribute() override;
 
     predicate::PredicateIndex &getIndex() { return *_index; }
 
@@ -77,13 +78,11 @@ public:
         _max_interval_range = std::max(intervalRange, _max_interval_range);
     }
 
-    void populateIfNeeded() {
-        _index->populateIfNeeded(getNumDocs());
-    }
+    void populateIfNeeded();
 private:
     vespalib::string _base_file_name;
     const AttributeVectorDocIdLimitProvider _limit_provider;
-    predicate::PredicateIndex::UP _index;
+    std::unique_ptr<predicate::PredicateIndex> _index;
     int64_t _lower_bound;
     int64_t _upper_bound;
 

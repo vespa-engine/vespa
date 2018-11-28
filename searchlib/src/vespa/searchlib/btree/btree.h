@@ -6,8 +6,7 @@
 #include "noaggrcalc.h"
 #include <vespa/vespalib/util/generationhandler.h>
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 /**
  * Class that wraps a btree root and an allocator and that provides the same API as
@@ -165,6 +164,4 @@ public:
     }
 };
 
-} // namespace search::btree
-} // namespace search
-
+}

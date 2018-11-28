@@ -110,15 +110,12 @@ EnumStoreT<EntryType>::printValue(vespalib::asciistream & os, Type value) const
 
 template <class EntryType>
 void
-EnumStoreT<EntryType>::writeValues(BufferWriter &writer,
-                                   const Index *idxs, size_t count) const
+EnumStoreT<EntryType>::writeValues(BufferWriter &writer, const Index *idxs, size_t count) const
 {
     size_t sz(EntryType::fixedSize());
     for (uint32_t i = 0; i < count; ++i) {
         Index idx = idxs[i];
-        const char *src(_store.getBufferEntry<char>(idx.bufferId(),
-                                                    idx.offset()) +
-                        EntryBase::size());
+        const char *src(_store.getBufferEntry<char>(idx.bufferId(), idx.offset()) + EntryBase::size());
         writer.write(src, sz);
     }
 }
@@ -126,9 +123,7 @@ EnumStoreT<EntryType>::writeValues(BufferWriter &writer,
 
 template <class EntryType>
 ssize_t
-EnumStoreT<EntryType>::deserialize(const void *src,
-                                      size_t available,
-                                      size_t &initSpace)
+EnumStoreT<EntryType>::deserialize(const void *src, size_t available, size_t &initSpace)
 {
     (void) src;
     size_t sz(EntryType::fixedSize());
@@ -141,9 +136,7 @@ EnumStoreT<EntryType>::deserialize(const void *src,
 
 template <class EntryType>
 ssize_t
-EnumStoreT<EntryType>::deserialize(const void *src,
-                                      size_t available,
-                                      Index &idx)
+EnumStoreT<EntryType>::deserialize(const void *src, size_t available, Index &idx)
 {
     size_t sz(EntryType::fixedSize());
     if (available < sz)
@@ -166,8 +159,7 @@ EnumStoreT<EntryType>::deserialize(const void *src,
     ++_nextEnum;
 
     if (idx.valid()) {
-        assert(ComparatorType::compare(getValue(idx),
-                                       Entry(dst).getValue()) < 0);
+        assert(ComparatorType::compare(getValue(idx), Entry(dst).getValue()) < 0);
     }
     idx = Index(offset, activeBufferId);
     return sz;
@@ -178,8 +170,7 @@ template <class EntryType>
 bool
 EnumStoreT<EntryType>::foldedChange(const Index &idx1, const Index &idx2)
 {
-    int cmpres = FoldedComparatorType::compareFolded(getValue(idx1),
-                                                     getValue(idx2));
+    int cmpres = FoldedComparatorType::compareFolded(getValue(idx1), getValue(idx2));
     assert(cmpres <= 0);
     return cmpres < 0;
 }
@@ -187,8 +178,7 @@ EnumStoreT<EntryType>::foldedChange(const Index &idx1, const Index &idx2)
 
 template <typename EntryType>
 bool
-EnumStoreT<EntryType>::findEnum(Type value,
-                                   EnumStoreBase::EnumHandle &e) const
+EnumStoreT<EntryType>::findEnum(Type value, EnumStoreBase::EnumHandle &e) const
 {
     ComparatorType cmp(*this, value);
     Index idx;
@@ -248,9 +238,7 @@ EnumStoreT<EntryType>::freeUnusedEnums(const IndexVector &toRemove)
 template <typename EntryType>
 template <typename Dictionary>
 void
-EnumStoreT<EntryType>::addEnum(Type value,
-                                  Index &newIdx,
-                                  Dictionary &dict)
+EnumStoreT<EntryType>::addEnum(Type value, Index &newIdx, Dictionary &dict)
 {
     typedef typename Dictionary::Iterator DictionaryIterator;
     uint32_t entrySize = this->getEntrySize(value);
@@ -321,16 +309,12 @@ template <typename EntryType>
 void
 EnumStoreT<EntryType>::addEnum(Type value, Index & newIdx)
 {
-    if (_enumDict->hasData())
-        addEnum(value, newIdx,
-                static_cast<EnumStoreDict<EnumPostingTree> *>(_enumDict)->
-                getDictionary());
-    else
-        addEnum(value, newIdx,
-                static_cast<EnumStoreDict<EnumTree> *>(_enumDict)->
-                getDictionary());
+    if (_enumDict->hasData()) {
+        addEnum(value, newIdx, static_cast<EnumStoreDict<EnumPostingTree> *>(_enumDict)->getDictionary());
+    } else {
+        addEnum(value, newIdx, static_cast<EnumStoreDict<EnumTree> *>(_enumDict)->getDictionary());
+    }
 }
-
 
 template <typename DictionaryType>
 struct TreeBuilderInserter {
@@ -508,15 +492,11 @@ template <typename EntryType>
 void
 EnumStoreT<EntryType>::printCurrentContent(vespalib::asciistream &os) const
 {
-    if (_enumDict->hasData())
-        printCurrentContent(os,
-                            static_cast<EnumStoreDict<EnumPostingTree> *>
-                            (_enumDict)->getDictionary());
-    else
-        printCurrentContent(os,
-                            static_cast<EnumStoreDict<EnumTree> *>
-                            (_enumDict)->getDictionary());
+    if (_enumDict->hasData()) {
+        printCurrentContent(os, static_cast<EnumStoreDict<EnumPostingTree> *>(_enumDict)->getDictionary());
+    } else {
+        printCurrentContent(os, static_cast<EnumStoreDict<EnumTree> *>(_enumDict)->getDictionary());
+    }
 }
 
 } // namespace search
-

@@ -3,7 +3,6 @@
 #include "predicate_tree_analyzer.h"
 #include <vespa/document/predicate/predicate.h>
 #include <algorithm>
-#include <iostream>
 #include <cmath>
 
 using document::Predicate;
@@ -13,8 +12,8 @@ using std::string;
 using vespalib::slime::Inspector;
 using vespalib::Memory;
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
+
 namespace {
 long getType(const Inspector &in, bool negated) {
     long type = in[Predicate::NODE_TYPE].asLong();
@@ -163,7 +162,6 @@ PredicateTreeAnalyzer::PredicateTreeAnalyzer(const Inspector &in)
     _min_feature = static_cast<int>(std::ceil(float(findMinFeature(in)) + (_has_not? 1.0 : 0.0)));
 }
 
-PredicateTreeAnalyzer::~PredicateTreeAnalyzer() { }
+PredicateTreeAnalyzer::~PredicateTreeAnalyzer() = default;
 
-}  // namespace predicate
-}  // namespace search
+}

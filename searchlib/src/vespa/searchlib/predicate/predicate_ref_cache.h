@@ -7,8 +7,7 @@
 #include <cstdint>
 #include <cassert>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 /**
  * Holds the data used in a cache lookup operation.
@@ -158,5 +157,4 @@ public:
     }
 };
 
-}  // namespace predicate
-}  // namespace search
+}
