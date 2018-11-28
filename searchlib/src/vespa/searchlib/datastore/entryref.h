@@ -32,7 +32,11 @@ public:
         EntryRef((bufferId_ << OffsetBits) + offset_) {}
     EntryRefT(const EntryRef & ref_) : EntryRef(ref_.ref()) {}
     uint64_t offset() const { return _ref & (offsetSize()-1); }
-    uint32_t bufferId() const { return _ref >> OffsetBits; }
+    uint32_t bufferId() const {
+        return ((OffsetBits + BufferBits) == 32u)
+            ? (_ref >> OffsetBits)
+            : ((_ref >> OffsetBits) & (numBuffers() - 1));
+    }
     static uint64_t offsetSize() { return 1ul << OffsetBits; }
     static uint32_t numBuffers() { return 1 << BufferBits; } 
     static uint64_t align(uint64_t val) { return val; }
