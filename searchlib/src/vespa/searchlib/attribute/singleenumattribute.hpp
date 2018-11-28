@@ -135,7 +135,7 @@ SingleValueEnumAttribute<B>::considerAttributeChange(const Change & c, UniqueSet
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::reEnumerate()
+SingleValueEnumAttribute<B>::reEnumerate(const EnumIndexMap & old2New)
 {
     auto newIndexes = std::make_unique<vespalib::Array<EnumIndex>>();
     newIndexes->reserve(_enumIndices.capacity());
@@ -143,7 +143,7 @@ SingleValueEnumAttribute<B>::reEnumerate()
         EnumIndex oldIdx = _enumIndices[i];
         EnumIndex newIdx;
         if (oldIdx.valid()) {
-            this->_enumStore.getCurrentIndex(oldIdx, newIdx);
+            newIdx = old2New[oldIdx];
         }
         newIndexes->push_back_fast(newIdx);
     }

@@ -57,6 +57,7 @@ protected:
     typedef attribute::LoadedEnumAttributeVector LoadedEnumAttributeVector;
     typedef attribute::LoadedEnumAttribute LoadedEnumAttribute;
     using B::getGenerationHolder;
+    using EnumIndexMap = EnumStoreBase::EnumIndexMap;
 
 private:
     void considerUpdateAttributeChange(const Change & c, UniqueSet & newUniques);
@@ -65,7 +66,7 @@ private:
 protected:
     // from EnumAttribute
     void considerAttributeChange(const Change & c, UniqueSet & newUniques) override;
-    void reEnumerate() override;
+    void reEnumerate(const EnumIndexMap & old2New) override;
 
     // implemented by single value numeric enum attribute.
     virtual void considerUpdateAttributeChange(const Change & c) { (void) c; }

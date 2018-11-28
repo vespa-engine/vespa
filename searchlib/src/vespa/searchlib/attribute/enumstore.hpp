@@ -374,27 +374,23 @@ template <typename EntryType>
 void
 EnumStoreT<EntryType>::reset(Builder &builder)
 {
-    if (_enumDict->hasData())
-        reset(builder,
-              static_cast<EnumStoreDict<EnumPostingTree> *>(_enumDict)->
-              getDictionary());
-    else
-        reset(builder,
-              static_cast<EnumStoreDict<EnumTree> *>(_enumDict)->
-              getDictionary());
+    if (_enumDict->hasData()) {
+        reset(builder, static_cast<EnumStoreDict<EnumPostingTree> *>(_enumDict)->getDictionary());
+    } else {
+        reset(builder, static_cast<EnumStoreDict<EnumTree> *>(_enumDict)->getDictionary());
+    }
 }
 
 
 template <typename EntryType>
 template <typename Dictionary>
 void
-EnumStoreT<EntryType>::performCompaction(Dictionary &dict)
+EnumStoreT<EntryType>::performCompaction(Dictionary &dict, EnumIndexMap & old2New)
 {
     typedef typename Dictionary::Iterator DictionaryIterator;
     uint32_t freeBufferIdx = _store.getActiveBufferId(TYPE_ID);
     datastore::BufferState & freeBuf = _store.getBufferState(freeBufferIdx);
     bool disabledReEnumerate = _disabledReEnumerate;
-
     uint32_t newEnum = 0;
     // copy entries from active buffer to free buffer
     for (DictionaryIterator iter = dict.begin(); iter.valid(); ++iter) {
@@ -402,7 +398,7 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict)
 
         Entry e = this->getEntry(activeIdx);
 
-        // At this point the tree shal never reference any empy stuff.
+        // At this point the tree shall never reference any empty stuff.
         assert(e.getRefCount() > 0);
 #ifdef LOG_ENUM_STORE
         LOG(info, "performCompaction(): copy entry: enum = %u, refCount = %u, value = %s",
@@ -440,8 +436,7 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict)
         std::atomic_thread_fence(std::memory_order_release);
         iter.writeKey(newIdx);
 
-        // update index map with new index
-        this->_indexMap[oldEnum] = newIdx;
+        old2New[activeIdx] = newIdx;
     }
     if (disabledReEnumerate) {
         newEnum = this->_nextEnum; // use old range of enum values
@@ -452,17 +447,16 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict)
 
 template <typename EntryType>
 bool
-EnumStoreT<EntryType>::performCompaction(uint64_t bytesNeeded)
+EnumStoreT<EntryType>::performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New)
 {
     if ( ! this->preCompact(bytesNeeded) ) {
         return false;
     }
-    if (_enumDict->hasData())
-        performCompaction(static_cast<EnumStoreDict<EnumPostingTree> *>
-                          (_enumDict)->getDictionary());
-    else
-        performCompaction(static_cast<EnumStoreDict<EnumTree> *>
-                          (_enumDict)->getDictionary());
+    if (_enumDict->hasData()) {
+        performCompaction(static_cast<EnumStoreDict<EnumPostingTree> *>(_enumDict)->getDictionary(), old2New);
+    } else {
+        performCompaction(static_cast<EnumStoreDict<EnumTree> *>(_enumDict)->getDictionary(), old2New);
+    }
     return true;
 }
 
@@ -470,8 +464,7 @@ EnumStoreT<EntryType>::performCompaction(uint64_t bytesNeeded)
 template <typename EntryType>
 template <typename Dictionary>
 void
-EnumStoreT<EntryType>::printCurrentContent(vespalib::asciistream &os,
-                                              const Dictionary &dict) const
+EnumStoreT<EntryType>::printCurrentContent(vespalib::asciistream &os, const Dictionary &dict) const
 {
     typedef typename Dictionary::ConstIterator DictionaryConstIterator;
 

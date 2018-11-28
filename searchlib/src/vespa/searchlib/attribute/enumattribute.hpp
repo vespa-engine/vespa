@@ -67,8 +67,7 @@ EnumAttribute<B>::fillEnum0(const void *src,
 
 template <typename B>
 void
-EnumAttribute<B>::fixupEnumRefCounts(
-        const EnumVector &enumHist)
+EnumAttribute<B>::fixupEnumRefCounts(const EnumVector &enumHist)
 {
     _enumStore.fixupRefCounts(enumHist);
 }
@@ -105,7 +104,8 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
             this->_enumStore.getPendingCompact()) {
             this->removeAllOldGenerations();
             this->_enumStore.clearPendingCompact();
-            if (!this->_enumStore.performCompaction(extraBytesNeeded)) {
+            EnumIndexMap old2New(this->_enumStore.getNumUniques());
+            if (!this->_enumStore.performCompaction(extraBytesNeeded, old2New)) {
                 // fallback to resize strategy
                 this->_enumStore.fallbackResize(extraBytesNeeded);
                 if (extraBytesNeeded > this->_enumStore.getRemaining()) {
@@ -115,14 +115,11 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
             }
 
             // update underlying structure with new EnumIndex values.
-            reEnumerate();
+            reEnumerate(old2New);
             // Clear scratch enumeration
             for (auto & data : this->_changes) {
                 data._enumScratchPad = ChangeBase::UNSET_ENUM;
             }
-
-            // clear mapping from old enum value to new index
-            _enumStore.clearIndexMap();
         }
     } while (0);
 

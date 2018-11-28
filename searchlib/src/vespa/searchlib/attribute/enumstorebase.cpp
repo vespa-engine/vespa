@@ -69,7 +69,6 @@ EnumStoreBase::EnumStoreBase(uint64_t initBufferSize,
       _store(),
       _type(),
       _nextEnum(0),
-      _indexMap(),
       _toHoldBuffers(),
       _disabledReEnumerate(false)
 {
@@ -96,7 +95,6 @@ EnumStoreBase::reset(uint64_t initBufferSize)
     _store.dropBuffers();
     _type.setSizeNeededAndDead(initBufferSize, 0);
     _store.initActiveBuffers();
-    clearIndexMap();
     _enumDict->onReset();
     _nextEnum = 0;
 }
@@ -112,17 +110,6 @@ EnumStoreBase::getBufferIndex(datastore::BufferState::State status)
     return Index::numBuffers();
 }
 
-bool
-EnumStoreBase::getCurrentIndex(Index oldIdx, Index & newIdx) const
-{
-    uint32_t oldEnum = getEnum(oldIdx);
-    if (oldEnum >= _indexMap.size()) {
-        return false;
-    }
-    newIdx = _indexMap[oldEnum];
-    return true;
-}
-
 MemoryUsage
 EnumStoreBase::getMemoryUsage() const
 {
@@ -132,10 +119,8 @@ EnumStoreBase::getMemoryUsage() const
 AddressSpace
 EnumStoreBase::getAddressSpaceUsage() const
 {
-    const datastore::BufferState &activeState =
-            _store.getBufferState(_store.getActiveBufferId(TYPE_ID));
-    return AddressSpace(activeState.size(), activeState.getDeadElems(),
-                        DataStoreType::RefType::offsetSize());
+    const datastore::BufferState &activeState = _store.getBufferState(_store.getActiveBufferId(TYPE_ID));
+    return AddressSpace(activeState.size(), activeState.getDeadElems(), DataStoreType::RefType::offsetSize());
 }
 
 void
@@ -163,7 +148,6 @@ EnumStoreBase::preCompact(uint64_t bytesNeeded)
     datastore::BufferState & activeBuf = _store.getBufferState(activeBufId);
     _type.setSizeNeededAndDead(bytesNeeded, activeBuf.getDeadElems());
     _toHoldBuffers = _store.startCompact(TYPE_ID);
-    _indexMap.resize(_nextEnum);
     return true;
 }
 
