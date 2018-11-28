@@ -3,6 +3,8 @@ package com.yahoo.jrt;
 
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.tls.TransportSecurityOptions;
+import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager.Mode;
+import com.yahoo.security.tls.authz.PeerAuthorizerTrustManagersFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -33,11 +35,14 @@ public class TlsCryptoEngine implements CryptoEngine {
         return new TlsCryptoSocket(channel, sslEngine);
     }
 
+    // TODO Move to dedicated factory type controlling certificate hot-reloading in security-utils
     private static SSLContext createSslContext(TransportSecurityOptions options) {
         SslContextBuilder builder = new SslContextBuilder();
         options.getCertificatesFile()
                 .ifPresent(certificates -> builder.withKeyStore(options.getPrivateKeyFile().get(), certificates));
         options.getCaCertificatesFile().ifPresent(builder::withTrustStore);
+        options.getAuthorizedPeers().ifPresent(
+                authorizedPeers -> builder.withTrustManagerFactory(new PeerAuthorizerTrustManagersFactory(authorizedPeers, Mode.DRY_RUN)));
         return builder.build();
     }
 }

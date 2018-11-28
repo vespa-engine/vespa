@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
 import static com.yahoo.security.SubjectAlternativeName.Type.IP_ADDRESS;
@@ -24,6 +25,9 @@ import static java.util.stream.Collectors.toList;
  * @author bjorncs
  */
 public class PeerAuthorizer {
+
+    private static final Logger log = Logger.getLogger(PeerAuthorizer.class.getName());
+
     private final AuthorizedPeers authorizedPeers;
 
     public PeerAuthorizer(AuthorizedPeers authorizedPeers) {
@@ -35,6 +39,7 @@ public class PeerAuthorizer {
         Set<String> matchedPolicies = new HashSet<>();
         String cn = getCommonName(peerCertificate).orElse(null);
         List<String> sans = getSubjectAlternativeNames(peerCertificate);
+        log.fine(() -> String.format("Subject info from x509 certificate: CN=[%s], 'SAN=%s", cn, sans));
         for (PeerPolicy peerPolicy : authorizedPeers.peerPolicies()) {
             if (matchesPolicy(peerPolicy, cn, sans)) {
                 assumedRoles.addAll(peerPolicy.assumedRoles());
