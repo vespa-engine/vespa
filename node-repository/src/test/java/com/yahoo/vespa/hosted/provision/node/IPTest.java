@@ -130,7 +130,7 @@ public class IPTest {
                 .addReverseRecord("127.0.0.2", "host5");
         try {
             pool.findAllocation(emptyList, resolver);
-            //fail("Expected exception");
+            fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("Hostnames resolved from each IP address do not point to the same hostname " +
                          "[::1 -> host3, 127.0.0.2 -> host5]", e.getMessage());
