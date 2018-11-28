@@ -77,7 +77,7 @@ public class Container {
 
     /** Hack. For internal use only, will be removed later
      *
-     * Used by LocalApplication to be able to repeatedly set up containers.
+     * Used by Application to be able to repeatedly set up containers.
      **/
     public static void resetInstance() {
         instance = new Container();
