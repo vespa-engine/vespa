@@ -42,6 +42,7 @@ class CryptoUtils {
         return new StaticTlsContext(testSslContext);
     }
 
+    // TODO Fix TlsCryptoEngine bug to allow use of EC/ECDSA crypto
     static SSLContext createTestSslContext() {
         KeyPair keyPair = KeyUtils.generateKeypair(RSA);
 
