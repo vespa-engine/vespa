@@ -8,12 +8,21 @@
 #include <vector>
 #include <algorithm>
 #include <vespa/vespalib/stllike/hash_set.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 template <typename S>
 void fill(S & s, size_t count)
 {
     for(size_t i(0); i < count; i++) {
         s.insert(i);
+    }
+}
+
+template <typename M>
+void fillM(M & m, size_t count)
+{
+    for(size_t i(0); i < count; i++) {
+        m[i] = i;
     }
 }
 
@@ -43,6 +52,13 @@ size_t bench(S & set, size_t sz, size_t numLookups)
     return lookup_bench(set, sz, numLookups/sz);
 }
 
+template <typename M>
+size_t benchM(M & map, size_t sz, size_t numLookups)
+{
+    fillM(map, sz);
+    return lookup_bench(map, sz, numLookups/sz);
+}
+
 size_t benchMap(size_t sz, size_t numLookups)
 {
     std::set<uint32_t> set;
@@ -57,14 +73,26 @@ size_t benchHashStl(size_t sz, size_t numLookups)
 
 size_t benchHashVespaLib(size_t sz, size_t numLookups)
 {
-    vespalib::hash_set<uint32_t> set;
+    vespalib::hash_set<uint32_t> set(3*sz);
     return bench(set, sz, numLookups);
 }
 
 size_t benchHashVespaLib2(size_t sz, size_t numLookups)
 {
-    vespalib::hash_set<uint32_t, vespalib::hash<uint32_t>, std::equal_to<uint32_t>, vespalib::hashtable_base::and_modulator > set;
+    vespalib::hash_set<uint32_t, vespalib::hash<uint32_t>, std::equal_to<uint32_t>, vespalib::hashtable_base::and_modulator > set(3*sz);
     return bench(set, sz, numLookups);
+}
+
+size_t benchHashMapVespaLib(size_t sz, size_t numLookups)
+{
+    vespalib::hash_map<uint32_t, uint32_t> set(3*sz);
+    return benchM(set, sz, numLookups);
+}
+
+size_t benchHashMapVespaLib2(size_t sz, size_t numLookups)
+{
+    vespalib::hash_map<uint32_t, uint32_t, vespalib::hash<uint32_t>, std::equal_to<uint32_t>, vespalib::hashtable_base::and_modulator > set(3*sz);
+    return benchM(set, sz, numLookups);
 }
 
 int main(int argc, char *argv[])
@@ -86,12 +114,16 @@ int main(int argc, char *argv[])
     description['h'] = "std::hash_set";
     description['g'] = "vespalib::hash_set";
     description['G'] = "vespalib::hash_set with simple and modulator.";
+    description['k'] = "vespalib::hash_map";
+    description['K'] = "vespalib::hash_map with simple and modulator.";
     size_t found(0);
     switch (type) {
     case 'm': found = benchMap(count, rep); break;
     case 'h': found = benchHashStl(count, rep); break;
     case 'g': found = benchHashVespaLib(count, rep); break;
     case 'G': found = benchHashVespaLib2(count, rep); break;
+    case 'k': found = benchHashMapVespaLib(count, rep); break;
+    case 'K': found = benchHashMapVespaLib2(count, rep); break;
     default:
         printf("'m' = %s\n", description[type]);
         printf("'h' = %s\n", description[type]);
