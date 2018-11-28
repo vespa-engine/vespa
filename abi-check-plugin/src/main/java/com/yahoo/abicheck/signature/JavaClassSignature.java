@@ -5,11 +5,18 @@ import java.util.Set;
 
 public class JavaClassSignature {
 
+  public final String superClass;
+  public final Set<String> interfaces;
   public final List<String> attributes;
   public final Set<String> methods;
+  public final Set<String> fields;
 
-  public JavaClassSignature(List<String> attributes, Set<String> methods) {
+  public JavaClassSignature(String superClass, Set<String> interfaces, List<String> attributes,
+      Set<String> methods, Set<String> fields) {
+    this.superClass = superClass;
+    this.interfaces = interfaces;
     this.attributes = attributes;
     this.methods = methods;
+    this.fields = fields;
   }
 }

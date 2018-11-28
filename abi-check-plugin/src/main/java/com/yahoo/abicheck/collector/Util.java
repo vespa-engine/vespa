@@ -39,6 +39,19 @@ public class Util {
       AccessFlag.ignored(Opcodes.ACC_DEPRECATED)
   );
 
+  public static final List<AccessFlag> fieldFlags = Arrays.asList(
+      AccessFlag.make(Opcodes.ACC_PUBLIC, "public"),
+      AccessFlag.make(Opcodes.ACC_PRIVATE, "private"),
+      AccessFlag.make(Opcodes.ACC_PROTECTED, "protected"),
+      AccessFlag.make(Opcodes.ACC_STATIC, "static"),
+      AccessFlag.make(Opcodes.ACC_FINAL, "final"),
+      AccessFlag.make(Opcodes.ACC_VOLATILE, "volatile"),
+      AccessFlag.make(Opcodes.ACC_TRANSIENT, "transient"),
+      AccessFlag.make(Opcodes.ACC_SYNTHETIC, "synthetic"), // FIXME: Do we want this?
+      AccessFlag.make(Opcodes.ACC_ENUM, "enum"),
+      AccessFlag.ignored(Opcodes.ACC_DEPRECATED)
+  );
+
   public static List<String> convertAccess(int access, List<AccessFlag> flags) {
     List<String> result = new ArrayList<>();
     for (AccessFlag flag : flags) {
@@ -53,7 +66,7 @@ public class Util {
     return result;
   }
 
-  private static class AccessFlag {
+  public static class AccessFlag {
 
     public final int bit;
     public final String attribute;

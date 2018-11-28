@@ -128,13 +128,27 @@ public class AbiCheck extends AbstractMojo {
   private boolean matchingClasses(String className, JavaClassSignature expected,
       JavaClassSignature actual) {
     boolean match = true;
-    if (!matchingItemSets(new HashSet<>(expected.attributes), new HashSet<>(actual.attributes),
-        item -> true, (item, error) -> getLog().error(String
-            .format("Class %s: %s attribute %s", className, capitalizeFirst(error), item)))) {
+    if (!expected.superClass.equals(actual.superClass)) {
       match = false;
+      getLog().error(String
+          .format("Class %s: Expected superclass %s, found %s", className, expected.superClass,
+              actual.superClass));
+    }
+    if (!matchingItemSets(expected.interfaces, actual.interfaces, item -> true,
+        (item, error) -> getLog().error(
+            String.format("Class %s: %s interface %s", className, capitalizeFirst(error), item)))) {
+      if (!matchingItemSets(new HashSet<>(expected.attributes), new HashSet<>(actual.attributes),
+          item -> true, (item, error) -> getLog().error(String
+              .format("Class %s: %s attribute %s", className, capitalizeFirst(error), item)))) {
+        match = false;
+      }
     }
     if (!matchingItemSets(expected.methods, actual.methods, item -> true, (item, error) -> getLog()
         .error(String.format("Class %s: %s method %s", className, capitalizeFirst(error), item)))) {
+      match = false;
+    }
+    if (!matchingItemSets(expected.fields, actual.fields, item -> true, (item, error) -> getLog()
+        .error(String.format("Class %s: %s field %s", className, capitalizeFirst(error), item)))) {
       match = false;
     }
     return match;
