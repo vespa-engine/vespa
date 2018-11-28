@@ -27,7 +27,7 @@ public class RankingExpressionWithTensorTestCase {
                 "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
-        f.assertRankProperty("{{x:1,y:2}:1.0,{x:2,y:1}:2.0}", "constant(my_tensor).value", "my_profile");
+        f.assertRankProperty("tensor(x{},y{}):{{x:1,y:2}:1.0,{x:2,y:1}:2.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{},y{})", "constant(my_tensor).type", "my_profile");
     }
 
@@ -50,7 +50,7 @@ public class RankingExpressionWithTensorTestCase {
                 "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
-        f.assertRankProperty("{{x:1,y:2}:1.0,{x:2,y:1}:2.0}", "constant(my_tensor).value", "my_profile");
+        f.assertRankProperty("tensor(x{},y{}):{{x:1,y:2}:1.0,{x:2,y:1}:2.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{},y{})", "constant(my_tensor).type", "my_profile");
     }
 
@@ -69,7 +69,7 @@ public class RankingExpressionWithTensorTestCase {
                 "  }");
         f.compileRankProfile("my_profile");
         f.assertSecondPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
-        f.assertRankProperty("{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
+        f.assertRankProperty("tensor(x{}):{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{})", "constant(my_tensor).type", "my_profile");
     }
 
@@ -90,7 +90,7 @@ public class RankingExpressionWithTensorTestCase {
                 "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
-        f.assertRankProperty("{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
+        f.assertRankProperty("tensor(x{}):{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{})", "constant(my_tensor).type", "my_profile");
     }
 
@@ -113,7 +113,7 @@ public class RankingExpressionWithTensorTestCase {
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("5.0 + my_macro", "my_profile");
         f.assertFunction("reduce(constant(my_tensor), sum)", "my_macro", "my_profile");
-        f.assertRankProperty("{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
+        f.assertRankProperty("tensor(x{}):{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{})", "constant(my_tensor).type", "my_profile");
     }
 
@@ -134,7 +134,7 @@ public class RankingExpressionWithTensorTestCase {
                 "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("3.0 + reduce(constant(my_tensor), sum) + 5.0", "my_profile");
-        f.assertRankProperty("{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
+        f.assertRankProperty("tensor(x{}):{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{})", "constant(my_tensor).type", "my_profile");
     }
 
