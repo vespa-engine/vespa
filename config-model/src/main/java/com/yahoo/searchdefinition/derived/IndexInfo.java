@@ -139,7 +139,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             addIndexCommand(field, CMD_MULTIVALUE);
         }
 
-        Attribute attribute = field.getAttributes().get(field.getName());
+        Attribute attribute = getAttribute(field);
         if ((field.doesAttributing() || (attribute != null && !inPosition)) && !field.doesIndexing()) {
             addIndexCommand(field.getName(), CMD_ATTRIBUTE);
             if (attribute != null && attribute.isFastSearch())
@@ -169,6 +169,13 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             addIndexCommand(field, command);
         }
 
+    }
+
+    private static Attribute getAttribute(ImmutableSDField field) {
+        while (field.isImportedField()) {
+            field = field.getBackingField();
+        }
+        return field.getAttributes().get(field.getName());
     }
 
     static String stemCmd(ImmutableSDField field, Search search) {
