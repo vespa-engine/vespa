@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.tensorflow;
 
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import ai.vespa.rankingexpression.importer.ImportedModel;
 import org.junit.Assert;
@@ -22,10 +23,9 @@ public class MnistImportTestCase {
         Assert.assertEquals("Has skipped outputs",
                             0, model.get().signature("serving_default").skippedOutputs().size());
 
-        ExpressionFunction output = signature.outputExpression("y");
+        ImportedMlFunction output = signature.outputFunction("y", "y");
         assertNotNull(output);
-        assertEquals("dnn/outputs/add", output.getBody().getName());
-        model.assertEqualResultSum("input", output.getBody().getName(), 0.00001);
+        model.assertEqualResultSum("input", "dnn/outputs/add", 0.00001);
     }
 
 }

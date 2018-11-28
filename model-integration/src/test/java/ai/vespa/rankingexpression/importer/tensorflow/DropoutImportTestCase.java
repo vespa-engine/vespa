@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.tensorflow;
 
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import ai.vespa.rankingexpression.importer.ImportedModel;
 import com.yahoo.tensor.TensorType;
@@ -31,12 +32,11 @@ public class DropoutImportTestCase {
         Assert.assertEquals("Has skipped outputs",
                             0, model.get().signature("serving_default").skippedOutputs().size());
 
-        ExpressionFunction function = signature.outputExpression("y");
+        ImportedMlFunction function = signature.outputFunction("y", "y");
         assertNotNull(function);
-        assertEquals("outputs/Maximum", function.getBody().getName());
         assertEquals("join(join(imported_ml_function_test_outputs_BiasAdd, reduce(constant(test_outputs_Const), sum, d1), f(a,b)(a * b)), imported_ml_function_test_outputs_BiasAdd, f(a,b)(max(a,b)))",
-                     function.getBody().getRoot().toString());
-        model.assertEqualResult("X", function.getBody().getName());
+                     function.expression());
+        model.assertEqualResult("X", "outputs/Maximum");
         assertEquals("{X=tensor(d0[],d1[784])}", function.argumentTypes().toString());
     }
 

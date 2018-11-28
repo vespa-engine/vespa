@@ -97,7 +97,6 @@ public class ImportedModel implements ImportedMlModel {
 
     /**
      * Returns an immutable map of the functions that are part of this model.
-     * Note that the functions themselves are *not* copies and *not* immutable - they must be copied before modification.
      */
     @Override
     public Map<String, String> functions() { return asExpressionStrings(functions); }
@@ -244,15 +243,6 @@ public class ImportedModel implements ImportedMlModel {
          * Returns an immutable list of possibly non-fatal warnings encountered during import.
          */
         public List<String> importWarnings() { return Collections.unmodifiableList(importWarnings); }
-
-        /** Returns the expression this output references */
-        public ExpressionFunction outputExpression(String outputName) {
-            return new ExpressionFunction(outputName,
-                                          new ArrayList<>(inputs.values()),
-                                          owner().expressions().get(outputs.get(outputName)),
-                                          inputMap(),
-                                          Optional.empty());
-        }
 
         /** Returns the expression this output references as an imported function */
         public ImportedMlFunction outputFunction(String outputName, String functionName) {

@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.onnx;
 
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
@@ -45,11 +46,10 @@ public class OnnxMnistSoftmaxImportTestCase {
         assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), model.inputs().get("Placeholder"));
 
         // Check signature
-        ExpressionFunction output = model.defaultSignature().outputExpression("add");
+        ImportedMlFunction output = model.defaultSignature().outputFunction("add", "add");
         assertNotNull(output);
-        assertEquals("add", output.getBody().getName());
         assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(test_Variable), f(a,b)(a * b)), sum, d2), constant(test_Variable_1), f(a,b)(a + b))",
-                     output.getBody().getRoot().toString());
+                     output.expression());
         assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"),
                      model.inputs().get(model.defaultSignature().inputs().get("Placeholder")));
         assertEquals("{Placeholder=tensor(d0[],d1[784])}", output.argumentTypes().toString());
