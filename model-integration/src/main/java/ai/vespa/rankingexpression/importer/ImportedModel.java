@@ -93,8 +93,6 @@ public class ImportedModel implements ImportedMlModel {
      */
     public Map<String, RankingExpression> expressions() { return Collections.unmodifiableMap(expressions); }
 
-    // TODO: Most of the usage of the above can be replaced by a faster expressionNames method
-
     /**
      * Returns an immutable map of the functions that are part of this model.
      */

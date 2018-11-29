@@ -316,7 +316,7 @@ List<ExpressionNode> args() :
     ExpressionNode argument;
 }
 {
-    ( argument = arg() { arguments.add(argument); } ( <COMMA> argument = arg() { arguments.add(argument); } )* )
+    ( ( argument = arg() { arguments.add(argument); })? ( <COMMA> argument = arg() { arguments.add(argument); } )* )
     { return arguments; }
 }
 
