@@ -5,6 +5,7 @@ import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager.Mode;
 import com.yahoo.security.tls.authz.PeerAuthorizerTrustManagersFactory;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
@@ -15,6 +16,7 @@ import com.yahoo.security.tls.policy.RequiredPeerCredential.Field;
 import com.yahoo.security.tls.policy.Role;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -34,6 +36,13 @@ import static java.util.Collections.singletonList;
  * @author bjorncs
  */
 class CryptoUtils {
+    static final SSLContext testSslContext = createTestSslContext();
+
+    static TlsContext createTestTlsContext() {
+        return new StaticTlsContext(testSslContext);
+    }
+
+    // TODO Fix TlsCryptoEngine bug to allow use of EC/ECDSA crypto
     static SSLContext createTestSslContext() {
         KeyPair keyPair = KeyUtils.generateKeypair(RSA);
 
@@ -63,5 +72,20 @@ class CryptoUtils {
                                 singletonList(
                                         new RequiredPeerCredential(
                                                 Field.CN, new HostGlobPattern("dummy"))))));
+    }
+
+    private static class StaticTlsContext implements TlsContext {
+
+        final SSLContext sslContext;
+
+        StaticTlsContext(SSLContext sslContext) {
+            this.sslContext = sslContext;
+        }
+
+        @Override
+        public SSLEngine createSslEngine() {
+            return sslContext.createSSLEngine();
+        }
+
     }
 }
