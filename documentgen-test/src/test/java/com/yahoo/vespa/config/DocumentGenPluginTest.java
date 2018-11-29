@@ -926,7 +926,7 @@ public class DocumentGenPluginTest {
         Book book = new Book(new DocumentId("doc:book:0"));
         assertNull(book.getVector());
         book.setVector(Tensor.from("{{x:0}:1.0, {x:1}:2.0, {x:2}:3.0}"));
-        assertEquals("tensor(x{}):{{x:0}:1.0,{x:1}:2.0,{x:2}:3.0}", book.getVector().toString());
+        assertEquals("{{x:0}:1.0,{x:1}:2.0,{x:2}:3.0}", book.getVector().toString());
     }
     
 }

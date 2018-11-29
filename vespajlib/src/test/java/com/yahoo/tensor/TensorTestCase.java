@@ -29,10 +29,10 @@ public class TensorTestCase {
 
     @Test
     public void testStringForm() {
-        assertEquals("tensor():{5.7}", Tensor.from("{5.7}").toString());
-        assertTrue(Tensor.from("tensor():{5.7}") instanceof IndexedTensor);
-        assertEquals("tensor(d1{},d2{}):{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l2}:6.0}", Tensor.from("{ {d1:l1,d2:l1}: 5,   {d2:l2, d1:l1}:6.0} ").toString());
-        assertEquals("tensor(d1{},d2{}):{{d1:l1,d2:l1}:-5.3,{d1:l1,d2:l2}:0.0}", Tensor.from("{ {d1:l1,d2:l1}:-5.3, {d2:l2, d1:l1}:0}").toString());
+        assertEquals("{5.7}", Tensor.from("{5.7}").toString());
+        assertTrue(Tensor.from("{5.7}") instanceof IndexedTensor);
+        assertEquals("{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l2}:6.0}", Tensor.from("{ {d1:l1,d2:l1}: 5,   {d2:l2, d1:l1}:6.0} ").toString());
+        assertEquals("{{d1:l1,d2:l1}:-5.3,{d1:l1,d2:l2}:0.0}", Tensor.from("{ {d1:l1,d2:l1}:-5.3, {d2:l2, d1:l1}:0}").toString());
     }
 
     @Test
@@ -79,7 +79,7 @@ public class TensorTestCase {
     public void testCombineInDimensionIndexed() {
         Tensor input =  Tensor.from("tensor(input[]):{{input:0}:3, {input:1}:7}");
         Tensor result = input.concat(11, "input");
-        assertEquals("tensor(input[]):{{input:0}:3.0,{input:1}:7.0,{input:2}:11.0}", result.toString());
+        assertEquals("{{input:0}:3.0,{input:1}:7.0,{input:2}:11.0}", result.toString());
     }
 
     /** All functions are more throughly tested in searchlib EvaluationTestCase */
