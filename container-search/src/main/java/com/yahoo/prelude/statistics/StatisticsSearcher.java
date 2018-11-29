@@ -69,7 +69,6 @@ public class StatisticsSearcher extends Searcher {
     private final Value queryLatencyBuckets;
     private final Value maxQueryLatency; // separate to avoid name mangling
     @SuppressWarnings("unused") // all the work is done by the callback
-    private final Value activeQueries; // raw measure every 5 minutes
     private final Value peakQPS; // peak 1s QPS
     private final Counter emptyResults; // number of results containing no concrete hits
     private final Value hitsPerQuery; // mean number of hits per query
@@ -85,19 +84,6 @@ public class StatisticsSearcher extends Searcher {
     private Map<String, Map<DegradedReason, Metric.Context>> degradedReasonContexts = new CopyOnWriteHashMap<>();
     private java.util.Timer scheduler = new java.util.Timer(true);
 
-    // Callback to measure queries in flight every five minutes
-    private class ActivitySampler implements Callback {
-        public void run(Handle h, boolean firstRun) {
-            if (firstRun) {
-                metric.set(ACTIVE_QUERIES_METRIC, 0, null);
-                return;
-            }
-            // TODO Server.get() is to be removed
-            int searchQueriesInFlight = Server.get().searchQueriesInFlight();
-            ((Value) h).put(searchQueriesInFlight);
-            metric.set(ACTIVE_QUERIES_METRIC, searchQueriesInFlight, null);
-        }
-    }
     private class PeakQpsReporter extends java.util.TimerTask {
         private long prevMaxQPSTime = System.currentTimeMillis();
         private long queriesForQPS = 0;
@@ -143,7 +129,6 @@ public class StatisticsSearcher extends Searcher {
         queryLatency = new Value(MEAN_QUERY_LATENCY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
         maxQueryLatency = new Value(MAX_QUERY_LATENCY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
         queryLatencyBuckets = Value.buildValue(QUERY_LATENCY_METRIC, manager, null);
-        activeQueries = new Value(ACTIVE_QUERIES_METRIC, manager, new Value.Parameters().setLogRaw(true).setCallback(new ActivitySampler()));
         peakQPS = new Value(PEAK_QPS_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
         hitsPerQuery = new Value(HITS_PER_QUERY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
         emptyResults = new Counter(EMPTY_RESULTS_METRIC, manager, false);

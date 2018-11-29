@@ -27,9 +27,9 @@ public class Server {
     /** Creates a new server instance. Not usually useful, use get() to get the current server */
     private Server() { }
 
-    /** The number of currently active incoming search requests */
+    /** @deprecated returns 0 */
+    @Deprecated
     public int searchQueriesInFlight() {
-        //TODO: Implement
         return 0;
     }
 
@@ -39,8 +39,9 @@ public class Server {
      *
      * @return The current number of open search connections
      */
+    /** @deprecated returns 0 */
+    @Deprecated
     public int getCurrentConnections() {
-        //TODO: Implement
         return 0;
     }
 
