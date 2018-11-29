@@ -91,10 +91,9 @@ public class PublicSignatureCollector extends ClassVisitor {
     if (testBit(access, Opcodes.ACC_PUBLIC)) {
       return true;
     }
-    // Protected non-static members are visible if the class is not final (can be called from
+    // Protected members are visible if the class is not final (can be accessed from
     // extending classes)
-    if (!testBit(access, Opcodes.ACC_STATIC) && testBit(access, Opcodes.ACC_PROTECTED) && !testBit(
-        currentAccess, Opcodes.ACC_FINAL)) {
+    if (!testBit(access, Opcodes.ACC_PROTECTED) && !testBit(currentAccess, Opcodes.ACC_FINAL)) {
       return true;
     }
     // Otherwise not visible
