@@ -4,11 +4,22 @@
 
 namespace fdispatch {
 
+constexpr uint64_t MIN_DECAY_RATE = 42;
+constexpr double MIN_QUERY_TIME = 0.001;
+
+RowState::RowState(double initialValue, uint64_t decayRate) :
+    _decayRate(std::max(decayRate, MIN_DECAY_RATE)),
+    _avgSearchTime(std::max(initialValue, MIN_QUERY_TIME)),
+    _sumActiveDocs(0),
+    _numQueries(0)
+{ }
+
 void RowState::updateSearchTime(double searchTime)
 {
-    _numQueries++;
-    double decayRate = std::min(_numQueries, _decayRate);
+    searchTime = std::max(searchTime, MIN_QUERY_TIME);
+    double decayRate = std::min(_numQueries + MIN_DECAY_RATE, _decayRate);
     _avgSearchTime = (searchTime + (decayRate-1)*_avgSearchTime)/decayRate;
+    ++_numQueries;
 }
 
 StateOfRows::StateOfRows(size_t numRows, double initialValue, uint64_t decayRate) :

@@ -15,12 +15,7 @@ namespace fdispatch {
  **/
 class RowState {
 public:
-    RowState(double initialValue, uint64_t decayRate) :
-        _decayRate(std::max(1ul, decayRate)),
-        _avgSearchTime(initialValue),
-        _sumActiveDocs(0),
-        _numQueries(0)
-    { }
+    RowState(double initialValue, uint64_t decayRate);
     double getAverageSearchTime() const { return _avgSearchTime; }
     double getAverageSearchTimeInverse() const { return 1.0/_avgSearchTime; }
     void updateSearchTime(double searchTime);
