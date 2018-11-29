@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
-import com.yahoo.config.provision.Zone;
-
 public interface SuperModelProvider {
     SuperModel getSuperModel();
 
@@ -13,6 +11,4 @@ public interface SuperModelProvider {
      */
     SuperModel snapshot(SuperModelListener listener);
 
-    // TODO: Remove when 6.313 is latest version in use
-    Zone getZone();
 }
