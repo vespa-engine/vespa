@@ -144,11 +144,6 @@
                 <version>${guice.version}</version>
                 <classifier>no_aop</classifier>
             </dependency>
-           <dependency>
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>1.4</version>
-            </dependency>
             <dependency>
                 <groupId>commons-daemon</groupId>
                 <artifactId>commons-daemon</artifactId>
