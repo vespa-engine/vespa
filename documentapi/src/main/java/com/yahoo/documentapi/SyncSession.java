@@ -34,7 +34,9 @@ public interface SyncSession extends Session {
      * @param documentPut The DocumentPut operation
      * @param priority The priority with which to perform this operation.
      */
-    void put(DocumentPut documentPut, DocumentProtocol.Priority priority);
+    default void put(DocumentPut documentPut, DocumentProtocol.Priority priority) {
+        put(documentPut);
+    }
 
     /**
      * <p>Gets a document.</p>
