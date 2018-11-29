@@ -1,10 +1,11 @@
 package com.yahoo.abicheck;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.yahoo.abicheck.collector.Util;
 import java.util.Arrays;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
 
 public class AccessConversionTest {
@@ -38,9 +39,10 @@ public class AccessConversionTest {
             Util.fieldFlags));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testUnsupportedFlags() {
     // ACC_MODULE is not a valid flag for fields
-    Util.convertAccess(Opcodes.ACC_MODULE, Util.fieldFlags);
+    assertThrows(IllegalArgumentException.class,
+        () -> Util.convertAccess(Opcodes.ACC_MODULE, Util.fieldFlags));
   }
 }
