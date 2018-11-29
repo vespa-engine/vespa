@@ -5,6 +5,7 @@
 #include <vespa/searchlib/engine/searchapi.h>
 #include <vespa/searchcore/fdispatch/common/appcontext.h>
 #include <vespa/searchcore/fdispatch/common/search.h>
+#include <vespa/fastos/thread.h>
 
 namespace fdispatch {
 

@@ -6,6 +6,7 @@
 #include "plain_dataset.h"
 #include "engine_base.h"
 #include <vespa/config/common/exceptions.h>
+#include <vespa/fastos/thread.h>
 #include <set>
 
 #include <vespa/log/log.h>

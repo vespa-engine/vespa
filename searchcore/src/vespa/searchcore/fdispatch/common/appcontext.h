@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/clock.h>
+#include <cstdint>
 
 class FastS_NodeManager;
 class FNET_Transport;
 class FNET_Scheduler;
 class FastS_DataSetCollection;
-
+class FastOS_ThreadPool;
 
 class FastS_TimeKeeper
 {
