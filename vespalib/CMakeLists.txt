@@ -67,6 +67,10 @@ vespa_define_module(
     src/tests/net/tls/transport_options
     src/tests/objects/nbostream
     src/tests/optimized
+    src/tests/portal
+    src/tests/portal/handle_manager
+    src/tests/portal/http_request
+    src/tests/portal/reactor
     src/tests/printable
     src/tests/priority_queue
     src/tests/random
@@ -130,6 +134,7 @@ vespa_define_module(
     src/vespa/vespalib/net/tls
     src/vespa/vespalib/net/tls/impl
     src/vespa/vespalib/objects
+    src/vespa/vespalib/portal
     src/vespa/vespalib/stllike
     src/vespa/vespalib/test
     src/vespa/vespalib/testkit

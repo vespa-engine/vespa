@@ -1,0 +1,298 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/portal/portal.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/net/socket_spec.h>
+#include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/sync_crypto_socket.h>
+#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
+#include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
+#include <vespa/vespalib/test/make_tls_options_for_testing.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+
+using namespace vespalib;
+
+//-----------------------------------------------------------------------------
+
+vespalib::string do_http(int port, CryptoEngine::SP crypto, const vespalib::string &method, const vespalib::string &uri) {
+    auto socket = SocketSpec::from_port(port).client_address().connect();
+    ASSERT_TRUE(socket.valid());
+    auto conn = SyncCryptoSocket::create(*crypto, std::move(socket), false);
+    vespalib::string http_req = vespalib::make_string("%s %s HTTP/1.1\r\n"
+                                                      "Host: localhost:%d\r\n"
+                                                      "\r\n", method.c_str(), uri.c_str(), port);
+    ASSERT_EQUAL(conn->write(http_req.data(), http_req.size()), ssize_t(http_req.size()));
+    char buf[1024];
+    vespalib::string result;
+    ssize_t res = conn->read(buf, sizeof(buf));
+    while (res > 0) {
+        result.append(vespalib::stringref(buf, res));
+        res = conn->read(buf, sizeof(buf));
+    }
+    ASSERT_EQUAL(res, 0);
+    return result;
+}
+
+vespalib::string fetch(int port, CryptoEngine::SP crypto, const vespalib::string &path) {
+    return do_http(port, std::move(crypto), "GET", path);
+}
+
+//-----------------------------------------------------------------------------
+
+vespalib::string make_expected_response(const vespalib::string &content_type, const vespalib::string &content) {
+    return vespalib::make_string("HTTP/1.1 200 OK\r\n"
+                                 "Connection: close\r\n"
+                                 "Content-Type: %s\r\n"
+                                 "\r\n"
+                                 "%s", content_type.c_str(), content.c_str());
+}
+
+vespalib::string make_expected_error(int code, const vespalib::string &message) {
+    return vespalib::make_string("HTTP/1.1 %d %s\r\n"
+                                 "Connection: close\r\n"
+                                 "\r\n", code, message.c_str());
+}
+
+//-----------------------------------------------------------------------------
+
+struct Encryption {
+    vespalib::string name;
+    CryptoEngine::SP engine;
+    ~Encryption();
+};
+Encryption::~Encryption() = default;
+
+auto null_crypto() { return std::make_shared<NullCryptoEngine>(); }
+auto xor_crypto() { return std::make_shared<XorCryptoEngine>(); }
+auto tls_crypto() { return std::make_shared<TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing()); }
+auto maybe_tls_crypto(bool client_tls) { return std::make_shared<MaybeTlsCryptoEngine>(tls_crypto(), client_tls); }
+
+std::vector<Encryption> crypto_list = {{"no encryption", null_crypto()},
+                                       {"ad-hoc xor", xor_crypto()},
+                                       {"always TLS", tls_crypto()},
+                                       {"maybe TLS; yes", maybe_tls_crypto(true)},
+                                       {"maybe TLS; no", maybe_tls_crypto(false)}};
+
+//-----------------------------------------------------------------------------
+
+struct MyGetHandler : public Portal::GetHandler {
+    std::function<void(Portal::GetRequest)> fun;
+    template <typename F>
+    MyGetHandler(F &&f) : fun(std::move(f)) {}
+    void get(Portal::GetRequest request) const override {
+        fun(std::move(request));
+    }
+    ~MyGetHandler();
+};
+MyGetHandler::~MyGetHandler() = default;
+
+//-----------------------------------------------------------------------------
+
+TEST("require that failed portal listening throws exception") {
+    EXPECT_EXCEPTION(Portal::create(null_crypto(), -37), PortListenException, "-37");
+}
+
+TEST("require that portal can listen to auto-selected port") {
+    auto portal = Portal::create(null_crypto(), 0);
+    EXPECT_GREATER(portal->listen_port(), 0);
+}
+
+TEST("require that simple GET works with various encryption strategies") {
+    vespalib::string path = "/test";
+    vespalib::string type = "application/json";
+    vespalib::string content = "[1,2,3]";
+    MyGetHandler handler([&](Portal::GetRequest request)
+                         {
+                             EXPECT_EQUAL(request.get_uri(), path);
+                             request.respond_with_content(type, content);
+                         });
+    for (const Encryption &crypto: crypto_list) {
+        fprintf(stderr, "... testing simple GET with encryption: '%s'\n", crypto.name.c_str());
+        auto portal = Portal::create(crypto.engine, 0);
+        auto bound = portal->bind(path, handler);
+        auto expect = make_expected_response(type, content);
+        auto result = fetch(portal->listen_port(), crypto.engine, path);
+        EXPECT_EQUAL(result, expect);
+        bound.reset();
+        result = fetch(portal->listen_port(), crypto.engine, path);
+        expect = make_expected_error(404, "Not Found");
+        EXPECT_EQUAL(result, expect);
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that methods other than GET return not implemented error") {
+    auto portal = Portal::create(null_crypto(), 0);
+    auto expect_get = make_expected_error(404, "Not Found");
+    auto expect_other = make_expected_error(501, "Not Implemented");
+    for (const auto &method: {"OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT"}) {
+        auto result = do_http(portal->listen_port(), null_crypto(), method, "/test");
+        if (vespalib::string("GET") == method) {
+            EXPECT_EQUAL(result, expect_get);
+        } else {
+            EXPECT_EQUAL(result, expect_other);
+        }
+    }
+}
+
+TEST("require that GET handler can return HTTP error") {
+    vespalib::string path = "/test";
+    auto portal = Portal::create(null_crypto(), 0);
+    auto expect = make_expected_error(123, "My Error");
+    MyGetHandler handler([](Portal::GetRequest request)
+                         {
+                             request.respond_with_error(123, "My Error");
+                         });
+    auto bound = portal->bind(path, handler);
+    auto result = fetch(portal->listen_port(), null_crypto(), path);
+    EXPECT_EQUAL(result, expect);
+}
+
+TEST("require that get requests dropped on the floor returns HTTP error") {
+    vespalib::string path = "/test";
+    auto portal = Portal::create(null_crypto(), 0);
+    auto expect = make_expected_error(500, "Internal Server Error");
+    MyGetHandler handler([](Portal::GetRequest){});
+    auto bound = portal->bind(path, handler);
+    auto result = fetch(portal->listen_port(), null_crypto(), path);
+    EXPECT_EQUAL(result, expect);
+}
+
+struct GetTask : public Executor::Task {
+    Portal::GetRequest request;
+    GetTask(Portal::GetRequest request_in) : request(std::move(request_in)) {}
+    void run() override {
+        request.respond_with_content("text/plain", "hello");
+    }
+};
+
+TEST("require that GET requests can be completed in another thread") {
+    vespalib::string path = "/test";
+    ThreadStackExecutor executor(1, 128 * 1024);
+    auto portal = Portal::create(null_crypto(), 0);
+    auto expect = make_expected_response("text/plain", "hello");
+    MyGetHandler handler([&executor](Portal::GetRequest request)
+                         {
+                             executor.execute(std::make_unique<GetTask>(std::move(request)));
+                         });
+    auto bound = portal->bind(path, handler);
+    auto result = fetch(portal->listen_port(), null_crypto(), path);
+    EXPECT_EQUAL(result, expect);
+    executor.shutdown().sync();
+}
+
+TEST("require that bogus request returns HTTP error") {
+    auto portal = Portal::create(null_crypto(), 0);
+    auto expect = make_expected_error(400, "Bad Request");
+    auto result = do_http(portal->listen_port(), null_crypto(), "this request is", " totally bogus\r\n");
+    EXPECT_EQUAL(result, expect);
+}
+
+TEST("require that the handler with the longest matching prefix is selected") {
+    auto portal = Portal::create(null_crypto(), 0);
+    MyGetHandler handler1([](Portal::GetRequest request){ request.respond_with_content("text/plain", "handler1"); });
+    MyGetHandler handler2([](Portal::GetRequest request){ request.respond_with_content("text/plain", "handler2"); });
+    MyGetHandler handler3([](Portal::GetRequest request){ request.respond_with_content("text/plain", "handler3"); });
+    auto bound1 = portal->bind("/foo", handler1);
+    auto bound3 = portal->bind("/foo/bar/baz", handler3);
+    auto bound2 = portal->bind("/foo/bar", handler2);
+    EXPECT_EQUAL(fetch(portal->listen_port(), null_crypto(), "/foo"), make_expected_response("text/plain", "handler1"));
+    EXPECT_EQUAL(fetch(portal->listen_port(), null_crypto(), "/foo/bar"), make_expected_response("text/plain", "handler2"));
+    EXPECT_EQUAL(fetch(portal->listen_port(), null_crypto(), "/foo/bar/baz"), make_expected_response("text/plain", "handler3"));
+    bound3.reset();
+    EXPECT_EQUAL(fetch(portal->listen_port(), null_crypto(), "/foo/bar/baz"), make_expected_response("text/plain", "handler2"));
+    bound2.reset();
+    EXPECT_EQUAL(fetch(portal->listen_port(), null_crypto(), "/foo/bar/baz"), make_expected_response("text/plain", "handler1"));
+}
+
+TEST("require that newer handlers with the same prefix shadows older ones") {
+    auto portal = Portal::create(null_crypto(), 0);
+    MyGetHandler handler1([](Portal::GetRequest request){ request.respond_with_content("text/plain", "handler1"); });
+    MyGetHandler handler2([](Portal::GetRequest request){ request.respond_with_content("text/plain", "handler2"); });
+    MyGetHandler handler3([](Portal::GetRequest request){ request.respond_with_content("text/plain", "handler3"); });
+    auto bound1 = portal->bind("/foo", handler1);
+    EXPECT_EQUAL(fetch(portal->listen_port(), null_crypto(), "/foo"), make_expected_response("text/plain", "handler1"));
+    auto bound2 = portal->bind("/foo", handler2);
+    EXPECT_EQUAL(fetch(portal->listen_port(), null_crypto(), "/foo"), make_expected_response("text/plain", "handler2"));
+    auto bound3 = portal->bind("/foo", handler3);
+    EXPECT_EQUAL(fetch(portal->listen_port(), null_crypto(), "/foo"), make_expected_response("text/plain", "handler3"));
+    bound3.reset();
+    EXPECT_EQUAL(fetch(portal->listen_port(), null_crypto(), "/foo"), make_expected_response("text/plain", "handler2"));
+    bound2.reset();
+    EXPECT_EQUAL(fetch(portal->listen_port(), null_crypto(), "/foo"), make_expected_response("text/plain", "handler1"));
+}
+
+TEST("require that connection errors do not block shutdown by leaking resources (also tests tight shutdown timing)") {
+    MyGetHandler handler([](Portal::GetRequest request)
+                         {
+                             std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                             request.respond_with_content("application/json", "[1,2,3]");
+                         });
+    for (const Encryption &crypto: crypto_list) {
+        fprintf(stderr, "... testing connection errors with encryption: '%s'\n", crypto.name.c_str());
+        auto portal = Portal::create(crypto.engine, 0);
+        auto bound = portal->bind("/test", handler);
+        { // close before sending anything
+            auto socket = SocketSpec::from_port(portal->listen_port()).client_address().connect();
+            auto conn = SyncCryptoSocket::create(*crypto.engine, std::move(socket), false);
+        }
+        { // send partial request then close connection
+            auto socket = SocketSpec::from_port(portal->listen_port()).client_address().connect();
+            auto conn = SyncCryptoSocket::create(*crypto.engine, std::move(socket), false);
+            vespalib::string req = "GET /test HTTP/1.1\r\n"
+                                   "Host: local";
+            ASSERT_EQUAL(conn->write(req.data(), req.size()), ssize_t(req.size()));
+        }
+        { // send request then close without reading response
+            auto socket = SocketSpec::from_port(portal->listen_port()).client_address().connect();
+            auto conn = SyncCryptoSocket::create(*crypto.engine, std::move(socket), false);
+            vespalib::string req = "GET /test HTTP/1.1\r\n"
+                                   "Host: localhost\r\n"
+                                   "\r\n";
+            ASSERT_EQUAL(conn->write(req.data(), req.size()), ssize_t(req.size()));
+        }
+    }
+}
+
+struct WaitingFixture {
+    Portal::SP portal;
+    Gate enter_callback;
+    Gate exit_callback;
+    MyGetHandler handler;
+    Portal::Token::UP bound;
+    WaitingFixture() : portal(Portal::create(null_crypto(), 0)),
+                       enter_callback(),
+                       exit_callback(),
+                       handler([this](Portal::GetRequest request)
+                               {
+                                   enter_callback.countDown();
+                                   request.respond_with_content("application/json", "[1,2,3]");
+                                   exit_callback.await();
+                               }),
+                       bound(portal->bind("/test", handler)) {}
+};
+
+TEST_MT_FFF("require that bind token destruction waits for active requests", 3,
+            WaitingFixture(), Gate(), TimeBomb(60))
+{
+    if (thread_id == 0) {
+        f1.enter_callback.await();
+        EXPECT_TRUE(!f2.await(20));
+        f1.exit_callback.countDown();
+        EXPECT_TRUE(f2.await(60000));
+    } else if (thread_id == 1) {
+        f1.enter_callback.await();
+        f1.bound.reset();
+        f2.countDown();
+    } else {
+        auto result = fetch(f1.portal->listen_port(), null_crypto(), "/test");
+        EXPECT_EQUAL(result, make_expected_response("application/json", "[1,2,3]"));
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+TEST_MAIN() { TEST_RUN_ALL(); }

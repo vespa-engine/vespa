@@ -1,0 +1,22 @@
+Portal is the codename of a component that does 3 things:
+
+(1) it is a simple HTTP server able to answer GET requests
+(2) it accepts incoming connections from other applications
+(3) it establishes outgoing connections to other applications
+
+The idea is that each resource is either something to be queried with
+a GET request or something to be connected to with a connection
+upgrade similar to how websocket connections are established. This
+allows an application to use a single port for all network traffic.
+
+For backwards compatibility, incoming connections can also be accepted
+directly from a server socket using a separate port. The important
+thing is that the component that will be using the connections is
+relieved of the complexities of accepting and establishing them. The
+flip to using HTTP connection upgrade later on should requite minor
+changes in how the portal API is used.
+
+notable http server limitations:
+  * HEAD method not supported
+  * http connection keep-alive not supported
+  * absolute uri in request-line not supported
