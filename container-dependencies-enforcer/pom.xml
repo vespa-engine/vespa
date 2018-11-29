@@ -90,7 +90,6 @@
                                                 <include>com.sun.activation:javax.activation:[1.2.0]:jar:provided</include>
                                                 <include>com.sun.xml.bind:jaxb-core:[${jaxb.version}]:jar:provided</include>
                                                 <include>com.sun.xml.bind:jaxb-impl:[${jaxb.version}]:jar:provided</include>
-                                                <include>commons-codec:commons-codec:[1.4]:jar:provided</include>
                                                 <include>commons-daemon:commons-daemon:[1.0.3]:jar:provided</include>
                                                 <include>commons-logging:commons-logging:[1.1.1]:jar:provided</include>
                                                 <include>javax.annotation:javax.annotation-api:[${javax.annotation-api.version}]:jar:provided</include>
