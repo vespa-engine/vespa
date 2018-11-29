@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
  * @author hakon
  */
 public class ConfigServerInfo {
-    private final List<String> configServerHostNames;
     private final URI loadBalancerEndpoint;
     private final AthenzService configServerIdentity;
     private final Function<String, URI> configServerHostnameToUriMapper;
@@ -23,7 +22,6 @@ public class ConfigServerInfo {
 
     public ConfigServerInfo(String loadBalancerHostName, List<String> configServerHostNames,
                             String scheme, int port, AthenzService configServerAthenzIdentity) {
-        this.configServerHostNames = configServerHostNames;
         this.loadBalancerEndpoint = createLoadBalancerEndpoint(loadBalancerHostName, scheme, port);
         this.configServerIdentity = configServerAthenzIdentity;
         this.configServerHostnameToUriMapper = hostname -> URI.create(scheme + "://" + hostname + ":" + port);
@@ -34,10 +32,6 @@ public class ConfigServerInfo {
 
     private static URI createLoadBalancerEndpoint(String loadBalancerHost, String scheme, int port) {
         return URI.create(scheme + "://" + loadBalancerHost + ":" + port);
-    }
-
-    public List<String> getConfigServerHostNames() {
-        return configServerHostNames;
     }
 
     public List<URI> getConfigServerUris() {
