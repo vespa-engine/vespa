@@ -166,7 +166,8 @@ public:
     typedef EnumStoreIndex         Index;
     typedef EnumStoreIndexVector   IndexVector;
     typedef EnumStoreEnumVector    EnumVector;
-    using EnumIndexMap = vespalib::hash_map<Index, Index>;
+    using EnumIndexMap = vespalib::hash_map<Index, Index, vespalib::hash<Index>, std::equal_to<Index>,
+                                            vespalib::hashtable_base::and_modulator>;
 
     class EntryBase {
     protected:
