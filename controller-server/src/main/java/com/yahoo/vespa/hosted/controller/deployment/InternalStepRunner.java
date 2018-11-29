@@ -156,12 +156,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
-        // TODO jvenstad: Consider deploying old version of tester for initial staging feeding?
-        Version platform = controller.applications().require(id.application())
-                .deploymentJobs().statusOf(id.type())
-                .flatMap(JobStatus::lastTriggered)
-                .map(JobStatus.JobRun::platform)
-                .orElseThrow(() -> new IllegalStateException("Should not be here without a triggering!"));
+        Version platform = controller.jobController().run(id).get().versions().targetPlatform();
         logger.log("Deploying the tester container on platform " + platform + " ...");
         return deploy(id.tester().id(),
                       id.type(),
