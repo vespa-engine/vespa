@@ -25,6 +25,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     hdr_abort.cpp
     host_name.cpp
     joinable.cpp
+    latch.cpp
     left_right_heap.cpp
     lz4compressor.cpp
     md5.c
@@ -42,12 +43,12 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     simple_thread_bundle.cpp
     slaveproc.cpp
     stash.cpp
-    stringfmt.cpp
     string_hash.cpp
-    thread_bundle.cpp
+    stringfmt.cpp
     thread.cpp
-    threadstackexecutorbase.cpp
+    thread_bundle.cpp
     threadstackexecutor.cpp
+    threadstackexecutorbase.cpp
     time_tracker.cpp
     valgrind.cpp
     zstdcompressor.cpp
