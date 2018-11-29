@@ -88,7 +88,14 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     private void deriveImportedComplexField(ImportedField field) {
         String fieldName = field.fieldName();
-        addIndexCommand(fieldName, CMD_MULTIVALUE);
+        if (isPositionField(field.targetField())) {
+            addIndexCommand(fieldName, CMD_DEFAULT_POSITION);
+            if (isPositionArrayField(field.targetField())) {
+                addIndexCommand(fieldName, CMD_MULTIVALUE);
+            }
+        } else {
+            addIndexCommand(fieldName, CMD_MULTIVALUE);
+        }
         addIndexCommand(fieldName, CMD_INDEX);
     }
 
@@ -101,6 +108,14 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             }
         }
         return b.toString();
+    }
+
+    private static boolean isPositionArrayField(ImmutableSDField field) {
+        return field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE));
+    }
+
+    private static boolean isPositionField(ImmutableSDField field) {
+        return field.getDataType().equals(PositionDataType.INSTANCE) || isPositionArrayField(field);
     }
 
     @Override
@@ -127,8 +142,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             String name = e.getValue();
             addIndexAlias(alias, name);
         }
-        boolean isPosition = field.getDataType().equals(PositionDataType.INSTANCE) ||
-                field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE));
+        boolean isPosition = isPositionField(field);
         if (field.usesStructOrMap()) {
             for (ImmutableSDField structField : field.getStructFields()) {
                 derive(structField, search, isPosition); // Recursion

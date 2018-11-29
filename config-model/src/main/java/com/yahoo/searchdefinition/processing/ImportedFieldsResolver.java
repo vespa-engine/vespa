@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.MapDataType;
+import com.yahoo.document.PositionDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
@@ -50,7 +51,10 @@ public class ImportedFieldsResolver extends Processor {
     private void resolveImportedField(TemporaryImportedField importedField, boolean validate) {
         DocumentReference reference = validateDocumentReference(importedField);
         ImmutableSDField targetField = getTargetField(importedField, reference);
-        if (isArrayOfSimpleStruct(targetField)) {
+        if (targetField.getDataType().equals(PositionDataType.INSTANCE) ||
+                targetField.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE))) {
+            resolveImportedPositionField(importedField, reference, targetField, validate);
+        } else if (isArrayOfSimpleStruct(targetField)) {
             resolveImportedArrayOfStructField(importedField, reference, targetField, validate);
         } else if (isMapOfSimpleStruct(targetField)) {
             resolveImportedMapOfStructField(importedField, reference, targetField, validate);
@@ -59,6 +63,15 @@ public class ImportedFieldsResolver extends Processor {
         } else {
             resolveImportedNormalField(importedField, reference, targetField, validate);
         }
+    }
+
+    private void resolveImportedPositionField(TemporaryImportedField importedField, DocumentReference reference,
+                                                   ImmutableSDField targetField, boolean validate) {
+        TemporaryImportedField importedZCurveField = new TemporaryImportedField(PositionDataType.getZCurveFieldName(importedField.fieldName()),
+                reference.referenceField().getName(), PositionDataType.getZCurveFieldName(targetField.getName()));
+        ImmutableSDField targetZCurveField = getTargetField(importedZCurveField, reference);
+        resolveImportedNormalField(importedZCurveField, reference, targetZCurveField, validate);
+        makeImportedComplexField(importedField, reference, targetField);
     }
 
     private void resolveImportedArrayOfStructField(TemporaryImportedField importedField, DocumentReference reference,
@@ -72,6 +85,14 @@ public class ImportedFieldsResolver extends Processor {
         resolveImportedNestedField(importedField, reference, targetField.getStructField("key"), validate);
         resolveImportedNestedStructField(importedField, reference, targetField.getStructField("value"), validate);
         makeImportedComplexField(importedField, reference, targetField);
+    }
+
+    private void makeImportedNormalField(TemporaryImportedField importedField, String name, DocumentReference reference,
+                                         ImmutableSDField targetField) {
+        if (importedFields.get(name) != null) {
+            fail(importedField, name, targetFieldAsString(targetField.getName(), reference) +": Field already imported");
+        }
+        importedFields.put(name, new ImportedField(name, reference, targetField));
     }
 
     private void makeImportedComplexField(TemporaryImportedField importedField, DocumentReference reference,
@@ -89,7 +110,7 @@ public class ImportedFieldsResolver extends Processor {
         Attribute attribute = targetNestedField.getAttributes().get(targetNestedField.getName());
         String importedNestedFieldName = makeImportedNestedFieldName(importedField, targetNestedField);
         if (attribute != null) {
-            importedFields.put(importedNestedFieldName, new ImportedField(importedNestedFieldName, reference, targetNestedField));
+            makeImportedNormalField(importedField, importedNestedFieldName, reference, targetNestedField);
         } else if (requireAttribute) {
             fail(importedField, importedNestedFieldName, targetFieldAsString(targetNestedField.getName(), reference) +
                     ": Is not an attribute field. Only attribute fields supported");
@@ -124,7 +145,7 @@ public class ImportedFieldsResolver extends Processor {
         if (validate) {
             validateTargetField(importedField, targetField, reference);
         }
-        importedFields.put(importedField.fieldName(), new ImportedField(importedField.fieldName(), reference, targetField));
+        makeImportedNormalField(importedField, importedField.fieldName(), reference, targetField);
     }
 
     private DocumentReference validateDocumentReference(TemporaryImportedField importedField) {
@@ -170,6 +191,9 @@ public class ImportedFieldsResolver extends Processor {
     }
 
     private void fail(TemporaryImportedField importedField, String importedNestedFieldName, String msg) {
+        if (importedField.fieldName().equals(importedNestedFieldName)) {
+            fail(importedField, msg);
+        }
         throw new IllegalArgumentException("For search '" + search.getName() + "', import field '" +
                 importedField.fieldName() + "' (nested to '" + importedNestedFieldName + "'): " + msg);
     }
