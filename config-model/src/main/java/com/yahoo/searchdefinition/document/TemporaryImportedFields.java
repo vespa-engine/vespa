@@ -20,6 +20,8 @@ public class TemporaryImportedFields {
         fields.put(importedField.fieldName(), importedField);
     }
 
+    public boolean hasField(String fieldName) { return fields.get(fieldName) != null; }
+
     public Map<String, TemporaryImportedField> fields() {
         return Collections.unmodifiableMap(fields);
     }
