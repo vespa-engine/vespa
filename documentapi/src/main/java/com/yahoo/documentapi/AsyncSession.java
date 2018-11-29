@@ -43,7 +43,9 @@ public interface AsyncSession extends Session {
      * @param document the Document to put
      * @return the synchronous result of this operation
      */
-    Result put(Document document, DocumentProtocol.Priority priority);
+    default Result put(Document document, DocumentProtocol.Priority priority) {
+        return put(document);
+    }
 
     /**
      * <p>Gets a document. This method returns immediately.</p>
@@ -74,7 +76,9 @@ public interface AsyncSession extends Session {
      * @deprecated the 'headersonly' flag has no effect
      */
     @Deprecated // TODO: Remove on Vespa 8
-    Result get(DocumentId id, boolean headersOnly, DocumentProtocol.Priority priority);
+    default Result get(DocumentId id, boolean headersOnly, DocumentProtocol.Priority priority) {
+        return get(id);
+    }
 
     /**
      * <p>Gets a document. This method returns immediately.</p>
@@ -89,7 +93,9 @@ public interface AsyncSession extends Session {
      * @return the synchronous result of this operation
      * @throws UnsupportedOperationException if this access implementation does not support retrieving
      */
-    Result get(DocumentId id, DocumentProtocol.Priority priority);
+    default Result get(DocumentId id, DocumentProtocol.Priority priority) {
+        return get(id);
+    }
 
 
     /**
@@ -119,7 +125,9 @@ public interface AsyncSession extends Session {
      * @return the synchronous result of this operation
      * @throws UnsupportedOperationException if this access implementation does not support removal
      */
-    Result remove(DocumentId id, DocumentProtocol.Priority priority);
+    default Result remove(DocumentId id, DocumentProtocol.Priority priority) {
+        return remove(id);
+    }
 
     /**
      * <p>Updates a document. This method returns immediately.</p>
@@ -148,7 +156,9 @@ public interface AsyncSession extends Session {
      * @return the synchronous result of this operation
      * @throws UnsupportedOperationException if this access implementation does not support update
      */
-    Result update(DocumentUpdate update, DocumentProtocol.Priority priority);
+    default Result update(DocumentUpdate update, DocumentProtocol.Priority priority) {
+        return update(update);
+    }
 
     /**
      * Returns the current send window size of the session.
