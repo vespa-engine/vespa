@@ -2453,7 +2453,11 @@ void importField(Search search) :
         int indexOfDot = fieldRefSpec.indexOf('.');
         String documentReferenceFieldName = fieldRefSpec.substring(0, indexOfDot);
         String foreignFieldName = fieldRefSpec.substring(indexOfDot + 1);
-        search.temporaryImportedFields().get().add(new TemporaryImportedField(aliasFieldName, documentReferenceFieldName, foreignFieldName));
+        TemporaryImportedFields importedFields = search.temporaryImportedFields().get();
+        if (importedFields.hasField(aliasFieldName)) {
+            throw new IllegalArgumentException("For search '" + search.getName() + "', import field as '" + aliasFieldName + "': Field already imported");
+        }
+        importedFields.add(new TemporaryImportedField(aliasFieldName, documentReferenceFieldName, foreignFieldName));
     }
 }
 

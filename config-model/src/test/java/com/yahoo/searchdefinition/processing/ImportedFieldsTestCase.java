@@ -49,6 +49,20 @@ public class ImportedFieldsTestCase {
                 "}"));
     }
 
+    @Test
+    public void fail_duplicate_import() throws ParseException {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("For search 'ad', import field as 'my_budget': Field already imported");
+        Search search = buildAdSearch(joinLines(
+                "search ad {",
+                "  document ad {",
+                "    field campaign_ref type reference<campaign> { indexing: attribute }",
+                "  }",
+                "  import field campaign_ref.budget as my_budget {}",
+                "  import field campaign_ref.budget as my_budget {}",
+                "}"));
+    }
+
     private static Search buildAdSearch(String sdContent) throws ParseException {
         SearchBuilder builder = new SearchBuilder();
         builder.importString(joinLines("search campaign {",
