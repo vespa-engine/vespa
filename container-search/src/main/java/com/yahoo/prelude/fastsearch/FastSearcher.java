@@ -274,17 +274,26 @@ public class FastSearcher extends VespaBackEndSearcher {
         // federated query rules
         Coverage finalCoverage = null;
 
+        long answeredActiveDocs = 0;
+        long answeredSoonActiveDocs = 0;
+
         for (Result partialResult : results) {
+            Coverage coverage = partialResult.getCoverage(true);
+
+            if(partialResult.hits().getErrorHit() == null) {
+                answeredActiveDocs += coverage.getActive();
+                answeredSoonActiveDocs += coverage.getSoonActive();
+            }
             if(finalCoverage == null) {
-                finalCoverage = partialResult.getCoverage(true);
+                finalCoverage = coverage;
             } else {
-                finalCoverage.mergeWithPartition(partialResult.getCoverage(true));
+                finalCoverage.mergeWithPartition(coverage);
             }
             result.mergeWith(partialResult);
             result.hits().addAll(partialResult.hits().asUnorderedHits());
         }
         if (finalCoverage != null) {
-            adjustCoverageDegradedReason(finalCoverage);
+            adjustDegradedCoverage(finalCoverage, answeredActiveDocs, answeredSoonActiveDocs);
             result.setCoverage(finalCoverage);
         }
 
@@ -302,14 +311,28 @@ public class FastSearcher extends VespaBackEndSearcher {
         return result;
     }
 
-    private void adjustCoverageDegradedReason(Coverage coverage) {
-        int asked = coverage.getNodesTried();
+    private void adjustDegradedCoverage(Coverage coverage, long answeredActiveDocs, long answeredSoonActiveDocs) {
+        if (coverage.getFull()) {
+            return;
+        }
         int answered = coverage.getNodes();
-        if (asked > answered) {
-            int searchableCopies = (int) dispatcher.searchCluster().dispatchConfig().searchableCopies();
-            int missingNodes = (asked - answered) - (searchableCopies - 1);
-            if (missingNodes > 0) {
-                coverage.setDegradedReason(com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT);
+        int asked = coverage.getNodesTried();
+        int notAnswered = asked - answered;
+
+        if (coverage.isDegradedByAdapativeTimeout()) {
+            long active = answeredActiveDocs + (notAnswered * answeredActiveDocs / answered);
+            long soonActive = answeredSoonActiveDocs + (notAnswered * answeredSoonActiveDocs / answered);
+            coverage.setActive(active).setSoonActive(soonActive);
+        } else {
+            if (asked > answered) {
+                int searchableCopies = (int) dispatcher.searchCluster().dispatchConfig().searchableCopies();
+                int missingNodes = notAnswered - (searchableCopies - 1);
+                if (missingNodes > 0) {
+                    long active = answeredActiveDocs + (missingNodes * answeredActiveDocs / answered);
+                    long soonActive = answeredSoonActiveDocs + (missingNodes * answeredSoonActiveDocs / answered);
+                    coverage.setActive(active).setSoonActive(soonActive);
+                    coverage.setDegradedReason(com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT);
+                }
             }
         }
     }

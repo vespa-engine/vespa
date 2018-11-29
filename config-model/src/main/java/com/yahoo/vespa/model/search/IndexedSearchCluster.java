@@ -425,7 +425,7 @@ public class IndexedSearchCluster extends SearchCluster
         builder.searchableCopies(rootDispatch.getSearchableCopies());
         if (searchCoverage != null) {
             if (searchCoverage.getMinimum() != null)
-                builder.minSearchCoverage(searchCoverage.getMinimum());
+                builder.minSearchCoverage(searchCoverage.getMinimum() * 100.0);
             if (searchCoverage.getMinWaitAfterCoverageFactor() != null)
                 builder.minWaitAfterCoverageFactor(searchCoverage.getMinWaitAfterCoverageFactor());
             if (searchCoverage.getMaxWaitAfterCoverageFactor() != null)

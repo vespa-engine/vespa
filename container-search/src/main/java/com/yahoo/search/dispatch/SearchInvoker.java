@@ -56,7 +56,9 @@ public abstract class SearchInvoker extends CloseableInvoker {
 
     protected Optional<Coverage> getErrorCoverage() {
         if(node.isPresent()) {
-            return Optional.of(new Coverage(0, node.get().getActiveDocuments(), 0));
+            Coverage error = new Coverage(0, node.get().getActiveDocuments(), 0);
+            error.setNodesTried(1);
+            return Optional.of(error);
         } else {
             return Optional.empty();
         }

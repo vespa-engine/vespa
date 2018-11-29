@@ -134,7 +134,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         if (requests == responses || minimumCoverage >= 100.0) {
             return query.getTimeLeft();
         }
-        int minimumResponses = (int) (requests * minimumCoverage / 100.0);
+        int minimumResponses = (int) Math.ceil(requests * minimumCoverage / 100.0);
 
         if (responses < minimumResponses) {
             return query.getTimeLeft();
