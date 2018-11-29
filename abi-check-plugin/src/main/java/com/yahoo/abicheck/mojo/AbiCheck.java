@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.jar.JarFile;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -88,8 +89,8 @@ public class AbiCheck extends AbstractMojo {
 
     getLog().debug("Analyzing " + mainArtifact.getFile());
 
-    try {
-      ClassFileTree tree = ClassFileTree.fromJar(mainArtifact.getFile());
+    try (JarFile jarFile = new JarFile(mainArtifact.getFile())) {
+      ClassFileTree tree = ClassFileTree.fromJar(jarFile);
       Map<String, JavaClassSignature> signatures = new LinkedHashMap<>();
       for (ClassFileTree.Package pkg : tree.getRootPackages()) {
         signatures.putAll(collectPublicAbiSignatures(pkg));

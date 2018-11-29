@@ -1,6 +1,5 @@
 package com.yahoo.abicheck.classtree;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
@@ -17,9 +16,8 @@ import java.util.jar.JarFile;
 
 public abstract class ClassFileTree implements AutoCloseable {
 
-  public static ClassFileTree fromJar(File file) throws IOException {
+  public static ClassFileTree fromJar(JarFile jarFile) throws IOException {
     Map<String, Package> rootPackages = new HashMap<>();
-    JarFile jarFile = new JarFile(file);
 
     Enumeration<JarEntry> jarEntries = jarFile.entries();
     while (jarEntries.hasMoreElements()) {
