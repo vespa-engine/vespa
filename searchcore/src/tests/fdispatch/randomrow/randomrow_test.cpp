@@ -16,25 +16,29 @@ TEST("requireThatEmpyStateReturnsRowZero")
 
 TEST("requireThatDecayWorks")
 {
-    constexpr double SMALL = 0.000001;
+    constexpr double SMALL = 0.00001;
     StateOfRows s(1, 1.0, 1000);
     s.updateSearchTime(1.0, 0);
     EXPECT_EQUAL(1.0, s.getRowState(0).getAverageSearchTime());
     s.updateSearchTime(2.0, 0);
-    EXPECT_APPROX(1.5, s.getRowState(0).getAverageSearchTime(), SMALL);
+    EXPECT_APPROX(1.02326, s.getRowState(0).getAverageSearchTime(), SMALL);
     s.updateSearchTime(2.0, 0);
-    EXPECT_APPROX(1.666667, s.getRowState(0).getAverageSearchTime(), SMALL);
+    EXPECT_APPROX(1.04545, s.getRowState(0).getAverageSearchTime(), SMALL);
     s.updateSearchTime(0.1, 0);
     s.updateSearchTime(0.1, 0);
     s.updateSearchTime(0.1, 0);
     s.updateSearchTime(0.1, 0);
-    EXPECT_APPROX(0.771429, s.getRowState(0).getAverageSearchTime(), SMALL);
+    EXPECT_APPROX(0.966667, s.getRowState(0).getAverageSearchTime(), SMALL);
     for (size_t i(0); i < 10000; i++) {
         s.updateSearchTime(1.0, 0);
     }
     EXPECT_APPROX(1.0, s.getRowState(0).getAverageSearchTime(), SMALL);
     s.updateSearchTime(0.1, 0);
     EXPECT_APPROX(0.9991, s.getRowState(0).getAverageSearchTime(), SMALL);
+    for (size_t i(0); i < 10000; i++) {
+        s.updateSearchTime(0.0, 0);
+    }
+    EXPECT_APPROX(0.001045, s.getRowState(0).getAverageSearchTime(), SMALL);
 }
 
 TEST("requireWeightedSelectionWorks")
