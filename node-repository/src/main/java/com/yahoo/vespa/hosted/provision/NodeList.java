@@ -52,13 +52,6 @@ public class NodeList {
         return new NodeList(nodes.stream().filter(node -> node.allocation().get().membership().cluster().type().equals(type)).collect(Collectors.toList()));
     }
 
-    /** Returns the subset of nodes that are in the given state */
-    public NodeList in(Node.State state) {
-        return nodes.stream()
-                    .filter(node -> node.state() == state)
-                    .collect(collectingAndThen(Collectors.toList(), NodeList::new));
-    }
-
     /** Returns the subset of nodes owned by the given application */
     public NodeList owner(ApplicationId application) {
         return nodes.stream()

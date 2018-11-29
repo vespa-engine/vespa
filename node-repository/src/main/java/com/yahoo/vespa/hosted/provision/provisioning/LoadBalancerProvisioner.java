@@ -1,11 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -13,10 +13,9 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.lb.Real;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
-import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -43,6 +42,11 @@ public class LoadBalancerProvisioner {
         this.service = service;
     }
 
+    /** Get load balancers assigned to given application */
+    public List<LoadBalancer> get(ApplicationId application) {
+        return db.readLoadBalancers(application);
+    }
+
     /**
      * Provision load balancer(s) for given application.
      *
@@ -62,17 +66,17 @@ public class LoadBalancerProvisioner {
         }
     }
 
-    /** Deactivate all load balancers assigned to given application */
-    public void deactivate(ApplicationId application) {
+    /**
+     * Deactivate all load balancers assigned to given application. This is a no-op if an application does not have any
+     * load balancer(s)
+     */
+    public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (Mutex applicationLock = nodeRepository.lock(application)) {
             try (Mutex loadBalancersLock = db.lockLoadBalancers()) {
-                if (!activeContainers(application).isEmpty()) {
-                    throw new IllegalArgumentException(application + " has active containers, refusing to deactivate load balancers");
-                }
-                db.readLoadBalancers(application)
-                  .stream()
-                  .map(LoadBalancer::deactivate)
-                  .forEach(db::writeLoadBalancer);
+                List<LoadBalancer> deactivatedLoadBalancers = db.readLoadBalancers(application).stream()
+                                                                .map(LoadBalancer::deactivate)
+                                                                .collect(Collectors.toList());
+                db.writeLoadBalancers(deactivatedLoadBalancers, transaction);
             }
         }
     }
@@ -90,9 +94,8 @@ public class LoadBalancerProvisioner {
 
     /** Returns a list of active containers for given application, grouped by cluster ID */
     private Map<ClusterSpec.Id, List<Node>> activeContainers(ApplicationId application) {
-        return new NodeList(nodeRepository.getNodes())
+        return new NodeList(nodeRepository.getNodes(Node.State.active))
                 .owner(application)
-                .in(Node.State.active)
                 .type(ClusterSpec.Type.container)
                 .asList()
                 .stream()
@@ -105,21 +108,13 @@ public class LoadBalancerProvisioner {
         // Remove addresses unreachable by the load balancer service
         switch (service.protocol()) {
             case ipv4:
-                reachable.removeIf(this::isIpv6);
+                reachable.removeIf(IP::isV6);
                 break;
             case ipv6:
-                reachable.removeIf(this::isIpv4);
+                reachable.removeIf(IP::isV4);
                 break;
         }
         return reachable;
-    }
-
-    private boolean isIpv4(String ipAddress) {
-        return InetAddresses.forString(ipAddress) instanceof Inet4Address;
-    }
-
-    private boolean isIpv6(String ipAddress) {
-        return InetAddresses.forString(ipAddress) instanceof Inet6Address;
     }
 
 }

@@ -99,6 +99,11 @@ public class CuratorDatabase {
         curator.create(path);
     }
 
+    /** Returns whether given path exists */
+    public boolean exists(Path path) {
+        return curator.exists(path);
+    }
+
     // --------- Read operations -------------------------------------------------------------------------------
     // These can read from the memory file system, which accurately mirrors the ZooKeeper content IF
 

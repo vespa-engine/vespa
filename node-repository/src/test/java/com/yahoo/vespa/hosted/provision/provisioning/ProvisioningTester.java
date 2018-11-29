@@ -91,8 +91,8 @@ public class ProvisioningTester {
                                                      new DockerImage("docker-registry.domain.tld:8080/dist/vespa"), true);
             this.orchestrator = mock(Orchestrator.class);
             doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
             this.loadBalancerService = new LoadBalancerServiceMock();
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, loadBalancerService);
             this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
             this.provisionLogger = new NullProvisionLogger();
         }

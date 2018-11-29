@@ -10,6 +10,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -21,7 +22,9 @@ import java.util.List;
 public class MockProvisioner implements Provisioner {
 
     @Inject
-    public MockProvisioner() {}
+    public MockProvisioner(LoadBalancerService loadBalancerService) {
+        // Tests that we can inject a default instance using LoadBalancerServiceProvider
+    }
 
     @Override
     public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {

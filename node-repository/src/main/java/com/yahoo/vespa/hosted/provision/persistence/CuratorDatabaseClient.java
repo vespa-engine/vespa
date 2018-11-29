@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
@@ -26,6 +27,7 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -86,6 +88,7 @@ public class CuratorDatabaseClient {
         curatorDatabase.create(infrastructureVersionsPath());
         curatorDatabase.create(osVersionsPath());
         curatorDatabase.create(loadBalancersRoot);
+        curatorDatabase.create(flagsRoot);
     }
 
     /**
@@ -432,13 +435,17 @@ public class CuratorDatabaseClient {
     }
 
     public void writeLoadBalancer(LoadBalancer loadBalancer) {
-        Path path = loadBalancerPath(loadBalancer.id());
-        curatorDatabase.create(path);
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.setData(path.getAbsolute(),
-                                                         LoadBalancerSerializer.toJson(loadBalancer)));
+        writeLoadBalancers(Collections.singletonList(loadBalancer), transaction);
         transaction.commit();
+    }
+
+    public void writeLoadBalancers(Collection<LoadBalancer> loadBalancers, NestedTransaction transaction) {
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        loadBalancers.forEach(loadBalancer -> {
+            curatorTransaction.add(createOrSet(loadBalancerPath(loadBalancer.id()),
+                                               LoadBalancerSerializer.toJson(loadBalancer)));
+        });
     }
 
     public void removeLoadBalancer(LoadBalancer loadBalancer) {
@@ -458,11 +465,9 @@ public class CuratorDatabaseClient {
 
     public void writeFlag(Flag flag) {
         Path path = flagPath(flag.id());
-        curatorDatabase.create(path);
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.setData(path.getAbsolute(),
-                                                         FlagSerializer.toJson(flag)));
+        curatorTransaction.add(createOrSet(path, FlagSerializer.toJson(flag)));
         transaction.commit();
     }
 
@@ -476,6 +481,13 @@ public class CuratorDatabaseClient {
 
     private Path flagPath(FlagId id) {
         return flagsRoot.append(id.serializedValue());
+    }
+
+    private Transaction.Operation createOrSet(Path path, byte[] data) {
+        if (curatorDatabase.exists(path)) {
+            return CuratorOperations.setData(path.getAbsolute(), data);
+        }
+        return CuratorOperations.create(path.getAbsolute(), data);
     }
 
 }
