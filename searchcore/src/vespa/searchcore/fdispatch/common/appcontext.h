@@ -12,15 +12,8 @@ class FastS_DataSetCollection;
 
 class FastS_TimeKeeper
 {
-private:
-    vespalib::Clock   _clock;
-    FastOS_ThreadPool _thread_pool;
-
 public:
-    FastS_TimeKeeper();
-    ~FastS_TimeKeeper();
-
-    double GetTime() const { return _clock.getTimeNSAssumeRunning().sec(); }
+    double GetTime() const;
 };
 
 

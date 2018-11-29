@@ -3,29 +3,18 @@
 #include "appcontext.h"
 #include <cassert>
 
-FastS_TimeKeeper::FastS_TimeKeeper()
-    : _clock(0.010),
-      _thread_pool(128 * 1024)
-{
-    bool ok = _thread_pool.NewThread(&_clock);
-    assert(ok);
-    (void) ok;
-}
-
-
-FastS_TimeKeeper::~FastS_TimeKeeper()
-{
-    _clock.stop();
-    _thread_pool.Close();
+double FastS_TimeKeeper::GetTime() const {
+    using clock = std::chrono::steady_clock;
+    using seconds = std::chrono::duration<double, std::ratio<1,1>>;
+    return std::chrono::duration_cast<seconds>(clock::now().time_since_epoch()).count();
 }
 
 //---------------------------------------------------------------------
 
 FastS_AppContext::FastS_AppContext()
     : _timeKeeper(),
-      _createTime()
+      _createTime(_timeKeeper.GetTime())
 {
-    _createTime = _timeKeeper.GetTime();
 }
 
 FastS_AppContext::~FastS_AppContext() = default;
