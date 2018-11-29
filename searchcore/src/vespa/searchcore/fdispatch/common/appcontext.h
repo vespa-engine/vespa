@@ -2,25 +2,18 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/clock.h>
+#include <cstdint>
 
 class FastS_NodeManager;
 class FNET_Transport;
 class FNET_Scheduler;
 class FastS_DataSetCollection;
-
+class FastOS_ThreadPool;
 
 class FastS_TimeKeeper
 {
-private:
-    vespalib::Clock   _clock;
-    FastOS_ThreadPool _thread_pool;
-
 public:
-    FastS_TimeKeeper();
-    ~FastS_TimeKeeper();
-
-    double GetTime() const { return _clock.getTimeNSAssumeRunning().sec(); }
+    double GetTime() const;
 };
 
 
