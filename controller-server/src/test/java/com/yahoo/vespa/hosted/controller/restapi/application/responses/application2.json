@@ -2,6 +2,12 @@
   "application": "application2",
   "instance": "default",
   "deployments": "http://localhost:8080/application/v4/tenant/tenant2/application/application2/instance/default/job/",
+  "source": {
+    "gitRepository": "repository1",
+    "gitBranch": "master",
+    "gitCommit": "commit1"
+  },
+  "projectId": 456,
   "deploying": {
     "version": "(ignore)"
   },

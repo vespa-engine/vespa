@@ -391,6 +391,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                  "/instance/" + application.id().instance().value() + "/job/",
                                                  request.getUri()).toString());
 
+        application.deploymentJobs().statusOf(JobType.component)
+                   .flatMap(status -> status.lastSuccess())
+                   .map(run -> run.application().source())
+                   .ifPresent(source -> sourceRevisionToSlime(source, object.setObject("source")));
+
+        application.deploymentJobs().projectId()
+                   .ifPresent(id -> object.setLong("projectId", id));
+
         // Currently deploying change
         if (application.change().isPresent()) {
             toSlime(object.setObject("deploying"), application.change());
