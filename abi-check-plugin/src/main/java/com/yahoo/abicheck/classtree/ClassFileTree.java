@@ -72,6 +72,7 @@ public abstract class ClassFileTree implements AutoCloseable {
     }
 
     // CLOVER:OFF
+    // Testing debug methods is not necessary
     @Override
     public String toString() {
       return "ClassFile(" + parent.getFullyQualifiedName() + "." + name + ")";
@@ -116,6 +117,7 @@ public abstract class ClassFileTree implements AutoCloseable {
     }
 
     // CLOVER:OFF
+    // Testing debug methods is not necessary
     @Override
     public String toString() {
       return "Package(" + getFullyQualifiedName() + ")";
