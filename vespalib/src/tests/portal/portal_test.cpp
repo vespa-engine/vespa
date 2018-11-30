@@ -10,7 +10,7 @@
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/latch.h>
 
 using namespace vespalib;
 
@@ -161,29 +161,6 @@ TEST("require that get requests dropped on the floor returns HTTP error") {
     EXPECT_EQUAL(result, expect);
 }
 
-struct GetTask : public Executor::Task {
-    Portal::GetRequest request;
-    GetTask(Portal::GetRequest request_in) : request(std::move(request_in)) {}
-    void run() override {
-        request.respond_with_content("text/plain", "hello");
-    }
-};
-
-TEST("require that GET requests can be completed in another thread") {
-    vespalib::string path = "/test";
-    ThreadStackExecutor executor(1, 128 * 1024);
-    auto portal = Portal::create(null_crypto(), 0);
-    auto expect = make_expected_response("text/plain", "hello");
-    MyGetHandler handler([&executor](Portal::GetRequest request)
-                         {
-                             executor.execute(std::make_unique<GetTask>(std::move(request)));
-                         });
-    auto bound = portal->bind(path, handler);
-    auto result = fetch(portal->listen_port(), null_crypto(), path);
-    EXPECT_EQUAL(result, expect);
-    executor.shutdown().sync();
-}
-
 TEST("require that bogus request returns HTTP error") {
     auto portal = Portal::create(null_crypto(), 0);
     auto expect = make_expected_error(400, "Bad Request");
@@ -225,7 +202,7 @@ TEST("require that newer handlers with the same prefix shadows older ones") {
     EXPECT_EQUAL(fetch(portal->listen_port(), null_crypto(), "/foo"), make_expected_response("text/plain", "handler1"));
 }
 
-TEST("require that connection errors do not block shutdown by leaking resources (also tests tight shutdown timing)") {
+TEST("require that connection errors do not block shutdown by leaking resources") {
     MyGetHandler handler([](Portal::GetRequest request)
                          {
                              std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -257,35 +234,70 @@ TEST("require that connection errors do not block shutdown by leaking resources 
     }
 }
 
-struct WaitingFixture {
+struct LatchedFixture {
     Portal::SP portal;
-    Gate enter_callback;
-    Gate exit_callback;
     MyGetHandler handler;
     Portal::Token::UP bound;
-    WaitingFixture() : portal(Portal::create(null_crypto(), 0)),
-                       enter_callback(),
-                       exit_callback(),
+    Gate enter_callback;
+    Latch<Portal::GetRequest> latch;
+    Gate exit_callback;
+    LatchedFixture() : portal(Portal::create(null_crypto(), 0)),
                        handler([this](Portal::GetRequest request)
                                {
                                    enter_callback.countDown();
-                                   request.respond_with_content("application/json", "[1,2,3]");
+                                   latch.write(std::move(request));
                                    exit_callback.await();
                                }),
-                       bound(portal->bind("/test", handler)) {}
+                       bound(portal->bind("/test", handler)),
+                       enter_callback(), latch(), exit_callback() {}
 };
 
-TEST_MT_FFF("require that bind token destruction waits for active requests", 3,
-            WaitingFixture(), Gate(), TimeBomb(60))
+TEST_MT_FF("require that GET requests can be completed in another thread", 2,
+           LatchedFixture(), TimeBomb(60))
 {
     if (thread_id == 0) {
-        f1.enter_callback.await();
+        Portal::GetRequest req = f1.latch.read();
+        f1.exit_callback.countDown();
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        req.respond_with_content("text/plain", "hello");
+    } else {
+        auto result = fetch(f1.portal->listen_port(), null_crypto(), "/test");
+        EXPECT_EQUAL(result, make_expected_response("text/plain", "hello"));
+    }
+}
+
+TEST_MT_FFF("require that bind token destruction waits for active callbacks", 3,
+            LatchedFixture(), Gate(), TimeBomb(60))
+{
+    if (thread_id == 0) {
+        Portal::GetRequest req = f1.latch.read();
         EXPECT_TRUE(!f2.await(20));
         f1.exit_callback.countDown();
+        EXPECT_TRUE(f2.await(60000));
+        req.respond_with_content("application/json", "[1,2,3]");
+    } else if (thread_id == 1) {
+        f1.enter_callback.await();
+        f1.bound.reset();
+        f2.countDown();
+    } else {
+        auto result = fetch(f1.portal->listen_port(), null_crypto(), "/test");
+        EXPECT_EQUAL(result, make_expected_response("application/json", "[1,2,3]"));
+    }
+}
+
+TEST_MT_FFF("require that portal destruction waits for request completion", 3,
+            LatchedFixture(), Gate(), TimeBomb(60))
+{
+    if (thread_id == 0) {
+        Portal::GetRequest req = f1.latch.read();
+        f1.exit_callback.countDown();
+        EXPECT_TRUE(!f2.await(20));
+        req.respond_with_content("application/json", "[1,2,3]");
         EXPECT_TRUE(f2.await(60000));
     } else if (thread_id == 1) {
         f1.enter_callback.await();
         f1.bound.reset();
+        f1.portal.reset();
         f2.countDown();
     } else {
         auto result = fetch(f1.portal->listen_port(), null_crypto(), "/test");
