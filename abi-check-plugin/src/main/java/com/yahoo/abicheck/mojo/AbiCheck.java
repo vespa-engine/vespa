@@ -144,6 +144,14 @@ public class AbiCheck extends AbstractMojo {
     return signatures;
   }
 
+  static boolean compareSignatures(Map<String, JavaClassSignature> expected,
+      Map<String, JavaClassSignature> actual, Log log) {
+    return SetMatcher.compare(expected.keySet(), actual.keySet(),
+        item -> matchingClasses(item, expected.get(item), actual.get(item), log),
+        item -> log.error(String.format("Missing class: %s", item)),
+        item -> log.error(String.format("Extra class: %s", item)));
+  }
+
   // CLOVER:OFF
   // The main entry point is tedious to unit test
   @Override
@@ -177,12 +185,4 @@ public class AbiCheck extends AbstractMojo {
     }
   }
   // CLOVER:ON
-
-  static boolean compareSignatures(Map<String, JavaClassSignature> expected,
-      Map<String, JavaClassSignature> actual, Log log) {
-    return SetMatcher.compare(expected.keySet(), actual.keySet(),
-        item -> matchingClasses(item, expected.get(item), actual.get(item), log),
-        item -> log.error(String.format("Missing class: %s", item)),
-        item -> log.error(String.format("Extra class: %s", item)));
-  }
 }
