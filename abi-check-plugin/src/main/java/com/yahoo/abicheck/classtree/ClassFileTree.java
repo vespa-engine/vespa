@@ -53,6 +53,8 @@ public abstract class ClassFileTree implements AutoCloseable {
     };
   }
 
+  public abstract void close() throws IOException;
+
   public abstract Collection<Package> getRootPackages();
 
   public static abstract class ClassFile {
