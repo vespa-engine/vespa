@@ -198,4 +198,5 @@ public class NormalizedDefinition {
     public String getDefMd5() {
         return defMd5;
     }
+
 }

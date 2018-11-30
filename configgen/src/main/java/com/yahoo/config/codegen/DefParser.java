@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
  * @author hmusum
  */
 public class DefParser {
+
     public static final String DEFAULT_PACKAGE_PREFIX = "com.yahoo.";
 
     static final Pattern commentPattern = Pattern.compile("^\\s*#+\\s*(.*?)\\s*$");
@@ -231,4 +232,5 @@ public class DefParser {
             super(s, cause);
         }
     }
+
 }

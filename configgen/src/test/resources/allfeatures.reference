@@ -573,6 +573,11 @@ public final class AllfeaturesConfig extends ConfigInstance {
     public final String getDefName()      { return CONFIG_DEF_NAME; }
     @java.lang.Override
     public final String getDefNamespace() { return CONFIG_DEF_NAMESPACE; }
+
+    public AllfeaturesConfig build() {
+      return new AllfeaturesConfig(this);
+    }
+
   }
 
   // Some random bool without a default value. These comments exist to check
@@ -1129,6 +1134,11 @@ public final class AllfeaturesConfig extends ConfigInstance {
       private Builder bar(String __value) {
         return bar(Integer.valueOf(__value));
       }
+
+      public Basic_struct build() {
+        return new Basic_struct(this);
+      }
+
     }
 
     // A basic struct
@@ -1203,6 +1213,11 @@ public final class AllfeaturesConfig extends ConfigInstance {
         inner1 = __builder;
         return this;
       }
+
+      public Struct_of_struct build() {
+        return new Struct_of_struct(this);
+      }
+
     }
 
     private final Inner0 inner0;
@@ -1281,6 +1296,11 @@ public final class AllfeaturesConfig extends ConfigInstance {
         private Builder index(String __value) {
           return index(Integer.valueOf(__value));
         }
+
+        public Inner0 build() {
+          return new Inner0(this);
+        }
+
       }
 
       // A struct of struct
@@ -1363,6 +1383,11 @@ public final class AllfeaturesConfig extends ConfigInstance {
         private Builder index(String __value) {
           return index(Integer.valueOf(__value));
         }
+
+        public Inner1 build() {
+          return new Inner1(this);
+        }
+
       }
 
       private final StringNode name;
@@ -1502,6 +1527,11 @@ public final class AllfeaturesConfig extends ConfigInstance {
         anotherArray = __builders;
         return this;
       }
+
+      public MyArray build() {
+        return new MyArray(this);
+      }
+
     }
 
     private final IntegerNode intVal;
@@ -1653,6 +1683,11 @@ public final class AllfeaturesConfig extends ConfigInstance {
         private Builder foo(String __value) {
           return foo(Integer.valueOf(__value));
         }
+
+        public AnotherArray build() {
+          return new AnotherArray(this);
+        }
+
       }
 
       private final IntegerNode foo;
@@ -1790,6 +1825,11 @@ public final class AllfeaturesConfig extends ConfigInstance {
         anotherArray = __builders;
         return this;
       }
+
+      public MyMap build() {
+        return new MyMap(this);
+      }
+
     }
 
     private final IntegerNode intVal;
@@ -1941,6 +1981,11 @@ public final class AllfeaturesConfig extends ConfigInstance {
         private Builder foo(String __value) {
           return foo(Integer.valueOf(__value));
         }
+
+        public AnotherArray build() {
+          return new AnotherArray(this);
+        }
+
       }
 
       private final IntegerNode foo;

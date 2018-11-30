@@ -73,4 +73,5 @@ public class NormalizedDefinitionTest {
         assertNotNull(fileReader);
         fileReader.close();
     }
+
 }

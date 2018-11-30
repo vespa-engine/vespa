@@ -15,11 +15,11 @@ import java.util.Arrays;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
-
 /**
  * This class autogenerates C++ code for the C++ config, based on a CNode tree given.
  */
 public class CppClassBuilder implements ClassBuilder {
+
     private final CNode root;
     private final NormalizedDefinition nd;
     private final File rootDir;
@@ -1126,4 +1126,5 @@ public class CppClassBuilder implements ClassBuilder {
             return defaultVal;
         }
     }
+
 }

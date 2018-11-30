@@ -4,9 +4,10 @@ package com.yahoo.config.codegen;
 /**
  * This exception is thrown on internal errors.
  *
- * @author <a href="gv@yahoo-inc.com">G. Voldengen</a>
+ * @author gjoranv
  */
 public class CodegenRuntimeException extends RuntimeException {
+
     public CodegenRuntimeException(String s, Throwable cause) {
         super(s, cause);
     }
@@ -18,4 +19,5 @@ public class CodegenRuntimeException extends RuntimeException {
     public CodegenRuntimeException(String s) {
         super(s);
     }
+
 }

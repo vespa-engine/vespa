@@ -9,7 +9,7 @@ import java.util.StringTokenizer;
 /**
  * Encapsulates data extracted from system properties.
  *
- * @author <a href="gv@yahoo-inc.com">Gjoran Voldengen</a>
+ * @author gjoranv
  */
 public class MakeConfigProperties {
 

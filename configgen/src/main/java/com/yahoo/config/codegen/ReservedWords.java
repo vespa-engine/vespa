@@ -8,9 +8,7 @@ import java.util.regex.Pattern;
  * Reserved words that cannot be used as variable names in a config definition file.
  *
  * @author hmusum
- * @since 2009-06-24
  */
-
 public class ReservedWords {
 
     public static final String INTERNAL_PREFIX = "__";
@@ -67,6 +65,5 @@ public class ReservedWords {
     public static String getLanguageForReservedWord(String word) {
         return allKeyWords.get(word);
     }
-
 
 }

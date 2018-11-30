@@ -2,7 +2,9 @@
 package com.yahoo.config.codegen;
 
 public class PropertyException extends Exception {
+
     PropertyException(String s) {
         super(s);
     }
+
 }

@@ -36,9 +36,6 @@ public class MinimalQueryInserter extends Searcher {
     private static final CompoundName MAX_HITS = new CompoundName("maxHits");
     private static final CompoundName MAX_OFFSET = new CompoundName("maxOffset");
 
-    public MinimalQueryInserter() {
-    }
-
     @Override
     public Result search(Query query, Execution execution) {
         if (query.properties().get(YQL) == null) {

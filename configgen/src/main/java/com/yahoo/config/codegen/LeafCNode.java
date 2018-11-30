@@ -10,9 +10,7 @@ public abstract class LeafCNode extends CNode {
     private DefaultValue defaultValue = null;
     private boolean restart = false;
 
-    /**
-     * Constructor for the leaf nodes.
-     */
+    /** Constructor for the leaf nodes */
     protected LeafCNode(InnerCNode parent, String name) {
         super(parent, name);
     }
@@ -20,26 +18,16 @@ public abstract class LeafCNode extends CNode {
     public static LeafCNode newInstance(DefLine.Type type, InnerCNode parent, String name) {
         try {
             switch (type.name) {
-                case "int":
-                    return new IntegerLeaf(parent, name);
-                case "long":
-                    return new LongLeaf(parent, name);
-                case "double":
-                    return new DoubleLeaf(parent, name);
-                case "bool":
-                    return new BooleanLeaf(parent, name);
-                case "string":
-                    return new StringLeaf(parent, name);
-                case "reference":
-                    return new ReferenceLeaf(parent, name);
-                case "file":
-                    return new FileLeaf(parent, name);
-                case "path":
-                    return new PathLeaf(parent, name);
-                case "enum":
-                    return new EnumLeaf(parent, name, type.enumArray);
-                default:
-                    return null;
+                case "int": return new IntegerLeaf(parent, name);
+                case "long": return new LongLeaf(parent, name);
+                case "double": return new DoubleLeaf(parent, name);
+                case "bool": return new BooleanLeaf(parent, name);
+                case "string": return new StringLeaf(parent, name);
+                case "reference": return new ReferenceLeaf(parent, name);
+                case "file": return new FileLeaf(parent, name);
+                case "path": return new PathLeaf(parent, name);
+                case "enum": return new EnumLeaf(parent, name, type.enumArray);
+                default: return null;
             }
         } catch (NumberFormatException e) {
             return null;
@@ -77,7 +65,7 @@ public abstract class LeafCNode extends CNode {
     }
 
     /**
-     * @param defaultValue  The value to check.
+     * @param defaultValue the value to check.
      * @throws IllegalArgumentException if the value is illegal according to the node type.
      */
     public void checkDefaultValue(DefaultValue defaultValue) throws IllegalArgumentException {
@@ -243,7 +231,7 @@ public abstract class LeafCNode extends CNode {
             return "enum";
         }
 
-        /** @return This enum's legal values. */
+        /** Returns this enum's legal values. */
         public String[] getLegalValues() {
             return legalValues;
         }

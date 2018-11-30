@@ -29,7 +29,7 @@ public class VsmFieldsTestCase {
         VsmFields vsmFields = new VsmFields(search);
         VsmfieldsConfig.Builder cfgBuilder = new VsmfieldsConfig.Builder();
         vsmFields.getConfig(cfgBuilder);
-        VsmfieldsConfig cfg = new VsmfieldsConfig(cfgBuilder);
+        VsmfieldsConfig cfg = cfgBuilder.build();
 
         assertEquals(1, cfg.fieldspec().size());
         VsmfieldsConfig.Fieldspec fieldSpec = cfg.fieldspec().get(0);

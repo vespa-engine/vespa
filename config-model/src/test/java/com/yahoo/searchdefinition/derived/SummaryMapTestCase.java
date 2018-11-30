@@ -110,7 +110,7 @@ public class SummaryMapTestCase extends SearchDefinitionTestCase {
 
         SummarymapConfig.Builder scb = new SummarymapConfig.Builder();
         summaryMap.getConfig(scb);
-        SummarymapConfig c = new SummarymapConfig(scb);
+        SummarymapConfig c = scb.build();
         
         assertEquals(-1, c.defaultoutputclass());
         assertEquals(c.override().size(), 6);

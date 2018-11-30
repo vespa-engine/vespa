@@ -21,8 +21,8 @@ import static java.util.Arrays.stream;
  * @author gjoranv
  * @author ollivir
  */
-
 public class BuilderGenerator {
+
     public static String getBuilder(InnerCNode node) {
         return getDeclaration(node) + "\n" + //
                 indentCode(INDENTATION, getUninitializedScalars(node) + "\n\n" + //
@@ -31,7 +31,8 @@ public class BuilderGenerator {
                         getBuilderConstructors(node, nodeClass(node)) + "\n\n" + //
                         getOverrideMethod(node) + "\n\n" + //
                         getBuilderSetters(node) + "\n" + //
-                        getSpecialRootBuilderCode(node))
+                        getSpecialRootBuilderCode(node) + "\n" + //
+                        getBuildMethod(node) + "\n") //
                 + "}";
     }
 
@@ -43,6 +44,12 @@ public class BuilderGenerator {
 
     private static String getSpecialRootBuilderCode(InnerCNode node) {
         return (node.getParent() == null) ? "\n" + getDispatchCode() + "\n" : "";
+    }
+
+    private static String getBuildMethod(InnerCNode node) {
+        return "public " + nodeClass(node) + " build() {\n" +
+               "  return new " + nodeClass(node) + "(this);\n" +
+               "}\n";
     }
 
     private static String getDispatchCode() {
@@ -119,6 +126,7 @@ public class BuilderGenerator {
     }
 
     private static class BuilderSetters {
+
         private static String structSetter(InnerCNode n) {
             return "public Builder " + n.getName() + "(" + builderType(n) + " " + INTERNAL_PREFIX + "builder) {\n" + //
                     "  " + n.getName() + " = " + INTERNAL_PREFIX + "builder;\n" + //
@@ -227,9 +235,9 @@ public class BuilderGenerator {
     }
 
     private static String setBuilderValueFromConfig(CNode child, CNode node) {
-        final String name = child.getName();
-        final boolean isArray = child.isArray;
-        final boolean isMap = child.isMap;
+        String name = child.getName();
+        boolean isArray = child.isArray;
+        boolean isMap = child.isMap;
 
         if (child instanceof FileLeaf && isArray) {
             return name + "(" + userDataType(child) + ".toValues(config." + name + "()));";
@@ -255,7 +263,7 @@ public class BuilderGenerator {
     }
 
     private static String setInnerArrayBuildersFromConfig(InnerCNode innerArr, CNode node) {
-        final String elemName = createUniqueSymbol(node, innerArr.getName());
+        String elemName = createUniqueSymbol(node, innerArr.getName());
 
         return "for (" + userDataType(innerArr) + " " + elemName + " : config." + innerArr.getName() + "()) {\n" + //
                 "  " + innerArr.getName() + "(new " + builderType(innerArr) + "(" + elemName + "));\n" + //
@@ -263,7 +271,7 @@ public class BuilderGenerator {
     }
 
     private static String setInnerMapBuildersFromConfig(InnerCNode innerMap) {
-        final String entryName = INTERNAL_PREFIX + "entry";
+        String entryName = INTERNAL_PREFIX + "entry";
         return "for (Map.Entry<String, " + userDataType(innerMap) + "> " + entryName + " : config." + innerMap.getName()
                 + "().entrySet()) {\n" + //
                 "  " + innerMap.getName() + "(" + entryName + ".getKey(), new " + userDataType(innerMap) + ".Builder(" + entryName
@@ -282,7 +290,7 @@ public class BuilderGenerator {
     }
 
     private static String conditionStatement(CNode child) {
-        final String superior = INTERNAL_PREFIX + "superior";
+        String superior = INTERNAL_PREFIX + "superior";
 
         if (child.isArray) {
             return "if (!" + superior + "." + child.getName() + ".isEmpty())";
@@ -314,8 +322,8 @@ public class BuilderGenerator {
     }
 
     private static String getOverrideMethod(CNode node) {
-        final String superior = INTERNAL_PREFIX + "superior";
-        final String method = "override";
+        String superior = INTERNAL_PREFIX + "superior";
+        String method = "override";
 
         return "private Builder " + method + "(Builder " + superior + ") {\n" + //
                 indentCode(INDENTATION,
@@ -348,4 +356,5 @@ public class BuilderGenerator {
             return boxedDataType(node);
         }
     }
+
 }
