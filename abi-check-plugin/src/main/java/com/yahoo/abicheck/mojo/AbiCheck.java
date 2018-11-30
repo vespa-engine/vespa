@@ -97,7 +97,7 @@ public class AbiCheck extends AbstractMojo {
       }
       if (System.getProperty(WRITE_SPEC_PROPERTY) != null) {
         getLog().info("Writing ABI specs to " + specFileName);
-        writeSpec(signatures);
+        writeSpec(signatures, specFileName);
       } else {
         Gson gson = new GsonBuilder().create();
         try (FileReader reader = new FileReader(specFileName)) {
@@ -119,10 +119,11 @@ public class AbiCheck extends AbstractMojo {
     }
   }
 
-  private void writeSpec(Map<String, JavaClassSignature> publicAbiSignatures) throws IOException {
+  private static void writeSpec(Map<String, JavaClassSignature> signatures, String fileName)
+      throws IOException {
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    try (FileWriter writer = new FileWriter(specFileName)) {
-      gson.toJson(publicAbiSignatures, writer);
+    try (FileWriter writer = new FileWriter(fileName)) {
+      gson.toJson(signatures, writer);
     }
   }
 
@@ -155,7 +156,8 @@ public class AbiCheck extends AbstractMojo {
     return match;
   }
 
-  private boolean isPublicAbiPackage(ClassFileTree.Package pkg) throws IOException {
+  private static boolean isPublicAbiPackage(ClassFileTree.Package pkg, String publicApiAnnotation)
+      throws IOException {
     Optional<ClassFile> pkgInfo = pkg.getClassFiles().stream()
         .filter(klazz -> klazz.getName().equals(PACKAGE_INFO_CLASS_FILE_NAME)).findFirst();
     if (!pkgInfo.isPresent()) {
@@ -172,7 +174,7 @@ public class AbiCheck extends AbstractMojo {
   private Map<String, JavaClassSignature> collectPublicAbiSignatures(Package pkg)
       throws IOException {
     Map<String, JavaClassSignature> signatures = new LinkedHashMap<>();
-    if (isPublicAbiPackage(pkg)) {
+    if (isPublicAbiPackage(pkg, publicApiAnnotation)) {
       PublicSignatureCollector collector = new PublicSignatureCollector();
       for (ClassFile klazz : pkg.getClassFiles()) {
         try (InputStream is = klazz.getInputStream()) {
