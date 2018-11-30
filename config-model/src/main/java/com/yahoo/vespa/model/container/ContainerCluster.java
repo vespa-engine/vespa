@@ -232,7 +232,6 @@ public final class ContainerCluster
         addSimpleComponent("com.yahoo.container.jdisc.state.StateMonitor");
         addSimpleComponent("com.yahoo.container.jdisc.ContainerThreadFactory");
         addSimpleComponent("com.yahoo.container.protect.FreezeDetector");
-        addSimpleComponent("com.yahoo.container.core.slobrok.SlobrokConfigurator");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addJaxProviders();
@@ -287,12 +286,6 @@ public final class ContainerCluster
         Handler<?> vipHandler = Handler.fromClassName(FileStatusHandlerComponent.CLASS);
         vipHandler.addServerBindings("http://*/status.html", "https://*/status.html");
         addComponent(vipHandler);
-    }
-
-    public void addStatisticsHandler() {
-        Handler<?> statsHandler = Handler.fromClassName(STATISTICS_HANDLER_CLASS);
-        statsHandler.addServerBindings("http://*/statistics/*", "https://*/statistics/*");
-        addComponent(statsHandler);
     }
 
     @SuppressWarnings("deprecation")
