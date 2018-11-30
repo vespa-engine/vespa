@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/latch.h>
 #include <vespa/fnet/frt/frt.h>
 #include <mutex>
 #include <condition_variable>
@@ -21,30 +22,13 @@ vespalib::CryptoEngine::SP crypto;
 
 class RequestLatch : public FRT_IRequestWait {
 private:
-    FRT_RPCRequest *_req;
-    std::mutex _lock;
-    std::condition_variable _cond;
+    vespalib::Latch<FRT_RPCRequest*> _latch;
 public:
-    RequestLatch() : _req(nullptr), _lock(), _cond() {}
-    ~RequestLatch() { ASSERT_TRUE(_req == nullptr); }
-    bool has_req() {
-        std::lock_guard guard(_lock);
-        return (_req != nullptr);
-    }
-    FRT_RPCRequest *read() {
-        std::unique_lock guard(_lock);
-        _cond.wait(guard, [&req = _req]{ return (req != nullptr); });
-        auto ret = _req;
-        _req = nullptr;
-        _cond.notify_all();
-        return ret;
-    }
-    void write(FRT_RPCRequest *req) {
-        std::unique_lock guard(_lock);
-        _cond.wait(guard, [&req = _req]{ return (req == nullptr); });
-        _req = req;
-        _cond.notify_all();
-    }
+    RequestLatch() : _latch() {}
+    ~RequestLatch() { ASSERT_TRUE(!has_req()); }
+    bool has_req() { return _latch.has_value(); }
+    FRT_RPCRequest *read() { return _latch.read(); }
+    void write(FRT_RPCRequest *req) { _latch.write(req); }
     void RequestDone(FRT_RPCRequest *req) override { write(req); }
 };
 
