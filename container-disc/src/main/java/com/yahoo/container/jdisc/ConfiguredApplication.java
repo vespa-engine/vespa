@@ -11,7 +11,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
-import com.yahoo.container.Server;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.di.config.Subscriber;
@@ -134,10 +133,11 @@ public final class ConfiguredApplication implements Application {
         portWatcher.start();
     }
 
-
+    @SuppressWarnings("deprecation")
     private static void hackToInitializeServer(QrConfig config) {
         try {
-            Server.get().initialize(config);
+            Container.get().setupFileAcquirer(config.filedistributor());
+            com.yahoo.container.Server.get().initialize(config);
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Caught exception when initializing server. Exiting.", e);
             Runtime.getRuntime().halt(1);

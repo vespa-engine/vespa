@@ -116,7 +116,6 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         // Add base handlers and the log handler
         logServerCluster.addMetricStateHandler();
         logServerCluster.addApplicationStatusHandler();
-        logServerCluster.addStatisticsHandler();
         logServerCluster.addDefaultRootHandler();
         logServerCluster.addVipHandler();
         addLogHandler(logServerCluster);
