@@ -111,7 +111,7 @@ public class ImportedFieldsTestCase {
     @Test
     public void check_illegal_struct_import_missing_array_of_struct_attributes() throws ParseException {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'child', import field 'my_elem_array' (nested to 'my_elem_array'): Field 'elem_array' via reference field 'parent_ref': Is not a struct containing an attribute field.");
+        exception.expectMessage("For search 'child', import field 'my_elem_array': Field 'elem_array' via reference field 'parent_ref': Is not a struct containing an attribute field.");
         checkStructImport(new ParentSdBuilder().elem_array_name_attr(false).elem_array_weight_attr(false));
     }
 
@@ -233,6 +233,62 @@ public class ImportedFieldsTestCase {
         builder.importString(sdContent);
         builder.build();
         return builder.getSearch("child");
+    }
+
+    private static class ParentPosSdBuilder {
+        public String build() {
+            return joinLines("search parent {",
+                    "  document parent {",
+                    "field pos type position {",
+                    "indexing: attribute | summary",
+                    "    }",
+                    "  }",
+                    "}");
+        }
+    }
+
+    private static class ChildPosSdBuilder {
+        private boolean import_pos_zcurve_before;
+
+        public ChildPosSdBuilder() {
+            import_pos_zcurve_before = false;
+        }
+
+        ChildPosSdBuilder import_pos_zcurve_before(boolean v) { import_pos_zcurve_before = v; return this; }
+
+        public String build() {
+            return joinLines("search child {",
+                    "  document child {",
+                    "    field parent_ref type reference<parent> {",
+                    "      indexing: attribute | summary",
+                    "    }",
+                    "  }",
+                    importPosZCurve(import_pos_zcurve_before),
+                    "  import field parent_ref.pos as my_pos {}",
+                    "}");
+        }
+
+        private static String importPosZCurve(boolean doImport) {
+            return doImport ? "import field parent_ref.pos_zcurve as my_pos_zcurve {}" : "";
+        }
+    }
+
+    private static void checkPosImport(ParentPosSdBuilder parentBuilder, ChildPosSdBuilder childBuilder) throws ParseException {
+        Search search = buildChildSearch(parentBuilder.build(), childBuilder.build());
+        assertEquals(1, search.importedFields().get().fields().size());
+        assertSearchContainsImportedField("my_pos_zcurve", "parent_ref", "parent", "pos_zcurve", search);
+    }
+
+    @Test
+    public void check_pos_import() throws ParseException {
+        checkPosImport(new ParentPosSdBuilder(), new ChildPosSdBuilder());
+    }
+
+    @Test
+    public void check_pos_import_after_pos_zcurve_import() throws ParseException {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("For search 'child', import field 'my_pos_zcurve': Field 'pos_zcurve' via reference field 'parent_ref': Field already imported");
+        checkPosImport(new ParentPosSdBuilder(), new ChildPosSdBuilder().import_pos_zcurve_before(true));
     }
 
     private static void assertSearchNotContainsImportedField(String fieldName, Search search) {
