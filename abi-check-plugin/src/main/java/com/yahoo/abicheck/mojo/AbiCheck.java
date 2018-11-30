@@ -166,7 +166,7 @@ public class AbiCheck extends AbstractMojo {
         writeSpec(signatures, specFileName);
       } else {
         Map<String, JavaClassSignature> abiSpec = readSpec(specFileName);
-        if (!compareSignatures(abiSpec, signatures)) {
+        if (!compareSignatures(abiSpec, signatures, getLog())) {
           throw new MojoFailureException("ABI spec mismatch");
         }
       }
@@ -175,11 +175,11 @@ public class AbiCheck extends AbstractMojo {
     }
   }
 
-  private boolean compareSignatures(Map<String, JavaClassSignature> expected,
-      Map<String, JavaClassSignature> actual) {
+  static boolean compareSignatures(Map<String, JavaClassSignature> expected,
+      Map<String, JavaClassSignature> actual, Log log) {
     return SetMatcher.compare(expected.keySet(), actual.keySet(),
-        item -> matchingClasses(item, expected.get(item), actual.get(item), getLog()),
-        item -> getLog().error(String.format("Missing class: %s", item)),
-        item -> getLog().error(String.format("Extra class: %s", item)));
+        item -> matchingClasses(item, expected.get(item), actual.get(item), log),
+        item -> log.error(String.format("Missing class: %s", item)),
+        item -> log.error(String.format("Extra class: %s", item)));
   }
 }
