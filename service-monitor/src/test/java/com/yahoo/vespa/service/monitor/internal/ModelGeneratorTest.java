@@ -2,6 +2,7 @@
 package com.yahoo.vespa.service.monitor.internal;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.service.monitor.application.DuperModel;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitorManagerImpl;
@@ -36,7 +38,8 @@ public class ModelGeneratorTest {
         SuperModel superModel = ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
 
         ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig();
-        DuperModel duperModel = new DuperModel(config);
+        ApplicationInfo configServerInfo = new ConfigServerApplication().makeApplicationInfoFromConfig(config);
+        DuperModel duperModel = new DuperModel(false, true, true, configServerInfo);
         ModelGenerator modelGenerator = new ModelGenerator();
 
         Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));

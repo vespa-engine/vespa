@@ -1,8 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
@@ -11,12 +11,9 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
-import com.yahoo.vespa.service.monitor.application.ConfigServerHostApplication;
-import com.yahoo.vespa.service.monitor.application.ControllerApplication;
-import com.yahoo.vespa.service.monitor.application.ControllerHostApplication;
-import com.yahoo.vespa.service.monitor.application.HostedVespaApplication;
-import com.yahoo.vespa.service.monitor.application.ProxyHostApplication;
+import com.yahoo.vespa.service.monitor.application.DuperModelInfraApi;
+import com.yahoo.vespa.service.monitor.application.InfraApplication;
+import com.yahoo.vespa.service.monitor.application.InfraApplicationApi;
 
 import java.time.Duration;
 import java.util.List;
@@ -34,33 +31,56 @@ import java.util.stream.Collectors;
 public class InfrastructureProvisioner extends Maintainer {
 
     private static final Logger logger = Logger.getLogger(InfrastructureProvisioner.class.getName());
-    private static final List<HostedVespaApplication> HOSTED_VESPA_APPLICATIONS = ImmutableList.of(
-            ConfigServerApplication.CONFIG_SERVER_APPLICATION,
-            ConfigServerHostApplication.CONFIG_SERVER_HOST_APPLICATION,
-            ProxyHostApplication.PROXY_HOST_APPLICATION,
-            ControllerApplication.CONTROLLER_APPLICATION,
-            ControllerHostApplication.CONTROLLER_HOST_APPLICATION);
 
     private final Provisioner provisioner;
     private final InfrastructureVersions infrastructureVersions;
+    private final DuperModelInfraApi duperModel;
 
     public InfrastructureProvisioner(Provisioner provisioner, NodeRepository nodeRepository,
-                                     InfrastructureVersions infrastructureVersions, Duration interval, JobControl jobControl) {
+                                     InfrastructureVersions infrastructureVersions, Duration interval, JobControl jobControl,
+                                     DuperModelInfraApi duperModel) {
         super(nodeRepository, interval, jobControl);
         this.provisioner = provisioner;
         this.infrastructureVersions = infrastructureVersions;
+        this.duperModel = duperModel;
     }
 
     @Override
     protected void maintain() {
-        for (HostedVespaApplication application: HOSTED_VESPA_APPLICATIONS) {
+        for (InfraApplicationApi application: duperModel.getSupportedInfraApplications()) {
             try (Mutex lock = nodeRepository().lock(application.getApplicationId())) {
-                Optional<Version> version = getTargetVersion(application.getCapacity().type());
-                if (! version.isPresent()) continue;
+                NodeType nodeType = application.getCapacity().type();
+
+                Optional<Version> targetVersion = infrastructureVersions.getTargetVersionFor(nodeType);
+                if (!targetVersion.isPresent()) {
+                    logger.log(LogLevel.DEBUG, "Skipping provision of " + nodeType + ": No target version set");
+                    duperModel.infraApplicationRemoved(application.getApplicationId());
+                    continue;
+                }
+
+                List<Version> wantedVersions = nodeRepository()
+                        .getNodes(nodeType, Node.State.ready, Node.State.reserved, Node.State.active, Node.State.inactive)
+                        .stream()
+                        .map(node -> node.allocation()
+                                .map(allocation -> allocation.membership().cluster().vespaVersion())
+                                .orElse(null))
+                        .collect(Collectors.toList());
+                if (wantedVersions.isEmpty()) {
+                    logger.log(LogLevel.DEBUG, "Skipping provision of " + nodeType + ": No nodes to provision");
+                    duperModel.infraApplicationRemoved(application.getApplicationId());
+                    continue;
+                }
+
+                if (wantedVersions.stream().allMatch(targetVersion.get()::equals) &&
+                        duperModel.infraApplicationIsActive(application.getApplicationId())) {
+                    logger.log(LogLevel.DEBUG, "Skipping provision of " + nodeType +
+                            ": Already provisioned to target version " + targetVersion);
+                    continue;
+                }
 
                 List<HostSpec> hostSpecs = provisioner.prepare(
                         application.getApplicationId(),
-                        application.getClusterSpecWithVersion(version.get()),
+                        application.getClusterSpecWithVersion(targetVersion.get()),
                         application.getCapacity(),
                         1, // groups
                         logger::log);
@@ -68,42 +88,14 @@ public class InfrastructureProvisioner extends Maintainer {
                 NestedTransaction nestedTransaction = new NestedTransaction();
                 provisioner.activate(nestedTransaction, application.getApplicationId(), hostSpecs);
                 nestedTransaction.commit();
+
+                duperModel.infraApplicationActivated(
+                        application.getApplicationId(),
+                        hostSpecs.stream().map(HostSpec::hostname).map(HostName::from).collect(Collectors.toList()));
+            } catch (RuntimeException e) {
+                logger.log(LogLevel.INFO, "Failed to activate " + application.getApplicationId(), e);
+                // loop around to activate the next application
             }
         }
     }
-
-    /**
-     * Returns the version that the given node type should be provisioned to. This is
-     * the version returned by {@link InfrastructureVersions#getTargetVersionFor} unless a provisioning is:
-     * <ul>
-     *   <li>not possible: no nodes of given type in legal state in node-repo</li>
-     *   <li>redundant: all nodes that can be provisioned already have the right wanted Vespa version</li>
-     * </ul>
-     */
-    Optional<Version> getTargetVersion(NodeType nodeType) {
-        Optional<Version> targetVersion = infrastructureVersions.getTargetVersionFor(nodeType);
-        if (!targetVersion.isPresent()) {
-            logger.log(LogLevel.DEBUG, "Skipping provision of " + nodeType + ": No target version set");
-            return Optional.empty();
-        }
-
-        List<Version> wantedVersions = nodeRepository().getNodes(nodeType,
-                Node.State.ready, Node.State.reserved, Node.State.active, Node.State.inactive).stream()
-                .map(node -> node.allocation()
-                        .map(allocation -> allocation.membership().cluster().vespaVersion())
-                        .orElse(null))
-                .collect(Collectors.toList());
-        if (wantedVersions.isEmpty()) {
-            logger.log(LogLevel.DEBUG, "Skipping provision of " + nodeType + ": No nodes to provision");
-            return Optional.empty();
-        }
-
-        if (wantedVersions.stream().allMatch(targetVersion.get()::equals)) {
-            logger.log(LogLevel.DEBUG, "Skipping provision of " + nodeType +
-                    ": Already provisioned to target version " + targetVersion);
-            return Optional.empty();
-        }
-        return targetVersion;
-    }
-
 }
