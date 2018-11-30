@@ -47,6 +47,16 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
     public Coverage setSoonActive(long soonActive) { this.soonActive = soonActive; return this; }
 
     /**
+     * Will set number of documents present
+     *
+     * @param active Number of documents active
+     * @return self for chaining
+
+     */
+    @Beta
+    public Coverage setActive(long active) { this.active = active; return this; }
+
+    /**
      * Will set the reasons for degraded coverage as reported by vespa backend.
      *
      * @param degradedReason Reason for degradation
