@@ -26,6 +26,10 @@ public class NodeAttributes {
         return this;
     }
 
+    public NodeAttributes withRestartGeneration(long restartGeneration) {
+        return withRestartGeneration(Optional.of(restartGeneration));
+    }
+
     public NodeAttributes withRebootGeneration(long rebootGeneration) {
         this.rebootGeneration = Optional.of(rebootGeneration);
         return this;

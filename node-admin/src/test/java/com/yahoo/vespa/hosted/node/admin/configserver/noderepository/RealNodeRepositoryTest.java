@@ -136,7 +136,7 @@ public class RealNodeRepositoryTest {
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
                 new NodeAttributes()
-                        .withRestartGeneration(Optional.of(1L))
+                        .withRestartGeneration(1)
                         .withDockerImage(new DockerImage("image-1:6.2.3")));
     }
 
@@ -146,7 +146,7 @@ public class RealNodeRepositoryTest {
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
                 new NodeAttributes()
-                        .withRestartGeneration(Optional.of(1L))
+                        .withRestartGeneration(1)
                         .withDockerImage(new DockerImage("image-1")));
     }
 
