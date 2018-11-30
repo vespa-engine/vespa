@@ -65,7 +65,7 @@ public class AbiCheck extends AbstractMojo {
       ClassFileTree tree = ClassFileTree.fromJar(jarFile);
       Map<String, JavaClassSignature> signatures = new LinkedHashMap<>();
       for (ClassFileTree.Package pkg : tree.getRootPackages()) {
-        signatures.putAll(collectPublicAbiSignatures(pkg));
+        signatures.putAll(collectPublicAbiSignatures(pkg, publicApiAnnotation));
       }
       if (System.getProperty(WRITE_SPEC_PROPERTY) != null) {
         getLog().info("Writing ABI specs to " + specFileName);
@@ -73,7 +73,7 @@ public class AbiCheck extends AbstractMojo {
       } else {
         Map<String, JavaClassSignature> abiSpec = readSpec(specFileName);
         if (!SetMatcher.compare(abiSpec.keySet(), signatures.keySet(),
-            item -> matchingClasses(item, abiSpec.get(item), signatures.get(item)),
+            item -> matchingClasses(item, abiSpec.get(item), signatures.get(item), getLog()),
             item -> getLog().error(String.format("Missing class: %s", item)),
             item -> getLog().error(String.format("Extra class: %s", item)))) {
           throw new MojoFailureException("ABI spec mismatch");
@@ -102,9 +102,8 @@ public class AbiCheck extends AbstractMojo {
     }
   }
 
-  private boolean matchingClasses(String className, JavaClassSignature expected,
-      JavaClassSignature actual) {
-    Log log = getLog();
+  private static boolean matchingClasses(String className, JavaClassSignature expected,
+      JavaClassSignature actual, Log log) {
     boolean match = true;
     if (!expected.superClass.equals(actual.superClass)) {
       match = false;
@@ -155,8 +154,8 @@ public class AbiCheck extends AbstractMojo {
     }
   }
 
-  private Map<String, JavaClassSignature> collectPublicAbiSignatures(Package pkg)
-      throws IOException {
+  private static Map<String, JavaClassSignature> collectPublicAbiSignatures(Package pkg,
+      String publicApiAnnotation) throws IOException {
     Map<String, JavaClassSignature> signatures = new LinkedHashMap<>();
     if (isPublicAbiPackage(pkg, publicApiAnnotation)) {
       PublicSignatureCollector collector = new PublicSignatureCollector();
@@ -168,7 +167,7 @@ public class AbiCheck extends AbstractMojo {
       signatures.putAll(collector.getClassSignatures());
     }
     for (ClassFileTree.Package subPkg : pkg.getSubPackages()) {
-      signatures.putAll(collectPublicAbiSignatures(subPkg));
+      signatures.putAll(collectPublicAbiSignatures(subPkg, publicApiAnnotation));
     }
     return signatures;
   }
