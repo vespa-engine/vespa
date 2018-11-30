@@ -50,6 +50,8 @@ public class AbiCheck extends AbstractMojo {
   @Parameter
   private String specFileName = DEFAULT_SPEC_FILE;
 
+  // CLOVER:OFF
+  // Testing that Gson can read JSON files is not very useful
   private static Map<String, JavaClassSignature> readSpec(String fileName) throws IOException {
     try (FileReader reader = new FileReader(fileName)) {
       TypeToken<Map<String, JavaClassSignature>> typeToken =
@@ -59,7 +61,10 @@ public class AbiCheck extends AbstractMojo {
       return gson.fromJson(reader, typeToken.getType());
     }
   }
+  // CLOVER:ON
 
+  // CLOVER:OFF
+  // Testing that Gson can write JSON files is not very useful
   private static void writeSpec(Map<String, JavaClassSignature> signatures, String fileName)
       throws IOException {
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -67,6 +72,7 @@ public class AbiCheck extends AbstractMojo {
       gson.toJson(signatures, writer);
     }
   }
+  // CLOVER:ON
 
   private static boolean matchingClasses(String className, JavaClassSignature expected,
       JavaClassSignature actual, Log log) {
