@@ -9,8 +9,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
-import java.util.Optional;
-
 import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.NODE_PROGRAM;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -51,7 +49,7 @@ public class RestartTest {
             tester.inOrder(tester.docker).executeInContainerAsUser(
                     eq(new ContainerName("host1")), any(), any(), eq(NODE_PROGRAM), eq("restart-vespa"));
             tester.inOrder(tester.nodeRepository).updateNodeAttributes(
-                    eq(hostname), eq(new NodeAttributes().withRestartGeneration(Optional.of(2L))));
+                    eq(hostname), eq(new NodeAttributes().withRestartGeneration(2)));
         }
     }
 }
