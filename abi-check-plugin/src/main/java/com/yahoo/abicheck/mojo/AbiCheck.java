@@ -50,40 +50,6 @@ public class AbiCheck extends AbstractMojo {
   @Parameter
   private String specFileName = DEFAULT_SPEC_FILE;
 
-  @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
-    Artifact mainArtifact = project.getArtifact();
-    if (mainArtifact.getFile() == null) {
-      throw new MojoExecutionException("Missing project artifact file");
-    } else if (!mainArtifact.getType().equals("jar")) {
-      throw new MojoExecutionException("Project artifact is not a JAR");
-    }
-
-    getLog().debug("Analyzing " + mainArtifact.getFile());
-
-    try (JarFile jarFile = new JarFile(mainArtifact.getFile())) {
-      ClassFileTree tree = ClassFileTree.fromJar(jarFile);
-      Map<String, JavaClassSignature> signatures = new LinkedHashMap<>();
-      for (ClassFileTree.Package pkg : tree.getRootPackages()) {
-        signatures.putAll(collectPublicAbiSignatures(pkg, publicApiAnnotation));
-      }
-      if (System.getProperty(WRITE_SPEC_PROPERTY) != null) {
-        getLog().info("Writing ABI specs to " + specFileName);
-        writeSpec(signatures, specFileName);
-      } else {
-        Map<String, JavaClassSignature> abiSpec = readSpec(specFileName);
-        if (!SetMatcher.compare(abiSpec.keySet(), signatures.keySet(),
-            item -> matchingClasses(item, abiSpec.get(item), signatures.get(item), getLog()),
-            item -> getLog().error(String.format("Missing class: %s", item)),
-            item -> getLog().error(String.format("Extra class: %s", item)))) {
-          throw new MojoFailureException("ABI spec mismatch");
-        }
-      }
-    } catch (IOException e) {
-      throw new MojoExecutionException("Error processing class signatures", e);
-    }
-  }
-
   private static Map<String, JavaClassSignature> readSpec(String fileName) throws IOException {
     try (FileReader reader = new FileReader(fileName)) {
       TypeToken<Map<String, JavaClassSignature>> typeToken =
@@ -170,5 +136,39 @@ public class AbiCheck extends AbstractMojo {
       signatures.putAll(collectPublicAbiSignatures(subPkg, publicApiAnnotation));
     }
     return signatures;
+  }
+
+  @Override
+  public void execute() throws MojoExecutionException, MojoFailureException {
+    Artifact mainArtifact = project.getArtifact();
+    if (mainArtifact.getFile() == null) {
+      throw new MojoExecutionException("Missing project artifact file");
+    } else if (!mainArtifact.getType().equals("jar")) {
+      throw new MojoExecutionException("Project artifact is not a JAR");
+    }
+
+    getLog().debug("Analyzing " + mainArtifact.getFile());
+
+    try (JarFile jarFile = new JarFile(mainArtifact.getFile())) {
+      ClassFileTree tree = ClassFileTree.fromJar(jarFile);
+      Map<String, JavaClassSignature> signatures = new LinkedHashMap<>();
+      for (ClassFileTree.Package pkg : tree.getRootPackages()) {
+        signatures.putAll(collectPublicAbiSignatures(pkg, publicApiAnnotation));
+      }
+      if (System.getProperty(WRITE_SPEC_PROPERTY) != null) {
+        getLog().info("Writing ABI specs to " + specFileName);
+        writeSpec(signatures, specFileName);
+      } else {
+        Map<String, JavaClassSignature> abiSpec = readSpec(specFileName);
+        if (!SetMatcher.compare(abiSpec.keySet(), signatures.keySet(),
+            item -> matchingClasses(item, abiSpec.get(item), signatures.get(item), getLog()),
+            item -> getLog().error(String.format("Missing class: %s", item)),
+            item -> getLog().error(String.format("Extra class: %s", item)))) {
+          throw new MojoFailureException("ABI spec mismatch");
+        }
+      }
+    } catch (IOException e) {
+      throw new MojoExecutionException("Error processing class signatures", e);
+    }
   }
 }
