@@ -23,6 +23,6 @@
         <module>../config-class-plugin</module>
         <module>../application-deploy-plugin</module>
         <module>../vespa-application-maven-plugin</module>
-	<module>../abi-check-plugin</module>
+        <module>../abi-check-plugin</module>
     </modules>
 </project>
