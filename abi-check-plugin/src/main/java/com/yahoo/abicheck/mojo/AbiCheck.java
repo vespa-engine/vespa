@@ -99,23 +99,26 @@ public class AbiCheck extends AbstractMojo {
         getLog().info("Writing ABI specs to " + specFileName);
         writeSpec(signatures, specFileName);
       } else {
-        Gson gson = new GsonBuilder().create();
-        try (FileReader reader = new FileReader(specFileName)) {
-          TypeToken<Map<String, JavaClassSignature>> typeToken =
-              new TypeToken<Map<String, JavaClassSignature>>() {
-              };
-          Map<String, JavaClassSignature> abiSpec = gson
-              .fromJson(reader, typeToken.getType());
-          if (!matchingItemSets(abiSpec.keySet(), signatures.keySet(),
-              item -> matchingClasses(item, abiSpec.get(item), signatures.get(item)),
-              (item, error) -> getLog()
-                  .error(String.format("%s class: %s", capitalizeFirst(error), item)))) {
-            throw new MojoFailureException("ABI spec mismatch");
-          }
+        Map<String, JavaClassSignature> abiSpec = readSpec(specFileName);
+        if (!matchingItemSets(abiSpec.keySet(), signatures.keySet(),
+            item -> matchingClasses(item, abiSpec.get(item), signatures.get(item)),
+            (item, error) -> getLog()
+                .error(String.format("%s class: %s", capitalizeFirst(error), item)))) {
+          throw new MojoFailureException("ABI spec mismatch");
         }
       }
     } catch (IOException e) {
       throw new MojoExecutionException("Error processing class signatures", e);
+    }
+  }
+
+  private static Map<String, JavaClassSignature> readSpec(String fileName) throws IOException {
+    try (FileReader reader = new FileReader(fileName)) {
+      TypeToken<Map<String, JavaClassSignature>> typeToken =
+          new TypeToken<Map<String, JavaClassSignature>>() {
+          };
+      Gson gson = new GsonBuilder().create();
+      return gson.fromJson(reader, typeToken.getType());
     }
   }
 
