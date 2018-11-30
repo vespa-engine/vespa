@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.templates;
 
+import com.yahoo.container.ConfigHack;
 import com.yahoo.prelude.hitfield.HitField;
 import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.prelude.hitfield.XMLString;
@@ -80,7 +81,7 @@ public class TiledTemplateSet extends DefaultTemplateSet {
     private FormattingOptions hitOptions;
 
     public TiledTemplateSet() {
-        this("tiled");
+        this(ConfigHack.TILED_TEMPLATE);
     }
 
     public TiledTemplateSet(String templateName) {
