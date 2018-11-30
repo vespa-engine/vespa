@@ -16,7 +16,7 @@ import java.util.jar.JarFile;
 
 public abstract class ClassFileTree implements AutoCloseable {
 
-  public static ClassFileTree fromJar(JarFile jarFile) throws IOException {
+  public static ClassFileTree fromJar(JarFile jarFile) {
     Map<String, Package> rootPackages = new HashMap<>();
 
     Enumeration<JarEntry> jarEntries = jarFile.entries();
