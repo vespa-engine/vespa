@@ -144,6 +144,8 @@ public class AbiCheck extends AbstractMojo {
     return signatures;
   }
 
+  // CLOVER:OFF
+  // The main entry point is tedious to unit test
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     Artifact mainArtifact = project.getArtifact();
@@ -174,6 +176,7 @@ public class AbiCheck extends AbstractMojo {
       throw new MojoExecutionException("Error processing class signatures", e);
     }
   }
+  // CLOVER:ON
 
   static boolean compareSignatures(Map<String, JavaClassSignature> expected,
       Map<String, JavaClassSignature> actual, Log log) {
