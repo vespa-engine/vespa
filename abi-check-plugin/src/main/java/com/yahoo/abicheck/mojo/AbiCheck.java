@@ -126,7 +126,7 @@ public class AbiCheck extends AbstractMojo {
     }
   }
 
-  private static Map<String, JavaClassSignature> collectPublicAbiSignatures(Package pkg,
+  static Map<String, JavaClassSignature> collectPublicAbiSignatures(Package pkg,
       String publicApiAnnotation) throws IOException {
     Map<String, JavaClassSignature> signatures = new LinkedHashMap<>();
     if (isPublicAbiPackage(pkg, publicApiAnnotation)) {
