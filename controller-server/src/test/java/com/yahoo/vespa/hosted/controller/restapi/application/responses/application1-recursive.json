@@ -7,6 +7,7 @@
     "gitBranch": "master",
     "gitCommit": "commit1"
   },
+  "projectId": 123,
   "deploying": {
     "revision": {
       "hash": "(ignore)",

@@ -97,6 +97,7 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  * @author mpolden
  * @author bjorncs
+ * @author jonmv
  */
 public class ApplicationApiTest extends ControllerContainerTest {
 
