@@ -216,7 +216,7 @@ public final class ContainerCluster
 
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
-        // TODO better modelling
+        // TODO: Better modelling
         addSimpleComponent(ThreadPoolProvider.class);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent("com.yahoo.jdisc.http.filter.SecurityFilterInvoker");
