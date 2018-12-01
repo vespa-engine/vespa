@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
  * @author ollivir
  */
 public class LocalFileDb implements FileAcquirer, FileRegistry {
+
     private static final Constructor<FileReference> fileReferenceConstructor = createFileReferenceConstructor();
 
     private final Map<FileReference, File> fileReferenceToFile = new HashMap<>();
@@ -94,4 +95,5 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
             throw new IllegalStateException(ex);
         }
     }
+
 }
