@@ -35,7 +35,6 @@ import static com.yahoo.log.LogLevel.DEBUG;
  * @author ollivir
  */
 public class Container {
-
     private static final Logger log = Logger.getLogger(Container.class.getName());
 
     private final SubscriberFactory subscriberFactory;
@@ -264,5 +263,4 @@ public class Container {
     public static BundleInstantiationSpecification bundleInstatiationSpecification(ComponentsConfig.Components config) {
         return BundleInstantiationSpecification.getFromStrings(config.id(), config.classId(), config.bundle());
     }
-
 }
