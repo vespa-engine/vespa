@@ -289,6 +289,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addDefaultRootHandler();
         cluster.addMetricStateHandler();
         cluster.addApplicationStatusHandler();
+        cluster.addStatisticsHandler();
     }
 
     private void addClientProviders(DeployState deployState, Element spec, ContainerCluster cluster) {

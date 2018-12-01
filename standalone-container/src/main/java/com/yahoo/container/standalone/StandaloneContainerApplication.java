@@ -9,7 +9,6 @@ import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -24,7 +23,6 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.QrConfig;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.jdisc.ConfiguredApplication;
 import com.yahoo.io.IOUtils;
@@ -59,7 +57,6 @@ import static com.yahoo.collections.CollectionUtil.first;
  * @author ollivir
  */
 public class StandaloneContainerApplication implements Application {
-
     public static final String PACKAGE_NAME = "standalone_jdisc_container";
     public static final String APPLICATION_LOCATION_INSTALL_VARIABLE = PACKAGE_NAME + ".app_location";
     public static final String DEPLOYMENT_PROFILE_INSTALL_VARIABLE = PACKAGE_NAME + ".deployment_profile";
@@ -127,8 +124,6 @@ public class StandaloneContainerApplication implements Application {
             @Override
             public void configure() {
                 bind(SubscriberFactory.class).toInstance(new StandaloneSubscriberFactory(modelRoot));
-                bind(SlobroksConfig.class).toInstance(new SlobroksConfig(new SlobroksConfig.Builder()));
-                bind(QrConfig.class).toInstance(new QrConfig(new QrConfig.Builder()));
             }
         });
 
@@ -316,6 +311,7 @@ public class StandaloneContainerApplication implements Application {
         }
     }
 
+    @SuppressWarnings("deprecation") // TODO: what is the not-deprecated way?
     private static void initializeContainerModel(ContainerModel containerModel, ConfigModelRepo configModelRepo) {
         containerModel.initialize(configModelRepo);
     }
@@ -327,5 +323,4 @@ public class StandaloneContainerApplication implements Application {
         }
         return Optional.ofNullable(System.getProperty(name)); // for unit testing
     }
-
 }
