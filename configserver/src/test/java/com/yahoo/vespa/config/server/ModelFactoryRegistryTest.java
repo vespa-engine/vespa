@@ -7,7 +7,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.ValidationParameters;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import org.junit.Test;
@@ -31,10 +31,10 @@ public class ModelFactoryRegistryTest {
 
     @Test
     public void testThatLatestVersionIsSelected() {
-        Version versionA = Version.fromIntValues(5, 38, 4);
-        Version versionB = Version.fromIntValues(5, 58, 1);
-        Version versionC = Version.fromIntValues(5, 48, 44);
-        Version versionD = Version.fromIntValues(5, 18, 44);
+        Version versionA = new Version(5, 38, 4);
+        Version versionB = new Version(5, 58, 1);
+        Version versionC = new Version(5, 48, 44);
+        Version versionD = new Version(5, 18, 44);
         TestFactory a = new TestFactory(versionA);
         TestFactory b = new TestFactory(versionB);
         TestFactory c = new TestFactory(versionC);
@@ -53,10 +53,10 @@ public class ModelFactoryRegistryTest {
 
     @Test
     public void testThatAllFactoriesAreReturned() {
-        TestFactory a = new TestFactory(Version.fromIntValues(5, 38, 4));
-        TestFactory b = new TestFactory(Version.fromIntValues(5, 58, 1));
-        TestFactory c = new TestFactory(Version.fromIntValues(5, 48, 44));
-        TestFactory d = new TestFactory(Version.fromIntValues(5, 18, 44));
+        TestFactory a = new TestFactory(new Version(5, 38, 4));
+        TestFactory b = new TestFactory(new Version(5, 58, 1));
+        TestFactory c = new TestFactory(new Version(5, 48, 44));
+        TestFactory d = new TestFactory(new Version(5, 18, 44));
         ModelFactoryRegistry registry = new ModelFactoryRegistry(Arrays.asList(a, b, c, d));
         assertThat(registry.getFactories().size(), is(4));
         assertTrue(registry.getFactories().contains(a));
@@ -67,11 +67,12 @@ public class ModelFactoryRegistryTest {
 
     @Test(expected = UnknownVespaVersionException.class)
     public void testThatUnknownVersionGivesError() {
-        ModelFactoryRegistry registry = new ModelFactoryRegistry(Arrays.asList(new TestFactory(Version.fromIntValues(1, 2, 3))));
-        registry.getFactory(Version.fromIntValues(3, 2, 1));
+        ModelFactoryRegistry registry = new ModelFactoryRegistry(Arrays.asList(new TestFactory(new Version(1, 2, 3))));
+        registry.getFactory(new Version(3, 2, 1));
     }
 
     private static class TestFactory implements ModelFactory {
+
         private final Version version;
 
         public TestFactory(Version version) {
@@ -79,7 +80,7 @@ public class ModelFactoryRegistryTest {
         }
 
         @Override
-        public Version getVersion() {
+        public Version version() {
             return version;
         }
 
@@ -93,4 +94,5 @@ public class ModelFactoryRegistryTest {
             return null;
         }
     }
+
 }

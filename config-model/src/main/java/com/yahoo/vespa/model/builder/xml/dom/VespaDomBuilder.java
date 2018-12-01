@@ -235,10 +235,11 @@ public class VespaDomBuilder extends VespaModelBuilder {
 
         @Override
         protected ApplicationConfigProducerRoot doBuild(DeployState deployState, AbstractConfigProducer parent, Element producerSpec) {
-            ApplicationConfigProducerRoot root = new ApplicationConfigProducerRoot(parent, name,
-                    deployState.getDocumentModel(),
-                    deployState.getProperties().vespaVersion(),
-                    deployState.getProperties().applicationId());
+            ApplicationConfigProducerRoot root = new ApplicationConfigProducerRoot(parent,
+                                                                                   name,
+                                                                                   deployState.getDocumentModel(),
+                                                                                   deployState.getProperties().vespaVersion(),
+                                                                                   deployState.getProperties().applicationId());
             root.setHostSystem(new HostSystem(root, "hosts", deployState.getProvisioner(), deployState.getDeployLogger()));
             new Client(root);
             return root;

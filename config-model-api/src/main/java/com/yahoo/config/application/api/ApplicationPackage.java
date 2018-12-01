@@ -2,7 +2,7 @@
 package com.yahoo.config.application.api;
 
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 
 /**
  * Represents an application package, that is, used as input when creating a VespaModel and as
@@ -184,7 +185,17 @@ public interface ApplicationPackage {
     Optional<Reader> getDeployment();
     Optional<Reader> getValidationOverrides();
 
-    List<ComponentInfo> getComponentsInfo(Version vespaVersion);
+    /** @deprecated do not override or call. Use the other Version class */
+    @Deprecated
+    default List<ComponentInfo> getComponentsInfo(com.yahoo.config.provision.Version vespaVersion) {
+        return getComponentsInfo(vespaVersion.toVersion());
+    }
+
+    // TODO: Remove the default implementation after December 2018
+    @SuppressWarnings("deprecation")
+    default List<ComponentInfo> getComponentsInfo(Version vespaVersion) {
+        return getComponentsInfo(com.yahoo.config.provision.Version.from(vespaVersion));
+    }
 
     /**
      * Reads a ranking expression from file to a string and returns it.
@@ -237,7 +248,13 @@ public interface ApplicationPackage {
         throw new UnsupportedOperationException("This application package cannot validate XML");
     }
 
-    default void validateXML(Optional<Version> vespaVersion) throws IOException {
+    /** @deprecated do not override or call. Use the other Version class */
+    @Deprecated
+    default void validateXML(Optional<com.yahoo.config.provision.Version> vespaVersion) throws IOException {
+        validateXMLFor(vespaVersion.map(com.yahoo.config.provision.Version::toVersion));
+    }
+
+    default void validateXMLFor(Optional<Version> vespaVersion) throws IOException {
         throw new UnsupportedOperationException("This application package cannot validate XML");
     }
 
@@ -252,7 +269,7 @@ public interface ApplicationPackage {
      */
     // TODO: Remove on Vespa 7
     @Deprecated
-    default Map<Version, AllocatedHosts> getProvisionInfoMap() {
+    default Map<com.yahoo.config.provision.Version, AllocatedHosts> getProvisionInfoMap() {
         return Collections.emptyMap();
     }
 
@@ -261,7 +278,16 @@ public interface ApplicationPackage {
         return Optional.empty();
     }
 
-    default Map<Version, FileRegistry> getFileRegistryMap() {
+    /** @deprecated do not override or call. Use getFileRegistries */
+    @Deprecated
+    default Map<com.yahoo.config.provision.Version, FileRegistry> getFileRegistryMap() {
+        return getFileRegistries().entrySet()
+                                  .stream()
+                                  .collect(Collectors.toMap(e -> com.yahoo.config.provision.Version.from(e.getKey()),
+                                                            e -> e.getValue()));
+    }
+
+    default Map<Version, FileRegistry> getFileRegistries() {
         return Collections.emptyMap();
     }
 

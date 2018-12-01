@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.version;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -26,7 +26,7 @@ public class VersionStateTest {
 
     @Test
     public void upgrade() throws IOException {
-        Version unknownVersion = Version.fromIntValues(0, 0, 0);
+        Version unknownVersion = new Version(0, 0, 0);
         File versionFile = tempDir.newFile();
         VersionState state = new VersionState(versionFile);
         assertThat(state.storedVersion(), is(unknownVersion));
@@ -39,7 +39,7 @@ public class VersionStateTest {
         assertTrue(state.isUpgraded());
 
         IOUtils.writeFile(versionFile, "5.0.0", false);
-        assertThat(state.storedVersion(), is(Version.fromIntValues(5, 0, 0)));
+        assertThat(state.storedVersion(), is(new Version(5, 0, 0)));
         assertTrue(state.isUpgraded());
 
         state.saveNewVersion();
@@ -57,4 +57,5 @@ public class VersionStateTest {
         Version stored = Version.fromString(IOUtils.readFile(versionFile));
         assertThat(stored, is(state.currentVersion()));
     }
+
 }

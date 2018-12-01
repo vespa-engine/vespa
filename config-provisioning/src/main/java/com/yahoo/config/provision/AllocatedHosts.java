@@ -56,10 +56,10 @@ public class AllocatedHosts {
         cursor.setString(hostSpecHostName, host.hostname());
         host.membership().ifPresent(membership -> {
             cursor.setString(hostSpecMembership, membership.stringValue());
-            cursor.setString(hostSpecVespaVersion, membership.cluster().vespaVersion().toString());
+            cursor.setString(hostSpecVespaVersion, membership.cluster().vespaVersion().toFullString());
         });
         host.flavor().ifPresent(flavor -> cursor.setString(hostSpecFlavor, flavor.name()));
-        host.version().ifPresent(version -> cursor.setString(hostSpecCurrentVespaVersion, version.toString()));
+        host.version().ifPresent(version -> cursor.setString(hostSpecCurrentVespaVersion, version.toFullString()));
     }
 
     /** Returns the hosts of this allocation */

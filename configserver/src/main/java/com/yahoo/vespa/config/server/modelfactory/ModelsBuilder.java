@@ -11,7 +11,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.OutOfCapacityException;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.log.LogLevel;
@@ -173,14 +173,14 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         return allApplicationVersions;
     }
 
-    private Set<Version> versionsToBuild(Set<Version> versions, com.yahoo.component.Version wantedVersion, int majorVersion, AllocatedHosts allocatedHosts) {
+    private Set<Version> versionsToBuild(Set<Version> versions, Version wantedVersion, int majorVersion, AllocatedHosts allocatedHosts) {
         if (configserverConfig.buildMinimalSetOfConfigModels())
             versions = keepThoseUsedOn(allocatedHosts, versions);
 
         // Make sure we build wanted version if we are building models for this major version and we are on hosted vespa
         // If not on hosted vespa, we do not want to try to build this version, since we have only one version (the latest)
         if (hosted && wantedVersion.getMajor() == majorVersion)
-            versions.add(Version.fromIntValues(wantedVersion.getMajor(), wantedVersion.getMinor(), wantedVersion.getMicro()));
+            versions.add(wantedVersion);
 
         return versions;
     }
@@ -205,14 +205,13 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     }
 
     private boolean isUsedOn(AllocatedHosts hosts, Version version) {
-        com.yahoo.component.Version v = new com.yahoo.component.Version(version.toString());
         return hosts.getHosts().stream()
-                               .anyMatch(host -> host.version().isPresent() && host.version().get().equals(v));
+                               .anyMatch(host -> host.version().isPresent() && host.version().get().equals(version));
     }
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
                                                      ApplicationId applicationId, 
-                                                     com.yahoo.component.Version wantedNodeVespaVersion,
+                                                     Version wantedNodeVespaVersion,
                                                      Optional<AllocatedHosts> allocatedHosts,
                                                      Instant now);
 

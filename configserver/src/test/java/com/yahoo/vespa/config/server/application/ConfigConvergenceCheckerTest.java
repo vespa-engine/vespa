@@ -7,7 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -65,7 +65,7 @@ public class ConfigConvergenceCheckerTest {
                                       new ServerCache(),
                                       3,
                                       false,
-                                      Version.fromIntValues(0, 0, 0),
+                                      new Version(0, 0, 0),
                                       MetricUpdater.createTestUpdater(), appId);
         checker = new ConfigConvergenceChecker();
     }
@@ -139,7 +139,7 @@ public class ConfigConvergenceCheckerTest {
             );
             Application application = new Application(model, new ServerCache(), 4,
                                                       false,
-                                                      Version.fromIntValues(0, 0, 0),
+                                                      new Version(0, 0, 0),
                                                       MetricUpdater.createTestUpdater(), appId);
 
             wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":4}}")));

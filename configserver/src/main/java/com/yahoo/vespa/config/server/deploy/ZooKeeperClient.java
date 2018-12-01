@@ -9,7 +9,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -310,7 +310,7 @@ public class ZooKeeperClient {
         String exportedRegistry = PreGeneratedFileRegistry.exportRegistry(fileRegistry);
 
         configCurator.putData(getZooKeeperAppPath(null).append(ZKApplicationPackage.fileRegistryNode).getAbsolute(),
-                vespaVersion.toSerializedForm(),
+                vespaVersion.toFullString(),
                 exportedRegistry);
     }
 

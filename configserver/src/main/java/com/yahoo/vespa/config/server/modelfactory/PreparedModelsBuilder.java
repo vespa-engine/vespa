@@ -16,7 +16,7 @@ import com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -86,7 +86,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                     com.yahoo.component.Version wantedNodeVespaVersion,
                                                     Optional<AllocatedHosts> allocatedHosts,
                                                     Instant now) {
-        Version modelVersion = modelFactory.getVersion();
+        Version modelVersion = modelFactory.version();
         log.log(LogLevel.DEBUG, "Building model " + modelVersion + " for " + applicationId);
         FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(context.getServerDBSessionDir());
 
@@ -101,7 +101,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 createHostProvisioner(allocatedHosts),
                 properties,
                 getAppDir(applicationPackage),
-                new com.yahoo.component.Version(modelVersion.toString()),
+                modelVersion,
                 wantedNodeVespaVersion);
 
         log.log(LogLevel.DEBUG, "Create and validate model " + modelVersion + " for " + applicationId);

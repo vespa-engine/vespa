@@ -11,7 +11,7 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -60,7 +60,7 @@ import static org.junit.Assert.*;
  */
 public class TenantRequestHandlerTest {
 
-    private static final Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).getVersion();
+    private static final Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
     private TenantRequestHandler server;
     private MockReloadListener listener = new MockReloadListener();
     private File app1 = new File("src/test/apps/cs1");
@@ -120,7 +120,7 @@ public class TenantRequestHandlerTest {
 
     private ModelFactoryRegistry createRegistry() {
         return new ModelFactoryRegistry(Arrays.asList(new TestModelFactory(vespaVersion),
-                new TestModelFactory(Version.fromIntValues(3, 2, 1))));
+                new TestModelFactory(new Version(3, 2, 1))));
     }
 
     public <T extends ConfigInstance> T resolve(Class<T> clazz,
@@ -150,7 +150,7 @@ public class TenantRequestHandlerTest {
 
             @Override
             public Optional<VespaVersion> getVespaVersion() {
-                return Optional.of(VespaVersion.fromString(vespaVersion.toSerializedForm()));
+                return Optional.of(VespaVersion.fromString(vespaVersion.toFullString()));
             }
 
             @Override
@@ -240,7 +240,7 @@ public class TenantRequestHandlerTest {
         feedAndReloadApp(app1, 1, appId);
         SimpletypesConfig config = resolve(SimpletypesConfig.class, server, appId, vespaVersion, "");
         assertThat(config.intval(), is(1337));
-        config = resolve(SimpletypesConfig.class, server, appId, Version.fromIntValues(3, 2, 1), "");
+        config = resolve(SimpletypesConfig.class, server, appId, new Version(3, 2, 1), "");
         assertThat(config.intval(), is(1337));
     }
 

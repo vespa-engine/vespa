@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
+
 import com.yahoo.config.model.api.HostInfo;
-import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 
 import java.time.Instant;
 import java.util.*;
@@ -91,4 +91,5 @@ public final class ApplicationSet {
     public long getApplicationGeneration() {
         return generation;
     }
+
 }

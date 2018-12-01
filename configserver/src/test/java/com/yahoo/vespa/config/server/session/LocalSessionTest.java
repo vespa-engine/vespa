@@ -2,8 +2,12 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.io.Files;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.slime.Slime;
@@ -166,7 +170,7 @@ public class LocalSessionTest {
         if (allocatedHosts.isPresent()) {
             zkClient.write(allocatedHosts.get());
         }
-        zkClient.write(Collections.singletonMap(Version.fromIntValues(0, 0, 0), new MockFileRegistry()));
+        zkClient.write(Collections.singletonMap(new Version(0, 0, 0), new MockFileRegistry()));
         File sessionDir = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
         sessionDir.createNewFile();
         return new LocalSession(tenant, sessionId, preparer, new SessionContext(FilesApplicationPackage.fromFile(testApp), zkc, sessionDir, new MemoryTenantApplications(), new HostRegistry<>(), superModelGenerationCounter));

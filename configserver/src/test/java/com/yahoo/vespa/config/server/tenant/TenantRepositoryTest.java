@@ -8,7 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -86,7 +86,7 @@ public class TenantRepositoryTest {
                                 new ServerCache(),
                                 4L,
                                 false,
-                                Version.fromIntValues(1, 2, 3),
+                                new Version(1, 2, 3),
                                 MetricUpdater.createTestUpdater(),
                                 ApplicationId.defaultId())));
         assertEquals(1, listener.reloaded.get());

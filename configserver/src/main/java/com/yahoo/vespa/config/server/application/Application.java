@@ -5,7 +5,7 @@ import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;

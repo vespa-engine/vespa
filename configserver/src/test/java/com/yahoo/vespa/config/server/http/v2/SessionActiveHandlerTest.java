@@ -217,7 +217,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         zkClient.writeStatus(status);
         ZooKeeperClient zkC = new ZooKeeperClient(componentRegistry.getConfigCurator(), new BaseDeployLogger(), false,
                                                   TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
-        zkC.write(Collections.singletonMap(modelFactory.getVersion(), new MockFileRegistry()));
+        zkC.write(Collections.singletonMap(modelFactory.version(), new MockFileRegistry()));
         zkC.write(AllocatedHosts.withHosts(Collections.emptySet()));
         RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, zkClient, clock);
         remoteSessionRepo.addSession(session);

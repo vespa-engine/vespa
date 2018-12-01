@@ -9,7 +9,7 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;

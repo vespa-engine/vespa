@@ -5,18 +5,21 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ValidationParameters;
-import com.yahoo.config.model.application.provider.*;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.TimeoutBudgetTest;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
@@ -38,11 +41,17 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
@@ -53,9 +62,9 @@ public class SessionPreparerTest {
     private static final Path sessionsPath = tenantPath.append("sessions").append("testapp");
     private static final File testApp = new File("src/test/apps/app");
     private static final File invalidTestApp = new File("src/test/apps/illegalApp");
-    private static final Version version123 = Version.fromIntValues(1, 2, 3);
-    private static final Version version321 = Version.fromIntValues(3, 2, 1);
-    private static final Version version323 = Version.fromIntValues(3, 2, 3);
+    private static final Version version123 = new Version(1, 2, 3);
+    private static final Version version321 = new Version(3, 2, 1);
+    private static final Version version323 = new Version(3, 2, 3);
 
     private MockCurator curator;
     private ConfigCurator configCurator;
@@ -223,7 +232,11 @@ public class SessionPreparerTest {
     }
 
     private SessionContext getContext(FilesApplicationPackage app) throws IOException {
-        return new SessionContext(app, new SessionZooKeeperClient(curator, sessionsPath), app.getAppDir(), new MemoryTenantApplications(), new HostRegistry<>(), new SuperModelGenerationCounter(curator));
+        return new SessionContext(app,
+                                  new SessionZooKeeperClient(curator, sessionsPath),
+                                  app.getAppDir(),
+                                  new MemoryTenantApplications(), new HostRegistry<>(),
+                                  new SuperModelGenerationCounter(curator));
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {

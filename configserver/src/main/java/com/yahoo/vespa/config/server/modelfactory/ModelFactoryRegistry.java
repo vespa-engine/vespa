@@ -4,14 +4,14 @@ package com.yahoo.vespa.config.server.modelfactory;
 import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.model.api.ModelFactory;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 
 import java.util.*;
 
 /**
  * A registry of model factories. Allows querying for a specific version of a {@link ModelFactory} or
- * simply returning all of them. Keeps track of the latest {@link com.yahoo.config.provision.Version} supported.
+ * simply returning all of them. Keeps track of the latest {@link Version} supported.
  *
  * @author Ulf Lilleengen
  */
@@ -29,7 +29,7 @@ public class ModelFactoryRegistry {
             throw new IllegalArgumentException("No ModelFactory instances registered, cannot build config models");
         }
         for (ModelFactory factory : modelFactories) {
-            factories.put(factory.getVersion(), factory);
+            factories.put(factory.version(), factory);
         }
     }
 

@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.version;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -36,7 +36,7 @@ public class VersionState {
 
     public void saveNewVersion() {
         try (FileWriter writer = new FileWriter(versionFile)) {
-            writer.write(currentVersion().toSerializedForm());
+            writer.write(currentVersion().toFullString());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -46,12 +46,12 @@ public class VersionState {
         try (FileReader reader = new FileReader(versionFile)) {
             return Version.fromString(IOUtils.readAll(reader));
         } catch (Exception e) {
-            return Version.fromIntValues(0, 0, 0); // Use an old value to signal we don't know
+            return new Version(0, 0, 0); // Use an old value to signal we don't know
         }
     }
 
     public Version currentVersion() {
-        return Version.fromIntValues(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
+        return new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
     }
 
     @Override

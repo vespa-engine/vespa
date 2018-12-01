@@ -23,7 +23,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
@@ -264,7 +264,7 @@ public class DeployTester {
         }
         
         @Override
-        public Version getVersion() { return version; }
+        public Version version() { return version; }
 
         @Override
         public Model createModel(ModelContext modelContext) {
@@ -305,7 +305,7 @@ public class DeployTester {
         public int creationCount() { return creationCount; }
 
         @Override
-        public Version getVersion() { return wrapped.getVersion(); }
+        public Version version() { return wrapped.version(); }
 
         @Override
         public Model createModel(ModelContext modelContext) {
