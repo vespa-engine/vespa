@@ -127,8 +127,6 @@ public class StandaloneContainerApplication implements Application {
             @Override
             public void configure() {
                 bind(SubscriberFactory.class).toInstance(new StandaloneSubscriberFactory(modelRoot));
-                bind(SlobroksConfig.class).toInstance(new SlobroksConfig(new SlobroksConfig.Builder()));
-                bind(QrConfig.class).toInstance(new QrConfig(new QrConfig.Builder()));
             }
         });
 

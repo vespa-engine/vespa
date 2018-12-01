@@ -79,7 +79,6 @@ public final class ConfiguredApplication implements Application {
     private final ContainerDiscApplication applicationWithLegacySetup;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
-    private final Register slobrokRegistrator;
 
     //TODO: FilterChainRepository should instead always be set up in the model.
     private final FilterChainRepository defaultFilterChainRepository =
@@ -95,6 +94,7 @@ public final class ConfiguredApplication implements Application {
     private Thread reconfigurerThread;
     private Thread portWatcher;
     private QrConfig qrConfig;
+    private Register slobrokRegistrator = null;
 
     static {
         LogSetup.initVespaLogging("Container");
@@ -115,9 +115,7 @@ public final class ConfiguredApplication implements Application {
     public ConfiguredApplication(ContainerActivator activator,
                                  OsgiFramework osgiFramework,
                                  com.yahoo.jdisc.Timer timer,
-                                 SubscriberFactory subscriberFactory,
-                                 SlobroksConfig slobroksConfig,
-                                 QrConfig qrConfig) throws ListenFailedException {
+                                 SubscriberFactory subscriberFactory) throws ListenFailedException {
         this.activator = activator;
         this.osgiFramework = osgiFramework;
         this.timerSingleton = timer;
@@ -127,8 +125,24 @@ public final class ConfiguredApplication implements Application {
         Container.get().setOsgi(new OsgiImpl(osgiFramework));
 
         applicationWithLegacySetup = new ContainerDiscApplication(configId);
+    }
 
+    @Override
+    public void start() {
+        qrConfig = getConfig(QrConfig.class);
+        SlobroksConfig slobroksConfig = getConfig(SlobroksConfig.class);
         slobrokRegistrator = registerInSlobrok(slobroksConfig, qrConfig);
+
+        hackToInitializeServer(qrConfig);
+
+        ContainerBuilder builder = createBuilderWithGuiceBindings();
+        configureComponents(builder.guiceModules().activate());
+
+        intitializeAndActivateContainer(builder);
+        startReconfigurerThread();
+        portWatcher = new Thread(this::watchPortChange);
+        portWatcher.setDaemon(true);
+        portWatcher.start();
     }
 
     /** The container has no rpc methods, but we still need to register it in Slobrok to enable orchestration */
@@ -141,21 +155,6 @@ public final class ConfiguredApplication implements Application {
         log.log(LogLevel.INFO,
                 "Registered name '" + qrConfig.rpc().slobrokId() + "' at " + mySpec + " with: " + slobrokList);
         return slobrokRegistrator;
-    }
-
-    @Override
-    public void start() {
-        qrConfig = getConfig(QrConfig.class);
-        hackToInitializeServer(qrConfig);
-
-        ContainerBuilder builder = createBuilderWithGuiceBindings();
-        configureComponents(builder.guiceModules().activate());
-
-        intitializeAndActivateContainer(builder);
-        startReconfigurerThread();
-        portWatcher = new Thread(this::watchPortChange);
-        portWatcher.setDaemon(true);
-        portWatcher.start();
     }
 
     @SuppressWarnings("deprecation")
@@ -318,7 +317,9 @@ public final class ConfiguredApplication implements Application {
         log.info("Stop: Shutting container down");
         configurer.shutdown(new Deconstructor(false));
         Container.get().shutdown();
-        slobrokRegistrator.shutdown();
+
+        if (slobrokRegistrator != null)
+            slobrokRegistrator.shutdown();
 
         log.info("Stop: Finished");
     }
