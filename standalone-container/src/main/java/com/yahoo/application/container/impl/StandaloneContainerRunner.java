@@ -12,6 +12,7 @@ import java.nio.file.Path;
  * @author ollivir
  */
 public class StandaloneContainerRunner {
+
     public static Path createApplicationPackage(String servicesXml) {
         try {
             return createApplicationDirectory(servicesXml);
@@ -31,4 +32,5 @@ public class StandaloneContainerRunner {
         Files.write(servicesXmlFile, Utf8.toBytes(content));
         return applicationDir;
     }
+
 }

@@ -5,13 +5,13 @@ import com.google.common.collect.MapMaker;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
-import com.yahoo.container.Server;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.di.config.Subscriber;
@@ -30,8 +30,14 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.jrt.ListenFailedException;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
+import com.yahoo.jrt.slobrok.api.Register;
+import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
+import com.yahoo.net.HostName;
 import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
@@ -73,6 +79,8 @@ public final class ConfiguredApplication implements Application {
     private final ContainerDiscApplication applicationWithLegacySetup;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
+    private final Register slobrokRegistrator;
+
     //TODO: FilterChainRepository should instead always be set up in the model.
     private final FilterChainRepository defaultFilterChainRepository =
             new FilterChainRepository(new ChainsConfig(new ChainsConfig.Builder()),
@@ -107,7 +115,9 @@ public final class ConfiguredApplication implements Application {
     public ConfiguredApplication(ContainerActivator activator,
                                  OsgiFramework osgiFramework,
                                  com.yahoo.jdisc.Timer timer,
-                                 SubscriberFactory subscriberFactory) throws ListenFailedException {
+                                 SubscriberFactory subscriberFactory,
+                                 SlobroksConfig slobroksConfig,
+                                 QrConfig qrConfig) throws ListenFailedException {
         this.activator = activator;
         this.osgiFramework = osgiFramework;
         this.timerSingleton = timer;
@@ -117,6 +127,20 @@ public final class ConfiguredApplication implements Application {
         Container.get().setOsgi(new OsgiImpl(osgiFramework));
 
         applicationWithLegacySetup = new ContainerDiscApplication(configId);
+
+        slobrokRegistrator = registerInSlobrok(slobroksConfig, qrConfig);
+    }
+
+    /** The container has no rpc methods, but we still need to register it in Slobrok to enable orchestration */
+    private Register registerInSlobrok(SlobroksConfig slobrokConfig, QrConfig qrConfig) {
+        SlobrokList slobrokList = new SlobrokList();
+        slobrokList.setup(slobrokConfig.slobrok().stream().map(SlobroksConfig.Slobrok::connectionspec).toArray(String[]::new));
+        Spec mySpec = new Spec(HostName.getLocalhost(), qrConfig.rpc().port());
+        Register slobrokRegistrator = new Register(new Supervisor(new Transport()), slobrokList, mySpec);
+        slobrokRegistrator.registerName(qrConfig.rpc().slobrokId());
+        log.log(LogLevel.INFO,
+                "Registered name '" + qrConfig.rpc().slobrokId() + "' at " + mySpec + " with: " + slobrokList);
+        return slobrokRegistrator;
     }
 
     @Override
@@ -134,10 +158,11 @@ public final class ConfiguredApplication implements Application {
         portWatcher.start();
     }
 
-
+    @SuppressWarnings("deprecation")
     private static void hackToInitializeServer(QrConfig config) {
         try {
-            Server.get().initialize(config);
+            Container.get().setupFileAcquirer(config.filedistributor());
+            com.yahoo.container.Server.get().initialize(config);
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Caught exception when initializing server. Exiting.", e);
             Runtime.getRuntime().halt(1);
@@ -293,6 +318,7 @@ public final class ConfiguredApplication implements Application {
         log.info("Stop: Shutting container down");
         configurer.shutdown(new Deconstructor(false));
         Container.get().shutdown();
+        slobrokRegistrator.shutdown();
 
         log.info("Stop: Finished");
     }
