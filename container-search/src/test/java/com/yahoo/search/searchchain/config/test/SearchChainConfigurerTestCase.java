@@ -3,7 +3,7 @@ package com.yahoo.search.searchchain.config.test;
 
 import com.yahoo.config.search.IntConfig;
 import com.yahoo.config.search.StringConfig;
-import com.yahoo.container.config.testutil.TestUtil;
+import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.core.config.testutil.HandlersConfigurerTestWrapper;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -19,6 +19,8 @@ import org.junit.Test;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
@@ -50,7 +52,7 @@ public class SearchChainConfigurerTestCase {
     }
 
     @AfterClass
-    public static void removeDefaultComponentsConfigs() throws IOException {
+    public static void removeDefaultComponentsConfigs() {
         new File(testDir + "components.cfg").delete();
     }
 
@@ -60,7 +62,7 @@ public class SearchChainConfigurerTestCase {
     }
 
     @Test
-    public synchronized void testConfiguration() throws Exception {
+    public synchronized void testConfiguration() {
         HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper("dir:" + testDir);
 
         SearchChain simple=getSearchChainRegistryFrom(configurer).getComponent("simple");
@@ -182,7 +184,7 @@ public class SearchChainConfigurerTestCase {
      * and that a searcher that has been removed from the configuration is not in the new registry.
      */
     @Test
-    public void testChainsConfigUpdate() throws IOException, InterruptedException {
+    public void testChainsConfigUpdate() throws IOException {
         File cfgDir = getCfgDir();
         copyFile(testDir + "handlers.cfg", cfgDir +  "/handlers.cfg");
         copyFile(testDir + "qr-search.cfg", cfgDir +  "/qr-search.cfg");
@@ -266,7 +268,7 @@ public class SearchChainConfigurerTestCase {
 
     //// Helper methods
 
-    public static void printFile(File f, String content) throws IOException, InterruptedException {
+    public static void printFile(File f, String content) throws IOException {
         OutputStream out = new FileOutputStream(f);
         out.write(content.getBytes());
         out.close();
@@ -300,8 +302,58 @@ public class SearchChainConfigurerTestCase {
      * Also adds the default SearchHandler.
      */
     public static void createComponentsConfig(String chainsFile, String handlersFile, String componentsFile) throws IOException {
-        TestUtil.createComponentsConfig(handlersFile, componentsFile, "handler");
-        TestUtil.createComponentsConfig(chainsFile, componentsFile, "components", true);
+        createComponentsConfig(handlersFile, componentsFile, "handler", false);
+        createComponentsConfig(chainsFile, componentsFile, "components", true);
+    }
+
+    /**
+     * Copies the component ids from another config, e.g. 'handlers' to a 'components' array in a new components file,
+     * to avoid a manually written 'components' file for tests where the bundle spec is given by the component id.
+     * @param configFile  Full path to the original config file, e.g. 'handlers'
+     * @param componentsFile  Full path to the new 'components' file
+     * @param componentType   The type of component, e.g. 'handler'
+     * @param append  'true' will append to an already existing 'componentsFile'
+     */
+    public static void createComponentsConfig(String configFile,
+                                              String componentsFile,
+                                              String componentType,
+                                              boolean append) throws IOException {
+        StringBuilder buf = new StringBuilder();
+        String line;
+        int i = 0;
+        if (append) {
+            Pattern p = Pattern.compile("^[a-z]+" + "\\[\\d+\\]\\.id (.+)");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    new FileInputStream(new File(componentsFile)), "UTF-8"));
+            while ((line = reader.readLine()) != null) {
+                Matcher m = p.matcher(line);
+                if (m.matches() && !m.group(1).equals(HandlersConfigurerDi.RegistriesHack.class.getName())) {
+                    buf.append("components[").append(i).append("].id ").append(m.group(1)).append("\n");
+                    i++;
+                }
+            }
+            reader.close();
+        }
+        BufferedReader reader = new BufferedReader(new InputStreamReader(
+                new FileInputStream(new File(configFile)), "UTF-8"));
+        Pattern component = Pattern.compile("^" + componentType + "\\[\\d+\\]\\.id (.+)");
+        while ((line = reader.readLine()) != null) {
+            Matcher m = component.matcher(line);
+            if (m.matches()) {
+                buf.append("components[").append(i).append("].id ").append(m.group(1)).append("\n");
+                i++;
+            }
+        }
+        buf.append("components[").append(i).append("].id ").
+                                                                   append(HandlersConfigurerDi.RegistriesHack.class.getName()).append("\n");
+        i++;
+        reader.close();
+        buf.insert(0, "components["+i+"]\n");
+
+        Writer writer = new OutputStreamWriter(new FileOutputStream(new File(componentsFile)), "UTF-8");
+        writer.write(buf.toString());
+        writer.flush();
+        writer.close();
     }
 
 }
