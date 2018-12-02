@@ -12,7 +12,6 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.service.monitor.application.DuperModelInfraApi;
-import com.yahoo.vespa.service.monitor.application.InfraApplication;
 import com.yahoo.vespa.service.monitor.application.InfraApplicationApi;
 
 import java.time.Duration;
@@ -66,6 +65,7 @@ public class InfrastructureProvisioner extends Maintainer {
                                 .orElse(null))
                         .collect(Collectors.toList());
                 if (wantedVersions.isEmpty()) {
+                    // TODO: Unprovision active nodes from application?
                     logger.log(LogLevel.DEBUG, "Skipping provision of " + nodeType + ": No nodes to provision");
                     duperModel.infraApplicationRemoved(application.getApplicationId());
                     continue;

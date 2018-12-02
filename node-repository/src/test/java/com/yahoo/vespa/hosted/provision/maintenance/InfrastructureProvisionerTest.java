@@ -8,7 +8,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.log.event.Collection;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
@@ -18,9 +17,7 @@ import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.application.ControllerApplication;
 import com.yahoo.vespa.service.monitor.application.DuperModelInfraApi;
-import com.yahoo.vespa.service.monitor.application.InfraApplication;
 import com.yahoo.vespa.service.monitor.application.InfraApplicationApi;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -31,17 +28,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -199,7 +192,7 @@ public class InfrastructureProvisionerTest {
     }
 
     @Test
-    public void returns_empty_if_no_usable_nodes() {
+    public void avoid_provisioning_if_no_usable_nodes() {
         when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
 
         infrastructureProvisioner.maintain();

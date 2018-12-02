@@ -74,7 +74,7 @@ public class DuperModel implements DuperModelInfraApi {
         this.containsInfra = containsInfra;
         this.useConfigserverConfig = useConfigserverConfig;
 
-        // Single-tenant applications have the config server as part of the application model, conflicting and would have conflicting.
+        // Single-tenant applications have the config server as part of the application model.
         // TODO: Add health monitoring for config server when part of application model.
         if (useConfigserverConfig && multitenant) {
             staticInfos.add(configServerApplicationInfo);
