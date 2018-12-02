@@ -5,13 +5,13 @@ import com.google.common.collect.MapMaker;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
-import com.yahoo.container.Server;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.di.config.Subscriber;
@@ -29,9 +29,16 @@ import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
+import com.yahoo.jrt.Acceptor;
 import com.yahoo.jrt.ListenFailedException;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
+import com.yahoo.jrt.slobrok.api.Register;
+import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
+import com.yahoo.net.HostName;
 import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
@@ -73,6 +80,7 @@ public final class ConfiguredApplication implements Application {
     private final ContainerDiscApplication applicationWithLegacySetup;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
+
     //TODO: FilterChainRepository should instead always be set up in the model.
     private final FilterChainRepository defaultFilterChainRepository =
             new FilterChainRepository(new ChainsConfig(new ChainsConfig.Builder()),
@@ -87,6 +95,10 @@ public final class ConfiguredApplication implements Application {
     private Thread reconfigurerThread;
     private Thread portWatcher;
     private QrConfig qrConfig;
+
+    private Register slobrokRegistrator = null;
+    private Supervisor supervisor = null;
+    private Acceptor acceptor = null;
 
     static {
         LogSetup.initVespaLogging("Container");
@@ -122,6 +134,9 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void start() {
         qrConfig = getConfig(QrConfig.class);
+        SlobroksConfig slobroksConfig = getConfig(SlobroksConfig.class);
+        slobrokRegistrator = registerInSlobrok(slobroksConfig, qrConfig);
+
         hackToInitializeServer(qrConfig);
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
@@ -134,10 +149,48 @@ public final class ConfiguredApplication implements Application {
         portWatcher.start();
     }
 
+    /**
+     * The container has no rpc methods, but we still need an RPC sever
+     * to register in Slobrok to enable orchestration
+     */
+    private Register registerInSlobrok(SlobroksConfig slobrokConfig, QrConfig qrConfig) {
+        if ( ! qrConfig.rpc().enabled()) return null;
 
+        // 1. Set up RPC server
+        supervisor = new Supervisor(new Transport());
+        Spec listenSpec = new Spec(qrConfig.rpc().port());
+        try {
+            acceptor = supervisor.listen(listenSpec);
+        }
+        catch (ListenFailedException e) {
+            throw new RuntimeException("Could not create rpc server listening on " + listenSpec, e);
+        }
+
+        // 2. Register it in slobrok
+        SlobrokList slobrokList = new SlobrokList();
+        slobrokList.setup(slobrokConfig.slobrok().stream().map(SlobroksConfig.Slobrok::connectionspec).toArray(String[]::new));
+        Spec mySpec = new Spec(HostName.getLocalhost(), acceptor.port());
+        slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
+        slobrokRegistrator.registerName(qrConfig.rpc().slobrokId());
+        log.log(LogLevel.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +
+                               "' at " + mySpec + " with: " + slobrokList);
+        return slobrokRegistrator;
+    }
+
+    private void unregisterInSlobrok() {
+        if (slobrokRegistrator != null)
+            slobrokRegistrator.shutdown();
+        if (acceptor != null)
+            acceptor.shutdown().join();
+        if (supervisor != null)
+            supervisor.transport().shutdown().join();
+    }
+
+    @SuppressWarnings("deprecation")
     private static void hackToInitializeServer(QrConfig config) {
         try {
-            Server.get().initialize(config);
+            Container.get().setupFileAcquirer(config.filedistributor());
+            com.yahoo.container.Server.get().initialize(config);
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Caught exception when initializing server. Exiting.", e);
             Runtime.getRuntime().halt(1);
@@ -294,6 +347,7 @@ public final class ConfiguredApplication implements Application {
         configurer.shutdown(new Deconstructor(false));
         Container.get().shutdown();
 
+        unregisterInSlobrok();
         log.info("Stop: Finished");
     }
 

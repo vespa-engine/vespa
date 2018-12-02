@@ -50,6 +50,7 @@ import java.util.jar.JarFile;
  * @author ollivir
  */
 public final class ClassLoaderOsgiFramework implements OsgiFramework {
+
     private BundleContextImpl bundleContextImpl = new BundleContextImpl();
     private SystemBundleImpl systemBundleImpl = new SystemBundleImpl();
     private BundleWiringImpl bundleWiringImpl = new BundleWiringImpl();
@@ -566,4 +567,5 @@ public final class ClassLoaderOsgiFramework implements OsgiFramework {
             throw new UnsupportedOperationException();
         }
     }
+
 }
