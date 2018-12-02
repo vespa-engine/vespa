@@ -10,10 +10,10 @@ import java.util.Collections;
 import java.util.Dictionary;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.22.0
+ * @author Einar M R Rosenvinge
  */
 public class RestrictedBundleContext implements BundleContext {
+
     private final BundleContext wrapped;
 
     public RestrictedBundleContext(BundleContext wrapped) {
@@ -197,4 +197,5 @@ public class RestrictedBundleContext implements BundleContext {
     private RuntimeException newException() {
         return new UnsupportedOperationException("This BundleContext operation is not available to components.");
     }
+
 }

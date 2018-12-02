@@ -12,6 +12,7 @@ import com.yahoo.jdisc.http.CertificateStore;
  *
  * @author bratseth
  */
+@SuppressWarnings("unused")
 public class CertificateStoreProvider implements Provider<CertificateStore> {
 
     private static final ThrowingCertificateStore instance = new ThrowingCertificateStore();

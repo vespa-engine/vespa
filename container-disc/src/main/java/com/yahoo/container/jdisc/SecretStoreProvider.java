@@ -11,7 +11,7 @@ import com.yahoo.container.di.componentgraph.Provider;
  *
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "unused"})
 public class SecretStoreProvider implements Provider<com.yahoo.jdisc.http.SecretStore> {
 
     private static final ThrowingSecretStore instance = new ThrowingSecretStore();
