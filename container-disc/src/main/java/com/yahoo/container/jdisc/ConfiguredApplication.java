@@ -29,6 +29,7 @@ import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
+import com.yahoo.jrt.Acceptor;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
@@ -94,7 +95,10 @@ public final class ConfiguredApplication implements Application {
     private Thread reconfigurerThread;
     private Thread portWatcher;
     private QrConfig qrConfig;
+
     private Register slobrokRegistrator = null;
+    private Supervisor supervisor = null;
+    private Acceptor acceptor = null;
 
     static {
         LogSetup.initVespaLogging("Container");
@@ -145,16 +149,41 @@ public final class ConfiguredApplication implements Application {
         portWatcher.start();
     }
 
-    /** The container has no rpc methods, but we still need to register it in Slobrok to enable orchestration */
+    /**
+     * The container has no rpc methods, but we still need an RPC sever
+     * to register in Slobrok to enable orchestration
+     */
     private Register registerInSlobrok(SlobroksConfig slobrokConfig, QrConfig qrConfig) {
+        if ( ! qrConfig.rpc().enabled()) return null;
+
+        // 1. Set up RPC server
+        supervisor = new Supervisor(new Transport());
+        Spec listenSpec = new Spec(qrConfig.rpc().port());
+        try {
+            acceptor = supervisor.listen(listenSpec);
+        }
+        catch (ListenFailedException e) {
+            throw new RuntimeException("Could not create rpc server listening on " + listenSpec, e);
+        }
+
+        // 2. Register it in slobrok
         SlobrokList slobrokList = new SlobrokList();
         slobrokList.setup(slobrokConfig.slobrok().stream().map(SlobroksConfig.Slobrok::connectionspec).toArray(String[]::new));
-        Spec mySpec = new Spec(HostName.getLocalhost(), qrConfig.rpc().port());
-        Register slobrokRegistrator = new Register(new Supervisor(new Transport()), slobrokList, mySpec);
+        Spec mySpec = new Spec(HostName.getLocalhost(), acceptor.port());
+        slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
         slobrokRegistrator.registerName(qrConfig.rpc().slobrokId());
-        log.log(LogLevel.INFO,
-                "Registered name '" + qrConfig.rpc().slobrokId() + "' at " + mySpec + " with: " + slobrokList);
+        log.log(LogLevel.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +
+                               "' at " + mySpec + " with: " + slobrokList);
         return slobrokRegistrator;
+    }
+
+    private void unregisterInSlobrok() {
+        if (slobrokRegistrator != null)
+            slobrokRegistrator.shutdown();
+        if (acceptor != null)
+            acceptor.shutdown().join();
+        if (supervisor != null)
+            supervisor.transport().shutdown().join();
     }
 
     @SuppressWarnings("deprecation")
@@ -318,9 +347,7 @@ public final class ConfiguredApplication implements Application {
         configurer.shutdown(new Deconstructor(false));
         Container.get().shutdown();
 
-        if (slobrokRegistrator != null)
-            slobrokRegistrator.shutdown();
-
+        unregisterInSlobrok();
         log.info("Stop: Finished");
     }
 
