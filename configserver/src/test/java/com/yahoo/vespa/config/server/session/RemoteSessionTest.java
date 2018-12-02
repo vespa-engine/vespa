@@ -10,7 +10,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
@@ -85,11 +85,11 @@ public class RemoteSessionTest {
     @Test(expected = IllegalArgumentException.class)
     public void require_that_new_invalid_application_throws_exception() {
         MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = Version.fromIntValues(1, 2, 0);
+        failingFactory.vespaVersion = new Version(1, 2, 0);
         failingFactory.throwOnLoad = true;
 
         MockModelFactory okFactory = new MockModelFactory();
-        okFactory.vespaVersion = Version.fromIntValues(1, 1, 0);
+        okFactory.vespaVersion = new Version(1, 1, 0);
         okFactory.throwOnLoad = false;
 
         RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
@@ -99,15 +99,15 @@ public class RemoteSessionTest {
     @Test
     public void require_that_application_incompatible_with_latestmajor_is_loaded_on_earlier_major() {
         MockModelFactory okFactory1 = new MockModelFactory();
-        okFactory1.vespaVersion = Version.fromIntValues(1, 1, 0);
+        okFactory1.vespaVersion = new Version(1, 1, 0);
         okFactory1.throwOnLoad = false;
 
         MockModelFactory okFactory2 = new MockModelFactory();
-        okFactory2.vespaVersion = Version.fromIntValues(1, 2, 0);
+        okFactory2.vespaVersion = new Version(1, 2, 0);
         okFactory2.throwOnLoad = false;
 
         MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = Version.fromIntValues(2, 0, 0);
+        failingFactory.vespaVersion = new Version(2, 0, 0);
         failingFactory.throwOnLoad = true;
 
         RemoteSession session = createSession(3, Arrays.asList(okFactory1, failingFactory, okFactory2), failingFactory.clock());
@@ -117,12 +117,12 @@ public class RemoteSessionTest {
     @Test
     public void require_that_old_invalid_application_does_not_throw_exception_if_skipped() {
         MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = Version.fromIntValues(1, 1, 0);
+        failingFactory.vespaVersion = new Version(1, 1, 0);
         failingFactory.throwOnLoad = true;
 
         MockModelFactory okFactory =
             new MockModelFactory("<validation-overrides><allow until='2000-01-30'>skip-old-config-models</allow></validation-overrides>");
-        okFactory.vespaVersion = Version.fromIntValues(1, 2, 0);
+        okFactory.vespaVersion = new Version(1, 2, 0);
         okFactory.throwOnLoad = false;
 
         RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
@@ -132,12 +132,12 @@ public class RemoteSessionTest {
     @Test
     public void require_that_old_invalid_application_does_not_throw_exception_if_skipped_also_across_major_versions() {
         MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = Version.fromIntValues(1, 0, 0);
+        failingFactory.vespaVersion = new Version(1, 0, 0);
         failingFactory.throwOnLoad = true;
 
         MockModelFactory okFactory =
                 new MockModelFactory("<validation-overrides><allow until='2000-01-30'>skip-old-config-models</allow></validation-overrides>");
-        okFactory.vespaVersion = Version.fromIntValues(2, 0, 0);
+        okFactory.vespaVersion = new Version(2, 0, 0);
         okFactory.throwOnLoad = false;
 
         RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
@@ -147,17 +147,17 @@ public class RemoteSessionTest {
     @Test
     public void require_that_old_invalid_application_does_not_throw_exception_if_skipped_also_when_new_major_is_incompatible() {
         MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = Version.fromIntValues(1, 0, 0);
+        failingFactory.vespaVersion = new Version(1, 0, 0);
         failingFactory.throwOnLoad = true;
 
         MockModelFactory okFactory =
                 new MockModelFactory("<validation-overrides><allow until='2000-01-30'>skip-old-config-models</allow></validation-overrides>");
-        okFactory.vespaVersion = Version.fromIntValues(1, 1, 0);
+        okFactory.vespaVersion = new Version(1, 1, 0);
         okFactory.throwOnLoad = false;
 
         MockModelFactory tooNewFactory =
                 new MockModelFactory("<validation-overrides><allow until='2000-01-30'>skip-old-config-models</allow></validation-overrides>");
-        tooNewFactory.vespaVersion = Version.fromIntValues(2, 0, 0);
+        tooNewFactory.vespaVersion = new Version(2, 0, 0);
         tooNewFactory.throwOnLoad = true;
 
         RemoteSession session = createSession(3, Arrays.asList(tooNewFactory, okFactory, failingFactory), failingFactory.clock());
@@ -174,11 +174,11 @@ public class RemoteSessionTest {
         assertEquals(2, (int)application.getMajorVersion().get());
 
         MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = Version.fromIntValues(3, 0, 0);
+        failingFactory.vespaVersion = new Version(3, 0, 0);
         failingFactory.throwErrorOnLoad = true;
 
         MockModelFactory okFactory = new MockModelFactory();
-        okFactory.vespaVersion = Version.fromIntValues(2, 0, 0);
+        okFactory.vespaVersion = new Version(2, 0, 0);
         okFactory.throwErrorOnLoad = false;
 
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, 3, application);
@@ -198,11 +198,11 @@ public class RemoteSessionTest {
         assertEquals(3, (int)application.getMajorVersion().get());
 
         MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = Version.fromIntValues(4, 0, 0);
+        failingFactory.vespaVersion = new Version(4, 0, 0);
         failingFactory.throwErrorOnLoad = true;
 
         MockModelFactory okFactory = new MockModelFactory();
-        okFactory.vespaVersion = Version.fromIntValues(2, 0, 0);
+        okFactory.vespaVersion = new Version(2, 0, 0);
         okFactory.throwErrorOnLoad = false;
 
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, 3, application);
@@ -279,7 +279,7 @@ public class RemoteSessionTest {
         public boolean throwErrorOnLoad = false;
 
         public ModelContext modelContext;
-        public Version vespaVersion = Version.fromIntValues(1, 2, 3);
+        public Version vespaVersion = new Version(1, 2, 3);
 
         /** The validation overrides of this, or null if none */
         private final String validationOverrides;
@@ -293,7 +293,7 @@ public class RemoteSessionTest {
         }
 
         @Override
-        public Version getVersion() {
+        public Version version() {
             return vespaVersion;
         }
         
@@ -330,4 +330,5 @@ public class RemoteSessionTest {
             return new ModelCreateResult(loadModel(), new ArrayList<>());
         }
     }
+
 }

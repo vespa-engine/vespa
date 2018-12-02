@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -11,7 +11,12 @@ import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Test utility class

@@ -16,7 +16,7 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 
@@ -210,7 +210,7 @@ public class HostedDeployTest {
         ManualClock clock = new ManualClock("2016-10-09T00:00:00");
         List<ModelFactory> modelFactories = new ArrayList<>();
         modelFactories.add(DeployTester.createModelFactory(clock));
-        modelFactories.add(DeployTester.createFailingModelFactory(Version.fromIntValues(1, 0, 0))); // older than default
+        modelFactories.add(DeployTester.createFailingModelFactory(new Version(1, 0, 0))); // older than default
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig());
         tester.deployApp("src/test/apps/validationOverride/", clock.instant());
 
@@ -254,8 +254,8 @@ public class HostedDeployTest {
                 new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName"));
 
         List<ModelFactory> modelFactories = Arrays.asList(
-                new ConfigChangeActionsModelFactory(Version.fromIntValues(6, 1, 0), new MockRestartAction("change", services)),
-                new ConfigChangeActionsModelFactory(Version.fromIntValues(6, 2, 0), new MockRestartAction("other change", services)));
+                new ConfigChangeActionsModelFactory(new Version(6, 1, 0), new MockRestartAction("change", services)),
+                new ConfigChangeActionsModelFactory(new Version(6, 2, 0), new MockRestartAction("other change", services)));
 
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
         PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.2.0", Instant.now());

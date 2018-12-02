@@ -5,9 +5,9 @@ package com.yahoo.vespa.config.protocol;
  * A wrapper class for Vespa version
  *
  * @author hmusum
- * @since 5.39
  */
 public class VespaVersion {
+
     private final String version;
 
     public static VespaVersion fromString(String version) {
@@ -39,4 +39,5 @@ public class VespaVersion {
     public String toString() {
         return version;
     }
+
 }

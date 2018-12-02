@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.deploy;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 
 import java.io.IOException;
 import java.util.Map;
@@ -26,7 +26,7 @@ public class ZooKeeperDeployer {
     /**
      * Deploys an application package to zookeeper. initialize() must be called before calling this method.
      *
-     * @param applicationPackage The application package to persist.
+     * @param applicationPackage the application package to persist.
      * @param fileRegistryMap the file registries to persist.
      * @param allocatedHosts the provisioning info to persist.
      * @throws IOException if deploying fails
@@ -42,4 +42,5 @@ public class ZooKeeperDeployer {
     public void cleanup() {
         zooKeeperClient.cleanupZooKeeper();
     }
+
 }

@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -165,7 +165,7 @@ public class FileDistributionStatusTest {
                                new ServerCache(),
                                3,
                                false,
-                               Version.fromIntValues(0, 0, 0),
+                               new Version(0, 0, 0),
                                MetricUpdater.createTestUpdater(),
                                appId);
     }

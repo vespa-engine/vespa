@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.vespa.config.server.ModelStub;
 import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -66,4 +66,5 @@ public class ApplicationMapperTest {
                                         Optional.of(vespaVersions.get(1)),
                                         Instant.now());
     }
+
 }

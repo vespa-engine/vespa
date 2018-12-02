@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server;
 import java.util.Optional;
 import java.util.Set;
 
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.config.provision.ApplicationId;

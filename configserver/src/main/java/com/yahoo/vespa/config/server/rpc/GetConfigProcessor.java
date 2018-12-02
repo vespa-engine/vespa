@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.jrt.Request;
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
@@ -140,7 +140,7 @@ class GetConfigProcessor implements Runnable {
     }
 
     private static String getPrintableVespaVersion(Optional<Version> vespaVersion) {
-        return (vespaVersion.isPresent() ? vespaVersion.get().toString() : "LATEST");
+        return (vespaVersion.isPresent() ? vespaVersion.get().toFullString() : "LATEST");
     }
 
     private void returnEmpty(JRTServerConfigRequest request) {

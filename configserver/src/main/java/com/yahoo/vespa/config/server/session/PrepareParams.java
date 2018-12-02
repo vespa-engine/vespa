@@ -103,8 +103,8 @@ public final class PrepareParams {
             return this;
         }
 
-        public Builder vespaVersion(com.yahoo.config.provision.Version vespaVersion) {
-            this.vespaVersion = Optional.ofNullable(Version.fromString(vespaVersion.toSerializedForm()));
+        public Builder vespaVersion(Version vespaVersion) {
+            this.vespaVersion = Optional.ofNullable(vespaVersion);
             return this;
         }
 

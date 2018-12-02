@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
+import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.ConfigDefinitionDir;
 import com.yahoo.config.application.Xml;
@@ -12,7 +13,6 @@ import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.path.Path;
 import com.yahoo.io.HexDump;
@@ -45,7 +45,6 @@ import java.security.MessageDigest;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -571,7 +570,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return appDir.getCanonicalFile();
     }
 
-    public static ApplicationMetaData readMetaData(File appDir) {
+    private static ApplicationMetaData readMetaData(File appDir) {
         ApplicationMetaData defaultMetaData = new ApplicationMetaData(appDir, "n/a", "n/a", 0l, false, "", 0l, 0l);
         File metaFile = new File(appDir, META_FILE_NAME);
         if (!metaFile.exists()) {
@@ -642,13 +641,12 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     @Override
     public void validateXML() throws IOException {
-        validateXML(Optional.empty());
+        validateXMLFor(Optional.empty());
     }
 
     @Override
-    public void validateXML(Optional<Version> vespaVersion) throws IOException {
-        com.yahoo.component.Version modelVersion =
-                vespaVersion.map(v -> new com.yahoo.component.Version(vespaVersion.toString())).orElse(Vtag.currentVersion);
+    public void validateXMLFor(Optional<Version> vespaVersion) throws IOException {
+        Version modelVersion = vespaVersion.orElse(Vtag.currentVersion);
         ApplicationPackageXmlFilesValidator validator = ApplicationPackageXmlFilesValidator.create(appDir, modelVersion);
         validator.checkApplication();
         validator.checkIncludedDirs(this);

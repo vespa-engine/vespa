@@ -14,8 +14,10 @@ package com.yahoo.config.provision;
  * @since 5.39
  * Loosely based on component/Version.java
  * {@link Version} objects are immutable.
+ * @deprecated use com.yahoo.component.Version
  */
 // TODO: Replace usage of this by com.yahoo.component.Version
+@Deprecated
 public final class Version implements Comparable<Version> {
 
     private final int major;
@@ -49,6 +51,10 @@ public final class Version implements Comparable<Version> {
         } catch (AssertionError | ArrayIndexOutOfBoundsException | IllegalArgumentException e) {
             throw new IllegalArgumentException(String.format("Invalid version specification: \"%s\": %s", versionString, e.getMessage()));
         }
+    }
+
+    public com.yahoo.component.Version toVersion() {
+        return new com.yahoo.component.Version(major, minor, micro);
     }
 
     /**
@@ -92,6 +98,10 @@ public final class Version implements Comparable<Version> {
      */
     public static Version fromString(String versionString) {
         return new Version(versionString);
+    }
+
+    public static Version from(com.yahoo.component.Version version) {
+        return new Version(version.getMajor(), version.getMinor(), version.getMicro());
     }
 
     /**

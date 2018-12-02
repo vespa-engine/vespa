@@ -10,7 +10,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
@@ -53,7 +53,7 @@ public class ApplicationTest {
         ApplicationId appId = ApplicationId.from(TenantName.defaultName(),
                                               ApplicationName.from("foobar"), InstanceName.defaultName());
         ServerCache cache = new ServerCache();
-        Version vespaVersion = Version.fromIntValues(1, 2, 3);
+        Version vespaVersion = new Version(1, 2, 3);
         Application app = new Application(new ModelStub(), cache, 1337L, false, vespaVersion, MetricUpdater.createTestUpdater(), appId);
         assertThat(app.getApplicationGeneration(), is(1337l));
         assertNotNull(app.getModel());
@@ -73,7 +73,7 @@ public class ApplicationTest {
         ServerCache cache = createCacheAndAddContent();
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(testApp));
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("foo").build();
-        handler = new Application(model, cache, 1L, false, Version.fromIntValues(1, 2, 3),
+        handler = new Application(model, cache, 1L, false, new Version(1, 2, 3),
                                   new MetricUpdater(Metrics.createTestMetrics(), Metrics.createDimensions(applicationId)), applicationId);
     }
 

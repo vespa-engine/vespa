@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 
 import java.time.Instant;
 import java.util.Collections;

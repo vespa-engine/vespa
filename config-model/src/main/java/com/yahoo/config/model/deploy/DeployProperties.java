@@ -4,7 +4,7 @@ package com.yahoo.config.model.deploy;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -104,7 +104,7 @@ public class DeployProperties {
         private URI ztsUrl;
         private String athenzDnsSuffix;
         private boolean hostedVespa = false;
-        private Version vespaVersion = Version.fromIntValues(1, 0, 0);
+        private Version vespaVersion = new Version(1, 0, 0);
         private boolean isBootstrap = false;
         private boolean isFirstTimeDeployment = false;
         private boolean useDedicatedNodeForLogserver = false;

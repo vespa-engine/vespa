@@ -21,7 +21,6 @@ package com.yahoo.component;
  * @author arnej27959
  * @author bratseth
  */
-
 public final class VersionSpecification implements Comparable<VersionSpecification> {
 
     private Integer major = null;

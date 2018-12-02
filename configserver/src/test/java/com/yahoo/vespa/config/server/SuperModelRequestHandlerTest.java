@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.config.provision.ApplicationId;
@@ -124,7 +124,7 @@ public class SuperModelRequestHandlerTest {
     private static class TestApplication extends Application {
 
         TestApplication(VespaModel vespaModel, ServerCache cache, long appGeneration, ApplicationId app) {
-            super(vespaModel, cache, appGeneration, false, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), app);
+            super(vespaModel, cache, appGeneration, false, new Version(1, 2, 3), MetricUpdater.createTestUpdater(), app);
         }
 
     }

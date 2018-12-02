@@ -250,7 +250,9 @@ public final class Version implements Comparable<Version> {
 
     /**
      * Returns the string representation of this version identifier as major.minor.micro.qualifier,
-     * omitting .qualifier if qualifier was empty or unspecified
+     * omitting .qualifier if qualifier empty or unspecified
+     * <p>
+     * This string form is part of the API of Version and will never change.
      */
     public String toFullString() {
         StringBuilder b = new StringBuilder();
@@ -284,9 +286,13 @@ public final class Version implements Comparable<Version> {
      * Returns the string representation of this version identifier as major.minor.micro.qualifier,
      * omitting the remaining parts after reaching the first unspecified component.
      * Unspecified version component is equivalent to 0 (or the empty string for qualifier).
+     * <p>
+     * The string representation of a Version specified here is a part of the API and will never change.
      */
+    @Override
     public String toString() { return stringValue; }
 
+    @Override
     public int hashCode() { return stringValue.hashCode(); }
 
     /** Returns whether this equals the empty version */
@@ -306,8 +312,9 @@ public final class Version implements Comparable<Version> {
      *         <code>Version</code> and is equal to this object;
      *         <code>false</code> otherwise.
      */
+    @Override
     public boolean equals(Object object) {
-        if (!(object instanceof Version)) return false;
+        if ( ! (object instanceof Version)) return false;
         Version other = (Version) object;
         if (this.major != other.major) return false;
         if (this.minor != other.minor) return false;
@@ -317,8 +324,8 @@ public final class Version implements Comparable<Version> {
 
     @SuppressWarnings("unused")
     private boolean equals(Object o1, Object o2) {
-        if (o1==null && o2==null) return true;
-        if (o1==null || o2==null) return false;
+        if (o1 == null && o2 == null) return true;
+        if (o1 == null || o2 == null) return false;
         return o1.equals(o2);
     }
 
@@ -345,6 +352,7 @@ public final class Version implements Comparable<Version> {
      *         less than, equal to, or greater than the specified <code>Version</code> object.
      * @throws ClassCastException if the specified object is not a <code>Version</code>.
      */
+    @Override
     public int compareTo(Version other) {
         if (other == this) return 0;
 

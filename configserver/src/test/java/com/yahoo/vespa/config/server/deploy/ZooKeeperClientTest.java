@@ -2,11 +2,16 @@
 package com.yahoo.vespa.config.server.deploy;
 
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.config.model.application.provider.*;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.DeployData;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -19,10 +24,16 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
 
 /**
  * Unit tests for ZooKeeperClient.
@@ -62,8 +73,8 @@ public class ZooKeeperClientTest {
         FileRegistry b = new MockFileRegistry();
         b.addFile("fileB");
         Map<Version, FileRegistry> registryMap = new HashMap<>();
-        registryMap.put(Version.fromIntValues(1, 2, 3), a);
-        registryMap.put(Version.fromIntValues(3, 2, 1), b);
+        registryMap.put(new Version(1, 2, 3), a);
+        registryMap.put(new Version(3, 2, 1), b);
         return registryMap;
     }
 

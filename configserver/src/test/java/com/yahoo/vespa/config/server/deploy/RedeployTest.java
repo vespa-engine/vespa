@@ -5,7 +5,7 @@ import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import org.junit.Test;
 
 import java.time.Clock;
@@ -46,7 +46,7 @@ public class RedeployTest {
     public void testNoRedeploy() {
         List<ModelFactory> modelFactories = new ArrayList<>();
         modelFactories.add(DeployTester.createModelFactory(Clock.systemUTC()));
-        modelFactories.add(DeployTester.createFailingModelFactory(Version.fromIntValues(1, 0, 0)));
+        modelFactories.add(DeployTester.createFailingModelFactory(new Version(1, 0, 0)));
         DeployTester tester = new DeployTester(modelFactories);
         ApplicationId id = ApplicationId.from(tester.tenant().getName(),
                                               ApplicationName.from("default"),

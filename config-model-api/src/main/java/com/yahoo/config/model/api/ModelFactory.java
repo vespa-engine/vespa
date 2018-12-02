@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 
 /**
  * Factory for config models.
@@ -13,7 +13,14 @@ public interface ModelFactory {
      *
      * @return the version of a {@link Model} instance that this factory can create.
      */
-    Version getVersion();
+    @SuppressWarnings("deprecation")
+    default Version version() { // TODO: Remove this default implementationm after December 2018
+        return getVersion().toVersion();
+    }
+
+    /** @deprecated use and override version(). TODO: Remove this method after December 2018 */
+    @Deprecated
+    default com.yahoo.config.provision.Version getVersion() { return com.yahoo.config.provision.Version.from(version()); }
 
     /**
      * Creates an instance of a {@link Model}. The resulting instance will be used to serve config. No model
@@ -34,4 +41,5 @@ public interface ModelFactory {
      * @return a {@link ModelCreateResult} instance.
      */
     ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters);
+
 }

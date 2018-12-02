@@ -1,10 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model;
 
-import com.yahoo.cloud.config.*;
+import com.yahoo.cloud.config.ApplicationIdConfig;
+import com.yahoo.cloud.config.ClusterListConfig;
+import com.yahoo.cloud.config.ModelConfig;
+import com.yahoo.cloud.config.SlobroksConfig;
+import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.cloud.config.ModelConfig.Hosts;
 import com.yahoo.cloud.config.ModelConfig.Hosts.Services;
@@ -18,7 +22,12 @@ import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 import com.yahoo.vespa.documentmodel.DocumentModel;
-import com.yahoo.vespa.model.*;
+import com.yahoo.vespa.model.ConfigProducer;
+import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.HostSystem;
+import com.yahoo.vespa.model.PortsMeta;
+import com.yahoo.vespa.model.Service;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.clients.Clients;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -204,7 +213,7 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
 
     @Override
     public void getConfig(ModelConfig.Builder builder) {
-        builder.vespaVersion(vespaVersion.toSerializedForm());
+        builder.vespaVersion(vespaVersion.toFullString());
         for (HostResource modelHost : getHostSystem().getHosts()) {
             builder.hosts(new Hosts.Builder()
                     .name(modelHost.getHostname())
@@ -279,4 +288,5 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
         builder.application(applicationId.application().value());
         builder.instance(applicationId.instance().value());
     }
+
 }

@@ -2,11 +2,16 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import java.time.Clock;
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.*;
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.application.ApplicationMapper;

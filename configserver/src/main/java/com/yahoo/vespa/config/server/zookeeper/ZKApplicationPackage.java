@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.common.base.Joiner;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.FileRegistry;
@@ -9,7 +10,7 @@ import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.application.provider.*;
+import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.io.IOUtils;
@@ -24,14 +25,12 @@ import java.io.File;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Represents an application residing in zookeeper.
@@ -42,9 +41,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     private ZKLiveApp liveApp;
 
-    private final Map<com.yahoo.config.provision.Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
+    private final Map<Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
     private final Optional<AllocatedHosts> allocatedHosts;
-    private static final com.yahoo.config.provision.Version legacyVersion = com.yahoo.config.provision.Version.fromIntValues(0, 0, 0);
+    private static final Version legacyVersion = new Version(0, 0, 0);
 
     public static final String fileRegistryNode = "fileregistry";
     public static final String allocatedHostsNode = "allocatedHosts";
@@ -82,7 +81,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
             fileRegistryMap.put(legacyVersion, importFileRegistry(fileRegistryNode));
         } else {
             fileRegistryNodes.forEach(version ->
-                        fileRegistryMap.put(com.yahoo.config.provision.Version.fromString(version),
+                        fileRegistryMap.put(Version.fromString(version),
                                             importFileRegistry(Joiner.on("/").join(fileRegistryNode, version))));
         }
     }
@@ -148,11 +147,11 @@ public class ZKApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public Map<com.yahoo.config.provision.Version, FileRegistry> getFileRegistryMap() {
+    public Map<Version, FileRegistry> getFileRegistries() {
         return Collections.unmodifiableMap(fileRegistryMap);
     }
 
-    private Optional<PreGeneratedFileRegistry> getPreGeneratedFileRegistry(com.yahoo.config.provision.Version vespaVersion) {
+    private Optional<PreGeneratedFileRegistry> getPreGeneratedFileRegistry(Version vespaVersion) {
         // Assumes at least one file registry, which we always have.
         Optional<PreGeneratedFileRegistry> fileRegistry = Optional.ofNullable(fileRegistryMap.get(vespaVersion));
         if ( ! fileRegistry.isPresent()) {
@@ -180,8 +179,8 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
         List<String> allDefs = liveApp.getChildren(ConfigCurator.DEFCONFIGS_ZK_SUBPATH);
 
-        for (final String nodeName : allDefs) {
-            final ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromZKString(nodeName);
+        for (String nodeName : allDefs) {
+            ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromZKString(nodeName);
             ret.put(key, new UnparsedConfigDefinition() {
                 @Override
                 public ConfigDefinition parse() {
@@ -240,7 +239,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public List<ComponentInfo> getComponentsInfo(com.yahoo.config.provision.Version vespaVersion) {
+    public List<ComponentInfo> getComponentsInfo(Version vespaVersion) {
         List<ComponentInfo> components = new ArrayList<>();
         PreGeneratedFileRegistry fileRegistry = getPreGeneratedFileRegistry(vespaVersion).get();
         for (String path : fileRegistry.getPaths()) {

@@ -8,7 +8,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.jrt.Acceptor;
 import com.yahoo.jrt.DataValue;
 import com.yahoo.jrt.Int32Value;

@@ -11,7 +11,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
@@ -51,7 +51,10 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final Curator curator;
     private final DeployLogger logger;
 
-    public ActivatedModelsBuilder(TenantName tenant, long appGeneration, SessionZooKeeperClient zkClient, GlobalComponentRegistry globalComponentRegistry) {
+    public ActivatedModelsBuilder(TenantName tenant,
+                                  long appGeneration,
+                                  SessionZooKeeperClient zkClient,
+                                  GlobalComponentRegistry globalComponentRegistry) {
         super(globalComponentRegistry.getModelFactoryRegistry(),
               globalComponentRegistry.getConfigserverConfig(),
               globalComponentRegistry.getZone(),
@@ -70,11 +73,11 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     protected Application buildModelVersion(ModelFactory modelFactory,
                                             ApplicationPackage applicationPackage,
                                             ApplicationId applicationId,
-                                            com.yahoo.component.Version wantedNodeVespaVersion,
+                                            Version wantedNodeVespaVersion,
                                             Optional<AllocatedHosts> ignored, // Ignored since we have this in the app package for activated models
                                             Instant now) {
         log.log(LogLevel.DEBUG, String.format("Loading model version %s for session %s application %s",
-                                              modelFactory.getVersion(), appGeneration, applicationId));
+                                              modelFactory.version(), appGeneration, applicationId));
         ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId);
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
@@ -82,16 +85,18 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 permanentApplicationPackage.applicationPackage(),
                 logger,
                 configDefinitionRepo,
-                getForVersionOrLatest(applicationPackage.getFileRegistryMap(), modelFactory.getVersion()).orElse(new MockFileRegistry()),
+                getForVersionOrLatest(applicationPackage.getFileRegistries(), modelFactory.version()).orElse(new MockFileRegistry()),
                 createStaticProvisioner(applicationPackage.getAllocatedHosts(), modelContextProperties),
                 modelContextProperties,
                 Optional.empty(),
-                new com.yahoo.component.Version(modelFactory.getVersion().toString()),
+                modelFactory.version(),
                 wantedNodeVespaVersion);
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
-        return new Application(modelFactory.createModel(modelContext), zkClient.loadServerCache(), appGeneration,
+        return new Application(modelFactory.createModel(modelContext),
+                               zkClient.loadServerCache(),
+                               appGeneration,
                                applicationPackage.getMetaData().isInternalRedeploy(),
-                               modelFactory.getVersion(),
+                               modelFactory.version(),
                                applicationMetricUpdater, applicationId);
     }
 

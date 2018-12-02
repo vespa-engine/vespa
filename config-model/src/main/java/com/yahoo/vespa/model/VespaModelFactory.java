@@ -20,7 +20,7 @@ import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesVal
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
@@ -54,7 +54,7 @@ public class VespaModelFactory implements ModelFactory {
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<MlModelImporter> modelImporters,
                              Zone zone) {
-        this.version = Version.fromIntValues(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
+        this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder> modelBuilders = new ArrayList<>();
         for (ConfigModelPlugin plugin : pluginRegistry.allComponents()) {
             if (plugin instanceof ConfigModelBuilder) {
@@ -71,7 +71,7 @@ public class VespaModelFactory implements ModelFactory {
         this(configModelRegistry, Clock.systemUTC());
     }
     public VespaModelFactory(ConfigModelRegistry configModelRegistry, Clock clock) {
-        this(Version.fromIntValues(VespaVersion.major, VespaVersion.minor, VespaVersion.micro), configModelRegistry, clock);
+        this(new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro), configModelRegistry, clock);
     }
     public VespaModelFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock) {
         this.version = version;
@@ -88,7 +88,7 @@ public class VespaModelFactory implements ModelFactory {
 
     /** Returns the version this model is build for */
     @Override
-    public Version getVersion() { return version; }
+    public Version version() { return version; }
 
     @Override
     public Model createModel(ModelContext modelContext) {
@@ -157,7 +157,7 @@ public class VespaModelFactory implements ModelFactory {
                 .athenzDnsSuffix(properties.athenzDnsSuffix())
                 .multitenant(properties.multitenant())
                 .hostedVespa(properties.hostedVespa())
-                .vespaVersion(getVersion())
+                .vespaVersion(version())
                 .isBootstrap(properties.isBootstrap())
                 .isFirstTimeDeployment(properties.isFirstTimeDeployment())
                 .useDedicatedNodeForLogserver(properties.useDedicatedNodeForLogserver())

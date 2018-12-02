@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.vespa.config.server.ModelStub;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import org.junit.Before;

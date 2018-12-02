@@ -8,7 +8,7 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.jrt.Request;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.ConfigKey;
@@ -87,7 +87,7 @@ public class RpcServerTest {
                                           new ServerCache(),
                                           2L,
                                           false,
-                                          Version.fromIntValues(1, 2, 3),
+                                          new Version(1, 2, 3),
                                           MetricUpdater.createTestUpdater(),
                                           ApplicationId.defaultId());
         ApplicationSet appSet = ApplicationSet.fromSingle(app);

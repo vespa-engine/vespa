@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.http.status;
 
 import com.google.inject.Inject;
 import com.yahoo.config.model.api.ModelFactory;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
@@ -46,8 +46,8 @@ public class StatusHandler extends HttpHandler {
 
             Cursor modelVersionsCursor = object.setArray("modelVersions");
             componentRegistry.getModelFactoryRegistry().getFactories().stream()
-                    .map(ModelFactory::getVersion)
-                    .map(Version::toString)
+                    .map(ModelFactory::version)
+                    .map(Version::toFullString)
                     .forEach(modelVersionsCursor::addString);
         }
 

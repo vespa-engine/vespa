@@ -2,7 +2,10 @@
 package com.yahoo.vespa.config.server.zookeeper;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +20,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.Version;
+import com.yahoo.component.Version;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
@@ -69,10 +72,10 @@ public class ZKApplicationPackageTest {
         }
         assertTrue(zkApp.getFile(Path.createRoot()).exists());
         assertTrue(zkApp.getFile(Path.createRoot()).isDirectory());
-        Version goodVersion = Version.fromIntValues(3, 0, 0);
-        assertTrue(zkApp.getFileRegistryMap().containsKey(goodVersion));
-        assertFalse(zkApp.getFileRegistryMap().containsKey(Version.fromIntValues(0, 0, 0)));
-        assertThat(zkApp.getFileRegistryMap().get(goodVersion).fileSourceHost(), is("dummyfiles"));
+        Version goodVersion = new Version(3, 0, 0);
+        assertTrue(zkApp.getFileRegistries().containsKey(goodVersion));
+        assertFalse(zkApp.getFileRegistries().containsKey(new Version(0, 0, 0)));
+        assertThat(zkApp.getFileRegistries().get(goodVersion).fileSourceHost(), is("dummyfiles"));
         AllocatedHosts readInfo = zkApp.getAllocatedHosts().get();
         assertThat(Utf8.toString(readInfo.toJson()), is(Utf8.toString(ALLOCATED_HOSTS.toJson())));
         assertThat(readInfo.getHosts().iterator().next().flavor(), is(TEST_FLAVOR));
@@ -100,4 +103,5 @@ public class ZKApplicationPackageTest {
             );
         }
     }
+
 }
