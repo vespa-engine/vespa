@@ -104,6 +104,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
 
         Map<String, Handler<?>> handlerMap = getHandlers("cluster1");
 
+        assertThat(handlerMap.get("com.yahoo.container.config.StatisticsRequestHandler"), not(nullValue()));
         assertThat(handlerMap.get("com.yahoo.container.handler.VipStatusHandler"), not(nullValue()));
         assertThat(handlerMap.get("com.yahoo.container.handler.observability.ApplicationStatusHandler"), not(nullValue()));
         assertThat(handlerMap.get("com.yahoo.container.jdisc.state.StateHandler"), not(nullValue()));

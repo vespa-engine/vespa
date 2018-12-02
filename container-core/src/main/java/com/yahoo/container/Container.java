@@ -4,6 +4,8 @@ package com.yahoo.container;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.config.BundleLoader;
+import com.yahoo.container.osgi.AbstractRpcAdaptor;
+import com.yahoo.container.osgi.ContainerRpcAdaptor;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirerFactory;
 import com.yahoo.jdisc.handler.RequestHandler;
@@ -31,23 +33,35 @@ public class Container {
     private volatile ComponentRegistry<ServerProvider> serverProviderRegistry;
     private volatile ComponentRegistry<AbstractComponent> componentRegistry;
     private volatile FileAcquirer fileAcquirer;
+    private Osgi osgi;
+
+    private final ContainerRpcAdaptor rpcAdaptor = new ContainerRpcAdaptor(osgi);
 
     private volatile BundleLoader bundleLoader;
 
     private static Logger logger = Logger.getLogger(Container.class.getName());
 
-    // TODO: Make this final again.
+    //TODO: Make this final again.
     private static Container instance = new Container();
 
     public static Container get() { return instance; }
 
     public void setOsgi(Osgi osgi) {
+        this.osgi = osgi;
         bundleLoader = new BundleLoader(osgi);
     }
 
     public void shutdown() {
+        com.yahoo.container.Server.get().shutdown();
         if (fileAcquirer != null)
             fileAcquirer.shutdown();
+
+        rpcAdaptor.shutdown();
+    }
+
+    /** Returns the rpc adaptor owned by this */
+    public ContainerRpcAdaptor getRpcAdaptor() {
+        return rpcAdaptor;
     }
 
     //Used to acquire files originating from the application package.
@@ -61,13 +75,22 @@ public class Container {
         return bundleLoader;
     }
 
-    /**
-     * Hack. For internal use only, will be removed later
+    /** Hack. For internal use only, will be removed later
      *
      * Used by Application to be able to repeatedly set up containers.
      **/
     public static void resetInstance() {
         instance = new Container();
+        com.yahoo.container.Server.resetInstance();
+    }
+
+    /**
+     * Add an application specific RPC adaptor.
+     *
+     * @param adaptor the RPC adaptor to add to the Container
+     */
+    public void addOptionalRpcAdaptor(AbstractRpcAdaptor adaptor) {
+        rpcAdaptor.bindRpcAdaptor(adaptor);
     }
 
     public ComponentRegistry<RequestHandler> getRequestHandlerRegistry() {
@@ -142,5 +165,4 @@ public class Container {
             }
         });
     }
-
 }
