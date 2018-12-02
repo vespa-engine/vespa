@@ -18,6 +18,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
+import com.yahoo.container.config.StatisticsRequestHandler;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.handler.VipStatusHandler;
@@ -273,6 +274,10 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         JdiscBindingsConfig.Handlers applicationStatusHandler = config.handlers(ApplicationStatusHandler.class.getName());
         assertThat(applicationStatusHandler.serverBindings(),
                    contains("http://*/ApplicationStatus", "https://*/ApplicationStatus"));
+
+        JdiscBindingsConfig.Handlers statisticsRequestHandler = config.handlers(StatisticsRequestHandler.class.getName());
+        assertTrue(statisticsRequestHandler.serverBindings(0).startsWith("http://*/statistics"));
+        assertTrue(statisticsRequestHandler.serverBindings(1).startsWith("https://*/statistics"));
 
         JdiscBindingsConfig.Handlers fileRequestHandler = config.handlers(VipStatusHandler.class.getName());
         assertThat(fileRequestHandler.serverBindings(),
