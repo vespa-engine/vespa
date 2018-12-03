@@ -133,7 +133,7 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public void stopNodeAgentServices(List<String> hostnames) {
         // Each container may spend 1-1:30 minutes stopping
-        hostnames.stream()
+        hostnames.parallelStream()
                 .filter(nodeAgentsByHostname::containsKey)
                 .map(nodeAgentsByHostname::get)
                 .forEach(nodeAgent -> {
