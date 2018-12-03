@@ -42,7 +42,7 @@ class CryptoUtils {
         return new StaticTlsContext(testSslContext);
     }
 
-    // TODO Fix TlsCryptoEngine bug to allow use of EC/ECDSA crypto
+    // TODO Use EC. Java/JSSE is currently unable to find compatible ciphers when using elliptic curve crypto from BouncyCastle
     static SSLContext createTestSslContext() {
         KeyPair keyPair = KeyUtils.generateKeypair(RSA);
 
