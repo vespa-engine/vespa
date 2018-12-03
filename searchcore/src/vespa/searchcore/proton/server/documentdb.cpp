@@ -129,7 +129,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _writeService(_writeServiceConfig.indexingThreads(),
                     indexing_thread_stack_size,
                     _writeServiceConfig.defaultTaskLimit()),
-      _initializeThreads(initializeThreads),
+      _initializeThreads(std::move(initializeThreads)),
       _initConfigSnapshot(),
       _initConfigSerialNum(0u),
       _pendingConfigSnapshot(configSnapshot),
@@ -189,8 +189,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     // Forward changes of cluster state to bucket handler
     _clusterStateHandler.addClusterStateChangedHandler(&_bucketHandler);
     for (auto subDb : _subDBs) {
-        _lidSpaceCompactionHandlers.push_back(ILidSpaceCompactionHandler::UP
-                (new LidSpaceCompactionHandler(*subDb, _docTypeName.getName())));
+        _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(*subDb, _docTypeName.getName()));
     }
     _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
     fastos::TimeStamp visibilityDelay = loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
@@ -252,10 +251,9 @@ public:
           _taskRunner(std::move(taskRunner)),
           _configSnapshot(std::move(configSnapshot)),
           _self(self)
-    {
-    }
+    {}
 
-    ~InitDoneTask();
+    ~InitDoneTask() override;
 
     void run() override {
         _self.initFinish(std::move(_configSnapshot));
@@ -288,7 +286,7 @@ DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot)
     _syncFeedViewEnabled = true;
     syncFeedView();
     // Check that feed view has been activated.
-    assert(_feedView.get().get() != NULL);
+    assert(_feedView.get());
     setActiveConfig(configSnapshot, _initConfigSerialNum, configSnapshot->getGeneration());
     startTransactionLogReplay();
 }
@@ -554,7 +552,7 @@ DocumentDB::close()
     AttributeMetricsCollection ready(metrics.ready.attributes, legacyMetrics.ready.attributes);
     AttributeMetricsCollection notReady(metrics.notReady.attributes, legacyMetrics.notReady.attributes);
     _metricsWireService.cleanAttributes(ready, &legacyMetrics.attributes);
-    _metricsWireService.cleanAttributes(notReady, NULL);
+    _metricsWireService.cleanAttributes(notReady, nullptr);
     _writeService.sync();
     masterExecute([this] () { closeSubDBs(); } );
     _writeService.sync();
@@ -712,8 +710,7 @@ DocumentDB::startTransactionLogReplay()
 
 BucketGuard::UP DocumentDB::lockBucket(const document::BucketId &bucket)
 {
-    BucketGuard::UP guard(std::make_unique<BucketGuard>(bucket, _maintenanceController));
-    return std::move(guard);
+    return std::make_unique<BucketGuard>(bucket, _maintenanceController);
 }
 
 std::shared_ptr<std::vector<IDocumentRetriever::SP> >
@@ -725,7 +722,7 @@ DocumentDB::getDocumentRetrievers(IDocumentRetriever::ReadConsistency consistenc
         std::shared_ptr<std::vector<IDocumentRetriever::SP> > wrappedList = std::make_shared<std::vector<IDocumentRetriever::SP>>();
         wrappedList->reserve(list->size());
         for (const IDocumentRetriever::SP & retriever : *list) {
-            wrappedList->emplace_back(new CommitAndWaitDocumentRetriever(retriever, _visibility));
+            wrappedList->push_back(std::make_shared<CommitAndWaitDocumentRetriever>(retriever, _visibility));
         }
         return wrappedList;
     } else {
@@ -868,10 +865,9 @@ DocumentDB::replayConfig(search::SerialNum serialNum)
 {
     // Called by executor thread during transaction log replay.
     DocumentDBConfig::SP configSnapshot = getActiveConfig();
-    if (configSnapshot.get() == NULL) {
-        LOG(warning,
-            "DocumentDB(%s): Missing old config when replaying config, serialNum=%" PRIu64,
-            _docTypeName.toString().c_str(), serialNum);
+    if ( ! configSnapshot) {
+        LOG(warning, "DocumentDB(%s): Missing old config when replaying config, serialNum=%" PRIu64,
+                     _docTypeName.toString().c_str(), serialNum);
         return;
     }
     // Load config to replay
@@ -881,9 +877,8 @@ DocumentDB::replayConfig(search::SerialNum serialNum)
     // Ignore configs that are not relevant during replay of transaction log
     configSnapshot = DocumentDBConfig::makeReplayConfig(configSnapshot);
     applyConfig(configSnapshot, serialNum);
-    LOG(info,
-        "DocumentDB(%s): Replayed config with serialNum=%" PRIu64,
-        _docTypeName.toString().c_str(), serialNum);
+    LOG(info, "DocumentDB(%s): Replayed config with serialNum=%" PRIu64,
+              _docTypeName.toString().c_str(), serialNum);
 }
 
 int64_t DocumentDB::getActiveGeneration() const {
@@ -956,7 +951,7 @@ DocumentDB::performStartMaintenance()
         lock_guard guard(_configMutex);
         if (_state.getClosed())
             return;
-        assert(_activeConfigSnapshot.get() != NULL);
+        assert(_activeConfigSnapshot);
         maintenanceConfig = _activeConfigSnapshot->getMaintenanceConfigSP();
     }
     if (_maintenanceController.getStopping()) {
@@ -977,7 +972,7 @@ DocumentDB::forwardMaintenanceConfig()
 {
     // Called by executor thread
     DocumentDBConfig::SP activeConfig = getActiveConfig();
-    assert(activeConfig.get() != NULL);
+    assert(activeConfig);
     DocumentDBMaintenanceConfig::SP
         maintenanceConfig(activeConfig->getMaintenanceConfigSP());
     if (!_state.getClosed()) {
@@ -996,10 +991,10 @@ DocumentDB::notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc)
     _calc = newCalc; // Save for maintenance job injection
     // Forward changes of cluster state to feed view
     IFeedView::SP feedView(_feedView.get());
-    if (feedView.get() != NULL) {
+    if (feedView) {
         // Try downcast to avoid polluting API
         CombiningFeedView *cfv = dynamic_cast<CombiningFeedView *>(feedView.get());
-        if (cfv != NULL)
+        if (cfv != nullptr)
             cfv->setCalculator(newCalc);
     }
     _subDBs.setBucketStateCalculator(newCalc);
