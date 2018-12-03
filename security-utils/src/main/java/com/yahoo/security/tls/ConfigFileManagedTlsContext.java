@@ -9,6 +9,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +26,17 @@ import java.util.logging.Logger;
 public class ConfigFileManagedTlsContext implements TlsContext {
 
     private static final Duration UPDATE_PERIOD = Duration.ofHours(1);
+    private static final List<String> ALLOWED_CIPHER_SUITS = Arrays.asList(
+            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+            "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256");
 
     private static final Logger log = Logger.getLogger(ConfigFileManagedTlsContext.class.getName());
 
@@ -49,7 +62,20 @@ public class ConfigFileManagedTlsContext implements TlsContext {
     }
 
     public SSLEngine createSslEngine() {
-        return currentSslContext.get().createSSLEngine();
+        SSLEngine sslEngine = currentSslContext.get().createSSLEngine();
+        restrictSetOfEnabledCiphers(sslEngine);
+        return sslEngine;
+    }
+
+    private static void restrictSetOfEnabledCiphers(SSLEngine sslEngine) {
+        String[] validCipherSuits = Arrays.stream(sslEngine.getSupportedCipherSuites())
+                .filter(ALLOWED_CIPHER_SUITS::contains)
+                .toArray(String[]::new);
+        if (validCipherSuits.length == 0) {
+            throw new IllegalStateException("None of the allowed cipher suits are supported");
+        }
+        log.log(Level.FINE, () -> String.format("Allowed cipher suits that are supported: %s", Arrays.toString(validCipherSuits)));
+        sslEngine.setEnabledCipherSuites(validCipherSuits);
     }
 
     private static SSLContext createSslContext(Path tlsOptionsConfigFile, PeerAuthorizerTrustManager.Mode mode) {
