@@ -3,13 +3,12 @@ package com.yahoo.vespa.service.monitor.application;
 
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.applicationmodel.ServiceType;
 
-public class ConfigServerHostApplication extends HostedVespaApplication {
-
-    public static final ConfigServerHostApplication CONFIG_SERVER_HOST_APPLICATION = new ConfigServerHostApplication();
-
-    private ConfigServerHostApplication() {
+public class ConfigServerHostApplication extends InfraApplication {
+    public ConfigServerHostApplication() {
         super("configserver-host", NodeType.confighost,
-                ClusterSpec.Type.container, ClusterSpec.Id.from("configserver-host"));
+                ClusterSpec.Type.container, ClusterSpec.Id.from("configserver-host"),
+                ServiceType.HOST_ADMIN);
     }
 }

@@ -12,6 +12,9 @@ public class ServiceType {
     // Common service types.
     public static final ServiceType CONTAINER = new ServiceType("container");
     public static final ServiceType SLOBROK = new ServiceType("slobrok");
+    public static final ServiceType HOST_ADMIN = new ServiceType("hostadmin");
+    public static final ServiceType CONFIG_SERVER = new ServiceType("configserver");
+    public static final ServiceType CONTROLLER = new ServiceType("controller");
 
     private final String id;
 
