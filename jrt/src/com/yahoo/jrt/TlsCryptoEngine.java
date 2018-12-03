@@ -27,4 +27,8 @@ public class TlsCryptoEngine implements CryptoEngine {
         return new TlsCryptoSocket(channel, sslEngine);
     }
 
+    @Override
+    public void close() {
+        tlsContext.close();
+    }
 }

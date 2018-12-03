@@ -31,4 +31,9 @@ public class MaybeTlsCryptoEngine implements CryptoEngine {
     }
 
     @Override public String toString() { return "MaybeTlsCryptoEngine(useTlsWhenClient:" + useTlsWhenClient + ")"; }
+
+    @Override
+    public void close() {
+        tlsEngine.close();
+    }
 }
