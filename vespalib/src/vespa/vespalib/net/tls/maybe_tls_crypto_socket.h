@@ -22,7 +22,7 @@ class MaybeTlsCryptoSocket : public CryptoSocket
 private:
     CryptoSocket::UP _socket;
 public:
-    MaybeTlsCryptoSocket(SocketHandle socket, std::shared_ptr<TlsCryptoEngine> tls_engine);
+    MaybeTlsCryptoSocket(SocketHandle socket, std::shared_ptr<AbstractTlsCryptoEngine> tls_engine);
     int get_fd() const override { return _socket->get_fd(); }
     HandshakeResult handshake() override { return _socket->handshake(); }
     size_t min_read_buffer_size() const override { return _socket->min_read_buffer_size(); }

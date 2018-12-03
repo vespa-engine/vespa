@@ -9,19 +9,26 @@
 
 namespace vespalib {
 
+class AbstractTlsCryptoEngine : public CryptoEngine {
+public:
+    virtual std::unique_ptr<TlsCryptoSocket> create_tls_crypto_socket(SocketHandle socket, bool is_server) = 0;
+};
+
 /**
  * Crypto engine implementing TLS.
  **/
-class TlsCryptoEngine : public CryptoEngine
+class TlsCryptoEngine : public AbstractTlsCryptoEngine
 {
 private:
     std::shared_ptr<net::tls::TlsContext> _tls_ctx;
 public:
     explicit TlsCryptoEngine(net::tls::TransportSecurityOptions tls_opts);
-    std::unique_ptr<TlsCryptoSocket> create_tls_crypto_socket(SocketHandle socket, bool is_server);
+    std::unique_ptr<TlsCryptoSocket> create_tls_crypto_socket(SocketHandle socket, bool is_server) override;
     CryptoSocket::UP create_crypto_socket(SocketHandle socket, bool is_server) override {
         return create_tls_crypto_socket(std::move(socket), is_server);
     }
+
+    std::shared_ptr<net::tls::TlsContext> tls_context() const noexcept { return _tls_ctx; };
 };
 
 } // namespace vespalib

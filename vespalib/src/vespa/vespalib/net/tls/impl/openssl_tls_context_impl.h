@@ -3,6 +3,7 @@
 
 #include "openssl_typedefs.h"
 #include <vespa/vespalib/net/tls/tls_context.h>
+#include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/certificate_verification_callback.h>
 #include <vespa/vespalib/stllike/string.h>
 
@@ -11,12 +12,18 @@ namespace vespalib::net::tls::impl {
 class OpenSslTlsContextImpl : public TlsContext {
     SslCtxPtr _ctx;
     std::shared_ptr<CertificateVerificationCallback> _cert_verify_callback;
+    TransportSecurityOptions _redacted_transport_options;
 public:
     OpenSslTlsContextImpl(const TransportSecurityOptions& ts_opts,
                           std::shared_ptr<CertificateVerificationCallback> cert_verify_callback);
     ~OpenSslTlsContextImpl() override;
 
     ::SSL_CTX* native_context() const noexcept { return _ctx.get(); }
+    // Transport options this context was created with, but with the private key
+    // information scrubbed away.
+    const TransportSecurityOptions& transport_security_options() const noexcept {
+        return _redacted_transport_options;
+    }
 private:
     // Note: single use per instance; does _not_ clear existing chain!
     void add_certificate_authorities(stringref ca_pem);

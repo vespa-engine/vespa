@@ -19,6 +19,14 @@ TEST("can load TLS credentials via config file") {
     EXPECT_EQUAL("My certificate chain\n", opts->cert_chain_pem());
 }
 
+TEST("copying options without private key does, in fact, not include private key") {
+    auto opts = read_options_from_json_file("ok_config.json");
+    auto cloned = opts->copy_without_private_key();
+    EXPECT_EQUAL("", cloned.private_key_pem());
+    EXPECT_EQUAL("My CA certificates\n", cloned.ca_certs_pem());
+    EXPECT_EQUAL("My certificate chain\n", cloned.cert_chain_pem());
+}
+
 TEST("missing JSON file throws exception") {
     EXPECT_EXCEPTION(read_options_from_json_file("missing_config.json"), IllegalArgumentException,
                      "TLS config file 'missing_config.json' could not be read");

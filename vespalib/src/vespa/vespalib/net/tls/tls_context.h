@@ -6,7 +6,7 @@
 namespace vespalib::net::tls {
 
 class TransportSecurityOptions;
-class CertificateVerificationCallback;
+struct CertificateVerificationCallback;
 
 struct TlsContext {
     virtual ~TlsContext() = default;

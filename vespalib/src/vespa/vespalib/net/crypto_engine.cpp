@@ -6,6 +6,7 @@
 #include <thread>
 #include <vespa/vespalib/xxhash/xxhash.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/net/tls/auto_reloading_tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
@@ -188,8 +189,7 @@ CryptoEngine::SP create_default_crypto_engine() {
         return std::make_shared<NullCryptoEngine>();
     }
     LOG(debug, "Using TLS crypto engine with config file '%s'", cfg_file.c_str());
-    auto tls_opts = net::tls::read_options_from_json_file(cfg_file);
-    auto tls = std::make_shared<TlsCryptoEngine>(*tls_opts);
+    auto tls = std::make_shared<net::tls::AutoReloadingTlsCryptoEngine>(cfg_file);
     env = getenv("VESPA_TLS_INSECURE_MIXED_MODE");
     vespalib::string mixed_mode = env ? env : "";
     if (mixed_mode == "plaintext_client_mixed_server") {

@@ -19,11 +19,11 @@ class MaybeTlsCryptoEngine : public CryptoEngine
 {
 private:
     std::shared_ptr<NullCryptoEngine> _null_engine;
-    std::shared_ptr<TlsCryptoEngine> _tls_engine;
+    std::shared_ptr<AbstractTlsCryptoEngine> _tls_engine;
     bool _use_tls_when_client;
 
 public:
-    MaybeTlsCryptoEngine(std::shared_ptr<TlsCryptoEngine> tls_engine,
+    MaybeTlsCryptoEngine(std::shared_ptr<AbstractTlsCryptoEngine> tls_engine,
                          bool use_tls_when_client)
         : _null_engine(std::make_shared<NullCryptoEngine>()),
           _tls_engine(std::move(tls_engine)),
