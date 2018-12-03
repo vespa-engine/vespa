@@ -3,7 +3,7 @@
 
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
-#include <vespa/searchcore/config/config-proton.h>
+#include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <mutex>
@@ -39,7 +39,6 @@ struct IBucketStateCalculator;
 class IDocumentSubDBOwner;
 class IDocumentSubDB;
 class IDocumentRetriever;
-class IRreprocessingTask;
 class ReconfigParams;
 
 namespace matching {
@@ -49,12 +48,30 @@ namespace matching {
 
 namespace initializer { class InitializerTask; }
 
+namespace index { class IndexConfig; }
+
 class DocumentSubDBCollection {
 public:
     using SubDBVector = std::vector<IDocumentSubDB *>;
     using const_iterator = SubDBVector::const_iterator;
     using SerialNum = search::SerialNum;
-    using ProtonConfig = vespa::config::search::core::ProtonConfig;
+    class Config {
+    public:
+        using GrowStrategy = search::GrowStrategy;
+        Config(GrowStrategy ready, GrowStrategy notReady, GrowStrategy removed,
+               size_t fixedAttributeTotalSkew, size_t numSearchThreads);
+        GrowStrategy getReadyGrowth() const { return _readyGrowth; }
+        GrowStrategy getNotReadyGrowth() const { return _notReadyGrowth; }
+        GrowStrategy getRemovedGrowth() const { return _removedGrowth; }
+        size_t getNumSearchThreads() const { return _numSearchThreads; }
+        size_t getFixedAttributeTotalSkew() const { return _fixedAttributeTotalSkew; }
+    private:
+        const GrowStrategy _readyGrowth;
+        const GrowStrategy _notReadyGrowth;
+        const GrowStrategy _removedGrowth;
+        const size_t       _fixedAttributeTotalSkew;
+        const size_t       _numSearchThreads;
+    };
 
 private:
     using IFeedViewSP = std::shared_ptr<IFeedView>;
@@ -90,7 +107,7 @@ public:
             const vespalib::Clock &clock,
             std::mutex &configMutex,
             const vespalib::string &baseDir,
-            const vespa::config::search::core::ProtonConfig &protonCfg,
+            const Config & cfg,
             const HwInfo &hwInfo);
     ~DocumentSubDBCollection();
 
@@ -125,7 +142,7 @@ public:
 
     std::shared_ptr<initializer::InitializerTask>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                      const vespa::config::search::core::ProtonConfig::Index & indexCfg);
+                      const index::IndexConfig & indexCfg);
 
     void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager);
     void clearViews();

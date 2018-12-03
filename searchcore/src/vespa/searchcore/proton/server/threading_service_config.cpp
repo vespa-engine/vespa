@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "threading_service_config.h"
-#include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/config/config-proton.h>
 #include <cmath>
 
 namespace proton {
@@ -20,8 +20,7 @@ ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
 namespace {
 
 uint32_t
-calculateIndexingThreads(const ProtonConfig &cfg,
-                         const HwInfo::Cpu &cpuInfo)
+calculateIndexingThreads(const ProtonConfig &cfg, const HwInfo::Cpu &cpuInfo)
 {
     double scaledCores = cpuInfo.cores() * cfg.feeding.concurrency;
     uint32_t indexingThreads = std::max((uint32_t)std::ceil(scaledCores / 3), (uint32_t)cfg.indexing.threads);
@@ -31,8 +30,7 @@ calculateIndexingThreads(const ProtonConfig &cfg,
 }
 
 ThreadingServiceConfig
-ThreadingServiceConfig::make(const ProtonConfig &cfg,
-                             const HwInfo::Cpu &cpuInfo)
+ThreadingServiceConfig::make(const ProtonConfig &cfg, const HwInfo::Cpu &cpuInfo)
 {
     uint32_t indexingThreads = calculateIndexingThreads(cfg, cpuInfo);
     return ThreadingServiceConfig(indexingThreads,

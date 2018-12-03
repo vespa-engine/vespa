@@ -19,6 +19,7 @@
 using document::Document;
 using document::FieldValue;
 using proton::ExecutorThreadingService;
+using proton::index::IndexManager;
 using search::FixedSourceSelector;
 using search::TuneFileAttributes;
 using search::TuneFileIndexManager;

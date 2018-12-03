@@ -15,22 +15,17 @@ BucketDBHandler::BucketDBHandler(BucketDBOwner &bucketDB)
 {
 }
 
-BucketDBHandler::~BucketDBHandler()
-{
-}
+BucketDBHandler::~BucketDBHandler() = default;
 
 void
-BucketDBHandler::addDocumentMetaStore(IDocumentMetaStore *dms,
-                                      search::SerialNum flushedSerialNum)
+BucketDBHandler::addDocumentMetaStore(IDocumentMetaStore *dms, search::SerialNum flushedSerialNum)
 {
     _dmsv.push_back(MetaStoreDesc(dms, flushedSerialNum));
 }
 
 void
-BucketDBHandler::handleSplit(search::SerialNum serialNum,
-                             const BucketId &source,
-                             const BucketId &target1,
-                             const BucketId &target2)
+BucketDBHandler::handleSplit(search::SerialNum serialNum, const BucketId &source,
+                             const BucketId &target1, const BucketId &target2)
 {
     // Called by writer thread
     assert(source.valid());
@@ -63,10 +58,8 @@ BucketDBHandler::handleSplit(search::SerialNum serialNum,
 
 
 void
-BucketDBHandler::handleJoin(search::SerialNum serialNum,
-                            const BucketId &source1,
-                            const BucketId &source2,
-                            const BucketId &target)
+BucketDBHandler::handleJoin(search::SerialNum serialNum, const BucketId &source1,
+                            const BucketId &source2, const BucketId &target)
 {
     // Called by writer thread
     JoinBucketsSession session(_bucketDB, _bucketCreateNotifier, source1, source2, target);

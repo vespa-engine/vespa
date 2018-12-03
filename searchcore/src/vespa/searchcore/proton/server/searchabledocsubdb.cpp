@@ -19,9 +19,7 @@
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-using vespa::config::search::AttributesConfig;
 using vespa::config::search::RankProfilesConfig;
-using vespa::config::search::core::ProtonConfig;
 using proton::matching::MatchingStats;
 using proton::matching::SessionManager;
 using search::AttributeGuard;
@@ -90,41 +88,29 @@ SearchableDocSubDB::getNewestFlushedSerial()
 
 initializer::InitializerTask::SP
 SearchableDocSubDB::
-createIndexManagerInitializer(const DocumentDBConfig &configSnapshot,
-                              SerialNum configSerialNum,
-                              const ProtonConfig::Index &indexCfg,
+createIndexManagerInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
+                              const IndexConfig &indexCfg,
                               std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const
 {
     Schema::SP schema(configSnapshot.getSchemaSP());
     vespalib::string vespaIndexDir(_baseDir + "/index");
     // Note: const_cast for reconfigurer role
     return std::make_shared<IndexManagerInitializer>
-        (vespaIndexDir,
-         searchcorespi::index::WarmupConfig(indexCfg.warmup.time, indexCfg.warmup.unpack),
-         indexCfg.maxflushed,
-         indexCfg.cache.size,
-         *schema,
-         configSerialNum,
-         const_cast<SearchableDocSubDB &>(*this),
-         _writeService,
-         _warmupExecutor,
-         configSnapshot.getTuneFileDocumentDBSP()->_index,
-         configSnapshot.getTuneFileDocumentDBSP()->_attr,
-         _fileHeaderContext,
-         indexManager);
+        (vespaIndexDir, indexCfg, *schema, configSerialNum, const_cast<SearchableDocSubDB &>(*this),
+         _writeService, _warmupExecutor, configSnapshot.getTuneFileDocumentDBSP()->_index,
+         configSnapshot.getTuneFileDocumentDBSP()->_attr, _fileHeaderContext, indexManager);
 }
 
 void
 SearchableDocSubDB::setupIndexManager(searchcorespi::IIndexManager::SP indexManager)
 {
     _indexMgr = indexManager;
-    _indexWriter.reset(new IndexWriter(_indexMgr));
+    _indexWriter = std::make_shared<IndexWriter>(_indexMgr);
 }
 
 DocumentSubDbInitializer::UP
 SearchableDocSubDB::
-createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                  const ProtonConfig::Index &indexCfg) const
+createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum, const IndexConfig &indexCfg) const
 {
     auto result = Parent::createInitializer(configSnapshot, configSerialNum, indexCfg);
     auto indexTask = createIndexManagerInitializer(configSnapshot, configSerialNum, indexCfg,
@@ -220,19 +206,18 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
     const IIndexManager::SP &indexMgr = getIndexManager();
     _constantValueRepo.reconfigure(configSnapshot.getRankingConstants());
     Matchers::SP matchers(_configurer.createMatchers(schema, configSnapshot.getRankProfilesConfig()).release());
-    MatchView::SP matchView(new MatchView(matchers, indexMgr->getSearchable(), attrMgr,
-                                          sessionManager, _metaStoreCtx, _docIdLimit));
-    _rSearchView.set(SearchView::SP(
-                              new SearchView(
+    auto matchView = std::make_shared<MatchView>(matchers, indexMgr->getSearchable(), attrMgr,
+                                                 sessionManager, _metaStoreCtx, _docIdLimit);
+    _rSearchView.set(std::make_shared<SearchView>(
                                       getSummaryManager()->createSummarySetup(
                                               configSnapshot.getSummaryConfig(),
                                               configSnapshot.getSummarymapConfig(),
                                               configSnapshot.getJuniperrcConfig(),
                                               configSnapshot.getDocumentTypeRepoSP(),
                                               matchView->getAttributeManager()),
-                                      matchView)));
+                                      matchView));
 
-    IAttributeWriter::SP attrWriter(new AttributeWriter(attrMgr));
+    auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);
     {
         std::lock_guard<std::mutex> guard(_configMutex);
         initFeedView(attrWriter, configSnapshot);
@@ -247,13 +232,13 @@ SearchableDocSubDB::initFeedView(const IAttributeWriter::SP &attrWriter,
                                  const DocumentDBConfig &configSnapshot)
 {
     assert(_writeService.master().isCurrentThread());
-    SearchableFeedView::UP feedView(new SearchableFeedView(getStoreOnlyFeedViewContext(configSnapshot),
+    auto feedView = std::make_shared<SearchableFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
             getFeedViewPersistentParams(),
             FastAccessFeedView::Context(attrWriter, _docIdLimit),
-            SearchableFeedView::Context(getIndexWriter())));
+            SearchableFeedView::Context(getIndexWriter()));
 
     // XXX: Not exception safe.
-    _rFeedView.set(SearchableFeedView::SP(feedView.release()));
+    _rFeedView.set(feedView);
     syncViews();
 }
 

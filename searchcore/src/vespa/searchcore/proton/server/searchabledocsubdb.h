@@ -10,7 +10,6 @@
 #include "summaryadapter.h"
 #include <vespa/eval/eval/value_cache/constant_tensor_loader.h>
 #include <vespa/eval/eval/value_cache/constant_value_cache.h>
-#include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
@@ -25,7 +24,6 @@
 namespace proton {
 
 class DocumentDBConfig;
-class DocumentDBMetrics;
 class IDocumentDBReferenceResolver;
 class MetricsWireService;
 class GidToLidChangeHandler;
@@ -90,9 +88,8 @@ private:
 
     // Note: lifetime of indexManager must be handled by caller.
     std::shared_ptr<initializer::InitializerTask>
-    createIndexManagerInitializer(const DocumentDBConfig &configSnapshot,
-                                  SerialNum configSerialNum,
-                                  const vespa::config::search::core::ProtonConfig::Index &indexCfg,
+    createIndexManagerInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
+                                  const IndexConfig &indexCfg,
                                   std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const;
 
     void setupIndexManager(searchcorespi::IIndexManager::SP indexManager);
@@ -116,7 +113,7 @@ public:
 
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                      const vespa::config::search::core::ProtonConfig::Index &indexCfg) const override;
+                      const IndexConfig &indexCfg) const override;
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;
     void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager)  override;

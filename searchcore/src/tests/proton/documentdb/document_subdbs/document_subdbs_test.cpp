@@ -58,6 +58,7 @@ using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
 using vespalib::mkdir;
+using proton::index::IndexConfig;
 
 typedef StoreOnlyDocSubDB::Config StoreOnlyConfig;
 typedef StoreOnlyDocSubDB::Context StoreOnlyContext;
@@ -75,8 +76,7 @@ const SerialNum CFG_SERIAL = 5;
 struct ConfigDir1 { static vespalib::string dir() { return TEST_PATH("cfg1"); } };
 struct ConfigDir2 { static vespalib::string dir() { return TEST_PATH("cfg2"); } };
 struct ConfigDir3 { static vespalib::string dir() { return TEST_PATH("cfg3"); } };
-struct ConfigDir4 { static vespalib::string dir() { return TEST_PATH("cfg4")
-                ; } };
+struct ConfigDir4 { static vespalib::string dir() { return TEST_PATH("cfg4"); } };
 
 struct MySubDBOwner : public IDocumentSubDBOwner
 {
@@ -166,7 +166,7 @@ MyStoreOnlyContext::MyStoreOnlyContext(IThreadingService &writeService, ThreadSt
            bucketDBHandlerInitializer, _metrics, _configMutex, _hwInfo)
 {
 }
-MyStoreOnlyContext::~MyStoreOnlyContext() {}
+MyStoreOnlyContext::~MyStoreOnlyContext() = default;
 
 template <bool FastAccessAttributesOnly>
 struct MyFastAccessConfig
@@ -208,7 +208,7 @@ MyFastAccessContext::MyFastAccessContext(IThreadingService &writeService, Thread
       _wireService(),
       _ctx(_storeOnlyCtx._ctx, _attributeMetricsCollection, NULL, _wireService)
 {}
-MyFastAccessContext::~MyFastAccessContext() {}
+MyFastAccessContext::~MyFastAccessContext() = default;
 
 struct MySearchableConfig
 {
@@ -335,9 +335,7 @@ struct FixtureBase
     }
     void init() {
                 DocumentSubDbInitializer::SP task =
-                    _subDb.createInitializer(*_snapshot->_cfg,
-                                             Traits::configSerial(),
-                                             ProtonConfig::Index());
+                    _subDb.createInitializer(*_snapshot->_cfg, Traits::configSerial(), IndexConfig());
                 vespalib::ThreadStackExecutor executor(1, 1024 * 1024);
                 initializer::TaskRunner taskRunner(executor);
                 taskRunner.runTask(task);

@@ -103,8 +103,7 @@ FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResult)
 
 
 AttributeCollectionSpec::UP
-FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg,
-                                        SerialNum serialNum) const
+FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg, SerialNum serialNum) const
 {
     uint32_t docIdLimit(_dms->getCommittedDocIdLimit());
     AttributeCollectionSpecFactory factory(_attributeGrow,
@@ -113,16 +112,15 @@ FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg,
 }
 
 void
-FastAccessDocSubDB::initFeedView(const IAttributeWriter::SP &writer,
-                                 const DocumentDBConfig &configSnapshot)
+FastAccessDocSubDB::initFeedView(const IAttributeWriter::SP &writer, const DocumentDBConfig &configSnapshot)
 {
     // Called by executor thread
-    FastAccessFeedView::UP feedView(new FastAccessFeedView(
+    auto feedView = std::make_shared<FastAccessFeedView>(
             getStoreOnlyFeedViewContext(configSnapshot),
             getFeedViewPersistentParams(),
-            FastAccessFeedView::Context(writer, _docIdLimit)));
+            FastAccessFeedView::Context(writer, _docIdLimit));
 
-    _fastAccessFeedView.set(FastAccessFeedView::SP(feedView.release()));
+    _fastAccessFeedView.set(feedView);
     _iFeedView.set(_fastAccessFeedView.get());
 }
 
@@ -211,11 +209,11 @@ FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
       _docIdLimit(0)
 { }
 
-FastAccessDocSubDB::~FastAccessDocSubDB() { }
+FastAccessDocSubDB::~FastAccessDocSubDB() = default;
 
 DocumentSubDbInitializer::UP
 FastAccessDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                                      const vespa::config::search::core::ProtonConfig::Index &indexCfg) const
+                                      const IndexConfig &indexCfg) const
 {
     auto result = Parent::createInitializer(configSnapshot, configSerialNum, indexCfg);
     auto attrMgrInitTask = createAttributeManagerInitializer(configSnapshot, configSerialNum,
@@ -299,7 +297,7 @@ FastAccessDocSubDB::getDocumentRetriever()
 {
     FastAccessFeedView::SP feedView = _fastAccessFeedView.get();
     proton::IAttributeManager::SP attrMgr = extractAttributeManager(feedView);
-    return IDocumentRetriever::UP(new FastAccessDocumentRetriever(feedView, attrMgr));
+    return std::make_unique<FastAccessDocumentRetriever>(feedView, attrMgr);
 }
 
 void
@@ -311,8 +309,7 @@ FastAccessDocSubDB::onReplayDone()
     uint32_t docIdLimit = _metaStoreCtx->get().getCommittedDocIdLimit();
     assert(docIdLimit > 0);
     IFeedView::SP feedView = _iFeedView.get();
-    IAttributeWriter::SP attrWriter =
-        static_cast<FastAccessFeedView &>(*feedView).getAttributeWriter();
+    IAttributeWriter::SP attrWriter = static_cast<FastAccessFeedView &>(*feedView).getAttributeWriter();
     attrWriter->onReplayDone(docIdLimit);
 }
 
@@ -321,8 +318,7 @@ void
 FastAccessDocSubDB::onReprocessDone(SerialNum serialNum)
 {
     IFeedView::SP feedView = _iFeedView.get();
-    IAttributeWriter::SP attrWriter =
-        static_cast<FastAccessFeedView &>(*feedView).getAttributeWriter();
+    IAttributeWriter::SP attrWriter = static_cast<FastAccessFeedView &>(*feedView).getAttributeWriter();
     attrWriter->forceCommit(serialNum, std::shared_ptr<search::IDestructorCallback>());
     _writeService.attributeFieldWriter().sync();
     _writeService.summary().sync();

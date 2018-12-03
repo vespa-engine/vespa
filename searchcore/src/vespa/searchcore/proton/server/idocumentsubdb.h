@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_task.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/util/searchable_stats.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search::index { class Schema; }
 
@@ -15,6 +15,10 @@ namespace searchcorespi {
     class IFlushTarget;
     class IIndexManager;
 }
+namespace proton::index {
+    class IndexConfig;
+}
+
 namespace proton {
 
 namespace matching { class SessionManager; }
@@ -23,10 +27,8 @@ class DocumentDBConfig;
 class DocumentSubDbInitializer;
 class DocumentSubDbInitializerResult;
 class FeedHandler;
-class FileConfigManager;
 class IAttributeManager;
 class IBucketStateCalculator;
-class IDcoumentRetriever;
 class IDocumentDBReferenceResolver;
 class IDocumentDBReference;
 class IDocumentMetaStoreContext;
@@ -54,8 +56,8 @@ public:
     using SerialNum = search::SerialNum;
     using Schema = search::index::Schema;
     using SchemaSP = std::shared_ptr<Schema>;
-    using ProtonConfig = vespa::config::search::core::ProtonConfig;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
+    using IndexConfig = index::IndexConfig;
 public:
     IDocumentSubDB() { }
     virtual ~IDocumentSubDB() { }
@@ -64,7 +66,7 @@ public:
 
     virtual std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                      const ProtonConfig::Index &indexCfg) const = 0;
+                      const IndexConfig &indexCfg) const = 0;
 
     // Called by master thread
     virtual void setup(const DocumentSubDbInitializerResult &initResult) = 0;

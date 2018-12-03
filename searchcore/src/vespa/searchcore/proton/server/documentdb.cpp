@@ -36,6 +36,8 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
+#include <vespa/searchcorespi/index/warmupconfig.h>
+
 LOG_SETUP(".proton.server.documentdb");
 
 using vespa::config::search::AttributesConfig;
@@ -53,6 +55,7 @@ using namespace search::fef;
 using namespace search::index;
 using namespace search::transactionlog;
 using searchcorespi::index::IThreadService;
+using searchcorespi::index::WarmupConfig;
 using search::TuneFileDocumentDB;
 using storage::spi::Timestamp;
 using search::common::FileHeaderContext;
@@ -65,6 +68,28 @@ namespace proton {
 
 namespace {
 constexpr uint32_t indexing_thread_stack_size = 128 * 1024;
+
+GrowStrategy
+makeGrowStrategy(uint32_t docsInitialCapacity, const ProtonConfig::Grow &growCfg)
+{
+    return GrowStrategy(docsInitialCapacity, growCfg.factor, growCfg.add, growCfg.multivalueallocfactor);
+}
+
+DocumentSubDBCollection::Config
+makeSubDBConfig(const ProtonConfig & protonCfg) {
+    const ProtonConfig::Grow & growCfg = protonCfg.grow;
+    const ProtonConfig::Distribution & distCfg = protonCfg.distribution;
+    GrowStrategy searchableGrowth = makeGrowStrategy(growCfg.initial * distCfg.searchablecopies, growCfg);
+    GrowStrategy removedGrowth = makeGrowStrategy(std::max(1024l, growCfg.initial/100), growCfg);
+    GrowStrategy notReadyGrowth = makeGrowStrategy(growCfg.initial * (distCfg.redundancy - distCfg.searchablecopies), growCfg);
+    return DocumentSubDBCollection::Config(searchableGrowth, notReadyGrowth, removedGrowth, growCfg.numdocs, protonCfg.numsearcherthreads);
+}
+
+index::IndexConfig
+makeIndexConfig(const ProtonConfig::Index & cfg) {
+    return index::IndexConfig(WarmupConfig(cfg.warmup.time, cfg.warmup.unpack), cfg.maxflushed, cfg.cache.size);
+}
+
 }
 
 template <typename FunctionType>
@@ -116,7 +141,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _initGate(),
       _clusterStateHandler(_writeService.master()),
       _bucketHandler(_writeService.master()),
-      _protonIndexCfg(protonCfg.index),
+      _indexCfg(makeIndexConfig(protonCfg.index)),
       _config_store(std::move(config_store)),
       _sessionManager(new matching::SessionManager(protonCfg.grouping.sessionmanager.maxentries)),
       _metricsWireService(metricsWireService),
@@ -131,18 +156,13 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _feedHandler(_writeService, tlsSpec, docTypeName, _state, *this, _writeFilter, *this, tlsDirectWriter),
       _subDBs(*this, *this, _feedHandler, _docTypeName, _writeService, warmupExecutor,
               sharedExecutor, fileHeaderContext, metricsWireService, getMetricsCollection(),
-              queryLimiter, clock, _configMutex, _baseDir, protonCfg, hwInfo),
+              queryLimiter, clock, _configMutex, _baseDir, makeSubDBConfig(protonCfg), hwInfo),
       _maintenanceController(_writeService.master(), sharedExecutor, _docTypeName),
       _visibility(_feedHandler, _writeService, _feedView),
       _lidSpaceCompactionHandlers(),
       _jobTrackers(),
       _calc(),
-      _metricsUpdater(_subDBs,
-                      _writeService,
-                      _jobTrackers,
-                      *_sessionManager,
-                      _writeFilter,
-                      _state)
+      _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter, _state)
 {
     assert(configSnapshot);
 
@@ -250,8 +270,7 @@ DocumentDB::initManagers()
     // Called by executor thread
     DocumentDBConfig::SP configSnapshot(_initConfigSnapshot);
     _initConfigSnapshot.reset();
-    InitializerTask::SP rootTask =
-        _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _protonIndexCfg);
+    InitializerTask::SP rootTask = _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _indexCfg);
     InitializeThreads initializeThreads = _initializeThreads;
     _initializeThreads.reset();
     std::shared_ptr<TaskRunner> taskRunner(std::make_shared<TaskRunner>(*initializeThreads));

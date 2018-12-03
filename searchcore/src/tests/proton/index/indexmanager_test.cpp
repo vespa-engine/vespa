@@ -50,6 +50,8 @@ using std::set;
 using std::string;
 using vespalib::BlockingThreadStackExecutor;
 using vespalib::ThreadStackExecutor;
+using proton::index::IndexManager;
+using proton::index::IndexConfig;
 
 using namespace proton;
 using namespace searchcorespi;
@@ -170,27 +172,21 @@ Document::UP Fixture::addDocument(uint32_t id) {
 }
 
 void Fixture::resetIndexManager() {
-    _index_manager.reset(0);
-    _index_manager.reset(
-            new IndexManager(index_dir, searchcorespi::index::WarmupConfig(), 2, 0, getSchema(), 1,
+    _index_manager.reset();
+    _index_manager = std::make_unique<IndexManager>(index_dir, IndexConfig(), getSchema(), 1,
                              _reconfigurer, _writeService, _writeService.getMasterExecutor(),
-                             TuneFileIndexManager(), TuneFileAttributes(),
-                             _fileHeaderContext));
+                             TuneFileIndexManager(), TuneFileAttributes(),_fileHeaderContext);
 }
 
 
-void Fixture::assertStats(uint32_t expNumDiskIndexes,
-                          uint32_t expNumMemoryIndexes,
-                          SerialNum expLastDiskIndexSerialNum,
-                          SerialNum expLastMemoryIndexSerialNum)
+void Fixture::assertStats(uint32_t expNumDiskIndexes, uint32_t expNumMemoryIndexes,
+                          SerialNum expLastDiskIndexSerialNum, SerialNum expLastMemoryIndexSerialNum)
 {
     searchcorespi::IndexManagerStats stats(*_index_manager);
     SerialNum lastDiskIndexSerialNum = 0;
     SerialNum lastMemoryIndexSerialNum = 0;
-    const std::vector<searchcorespi::index::DiskIndexStats> &
-        diskIndexes(stats.getDiskIndexes());
-    const std::vector<searchcorespi::index::MemoryIndexStats> &
-        memoryIndexes(stats.getMemoryIndexes());
+    const std::vector<searchcorespi::index::DiskIndexStats> & diskIndexes(stats.getDiskIndexes());
+    const std::vector<searchcorespi::index::MemoryIndexStats> & memoryIndexes(stats.getMemoryIndexes());
     if (!diskIndexes.empty()) {
         lastDiskIndexSerialNum = diskIndexes.back().getSerialNum();
     }

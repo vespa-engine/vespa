@@ -29,6 +29,7 @@
 #include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
 #include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
+#include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/vespalib/util/varholder.h>
@@ -39,6 +40,8 @@ namespace search {
     namespace common { class FileHeaderContext; }
     namespace transactionlog { class TransLogClient; }
 }
+
+namespace vespa::config::search::core::internal { class InternalProtonType; }
 
 namespace proton {
 class IDocumentDBOwner;
@@ -85,7 +88,7 @@ private:
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     using StatusReportUP = std::unique_ptr<StatusReport>;
-    using ProtonConfig = vespa::config::search::core::ProtonConfig;
+    using ProtonConfig = const vespa::config::search::core::internal::InternalProtonType;
 
     DocTypeName                   _docTypeName;
     document::BucketSpace         _bucketSpace;
@@ -117,7 +120,7 @@ private:
 
     ClusterStateHandler           _clusterStateHandler;
     BucketHandler                 _bucketHandler;
-    ProtonConfig::Index           _protonIndexCfg;
+    index::IndexConfig            _indexCfg;
     ConfigStore::UP               _config_store;
     std::shared_ptr<matching::SessionManager>  _sessionManager; // TODO: This should not have to be a shared pointer.
     MetricsWireService             &_metricsWireService;
@@ -188,13 +191,13 @@ private:
     /**
      * Implements IFeedHandlerOwner
      */
-    virtual void onTransactionLogReplayDone() override __attribute__((noinline));
-    virtual void onPerformPrune(SerialNum flushedSerial) override;
+    void onTransactionLogReplayDone() override __attribute__((noinline));
+    void onPerformPrune(SerialNum flushedSerial) override;
 
     /**
      * Implements IFeedHandlerOwner
      **/
-    virtual bool getAllowPrune() const override;
+    bool getAllowPrune() const override;
 
     void startTransactionLogReplay();
 
@@ -202,7 +205,7 @@ private:
     /**
      * Implements IClusterStateChangedHandler
      */
-    virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
+    void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
     void notifyAllBucketsChanged();
 
     /*
@@ -265,7 +268,7 @@ public:
      * Frees any allocated resources. This will also stop the internal thread
      * and wait for it to finish. All pending tasks are deleted.
      */
-    ~DocumentDB();
+    ~DocumentDB() override;
 
     /**
      * Starts initialization of the document db in the init & executor threads,

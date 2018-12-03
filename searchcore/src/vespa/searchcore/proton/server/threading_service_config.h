@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <cstdint>
 
+namespace vespa::config::search::core::internal { class InternalProtonType; }
 namespace proton {
 
 /**
@@ -12,7 +12,7 @@ namespace proton {
  */
 class ThreadingServiceConfig {
 public:
-    using ProtonConfig = vespa::config::search::core::ProtonConfig;
+    using ProtonConfig = const vespa::config::search::core::internal::InternalProtonType;
 
 private:
     uint32_t _indexingThreads;

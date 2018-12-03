@@ -18,17 +18,14 @@ using searchcorespi::IFlushTarget;
 
 namespace proton {
 
-namespace {
-
-GrowStrategy
-makeGrowStrategy(uint32_t docsInitialCapacity,
-                 const DocumentSubDBCollection::ProtonConfig::Grow &growCfg)
-{
-    return GrowStrategy(docsInitialCapacity, growCfg.factor,
-                        growCfg.add, growCfg.multivalueallocfactor);
-}
-
-}
+DocumentSubDBCollection::Config::Config(GrowStrategy ready, GrowStrategy notReady, GrowStrategy removed,
+                                        size_t fixedAttributeTotalSkew, size_t numSearchThreads)
+    : _readyGrowth(ready),
+      _notReadyGrowth(notReady),
+      _removedGrowth(removed),
+      _fixedAttributeTotalSkew(fixedAttributeTotalSkew),
+      _numSearchThreads(numSearchThreads)
+{ }
 
 DocumentSubDBCollection::DocumentSubDBCollection(
         IDocumentSubDBOwner &owner,
@@ -45,7 +42,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         const vespalib::Clock &clock,
         std::mutex &configMutex,
         const vespalib::string &baseDir,
-        const ProtonConfig &protonCfg,
+        const Config & cfg,
         const HwInfo &hwInfo)
     : _subDBs(),
       _owner(owner),
@@ -58,41 +55,25 @@ DocumentSubDBCollection::DocumentSubDBCollection(
       _bucketDB(),
       _bucketDBHandler()
 {
-    const ProtonConfig::Grow & growCfg = protonCfg.grow;
-    const ProtonConfig::Distribution & distCfg = protonCfg.distribution;
     _bucketDB = std::make_shared<BucketDBOwner>();
-    _bucketDBHandler.reset(new bucketdb::BucketDBHandler(*_bucketDB));
-    GrowStrategy searchableGrowth = makeGrowStrategy(growCfg.initial * distCfg.searchablecopies, growCfg);
-    GrowStrategy removedGrowth = makeGrowStrategy(std::max(1024l, growCfg.initial/100), growCfg);
-    GrowStrategy notReadyGrowth = makeGrowStrategy(growCfg.initial * (distCfg.redundancy - distCfg.searchablecopies), growCfg);
-    size_t attributeGrowNumDocs(growCfg.numdocs);
-    size_t numSearcherThreads = protonCfg.numsearcherthreads;
+    _bucketDBHandler = std::make_unique<bucketdb::BucketDBHandler>(*_bucketDB);
 
-    StoreOnlyDocSubDB::Context context(owner,
-                                       tlSyncer,
-                                       getSerialNum,
-                                       fileHeaderContext,
-                                       writeService,
-                                       sharedExecutor,
-                                       _bucketDB,
-                                       *_bucketDBHandler,
-                                       metrics,
-                                       configMutex,
-                                       hwInfo);
+    StoreOnlyDocSubDB::Context context(owner, tlSyncer, getSerialNum, fileHeaderContext, writeService,
+                                       sharedExecutor, _bucketDB, *_bucketDBHandler, metrics, configMutex, hwInfo);
     _subDBs.push_back
         (new SearchableDocSubDB
             (SearchableDocSubDB::Config(FastAccessDocSubDB::Config
                 (StoreOnlyDocSubDB::Config(docTypeName,
                         "0.ready",
                         baseDir,
-                        searchableGrowth,
-                        attributeGrowNumDocs,
+                        cfg.getReadyGrowth(),
+                        cfg.getFixedAttributeTotalSkew(),
                         _readySubDbId,
                         SubDbType::READY),
                         true,
                         true,
                         false),
-                        numSearcherThreads),
+                        cfg.getNumSearchThreads()),
                 SearchableDocSubDB::Context(FastAccessDocSubDB::Context
                         (context,
                          AttributeMetricsCollection(metrics.getTaggedMetrics().ready.attributes,
@@ -106,8 +87,8 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         (new StoreOnlyDocSubDB(StoreOnlyDocSubDB::Config(docTypeName,
                                                      "1.removed",
                                                      baseDir,
-                                                     removedGrowth,
-                                                     attributeGrowNumDocs,
+                                                     cfg.getRemovedGrowth(),
+                                                     cfg.getFixedAttributeTotalSkew(),
                                                      _remSubDbId,
                                                      SubDbType::REMOVED),
                              context));
@@ -116,8 +97,8 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                 (StoreOnlyDocSubDB::Config(docTypeName,
                         "2.notready",
                         baseDir,
-                        notReadyGrowth,
-                        attributeGrowNumDocs,
+                        cfg.getNotReadyGrowth(),
+                        cfg.getFixedAttributeTotalSkew(),
                         _notReadySubDbId,
                         SubDbType::NOTREADY),
                         true,
@@ -126,7 +107,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                 FastAccessDocSubDB::Context(context,
                         AttributeMetricsCollection(metrics.getTaggedMetrics().notReady.attributes,
                                                    metrics.getLegacyMetrics().notReady.attributes),
-                        NULL,
+                        nullptr,
                         metricsWireService)));
 }
 
@@ -153,8 +134,7 @@ DocumentSubDBCollection::createRetrievers()
 namespace {
 
 IDocumentRetriever::SP
-wrapRetriever(const IDocumentRetriever::SP &retriever,
-              ICommitable &commit)
+wrapRetriever(const IDocumentRetriever::SP &retriever, ICommitable &commit)
 {
     return std::make_shared<CommitAndWaitDocumentRetriever>(retriever, commit);
 }
@@ -162,8 +142,7 @@ wrapRetriever(const IDocumentRetriever::SP &retriever,
 }
 
 
-void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc,
-                                              ICommitable &commit) {
+void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc, ICommitable &commit) {
     RetrieversSP retrievers = getRetrievers();
     MaintenanceDocumentSubDB readySubDB(
             getReadySubDB()->getDocumentMetaStoreContext().getSP(),
@@ -183,7 +162,7 @@ void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc,
 initializer::InitializerTask::SP
 DocumentSubDBCollection::createInitializer(const DocumentDBConfig &configSnapshot,
                                            SerialNum configSerialNum,
-                                           const ProtonConfig::Index & indexCfg)
+                                           const index::IndexConfig & indexCfg)
 {
     DocumentSubDbCollectionInitializer::SP task = std::make_shared<DocumentSubDbCollectionInitializer>();
     for (auto subDb : _subDBs) {
@@ -287,11 +266,11 @@ DocumentSubDBCollection::getFeedView()
         views.push_back(subDb->getFeedView());
     }
     IFeedView::SP newFeedView;
-    assert(views.size() >= 1);
+    assert( ! views.empty());
     if (views.size() > 1) {
-        return IFeedView::SP(new CombiningFeedView(views, _owner.getBucketSpace(), _calc));
+        return std::make_shared<CombiningFeedView>(views, _owner.getBucketSpace(), _calc);
     } else {
-        assert(views.front() != NULL);
+        assert(views.front() != nullptr);
         return views.front();
     }
 }
