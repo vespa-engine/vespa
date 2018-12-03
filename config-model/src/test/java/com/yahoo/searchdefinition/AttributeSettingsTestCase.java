@@ -180,7 +180,7 @@ public class AttributeSettingsTestCase extends SearchDefinitionTestCase {
         AttributeFields attributes = new AttributeFields(getSearchWithMutables());
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
         attributes.getConfig(builder);
-        AttributesConfig cfg = new AttributesConfig(builder);
+        AttributesConfig cfg = builder.build();
         assertEquals("a", cfg.attribute().get(0).name());
         assertFalse(cfg.attribute().get(0).ismutable());
 
@@ -197,7 +197,7 @@ public class AttributeSettingsTestCase extends SearchDefinitionTestCase {
         IndexingScript script = new IndexingScript(getSearchWithMutables());
         IlscriptsConfig.Builder builder = new IlscriptsConfig.Builder();
         script.getConfig(builder);
-        IlscriptsConfig cfg = new IlscriptsConfig(builder);
+        IlscriptsConfig cfg = builder.build();
         assertEquals(1, cfg.ilscript().size());
         IlscriptsConfig.Ilscript ils = cfg.ilscript(0);
         assertEquals("test", ils.doctype());

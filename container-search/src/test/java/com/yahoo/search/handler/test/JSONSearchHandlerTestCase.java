@@ -82,7 +82,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testBadJSON() throws Exception{
+    public void testBadJSON() {
         String json = "Not a valid JSON-string";
         RequestHandlerTestDriver.MockResponseHandler responseHandler = driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json, JSON_CONTENT_TYPE);
         String response = responseHandler.readAll();

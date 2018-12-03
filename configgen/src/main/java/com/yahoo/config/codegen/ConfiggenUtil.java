@@ -11,7 +11,8 @@ public class ConfiggenUtil {
 
     /**
      * Create class name from def name
-     * @param defName The file name without the '.def' suffix
+     *
+     * @param defName the file name without the '.def' suffix
      */
     public static String createClassName(String defName) {
         String className =  Arrays.stream(defName.split("-"))
@@ -41,4 +42,5 @@ public class ConfiggenUtil {
         }
         return true;
     }
+
 }

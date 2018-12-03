@@ -19,9 +19,12 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.QueryException;
+import com.yahoo.prelude.query.RangeItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.request.CompoundName;
@@ -767,6 +770,65 @@ public class QueryTestCase {
         }
         catch (QueryException e) {
             assertEquals("Cannot add (AND (OR )) to (OR ) as it would create a cycle", e.getMessage());
+        }
+    }
+
+    @Test
+    public void queryLanguageAlternatives() {
+        // Given:
+        // Person = {
+        //  Name: 'Joe',
+        //  Hobbies: ['sports','books','bonzais'],
+        //  Phones: [{Number: '12-3456-7890', areaCode: 'NY'},{Number: '22-3456-7890', areaCode: 'CA'}],
+        //  Mother: {
+        //    Name: 'Mom',
+        //    Birthyear: '1961'
+        //  }
+        //}
+
+        { // Select all Persons whose hobbies contains 'sport'
+            // YQL
+            Query yqlQuery = new Query(httpEncode("?query=select * from Persons where hobbies contains 'sports';&type=yql"));
+            assertEquals("hobbies:sports", yqlQuery.getModel().getQueryTree().toString());
+
+            // JSON
+            Query jsonQuery = new Query(httpEncode("?select.where={\"contains\" : [ \"hobbies\", \"sports\" ]}&type=select"));
+            assertEquals("hobbies:sports", jsonQuery.getModel().getQueryTree().toString());
+
+            // Programmatically
+            Query query = new Query();
+            query.getModel().getQueryTree().setRoot(new WordItem("sports", "hobbies"));
+            assertEquals("hobbies:sports", query.getModel().getQueryTree().toString());
+        }
+
+        { // Select all Persons whose Phones areaCode equals 'NY'
+            // YQL
+            Query yqlQuery = new Query(httpEncode("?query=select * from Persons where phones.areaCode contains 'NY';&type=yql"));
+            assertEquals("phones.areaCode:NY", yqlQuery.getModel().getQueryTree().toString());
+
+            // JSON
+            Query jsonQuery = new Query(httpEncode("?select.where={\"contains\" : [ \"phones.areaCode\", \"NY\" ]}&type=select"));
+            assertEquals("phones.areaCode:NY", jsonQuery.getModel().getQueryTree().toString());
+
+            // Programmatically
+            Query query = new Query();
+            query.getModel().getQueryTree().setRoot(new WordItem("NY", "phones.areaCode"));
+            assertEquals("phones.areaCode:NY", query.getModel().getQueryTree().toString());
+        }
+
+        { // Select all Persons whose Mother's Birthyear is greater than 1960
+            // YQL
+            Query yqlQuery = new Query(httpEncode("?query=select * from Persons where mother.Birthyear > 1960;&type=yql"));
+            assertEquals("mother.Birthyear:>1960", yqlQuery.getModel().getQueryTree().toString());
+
+            // JSON
+            Query jsonQuery = new Query(httpEncode("?select.where={\"range\" : [ \"mother.Birthyear\", { \">\": 1960}]}&type=select"));
+            assertEquals("mother.Birthyear:>1960", jsonQuery.getModel().getQueryTree().toString());
+
+            // Programmatically
+            Query query = new Query();
+            query.getModel().getQueryTree().setRoot(new IntItem(">1960", "mother.Birthyear"));
+            assertEquals("mother.Birthyear:>1960", query.getModel().getQueryTree().toString());
         }
     }
 

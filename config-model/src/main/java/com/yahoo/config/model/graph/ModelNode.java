@@ -18,7 +18,6 @@ import java.util.*;
  * Only Collection, not Collection subtypes can be used.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ModelNode<MODEL extends ConfigModel> implements ConfigModelInstanceFactory<MODEL> {
 

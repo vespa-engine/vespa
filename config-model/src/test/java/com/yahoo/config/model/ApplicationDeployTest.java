@@ -149,7 +149,7 @@ public class ApplicationDeployTest {
         DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
         model.getConfig(b, VespaModel.ROOT_CONFIGID);
         //String docMan = model.getConfig("documentmanager", "").toString();
-        DocumentmanagerConfig dc = new DocumentmanagerConfig(b);
+        DocumentmanagerConfig dc = b.build();
         String docMan=ConfigInstance.serialize(dc).toString();
         int pFlags = Pattern.MULTILINE + Pattern.DOTALL;
         Pattern base = Pattern.compile(".*name.*base\\.header.*", pFlags);

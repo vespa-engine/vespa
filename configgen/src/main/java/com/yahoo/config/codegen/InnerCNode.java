@@ -82,8 +82,7 @@ public class InnerCNode extends CNode {
      * @param comment      comment extracted from the .def-file.
      */
     @Override
-    protected void setLeaf(String name, DefLine defLine, String comment)
-            throws IllegalArgumentException {
+    protected void setLeaf(String name, DefLine defLine, String comment) throws IllegalArgumentException {
         if (name.indexOf('.') < 0) {
             throw new IllegalArgumentException("Parameter with name '" + name +
                     "' cannot be a leaf node as it has already been declared as an inner node.");
@@ -92,13 +91,6 @@ public class InnerCNode extends CNode {
         String childName = name.substring(name.indexOf('.') + 1);
 
         CNode child = createOrGetChild(defLine.getType(), childName);
-/*
-        System.out.println("\nAdding child name: " + name);
-        System.out.println("            getName: " + child.getName());
-        System.out.println("          full name: " + child.getFullName());
-        System.out.println("          classname: " + child.getClassName());
-        System.out.println("     full classname: " + child.getFullClassName());
-*/
         restart |= defLine.getRestart();
         child.setLeaf(childName, defLine, comment);
         children.put(child.getName(), child);

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.util.List;
 
 import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
 import static com.yahoo.config.codegen.JavaClassBuilder.createUniqueSymbol;
@@ -15,12 +16,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
  * @author ollivir
  */
 public class JavaClassBuilderTest {
+
     private static final String TEST_DIR = "target/test-classes/";
     private static final String DEF_NAME = TEST_DIR + "allfeatures.def";
     private static final String REFERENCE_NAME = TEST_DIR + "allfeatures.reference";
@@ -103,14 +106,19 @@ public class JavaClassBuilderTest {
 
     @Test
     public void verify_generated_class_against_reference() throws IOException {
-        final String testDefinition = String.join("\n", Files.readAllLines(FileSystems.getDefault().getPath(DEF_NAME)));
-        final String referenceClass = String.join("\n", Files.readAllLines(FileSystems.getDefault().getPath(REFERENCE_NAME))) + "\n";
+        String testDefinition = String.join("\n", Files.readAllLines(FileSystems.getDefault().getPath(DEF_NAME)));
+        List<String> referenceClassLines = Files.readAllLines(FileSystems.getDefault().getPath(REFERENCE_NAME));
 
         DefParser parser = new DefParser("allfeatures", new StringReader(testDefinition));
         InnerCNode root = parser.getTree();
         JavaClassBuilder builder = new JavaClassBuilder(root, parser.getNormalizedDefinition(), null, null);
-        String configClass = builder.getConfigClass("AllfeaturesConfig");
+        String[] configClassLines = builder.getConfigClass("AllfeaturesConfig").split("\n");
 
-        assertEquals(referenceClass, configClass);
+        for (int i = 0; i < referenceClassLines.size(); i++) {
+            if (configClassLines.length <= i)
+                fail("Missing lines i generated comnfig class. First missing line:\n" + referenceClassLines.get(i));
+            assertEquals("Line " + i, referenceClassLines.get(i), configClassLines[i]);
+        }
     }
+
 }

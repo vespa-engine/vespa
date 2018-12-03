@@ -4,9 +4,8 @@ package com.yahoo.config.codegen;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- */
 public class DefLine {
+
     private final static Pattern defaultPattern =     Pattern.compile("^\\s*default\\s*=\\s*(\\S+)");
     private final static Pattern rangePattern =       Pattern.compile("^\\s*range\\s*=\\s*([\\(\\[].*?[\\)\\]])");
     private final static Pattern restartPattern =     Pattern.compile("^\\s*restart\\s*");
@@ -270,5 +269,6 @@ public class DefLine {
             throw new IllegalArgumentException("'" + name + "' cannot start with '" + ReservedWords.INTERNAL_PREFIX + "'");
         }
     }
+
 }
 

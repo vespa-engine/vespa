@@ -67,7 +67,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
             builder.build();
             DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
             DerivedConfiguration.exportDocuments(new DocumentManager().produce(builder.getModel(), b), outDir.getPath());
-            DocumentmanagerConfig dc = new DocumentmanagerConfig(b);
+            DocumentmanagerConfig dc = b.build();
             assertEquals(17, dc.datatype().size());
             assertNotNull(structType("child.body", dc));
             DocumentmanagerConfig.Datatype.Structtype childHeader = structType("child.header", dc);

@@ -22,6 +22,7 @@ import static com.yahoo.config.codegen.DefParser.DEFAULT_PACKAGE_PREFIX;
  * @author ollivir
  */
 public class JavaClassBuilder implements ClassBuilder {
+
     public static final String INDENTATION = "  ";
 
     private final InnerCNode root;
@@ -141,11 +142,9 @@ public class JavaClassBuilder implements ClassBuilder {
      * config class for the given node. The name will be based on the given basis
      * string, but the basis itself is not a possible return value.
      *
-     * @param node
-     *            The node to find a unused symbol name for.
-     * @param basis
-     *            The basis for the generated symbol name.
-     * @return A name that is not used in the given config node.
+     * @param node the node to find a unused symbol name for.
+     * @param basis the basis for the generated symbol name.
+     * @return a name that is not used in the given config node.
      */
     static String createUniqueSymbol(CNode node, String basis) {
         Set<String> usedSymbols = Arrays.stream(node.getChildren()).map(CNode::getName).collect(Collectors.toSet());
@@ -167,4 +166,5 @@ public class JavaClassBuilder implements ClassBuilder {
     public String javaPackage() {
         return javaPackage;
     }
+
 }

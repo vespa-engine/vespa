@@ -26,6 +26,7 @@ import static java.util.Arrays.stream;
  * @author ollivir
  */
 public class ConfigGenerator {
+
     // TODO: don't take indent as method param - the caller should indent
     public static String generateContent(String indent, InnerCNode node, boolean isOuter) {
         CNode[] children = node.getChildren();
@@ -441,4 +442,5 @@ public class ConfigGenerator {
             return rawType;
         }
     }
+
 }

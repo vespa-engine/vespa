@@ -13,7 +13,6 @@ public class DefaultValue {
      // The variable type. Always set UNLESS the value is null.
     private DefLine.Type type = null;
 
-
     /**
      * Null value
      */

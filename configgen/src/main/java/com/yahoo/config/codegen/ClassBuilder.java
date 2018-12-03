@@ -2,12 +2,11 @@
 package com.yahoo.config.codegen;
 
 /**
- * @author <a href="gv@yahoo-inc.com">G. Voldengen</a>
+ * @author gjoranv
  */
 public interface ClassBuilder {
 
-    /**
-     * Generate config class file(s).
-     */
+    /** Generate config class file(s). */
     public void createConfigClasses();
+
 }
