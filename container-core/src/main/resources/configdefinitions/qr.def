@@ -28,5 +28,5 @@ coveragereports bool default=false restart
 ## this string will be unique for every QRS in a Vespa application.
 discriminator string default="qrserver.0" restart
 
-## Force restart of container on deploy?
+## Force restart of container on deploy, and defer any changes until restart
 restartOnDeploy bool default=false restart
