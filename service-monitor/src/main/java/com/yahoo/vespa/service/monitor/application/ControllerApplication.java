@@ -3,16 +3,15 @@ package com.yahoo.vespa.service.monitor.application;
 
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.applicationmodel.ServiceType;
 
 /**
  * @author mpolden
  */
-public class ControllerApplication extends HostedVespaApplication {
-
-    public static final ControllerApplication CONTROLLER_APPLICATION = new ControllerApplication();
-
-    private ControllerApplication() {
-        super("controller", NodeType.controller, ClusterSpec.Type.container, ClusterSpec.Id.from("controller"));
+public class ControllerApplication extends InfraApplication {
+    public ControllerApplication() {
+        super("controller", NodeType.controller, ClusterSpec.Type.container,
+                ClusterSpec.Id.from("controller"), ServiceType.CONTROLLER);
     }
 
 }

@@ -25,7 +25,7 @@ import java.util.Map;
 /**
  * A service/application model of the config server with health status.
  */
-public class ConfigServerApplication extends HostedVespaApplication {
+public class ConfigServerApplication extends InfraApplication {
 
     public static final ConfigServerApplication CONFIG_SERVER_APPLICATION = new ConfigServerApplication();
     public static final TenantId TENANT_ID = new TenantId(CONFIG_SERVER_APPLICATION.getApplicationId().tenant().value());
@@ -39,12 +39,12 @@ public class ConfigServerApplication extends HostedVespaApplication {
         return new ConfigId(CONFIG_ID_PREFIX + index);
     }
 
-    private ConfigServerApplication() {
+    public ConfigServerApplication() {
         super("zone-config-servers", NodeType.config,
-                ClusterSpec.Type.admin, ClusterSpec.Id.from("zone-config-servers"));
+                ClusterSpec.Type.admin, ClusterSpec.Id.from("zone-config-servers"), ServiceType.CONFIG_SERVER);
     }
 
-    public ApplicationInfo makeApplicationInfo(ConfigserverConfig config) {
+    public ApplicationInfo makeApplicationInfoFromConfig(ConfigserverConfig config) {
         List<HostInfo> hostInfos = new ArrayList<>();
         List<ConfigserverConfig.Zookeeperserver> zooKeeperServers = config.zookeeperserver();
         for (int index = 0; index < zooKeeperServers.size(); ++index) {
