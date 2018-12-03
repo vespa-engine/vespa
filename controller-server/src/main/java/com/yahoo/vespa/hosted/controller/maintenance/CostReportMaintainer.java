@@ -27,7 +27,7 @@ public class CostReportMaintainer extends Maintainer {
     private final NodeRepositoryClientInterface nodeRepository;
 
     public CostReportMaintainer(Controller controller, Duration interval, JobControl jobControl, NodeRepositoryClientInterface nodeRepository) {
-        super(controller, interval, jobControl, null, EnumSet.of(SystemName.main));
+        super(controller, interval, jobControl, "CostReportMaintainer", EnumSet.of(SystemName.main));
         this.nodeRepository = Objects.requireNonNull(nodeRepository, "node repository must be non-null");
     }
 
