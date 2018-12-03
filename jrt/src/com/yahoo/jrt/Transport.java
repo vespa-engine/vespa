@@ -380,6 +380,7 @@ public class Transport {
         try { selector.close(); } catch (Exception e) {}
         closer.shutdown().join();
         connector.exit().join();
+        try { cryptoEngine.close(); } catch (Exception e) {}
     }
 
     /**

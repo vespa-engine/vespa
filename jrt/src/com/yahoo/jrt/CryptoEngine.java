@@ -17,9 +17,9 @@ import java.nio.channels.SocketChannel;
  * used by code wanting to perform network io with appropriate
  * encryption.
  **/
-public interface CryptoEngine {
-    public CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer);
-    static public CryptoEngine createDefault() {
+public interface CryptoEngine extends AutoCloseable {
+    CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer);
+    static CryptoEngine createDefault() {
         if (!TransportSecurityUtils.isTransportSecurityEnabled()) {
             return new NullCryptoEngine();
         }
@@ -37,5 +37,10 @@ public interface CryptoEngine {
             default:
                 throw new IllegalArgumentException(mixedMode.toString());
         }
+    }
+
+    @Override
+    default void close() {
+
     }
 }
