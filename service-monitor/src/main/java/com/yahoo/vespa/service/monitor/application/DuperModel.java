@@ -40,45 +40,39 @@ public class DuperModel implements DuperModelInfraApi {
             controllerHostApplication)
             .collect(Collectors.toMap(InfraApplication::getApplicationId, Function.identity()));
 
-    private final boolean containsInfra;
-    private final boolean useConfigserverConfig;
+    private final FeatureFlag containsInfra;
+    private final FeatureFlag useConfigserverConfig;
+    private final boolean multitenant;
 
     // Each of the above infrastructure applications may be active, in case their ApplicationInfo is present here
     private final ConcurrentHashMap<ApplicationId, ApplicationInfo> infraInfos =
             new ConcurrentHashMap<>(2 * supportedInfraApplications.size());
 
-    // ApplicationInfo known at construction time
-    private final List<ApplicationInfo> staticInfos = new ArrayList<>();
+    private final ApplicationInfo configServerApplicationFromConfig;
 
     @Inject
     public DuperModel(ConfigserverConfig configServerConfig, FlagSource flagSource) {
         this(
-                // Whether to include activate infrastructure applications in the DuperModel.
-                new FeatureFlag("dupermodel-contains-infra", true, flagSource).value(),
+                // Whether to include activate infrastructure applications (except from controller/config apps - see below).
+                new FeatureFlag("dupermodel-contains-infra", true, flagSource),
 
-                // Whether to base the ApplicationInfo for the config server on ConfigserverConfig or InfrastructureProvisioner:
-                // - ConfigserverConfig: The list of config servers comes from VESPA_CONFIGSERVERS environment variable.
-                // - InfrastructureProvisioner: The list of config servers comes from the node repository.
-                //
-                // The goal is to use InfrastructureProvisioner like other infrastructure applications.
-                new FeatureFlag("dupermodel-use-configserverconfig", true, flagSource).value(),
+                // For historical reasons, the ApplicationInfo in the DuperModel for controllers and config servers
+                // is based on the ConfigserverConfig (this flag is true). We want to transition to use the
+                // infrastructure application activated by the InfrastructureProvisioner once that supports health.
+                new FeatureFlag("dupermodel-use-configserverconfig", true, flagSource),
                 configServerConfig.multitenant(),
                 configServerApplication.makeApplicationInfoFromConfig(configServerConfig));
     }
 
     /** For testing */
-    public DuperModel(boolean containsInfra,
-                      boolean useConfigserverConfig,
+    public DuperModel(FeatureFlag containsInfra,
+                      FeatureFlag useConfigserverConfig,
                       boolean multitenant,
                       ApplicationInfo configServerApplicationInfo) {
         this.containsInfra = containsInfra;
         this.useConfigserverConfig = useConfigserverConfig;
-
-        // Single-tenant applications have the config server as part of the application model.
-        // TODO: Add health monitoring for config server when part of application model.
-        if (useConfigserverConfig && multitenant) {
-            staticInfos.add(configServerApplicationInfo);
-        }
+        this.multitenant = multitenant;
+        this.configServerApplicationFromConfig = configServerApplicationInfo;
     }
 
     public ConfigServerApplication getConfigServerApplication() {
@@ -118,10 +112,6 @@ public class DuperModel implements DuperModelInfraApi {
             throw new IllegalArgumentException("There is no infrastructure application with ID '" + applicationId + "'");
         }
 
-        if (useConfigserverConfig && application.equals(configServerApplication)) {
-            return;
-        }
-
         infraInfos.put(application.getApplicationId(), application.makeApplicationInfo(hostnames));
     }
 
@@ -131,10 +121,33 @@ public class DuperModel implements DuperModelInfraApi {
     }
 
     public List<ApplicationInfo> getApplicationInfos(SuperModel superModelSnapshot) {
-        List<ApplicationInfo> allApplicationInfos = new ArrayList<>();
-        allApplicationInfos.addAll(staticInfos);
-        if (containsInfra) allApplicationInfos.addAll(infraInfos.values());
-        allApplicationInfos.addAll(superModelSnapshot.getAllApplicationInfos());
-        return allApplicationInfos;
+        List<ApplicationInfo> infos = new ArrayList<>();
+
+        // Single-tenant applications have the config server as part of the application model.
+        if (multitenant) {
+            if (useConfigserverConfig.value()) {
+                infos.add(configServerApplicationFromConfig);
+            } else {
+                ApplicationInfo info = infraInfos.get(controllerApplication.getApplicationId());
+                if (info == null) {
+                    info = infraInfos.get(configServerApplication.getApplicationId());
+                }
+
+                if (info != null) {
+                    infos.add(info);
+                }
+            }
+        }
+
+        if (containsInfra.value()) {
+            // All infra apps, excluding controller and config server which handled above.
+            infraInfos.values().stream()
+                    .filter(info -> !info.getApplicationId().equals(controllerApplication.getApplicationId()) &&
+                            !info.getApplicationId().equals(configServerApplication.getApplicationId()))
+                    .forEach(infos::add);
+        }
+
+        infos.addAll(superModelSnapshot.getAllApplicationInfos());
+        return infos;
     }
 }

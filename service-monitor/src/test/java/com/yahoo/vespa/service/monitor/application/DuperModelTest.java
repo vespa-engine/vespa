@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.flags.FeatureFlag;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 import com.yahoo.vespa.service.monitor.internal.ConfigserverUtil;
 import org.junit.Before;
@@ -35,6 +36,8 @@ public class DuperModelTest {
     private final ConfigserverConfig configserverConfig = ConfigserverUtil.createExampleConfigserverConfig();
     private final ApplicationInfo configServerApplicationInfo = new ConfigServerApplication().makeApplicationInfoFromConfig(configserverConfig);
     private final SuperModel superModel = mock(SuperModel.class);
+    private final FeatureFlag containsInfra = mock(FeatureFlag.class);
+    private final FeatureFlag useConfigserverConfig = mock(FeatureFlag.class);
 
     @Before
     public void setUp() {
@@ -43,7 +46,9 @@ public class DuperModelTest {
 
     @Test
     public void toApplicationInstance() {
-        DuperModel duperModel = new DuperModel(false, true, true, configServerApplicationInfo);
+        when(containsInfra.value()).thenReturn(false);
+        when(useConfigserverConfig.value()).thenReturn(true);
+        DuperModel duperModel = new DuperModel(containsInfra, useConfigserverConfig, true, configServerApplicationInfo);
         ApplicationInfo superModelApplicationInfo = mock(ApplicationInfo.class);
         when(superModel.getAllApplicationInfos()).thenReturn(Collections.singletonList(superModelApplicationInfo));
         List<ApplicationInfo> applicationInfos = duperModel.getApplicationInfos(superModel);
@@ -54,7 +59,9 @@ public class DuperModelTest {
 
     @Test
     public void toApplicationInstanceInSingleTenantMode() {
-        DuperModel duperModel = new DuperModel(false, true, false, configServerApplicationInfo);
+        when(containsInfra.value()).thenReturn(false);
+        when(useConfigserverConfig.value()).thenReturn(true);
+        DuperModel duperModel = new DuperModel(containsInfra, useConfigserverConfig, false, configServerApplicationInfo);
         ApplicationInfo superModelApplicationInfo = mock(ApplicationInfo.class);
         when(superModel.getAllApplicationInfos()).thenReturn(Collections.singletonList(superModelApplicationInfo));
         List<ApplicationInfo> applicationInfos = duperModel.getApplicationInfos(superModel);
@@ -64,7 +71,9 @@ public class DuperModelTest {
 
     @Test
     public void testInfraApplications() {
-        DuperModel duperModel = new DuperModel(true, true, true, configServerApplicationInfo);
+        when(containsInfra.value()).thenReturn(true);
+        when(useConfigserverConfig.value()).thenReturn(true);
+        DuperModel duperModel = new DuperModel(containsInfra, useConfigserverConfig, true, configServerApplicationInfo);
         ApplicationInfo infraApplicationInfo = mock(ApplicationInfo.class);
         when(superModel.getAllApplicationInfos()).thenReturn(Collections.emptyList());
 
