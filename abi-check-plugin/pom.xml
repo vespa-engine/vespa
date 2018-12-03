@@ -14,14 +14,10 @@
   <packaging>maven-plugin</packaging>
   <name>${project.artifactId}</name>
   <description>Maven Plugin for ensuring ABI stability.</description>
-  <prerequisites>
-    <maven>2.2.1</maven>
-  </prerequisites>
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
-      <version>3.5.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -35,7 +31,6 @@
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm</artifactId>
-      <version>7.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -76,6 +71,25 @@
         <artifactId>clover-maven-plugin</artifactId>
         <version>4.3.1</version>
       </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>enforce-maven</id>
+                    <goals>
+                        <goal>enforce</goal>
+                    </goals>
+                    <configuration>
+                        <rules>
+                            <requireMavenVersion>
+                                <version>[3.5, )</version>
+                            </requireMavenVersion>
+                        </rules>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
     </plugins>
   </build>
 </project>
