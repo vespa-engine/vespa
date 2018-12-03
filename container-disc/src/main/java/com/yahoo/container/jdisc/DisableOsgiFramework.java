@@ -12,6 +12,7 @@ import java.util.List;
  * @author Tony Vaagenes
  */
 public final class DisableOsgiFramework implements OsgiFramework {
+
     private final RestrictedBundleContext restrictedBundleContext;
 
     public DisableOsgiFramework() {
@@ -63,4 +64,5 @@ public final class DisableOsgiFramework implements OsgiFramework {
     private RuntimeException newException() {
         return new UnsupportedOperationException("The OSGi framework is not available to components.");
     }
+
 }

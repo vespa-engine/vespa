@@ -30,7 +30,6 @@ import java.util.Map;
 
 /**
  * @author gjoranv
- * @since 5.18
  */
 public class BindingsOverviewHandler extends AbstractRequestHandler {
 
