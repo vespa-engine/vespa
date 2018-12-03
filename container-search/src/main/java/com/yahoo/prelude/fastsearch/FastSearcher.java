@@ -149,7 +149,7 @@ public class FastSearcher extends VespaBackEndSearcher {
     public Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
         if (dispatcher.searchCluster().groupSize() == 1)
             forceSinglePassGrouping(query);
-        try(SearchInvoker invoker = getSearchInvoker(query, execution)) {
+        try(SearchInvoker invoker = getSearchInvoker(query)) {
             Result result = invoker.search(query, queryPacket, cacheKey, execution);
 
             if (query.properties().getBoolean(Ranking.RANKFEATURES, false)) {
@@ -209,7 +209,7 @@ public class FastSearcher extends VespaBackEndSearcher {
      * depends on query properties with the default being an invoker that interfaces with a dispatcher
      * on the same host.
      */
-    private SearchInvoker getSearchInvoker(Query query, Execution execution) {
+    private SearchInvoker getSearchInvoker(Query query) {
         Optional<SearchInvoker> invoker = dispatcher.getSearchInvoker(query, fs4InvokerFactory);
         if (invoker.isPresent()) {
             return invoker.get();
