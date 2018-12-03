@@ -22,13 +22,11 @@ import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.Ranking;
-import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -151,9 +149,8 @@ public class FastSearcher extends VespaBackEndSearcher {
     public Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
         if (dispatcher.searchCluster().groupSize() == 1)
             forceSinglePassGrouping(query);
-        try(SearchInvoker invoker = getSearchInvoker(query)) {
-            List<Result> results = invoker.search(query, queryPacket, cacheKey);
-            Result result = mergeResults(results, query, execution);
+        try(SearchInvoker invoker = getSearchInvoker(query, execution)) {
+            Result result = invoker.search(query, queryPacket, cacheKey, execution);
 
             if (query.properties().getBoolean(Ranking.RANKFEATURES, false)) {
                 // There is currently no correct choice for which
@@ -212,7 +209,7 @@ public class FastSearcher extends VespaBackEndSearcher {
      * depends on query properties with the default being an invoker that interfaces with a dispatcher
      * on the same host.
      */
-    private SearchInvoker getSearchInvoker(Query query) {
+    private SearchInvoker getSearchInvoker(Query query, Execution execution) {
         Optional<SearchInvoker> invoker = dispatcher.getSearchInvoker(query, fs4InvokerFactory);
         if (invoker.isPresent()) {
             return invoker.get();
@@ -262,79 +259,6 @@ public class FastSearcher extends VespaBackEndSearcher {
         Node local = directDispatchRecipient.get();
         query.trace(false, 2, "Dispatching directly to ", local);
         return Optional.of(local);
-    }
-
-    private Result mergeResults(List<Result> results, Query query, Execution execution) {
-        if (results.size() == 1) {
-            return results.get(0);
-        }
-
-        Result result = new Result(query);
-        // keep a separate tally of coverage as the normal merge counts using
-        // federated query rules
-        Coverage finalCoverage = null;
-
-        long answeredActiveDocs = 0;
-        long answeredSoonActiveDocs = 0;
-
-        for (Result partialResult : results) {
-            Coverage coverage = partialResult.getCoverage(true);
-
-            if(partialResult.hits().getErrorHit() == null) {
-                answeredActiveDocs += coverage.getActive();
-                answeredSoonActiveDocs += coverage.getSoonActive();
-            }
-            if(finalCoverage == null) {
-                finalCoverage = coverage;
-            } else {
-                finalCoverage.mergeWithPartition(coverage);
-            }
-            result.mergeWith(partialResult);
-            result.hits().addAll(partialResult.hits().asUnorderedHits());
-        }
-        if (finalCoverage != null) {
-            adjustDegradedCoverage(finalCoverage, answeredActiveDocs, answeredSoonActiveDocs);
-            result.setCoverage(finalCoverage);
-        }
-
-        if (query.getOffset() != 0 || result.hits().size() > query.getHits()) {
-            // with multiple results, each partial result is expected to have
-            // offset = 0 to allow correct offset positioning after merge
-
-            if (result.getHitOrderer() != null) {
-                // Make sure we have the necessary data for sorting
-                fill(result, Execution.ATTRIBUTEPREFETCH, execution);
-            }
-            result.hits().trim(query.getOffset(), query.getHits());
-        }
-
-        return result;
-    }
-
-    private void adjustDegradedCoverage(Coverage coverage, long answeredActiveDocs, long answeredSoonActiveDocs) {
-        if (coverage.getFull()) {
-            return;
-        }
-        int answered = coverage.getNodes();
-        int asked = coverage.getNodesTried();
-        int notAnswered = asked - answered;
-
-        if (coverage.isDegradedByAdapativeTimeout()) {
-            long active = answeredActiveDocs + (notAnswered * answeredActiveDocs / answered);
-            long soonActive = answeredSoonActiveDocs + (notAnswered * answeredSoonActiveDocs / answered);
-            coverage.setActive(active).setSoonActive(soonActive);
-        } else {
-            if (asked > answered) {
-                int searchableCopies = (int) dispatcher.searchCluster().dispatchConfig().searchableCopies();
-                int missingNodes = notAnswered - (searchableCopies - 1);
-                if (missingNodes > 0) {
-                    long active = answeredActiveDocs + (missingNodes * answeredActiveDocs / answered);
-                    long soonActive = answeredSoonActiveDocs + (missingNodes * answeredSoonActiveDocs / answered);
-                    coverage.setActive(active).setSoonActive(soonActive);
-                    coverage.setDegradedReason(com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT);
-                }
-            }
-        }
     }
 
     private static @NonNull Optional<String> quotedSummaryClass(String summaryClass) {

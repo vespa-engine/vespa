@@ -7,6 +7,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
+import com.yahoo.search.searchchain.Execution;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -14,7 +15,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +46,7 @@ public class InterleavedSearchInvokerTest {
         expectedEvents.add(new Event(4900, 100, 1));
         expectedEvents.add(new Event(4800, 100, 2));
 
-        invoker.search(query, null, null);
+        invoker.search(query, null, null, null);
 
         assertTrue("All test scenario events processed", expectedEvents.isEmpty());
     }
@@ -60,11 +60,11 @@ public class InterleavedSearchInvokerTest {
         expectedEvents.add(new Event(4700, 300, 1));
         expectedEvents.add(null);
 
-        List<Result> results = invoker.search(query, null, null);
+        Result result = invoker.search(query, null, null, null);
 
         assertTrue("All test scenario events processed", expectedEvents.isEmpty());
-        assertNotNull("Last invoker is marked as an error", results.get(2).hits().getErrorHit());
-        assertTrue("Timed out invoker is a normal timeout", results.get(2).getCoverage(false).isDegradedByTimeout());
+        assertNotNull("Result is marked as an error", result.hits().getErrorHit());
+        assertTrue("Degradation reason is a normal timeout", result.getCoverage(false).isDegradedByTimeout());
     }
 
     @Test
@@ -77,11 +77,11 @@ public class InterleavedSearchInvokerTest {
         expectedEvents.add(new Event(2400, 100, 2));
         expectedEvents.add(new Event(0, 0, null));
 
-        List<Result> results = invoker.search(query, null, null);
+        Result result = invoker.search(query, null, null, null);
 
         assertTrue("All test scenario events processed", expectedEvents.isEmpty());
-        assertNotNull("Last invoker is marked as an error", results.get(3).hits().getErrorHit());
-        assertTrue("Timed out invoker is an adaptive timeout", results.get(3).getCoverage(false).isDegradedByAdapativeTimeout());
+        assertNotNull("Result is marked as an error", result.hits().getErrorHit());
+        assertTrue("Degradataion reason is an adaptive timeout", result.getCoverage(false).isDegradedByAdapativeTimeout());
     }
 
     private InterleavedSearchInvoker createInterleavedInvoker(SearchCluster searchCluster, int numInvokers) {
@@ -89,7 +89,7 @@ public class InterleavedSearchInvokerTest {
             invokers.add(new TestInvoker());
         }
 
-        return new InterleavedSearchInvoker(invokers, searchCluster) {
+        return new InterleavedSearchInvoker(invokers, null, searchCluster) {
             @Override
             protected long currentTime() {
                 return clock.millis();
@@ -150,8 +150,8 @@ public class InterleavedSearchInvokerTest {
         }
 
         @Override
-        protected List<Result> getSearchResults(CacheKey cacheKey) throws IOException {
-            return Collections.singletonList(new Result(query));
+        protected Result getSearchResult(CacheKey cacheKey, Execution execution) throws IOException {
+            return new Result(query);
         }
 
         @Override

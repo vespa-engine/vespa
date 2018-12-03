@@ -14,15 +14,12 @@ import com.yahoo.search.dispatch.ResponseMonitor;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.searchchain.Execution;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static java.util.Arrays.asList;
 
 /**
  * {@link SearchInvoker} implementation for FS4 nodes and fdispatch
@@ -52,7 +49,7 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
         if (isLoggingFine())
             getLogger().finest("sending query packet");
 
-        if(queryPacket == null) {
+        if (queryPacket == null) {
             // query changed for subchannel
             queryPacket = searcher.createQueryPacket(searcher.getServerId(), query);
         }
@@ -73,8 +70,8 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
     }
 
     @Override
-    protected List<Result> getSearchResults(CacheKey cacheKey) throws IOException {
-        if(pendingSearchError != null) {
+    protected Result getSearchResult(CacheKey cacheKey, Execution execution) throws IOException {
+        if (pendingSearchError != null) {
             return errorResult(pendingSearchError);
         }
         BasicPacket[] basicPackets;
@@ -125,13 +122,13 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
                 cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets, distributionKey());
             }
         }
-        return asList(result);
+        return result;
     }
 
-    private List<Result> errorResult(ErrorMessage errorMessage) {
+    private Result errorResult(ErrorMessage errorMessage) {
         Result error = new Result(query, errorMessage);
         getErrorCoverage().ifPresent(error::setCoverage);
-        return Arrays.asList(error);
+        return error;
     }
 
     @Override
@@ -158,4 +155,5 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
     public void responseAvailable(FS4Channel from) {
         responseAvailable();
     }
+
 }

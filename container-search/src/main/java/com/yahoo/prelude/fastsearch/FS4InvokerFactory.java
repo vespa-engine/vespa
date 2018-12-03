@@ -109,7 +109,7 @@ public class FS4InvokerFactory {
         if (invokers.size() == 1) {
             return Optional.of(invokers.get(0));
         } else {
-            return Optional.of(new InterleavedSearchInvoker(invokers, searchCluster));
+            return Optional.of(new InterleavedSearchInvoker(invokers, searcher, searchCluster));
         }
     }
 

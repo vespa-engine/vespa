@@ -3,18 +3,19 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.fastsearch.CacheKey;
+import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
+import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -36,6 +37,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private static final Logger log = Logger.getLogger(InterleavedSearchInvoker.class.getName());
 
     private final Set<SearchInvoker> invokers;
+    private final VespaBackEndSearcher searcher;
     private final SearchCluster searchCluster;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
     private Query query;
@@ -45,10 +47,21 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private long adaptiveTimeoutMax = 0;
     private long deadline = 0;
 
-    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers, SearchCluster searchCluster) {
+    private Result result = null;
+    private long answeredDocs = 0;
+    private long answeredActiveDocs = 0;
+    private long answeredSoonActiveDocs = 0;
+    private int askedNodes = 0;
+    private int answeredNodes = 0;
+    private boolean timedOut = false;
+
+    private boolean trimResult = false;
+
+    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers, VespaBackEndSearcher searcher, SearchCluster searchCluster) {
         super(Optional.empty());
         this.invokers = Collections.newSetFromMap(new IdentityHashMap<>());
         this.invokers.addAll(invokers);
+        this.searcher = searcher;
         this.searchCluster = searchCluster;
         this.availableForProcessing = newQueue();
     }
@@ -68,9 +81,11 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         int originalOffset = query.getOffset();
         query.setHits(query.getHits() + query.getOffset());
         query.setOffset(0);
+        trimResult = originalHits != query.getHits() || originalOffset != query.getOffset();
 
         for (SearchInvoker invoker : invokers) {
             invoker.sendSearchRequest(query, null);
+            askedNodes++;
         }
 
         query.setHits(originalHits);
@@ -78,38 +93,48 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     }
 
     @Override
-    protected List<Result> getSearchResults(CacheKey cacheKey) throws IOException {
-        int requests = invokers.size();
-        int responses = 0;
-        List<Result> results = new ArrayList<>();
-
+    protected Result getSearchResult(CacheKey cacheKey, Execution execution) throws IOException {
         long nextTimeout = query.getTimeLeft();
         try {
             while (!invokers.isEmpty() && nextTimeout >= 0) {
                 SearchInvoker invoker = availableForProcessing.poll(nextTimeout, TimeUnit.MILLISECONDS);
                 if (invoker == null) {
                     if (log.isLoggable(Level.FINE)) {
-                        log.fine("Search timed out with " + requests + " requests made, " + responses + " responses received");
+                        log.fine("Search timed out with " + askedNodes + " requests made, " + answeredNodes + " responses received");
                     }
                     break;
                 } else {
                     invokers.remove(invoker);
-                    results.addAll(invoker.getSearchResults(cacheKey));
-                    responses++;
+                    mergeResult(invoker.getSearchResult(cacheKey, execution));
                 }
-                nextTimeout = nextTimeout(requests, responses);
+                nextTimeout = nextTimeout();
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while waiting for search results", e);
         }
 
-        insertTimeoutErrors(results);
-        return results;
+        if (result == null) {
+            result = new Result(query);
+        }
+        insertTimeoutErrors();
+        result.setCoverage(createCoverage());
+        trimResult(execution);
+        Result ret = result;
+        result = null;
+        return ret;
     }
 
-    private void insertTimeoutErrors(List<Result> results) {
-        int degradedReason = adaptiveTimeoutCalculated ? DEGRADED_BY_ADAPTIVE_TIMEOUT : DEGRADED_BY_TIMEOUT;
+    private void trimResult(Execution execution) {
+        if (trimResult) {
+            if (result.getHitOrderer() != null) {
+                searcher.fill(result, Execution.ATTRIBUTEPREFETCH, execution);
+            }
 
+            result.hits().trim(query.getOffset(), query.getHits());
+        }
+    }
+
+    private void insertTimeoutErrors() {
         for (SearchInvoker invoker : invokers) {
             Optional<Integer> dk = invoker.distributionKey();
             String message;
@@ -118,25 +143,22 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             } else {
                 message = "Backend communication timeout";
             }
-            Result error = new Result(query, ErrorMessage.createBackendCommunicationError(message));
-            invoker.getErrorCoverage().ifPresent(coverage -> {
-                coverage.setDegradedReason(degradedReason);
-                error.setCoverage(coverage);
-            });
-            results.add(error);
+            result.hits().addError(ErrorMessage.createBackendCommunicationError(message));
+            invoker.getErrorCoverage().ifPresent(this::collectCoverage);
+            timedOut = true;
         }
     }
 
-    private long nextTimeout(int requests, int responses) {
+    private long nextTimeout() {
         DispatchConfig config = searchCluster.dispatchConfig();
         double minimumCoverage = config.minSearchCoverage();
 
-        if (requests == responses || minimumCoverage >= 100.0) {
+        if (askedNodes == answeredNodes || minimumCoverage >= 100.0) {
             return query.getTimeLeft();
         }
-        int minimumResponses = (int) Math.ceil(requests * minimumCoverage / 100.0);
+        int minimumResponses = (int) Math.ceil(askedNodes * minimumCoverage / 100.0);
 
-        if (responses < minimumResponses) {
+        if (answeredNodes < minimumResponses) {
             return query.getTimeLeft();
         }
 
@@ -148,8 +170,8 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         }
 
         long now = currentTime();
-        int pendingQueries = requests - responses;
-        double missWidth = ((100.0 - config.minSearchCoverage()) * requests) / 100.0 - 1.0;
+        int pendingQueries = askedNodes - answeredNodes;
+        double missWidth = ((100.0 - config.minSearchCoverage()) * askedNodes) / 100.0 - 1.0;
         double slopedWait = adaptiveTimeoutMin;
         if (pendingQueries > 1 && missWidth > 0.0) {
             slopedWait += ((adaptiveTimeoutMax - adaptiveTimeoutMin) * (pendingQueries - 1)) / missWidth;
@@ -161,6 +183,58 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         deadline = now + nextAdaptive;
 
         return nextAdaptive;
+    }
+
+    private void mergeResult(Result partialResult) {
+        collectCoverage(partialResult.getCoverage(true));
+
+        if (result == null) {
+            result = partialResult;
+            return;
+        }
+
+        result.mergeWith(partialResult);
+        result.hits().addAll(partialResult.hits().asUnorderedHits());
+    }
+
+    private void collectCoverage(Coverage source) {
+        answeredDocs += source.getDocs();
+        answeredActiveDocs += source.getActive();
+        answeredSoonActiveDocs += source.getSoonActive();
+        answeredNodes++;
+    }
+
+    private Coverage createCoverage() {
+        adjustDegradedCoverage();
+        Coverage coverage = new Coverage(answeredDocs, answeredActiveDocs, answeredNodes, 1);
+        coverage.setNodesTried(askedNodes);
+        coverage.setSoonActive(answeredSoonActiveDocs);
+        if (timedOut) {
+            coverage.setDegradedReason(adaptiveTimeoutCalculated ? DEGRADED_BY_ADAPTIVE_TIMEOUT : DEGRADED_BY_TIMEOUT);
+        }
+        return coverage;
+    }
+
+    private void adjustDegradedCoverage() {
+        if (askedNodes == answeredNodes) {
+            return;
+        }
+        int notAnswered = askedNodes - answeredNodes;
+
+        if (adaptiveTimeoutCalculated) {
+            answeredActiveDocs += (notAnswered * answeredActiveDocs / answeredNodes);
+            answeredSoonActiveDocs += (notAnswered * answeredSoonActiveDocs / answeredNodes);
+        } else {
+            if (askedNodes > answeredNodes) {
+                int searchableCopies = (int) searchCluster.dispatchConfig().searchableCopies();
+                int missingNodes = notAnswered - (searchableCopies - 1);
+                if (answeredNodes > 0) {
+                    answeredActiveDocs += (missingNodes * answeredActiveDocs / answeredNodes);
+                    answeredSoonActiveDocs += (missingNodes * answeredSoonActiveDocs / answeredNodes);
+                    timedOut = true;
+                }
+            }
+        }
     }
 
     @Override

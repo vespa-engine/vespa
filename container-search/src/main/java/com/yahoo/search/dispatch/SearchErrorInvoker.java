@@ -7,10 +7,9 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.searchchain.Execution;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -45,12 +44,12 @@ public class SearchErrorInvoker extends SearchInvoker {
     }
 
     @Override
-    protected List<Result> getSearchResults(CacheKey cacheKey) throws IOException {
+    protected Result getSearchResult(CacheKey cacheKey, Execution execution) throws IOException {
         Result res = new Result(query, message);
         if (coverage != null) {
             res.setCoverage(coverage);
         }
-        return Arrays.asList(res);
+        return res;
     }
 
     @Override
