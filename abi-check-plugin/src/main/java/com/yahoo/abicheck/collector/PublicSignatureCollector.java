@@ -26,7 +26,7 @@ public class PublicSignatureCollector extends ClassVisitor {
   private Set<String> currentFields;
 
   public PublicSignatureCollector() {
-    super(Opcodes.ASM6);
+    super(Opcodes.ASM7);
   }
 
   private static boolean testBit(long access, long mask) {
