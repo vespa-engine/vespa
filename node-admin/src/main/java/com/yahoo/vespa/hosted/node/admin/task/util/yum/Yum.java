@@ -59,7 +59,7 @@ public class Yum {
         List<Function<String, YumPackageName.Builder>> builders = PACKAGE_NAME_BUILDERS_GENERATOR.apply(builder);
         List<Optional<String>> lines = commandResult.mapEachLine(line -> Optional.of(line).filter(s -> !"(none)".equals(s)));
         if (lines.size() != builders.size()) throw new IllegalStateException(String.format(
-                "Unexpected response from rpm, expected %d lines, got %d" + builders.size(), commandResult.getOutput()));
+                "Unexpected response from rpm, expected %d lines, got %s", builders.size(), commandResult.getOutput()));
 
         IntStream.range(0, builders.size()).forEach(i -> lines.get(i).ifPresent(builders.get(i)::apply));
         return Optional.of(builder.build());
