@@ -10,7 +10,8 @@ numRpcThreads int default=0
 # ZooKeeper
 zookeeperserver[].hostname string
 zookeeperserver[].port int default=2181
-zookeeper.barrierTimeout long default=120 # in seconds
+# ZK write timeout in seconds, must be long enough to write application packages to other nodes
+zookeeper.barrierTimeout long default=360
 zookeeperLocalhostAffinity bool default=true
 
 # Directories
