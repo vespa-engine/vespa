@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicyList;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareCount;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.service.monitor.application.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Clock;
@@ -58,16 +57,15 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Provisioner provisioner,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Orchestrator orchestrator, Metric metric,
-                                     ConfigserverConfig configserverConfig,
-                                     DuperModelInfraApi duperModelInfraApi) {
+                                     ConfigserverConfig configserverConfig) {
         this(nodeRepository, deployer, provisioner, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
-                orchestrator, metric, configserverConfig, duperModelInfraApi);
+                orchestrator, metric, configserverConfig);
     }
 
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Provisioner provisioner,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
-                                     ConfigserverConfig configserverConfig, DuperModelInfraApi duperModelInfraApi) {
+                                     ConfigserverConfig configserverConfig) {
         DefaultTimes defaults = new DefaultTimes(zone);
         jobControl = new JobControl(nodeRepository.database());
         infrastructureVersions = new InfrastructureVersions(nodeRepository.database());
@@ -83,7 +81,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, durationFromEnv("provisioned_expiry").orElse(defaults.provisionedExpiry), jobControl);
         nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval), jobControl);
         metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
-        infrastructureProvisioner = new InfrastructureProvisioner(provisioner, nodeRepository, infrastructureVersions, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval), jobControl, duperModelInfraApi);
+        infrastructureProvisioner = new InfrastructureProvisioner(provisioner, nodeRepository, infrastructureVersions, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval), jobControl);
 
 
         RetirementPolicy policy = new RetirementPolicyList(new RetireIPv4OnlyNodes(zone));

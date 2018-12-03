@@ -3,7 +3,6 @@ package com.yahoo.vespa.service.monitor.internal.health;
 
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
-import com.yahoo.vespa.service.monitor.application.DuperModel;
 import com.yahoo.vespa.service.monitor.internal.ConfigserverUtil;
 import org.junit.Test;
 
@@ -36,8 +35,6 @@ public class ApplicationHealthMonitorTest {
         ApplicationHealthMonitor applicationMonitor = ApplicationHealthMonitor.startMonitoring(
                 ConfigserverUtil.makeExampleConfigServer(),
                 monitorFactory);
-
-        ConfigServerApplication configServerApplication = new ConfigServerApplication();
 
         ServiceStatus status1 = applicationMonitor.getStatus(
                 ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId(),

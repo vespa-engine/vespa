@@ -9,7 +9,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
-import com.yahoo.vespa.service.monitor.application.DuperModel;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.vespa.service.monitor.internal.health.HealthMonitorManager;
@@ -27,11 +26,12 @@ public class ServiceMonitorImpl implements ServiceMonitor {
                               HealthMonitorManager healthMonitorManager,
                               Metric metric,
                               Timer timer,
-                              Zone zone,
-                              DuperModel duperModel) {
+                              Zone zone) {
         ServiceMonitorMetrics metrics = new ServiceMonitorMetrics(metric, timer);
 
-        UnionMonitorManager monitorManager = new UnionMonitorManager(slobrokMonitorManager, healthMonitorManager);
+        DuperModel duperModel = new DuperModel(configserverConfig);
+        UnionMonitorManager monitorManager =
+                new UnionMonitorManager(slobrokMonitorManager, healthMonitorManager);
 
         SuperModelListenerImpl superModelListener = new SuperModelListenerImpl(
                 monitorManager,
