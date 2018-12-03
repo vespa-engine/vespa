@@ -7,9 +7,9 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.Coverage;
+import com.yahoo.search.searchchain.Execution;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -27,25 +27,25 @@ public abstract class SearchInvoker extends CloseableInvoker {
     }
 
     /**
-     * Retrieve the hits for the given {@link Query}. The invoker may return more than one result, in which case the caller is responsible
-     * for merging the results. If multiple results are returned and the search query had a hit offset other than zero, that offset is
-     * set to zero and the number of requested hits is adjusted accordingly.
+     * Retrieve the hits for the given {@link Query}. If the search is run on multiple content
+     * nodes, the provided {@link Execution} may be used to retrieve document summaries required
+     * for correct result windowing.
      */
-    public List<Result> search(Query query, QueryPacket queryPacket, CacheKey cacheKey) throws IOException {
+    public Result search(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) throws IOException {
         sendSearchRequest(query, queryPacket);
-        return getSearchResults(cacheKey);
+        return getSearchResult(cacheKey, execution);
     }
 
     protected abstract void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException;
 
-    protected abstract List<Result> getSearchResults(CacheKey cacheKey) throws IOException;
+    protected abstract Result getSearchResult(CacheKey cacheKey, Execution execution) throws IOException;
 
     protected void setMonitor(ResponseMonitor<SearchInvoker> monitor) {
         this.monitor = monitor;
     }
 
     protected void responseAvailable() {
-        if(monitor != null) {
+        if (monitor != null) {
             monitor.responseAvailable(this);
         }
     }
@@ -55,7 +55,7 @@ public abstract class SearchInvoker extends CloseableInvoker {
     }
 
     protected Optional<Coverage> getErrorCoverage() {
-        if(node.isPresent()) {
+        if (node.isPresent()) {
             Coverage error = new Coverage(0, node.get().getActiveDocuments(), 0);
             error.setNodesTried(1);
             return Optional.of(error);
