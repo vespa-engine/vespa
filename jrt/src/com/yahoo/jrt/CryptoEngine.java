@@ -2,7 +2,7 @@
 package com.yahoo.jrt;
 
 
-import com.yahoo.security.tls.ConfigFileManagedTlsContext;
+import com.yahoo.security.tls.ReloadingTlsContext;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.security.tls.TransportSecurityUtils.MixedMode;
@@ -23,7 +23,7 @@ public interface CryptoEngine extends AutoCloseable {
         if (!TransportSecurityUtils.isTransportSecurityEnabled()) {
             return new NullCryptoEngine();
         }
-        TlsContext tlsContext = new ConfigFileManagedTlsContext(TransportSecurityUtils.getConfigFile().get(), Mode.DRY_RUN);
+        TlsContext tlsContext = new ReloadingTlsContext(TransportSecurityUtils.getConfigFile().get(), Mode.DRY_RUN);
         TlsCryptoEngine tlsCryptoEngine = new TlsCryptoEngine(tlsContext);
         if (!TransportSecurityUtils.isInsecureMixedModeEnabled()) {
             return tlsCryptoEngine;

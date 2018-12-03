@@ -4,29 +4,26 @@ package com.yahoo.security.tls;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager;
 import com.yahoo.security.tls.authz.PeerAuthorizerTrustManagersFactory;
+import com.yahoo.security.tls.policy.AuthorizedPeers;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.nio.file.Path;
-import java.time.Duration;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A {@link TlsContext} that regularly reloads the credentials referred to from the transport security options file.
+ * A static {@link TlsContext}
  *
  * @author bjorncs
  */
-public class ConfigFileManagedTlsContext implements TlsContext {
+public class DefaultTlsContext implements TlsContext {
 
-    private static final Duration UPDATE_PERIOD = Duration.ofHours(1);
-    private static final List<String> ALLOWED_CIPHER_SUITS = Arrays.asList(
+    public static final List<String> ALLOWED_CIPHER_SUITS = Arrays.asList(
             "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
@@ -38,31 +35,25 @@ public class ConfigFileManagedTlsContext implements TlsContext {
             "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
             "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256");
 
-    private static final Logger log = Logger.getLogger(ConfigFileManagedTlsContext.class.getName());
+    private static final Logger log = Logger.getLogger(DefaultTlsContext.class.getName());
 
-    private final Path tlsOptionsConfigFile;
-    private final PeerAuthorizerTrustManager.Mode mode;
-    private final AtomicReference<SSLContext> currentSslContext;
-    private final ScheduledExecutorService scheduler =
-            Executors.newSingleThreadScheduledExecutor(runnable -> {
-                Thread thread = new Thread(runnable, "tls-context-reloader");
-                thread.setDaemon(true);
-                return thread;
-            });
+    private final SSLContext sslContext;
 
-
-    public ConfigFileManagedTlsContext(Path tlsOptionsConfigFile, PeerAuthorizerTrustManager.Mode mode) {
-        this.tlsOptionsConfigFile = tlsOptionsConfigFile;
-        this.mode = mode;
-        this.currentSslContext = new AtomicReference<>(createSslContext(tlsOptionsConfigFile, mode));
-        this.scheduler.scheduleAtFixedRate(new SslContextReloader(),
-                                           UPDATE_PERIOD.getSeconds()/*initial delay*/,
-                                           UPDATE_PERIOD.getSeconds(),
-                                           TimeUnit.SECONDS);
+    public DefaultTlsContext(List<X509Certificate> certificates,
+                             PrivateKey privateKey,
+                             List<X509Certificate> caCertificates,
+                             AuthorizedPeers authorizedPeers,
+                             PeerAuthorizerTrustManager.Mode mode) {
+        this.sslContext = createSslContext(certificates, privateKey, caCertificates, authorizedPeers, mode);
     }
 
+    public DefaultTlsContext(Path tlsOptionsConfigFile, PeerAuthorizerTrustManager.Mode mode) {
+        this.sslContext = createSslContext(tlsOptionsConfigFile, mode);
+    }
+
+    @Override
     public SSLEngine createSslEngine() {
-        SSLEngine sslEngine = currentSslContext.get().createSSLEngine();
+        SSLEngine sslEngine = sslContext.createSSLEngine();
         restrictSetOfEnabledCiphers(sslEngine);
         return sslEngine;
     }
@@ -78,6 +69,24 @@ public class ConfigFileManagedTlsContext implements TlsContext {
         sslEngine.setEnabledCipherSuites(validCipherSuits);
     }
 
+    private static SSLContext createSslContext(List<X509Certificate> certificates,
+                                               PrivateKey privateKey,
+                                               List<X509Certificate> caCertificates,
+                                               AuthorizedPeers authorizedPeers,
+                                               PeerAuthorizerTrustManager.Mode mode) {
+        SslContextBuilder builder = new SslContextBuilder();
+        if (!certificates.isEmpty()) {
+            builder.withKeyStore(privateKey, certificates);
+        }
+        if (!caCertificates.isEmpty()) {
+            builder.withTrustStore(caCertificates);
+        }
+        if (authorizedPeers != null) {
+            builder.withTrustManagerFactory(new PeerAuthorizerTrustManagersFactory(authorizedPeers, mode));
+        }
+        return builder.build();
+    }
+
     private static SSLContext createSslContext(Path tlsOptionsConfigFile, PeerAuthorizerTrustManager.Mode mode) {
         TransportSecurityOptions options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
         SslContextBuilder builder = new SslContextBuilder();
@@ -87,27 +96,6 @@ public class ConfigFileManagedTlsContext implements TlsContext {
         options.getAuthorizedPeers().ifPresent(
                 authorizedPeers -> builder.withTrustManagerFactory(new PeerAuthorizerTrustManagersFactory(authorizedPeers, mode)));
         return builder.build();
-    }
-
-    @Override
-    public void close() {
-        try {
-            scheduler.shutdownNow();
-            scheduler.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private class SslContextReloader implements Runnable {
-        @Override
-        public void run() {
-            try {
-                currentSslContext.set(createSslContext(tlsOptionsConfigFile, mode));
-            } catch (Throwable t) {
-                log.log(Level.SEVERE, String.format("Failed to load SSLContext (path='%s'): %s", tlsOptionsConfigFile, t.getMessage()), t);
-            }
-        }
     }
 
 }
