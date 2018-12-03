@@ -5,7 +5,6 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.service.monitor.application.DuperModel;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitorManagerImpl;
 import org.junit.Test;

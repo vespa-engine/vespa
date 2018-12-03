@@ -14,10 +14,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * The SuperModel contains the ApplicationInfo of all active applications (applications whose configs have been
- * activated/reloaded and not yet removed).
- */
 public class SuperModel {
 
     private final Map<ApplicationId, ApplicationInfo> models;

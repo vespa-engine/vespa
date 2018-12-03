@@ -42,7 +42,7 @@ public class ApplicationInstanceGeneratorTest {
                 configServer2,
                 configServer3);
         Zone zone = mock(Zone.class);
-        ApplicationInfo configServer = CONFIG_SERVER_APPLICATION.makeApplicationInfoFromConfig(config);
+        ApplicationInfo configServer = CONFIG_SERVER_APPLICATION.makeApplicationInfo(config);
         ApplicationInstance applicationInstance = new ApplicationInstanceGenerator(configServer, zone)
                 .makeApplicationInstance(statusProvider);
 
