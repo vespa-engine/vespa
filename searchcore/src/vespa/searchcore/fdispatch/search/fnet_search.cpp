@@ -1488,7 +1488,7 @@ FastS_FNET_Search::adjustQueryTimeout()
     }
 
     double mincoverage = _dataset->getMinimalSearchCoverage();
-    uint32_t wantedAnswers = getRequestedQueries() * mincoverage / 100.0;
+    uint32_t wantedAnswers = std::ceil(getRequestedQueries() * mincoverage / 100.0);
     LOG(spam, "Adjusting wanted answers from %u to %u", getRequestedQueries(), wantedAnswers);
     if (getDoneQueries() < wantedAnswers) {
         return;
