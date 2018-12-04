@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
  * also gives ServiceStatus on each service, and there may be
  * artificial applications like the config server "application".
  */
-// @Immutable
 public class ServiceModel {
+
     private final Map<ApplicationInstanceReference, ApplicationInstance> applications;
 
     public ServiceModel(Map<ApplicationInstanceReference, ApplicationInstance> applications) {
@@ -39,4 +39,5 @@ public class ServiceModel {
                 .flatMap(cluster -> cluster.serviceInstances().stream())
                 .collect(Collectors.groupingBy(ServiceInstance::hostName, Collectors.toList()));
     }
+
 }
