@@ -3,12 +3,11 @@ package com.yahoo.vespa.service.monitor.application;
 
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.applicationmodel.ServiceType;
 
-public class ProxyHostApplication extends HostedVespaApplication {
-
-    public static final ProxyHostApplication PROXY_HOST_APPLICATION = new ProxyHostApplication();
-
-    private ProxyHostApplication() {
-        super("proxy-host", NodeType.proxyhost, ClusterSpec.Type.container, ClusterSpec.Id.from("proxy-host"));
+public class ProxyHostApplication extends InfraApplication {
+    public ProxyHostApplication() {
+        super("proxy-host", NodeType.proxyhost, ClusterSpec.Type.container,
+                ClusterSpec.Id.from("proxy-host"), ServiceType.HOST_ADMIN);
     }
 }

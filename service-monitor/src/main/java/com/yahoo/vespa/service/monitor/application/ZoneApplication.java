@@ -10,14 +10,14 @@ import java.util.Objects;
 /**
  * @author hakon
  *
- * TODO: This does not extend HostedVespaApplication because
+ * TODO: This does not extend InfraApplication because
  * 1) It is not deployed same as the other HostedVespaApplications
  * 2) ZoneApplication has multiple clusters
  */
 public class ZoneApplication {
     private ZoneApplication() {}
 
-    public static final ApplicationId ZONE_APPLICATION_ID = HostedVespaApplication
+    public static final ApplicationId ZONE_APPLICATION_ID = InfraApplication
             .createHostedVespaApplicationId("routing");
 
     public static boolean isNodeAdminService(ApplicationId applicationId,

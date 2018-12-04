@@ -2,6 +2,7 @@
 package com.yahoo.vespa.service.monitor.internal;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -11,8 +12,10 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.flags.FeatureFlag;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
+import com.yahoo.vespa.service.monitor.application.DuperModel;
 import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitorManagerImpl;
 import org.junit.Test;
 
@@ -36,7 +39,12 @@ public class ModelGeneratorTest {
         SuperModel superModel = ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
 
         ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig();
-        DuperModel duperModel = new DuperModel(config);
+        ApplicationInfo configServerInfo = new ConfigServerApplication().makeApplicationInfoFromConfig(config);
+        FeatureFlag containsInfra = mock(FeatureFlag.class);
+        when(containsInfra.value()).thenReturn(false);
+        FeatureFlag useConfigserverConfig = mock(FeatureFlag.class);
+        when(useConfigserverConfig.value()).thenReturn(true);
+        DuperModel duperModel = new DuperModel(containsInfra, useConfigserverConfig, true, configServerInfo);
         ModelGenerator modelGenerator = new ModelGenerator();
 
         Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));

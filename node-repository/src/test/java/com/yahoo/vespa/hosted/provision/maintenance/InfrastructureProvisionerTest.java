@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -14,7 +16,8 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.application.ControllerApplication;
-import com.yahoo.vespa.service.monitor.application.HostedVespaApplication;
+import com.yahoo.vespa.service.monitor.application.DuperModelInfraApi;
+import com.yahoo.vespa.service.monitor.application.InfraApplicationApi;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -22,11 +25,16 @@ import org.junit.runners.Parameterized.Parameters;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -38,8 +46,8 @@ public class InfrastructureProvisionerTest {
     @Parameters(name = "application={0}")
     public static Iterable<Object[]> parameters() {
         return Arrays.asList(
-                new HostedVespaApplication[]{ConfigServerApplication.CONFIG_SERVER_APPLICATION},
-                new HostedVespaApplication[]{ControllerApplication.CONTROLLER_APPLICATION}
+                new InfraApplicationApi[]{new ConfigServerApplication()},
+                new InfraApplicationApi[]{new ControllerApplication()}
         );
     }
 
@@ -47,47 +55,46 @@ public class InfrastructureProvisionerTest {
     private final Provisioner provisioner = mock(Provisioner.class);
     private final NodeRepository nodeRepository = tester.nodeRepository();
     private final InfrastructureVersions infrastructureVersions = mock(InfrastructureVersions.class);
+    private final DuperModelInfraApi duperModelInfraApi = mock(DuperModelInfraApi.class);
     private final InfrastructureProvisioner infrastructureProvisioner = new InfrastructureProvisioner(
-            provisioner, nodeRepository, infrastructureVersions, Duration.ofDays(99), new JobControl(nodeRepository.database()));
+            provisioner, nodeRepository, infrastructureVersions, Duration.ofDays(99), new JobControl(nodeRepository.database()),
+            duperModelInfraApi);
+    private final HostName node1 = HostName.from("node-1");
+    private final HostName node2 = HostName.from("node-2");
+    private final HostName node3 = HostName.from("node-3");
+    private final Version target = Version.fromString("6.123.456");
+    private final Version oldVersion = Version.fromString("6.122.333");
 
-    private final HostedVespaApplication application;
+    private final InfraApplicationApi application;
     private final NodeType nodeType;
 
-    public InfrastructureProvisionerTest(HostedVespaApplication application) {
+    public InfrastructureProvisionerTest(InfraApplicationApi application) {
         this.application = application;
         this.nodeType = application.getCapacity().type();
+        when(duperModelInfraApi.getSupportedInfraApplications()).thenReturn(Collections.singletonList(application));
     }
 
     @Test
-    public void returns_version_if_usable_nodes_on_old_version() {
-        Version target = Version.fromString("6.123.456");
-        Version oldVersion = Version.fromString("6.122.333");
+    public void remove_application_if_without_target_version() {
+        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.empty());
+        addNode(1, Node.State.active, Optional.of(target));
+        infrastructureProvisioner.maintain();
+        verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
+        verifyNoMoreInteractions(provisioner);
+    }
+
+    @Test
+    public void remove_application_if_without_nodes() {
         when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
-
-        addNode(1, Node.State.failed, Optional.of(oldVersion));
-        addNode(2, Node.State.dirty, Optional.empty());
-        addNode(3, Node.State.active, Optional.of(oldVersion));
-
-        assertEquals(Optional.of(target), infrastructureProvisioner.getTargetVersion(nodeType));
+        addNode(1, Node.State.failed, Optional.of(target));
+        addNode(2, Node.State.parked, Optional.empty());
+        infrastructureProvisioner.maintain();
+        verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
+        verifyNoMoreInteractions(provisioner);
     }
 
     @Test
-    public void returns_version_if_has_usable_nodes_without_version() {
-        Version target = Version.fromString("6.123.456");
-        Version oldVersion = Version.fromString("6.122.333");
-        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
-
-        addNode(1, Node.State.failed, Optional.of(oldVersion));
-        addNode(2, Node.State.ready, Optional.empty());
-        addNode(3, Node.State.active, Optional.of(target));
-
-        assertEquals(Optional.of(target), infrastructureProvisioner.getTargetVersion(nodeType));
-    }
-
-    @Test
-    public void returns_empty_if_usable_nodes_on_target_version() {
-        Version target = Version.fromString("6.123.456");
-        Version oldVersion = Version.fromString("6.122.333");
+    public void no_op_if_nodes_active_and_on_target_version() {
         when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
 
         addNode(1, Node.State.failed, Optional.of(oldVersion));
@@ -96,32 +103,113 @@ public class InfrastructureProvisionerTest {
         addNode(4, Node.State.inactive, Optional.of(target));
         addNode(5, Node.State.dirty, Optional.empty());
 
-        assertEquals(Optional.empty(), infrastructureProvisioner.getTargetVersion(nodeType));
+        when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(true);
+
+        infrastructureProvisioner.maintain();
+        verify(duperModelInfraApi, never()).infraApplicationRemoved(any());
+        verify(duperModelInfraApi, never()).infraApplicationActivated(any(), any());
+        verifyNoMoreInteractions(provisioner);
     }
 
     @Test
-    public void returns_empty_if_no_usable_nodes() {
-        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(Version.fromString("6.123.456")));
+    public void activates_after_target_has_been_set_the_first_time() {
+        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
 
-        // No nodes in node repo
-        assertEquals(Optional.empty(), infrastructureProvisioner.getTargetVersion(nodeType));
+        addNode(1, Node.State.inactive, Optional.empty());
+        addNode(2, Node.State.parked, Optional.empty());
+        addNode(3, Node.State.active, Optional.empty());
+        addNode(4, Node.State.failed, Optional.empty());
+        addNode(5, Node.State.dirty, Optional.empty());
+
+        when(provisioner.prepare(any(), any(), any(), anyInt(), any())).thenReturn(Arrays.asList(
+                new HostSpec(node1.value(), Collections.emptyList()),
+                new HostSpec(node2.value(), Collections.emptyList()),
+                new HostSpec(node3.value(), Collections.emptyList())));
+
+        infrastructureProvisioner.maintain();
+
+        verify(provisioner).prepare(eq(application.getApplicationId()), any(), any(), anyInt(), any());
+        verify(provisioner).activate(any(), eq(application.getApplicationId()), any());
+        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), Arrays.asList(node1, node2, node3));
+    }
+
+
+    @Test
+    public void activates_the_first_time_after_jvm_start() {
+        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
+
+        addNode(1, Node.State.active, Optional.of(target));
+
+        when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(false);
+        when(provisioner.prepare(any(), any(), any(), anyInt(), any())).thenReturn(Collections.singletonList(
+                new HostSpec(node1.value(), Collections.emptyList())));
+
+        infrastructureProvisioner.maintain();
+
+        verify(provisioner).prepare(eq(application.getApplicationId()), any(), any(), anyInt(), any());
+        verify(provisioner).activate(any(), eq(application.getApplicationId()), any());
+        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), Arrays.asList(node1));
+    }
+
+    @Test
+    public void provision_usable_nodes_on_old_version() {
+        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
+
+        addNode(1, Node.State.failed, Optional.of(oldVersion));
+        addNode(2, Node.State.inactive, Optional.of(target));
+        addNode(3, Node.State.active, Optional.of(oldVersion));
+
+        when(duperModelInfraApi.getSupportedInfraApplications()).thenReturn(Collections.singletonList(application));
+        when(provisioner.prepare(any(), any(), any(), anyInt(), any())).thenReturn(Arrays.asList(
+                new HostSpec(node2.value(), Collections.emptyList()),
+                new HostSpec(node3.value(), Collections.emptyList())));
+
+        infrastructureProvisioner.maintain();
+
+        verify(provisioner).prepare(eq(application.getApplicationId()), any(), any(), anyInt(), any());
+        verify(provisioner).activate(any(), eq(application.getApplicationId()), any());
+        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), Arrays.asList(node2, node3));
+    }
+
+    @Test
+    public void provision_with_usable_node_without_version() {
+        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
+
+        addNode(1, Node.State.failed, Optional.of(oldVersion));
+        addNode(2, Node.State.ready, Optional.empty());
+        addNode(3, Node.State.active, Optional.of(target));
+
+        when(provisioner.prepare(any(), any(), any(), anyInt(), any()))
+                .thenReturn(Arrays.asList(
+                        new HostSpec(node2.value(), Collections.emptyList()),
+                        new HostSpec(node3.value(), Collections.emptyList())));
+
+        infrastructureProvisioner.maintain();
+
+        verify(provisioner).prepare(eq(application.getApplicationId()), any(), any(), anyInt(), any());
+        verify(provisioner).activate(any(), eq(application.getApplicationId()), any());
+        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), Arrays.asList(node2, node3));
+    }
+
+    @Test
+    public void avoid_provisioning_if_no_usable_nodes() {
+        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
+
+        infrastructureProvisioner.maintain();
+        verifyNoMoreInteractions(provisioner);
 
         // Add nodes in non-provisionable states
         addNode(1, Node.State.dirty, Optional.empty());
         addNode(2, Node.State.failed, Optional.empty());
-        assertEquals(Optional.empty(), infrastructureProvisioner.getTargetVersion(nodeType));
-    }
 
-    @Test
-    public void returns_empty_if_target_version_not_set() {
-        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.empty());
-        assertEquals(Optional.empty(), infrastructureProvisioner.getTargetVersion(nodeType));
+        infrastructureProvisioner.maintain();
+        verifyNoMoreInteractions(provisioner);
     }
 
     private Node addNode(int id, Node.State state, Optional<Version> wantedVespaVersion) {
         Node node = tester.addNode("id-" + id, "node-" + id, "default", nodeType);
         Optional<Node> nodeWithAllocation = wantedVespaVersion.map(version -> {
-            ClusterSpec clusterSpec = ClusterSpec.from(application.getClusterType(), application.getClusterId(), ClusterSpec.Group.from(0), version, false);
+            ClusterSpec clusterSpec = ClusterSpec.from(ClusterSpec.Type.admin, new ClusterSpec.Id("clusterid"), ClusterSpec.Group.from(0), version, false);
             ClusterMembership membership = ClusterMembership.from(clusterSpec, 1);
             Allocation allocation = new Allocation(application.getApplicationId(), membership, new Generation(0, 0), false);
             return node.with(allocation);
