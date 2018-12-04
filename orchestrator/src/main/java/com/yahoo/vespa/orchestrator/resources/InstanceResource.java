@@ -146,4 +146,5 @@ public class InstanceResource {
         throw new WebApplicationException(
                 Response.status(Response.Status.BAD_REQUEST).entity(message).build());
     }
+
 }
