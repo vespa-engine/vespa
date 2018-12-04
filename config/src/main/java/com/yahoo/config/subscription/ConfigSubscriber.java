@@ -29,7 +29,7 @@ import static java.util.stream.Collectors.toList;
  */
 public class ConfigSubscriber {
 
-    private final Logger log = Logger.getLogger(getClass().getName());
+    private static final Logger log = Logger.getLogger(ConfigSubscriber.class.getName());
     private State state = State.OPEN;
     protected List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new ArrayList<>();
     private final ConfigSource source;
