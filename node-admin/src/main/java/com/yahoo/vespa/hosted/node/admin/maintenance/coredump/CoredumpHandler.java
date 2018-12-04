@@ -158,6 +158,7 @@ public class CoredumpHandler {
                 .add(LZ4_PATH, "-f", coreFile.toString(), compressedCoreFile.toString())
                 .setTimeout(Duration.ofMinutes(30))
                 .execute();
+        new UnixPath(compressedCoreFile).setPermissions("rw-r-----");
         Files.delete(coreFile);
 
         Path newCoredumpDirectory = doneCoredumpsPath.resolve(coredumpDirectory.getFileName());
