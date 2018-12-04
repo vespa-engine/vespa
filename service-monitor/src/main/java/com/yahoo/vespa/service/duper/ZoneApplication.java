@@ -15,6 +15,7 @@ import java.util.Objects;
  * 2) ZoneApplication has multiple clusters
  */
 public class ZoneApplication {
+
     private ZoneApplication() {}
 
     public static final ApplicationId ZONE_APPLICATION_ID = InfraApplication
@@ -27,4 +28,5 @@ public class ZoneApplication {
                 Objects.equals(serviceType, ServiceType.CONTAINER) &&
                 Objects.equals(clusterId, ClusterId.NODE_ADMIN);
     }
+
 }

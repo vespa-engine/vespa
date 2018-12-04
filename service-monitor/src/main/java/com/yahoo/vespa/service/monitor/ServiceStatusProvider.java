@@ -11,6 +11,7 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
  * @author hakonhall
  */
 public interface ServiceStatusProvider {
+
     /**
      * Get the {@link ServiceStatus} of a particular service.
      *
@@ -25,4 +26,5 @@ public interface ServiceStatusProvider {
 
     /** Returns true if the status provider would start monitoring the application. */
     boolean wouldMonitor(ApplicationId applicationId);
+
 }
