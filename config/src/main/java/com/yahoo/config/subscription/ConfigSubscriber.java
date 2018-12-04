@@ -33,6 +33,7 @@ public class ConfigSubscriber {
     private State state = State.OPEN;
     protected List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new ArrayList<>();
     private final ConfigSource source;
+    private final Object monitor = new Object();
 
     /** The last complete config generation received by this */
     private long generation = -1;
@@ -110,8 +111,10 @@ public class ConfigSubscriber {
     }
 
     protected void checkStateBeforeSubscribe() {
-        if (state != State.OPEN)
-            throw new IllegalStateException("Adding subscription after calling nextConfig() is not allowed");
+        synchronized (monitor) {
+            if (state != State.OPEN)
+                throw new IllegalStateException("Adding subscription after calling nextConfig() is not allowed");
+        }
     }
 
     protected void subscribeAndHandleErrors(ConfigSubscription<?> sub, ConfigKey<?> configKey, ConfigHandle<?> handle, TimingValues timingValues) {
@@ -230,10 +233,12 @@ public class ConfigSubscriber {
      *         that at lest one of them has changed if <code>requireChange</code> is true), false otherwise
      */
     private boolean acquireSnapshot(long timeoutInMillis, boolean requireChange) {
-        if (state == State.CLOSED) return false;
+        synchronized (monitor) {
+            if (state == State.CLOSED) return false;
+            state = State.FROZEN;
+        }
         long started = System.currentTimeMillis();
         long timeLeftMillis = timeoutInMillis;
-        state = State.FROZEN;
         boolean anyConfigChanged = false;
         boolean allGenerationsChanged = true;
         boolean allGenerationsTheSame = true;
@@ -307,7 +312,9 @@ public class ConfigSubscriber {
      * Closes all open {@link ConfigSubscription}s
      */
     public void close() {
-        state = State.CLOSED;
+        synchronized (monitor) {
+            state = State.CLOSED;
+        }
         for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
             h.subscription().close();
         }
@@ -326,7 +333,10 @@ public class ConfigSubscriber {
 
     @Override
     public String toString() {
-        String ret = "Subscriber state:" + state;
+        String ret;
+        synchronized (monitor) {
+            ret = "Subscriber state:" + state;
+        }
         for (ConfigHandle<?> h : subscriptionHandles) {
             ret = ret + "\n" + h.toString();
         }
@@ -349,7 +359,9 @@ public class ConfigSubscriber {
     }
 
     protected State state() {
-        return state;
+        synchronized (monitor) {
+            return state;
+        }
     }
 
     /**
@@ -382,7 +394,9 @@ public class ConfigSubscriber {
     }
 
     public boolean isClosed() {
-        return state == State.CLOSED;
+        synchronized (monitor) {
+            return state == State.CLOSED;
+        }
     }
 
     /**
