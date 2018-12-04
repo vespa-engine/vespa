@@ -427,7 +427,7 @@ public class SchemaMappingAndAccessesTest {
 
     @Test
     public void testSchemaMapKey() {
-        SchemaMap map = new SchemaMap(null);
+        SchemaMap map = new SchemaMap();
         SchemaMap.SchemaMapKey key1 = map.new SchemaMapKey("chain", "docproc", "doctype", "from");
         SchemaMap.SchemaMapKey key1_1 = map.new SchemaMapKey("chain", "docproc", "doctype", "from");
         SchemaMap.SchemaMapKey key2 = map.new SchemaMapKey("chain", "docproc", "doctype2", "from");
@@ -437,7 +437,7 @@ public class SchemaMappingAndAccessesTest {
 
     @Test
     public void testSchemaMapConfig() {
-        SchemaMap map = new SchemaMap(null);
+        SchemaMap map = new SchemaMap();
         SchemamappingConfig.Builder scb = new SchemamappingConfig.Builder();
         scb.fieldmapping(new SchemamappingConfig.Fieldmapping.Builder().chain("mychain").docproc("mydocproc").doctype("mydoctype").
                 indocument("myindoc").inprocessor("myinprocessor"));
@@ -447,7 +447,7 @@ public class SchemaMappingAndAccessesTest {
 
     @Test
     public void testSchemaMapNoDocType() {
-        SchemaMap map = new SchemaMap(null);
+        SchemaMap map = new SchemaMap();
         map.addMapping("mychain", "com.yahoo.MyDocProc", null, "inDoc1", "inProc1");
         map.addMapping("mychain", "com.yahoo.MyDocProc", null, "inDoc2", "inProc2");
         Map<Pair<String, String>, String> cMap = map.chainMap("mychain", "com.yahoo.MyDocProc");
