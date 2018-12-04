@@ -215,14 +215,14 @@ public class ZookeeperStatusService implements StatusService {
     }
 
     private class ZkMutableStatusRegistry implements MutableStatusRegistry {
+
         private final Lock lock;
         private final ApplicationInstanceReference applicationInstanceReference;
         private final boolean probe;
 
-        public ZkMutableStatusRegistry(
-                Lock lock,
-                ApplicationInstanceReference applicationInstanceReference,
-                boolean probe) {
+        public ZkMutableStatusRegistry(Lock lock,
+                                       ApplicationInstanceReference applicationInstanceReference,
+                                       boolean probe) {
             this.lock = lock;
             this.applicationInstanceReference = applicationInstanceReference;
             this.probe = probe;
@@ -275,9 +275,12 @@ public class ZookeeperStatusService implements StatusService {
                 lock.close();
             } catch (RuntimeException e) {
                 // We may want to avoid logging some exceptions that may be expected, like when session expires.
-                log.log(LogLevel.WARNING, "Failed to close application lock for " +
-                        ZookeeperStatusService.class.getSimpleName() + ", will ignore and continue", e);
+                log.log(LogLevel.WARNING,
+                        "Failed to close application lock for " +
+                        ZookeeperStatusService.class.getSimpleName() + ", will ignore and continue",
+                        e);
             }
         }
     }
+
 }

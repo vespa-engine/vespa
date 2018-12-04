@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
  * @author smorgrav
  */
 public class OrchestratorImpl implements Orchestrator {
+
     private static final Logger log = Logger.getLogger(OrchestratorImpl.class.getName());
 
     private final Policy policy;
@@ -185,10 +186,9 @@ public class OrchestratorImpl implements Orchestrator {
                 return;
             }
 
-            ApplicationApi applicationApi = new ApplicationApiImpl(
-                    nodeGroup,
-                    hostStatusRegistry,
-                    clusterControllerClientFactory);
+            ApplicationApi applicationApi = new ApplicationApiImpl(nodeGroup,
+                                                                   hostStatusRegistry,
+                                                                   clusterControllerClientFactory);
             policy.grantSuspensionRequest(context.createSubcontextWithinLock(), applicationApi);
         }
     }
@@ -386,4 +386,5 @@ public class OrchestratorImpl implements Orchestrator {
             throw new RuntimeException("Unexpectedly interrupted", e);
         }
     }
+
 }

@@ -11,6 +11,7 @@ import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
  * @author oyving
  */
 public interface Policy {
+
     /**
      * Decide whether to grant a request for temporarily suspending the services on all hosts in the group.
      */
@@ -20,9 +21,6 @@ public interface Policy {
 
     /**
      * Give all hosts in a group permission to be removed from the application.
-     *
-     * @param context
-     * @param applicationApi
      */
     void acquirePermissionToRemove(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException;
 
@@ -35,4 +33,5 @@ public interface Policy {
             OrchestratorContext context, ApplicationInstance applicationInstance,
             HostName hostName,
             MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException;
+
 }

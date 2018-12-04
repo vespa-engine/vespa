@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostsUsedByApplicationInstance;
 
 public class ApplicationApiImpl implements ApplicationApi {
+
     private final ApplicationInstance applicationInstance;
     private final NodeGroup nodeGroup;
     private final MutableStatusRegistry hostStatusService;
@@ -145,4 +146,5 @@ public class ApplicationApiImpl implements ApplicationApi {
 
         return serviceClustersInGroup;
     }
+
 }
