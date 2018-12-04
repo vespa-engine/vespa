@@ -115,6 +115,7 @@ public final class ConfiguredApplication implements Application {
 
     }
 
+    @SuppressWarnings("deprecation") // TODO: Remove when the Container line below is removed
     @Inject
     public ConfiguredApplication(ContainerActivator activator,
                                  OsgiFramework osgiFramework,
@@ -126,7 +127,7 @@ public final class ConfiguredApplication implements Application {
         this.subscriberFactory = subscriberFactory;
         this.configId = System.getProperty("config.id");
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
-        Container.get().setOsgi(new OsgiImpl(osgiFramework));
+        Container.get().setOsgi(new OsgiImpl(osgiFramework)); // TODO: Remove, not necessary
 
         applicationWithLegacySetup = new ContainerDiscApplication(configId);
     }
@@ -140,7 +141,7 @@ public final class ConfiguredApplication implements Application {
         hackToInitializeServer(qrConfig);
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
-        configureComponents(builder.guiceModules().activate());
+        configurer = createConfigurer(builder.guiceModules().activate());
 
         intitializeAndActivateContainer(builder);
         startReconfigurerThread();
@@ -308,13 +309,13 @@ public final class ConfiguredApplication implements Application {
         startedServers.remove(server);
     }
 
-    private void configureComponents(Injector discInjector) {
-        configurer = new HandlersConfigurerDi(subscriberFactory,
-                                              Container.get(),
-                                              configId,
-                                              new Deconstructor(true),
-                                              discInjector,
-                                              osgiFramework);
+    private HandlersConfigurerDi createConfigurer(Injector discInjector) {
+        return new HandlersConfigurerDi(subscriberFactory,
+                                        Container.get(),
+                                        configId,
+                                        new Deconstructor(true),
+                                        discInjector,
+                                        osgiFramework);
     }
 
     private void setupGuiceBindings(GuiceRepository modules) {

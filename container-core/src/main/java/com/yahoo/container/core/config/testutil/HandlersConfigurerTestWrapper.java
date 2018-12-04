@@ -90,7 +90,6 @@ public class HandlersConfigurerTestWrapper {
     public HandlersConfigurerTestWrapper(Container container, String configId) {
         createFiles(configId);
         MockOsgi mockOsgi = new MockOsgi();
-        container.setOsgi(mockOsgi);
         ComponentDeconstructor testDeconstructor = getTestDeconstructor();
         configurer = new HandlersConfigurerDi(
                 new CloudSubscriberFactory(configSources),

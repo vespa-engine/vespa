@@ -13,7 +13,6 @@ import static com.yahoo.container.core.AccessLogConfig.FileHandler.RotateScheme;
 /**
  * @author Tony Vaagenes
  * @author gjoranv
- * @since 5.1.4
  */
 public final class AccessLogComponent extends SimpleComponent implements AccessLogConfig.Producer {
 

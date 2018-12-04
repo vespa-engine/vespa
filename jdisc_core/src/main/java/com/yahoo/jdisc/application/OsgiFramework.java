@@ -68,7 +68,6 @@ public interface OsgiFramework {
      *
      * @return A <tt>BundleContext</tt> for the system bundle, or <tt>null</tt>.
      * @throws SecurityException If the caller does not have the appropriate permissions.
-     * @since 2.0
      */
     BundleContext bundleContext();
 
