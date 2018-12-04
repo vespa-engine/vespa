@@ -33,8 +33,6 @@ public interface Orchestrator {
 
     /**
      * Get orchestrator information related to a host.
-     *
-     * @throws HostNameNotFoundException
      */
     Host getHost(HostName hostName) throws HostNameNotFoundException;
 

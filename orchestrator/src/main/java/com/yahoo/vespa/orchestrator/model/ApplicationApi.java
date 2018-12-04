@@ -13,8 +13,9 @@ import java.util.List;
  * The API a Policy has access to
  */
 public interface ApplicationApi {
+
     /**
-     * @return The 3-part application ID of the form tenant:name:instance.
+     * Returns the 3-part application ID of the form tenant:name:instance.
      */
     ApplicationId applicationId();
 
@@ -33,4 +34,5 @@ public interface ApplicationApi {
     List<StorageNode> getStorageNodesInGroupInClusterOrder();
     List<StorageNode> getUpStorageNodesInGroupInClusterOrder();
     List<StorageNode> getStorageNodesAllowedToBeDownInGroupInReverseClusterOrder();
+
 }

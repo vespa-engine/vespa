@@ -8,7 +8,7 @@ import java.util.NoSuchElementException;
 /**
  * A specialized list iterator to manipulate tokens in HitField objects.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class TokenFieldIterator implements ListIterator<FieldPart> {
 
