@@ -1,1 +1,2 @@
-a service that gives a list of node/service and their status(up/down) for all instances in a zone
+A service which provides the up/down status of all service instances ("nodes in a cluster")
+in all applications in a system.
