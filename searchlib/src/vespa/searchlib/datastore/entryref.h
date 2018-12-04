@@ -29,14 +29,10 @@ class EntryRefT : public EntryRef {
 public:
     EntryRefT() : EntryRef() {}
     EntryRefT(uint64_t offset_, uint32_t bufferId_) :
-        EntryRef((bufferId_ << OffsetBits) + offset_) {}
+        EntryRef((offset_ << BufferBits) + bufferId_) {}
     EntryRefT(const EntryRef & ref_) : EntryRef(ref_.ref()) {}
-    uint64_t offset() const { return _ref & (offsetSize()-1); }
-    uint32_t bufferId() const {
-        return ((OffsetBits + BufferBits) == 32u)
-            ? (_ref >> OffsetBits)
-            : ((_ref >> OffsetBits) & (numBuffers() - 1));
-    }
+    uint64_t offset() const { return _ref >> BufferBits; }
+    uint32_t bufferId() const { return _ref & (numBuffers() - 1); }
     static uint64_t offsetSize() { return 1ul << OffsetBits; }
     static uint32_t numBuffers() { return 1 << BufferBits; } 
     static uint64_t align(uint64_t val) { return val; }
@@ -50,7 +46,7 @@ public:
 template <uint32_t OffsetBits, uint32_t OffsetAlign>
 class AlignedEntryRefT : public EntryRefT<OffsetBits> {
 private:
-    using ParentType = EntryRefT<OffsetBits>;
+    typedef EntryRefT<OffsetBits> ParentType;
     static const uint32_t PadConstant = ((1 << OffsetAlign) - 1);
 public:
     AlignedEntryRefT() : ParentType() {}
