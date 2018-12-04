@@ -11,6 +11,7 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
  * @author hakonhall
  */
 public interface ServiceStatusProvider {
+
     /**
      * Get the {@link ServiceStatus} of a particular service.
      *
@@ -22,4 +23,5 @@ public interface ServiceStatusProvider {
                             ClusterId clusterId,
                             ServiceType serviceType,
                             ConfigId configId);
+
 }

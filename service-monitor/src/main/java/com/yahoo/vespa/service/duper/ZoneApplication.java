@@ -21,6 +21,7 @@ import java.util.Objects;
  * 2) ZoneApplication has multiple clusters
  */
 public class ZoneApplication {
+
     private ZoneApplication() {}
 
     private static final ApplicationId ZONE_APPLICATION_ID = InfraApplication
@@ -103,4 +104,5 @@ public class ZoneApplication {
                 ApplicationInstanceGenerator.getClusterId(serviceInfo),
                 ApplicationInstanceGenerator.toServiceType(serviceInfo));
     }
+
 }
