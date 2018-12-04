@@ -29,7 +29,7 @@ import static java.util.stream.Collectors.toList;
  */
 public class ConfigSubscriber {
 
-    private Logger log = Logger.getLogger(getClass().getName());
+    private final Logger log = Logger.getLogger(getClass().getName());
     private State state = State.OPEN;
     protected List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new ArrayList<>();
     private final ConfigSource source;
@@ -274,8 +274,10 @@ public class ConfigSubscriber {
             // This indicates the clients will possibly reconfigure their services, so "reset" changed-logic in subscriptions.
             // Also if appropriate update the changed flag on the handler, which clients use.
             markSubsChangedSeen(currentGen);
-            internalRedeploy = internalRedeployOnly;
-            generation = currentGen;
+            synchronized (monitor) {
+                internalRedeploy = internalRedeployOnly;
+                generation = currentGen;
+            }
         }
         return reconfigDue;
     }
@@ -443,14 +445,16 @@ public class ConfigSubscriber {
      * @return the current generation of configs known by this subscriber
      */
     public long getGeneration() {
-        return generation;
+        synchronized (monitor) {
+            return generation;
+        }
     }
 
     /**
      * Whether the current config generation received by this was due to a system-internal redeploy,
      * not an application package change
      */
-    public boolean isInternalRedeploy() { return internalRedeploy; }
+    public boolean isInternalRedeploy() { synchronized (monitor) { return internalRedeploy; } }
 
     /**
      * Convenience interface for clients who only subscribe to one config. Implement this, and pass it to {@link ConfigSubscriber#subscribe(SingleSubscriber, Class, String)}.
