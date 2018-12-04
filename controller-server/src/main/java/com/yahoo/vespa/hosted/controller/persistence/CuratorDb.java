@@ -223,7 +223,7 @@ public class CuratorDb {
     }
 
     public double readUpgradesPerMinute() {
-        return read(upgradesPerMinutePath(), ByteBuffer::wrap).map(ByteBuffer::getDouble).orElse(0.5);
+        return read(upgradesPerMinutePath(), ByteBuffer::wrap).map(ByteBuffer::getDouble).orElse(0.125);
     }
 
     public void writeUpgradesPerMinute(double n) {
