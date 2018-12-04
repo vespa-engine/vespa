@@ -10,10 +10,10 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.yolean.Exceptions;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
 import static java.util.stream.Collectors.toList;
@@ -29,11 +29,12 @@ import static java.util.stream.Collectors.toList;
  */
 public class ConfigSubscriber {
 
-    private final Logger log = Logger.getLogger(getClass().getName());
+    private static final Logger log = Logger.getLogger(ConfigSubscriber.class.getName());
     private State state = State.OPEN;
-    protected List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new ArrayList<>();
+    protected final List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new CopyOnWriteArrayList<>();
     private final ConfigSource source;
     private final Object monitor = new Object();
+    private final Throwable stackTraceAtConstruction; // TODO Remove once finalizer is gone
 
     /** The last complete config generation received by this */
     private long generation = -1;
@@ -69,6 +70,7 @@ public class ConfigSubscriber {
      */
     public ConfigSubscriber(ConfigSource source) {
         this.source = source;
+        this.stackTraceAtConstruction = new Throwable();
     }
 
     /**
@@ -474,7 +476,11 @@ public class ConfigSubscriber {
     protected void finalize() throws Throwable {
         try {
             if (!isClosed()) {
-                log.log(LogLevel.WARNING, () -> String.format("Closing subscription from finalizer() - close() has not been called (keys=%s)", subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).collect(toList())));
+                log.log(LogLevel.WARNING,
+                        stackTraceAtConstruction,
+                        () -> String.format("%s: Closing subscription from finalizer() - close() has not been called (keys=%s)",
+                                            super.toString(),
+                                            subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).collect(toList())));
                 close();
             }
         } finally {
