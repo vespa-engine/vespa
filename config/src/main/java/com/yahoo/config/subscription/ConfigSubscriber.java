@@ -10,10 +10,10 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.yolean.Exceptions;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
 import static java.util.stream.Collectors.toList;
@@ -31,7 +31,7 @@ public class ConfigSubscriber {
 
     private static final Logger log = Logger.getLogger(ConfigSubscriber.class.getName());
     private State state = State.OPEN;
-    protected List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new ArrayList<>();
+    protected final List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new CopyOnWriteArrayList<>();
     private final ConfigSource source;
     private final Object monitor = new Object();
 
