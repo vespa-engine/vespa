@@ -13,7 +13,6 @@ public:
     EntryRef() : _ref(0u) { }
     explicit EntryRef(uint32_t ref_) : _ref(ref_) { }
     uint32_t ref() const { return _ref; }
-    uint32_t hash() const { return _ref; }
     bool valid() const { return _ref != 0u; }
     bool operator==(const EntryRef &rhs) const { return _ref == rhs._ref; }
     bool operator!=(const EntryRef &rhs) const { return _ref != rhs._ref; }
@@ -31,6 +30,7 @@ public:
     EntryRefT(uint64_t offset_, uint32_t bufferId_) :
         EntryRef((offset_ << BufferBits) + bufferId_) {}
     EntryRefT(const EntryRef & ref_) : EntryRef(ref_.ref()) {}
+    uint32_t hash() const { return offset() + (bufferId() << OffsetBits); }
     uint64_t offset() const { return _ref >> BufferBits; }
     uint32_t bufferId() const { return _ref & (numBuffers() - 1); }
     static uint64_t offsetSize() { return 1ul << OffsetBits; }
