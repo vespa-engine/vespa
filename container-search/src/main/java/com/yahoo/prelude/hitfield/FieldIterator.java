@@ -7,7 +7,7 @@ import java.util.ListIterator;
 /**
  * A specialized list iterator to manipulate FieldParts in HitField objects.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class FieldIterator implements ListIterator<FieldPart> {
 
