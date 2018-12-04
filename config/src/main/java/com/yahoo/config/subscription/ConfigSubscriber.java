@@ -1,20 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription;
 
+import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.config.subscription.impl.ConfigSubscription;
+import com.yahoo.config.subscription.impl.JRTConfigRequester;
+import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.TimingValues;
+import com.yahoo.yolean.Exceptions;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.ConfigurationRuntimeException;
-import com.yahoo.config.subscription.impl.ConfigSubscription;
-import com.yahoo.config.subscription.impl.JRTConfigRequester;
-import com.yahoo.log.LogLevel;
-import com.yahoo.yolean.Exceptions;
-import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.TimingValues;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Used for subscribing to one or more configs. Can optionally be given a {@link ConfigSource} for the configs
@@ -454,6 +456,7 @@ public class ConfigSubscriber {
     protected void finalize() throws Throwable {
         try {
             if (!isClosed()) {
+                log.log(LogLevel.WARNING, () -> String.format("Closing subscription from finalizer() - close() has not been called (keys=%s)", subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).collect(toList())));
                 close();
             }
         } finally {
