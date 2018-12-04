@@ -474,7 +474,7 @@ public class ConfigSubscriber {
     protected void finalize() throws Throwable {
         try {
             if (!isClosed()) {
-                log.log(LogLevel.WARNING, () -> String.format("Closing subscription from finalizer() - close() has not been called (keys=%s)", subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).collect(toList())));
+                log.log(LogLevel.WARNING, () -> String.format("%s: Closing subscription from finalizer() - close() has not been called (keys=%s)", super.toString(), subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).collect(toList())));
                 close();
             }
         } finally {
