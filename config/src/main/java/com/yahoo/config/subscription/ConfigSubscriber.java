@@ -34,6 +34,7 @@ public class ConfigSubscriber {
     protected final List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new CopyOnWriteArrayList<>();
     private final ConfigSource source;
     private final Object monitor = new Object();
+    private final Throwable stackTraceAtConstruction; // TODO Remove once finalizer is gone
 
     /** The last complete config generation received by this */
     private long generation = -1;
@@ -69,6 +70,7 @@ public class ConfigSubscriber {
      */
     public ConfigSubscriber(ConfigSource source) {
         this.source = source;
+        this.stackTraceAtConstruction = new Throwable();
     }
 
     /**
@@ -474,7 +476,11 @@ public class ConfigSubscriber {
     protected void finalize() throws Throwable {
         try {
             if (!isClosed()) {
-                log.log(LogLevel.WARNING, () -> String.format("%s: Closing subscription from finalizer() - close() has not been called (keys=%s)", super.toString(), subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).collect(toList())));
+                log.log(LogLevel.WARNING,
+                        stackTraceAtConstruction,
+                        () -> String.format("%s: Closing subscription from finalizer() - close() has not been called (keys=%s)",
+                                            super.toString(),
+                                            subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).collect(toList())));
                 close();
             }
         } finally {
