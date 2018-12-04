@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 /**
  * Class that based on BucketspacesConfig builds a mapping from document type to which bucket space it belongs to.
  */
-class BucketSpaceEnumerator {
+public class BucketSpaceEnumerator {
 
     private final Map<String, String> doctypeToSpace;
 
