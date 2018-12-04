@@ -372,8 +372,9 @@ public class HitField {
         }
         return xml.toString();
     }
+
     /**
-     * @return the content of the field, stripped of markup
+     * Returns the content of the field, stripped of markup
      */
     public String bareContent(boolean XMLQuote, boolean inAttribute) {
         StringBuilder bareContent = new StringBuilder();
