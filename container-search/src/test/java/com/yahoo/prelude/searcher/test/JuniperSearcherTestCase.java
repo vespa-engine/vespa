@@ -47,7 +47,7 @@ public class JuniperSearcherTestCase {
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         addResult(new Query("?query=12"), sdName, content, docsource);
         addResult(new Query("?query=12&bolding=false"), sdName, content, docsource);
-        return new Chain<Searcher>(searcher, docsource);
+        return new Chain<>(searcher, docsource);
     }
 
     private void addResult(Query query, String sdName, String content, DocumentSourceSearcher docsource) {
