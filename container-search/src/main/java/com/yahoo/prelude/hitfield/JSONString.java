@@ -86,6 +86,7 @@ public class JSONString implements Inspectable {
         didInitContent = true;
     }
 
+    @Override
     public String toString() {
         if (value != null) {
             return renderFromInspector();
