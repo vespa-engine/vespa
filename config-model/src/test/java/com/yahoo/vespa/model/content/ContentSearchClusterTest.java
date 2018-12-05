@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
+import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -19,6 +20,7 @@ import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createClus
 import static com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder.createSearchDefinitions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -165,6 +167,19 @@ public class ContentSearchClusterTest {
         assertEquals(2, config.documenttype().size());
         assertDocumentType("global", "global", config.documenttype(0));
         assertDocumentType("regular", "default", config.documenttype(1));
+    }
+
+    @Test
+    public void bucket_space_config_builder_returns_correct_mappings() throws Exception {
+        ContentCluster cluster = createClusterWithGlobalType();
+        BucketspacesConfig expected = getBucketspacesConfig(cluster);
+        AllClustersBucketSpacesConfig.Cluster actual = cluster.clusterBucketSpaceConfigBuilder().build();
+        assertEquals(2, expected.documenttype().size());
+        assertEquals(expected.documenttype().size(), actual.documentType().size());
+        assertNotNull(actual.documentType("global"));
+        assertEquals("global", actual.documentType().get("global").bucketSpace());
+        assertNotNull(actual.documentType("regular"));
+        assertEquals("default", actual.documentType().get("regular").bucketSpace());
     }
 
     @Test
