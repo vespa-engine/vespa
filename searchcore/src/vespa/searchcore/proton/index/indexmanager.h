@@ -5,8 +5,23 @@
 #include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/searchcorespi/index/indexmaintainer.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
+#include <vespa/searchcorespi/index/warmupconfig.h>
 
-namespace proton {
+namespace proton::index {
+
+struct IndexConfig {
+    using WarmupConfig = searchcorespi::index::WarmupConfig;
+    IndexConfig() : IndexConfig(WarmupConfig(), 2, 0) { }
+    IndexConfig(WarmupConfig warmup_, size_t maxFlushed_, size_t cacheSize_)
+        : warmup(warmup_),
+          maxFlushed(maxFlushed_),
+          cacheSize(cacheSize_)
+    { }
+
+    const WarmupConfig warmup;
+    const size_t       maxFlushed;
+    const size_t       cacheSize;
+};
 
 /**
  * The IndexManager provides a holistic view of a set of disk and
@@ -19,6 +34,8 @@ class IndexManager : public searchcorespi::IIndexManager
 public:
     class MaintainerOperations : public searchcorespi::index::IIndexMaintainerOperations {
     private:
+        using IDiskIndex = searchcorespi::index::IDiskIndex;
+        using IMemoryIndex = searchcorespi::index::IMemoryIndex;
         const size_t _cacheSize;
         const search::common::FileHeaderContext &_fileHeaderContext;
         const search::TuneFileIndexing _tuneFileIndexing;
@@ -29,21 +46,15 @@ public:
         MaintainerOperations(const search::common::FileHeaderContext &fileHeaderContext,
                              const search::TuneFileIndexManager &tuneFileIndexManager,
                              size_t cacheSize,
-                             searchcorespi::index::IThreadingService &
-                             threadingService);
+                             searchcorespi::index::IThreadingService &threadingService);
 
-        virtual searchcorespi::index::IMemoryIndex::SP
-        createMemoryIndex(const search::index::Schema &schema,
-                          SerialNum serialNum) override;
-        virtual searchcorespi::index::IDiskIndex::SP
-            loadDiskIndex(const vespalib::string &indexDir) override;
-        virtual searchcorespi::index::IDiskIndex::SP
-            reloadDiskIndex(const searchcorespi::index::IDiskIndex &oldIndex) override;
-        virtual bool runFusion(const search::index::Schema &schema,
-                               const vespalib::string &outputDir,
-                               const std::vector<vespalib::string> &sources,
-                               const search::diskindex::SelectorArray &docIdSelector,
-                               search::SerialNum lastSerialNum) override;
+        IMemoryIndex::SP createMemoryIndex(const Schema &schema, SerialNum serialNum) override;
+        IDiskIndex::SP loadDiskIndex(const vespalib::string &indexDir) override;
+        IDiskIndex::SP reloadDiskIndex(const IDiskIndex &oldIndex) override;
+        bool runFusion(const Schema &schema, const vespalib::string &outputDir,
+                       const std::vector<vespalib::string> &sources,
+                       const SelectorArray &docIdSelector,
+                       search::SerialNum lastSerialNum) override;
     };
 
 private:
@@ -54,9 +65,7 @@ public:
     IndexManager(const IndexManager &) = delete;
     IndexManager & operator = (const IndexManager &) = delete;
     IndexManager(const vespalib::string &baseDir,
-                 const searchcorespi::index::WarmupConfig & warmup,
-                 size_t maxFlushed,
-                 size_t cacheSize,
+                 const IndexConfig & indexConfig,
                  const Schema &schema,
                  SerialNum serialNum,
                  Reconfigurer &reconfigurer,
@@ -74,48 +83,46 @@ public:
     /**
      * Implements searchcorespi::IIndexManager
      **/
-    virtual void putDocument(uint32_t lid, const Document &doc,
-                             SerialNum serialNum) override {
+    void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum) override {
         _maintainer.putDocument(lid, doc, serialNum);
     }
 
-    virtual void removeDocument(uint32_t lid, SerialNum serialNum) override {
+    void removeDocument(uint32_t lid, SerialNum serialNum) override {
         _maintainer.removeDocument(lid, serialNum);
     }
 
-    virtual void commit(SerialNum serialNum,
-                        OnWriteDoneType onWriteDone) override {
+    void commit(SerialNum serialNum, OnWriteDoneType onWriteDone) override {
         _maintainer.commit(serialNum, onWriteDone);
     }
 
-    virtual void heartBeat(SerialNum serialNum) override {
+    void heartBeat(SerialNum serialNum) override {
         _maintainer.heartBeat(serialNum);
     }
 
-    virtual SerialNum getCurrentSerialNum() const override {
+    SerialNum getCurrentSerialNum() const override {
         return _maintainer.getCurrentSerialNum();
     }
 
-    virtual SerialNum getFlushedSerialNum() const override {
+    SerialNum getFlushedSerialNum() const override {
         return _maintainer.getFlushedSerialNum();
     }
 
-    virtual searchcorespi::IndexSearchable::SP getSearchable() const override {
+    searchcorespi::IndexSearchable::SP getSearchable() const override {
         return _maintainer.getSearchable();
     }
 
-    virtual search::SearchableStats getSearchableStats() const override {
+    search::SearchableStats getSearchableStats() const override {
         return _maintainer.getSearchableStats();
     }
 
-    virtual searchcorespi::IFlushTarget::List getFlushTargets() override {
+    searchcorespi::IFlushTarget::List getFlushTargets() override {
         return _maintainer.getFlushTargets();
     }
 
-    virtual void setSchema(const Schema &schema, SerialNum serialNum) override {
+    void setSchema(const Schema &schema, SerialNum serialNum) override {
         _maintainer.setSchema(schema, serialNum);
     }
-    virtual void setMaxFlushed(uint32_t maxFlushed) override {
+    void setMaxFlushed(uint32_t maxFlushed) override {
         _maintainer.setMaxFlushed(maxFlushed);
     }
 };

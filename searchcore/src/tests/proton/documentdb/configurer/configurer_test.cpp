@@ -181,31 +181,32 @@ Fixture::Fixture()
     _configurer.reset(new Configurer(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
                                      _constantValueRepo, _clock, "test", 0));
 }
-Fixture::~Fixture() {}
+Fixture::~Fixture() = default;
 
 void
 Fixture::initViewSet(ViewSet &views)
 {
-    Matchers::SP matchers(new Matchers(_clock, _queryLimiter, _constantValueRepo));
-    auto indexMgr = make_shared<IndexManager>(BASE_DIR, searchcorespi::index::WarmupConfig(), 2, 0, Schema(), 1,
+    using IndexManager = proton::index::IndexManager;
+    using IndexConfig = proton::index::IndexConfig;
+    auto matchers = std::make_shared<Matchers>(_clock, _queryLimiter, _constantValueRepo);
+    auto indexMgr = make_shared<IndexManager>(BASE_DIR, IndexConfig(searchcorespi::index::WarmupConfig(), 2, 0), Schema(), 1,
                                               views._reconfigurer, views._writeService, _summaryExecutor,
                                               TuneFileIndexManager(), TuneFileAttributes(), views._fileHeaderContext);
     auto attrMgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), views._fileHeaderContext,
                                                  views._writeService.attributeFieldWriter(),views._hwInfo);
-    ProtonConfig protonCfg;
     auto summaryMgr = make_shared<SummaryManager>
             (_summaryExecutor, search::LogDocumentStore::Config(), GrowStrategy(), BASE_DIR, views._docTypeName,
              TuneFileSummary(), views._fileHeaderContext,views._noTlSyncer, search::IBucketizer::SP());
-    auto sesMgr = make_shared<SessionManager>(protonCfg.grouping.sessionmanager.maxentries);
+    auto sesMgr = make_shared<SessionManager>(100);
     auto metaStore = make_shared<DocumentMetaStoreContext>(make_shared<BucketDBOwner>());
-    IIndexWriter::SP indexWriter(new IndexWriter(indexMgr));
-    AttributeWriter::SP attrWriter(new AttributeWriter(attrMgr));
-    ISummaryAdapter::SP summaryAdapter(new SummaryAdapter(summaryMgr));
+    auto indexWriter = std::make_shared<IndexWriter>(indexMgr);
+    auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);
+    auto summaryAdapter = std::make_shared<SummaryAdapter>(summaryMgr);
     views._gidToLidChangeHandler = make_shared<MockGidToLidChangeHandler>();
     Schema::SP schema(new Schema());
     views._summaryMgr = summaryMgr;
     views._dmsc = metaStore;
-    views._lidReuseDelayer.reset(new documentmetastore::LidReuseDelayer(views._writeService, metaStore->get()));
+    views._lidReuseDelayer = std::make_unique<documentmetastore::LidReuseDelayer>(views._writeService, metaStore->get());
     IndexSearchable::SP indexSearchable;
     MatchView::SP matchView(new MatchView(matchers, indexSearchable, attrMgr, sesMgr, metaStore, views._docIdLimit));
     views.searchView.set(make_shared<SearchView>

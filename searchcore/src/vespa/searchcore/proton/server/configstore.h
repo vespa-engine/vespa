@@ -5,14 +5,16 @@
 #include "documentdbconfig.h"
 #include "feedconfigstore.h"
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcore/config/config-proton.h>
 
+namespace vespa::config::search::core::internal {
+    class InternalProtonType;
+}
 namespace proton {
 
 struct ConfigStore : FeedConfigStore {
     typedef std::unique_ptr<ConfigStore> UP;
     typedef search::SerialNum SerialNum;
-    using ProtonConfig = vespa::config::search::core::ProtonConfig;
+    using ProtonConfig = const vespa::config::search::core::internal::InternalProtonType;
     using ProtonConfigSP = std::shared_ptr<ProtonConfig>;
 
     /**
@@ -22,11 +24,9 @@ struct ConfigStore : FeedConfigStore {
      * @param loadedSnapshot the shared pointer in which to store the
      *                       resulting config snapshot.
      */
-    virtual void loadConfig(const DocumentDBConfig &currentSnapshot,
-                            SerialNum serialNum,
+    virtual void loadConfig(const DocumentDBConfig &currentSnapshot, SerialNum serialNum,
                             DocumentDBConfig::SP &loadedSnapshot) = 0;
-    virtual void saveConfig(const DocumentDBConfig &snapshot,
-                            SerialNum serialNum) = 0;
+    virtual void saveConfig(const DocumentDBConfig &snapshot, SerialNum serialNum) = 0;
 
     virtual void removeInvalid() = 0;
     /**

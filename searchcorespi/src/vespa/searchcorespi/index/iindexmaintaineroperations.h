@@ -7,19 +7,20 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/diskindex/docidmapper.h>
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * Interface for operations needed by an index maintainer.
  */
 struct IIndexMaintainerOperations {
+    using Schema = search::index::Schema;
+    using SelectorArray = search::diskindex::SelectorArray;
     virtual ~IIndexMaintainerOperations() {}
 
     /**
      * Creates a new memory index using the given schema.
      */
-    virtual IMemoryIndex::SP createMemoryIndex(const search::index::Schema &schema, search::SerialNum serialNum) = 0;
+    virtual IMemoryIndex::SP createMemoryIndex(const Schema &schema, search::SerialNum serialNum) = 0;
 
     /**
      * Loads a disk index from the given directory.
@@ -43,14 +44,13 @@ struct IIndexMaintainerOperations {
      * @param selectorArray the array specifying in which input disk index a document is located.
      * @param lastSerialNum the serial number of the last operation in the last input disk index.
      */
-    virtual bool runFusion(const search::index::Schema &schema,
+    virtual bool runFusion(const Schema &schema,
                            const vespalib::string &outputDir,
                            const std::vector<vespalib::string> &sources,
-                           const search::diskindex::SelectorArray &selectorArray,
+                           const SelectorArray &selectorArray,
                            search::SerialNum lastSerialNum) = 0;
 };
 
-} // namespace index
-} // namespace searchcorespi
+}
 
 

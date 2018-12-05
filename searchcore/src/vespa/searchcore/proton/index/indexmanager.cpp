@@ -22,14 +22,12 @@ using searchcorespi::index::IndexMaintainerContext;
 using searchcorespi::index::IMemoryIndex;
 using searchcorespi::index::IThreadingService;
 
-namespace proton {
+namespace proton::index {
 
 IndexManager::MaintainerOperations::MaintainerOperations(const FileHeaderContext &fileHeaderContext,
                                                          const TuneFileIndexManager &tuneFileIndexManager,
                                                          size_t cacheSize,
-                                                         searchcorespi::index::
-                                                         IThreadingService &
-                                                         threadingService)
+                                                         IThreadingService &threadingService)
     : _cacheSize(cacheSize),
       _fileHeaderContext(fileHeaderContext),
       _tuneFileIndexing(tuneFileIndexManager._indexing),
@@ -39,27 +37,23 @@ IndexManager::MaintainerOperations::MaintainerOperations(const FileHeaderContext
 }
 
 IMemoryIndex::SP
-IndexManager::MaintainerOperations::createMemoryIndex(const Schema &schema,
-                                                      SerialNum serialNum)
+IndexManager::MaintainerOperations::createMemoryIndex(const Schema &schema, SerialNum serialNum)
 {
-    return IMemoryIndex::SP(new MemoryIndexWrapper(schema,
-                                                   _fileHeaderContext,
-                                                   _tuneFileIndexing,
-                                                   _threadingService,
-                                                   serialNum));
+    return std::make_shared<MemoryIndexWrapper>(schema, _fileHeaderContext, _tuneFileIndexing,
+                                                _threadingService, serialNum);
 }
 
 IDiskIndex::SP
 IndexManager::MaintainerOperations::loadDiskIndex(const vespalib::string &indexDir)
 {
-    return IDiskIndex::SP(new DiskIndexWrapper(indexDir, _tuneFileSearch, _cacheSize));
+    return std::make_shared<DiskIndexWrapper>(indexDir, _tuneFileSearch, _cacheSize);
 }
 
 IDiskIndex::SP
 IndexManager::MaintainerOperations::reloadDiskIndex(const IDiskIndex &oldIndex)
 {
-    return IDiskIndex::SP(new DiskIndexWrapper(dynamic_cast<const DiskIndexWrapper &>(oldIndex),
-                                               _tuneFileSearch, _cacheSize));
+    return std::make_shared<DiskIndexWrapper>(dynamic_cast<const DiskIndexWrapper &>(oldIndex),
+                                              _tuneFileSearch, _cacheSize);
 }
 
 bool
@@ -69,19 +63,15 @@ IndexManager::MaintainerOperations::runFusion(const Schema &schema,
                                               const SelectorArray &selectorArray,
                                               SerialNum serialNum)
 {
-    SerialNumFileHeaderContext fileHeaderContext(_fileHeaderContext,
-                                                 serialNum);
+    SerialNumFileHeaderContext fileHeaderContext(_fileHeaderContext, serialNum);
     const bool dynamic_k_doc_pos_occ_format = false;
-    return Fusion::merge(schema, outputDir, sources, selectorArray,
-                         dynamic_k_doc_pos_occ_format,
+    return Fusion::merge(schema, outputDir, sources, selectorArray, dynamic_k_doc_pos_occ_format,
                          _tuneFileIndexing, fileHeaderContext);
 }
 
 
 IndexManager::IndexManager(const vespalib::string &baseDir,
-                           const WarmupConfig & warmup,
-                           const size_t maxFlushed,
-                           const size_t cacheSize,
+                           const IndexConfig & indexConfig,
                            const Schema &schema,
                            SerialNum serialNum,
                            Reconfigurer &reconfigurer,
@@ -89,26 +79,15 @@ IndexManager::IndexManager(const vespalib::string &baseDir,
                            vespalib::ThreadExecutor & warmupExecutor,
                            const search::TuneFileIndexManager &tuneFileIndexManager,
                            const search::TuneFileAttributes &tuneFileAttributes,
-                           const search::common::FileHeaderContext &fileHeaderContext) :
-    _operations(fileHeaderContext, tuneFileIndexManager, cacheSize,
-                threadingService),
-    _maintainer(IndexMaintainerConfig(baseDir,
-                                      warmup,
-                                      maxFlushed,
-                                      schema,
-                                      serialNum,
-                                      tuneFileAttributes),
-                IndexMaintainerContext(threadingService,
-                                       reconfigurer,
-                                       fileHeaderContext,
-                                       warmupExecutor),
+                           const FileHeaderContext &fileHeaderContext) :
+    _operations(fileHeaderContext, tuneFileIndexManager, indexConfig.cacheSize, threadingService),
+    _maintainer(IndexMaintainerConfig(baseDir, indexConfig.warmup, indexConfig.maxFlushed, schema, serialNum, tuneFileAttributes),
+                IndexMaintainerContext(threadingService, reconfigurer, fileHeaderContext, warmupExecutor),
                 _operations)
 {
 }
 
-IndexManager::~IndexManager()
-{
-}
+IndexManager::~IndexManager() = default;
 
 } // namespace proton
 

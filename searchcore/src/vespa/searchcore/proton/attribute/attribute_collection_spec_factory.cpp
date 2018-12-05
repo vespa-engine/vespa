@@ -27,8 +27,7 @@ AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
     // Amortize memory spike cost over N docs
     const size_t skew = _growNumDocs/(attrCfg.attribute.size()+1);
     GrowStrategy grow = _growStrategy;
-    grow.setDocsInitialCapacity(std::max(grow.getDocsInitialCapacity(),
-                                         docIdLimit));
+    grow.setDocsInitialCapacity(std::max(grow.getDocsInitialCapacity(),docIdLimit));
     for (const auto &attr : attrCfg.attribute) {
         search::attribute::Config cfg = ConfigConverter::convert(attr);
         if (_fastAccessOnly && !cfg.fastAccess()) {
@@ -38,9 +37,7 @@ AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
         cfg.setGrowStrategy(grow);
         attrs.push_back(AttributeSpec(attr.name, cfg));
     }
-    return AttributeCollectionSpec::UP(new AttributeCollectionSpec(attrs,
-                                                                   docIdLimit,
-                                                                   serialNum));
+    return std::make_unique<AttributeCollectionSpec>(attrs, docIdLimit, serialNum);
 }
 
 } // namespace proton

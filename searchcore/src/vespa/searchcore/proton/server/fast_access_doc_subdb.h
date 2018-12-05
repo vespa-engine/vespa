@@ -102,7 +102,7 @@ public:
 
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                      const ProtonConfig::Index &indexCfg) const override;
+                      const IndexConfig &indexCfg) const override;
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;
     void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager) override;

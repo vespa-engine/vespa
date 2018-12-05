@@ -10,9 +10,7 @@ namespace proton {
 
 IndexManagerInitializer::
 IndexManagerInitializer(const vespalib::string &baseDir,
-                        const searchcorespi::index::WarmupConfig & warmupCfg,
-                        size_t maxFlushed,
-                        size_t cacheSize,
+                        const index::IndexConfig & indexCfg,
                         const search::index::Schema &schema,
                         search::SerialNum serialNum,
                         searchcorespi::IIndexManager::Reconfigurer & reconfigurer,
@@ -23,9 +21,7 @@ IndexManagerInitializer(const vespalib::string &baseDir,
                         const search::common::FileHeaderContext & fileHeaderContext,
                         std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager)
     : _baseDir(baseDir),
-      _warmupCfg(warmupCfg),
-      _maxFlushed(maxFlushed),
-      _cacheSize(cacheSize),
+      _indexConfig(indexCfg),
       _schema(schema),
       _serialNum(serialNum),
       _reconfigurer(reconfigurer),
@@ -42,23 +38,12 @@ IndexManagerInitializer(const vespalib::string &baseDir,
 void
 IndexManagerInitializer::run()
 {
-    LOG(debug, "About to create proton::IndexManager with %u index field(s)",
-        _schema.getNumIndexFields());
+    LOG(debug, "About to create proton::IndexManager with %u index field(s)", _schema.getNumIndexFields());
     vespalib::mkdir(_baseDir, false);
     vespalib::File::sync(vespalib::dirname(_baseDir));
-    *_indexManager = std::make_shared<proton::IndexManager>
-                    (_baseDir,
-                     _warmupCfg,
-                     _maxFlushed,
-                     _cacheSize,
-                     _schema,
-                     _serialNum,
-                     _reconfigurer,
-                     _threadingService,
-                     _warmupExecutor,
-                     _tuneFileIndexManager,
-                     _tuneFileAttributes,
-                     _fileHeaderContext);
+    *_indexManager = std::make_shared<index::IndexManager>
+                    (_baseDir, _indexConfig, _schema, _serialNum, _reconfigurer, _threadingService,
+                     _warmupExecutor, _tuneFileIndexManager, _tuneFileAttributes, _fileHeaderContext);
 }
 
 

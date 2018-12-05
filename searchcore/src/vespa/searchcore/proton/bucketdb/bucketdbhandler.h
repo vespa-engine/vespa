@@ -35,33 +35,16 @@ private:
 
 public:
     BucketDBHandler(BucketDBOwner &bucketDB);
-
     ~BucketDBHandler();
 
-    void
-    setBucketDB(BucketDBOwner &bucketDB);
-
-    virtual void
-    addDocumentMetaStore(IDocumentMetaStore *dms,
-                         search::SerialNum flushedSerialNum) override;
-
-    virtual void
-    handleSplit(search::SerialNum serialNum,
-                const BucketId &source,
-                const BucketId &target1,
-                const BucketId &target2) override;
-
-    virtual void
-    handleJoin(search::SerialNum serialNum,
-               const BucketId &source1,
-               const BucketId &source2,
-               const BucketId &target) override;
-
-    virtual void
-    handleCreateBucket(const BucketId &bucketId) override;
-
-    virtual void
-    handleDeleteBucket(const BucketId &bucketId) override;
+    void setBucketDB(BucketDBOwner &bucketDB);
+    void addDocumentMetaStore(IDocumentMetaStore *dms, search::SerialNum flushedSerialNum) override;
+    void handleSplit(search::SerialNum serialNum, const BucketId &source,
+                     const BucketId &target1, const BucketId &target2) override;
+    void handleJoin(search::SerialNum serialNum, const BucketId &source1,
+                    const BucketId &source2, const BucketId &target) override;
+    void handleCreateBucket(const BucketId &bucketId) override;
+    void handleDeleteBucket(const BucketId &bucketId) override;
 
     IBucketCreateNotifier &getBucketCreateNotifier() { return _bucketCreateNotifier; }
 };

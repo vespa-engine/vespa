@@ -43,8 +43,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     uint32_t getSubDbId() const override { return _subDbId; }
     vespalib::string getName() const override { return "dummysubdb"; }
     DocumentSubDbInitializer::UP
-    createInitializer(const DocumentDBConfig &, SerialNum,
-                      const vespa::config::search::core::ProtonConfig::Index &) const override {
+    createInitializer(const DocumentDBConfig &, SerialNum,const index::IndexConfig &) const override {
         return std::make_unique<DocumentSubDbInitializer>
             (const_cast<DummyDocumentSubDb &>(*this), _writeService->master());
     }

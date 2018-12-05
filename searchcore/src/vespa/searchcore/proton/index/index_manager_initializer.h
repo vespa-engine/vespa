@@ -5,8 +5,7 @@
 #include "indexmanager.h"
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 
-namespace proton
-{
+namespace proton {
 
 
 /*
@@ -16,9 +15,7 @@ namespace proton
 class IndexManagerInitializer :  public initializer::InitializerTask
 {
     const vespalib::string                      _baseDir;
-    const searchcorespi::index::WarmupConfig    _warmupCfg;
-    size_t                                      _maxFlushed;
-    size_t                                      _cacheSize;
+    const index::IndexConfig                    _indexConfig;
     const search::index::Schema                 _schema;
     search::SerialNum                           _serialNum;
     searchcorespi::IIndexManager::Reconfigurer &_reconfigurer;
@@ -31,9 +28,7 @@ class IndexManagerInitializer :  public initializer::InitializerTask
 public:
     // Note: lifetime of indexManager must be handled by caller.
     IndexManagerInitializer(const vespalib::string &baseDir,
-                            const searchcorespi::index::WarmupConfig & warmupCfg,
-                            size_t maxFlushed,
-                            size_t cacheSize,
+                            const index::IndexConfig & indexCfg,
                             const search::index::Schema &schema,
                             search::SerialNum serialNum,
                             searchcorespi::IIndexManager::Reconfigurer & reconfigurer,
@@ -43,7 +38,7 @@ public:
                             const search::TuneFileAttributes & tuneFileAttributes,
                             const search::common::FileHeaderContext & fileHeaderContext,
                             std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager);
-    virtual void run() override;
+    void run() override;
 };
 
 } // namespace proton

@@ -30,8 +30,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.storeonlydocsubdb");
 
-using vespa::config::search::AttributesConfig;
-using vespa::config::search::core::ProtonConfig;
 using search::GrowStrategy;
 using search::AttributeGuard;
 using search::AttributeVector;
@@ -46,8 +44,6 @@ using proton::matching::MatchingStats;
 using proton::matching::SessionManager;
 using vespalib::GenericHeader;
 using search::common::FileHeaderContext;
-using vespalib::makeTask;
-using vespalib::makeClosure;
 using proton::documentmetastore::LidReuseDelayer;
 using fastos::TimeStamp;
 using proton::initializer::InitializerTask;
@@ -79,7 +75,7 @@ StoreOnlyDocSubDB::Config::~Config() = default;
 StoreOnlyDocSubDB::Context::Context(IDocumentSubDBOwner &owner,
                                     search::transactionlog::SyncProxy &tlSyncer,
                                     const IGetSerialNum &getSerialNum,
-                                    const search::common::FileHeaderContext &fileHeaderContext,
+                                    const FileHeaderContext &fileHeaderContext,
                                     searchcorespi::index::IThreadingService &writeService,
                                     vespalib::ThreadStackExecutorBase &sharedExecutor,
                                     std::shared_ptr<BucketDBOwner> bucketDB,
@@ -299,11 +295,8 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
 }
 
 DocumentSubDbInitializer::UP
-StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                                     const ProtonConfig::Index &indexCfg) const
+StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, SerialNum , const IndexConfig &) const
 {
-    (void) configSerialNum;
-    (void) indexCfg;
     auto result = std::make_unique<DocumentSubDbInitializer>(const_cast<StoreOnlyDocSubDB &>(*this),
                                                              _writeService.master());
     auto dmsInitTask = createDocumentMetaStoreInitializer(configSnapshot.getTuneFileDocumentDBSP()->_attr,
@@ -513,10 +506,10 @@ StoreOnlyDocSubDB::getDocumentDBReference()
 
 StoreOnlySubDBFileHeaderContext::
 StoreOnlySubDBFileHeaderContext(StoreOnlyDocSubDB &owner,
-                                const search::common::FileHeaderContext & parentFileHeaderContext,
+                                const FileHeaderContext & parentFileHeaderContext,
                                 const DocTypeName &docTypeName,
                                 const vespalib::string &baseDir)
-    : search::common::FileHeaderContext(),
+    : FileHeaderContext(),
       _owner(owner),
       _parentFileHeaderContext(parentFileHeaderContext),
       _docTypeName(docTypeName),

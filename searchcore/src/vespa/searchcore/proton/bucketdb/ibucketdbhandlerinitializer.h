@@ -2,11 +2,7 @@
 
 #pragma once
 
-namespace proton
-{
-
-namespace bucketdb
-{
+namespace proton::bucketdb {
 
 /**
  * The IBucketDBHandlerInitiaizer class handles initialization of a 
@@ -15,19 +11,10 @@ namespace bucketdb
 class IBucketDBHandlerInitializer
 {
 public:
-    IBucketDBHandlerInitializer()
-    {
-    }
+    IBucketDBHandlerInitializer() { }
+    virtual ~IBucketDBHandlerInitializer() {}
 
-    virtual ~IBucketDBHandlerInitializer()
-    {
-    }
-
-    virtual void
-    addDocumentMetaStore(IDocumentMetaStore *dms,
-                         search::SerialNum flushedSerialNum) = 0;
+    virtual void addDocumentMetaStore(IDocumentMetaStore *dms, search::SerialNum flushedSerialNum) = 0;
 };
-
-}
 
 }
