@@ -24,7 +24,7 @@ public class HitField {
     private boolean xmlProperty;
 
     private List<FieldPart> tokenizedContent = null;
-    private String content = null;
+    private String content;
 
 
     private Object original;
@@ -48,7 +48,7 @@ public class HitField {
     /**
      * @param f The field name
      * @param c The field content
-     * @param cjk true if this is a cjk-document
+     * @param cjk true if the content is CJK text
      */
     public HitField(String f, String c, boolean cjk) {
         this(f, c, cjk, false);
@@ -57,7 +57,7 @@ public class HitField {
     /**
      * @param f The field name
      * @param c The field content
-     * @param cjk true if this is a cjk-document
+     * @param cjk true if the content is CJK text
      */
     public HitField(String f, XMLString c, boolean cjk) {
         this(f, c.toString(), cjk, true);
@@ -66,7 +66,7 @@ public class HitField {
     /**
      * @param f The field name
      * @param c The field content
-     * @param cjk true if this is a cjk-document
+     * @param cjk true if the content is CJK text
      * @param xmlProperty true if this should not quote XML syntax
      */
     public HitField(String f, String c, boolean cjk, boolean xmlProperty) {
@@ -279,9 +279,8 @@ public class HitField {
         // Must null content reference _before_ calling getContent()
         content = null;
     }
-    /**
-     * @return the content of this field
-     */
+
+    /** Returns the content of this field */
     public String getContent() {
         if (content == null) {
             StringBuilder buf = new StringBuilder();
@@ -294,13 +293,8 @@ public class HitField {
         return content;
     }
 
-    /**
-     * @return the content of this field, using the arguments as bolding
-     * tags
-     */
-    public String getContent(String boldOpenTag,
-                             String boldCloseTag,
-                             String separatorTag) {
+    /** Returns the content of this field, using the arguments as bolding tags */
+    public String getContent(String boldOpenTag, String boldCloseTag, String separatorTag) {
         StringBuilder buf = new StringBuilder();
         Iterator<FieldPart> iter = ensureTokenized().iterator();
         while(iter.hasNext()) {
