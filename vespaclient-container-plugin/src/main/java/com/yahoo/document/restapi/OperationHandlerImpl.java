@@ -101,8 +101,8 @@ public class OperationHandlerImpl implements OperationHandler {
                 .get(docType));
     }
 
-    public OperationHandlerImpl(DocumentAccess documentAccess, MetricReceiver metricReceiver) {
-        this(documentAccess, defaultClusterEnumerator(), defaultBucketResolver(), metricReceiver);
+    public OperationHandlerImpl(DocumentAccess documentAccess, ClusterEnumerator clusterEnumerator, MetricReceiver metricReceiver) {
+        this(documentAccess, clusterEnumerator, defaultBucketResolver(), metricReceiver);
     }
 
     public OperationHandlerImpl(DocumentAccess documentAccess, ClusterEnumerator clusterEnumerator,
