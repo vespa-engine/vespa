@@ -917,9 +917,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse notifyJobCompletion(String tenant, String application, HttpRequest request) {
         try {
             DeploymentJobs.JobReport report = toJobReport(tenant, application, toSlime(request.getData()).get());
-            if (controller.applications().require(report.applicationId()).deploymentJobs().deployedInternally())
+            if (   report.jobType() == JobType.component
+                && controller.applications().require(report.applicationId()).deploymentJobs().deployedInternally())
                 throw new IllegalArgumentException(report.applicationId() + " is set up to be deployed from internally, and no " +
-                                                   "longer accepts reports from Screwdriver v3 jobs. If you need to revert " +
+                                                   "longer accepts submissions from Screwdriver v3 jobs. If you need to revert " +
                                                    "to the old pipeline, please file a ticket at yo/vespa-support and request this.");
 
             controller.applications().deploymentTrigger().notifyOfCompletion(report);

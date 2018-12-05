@@ -448,7 +448,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                                                 Optional.of(BuildJob.defaultSourceRevision),
                                                                                 Optional.empty()))),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"" + app1 + " is set up to be deployed from internally," +
-                              " and no longer accepts reports from Screwdriver v3 jobs. If you need to revert " +
+                              " and no longer accepts submissions from Screwdriver v3 jobs. If you need to revert " +
                               "to the old pipeline, please file a ticket at yo/vespa-support and request this.\"}",
                               400);
 
