@@ -1,8 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security.tls;
 
-import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager;
-
 import javax.net.ssl.SSLEngine;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -25,7 +23,7 @@ public class ReloadingTlsContext implements TlsContext {
     private static final Logger log = Logger.getLogger(ReloadingTlsContext.class.getName());
 
     private final Path tlsOptionsConfigFile;
-    private final PeerAuthorizerTrustManager.Mode mode;
+    private final AuthorizationMode mode;
     private final AtomicReference<TlsContext> currentTlsContext;
     private final ScheduledExecutorService scheduler =
             Executors.newSingleThreadScheduledExecutor(runnable -> {
@@ -34,7 +32,7 @@ public class ReloadingTlsContext implements TlsContext {
                 return thread;
             });
 
-    public ReloadingTlsContext(Path tlsOptionsConfigFile, PeerAuthorizerTrustManager.Mode mode) {
+    public ReloadingTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
         this.tlsOptionsConfigFile = tlsOptionsConfigFile;
         this.mode = mode;
         this.currentTlsContext = new AtomicReference<>(new DefaultTlsContext(tlsOptionsConfigFile, mode));

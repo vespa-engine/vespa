@@ -3,9 +3,9 @@ package com.yahoo.jrt;
 
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.tls.AuthorizationMode;
 import com.yahoo.security.tls.DefaultTlsContext;
 import com.yahoo.security.tls.TlsContext;
-import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager.Mode;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 import com.yahoo.security.tls.policy.HostGlobPattern;
 import com.yahoo.security.tls.policy.PeerPolicy;
@@ -49,7 +49,7 @@ class CryptoUtils {
                                             Field.CN, new HostGlobPattern("dummy"))))));
 
     static TlsContext createTestTlsContext() {
-        return new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, Mode.ENFORCE);
+        return new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE);
     }
 
 }

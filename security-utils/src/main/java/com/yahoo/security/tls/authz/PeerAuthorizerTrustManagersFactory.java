@@ -2,6 +2,7 @@
 package com.yahoo.security.tls.authz;
 
 import com.yahoo.security.SslContextBuilder;
+import com.yahoo.security.tls.AuthorizationMode;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 
 import javax.net.ssl.TrustManager;
@@ -13,9 +14,9 @@ import java.security.KeyStore;
  */
 public class PeerAuthorizerTrustManagersFactory implements SslContextBuilder.TrustManagersFactory {
     private final AuthorizedPeers authorizedPeers;
-    private PeerAuthorizerTrustManager.Mode mode;
+    private AuthorizationMode mode;
 
-    public PeerAuthorizerTrustManagersFactory(AuthorizedPeers authorizedPeers, PeerAuthorizerTrustManager.Mode mode) {
+    public PeerAuthorizerTrustManagersFactory(AuthorizedPeers authorizedPeers, AuthorizationMode mode) {
         this.authorizedPeers = authorizedPeers;
         this.mode = mode;
     }

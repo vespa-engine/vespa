@@ -2,6 +2,7 @@
 package com.yahoo.security.tls.authz;
 
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.security.tls.AuthorizationMode;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 
 import javax.net.ssl.SSLEngine;
@@ -27,25 +28,23 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
 
     private static final Logger log = Logger.getLogger(PeerAuthorizerTrustManager.class.getName());
 
-    public enum Mode { DRY_RUN, ENFORCE }
-
     private final PeerAuthorizer authorizer;
     private final X509ExtendedTrustManager defaultTrustManager;
-    private final Mode mode;
+    private final AuthorizationMode mode;
 
-    public PeerAuthorizerTrustManager(AuthorizedPeers authorizedPeers, Mode mode, X509ExtendedTrustManager defaultTrustManager) {
+    public PeerAuthorizerTrustManager(AuthorizedPeers authorizedPeers, AuthorizationMode mode, X509ExtendedTrustManager defaultTrustManager) {
         this.authorizer = new PeerAuthorizer(authorizedPeers);
         this.mode = mode;
         this.defaultTrustManager = defaultTrustManager;
     }
 
-    public static TrustManager[] wrapTrustManagersFromKeystore(AuthorizedPeers authorizedPeers, Mode mode, KeyStore keystore) throws GeneralSecurityException {
+    public static TrustManager[] wrapTrustManagersFromKeystore(AuthorizedPeers authorizedPeers, AuthorizationMode mode, KeyStore keystore) throws GeneralSecurityException {
         TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         factory.init(keystore);
         return wrapTrustManagers(authorizedPeers, mode, factory.getTrustManagers());
     }
 
-    public static TrustManager[] wrapTrustManagers(AuthorizedPeers authorizedPeers, Mode mode, TrustManager[] managers) {
+    public static TrustManager[] wrapTrustManagers(AuthorizedPeers authorizedPeers, AuthorizationMode mode, TrustManager[] managers) {
         TrustManager[] wrappedManagers = new TrustManager[managers.length];
         for (int i = 0; i < managers.length; i++) {
             if (managers[i] instanceof X509ExtendedTrustManager) {
@@ -99,6 +98,8 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     }
 
     private void authorizePeer(X509Certificate certificate, String authType, boolean isVerifyingClient, SSLEngine sslEngine) throws CertificateException {
+        if (mode == AuthorizationMode.DISABLE) return;
+
         log.fine(() -> "Verifying certificate: " + createInfoString(certificate, authType, isVerifyingClient));
         AuthorizationResult result = authorizer.authorizePeer(certificate);
         if (sslEngine != null) { // getHandshakeSession() will never return null in this context
@@ -109,13 +110,8 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
         } else {
             String errorMessage = "Authorization failed: " + createInfoString(certificate, authType, isVerifyingClient);
             log.warning(errorMessage);
-            switch (mode) {
-                case ENFORCE:
-                    throw new CertificateException(errorMessage);
-                case DRY_RUN:
-                    break;
-                default:
-                    throw new UnsupportedOperationException();
+            if (mode == AuthorizationMode.ENFORCE) {
+                throw new CertificateException(errorMessage);
             }
         }
     }

@@ -2,7 +2,6 @@
 package com.yahoo.security.tls;
 
 import com.yahoo.security.SslContextBuilder;
-import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager;
 import com.yahoo.security.tls.authz.PeerAuthorizerTrustManagersFactory;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 
@@ -43,11 +42,11 @@ public class DefaultTlsContext implements TlsContext {
                              PrivateKey privateKey,
                              List<X509Certificate> caCertificates,
                              AuthorizedPeers authorizedPeers,
-                             PeerAuthorizerTrustManager.Mode mode) {
+                             AuthorizationMode mode) {
         this.sslContext = createSslContext(certificates, privateKey, caCertificates, authorizedPeers, mode);
     }
 
-    public DefaultTlsContext(Path tlsOptionsConfigFile, PeerAuthorizerTrustManager.Mode mode) {
+    public DefaultTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
         this.sslContext = createSslContext(tlsOptionsConfigFile, mode);
     }
 
@@ -73,7 +72,7 @@ public class DefaultTlsContext implements TlsContext {
                                                PrivateKey privateKey,
                                                List<X509Certificate> caCertificates,
                                                AuthorizedPeers authorizedPeers,
-                                               PeerAuthorizerTrustManager.Mode mode) {
+                                               AuthorizationMode mode) {
         SslContextBuilder builder = new SslContextBuilder();
         if (!certificates.isEmpty()) {
             builder.withKeyStore(privateKey, certificates);
@@ -87,14 +86,16 @@ public class DefaultTlsContext implements TlsContext {
         return builder.build();
     }
 
-    private static SSLContext createSslContext(Path tlsOptionsConfigFile, PeerAuthorizerTrustManager.Mode mode) {
+    private static SSLContext createSslContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
         TransportSecurityOptions options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
         SslContextBuilder builder = new SslContextBuilder();
         options.getCertificatesFile()
                 .ifPresent(certificates -> builder.withKeyStore(options.getPrivateKeyFile().get(), certificates));
         options.getCaCertificatesFile().ifPresent(builder::withTrustStore);
-        options.getAuthorizedPeers().ifPresent(
-                authorizedPeers -> builder.withTrustManagerFactory(new PeerAuthorizerTrustManagersFactory(authorizedPeers, mode)));
+        if (mode != AuthorizationMode.DISABLE) {
+            options.getAuthorizedPeers().ifPresent(
+                    authorizedPeers -> builder.withTrustManagerFactory(new PeerAuthorizerTrustManagersFactory(authorizedPeers, mode)));
+        }
         return builder.build();
     }
 

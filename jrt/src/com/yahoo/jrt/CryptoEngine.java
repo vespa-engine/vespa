@@ -2,11 +2,11 @@
 package com.yahoo.jrt;
 
 
+import com.yahoo.security.tls.AuthorizationMode;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.ReloadingTlsContext;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager.Mode;
 
 import java.nio.channels.SocketChannel;
 
@@ -23,7 +23,8 @@ public interface CryptoEngine extends AutoCloseable {
         if (!TransportSecurityUtils.isTransportSecurityEnabled()) {
             return new NullCryptoEngine();
         }
-        TlsContext tlsContext = new ReloadingTlsContext(TransportSecurityUtils.getConfigFile().get(), Mode.DRY_RUN);
+        AuthorizationMode mode = TransportSecurityUtils.getInsecureAuthorizationMode().orElse(AuthorizationMode.ENFORCE);
+        TlsContext tlsContext = new ReloadingTlsContext(TransportSecurityUtils.getConfigFile().get(), mode);
         TlsCryptoEngine tlsCryptoEngine = new TlsCryptoEngine(tlsContext);
         if (!TransportSecurityUtils.isInsecureMixedModeEnabled()) {
             return tlsCryptoEngine;
