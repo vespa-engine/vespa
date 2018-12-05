@@ -25,6 +25,8 @@ public class CostReportMaintainer extends Maintainer {
     private static final Logger log = Logger.getLogger(CostReportMaintainer.class.getName());
 
     private final NodeRepositoryClientInterface nodeRepository;
+    String csv;
+
 
     public CostReportMaintainer(Controller controller, Duration interval, JobControl jobControl, NodeRepositoryClientInterface nodeRepository) {
         super(controller, interval, jobControl, "CostReportMaintainer", EnumSet.of(SystemName.main));
@@ -63,7 +65,7 @@ public class CostReportMaintainer extends Maintainer {
                         entry -> entry.getValue().ratio(total)
                 ));
 
-        String csv = resourceShareByProperty.entrySet().stream()
+        csv = resourceShareByProperty.entrySet().stream()
                 .sorted((Comparator.comparingDouble(Map.Entry::getValue)))
                 .map(entry -> entry.getKey().id() + "," + entry.getValue())
                 .collect(Collectors.joining("\n"));

@@ -248,7 +248,7 @@ public final class ControllerTester {
         TenantName name = TenantName.from(tenantName);
         Optional<Tenant> existing = controller().tenants().tenant(name);
         if (existing.isPresent()) return name;
-        AthenzTenant tenant = AthenzTenant.create(name, createDomain(domainName), new Property("app1Property"),
+        AthenzTenant tenant = AthenzTenant.create(name, createDomain(domainName), new Property("Property"+propertyId),
                                                   Optional.ofNullable(propertyId)
                                                           .map(Object::toString)
                                                           .map(PropertyId::new), contact);

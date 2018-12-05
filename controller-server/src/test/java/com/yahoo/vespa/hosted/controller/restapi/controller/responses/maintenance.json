@@ -13,7 +13,10 @@
       "name": "ContactInformationMaintainer"
     },
     {
-      "name": "DefaultOsUpgrader"
+      "name": "CostReportMaintainer"
+    },
+    {
+      "name":"DefaultOsUpgrader"
     },
     {
       "name": "DeploymentExpirer"
