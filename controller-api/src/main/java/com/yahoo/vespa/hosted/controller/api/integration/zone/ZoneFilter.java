@@ -23,4 +23,9 @@ public interface ZoneFilter {
     /** All zones from the initial pool. */
     ZoneList all();
 
+    /** Zones in the specified cloud */
+    default ZoneList ofCloud(CloudName cloud) {
+        return all(); // Not implemented in this repo.
+    }
+
 }

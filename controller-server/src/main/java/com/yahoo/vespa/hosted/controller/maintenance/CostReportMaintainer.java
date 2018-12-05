@@ -1,11 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 
 import java.time.Duration;
@@ -19,6 +21,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * Periodically calculate and store cost allocation for properties.
  *
  * @author ldalves
+ * @author andreer
  */
 public class CostReportMaintainer extends Maintainer {
 
@@ -35,8 +38,9 @@ public class CostReportMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        List<NodeRepositoryNode> nodes = controller().zoneRegistry().zones().reachable().ids().stream()
-                .flatMap(zoneId -> uncheck(() -> nodeRepository.listNodes(zoneId,true).nodes().stream()))
+        List<NodeRepositoryNode> nodes = controller().zoneRegistry().zones()
+                .reachable().in(Environment.prod).ofCloud(CloudName.from("yahoo")).ids().stream()
+                .flatMap(zoneId -> uncheck(() -> nodeRepository.listNodes(zoneId, true).nodes().stream()))
                 .filter(node -> node.getOwner() != null && !node.getOwner().getTenant().equals("hosted-vespa"))
                 .collect(Collectors.toList());
 
@@ -91,7 +95,7 @@ public class CostReportMaintainer extends Maintainer {
         }
 
         private double ratio(ResourceAllocation other) {
-            return (cpuCores/other.cpuCores + memoryGb /other.memoryGb + diskGb /other.diskGb) / 3;
+            return (cpuCores / other.cpuCores + memoryGb / other.memoryGb + diskGb / other.diskGb) / 3;
         }
     }
 
