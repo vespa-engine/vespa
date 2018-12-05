@@ -3,7 +3,6 @@ package com.yahoo.security.tls;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Optional;
 
 /**
@@ -15,28 +14,6 @@ public class TransportSecurityUtils {
 
     public static final String CONFIG_FILE_ENVIRONMENT_VARIABLE = "VESPA_TLS_CONFIG_FILE";
     public static final String INSECURE_MIXED_MODE_ENVIRONMENT_VARIABLE = "VESPA_TLS_INSECURE_MIXED_MODE";
-
-    public enum MixedMode {
-        PLAINTEXT_CLIENT_MIXED_SERVER("plaintext_client_mixed_server"),
-        TLS_CLIENT_MIXED_SERVER("tls_client_mixed_server");
-
-        final String configValue;
-
-        MixedMode(String configValue) {
-            this.configValue = configValue;
-        }
-
-        public String configValue() {
-            return configValue;
-        }
-
-        static MixedMode fromConfigValue(String configValue) {
-            return Arrays.stream(values())
-                    .filter(v -> v.configValue.equals(configValue))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Unknown value: " + configValue));
-        }
-    }
 
     private TransportSecurityUtils() {}
 

@@ -2,10 +2,10 @@
 package com.yahoo.jrt;
 
 
+import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.ReloadingTlsContext;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import com.yahoo.security.tls.TransportSecurityUtils.MixedMode;
 import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager.Mode;
 
 import java.nio.channels.SocketChannel;
