@@ -3,7 +3,6 @@
 #pragma once
 
 #include <cstdint>
-#include <cassert>
 
 namespace search::datastore {
 
@@ -29,11 +28,7 @@ class EntryRefT : public EntryRef {
 public:
     EntryRefT() : EntryRef() {}
     EntryRefT(uint64_t offset_, uint32_t bufferId_) :
-        EntryRef((offset_ << BufferBits) + bufferId_)
-    {
-        assert(offset_ < offsetSize());
-        assert(bufferId_ < numBuffers());
-    }
+        EntryRef((offset_ << BufferBits) + bufferId_) {}
     EntryRefT(const EntryRef & ref_) : EntryRef(ref_.ref()) {}
     uint32_t hash() const { return offset() + (bufferId() << OffsetBits); }
     uint64_t offset() const { return _ref >> BufferBits; }
