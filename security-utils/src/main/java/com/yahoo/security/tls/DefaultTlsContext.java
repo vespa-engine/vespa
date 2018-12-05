@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  */
 public class DefaultTlsContext implements TlsContext {
 
-    public static final List<String> ALLOWED_CIPHER_SUITS = Arrays.asList(
+    public static final List<String> ALLOWED_CIPHER_SUITES = Arrays.asList(
             "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
@@ -54,14 +54,14 @@ public class DefaultTlsContext implements TlsContext {
     }
 
     private static void restrictSetOfEnabledCiphers(SSLEngine sslEngine) {
-        String[] validCipherSuits = Arrays.stream(sslEngine.getSupportedCipherSuites())
-                .filter(ALLOWED_CIPHER_SUITS::contains)
+        String[] validCipherSuites = Arrays.stream(sslEngine.getSupportedCipherSuites())
+                .filter(ALLOWED_CIPHER_SUITES::contains)
                 .toArray(String[]::new);
-        if (validCipherSuits.length == 0) {
-            throw new IllegalStateException("None of the allowed cipher suits are supported");
+        if (validCipherSuites.length == 0) {
+            throw new IllegalStateException("None of the allowed cipher suites are supported");
         }
-        log.log(Level.FINE, () -> String.format("Allowed cipher suits that are supported: %s", Arrays.toString(validCipherSuits)));
-        sslEngine.setEnabledCipherSuites(validCipherSuits);
+        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", Arrays.toString(validCipherSuites)));
+        sslEngine.setEnabledCipherSuites(validCipherSuites);
     }
 
     private static SSLContext createSslContext(List<X509Certificate> certificates,

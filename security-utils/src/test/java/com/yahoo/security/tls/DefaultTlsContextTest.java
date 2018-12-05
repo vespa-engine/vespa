@@ -52,7 +52,7 @@ public class DefaultTlsContextTest {
         assertThat(sslEngine).isNotNull();
         String[] enabledCiphers = sslEngine.getEnabledCipherSuites();
         assertThat(enabledCiphers).isNotEmpty();
-        assertThat(enabledCiphers).isSubsetOf(DefaultTlsContext.ALLOWED_CIPHER_SUITS.toArray(new String[0]));
+        assertThat(enabledCiphers).isSubsetOf(DefaultTlsContext.ALLOWED_CIPHER_SUITES.toArray(new String[0]));
     }
 
 }
