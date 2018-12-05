@@ -9,7 +9,6 @@ import com.yahoo.config.docproc.SchemamappingConfig.Fieldmapping;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 
 /**
  * Can be used to map field names from input doc into names used in a docproc that was
@@ -71,26 +70,11 @@ public class SchemaMap implements ConfigSubscriber.SingleSubscriber<Schemamappin
     }
 
     // (key->inProcessor),...
-    private final ConfigSubscriber subscriber;
+
     private Map<SchemaMapKey, String> fields = new HashMap<>();
 
     void addMapping(String chain, String docproc, String doctype, String inDocument, String inProcessor) {
         fields.put(new SchemaMapKey(chain, docproc, doctype, inDocument), inProcessor);
-    }
-
-    /**
-     * New map from the docproc cluster's config id
-     * @param configid can be null. Will not get anything from config in that case.
-     */
-    public SchemaMap(String configid) {
-        subscriber = new ConfigSubscriber();
-        if (configid!=null) {
-            subscriber.subscribe(this, SchemamappingConfig.class, configid);
-        }
-    }
-
-    public SchemaMap() {
-        this(null);
     }
 
     @Override
