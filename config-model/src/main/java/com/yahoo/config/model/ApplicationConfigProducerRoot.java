@@ -19,6 +19,7 @@ import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
 import com.yahoo.messagebus.MessagebusConfig;
+import com.yahoo.vespa.config.content.core.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 import com.yahoo.vespa.documentmodel.DocumentModel;
@@ -208,6 +209,14 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
             storage.name(cluster.getName());
             storage.configid(cluster.getConfigId());
             builder.storage(storage);
+        }
+    }
+
+    @Override
+    public void getConfig(AllClustersBucketSpacesConfig.Builder builder) {
+        VespaModel model = (VespaModel) getRoot();
+        for (ContentCluster cluster : model.getContentClusters().values()) {
+            builder.cluster(cluster.getName(), cluster.clusterBucketSpaceConfigBuilder());
         }
     }
 

@@ -9,6 +9,7 @@ import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.config.content.core.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -29,6 +30,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -821,6 +823,63 @@ public class ContentClusterTest extends ContentBaseTest {
 
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("true");
         new VespaModelCreatorWithMockPkg(null, xml, sds).create();
+    }
+
+    private void assertClusterHasBucketSpaceMappings(AllClustersBucketSpacesConfig config, String clusterId,
+                                                     List<String> defaultSpaceTypes, List<String> globalSpaceTypes) {
+        AllClustersBucketSpacesConfig.Cluster cluster = config.cluster(clusterId);
+        assertNotNull(cluster);
+        assertEquals(defaultSpaceTypes.size() + globalSpaceTypes.size(), cluster.documentType().size());
+        assertClusterHasTypesInBucketSpace(cluster, "default", defaultSpaceTypes);
+        assertClusterHasTypesInBucketSpace(cluster, "global", globalSpaceTypes);
+    }
+
+    private void assertClusterHasTypesInBucketSpace(AllClustersBucketSpacesConfig.Cluster cluster,
+                                                    String bucketSpace, List<String> expectedTypes) {
+        for (String type : expectedTypes) {
+            assertNotNull(cluster.documentType(type));
+            assertEquals(bucketSpace, cluster.documentType(type).bucketSpace());
+        }
+    }
+
+    @Test
+    public void all_clusters_bucket_spaces_config_contains_mappings_across_all_clusters() {
+        String xml =
+                "<services>" +
+                "<admin version=\"2.0\">" +
+                "  <adminserver hostalias=\"node0\"/>" +
+                "</admin>" +
+                "<content version=\"1.0\" id=\"foocluster\">" +
+                "  <redundancy>1</redundancy>" +
+                "  <documents>" +
+                "    <document type=\"bunnies\" mode=\"index\"/>" +
+                "    <document type=\"hares\" mode=\"index\"/>" +
+                "  </documents>" +
+                "  <group>" +
+                "    <node distribution-key=\"0\" hostalias=\"node0\"/>" +
+                "  </group>" +
+                "</content>" +
+                "<content version=\"1.0\" id=\"barcluster\">" +
+                "  <redundancy>1</redundancy>" +
+                "  <documents>" +
+                "    <document type=\"rabbits\" mode=\"index\" global=\"true\"/>" +
+                "  </documents>" +
+                "  <group>" +
+                "    <node distribution-key=\"0\" hostalias=\"node0\"/>" +
+                "  </group>" +
+                "</content>" +
+                "</services>";
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("bunnies", "hares", "rabbits");
+        VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
+
+        AllClustersBucketSpacesConfig.Builder builder = new AllClustersBucketSpacesConfig.Builder();
+        model.getConfig(builder, "client");
+        AllClustersBucketSpacesConfig config = builder.build();
+
+        assertEquals(2, config.cluster().size());
+
+        assertClusterHasBucketSpaceMappings(config, "foocluster", Arrays.asList("bunnies", "hares"), Collections.emptyList());
+        assertClusterHasBucketSpaceMappings(config, "barcluster", Collections.emptyList(), Collections.singletonList("rabbits"));
     }
 
     private ContentCluster createWithZone(String clusterXml, Zone zone) throws Exception {
