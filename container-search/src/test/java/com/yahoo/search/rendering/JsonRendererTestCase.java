@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.document.DataType;
@@ -19,8 +18,13 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.predicate.Predicate;
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.hitfield.JSONString;
+import com.yahoo.prelude.searcher.JuniperSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -38,6 +42,7 @@ import com.yahoo.search.result.NanNumber;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.result.StructuredData;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import com.yahoo.search.statistics.ElapsedTimeTestCase;
 import com.yahoo.search.statistics.ElapsedTimeTestCase.CreativeTimeSource;
 import com.yahoo.search.statistics.ElapsedTimeTestCase.UselessSearcher;
@@ -51,32 +56,31 @@ import com.yahoo.yolean.trace.TraceNode;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.times;
 
 /**
  * Functional testing of {@link JsonRenderer}.
  *
  * @author Steinar Knutsen
+ * @author bratseth
  */
 public class JsonRendererTestCase {
 
-    JsonRenderer originalRenderer;
-    JsonRenderer renderer;
+    private JsonRenderer originalRenderer;
+    private JsonRenderer renderer;
 
     public JsonRendererTestCase() {
         originalRenderer = new JsonRenderer();
@@ -84,21 +88,9 @@ public class JsonRendererTestCase {
 
     @Before
     public void setUp() throws Exception {
-        // Do the same dance as in production
+        // Use the shared renderer as a prototype object, as specified in the API contract
         renderer = (JsonRenderer) originalRenderer.clone();
         renderer.init();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        renderer = null;
-    }
-
-    private static final class Thingie {
-        @Override
-        public String toString() {
-            return "thingie";
-        }
     }
 
     @Test
@@ -128,14 +120,6 @@ public class JsonRendererTestCase {
         r.setTotalHitCount(1L);
         String summary = render(r);
         assertEqualJson(expected, summary);
-    }
-
-    private Result newEmptyResult(String[] args) {
-        return new Result(new Query("/?" + String.join("&", args)));
-    }
-
-    private Result newEmptyResult() {
-        return newEmptyResult(new String[] {"query=a"});
     }
 
     @Test
@@ -188,7 +172,7 @@ public class JsonRendererTestCase {
 
 
     @Test
-    public final void testTracing() throws IOException, InterruptedException, ExecutionException {
+    public void testTracing() throws IOException, InterruptedException, ExecutionException {
         // which clearly shows a trace child is created once too often...
         String expected = "{\n"
                 + "    \"root\": {\n"
@@ -243,7 +227,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testEmptyTracing() throws IOException, InterruptedException, ExecutionException {
+    public void testEmptyTracing() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"fields\": {\n"
@@ -272,7 +256,7 @@ public class JsonRendererTestCase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public final void testTracingWithEmptySubtree() throws IOException, InterruptedException, ExecutionException {
+    public void testTracingWithEmptySubtree() throws IOException, InterruptedException, ExecutionException {
         String expected =  "{\n"
                 + "    \"root\": {\n"
                 + "        \"fields\": {\n"
@@ -346,15 +330,8 @@ public class JsonRendererTestCase {
         assertEqualJson(expected, summary);
     }
 
-    private void subExecution(Execution execution, String color, int traceLevel) {
-        Execution e2 = new Execution(new Chain<Searcher>(), execution.context());
-        Query subQuery = new Query("/?query=b&tracelevel=" + traceLevel);
-        e2.search(subQuery);
-        subQuery.trace(color, 1);
-    }
-
     @Test
-    public final void testTracingOfNodesWithBothChildrenAndData() throws IOException, InterruptedException, ExecutionException {
+    public void testTracingOfNodesWithBothChildrenAndData() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"fields\": {\n"
@@ -400,7 +377,7 @@ public class JsonRendererTestCase {
 
 
     @Test
-    public final void testTracingOfNodesWithBothChildrenAndDataAndEmptySubnode() throws IOException, InterruptedException, ExecutionException {
+    public void testTracingOfNodesWithBothChildrenAndDataAndEmptySubnode() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"fields\": {\n"
@@ -441,7 +418,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testTracingOfNestedNodesWithDataAndSubnodes() throws IOException, InterruptedException, ExecutionException {
+    public void testTracingOfNestedNodesWithDataAndSubnodes() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"fields\": {\n"
@@ -490,7 +467,7 @@ public class JsonRendererTestCase {
 
 
     @Test
-    public final void test() throws IOException, InterruptedException, ExecutionException {
+    public void test() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -883,7 +860,7 @@ public class JsonRendererTestCase {
         });
         GroupList gl = new GroupList("customer");
         Group g = new Group(new DoubleBucketId(1.0, 2.0), new Relevance(1.0));
-        g.setField("something()", Integer.valueOf(7));
+        g.setField("something()", 7);
         gl.add(g);
         rg.add(gl);
         r.hits().add(rg);
@@ -956,7 +933,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testFieldValueInHit() throws IOException, InterruptedException, ExecutionException, JSONException {
+    public void testFieldValueInHit() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -991,7 +968,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testHiddenFields() throws IOException, InterruptedException, ExecutionException, JSONException {
+    public void testHiddenFields() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -1015,17 +992,8 @@ public class JsonRendererTestCase {
         assertEqualJson(expected, summary);
     }
 
-    private Hit createHitWithOnlyHiddenFields() {
-        Hit h = new Hit("hiddenFields");
-        h.setField("NaN", NanNumber.NaN);
-        h.setField("emptyString", "");
-        h.setField("emptyStringFieldValue", new StringFieldValue(""));
-        h.setField("$vespaImplementationDetail", "Hello, World!");
-        return h;
-    }
-
     @Test
-    public final void testDebugRendering() throws IOException, InterruptedException, ExecutionException, JSONException {
+    public void testDebugRendering() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -1056,7 +1024,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testTimingRendering() throws InterruptedException, ExecutionException, JsonParseException, JsonMappingException, IOException {
+    public void testTimingRendering() throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"fields\": {"
@@ -1091,7 +1059,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testJsonCallback() throws IOException, InterruptedException, ExecutionException, JSONException {
+    public void testJsonCallback() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -1129,7 +1097,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testMapInField() throws IOException, InterruptedException, ExecutionException, JSONException {
+    public void testMapInField() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -1185,6 +1153,54 @@ public class JsonRendererTestCase {
                 + "}";
         assertEquals("Duplicate key \"duplicate\"", validateJSON(json));
     }
+
+    @Test
+    public void testDynamicSummary() throws Exception {
+        String content = "\uFFF9Feeding\uFFFAfeed\uFFFB \u001F\uFFF9documents\uFFFAdocument\uFFFB\u001F into Vespa \uFFF9is\uFFFAbe\u001Eincrement of a set of \u001F\uFFF9documents\uFFFAdocument\uFFFB\u001F fed into Vespa \uFFF9is\u001Efloat in XML when \u001Fdocument\u001F attribute \uFFF9is\uFFFAbe\uFFFB int\u001E";
+        Result result = createResult("one", content, true);
+
+        String summary = render(result);
+
+        String expected =
+                "{  \n" +
+                "   \"root\":{  " +
+                "      \"id\":\"toplevel\"," +
+                "      \"relevance\":1.0," +
+                "      \"fields\":{  " +
+                "         \"totalCount\":0" +
+                "      }," +
+                "      \"children\":[  " +
+                "         {  " +
+                "            \"id\":\"http://abc.html/\"," +
+                "            \"relevance\":1.0," +
+                "            \"fields\":{  " +
+                "               \"sddocname\":\"one\",\n" +
+                "               \"dynteaser\":\"Feeding <hi>documents</hi> into Vespa is<sep />increment of a set of <hi>documents</hi> fed into Vespa <sep />float in XML when <hi>document</hi> attribute is int<sep />\"\n" +
+                "            }\n" +
+                "         }\n" +
+                "      ]\n" +
+                "   }\n" +
+                "}\n";
+        assertEqualJson(expected, summary);
+    }
+
+    private Result newEmptyResult(String[] args) {
+        return new Result(new Query("/?" + String.join("&", args)));
+    }
+
+    private Result newEmptyResult() {
+        return newEmptyResult(new String[] {"query=a"});
+    }
+
+    private Hit createHitWithOnlyHiddenFields() {
+        Hit h = new Hit("hiddenFields");
+        h.setField("NaN", NanNumber.NaN);
+        h.setField("emptyString", "");
+        h.setField("emptyStringFieldValue", new StringFieldValue(""));
+        h.setField("$vespaImplementationDetail", "Hello, World!");
+        return h;
+    }
+
     private String render(Result r) throws InterruptedException, ExecutionException {
         Execution execution = new Execution(Execution.Context.createContextStub());
         return render(execution, r);
@@ -1207,6 +1223,7 @@ public class JsonRendererTestCase {
         assertEquals("", validateJSON(expected));
         assertEquals("", validateJSON(generated));
     }
+
     private String validateJSON(String presumablyValidJson) {
         try {
             new JSONObject(presumablyValidJson);
@@ -1214,6 +1231,78 @@ public class JsonRendererTestCase {
         } catch (JSONException e) {
             return e.getMessage();
         }
+    }
+
+    private static final class Thingie {
+        @Override
+        public String toString() {
+            return "thingie";
+        }
+    }
+
+    private Result createResult(String sdName, String content, boolean bolding) {
+        Chain<Searcher> chain = createSearchChain(sdName, content);
+        Query query = new Query("?query=12");
+        if ( ! bolding)
+            query = new Query("?query=12&bolding=false");
+        Execution execution = createExecution(chain);
+        Result result = execution.search(query);
+        execution.fill(result);
+        return result;
+    }
+
+    /**
+     * Creates a search chain which always returns a result with one hit containing information given in this
+     *
+     * @param sdName the search definition type of the returned hit
+     * @param content the content of the "dynteaser" field of the returned hit
+     */
+    private Chain<Searcher> createSearchChain(String sdName, String content) {
+        JuniperSearcher searcher = new JuniperSearcher(new ComponentId("test"),
+                                                       new QrSearchersConfig(new QrSearchersConfig.Builder()));
+
+        DocumentSourceSearcher docsource = new DocumentSourceSearcher();
+        addResult(new Query("?query=12"), sdName, content, docsource);
+        addResult(new Query("?query=12&bolding=false"), sdName, content, docsource);
+        return new Chain<>(searcher, docsource);
+    }
+
+    private void addResult(Query query, String sdName, String content, DocumentSourceSearcher docsource) {
+        Result r = new Result(query);
+        FastHit hit = new FastHit();
+        hit.setId("http://abc.html");
+        hit.setRelevance(new Relevance(1));
+        hit.setField(Hit.SDDOCNAME_FIELD, sdName);
+        hit.setField("dynteaser", content);
+        r.hits().add(hit);
+        docsource.addResult(query, r);
+    }
+
+    private Execution createExecution(Chain<Searcher> chain) {
+        Map<String, List<String>> clusters = new LinkedHashMap<>();
+        Map<String, SearchDefinition> searchDefs = new LinkedHashMap<>();
+        searchDefs.put("one", createSearchDefinitionOne());
+        SearchDefinition union = new SearchDefinition("union");
+        IndexModel indexModel = new IndexModel(clusters, searchDefs, union);
+        return new Execution(chain, Execution.Context.createContextStub(new IndexFacts(indexModel)));
+    }
+
+    private SearchDefinition createSearchDefinitionOne() {
+        SearchDefinition one = new SearchDefinition("one");
+
+        Index dynteaser = new Index("dynteaser");
+        dynteaser.setDynamicSummary(true);
+        one.addIndex(dynteaser);
+
+        Index bigteaser = new Index("bigteaser");
+        dynteaser.setHighlightSummary(true);
+        one.addIndex(bigteaser);
+
+        Index otherteaser = new Index("otherteaser");
+        otherteaser.setDynamicSummary(true);
+        one.addIndex(otherteaser);
+
+        return one;
     }
 
 }
