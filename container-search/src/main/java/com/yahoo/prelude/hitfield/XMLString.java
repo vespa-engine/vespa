@@ -4,7 +4,7 @@ package com.yahoo.prelude.hitfield;
 /**
  * A representation of an XML chunk.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class XMLString {
 

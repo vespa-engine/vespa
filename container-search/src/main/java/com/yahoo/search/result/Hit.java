@@ -637,7 +637,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * Returns a field of this hit XML escaped and without token
      * delimiters.
      *
-     * @deprecated do not use
+     * @deprecated do not use - use getField(key).toString() instead
      * @return a field of this hit, or null if the property is not set
      */
     // TODO: Remove on Vespa 7
