@@ -349,15 +349,12 @@ public final class XmlRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private Result getResult() {
-        Result r;
         try {
-            r = (Result) getResponse();
+            return (Result) getResponse();
         } catch (ClassCastException e) {
-            throw new IllegalArgumentException(
-                    "XmlRenderer attempted used outside a search context, got a "
-                    + getResponse().getClass().getName());
+            throw new IllegalArgumentException("XmlRenderer attempted used outside a search context, got a " +
+                                               getResponse().getClass().getName());
         }
-        return r;
     }
 
     @Override
