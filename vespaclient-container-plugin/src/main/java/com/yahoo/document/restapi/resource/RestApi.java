@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -29,11 +30,15 @@ import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
+import com.yahoo.vespaclient.ClusterDef;
+import com.yahoo.vespaclient.ClusterList;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -70,12 +75,15 @@ public class RestApi extends LoggingRequestHandler {
     @Inject
     public RestApi(LoggingRequestHandler.Context parentCtx, DocumentmanagerConfig documentManagerConfig,
                    LoadTypeConfig loadTypeConfig, ThreadpoolConfig threadpoolConfig,
-                   MetricReceiver metricReceiver)
+                   ClusterListConfig clusterListConfig, MetricReceiver metricReceiver)
     {
         super(parentCtx);
         MessageBusParams params = new MessageBusParams(new LoadTypeSet(loadTypeConfig));
         params.setDocumentmanagerConfig(documentManagerConfig);
-        this.operationHandler = new OperationHandlerImpl(new MessageBusDocumentAccess(params), metricReceiver);
+        this.operationHandler = new OperationHandlerImpl(
+                new MessageBusDocumentAccess(params),
+                fixedClusterEnumeratorFromConfig(clusterListConfig),
+                metricReceiver);
         this.singleDocumentParser = new SingleDocumentParser(new DocumentTypeManager(documentManagerConfig));
         // 40% of the threads can be blocked before we deny requests.
         if (threadpoolConfig != null) {
@@ -105,6 +113,11 @@ public class RestApi extends LoggingRequestHandler {
     // For testing and development
     protected void setDocTypeManagerForTests(DocumentTypeManager docTypeManager) {
         this.singleDocumentParser = new SingleDocumentParser(docTypeManager);
+    }
+
+    private static OperationHandlerImpl.ClusterEnumerator fixedClusterEnumeratorFromConfig(ClusterListConfig config) {
+        final List<ClusterDef> clusters = Collections.unmodifiableList(new ClusterList(config).getStorageClusters());
+        return () -> clusters;
     }
 
     private static Optional<String> requestProperty(String parameter, HttpRequest request) {
