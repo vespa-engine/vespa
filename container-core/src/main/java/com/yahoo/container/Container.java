@@ -41,6 +41,8 @@ public class Container {
 
     public static Container get() { return instance; }
 
+    /** @deprecated do not use */
+    @Deprecated // TODO: Remove
     public void setOsgi(Osgi osgi) {
         bundleLoader = new BundleLoader(osgi);
     }
@@ -55,6 +57,8 @@ public class Container {
         return fileAcquirer;
     }
 
+    /** @deprecated do not use */
+    @Deprecated // TODO: Remove
     public BundleLoader getBundleLoader() {
         if (bundleLoader == null)
             bundleLoader = new BundleLoader(null);
@@ -65,7 +69,7 @@ public class Container {
      * Hack. For internal use only, will be removed later
      *
      * Used by Application to be able to repeatedly set up containers.
-     **/
+     */
     public static void resetInstance() {
         instance = new Container();
     }

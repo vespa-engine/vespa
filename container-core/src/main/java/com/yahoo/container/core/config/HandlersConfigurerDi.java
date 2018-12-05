@@ -83,7 +83,7 @@ public class HandlersConfigurerDi {
                                 OsgiFramework osgiFramework) {
 
         this.vespaContainer = vespaContainer;
-        osgiWrapper = new OsgiWrapper(osgiFramework, vespaContainer.getBundleLoader());
+        osgiWrapper = new OsgiWrapper(osgiFramework, new BundleLoader(new OsgiImpl(osgiFramework)));
 
         container = new Container(subscriberFactory, configId, deconstructor, osgiWrapper);
         getNewComponentGraph(discInjector, false);

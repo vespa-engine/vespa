@@ -37,6 +37,8 @@ public final class JDisc implements AutoCloseable {
     private final ClassLoaderOsgiFramework osgiFramework = new ClassLoaderOsgiFramework();
 
     private final TestDriver testDriver;
+
+    @SuppressWarnings("unused")
     private final StandaloneContainerApplication application;
 
     private final Container container = Container.get();  // TODO: This is indeed temporary ... *3 years later* Indeed.
@@ -136,8 +138,7 @@ public final class JDisc implements AutoCloseable {
                 .getComponent(ProcessingHandler.class.getName());
 
         if (processingHandler == null) {
-            throw new UnsupportedOperationException("This JDisc does not have 'processing' " +
-                    "configured.");
+            throw new UnsupportedOperationException("This JDisc does not have 'processing' configured.");
         }
 
         return new Processing(processingHandler);
@@ -156,8 +157,7 @@ public final class JDisc implements AutoCloseable {
                 .getComponent(DocumentProcessingHandler.class.getName());
 
         if (docprocHandler == null) {
-            throw new UnsupportedOperationException("This JDisc does not have 'document-processing' " +
-                    "configured.");
+            throw new UnsupportedOperationException("This JDisc does not have 'document-processing' configured.");
         }
         return new DocumentProcessing(docprocHandler);
     }
