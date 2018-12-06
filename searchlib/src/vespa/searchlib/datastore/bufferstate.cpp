@@ -80,6 +80,11 @@ calcAllocation(uint32_t bufferId,
     size_t allocClusters = typeHandler.calcClustersToAlloc(bufferId, elementsNeeded, resizing);
     size_t allocElements = allocClusters * typeHandler.getClusterSize();
     size_t allocBytes = roundUpToMatchAllocator(allocElements * typeHandler.elementSize());
+    size_t maxAllocBytes = typeHandler.getMaxClusters() * typeHandler.getClusterSize() * typeHandler.elementSize();
+    if (allocBytes > maxAllocBytes) {
+        // Ensure that allocated bytes does not exceed the maximum handled by this type.
+        allocBytes = maxAllocBytes;
+    }
     size_t adjustedAllocElements = (allocBytes / typeHandler.elementSize());
     return AllocResult(adjustedAllocElements, allocBytes);
 }

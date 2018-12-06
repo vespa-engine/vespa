@@ -36,6 +36,11 @@ struct Fixture
           refStore(),
           generation(1)
     {}
+    Fixture(const ArrayStoreConfig &storeCfg)
+        : store(storeCfg),
+          refStore(),
+          generation(1)
+    {}
     void assertAdd(const EntryVector &input) {
         EntryRef ref = add(input);
         assertGet(ref, input);
@@ -112,6 +117,9 @@ struct Fixture
 using NumberFixture = Fixture<uint32_t>;
 using StringFixture = Fixture<std::string>;
 using SmallOffsetNumberFixture = Fixture<uint32_t, EntryRefT<10>>;
+using ByteFixture = Fixture<uint8_t>;
+
+
 
 TEST("require that we test with trivial and non-trivial types")
 {
@@ -335,6 +343,18 @@ TEST_F("require that address space usage is ratio between used clusters and numb
     size_t expLimit = fourgig - 4 * F1::EntryRefType::offsetSize() + 3 * 16 + 21;
     EXPECT_EQUAL(static_cast<double>(2)/ expLimit, f.store.addressSpaceUsage().usage());
     EXPECT_EQUAL(expLimit, f.store.addressSpaceUsage().limit());
+}
+
+TEST_F("require that offset in EntryRefT is within bounds when allocating memory buffers where wanted number of bytes is not a power of 2 and less than huge page size",
+       ByteFixture(ByteFixture::ArrayStoreType::optimizedConfigForHugePage(1023, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+                                                                           4 * 1024, 8 * 1024, ALLOC_GROW_FACTOR)))
+{
+    // The array store config used in this test is equivalent to the one multi-value attribute uses when initializing multi-value mapping.
+    // See similar test in datastore_test.cpp for more details on what happens during memory allocation.
+    for (size_t i = 0; i < 1000000; ++i) {
+        f.add({1, 2, 3});
+    }
+    f.assertStoreContent();
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
