@@ -47,6 +47,12 @@ public class NodeFailer extends Maintainer {
     private static final Logger log = Logger.getLogger(NodeFailer.class.getName());
     private static final Duration nodeRequestInterval = Duration.ofMinutes(10);
 
+    /** Metric for number of nodes that we want to fail, but cannot due to throttling */
+    public static final String throttledNodeFailuresMetric = "throttledNodeFailures";
+
+    /** Metric that indicates whether throttling is active where 1 means active and 0 means inactive */
+    public static final String throttlingActiveMetric = "nodeFailThrottling";
+
     /** Provides information about the status of ready hosts */
     private final HostLivenessTracker hostLivenessTracker;
 
@@ -88,11 +94,17 @@ public class NodeFailer extends Maintainer {
         try (Mutex lock = nodeRepository().lockUnallocated()) {
             updateNodeLivenessEventsForReadyNodes();
 
-            getReadyNodesByFailureReason().forEach((node, reason) -> {
-                if (!throttle(node)) {
-                    nodeRepository().fail(node.hostname(), Agent.system, reason);
+            int throttledNodeFailures = 0;
+            for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
+                Node node = entry.getKey();
+                if (throttle(node)) {
+                    throttledNodeFailures++;
+                    continue;
                 }
-            });
+                String reason = entry.getValue();
+                nodeRepository().fail(node.hostname(), Agent.system, reason);
+            }
+            metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
         }
 
         // Active nodes
@@ -317,7 +329,7 @@ public class NodeFailer extends Maintainer {
             log.info(String.format("Want to fail node %s, but throttling is in effect: %s", node.hostname(),
                                    throttlePolicy.toHumanReadableString()));
         }
-        metric.set("nodeFailThrottling", throttle ? 1 : 0, null);
+        metric.set(throttlingActiveMetric, throttle ? 1 : 0, null);
         return throttle;
     }
 
