@@ -132,7 +132,7 @@ public class OperationHandlerImplTest {
             });
             when(documentAccess.createSyncSession(any(SyncParameters.class))).thenReturn(mockSyncSession);
             OperationHandlerImpl.ClusterEnumerator clusterEnumerator = () -> Arrays.asList(new ClusterDef("foo", "configId"));
-            OperationHandlerImpl.BucketSpaceResolver bucketSpaceResolver = (clusterId, docType) -> Optional.ofNullable(bucketSpaces.get(docType));
+            OperationHandlerImpl.BucketSpaceResolver bucketSpaceResolver = (configId, docType) -> Optional.ofNullable(bucketSpaces.get(docType));
             return new OperationHandlerImpl(documentAccess, clusterEnumerator, bucketSpaceResolver, MetricReceiver.nullImplementation);
         }
     }

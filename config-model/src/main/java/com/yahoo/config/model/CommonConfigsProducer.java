@@ -12,7 +12,6 @@ import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
 import com.yahoo.messagebus.MessagebusConfig;
-import com.yahoo.vespa.config.content.core.AllClustersBucketSpacesConfig;
 
 
 /**
@@ -30,7 +29,6 @@ public interface CommonConfigsProducer extends DocumentmanagerConfig.Producer,
                                                ZookeepersConfig.Producer,
                                                LoadTypeConfig.Producer,
                                                ClusterListConfig.Producer,
-                                               AllClustersBucketSpacesConfig.Producer,
                                                ModelConfig.Producer,
                                                ApplicationIdConfig.Producer {
 }
