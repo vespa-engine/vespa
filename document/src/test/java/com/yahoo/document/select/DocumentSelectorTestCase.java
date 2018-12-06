@@ -166,7 +166,7 @@ public class DocumentSelectorTestCase {
         assertParse("music.h == \"\\ttx48 \\n\"", "music.h == \"\\tt\\x48 \\n\"");
 
         // Test illegal operator.
-        assertParseError("music.hmm <> 12", "Exception parsing document selector 'music.hmm <> 12': Encountered \" \">\" \"> \"\" at line 1, column 12.");
+        assertParseError("music.hmm <> 12", "Exception parsing document selector 'music.hmm <> 12': Encountered \" \">\" \">\"\" at line 1, column 12.");
 
         // Test comparison operators.
         assertParse("music.hmm >= 123");

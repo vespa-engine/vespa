@@ -49,21 +49,21 @@ public class FastCharStream {
         readPos -= amount;
     }
 
-    public char BeginToken() throws IOException {
+    public char beginToken() throws IOException {
         tokenPos = readPos;
         return readChar();
     }
 
-    public String GetImage() {
+    public String getImage() {
         return inputStr.substring(tokenPos, readPos);
     }
 
     @SuppressWarnings("UnusedParameters")
-    public char[] GetSuffix(int len) {
+    public char[] getSuffix(int len) {
         throw new UnsupportedOperationException();
     }
 
-    public void Done() {
+    public void done() {
 
     }
 
@@ -73,7 +73,7 @@ public class FastCharStream {
 
     public void setTrackLineColumn(boolean tlc) { trackLineColumn = tlc; }
 
-    public boolean getTrackLineColumn() { return trackLineColumn; }
+    public boolean isTrackLineColumn() { return trackLineColumn; }
 
     public String formatException(String parseException) {
         int errPos = findErrPos(parseException);

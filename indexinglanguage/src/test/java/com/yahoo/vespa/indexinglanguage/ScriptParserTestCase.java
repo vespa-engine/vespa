@@ -11,6 +11,7 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -22,7 +23,7 @@ public class ScriptParserTestCase {
         try {
             ScriptParser.parseExpression(newContext("foo"));
         } catch (ParseException e) {
-            assertException(e, "Encountered \" <IDENTIFIER> \"foo \"\" at line 1, column 1.");
+            assertException(e, "Encountered \" <IDENTIFIER> \"foo\"\" at line 1, column 1.");
         }
         assertEquals(new InputExpression("foo"),
                      ScriptParser.parseExpression(newContext("input foo")));
@@ -38,7 +39,7 @@ public class ScriptParserTestCase {
         try {
             ScriptParser.parseStatement(newContext("foo"));
         } catch (ParseException e) {
-            assertException(e, "Encountered \" <IDENTIFIER> \"foo \"\" at line 1, column 1.");
+            assertException(e, "Encountered \" <IDENTIFIER> \"foo\"\" at line 1, column 1.");
         }
         assertEquals(new StatementExpression(new InputExpression("foo")),
                      ScriptParser.parseStatement(newContext("input foo")));
@@ -54,17 +55,17 @@ public class ScriptParserTestCase {
         try {
             ScriptParser.parseScript(newContext("foo"));
         } catch (ParseException e) {
-            assertException(e, "Encountered \" <IDENTIFIER> \"foo \"\" at line 1, column 1.");
+            assertException(e, "Encountered \" <IDENTIFIER> \"foo\"\" at line 1, column 1.");
         }
         try {
             ScriptParser.parseScript(newContext("input foo"));
         } catch (ParseException e) {
-            assertException(e, "Encountered \" \"input\" \"input \"\" at line 1, column 1.");
+            assertException(e, "Encountered \" \"input\" \"input\"\" at line 1, column 1.");
         }
         try {
             ScriptParser.parseScript(newContext("input foo | echo"));
         } catch (ParseException e) {
-            assertException(e, "Encountered \" \"input\" \"input \"\" at line 1, column 1.");
+            assertException(e, "Encountered \" \"input\" \"input\"\" at line 1, column 1.");
         }
         assertEquals(new ScriptExpression(new StatementExpression(new InputExpression("foo")),
                                           new StatementExpression(new EchoExpression())),
@@ -89,7 +90,7 @@ public class ScriptParserTestCase {
 
     private static void assertException(ParseException e, String expectedMessage) throws ParseException {
         if (!e.getMessage().startsWith(expectedMessage)) {
-            throw e;
+            fail("Expected exception with message starting with:\n'" + expectedMessage + ", but got:\n'" + e.getMessage());
         }
     }
 

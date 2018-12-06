@@ -11,6 +11,7 @@ import java.util.Iterator;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
@@ -186,22 +187,26 @@ public class RankingConstantTest {
     }
 
     @Test
-    public void constant_uri_only_supports_http_and_https() throws Exception {
+    public void constant_uri_only_supports_http_and_https() {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
-        thrown.expect(ParseException.class);
-        thrown.expectMessage("Encountered \" <IDENTIFIER> \"ftp \"\" at line 5, column 10.\n" +
-                "Was expecting:\n" +
-                "    <URI_PATH> ...");
-        searchBuilder.importString(joinLines(
-                "search test {",
-                "  document test { }",
-                "  constant foo {",
-                "    type: tensor(x{})",
-                "    uri: ftp:somewhere.far.away/in/another-galaxy",
-                "  }",
-                "}"
-        ));
+        String expectedMessage = "Encountered \" <IDENTIFIER> \"ftp\"\" at line 5, column 10.\n\n" +
+                "Was expecting:\n\n" +
+                "<URI_PATH> ...";
+        try {
+            searchBuilder.importString(joinLines(
+                    "search test {",
+                    "  document test { }",
+                    "  constant foo {",
+                    "    type: tensor(x{})",
+                    "    uri: ftp:somewhere.far.away/in/another-galaxy",
+                    "  }",
+                    "}"
+            ));
+        } catch (ParseException e) {
+            if (! e.getMessage().startsWith(expectedMessage))
+                fail("Expected exception with message starting with:\n'" + expectedMessage + "\nBut got:\n'" + e.getMessage());
+        }
     }
 
 }
