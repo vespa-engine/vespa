@@ -27,12 +27,15 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -206,6 +209,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("deploy-result.json"));
 
+
         // POST (deploy) an application to a zone. This simulates calls done by our tenant pipeline.
         ApplicationId id = ApplicationId.from("tenant1", "application1", "default");
         long screwdriverProjectId = 123;
@@ -258,6 +262,27 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .projectId(screwdriverProjectId)
                         .unsuccessful()
                         .submit();
+
+        // POST an application deployment to a production zone - operator emergency deployment - fails since package is unknown
+        entity = createApplicationDeployData(Optional.empty(),
+                                             Optional.of(ApplicationVersion.from(BuildJob.defaultSourceRevision,
+                                                                                 BuildJob.defaultBuildNumber - 1)),
+                                             true);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/", POST)
+                                      .data(entity)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"NullPointerException\"}",
+                              500);
+
+        // POST an application deployment to a production zone - operator emergency deployment - works with known package
+        entity = createApplicationDeployData(Optional.empty(),
+                                             Optional.of(ApplicationVersion.from(BuildJob.defaultSourceRevision,
+                                                                                 BuildJob.defaultBuildNumber)),
+                                             true);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/", POST)
+                                      .data(entity)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              new File("deploy-result.json"));
 
         // POST (create) another application
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -1141,8 +1166,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private HttpEntity createApplicationDeployData(Optional<ApplicationPackage> applicationPackage, boolean deployDirectly) {
+        return createApplicationDeployData(applicationPackage, Optional.empty(), deployDirectly);
+    }
+
+    private HttpEntity createApplicationDeployData(Optional<ApplicationPackage> applicationPackage,
+                                                   Optional<ApplicationVersion> applicationVersion, boolean deployDirectly) {
         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-        builder.addTextBody("deployOptions", deployOptions(deployDirectly), ContentType.APPLICATION_JSON);
+        builder.addTextBody("deployOptions", deployOptions(deployDirectly, applicationVersion), ContentType.APPLICATION_JSON);
         applicationPackage.ifPresent(ap -> builder.addBinaryBody("applicationZip", ap.zippedContent()));
         return builder.build();
     }
@@ -1157,10 +1187,19 @@ public class ApplicationApiTest extends ControllerContainerTest {
         return builder.build();
     }
     
-    private String deployOptions(boolean deployDirectly) {
+    private String deployOptions(boolean deployDirectly, Optional<ApplicationVersion> applicationVersion) {
             return "{\"vespaVersion\":null," +
                     "\"ignoreValidationErrors\":false," +
                     "\"deployDirectly\":" + deployDirectly +
+                   applicationVersion.map(version ->
+                           "," +
+                           "\"buildNumber\":" + version.buildNumber().getAsLong() + "," +
+                           "\"sourceRevision\":{" +
+                               "\"repository\":\"" + version.source().get().repository() + "\"," +
+                               "\"branch\":\"" + version.source().get().branch() + "\"," +
+                               "\"commit\":\"" + version.source().get().commit() + "\"" +
+                           "}"
+                   ).orElse("") +
                     "}";
     }
 

@@ -18,6 +18,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -81,6 +82,7 @@ import com.yahoo.yolean.Exceptions;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -94,6 +96,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Scanner;
 import java.util.logging.Level;
 
@@ -831,6 +834,21 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Optional<ApplicationPackage> applicationPackage = Optional.ofNullable(dataParts.get("applicationZip"))
                                                                   .map(ApplicationPackage::new);
 
+        Inspector sourceRevision = deployOptions.field("sourceRevision");
+        Inspector buildNumber = deployOptions.field("buildNumber");
+        if (sourceRevision.valid() != buildNumber.valid())
+            throw new IllegalArgumentException("Source revision and build number must both be provided, or not");
+
+        Optional<ApplicationVersion> applicationVersion = Optional.empty();
+        if (sourceRevision.valid()) {
+            if (applicationPackage.isPresent())
+                throw new IllegalArgumentException("Application version and application package can't both be provided.");
+
+            applicationVersion = Optional.of(ApplicationVersion.from(toSourceRevision(sourceRevision).get(),
+                                                                     buildNumber.asLong()));
+            applicationPackage = Optional.of(controller.applications().getApplicationPackage(controller.applications().require(applicationId), applicationVersion.get()));
+        }
+
         // TODO: get rid of the json object
         DeployOptions deployOptionsJsonClass = new DeployOptions(deployOptions.field("deployDirectly").asBool(),
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
@@ -839,6 +857,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ActivateResult result = controller.applications().deploy(applicationId,
                                                                  zone,
                                                                  applicationPackage,
+                                                                 applicationVersion,
                                                                  deployOptionsJsonClass);
         return new SlimeJsonResponse(toSlime(result));
     }
