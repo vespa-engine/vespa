@@ -23,7 +23,6 @@ public class XmlFeedReader {
     private XmlFeedReader() {}
 
     public static void read(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) throws Exception {
-
         SAXParserFactory parserFactory = SAXParserFactory.newInstance();
         // XXE prevention:
         parserFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);

@@ -211,7 +211,7 @@ public class OperationProcessor {
     }
 
     public void resultReceived(EndpointResult endpointResult, int clusterId) {
-        final Result result = process(endpointResult, clusterId);
+        Result result = process(endpointResult, clusterId);
 
         if (result != null) {
             incompleteResultsThrottler.resultReady(result.isSuccess());

@@ -25,8 +25,8 @@ import static org.junit.Assert.assertThat;
 
 /**
  * Only runs on screwdriver to save time!
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.27
+ *
+ * @author Einar M R Rosenvinge
  */
 public class V3HttpAPITest extends TestOnCiBuildingSystemOnly {
 

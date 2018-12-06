@@ -31,6 +31,7 @@ public class JsonReader {
 
     /**
      * Process one inputstream and send all documents to feedclient.
+     *
      * @param inputStream source of array of json document.
      * @param feedClient where data is sent.
      * @param numSent counter to be incremented for every document streamed.
@@ -95,6 +96,7 @@ public class JsonReader {
             /**
              * This is for throwing away [ and spaces in front of a json object, and find the position of {.
              * Not for parsing much text.
+             *
              * @return position for {
              */
             public int findNextObjectStart() {
@@ -192,6 +194,7 @@ public class JsonReader {
 
     /**
      * Parse one document from the stream and return doc id.
+     *
      * @param jParser parser with stream.
      * @return doc id of document or null if no more docs.
      * @throws IOException on problems
@@ -202,7 +205,7 @@ public class JsonReader {
         boolean foundObject = false;
         boolean valueIsDocumentId = false;
         while (jParser.nextToken() != null) {
-            final String tokenAsText = jParser.getText();
+            String tokenAsText = jParser.getText();
             if (valueIsDocumentId) {
                 if (documentId != null) {
                     throw new RuntimeException("Several document ids");
@@ -224,9 +227,9 @@ public class JsonReader {
                 case FIELD_NAME:
                     if (objectLevel == 1 &&
                             (tokenAsText.equals("put")
-                                    || tokenAsText.endsWith("id")
-                                    || tokenAsText.endsWith("update")
-                                    || tokenAsText.equals("remove"))) {
+                             || tokenAsText.endsWith("id")
+                             || tokenAsText.endsWith("update")
+                             || tokenAsText.equals("remove"))) {
                         valueIsDocumentId = true;
                     }
                     break;
@@ -237,4 +240,5 @@ public class JsonReader {
             throw new EOFException("No more documents");
         return null;
     }
+
 }
