@@ -79,7 +79,7 @@ public class FastCharStreamTestCase {
     @Test
     public void requireThatSuffixIsNotSupported() {
         try {
-            new FastCharStream("foo").GetSuffix(0);
+            new FastCharStream("foo").getSuffix(0);
             fail();
         } catch (UnsupportedOperationException e) {
 
@@ -89,7 +89,7 @@ public class FastCharStreamTestCase {
     @Test
     public void requireThatDoneDoesNotThrowException() {
         FastCharStream input = new FastCharStream("foo");
-        input.Done();
+        input.done();
     }
 
     @Test
@@ -99,7 +99,7 @@ public class FastCharStreamTestCase {
         input.readChar();
         input.readChar();
         input.readChar();
-        assertEquals('b', input.BeginToken());
+        assertEquals('b', input.beginToken());
         assertEquals(5, input.getBeginColumn());
         assertEquals(-1, input.getBeginLine());
         assertEquals(6, input.getEndColumn());
@@ -108,7 +108,7 @@ public class FastCharStreamTestCase {
         assertEquals('r', input.readChar());
         assertEquals(8, input.getEndColumn());
         assertEquals(-1, input.getEndLine());
-        assertEquals("bar", input.GetImage());
+        assertEquals("bar", input.getImage());
     }
 
     @Test
