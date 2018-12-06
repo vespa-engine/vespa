@@ -51,7 +51,7 @@ public:
     virtual void initializeReservedElements(void *buffer, size_t reservedElements) = 0;
     virtual size_t elementSize() const = 0;
     virtual void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) = 0;
-    uint32_t getClusterSize() const { return _clusterSize; }
+    size_t getClusterSize() const { return _clusterSize; }
     void flushLastUsed();
     virtual void onActive(uint32_t bufferId, size_t *usedElems, size_t &deadElems, void *buffer);
     void onHold(const size_t *usedElems);
@@ -70,7 +70,7 @@ public:
     void clampMaxClusters(uint32_t maxClusters);
 
     uint32_t getActiveBuffers() const { return _activeBuffers; }
-    uint32_t getMaxClusters() const { return _maxClusters; }
+    size_t getMaxClusters() const { return _maxClusters; }
     uint32_t getNumClustersForNewBuffer() const { return _numClustersForNewBuffer; }
 };
 
