@@ -71,8 +71,8 @@ public:
     }
 };
 
-DocSet::DocSet() : std::set<uint32_t>() {}
-DocSet::~DocSet() {}
+DocSet::DocSet() = default;
+DocSet::~DocSet() = default;
 
 template <typename V, typename T>
 class PostingList
@@ -97,7 +97,7 @@ template <typename V, typename T>
 PostingList<V, T>::PostingList(V & vec, T value) : _vec(&vec), _value(value), _hits() {}
 
 template <typename V, typename T>
-PostingList<V, T>::~PostingList() {}
+PostingList<V, T>::~PostingList() = default;
 
 class DocRange
 {
@@ -145,7 +145,7 @@ private:
     void checkResultSet(const ResultSet & rs, const DocSet & exp, bool bitVector);
 
     template<typename T, typename A>
-    void testSearchIterator(T key, const vespalib::string &keyAsString, const ConfigMap &cfgs);
+    void testSearchIterator(const std::vector<T> & keys, const vespalib::string &keyAsString, const ConfigMap &cfgs);
     void testSearchIteratorConformance();
     // test search functionality
     template <typename V, typename T>
@@ -169,25 +169,25 @@ private:
     class AttributeIteratorTester : public IteratorTester
     {
     public:
-        virtual bool matches(const SearchIterator & base) const override {
-            return dynamic_cast<const AttributeIterator *>(&base) != NULL;
+        bool matches(const SearchIterator & base) const override {
+            return dynamic_cast<const AttributeIterator *>(&base) != nullptr;
         }
     };
     class FlagAttributeIteratorTester : public IteratorTester
     {
     public:
-        virtual bool matches(const SearchIterator & base) const override {
-            return (dynamic_cast<const FlagAttributeIterator *>(&base) != NULL) ||
-                   (dynamic_cast<const BitVectorIterator *>(&base) != NULL) ||
-                   (dynamic_cast<const queryeval::EmptySearch *>(&base) != NULL);
+        bool matches(const SearchIterator & base) const override {
+            return (dynamic_cast<const FlagAttributeIterator *>(&base) != nullptr) ||
+                   (dynamic_cast<const BitVectorIterator *>(&base) != nullptr) ||
+                   (dynamic_cast<const queryeval::EmptySearch *>(&base) != nullptr);
         }
     };
     class AttributePostingListIteratorTester : public IteratorTester
     {
     public:
-        virtual bool matches(const SearchIterator & base) const override {
-            return dynamic_cast<const AttributePostingListIterator *>(&base) != NULL ||
-                dynamic_cast<const queryeval::EmptySearch *>(&base) != NULL;
+        bool matches(const SearchIterator & base) const override {
+            return dynamic_cast<const AttributePostingListIterator *>(&base) != nullptr ||
+                dynamic_cast<const queryeval::EmptySearch *>(&base) != nullptr;
                 
         }
     };
@@ -473,7 +473,7 @@ SearchContextTest::checkResultSet(const ResultSet & rs, const DocSet & expected,
     if (bitVector) {
         const BitVector * vec = rs.getBitOverflow();
         if (expected.size() != 0) {
-            ASSERT_TRUE(vec != NULL);
+            ASSERT_TRUE(vec != nullptr);
             for (const auto & expect : expected) {
                 EXPECT_TRUE(vec->testBit(expect));
             }
@@ -481,7 +481,7 @@ SearchContextTest::checkResultSet(const ResultSet & rs, const DocSet & expected,
     } else {
         const RankedHit * array = rs.getArray();
         if (expected.size() != 0) {
-            ASSERT_TRUE(array != NULL);
+            ASSERT_TRUE(array != nullptr);
             uint32_t i = 0;
             for (DocSet::const_iterator iter = expected.begin();
                  iter != expected.end(); ++iter, ++i)
@@ -618,11 +618,12 @@ void SearchContextTest::testSearch(const ConfigMap & cfgs) {
 template<typename T, typename A>
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
-    Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name,
+    Verifier(const std::vector<T> & keys, const vespalib::string & keyAsString, const vespalib::string & name,
              const Config & cfg, bool withElementId);
     ~Verifier();
     SearchIterator::UP
     create(bool strict) const override {
+        _sc->fetchPostings(strict);
         auto search = _sc->createIterator(&_dummy, strict);
         if (_withElementId) {
             search = std::make_unique<attribute::ElementIterator>(std::move(search), *_sc, _dummy);
@@ -637,42 +638,51 @@ private:
 };
 
 template<typename T, typename A>
-Verifier<T, A>::Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name,
+Verifier<T, A>::Verifier(const std::vector<T> & keys, const vespalib::string & keyAsString, const vespalib::string & name,
                          const Config & cfg, bool withElementId)
     : _withElementId(withElementId),
       _attribute(AttributeFactory::createAttribute(name + "-initrange", cfg)),
       _sc()
 {
     SearchContextTest::addDocs(*_attribute, getDocIdLimit());
+    size_t i(0);
     for (uint32_t doc : getExpectedDocIds()) {
         EXPECT_TRUE(nullptr != dynamic_cast<A *>(_attribute.get()));
-        EXPECT_TRUE(dynamic_cast<A *>(_attribute.get())->update(doc, key));
+        EXPECT_TRUE(dynamic_cast<A *>(_attribute.get())->update(doc, keys[(i++)%keys.size()]));
     }
     _attribute->commit(true);
     _sc = SearchContextTest::getSearch(*_attribute, keyAsString);
     ASSERT_TRUE(_sc->valid());
-    _sc->fetchPostings(true);
 }
 
 template<typename T, typename A>
 Verifier<T, A>::~Verifier() = default;
 
 template<typename T, typename A>
-void SearchContextTest::testSearchIterator(T key, const vespalib::string &keyAsString, const ConfigMap &cfgs) {
+void SearchContextTest::testSearchIterator(const std::vector<T> & keys, const vespalib::string &keyAsString, const ConfigMap &cfgs) {
 
     for (bool withElementId : {false, true} ) {
         for (const auto & cfg : cfgs) {
-            Verifier<T, A> verifier(key, keyAsString, cfg.first, cfg.second, withElementId);
-            verifier.verify();
+            {
+                Verifier<T, A> verifier(keys, keyAsString, cfg.first, cfg.second, withElementId);
+                verifier.verify();
+            }
+            {
+                Config withFilter(cfg.second);
+                withFilter.setIsFilter(true);
+                Verifier<T, A> verifier(keys, keyAsString, cfg.first + "-filter", withFilter, withElementId);
+                verifier.verify();
+            }
         }
     }
 
 }
 
 void SearchContextTest::testSearchIteratorConformance() {
-    testSearchIterator<AttributeVector::largeint_t, IntegerAttribute>(42, "42", _integerCfg);
-    testSearchIterator<double, FloatingPointAttribute>(42.42, "42.42", _floatCfg);
-    testSearchIterator<vespalib::string, StringAttribute>("any-key", "any-key", _stringCfg);
+    testSearchIterator<AttributeVector::largeint_t, IntegerAttribute>({42,45,46}, "[0;100]", _integerCfg);
+    testSearchIterator<AttributeVector::largeint_t, IntegerAttribute>({42}, "42", _integerCfg);
+    testSearchIterator<double, FloatingPointAttribute>({42.42}, "42.42", _floatCfg);
+    testSearchIterator<vespalib::string, StringAttribute>({"any-key"}, "any-key", _stringCfg);
 }
 
 void
