@@ -66,8 +66,12 @@ public class ConfigServerBootstrapTest {
         VipStatus vipStatus = new VipStatus();
         // Take a host away so that there are too few for the application, to verify we can still bootstrap
         provisioner.allocations().values().iterator().next().remove(0);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState, createStateMonitor(), vipStatus);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
+                                                                    versionState, createStateMonitor(), vipStatus,
+                                                                    ConfigServerBootstrap.Mode.INITIALIZE_ONLY,
+                                                                    ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE);
         assertFalse(vipStatus.isInRotation());
+        bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
@@ -98,11 +102,11 @@ public class ConfigServerBootstrapTest {
         VipStatus vipStatus = new VipStatus();
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
                                                                     createStateMonitor(), vipStatus,
-                                                                    ConfigServerBootstrap.MainThread.DO_NOT_START,
+                                                                    ConfigServerBootstrap.Mode.INITIALIZE_ONLY,
                                                                     ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE);
         assertFalse(vipStatus.isInRotation());
         // Call method directly, to be sure that it is finished redeploying all applications and we can check status
-        bootstrap.run();
+        bootstrap.start();
         // App is invalid, bootstrapping was unsuccessful. Status should be 'initializing',
         // rpc server should not be running and it should be out of rotation
         assertEquals(StateMonitor.Status.initializing, bootstrap.status());
