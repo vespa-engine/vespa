@@ -43,7 +43,6 @@ public class Processing {
                 ImportedFieldsResolver::new,
                 ImplicitSummaries::new,
                 ImplicitSummaryFields::new,
-                AdjustPositionSummaryFields::new,
                 SummaryConsistency::new,
                 SummaryNamesFieldCollisions::new,
                 SummaryFieldsMustHaveValidSource::new,

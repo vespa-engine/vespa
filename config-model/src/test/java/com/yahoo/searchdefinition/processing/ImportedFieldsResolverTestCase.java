@@ -112,16 +112,19 @@ public class ImportedFieldsResolverTestCase {
         new SearchModel().addImportedField("my_predicate_field", "ref", "predicate_field").resolve();
     }
 
-    static class SearchModel extends ParentChildSearchModel {
+    static class SearchModel {
 
+        private final ApplicationPackage app = MockApplicationPackage.createEmpty();
         public final Search grandParentSearch;
+        public final Search parentSearch;
+        public final Search childSearch;
         public ImportedFields importedFields;
 
         public SearchModel() {
-            super();
             grandParentSearch = createSearch("grandparent");
             grandParentSearch.getDocument().addField(createField("ancient_field", DataType.INT, "{ attribute }"));
 
+            parentSearch = createSearch("parent");
             parentSearch.getDocument().addField(createField("attribute_field", DataType.INT, "{ attribute }"));
             parentSearch.getDocument().addField(createField("attribute_and_index", DataType.INT, "{ attribute | index }"));
             parentSearch.getDocument().addField(new TemporarySDField("not_attribute", DataType.INT));
@@ -130,16 +133,49 @@ public class ImportedFieldsResolverTestCase {
             addRefField(parentSearch, grandParentSearch, "ref");
             addImportedField(parentSearch, "ancient_field", "ref", "ancient_field");
 
+            childSearch = createSearch("child");
             addRefField(childSearch, parentSearch, "ref");
         }
 
+        private Search createSearch(String name) {
+            Search result = new Search(name, app);
+            result.addDocument(new SDDocumentType(name));
+            return result;
+        }
 
-        protected SearchModel addImportedField(String fieldName, String referenceFieldName, String targetFieldName) {
+        private static TemporarySDField createField(String name, DataType dataType, String indexingScript) {
+            TemporarySDField result = new TemporarySDField(name, dataType);
+            result.parseIndexingScript(indexingScript);
+            return result;
+        }
+
+        private static SDField createRefField(String parentType, String fieldName) {
+            return new TemporarySDField(fieldName, ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create(parentType)));
+        }
+
+        private static void addRefField(Search child, Search parent, String fieldName) {
+            SDField refField = createRefField(parent.getName(), fieldName);
+            child.getDocument().addField(refField);
+            child.getDocument().setDocumentReferences(new DocumentReferences(ImmutableMap.of(refField.getName(),
+                    new DocumentReference(refField, parent))));
+        }
+
+        public SearchModel addImportedField(String fieldName, String referenceFieldName, String targetFieldName) {
             return addImportedField(childSearch, fieldName, referenceFieldName, targetFieldName);
         }
 
-        protected SearchModel addImportedField(Search search, String fieldName, String referenceFieldName, String targetFieldName) {
-            super.addImportedField(search, fieldName, referenceFieldName, targetFieldName);
+        private SearchModel addImportedField(Search search, String fieldName, String referenceFieldName, String targetFieldName) {
+            search.temporaryImportedFields().get().add(new TemporaryImportedField(fieldName, referenceFieldName, targetFieldName));
+            return this;
+        }
+
+        public SearchModel addSummaryField(String fieldName, DataType dataType) {
+            DocumentSummary summary = childSearch.getSummary("my_summary");
+            if (summary == null) {
+                summary = new DocumentSummary("my_summary");
+                childSearch.addSummary(summary);
+            }
+            summary.add(new SummaryField(fieldName, dataType));
             return this;
         }
 
