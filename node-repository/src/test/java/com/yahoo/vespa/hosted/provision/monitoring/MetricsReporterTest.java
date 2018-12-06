@@ -229,12 +229,12 @@ public class MetricsReporterTest {
             values.put(key, val);
             if (ctx != null) {
                 //Create one context pr value added - copy the context to not have side effects
-                TestContext kontekst = (TestContext)createContext(((TestContext) ctx).properties);
+                TestContext copy = (TestContext) createContext(((TestContext) ctx).properties);
                 if (!context.containsKey(key)) {
                     context.put(key, new ArrayList<>());
                 }
-                kontekst.setValue(val);
-                context.get(key).add(kontekst);
+                copy.setValue(val);
+                context.get(key).add(copy);
             }
         }
 
