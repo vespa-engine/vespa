@@ -266,7 +266,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                              Optional.of(ApplicationVersion.from(BuildJob.defaultSourceRevision,
                                                                                  BuildJob.defaultBuildNumber - 1)),
                                              true);
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default/", POST)
                                       .data(entity)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"NullPointerException\"}",
@@ -277,7 +277,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                              Optional.of(ApplicationVersion.from(BuildJob.defaultSourceRevision,
                                                                                  BuildJob.defaultBuildNumber)),
                                              true);
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default/", POST)
                                       .data(entity)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               new File("deploy-result.json"));
