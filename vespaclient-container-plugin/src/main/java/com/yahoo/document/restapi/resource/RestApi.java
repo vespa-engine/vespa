@@ -30,6 +30,7 @@ import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
+import com.yahoo.vespa.config.content.core.AllClustersBucketSpacesConfig;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
@@ -75,6 +76,7 @@ public class RestApi extends LoggingRequestHandler {
     @Inject
     public RestApi(LoggingRequestHandler.Context parentCtx, DocumentmanagerConfig documentManagerConfig,
                    LoadTypeConfig loadTypeConfig, ThreadpoolConfig threadpoolConfig,
+                   AllClustersBucketSpacesConfig bucketSpacesConfig,
                    ClusterListConfig clusterListConfig, MetricReceiver metricReceiver)
     {
         super(parentCtx);
@@ -83,6 +85,7 @@ public class RestApi extends LoggingRequestHandler {
         this.operationHandler = new OperationHandlerImpl(
                 new MessageBusDocumentAccess(params),
                 fixedClusterEnumeratorFromConfig(clusterListConfig),
+                fixedBucketSpaceResolverFromConfig(bucketSpacesConfig),
                 metricReceiver);
         this.singleDocumentParser = new SingleDocumentParser(new DocumentTypeManager(documentManagerConfig));
         // 40% of the threads can be blocked before we deny requests.
@@ -118,6 +121,14 @@ public class RestApi extends LoggingRequestHandler {
     private static OperationHandlerImpl.ClusterEnumerator fixedClusterEnumeratorFromConfig(ClusterListConfig config) {
         final List<ClusterDef> clusters = Collections.unmodifiableList(new ClusterList(config).getStorageClusters());
         return () -> clusters;
+    }
+
+    private static OperationHandlerImpl.BucketSpaceResolver fixedBucketSpaceResolverFromConfig(
+            AllClustersBucketSpacesConfig bucketSpacesConfig) {
+        return (clusterId, docType) ->
+            Optional.ofNullable(bucketSpacesConfig.cluster(clusterId))
+                    .map(cluster -> cluster.documentType(docType))
+                    .map(type -> type.bucketSpace());
     }
 
     private static Optional<String> requestProperty(String parameter, HttpRequest request) {
