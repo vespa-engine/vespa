@@ -49,11 +49,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFact
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterCost;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -63,7 +64,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
@@ -831,6 +831,21 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Optional<ApplicationPackage> applicationPackage = Optional.ofNullable(dataParts.get("applicationZip"))
                                                                   .map(ApplicationPackage::new);
 
+        Inspector sourceRevision = deployOptions.field("sourceRevision");
+        Inspector buildNumber = deployOptions.field("buildNumber");
+        if (sourceRevision.valid() != buildNumber.valid())
+            throw new IllegalArgumentException("Source revision and build number must both be provided, or not");
+
+        Optional<ApplicationVersion> applicationVersion = Optional.empty();
+        if (sourceRevision.valid()) {
+            if (applicationPackage.isPresent())
+                throw new IllegalArgumentException("Application version and application package can't both be provided.");
+
+            applicationVersion = Optional.of(ApplicationVersion.from(toSourceRevision(sourceRevision).get(),
+                                                                     buildNumber.asLong()));
+            applicationPackage = Optional.of(controller.applications().getApplicationPackage(controller.applications().require(applicationId), applicationVersion.get()));
+        }
+
         // TODO: get rid of the json object
         DeployOptions deployOptionsJsonClass = new DeployOptions(deployOptions.field("deployDirectly").asBool(),
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
@@ -839,6 +854,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ActivateResult result = controller.applications().deploy(applicationId,
                                                                  zone,
                                                                  applicationPackage,
+                                                                 applicationVersion,
                                                                  deployOptionsJsonClass);
         return new SlimeJsonResponse(toSlime(result));
     }

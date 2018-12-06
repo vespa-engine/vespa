@@ -301,11 +301,18 @@ public class ApplicationController {
         }
     }
 
+    public ActivateResult deploy(ApplicationId applicationId, ZoneId zone,
+                                 Optional<ApplicationPackage> applicationPackageFromDeployer,
+                                 DeployOptions options) {
+        return deploy(applicationId, zone, applicationPackageFromDeployer, Optional.empty(), options);
+    }
+
     /** Deploys an application. If the application does not exist it is created. */
     // TODO: Get rid of the options arg
     // TODO jvenstad: Split this, and choose between deployDirectly and deploy in handler, excluding internally built from the latter.
     public ActivateResult deploy(ApplicationId applicationId, ZoneId zone,
                                  Optional<ApplicationPackage> applicationPackageFromDeployer,
+                                 Optional<ApplicationVersion> applicationVersionFromDeployer,
                                  DeployOptions options) {
         if (applicationId.instance().isTester())
             throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
@@ -324,7 +331,7 @@ public class ApplicationController {
             ApplicationPackage applicationPackage;
             if (canDeployDirectly) {
                 platformVersion = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
-                applicationVersion = ApplicationVersion.unknown;
+                applicationVersion = applicationVersionFromDeployer.orElse(ApplicationVersion.unknown);
                 applicationPackage = applicationPackageFromDeployer.orElseThrow(
                         () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
             }
@@ -343,18 +350,7 @@ public class ApplicationController {
                         ? triggered.sourceApplication().orElse(triggered.application())
                         : triggered.application();
 
-                try {
-                    applicationPackage = application.get().deploymentJobs().deployedInternally()
-                            ? new ApplicationPackage(applicationStore.get(application.get().id(), applicationVersion))
-                            : new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()));
-                }
-                catch (RuntimeException e) { // If application has switched deployment pipeline, artifacts stored prior to the switch are in the other artifact store.
-                    log.info("Fetching application package for " + applicationId + " from alternate repository; it is now deployed "
-                             + (application.get().deploymentJobs().deployedInternally() ? "internally" : "externally") + "\nException was: " + Exceptions.toMessageString(e));
-                    applicationPackage = application.get().deploymentJobs().deployedInternally()
-                            ? new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()))
-                            : new ApplicationPackage(applicationStore.get(application.get().id(), applicationVersion));
-                }
+                applicationPackage = getApplicationPackage(application.get(), applicationVersion);
                 validateRun(application.get(), zone, platformVersion, applicationVersion);
             }
 
@@ -383,6 +379,22 @@ public class ApplicationController {
             application = application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant());
             store(application);
             return result;
+        }
+    }
+
+    /** Fetches the requested application package from the artifact store(s). */
+    public ApplicationPackage getApplicationPackage(Application application, ApplicationVersion version) {
+        try {
+            return application.deploymentJobs().deployedInternally()
+                    ? new ApplicationPackage(applicationStore.get(application.id(), version))
+                    : new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), version.id()));
+        }
+        catch (RuntimeException e) { // If application has switched deployment pipeline, artifacts stored prior to the switch are in the other artifact store.
+            log.info("Fetching application package for " + application.id() + " from alternate repository; it is now deployed "
+                     + (application.deploymentJobs().deployedInternally() ? "internally" : "externally") + "\nException was: " + Exceptions.toMessageString(e));
+            return application.deploymentJobs().deployedInternally()
+                    ? new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), version.id()))
+                    : new ApplicationPackage(applicationStore.get(application.id(), version));
         }
     }
 
