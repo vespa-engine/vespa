@@ -44,9 +44,7 @@ public class AddAttributeTransformToSummaryOfImportedFields extends Processor {
     }
 
     private static void setAttributeTransform(SummaryField summaryField) {
-        if (summaryField.getTransform() == SummaryTransform.NONE) {
-            summaryField.setTransform(SummaryTransform.ATTRIBUTE);
-        }
+        summaryField.setTransform(SummaryTransform.ATTRIBUTE);
     }
 
     private static void setAttributeCombinerTransform(SummaryField summaryField) {
