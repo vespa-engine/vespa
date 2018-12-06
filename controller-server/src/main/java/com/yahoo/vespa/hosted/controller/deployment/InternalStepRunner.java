@@ -313,7 +313,7 @@ public class InternalStepRunner implements StepRunner {
                                                     serviceStatus.host().value(),
                                                     serviceStatus.type(),
                                                     serviceStatus.port(),
-                                                    serviceStatus.currentGeneration() == -1 ? "(unknown)" : Long.toString(serviceStatus.currentGeneration())))
+                                                    serviceStatus.currentGeneration() == -1 ? "not started!" : Long.toString(serviceStatus.currentGeneration())))
                 .collect(Collectors.toList());
         logger.log(statuses);
 
