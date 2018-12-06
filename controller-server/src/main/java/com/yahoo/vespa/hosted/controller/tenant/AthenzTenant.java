@@ -21,7 +21,6 @@ public class AthenzTenant extends Tenant {
     private final Property property;
     private final Optional<PropertyId> propertyId;
 
-
     /**
      * This should only be used by serialization.
      * Use {@link #create(TenantName, AthenzDomain, Property, Optional)}.
