@@ -9,7 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A utility wrapper of a FeedClient which feeds a list of documents and blocks until all responses are returned,
@@ -117,7 +116,7 @@ public class SyncFeedClient implements AutoCloseable {
          * A map from document ids to their results. This is initially populated with null values to keep track of
          * which responses we are waiting for.
          */
-        private Map<String, Result> results = null;
+        private LinkedHashMap<String, Result> results = null;
 
         void expectResultsOf(List<SyncOperation> operations) {
             synchronized (monitor) {
