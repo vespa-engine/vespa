@@ -90,11 +90,12 @@ public class NodeFailer extends Maintainer {
 
     @Override
     protected void maintain() {
+        int throttledNodeFailures = 0;
+
         // Ready nodes
         try (Mutex lock = nodeRepository().lockUnallocated()) {
             updateNodeLivenessEventsForReadyNodes();
 
-            int throttledNodeFailures = 0;
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
                 Node node = entry.getKey();
                 if (throttle(node)) {
@@ -104,16 +105,24 @@ public class NodeFailer extends Maintainer {
                 String reason = entry.getValue();
                 nodeRepository().fail(node.hostname(), Agent.system, reason);
             }
-            metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
         }
 
         // Active nodes
         updateNodeDownState();
-        getActiveNodesByFailureReason().forEach((node, reason) -> {
-            if (failAllowedFor(node.type()) && !throttle(node)) {
-                failActive(node, reason);
+        for (Map.Entry<Node, String> entry : getActiveNodesByFailureReason().entrySet()) {
+            Node node = entry.getKey();
+            if (!failAllowedFor(node.type())) {
+                continue;
             }
-        });
+            if (throttle(node)) {
+                throttledNodeFailures++;
+                continue;
+            }
+            String reason = entry.getValue();
+            failActive(node, reason);
+        }
+
+        metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
     }
 
     private void updateNodeLivenessEventsForReadyNodes() {
