@@ -114,7 +114,7 @@ SearchIteratorVerifier::createFullIterator() const
 {
     return make_unique<TrueSearch>(_trueTfmd);
 }
-SearchIteratorVerifier::~SearchIteratorVerifier() { }
+SearchIteratorVerifier::~SearchIteratorVerifier() = default;
 
 void
 SearchIteratorVerifier::verify() const {

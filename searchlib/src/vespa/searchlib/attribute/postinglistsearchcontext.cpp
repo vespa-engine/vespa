@@ -40,9 +40,7 @@ PostingListSearchContext(const Dictionary &dictionary,
 }
 
 
-PostingListSearchContext::~PostingListSearchContext()
-{
-}
+PostingListSearchContext::~PostingListSearchContext() = default;
 
 
 void
