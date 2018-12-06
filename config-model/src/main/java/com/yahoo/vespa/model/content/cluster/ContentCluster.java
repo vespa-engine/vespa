@@ -12,7 +12,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import com.yahoo.vespa.config.content.core.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.documentmodel.NewDocumentType;
@@ -737,26 +736,13 @@ public class ContentCluster extends AbstractConfigProducer implements
     private static final String DEFAULT_BUCKET_SPACE = "default";
     private static final String GLOBAL_BUCKET_SPACE = "global";
 
-    private String bucketSpaceOfDocumentType(NewDocumentType docType) {
-        return (isGloballyDistributed(docType) ? GLOBAL_BUCKET_SPACE : DEFAULT_BUCKET_SPACE);
-    }
-
-    public AllClustersBucketSpacesConfig.Cluster.Builder clusterBucketSpaceConfigBuilder() {
-        AllClustersBucketSpacesConfig.Cluster.Builder builder = new AllClustersBucketSpacesConfig.Cluster.Builder();
-        for (NewDocumentType docType : getDocumentDefinitions().values()) {
-            AllClustersBucketSpacesConfig.Cluster.DocumentType.Builder typeBuilder = new AllClustersBucketSpacesConfig.Cluster.DocumentType.Builder();
-            typeBuilder.bucketSpace(bucketSpaceOfDocumentType(docType));
-            builder.documentType(docType.getName(), typeBuilder);
-        }
-        return builder;
-    }
-
     @Override
     public void getConfig(BucketspacesConfig.Builder builder) {
         for (NewDocumentType docType : getDocumentDefinitions().values()) {
             BucketspacesConfig.Documenttype.Builder docTypeBuilder = new BucketspacesConfig.Documenttype.Builder();
             docTypeBuilder.name(docType.getName());
-            docTypeBuilder.bucketspace(bucketSpaceOfDocumentType(docType));
+            String bucketSpace = (isGloballyDistributed(docType) ? GLOBAL_BUCKET_SPACE : DEFAULT_BUCKET_SPACE);
+            docTypeBuilder.bucketspace(bucketSpace);
             builder.documenttype(docTypeBuilder);
         }
     }

@@ -50,7 +50,7 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     public interface BucketSpaceResolver {
-        Optional<String> clusterBucketSpaceFromDocumentType(String clusterId, String docType);
+        Optional<String> clusterBucketSpaceFromDocumentType(String clusterConfigId, String docType);
     }
 
     public static class BucketSpaceRoute {
@@ -90,6 +90,20 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     private final ConcurrentResourcePool<SyncSession> syncSessions;
+
+    private static ClusterEnumerator defaultClusterEnumerator() {
+        return () -> new ClusterList("client").getStorageClusters();
+    }
+
+    private static BucketSpaceResolver defaultBucketResolver() {
+        return (clusterConfigId, docType) -> Optional.ofNullable(BucketSpaceEnumerator
+                .fromConfig(clusterConfigId).getDoctypeToSpaceMapping()
+                .get(docType));
+    }
+
+    public OperationHandlerImpl(DocumentAccess documentAccess, ClusterEnumerator clusterEnumerator, MetricReceiver metricReceiver) {
+        this(documentAccess, clusterEnumerator, defaultBucketResolver(), metricReceiver);
+    }
 
     public OperationHandlerImpl(DocumentAccess documentAccess, ClusterEnumerator clusterEnumerator,
                                 BucketSpaceResolver bucketSpaceResolver, MetricReceiver metricReceiver) {
@@ -321,7 +335,7 @@ public class OperationHandlerImpl implements OperationHandler {
         String targetBucketSpace;
         if (!restUri.isRootOnly()) {
             String docType = restUri.getDocumentType();
-            Optional<String> resolvedSpace = bucketSpaceResolver.clusterBucketSpaceFromDocumentType(clusterDef.getName(), docType);
+            Optional<String> resolvedSpace = bucketSpaceResolver.clusterBucketSpaceFromDocumentType(clusterDef.getConfigId(), docType);
             if (!resolvedSpace.isPresent()) {
                 throw new RestApiException(Response.createErrorResponse(400, String.format(
                         "Document type '%s' in cluster '%s' is not mapped to a known bucket space", docType, clusterDef.getName()),
