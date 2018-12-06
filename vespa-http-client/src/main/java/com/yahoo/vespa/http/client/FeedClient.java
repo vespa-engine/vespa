@@ -10,8 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * API for feeding document operations (add, removes or updates) to one or many Vespa clusters.
  * Use the factory to configure and set up an instance of this API.
- * The feedclient does automatically error recovery and reconnects to hosts when
- * connections die.
+ * The feedclient does automatic error recovery and reconnects to hosts when connections die.
  *
  * A {@link FeedClientFactory} is provided to instantiate Sessions.
  *
@@ -26,8 +25,8 @@ public interface FeedClient extends AutoCloseable {
      * Documents might time out before they are sent. Failed documents are not retried.
      * Don't call stream() after close is called.
      * 
-     * @param documentId Document id of the document.
-     * @param documentData The document data as JSON or XML (as specified when using the factory to create the API)
+     * @param documentId the document id of the document.
+     * @param documentData the document data as JSON or XML (as specified when using the factory to create the API)
      */
     void stream(String documentId, CharSequence documentData);
 
@@ -36,9 +35,9 @@ public interface FeedClient extends AutoCloseable {
      * Documents might time out before they are sent. Failed documents are not retried.
      * Don't call stream() after close is called.
      * 
-     * @param documentId Document id of the document.
-     * @param documentData The document data as JSON or XML (as specified when using the factory to create the API)
-     * @param context Any context, will be accessible in the result of the callback.
+     * @param documentId the document id of the document.
+     * @param documentData the document data as JSON or XML (as specified when using the factory to create the API)
+     * @param context a context object which will be accessible in the result of the callback, or null if none
      */
     void stream(String documentId, CharSequence documentData, Object context);
 
@@ -51,6 +50,7 @@ public interface FeedClient extends AutoCloseable {
      * There is an example implementation in class SimpleLoggerResultCallback.
      */
     interface ResultCallback {
+
         void onCompletion(String docId, Result documentResult);
 
         /**
@@ -64,6 +64,7 @@ public interface FeedClient extends AutoCloseable {
          */
         // TODO Vespa 7: Remove empty default implementation
         default void onEndpointException(FeedEndpointException exception) {}
+
     }
 
     /**
@@ -83,9 +84,10 @@ public interface FeedClient extends AutoCloseable {
     /**
      * Utility function that takes an array of JSON documents and calls the FeedClient for each element.
      *
-     * @param inputStream This can be a very large stream. The outer element is an array (of document operations).
-     * @param feedClient The feedClient that will receive the document operations.
-     * @param numSent increased per document sent to API (but no waiting for results).
+     * @param inputStream the stream to feed. This can be a very large stream.
+     *                    The outer element must be an array of document operations.
+     * @param feedClient the feed client that will receive the document operations
+     * @param numSent increased per document sent to API (but not waiting for results)
      */
     static void feedJson(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) {
         JsonReader.read(inputStream, feedClient, numSent);
@@ -96,9 +98,10 @@ public interface FeedClient extends AutoCloseable {
      * The XML document has to be formatted with line space on each line (like "regular" XML, but stricter
      * than the specifications of XML).
      *
-     * @param inputStream This can be a very large stream.
-     * @param feedClient The feedClient that will receive the document operations.
-     * @param numSent increased per document sent to API (but no waiting for results).
+     * @param inputStream the stream to feed. This can be a very large stream. Operations must be enclosed in a
+     *                    top-level &lt;vespafeed&gt; tag
+     * @param feedClient the feed client that will receive the document operations
+     * @param numSent increased per document sent to API (but not waiting for results)
      */
     static void feedXml(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) {
         try {

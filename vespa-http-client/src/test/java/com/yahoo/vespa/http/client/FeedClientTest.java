@@ -4,7 +4,6 @@ package com.yahoo.vespa.http.client;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
-import com.yahoo.vespa.http.client.config.FeedParams;
 import com.yahoo.vespa.http.client.config.SessionParams;
 import com.yahoo.vespa.http.client.core.api.FeedClientImpl;
 import org.junit.Test;
@@ -12,14 +11,14 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for the API, using dryrun option to mock gateway.
+ *
  * @author dybis
  */
 public class FeedClientTest {
@@ -36,18 +35,18 @@ public class FeedClientTest {
             .build();
     final AtomicInteger resultsReceived = new AtomicInteger(0);
     FeedClient.ResultCallback resultCallback = (docId, documentResult) -> {
-        assert(documentResult.isSuccess());
-        assertThat(docId, is(DOCID));
+        assertTrue(documentResult.isSuccess());
+        assertEquals(DOCID, docId);
         resultsReceived.incrementAndGet();
     };
 
     FeedClient feedClient = new FeedClientImpl(sessionParams, resultCallback, SessionFactory.createTimeoutExecutor());
 
     @Test
-    public void testStreamAndClose() throws Exception {
+    public void testStreamAndClose() {
         feedClient.stream(DOCID, "blob");
         feedClient.close();
-        assertThat(resultsReceived.get(), is(1));
+        assertEquals(1, resultsReceived.get());
     }
 
     @Test
@@ -60,25 +59,27 @@ public class FeedClientTest {
     }
 
     @Test
-    public void testFeedJson() throws Exception {
+    public void testFeedJson() {
         InputStream stream = new ByteArrayInputStream((String.format("[{\"remove\": \"%s\"}]", DOCID)
                 .getBytes(StandardCharsets.UTF_8)));
         AtomicInteger docCounter = new AtomicInteger(0);
         FeedClient.feedJson(stream, feedClient, docCounter);
-        assertThat(docCounter.get(), is(1));
+        assertEquals(1, docCounter.get());
         feedClient.close();
-        assertThat(resultsReceived.get(), is(1));
+        assertEquals(1, resultsReceived.get());
     }
 
     @Test
-    public void testFeedXml() throws Exception {
+    public void testFeedXml() {
         InputStream stream = new ByteArrayInputStream((String.format(
                 "<document documenttype=\"music\" documentid=\"%s\">\n</document>\n", DOCID)
                 .getBytes(StandardCharsets.UTF_8)));
         AtomicInteger docCounter = new AtomicInteger(0);
         FeedClient.feedXml(stream, feedClient, docCounter);
-        assertThat(docCounter.get(), is(1));
+        assertEquals(1, docCounter.get());
         feedClient.close();
-        assertThat(resultsReceived.get(), is(1));
+        assertEquals(1, resultsReceived.get());
     }
+
 }
+
