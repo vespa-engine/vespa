@@ -130,7 +130,7 @@ public class GroupingOperationTestCase {
             GroupingOperation.fromString("all(foo)");
             fail();
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().startsWith("Encountered \" <IDENTIFIER> \"foo \"\" at line 1, column 5.\n"));
+            assertTrue(e.getMessage().startsWith("Encountered \" <IDENTIFIER> \"foo\"\" at line 1, column 5.\n"));
             assertTrue(e.getCause() instanceof ParseException);
         }
     }

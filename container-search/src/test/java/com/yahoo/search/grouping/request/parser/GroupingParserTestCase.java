@@ -162,15 +162,15 @@ public class GroupingParserTestCase {
         String expected = "all(group(foo) each(output(max(bar))))";
 
         assertParse(" all(group(foo)each(output(max(bar))))", expected);
-        assertIllegalArgument("all (group(foo)each(output(max(bar))))", "Encountered \" <SPACE> \"  \"\" at line 1, column 4.");
+        assertIllegalArgument("all (group(foo)each(output(max(bar))))", "Encountered \" <SPACE> \" \"\" at line 1, column 4.");
         assertParse("all( group(foo)each(output(max(bar))))", expected);
-        assertIllegalArgument("all(group (foo)each(output(max(bar))))", "Encountered \" <SPACE> \"  \"\" at line 1, column 10.");
+        assertIllegalArgument("all(group (foo)each(output(max(bar))))", "Encountered \" <SPACE> \" \"\" at line 1, column 10.");
         assertParse("all(group( foo)each(output(max(bar))))", expected);
         assertParse("all(group(foo )each(output(max(bar))))", expected);
         assertParse("all(group(foo) each(output(max(bar))))", expected);
-        assertIllegalArgument("all(group(foo)each (output(max(bar))))", "Encountered \" <SPACE> \"  \"\" at line 1, column 19.");
+        assertIllegalArgument("all(group(foo)each (output(max(bar))))", "Encountered \" <SPACE> \" \"\" at line 1, column 19.");
         assertParse("all(group(foo)each( output(max(bar))))", expected);
-        assertIllegalArgument("all(group(foo)each(output (max(bar))))", "Encountered \" <SPACE> \"  \"\" at line 1, column 26.");
+        assertIllegalArgument("all(group(foo)each(output (max(bar))))", "Encountered \" <SPACE> \" \"\" at line 1, column 26.");
         assertParse("all(group(foo)each(output( max(bar))))", expected);
         assertParse("all(group(foo)each(output(max(bar))))", expected);
         assertParse("all(group(foo)each(output(max( bar))))", expected);
@@ -328,7 +328,7 @@ public class GroupingParserTestCase {
         assertIllegalArgument("all(group(predefined(foo, bucket<-inf, inf>)))",
                               "Bucket type mismatch, cannot both be infinity");
         assertIllegalArgument("all(group(predefined(foo, bucket<inf, -inf>)))",
-                              "Encountered \" \"inf\" \"inf \"\" at line 1, column 34.");
+                              "Encountered \" \"inf\" \"inf\"\" at line 1, column 34.");
 
         assertIllegalArgument("all(group(predefined(foo, bucket(2, 1))))",
                               "Bucket to-value can not be less than from-value.");
@@ -337,7 +337,7 @@ public class GroupingParserTestCase {
         assertIllegalArgument("all(group(predefined(foo, bucket(b, a))))",
                               "Bucket to-value can not be less than from-value.");
         assertIllegalArgument("all(group(predefined(foo, bucket(b, -inf))))",
-                              "Encountered \" \"-inf\" \"-inf \"\" at line 1, column 37.");
+                              "Encountered \" \"-inf\" \"-inf\"\" at line 1, column 37.");
         assertIllegalArgument("all(group(predefined(foo, bucket(c, d), bucket(a, b))))",
                               "Buckets must be monotonically increasing, got bucket[\"c\", \"d\"> before bucket[\"a\", \"b\">.");
         assertIllegalArgument("all(group(predefined(foo, bucket(c, d), bucket(-inf, e))))",
@@ -381,19 +381,19 @@ public class GroupingParserTestCase {
                     "             each() as(baz))",
                     "all(group(a) each(each() as(foo) each() as(bar)) each() as(baz))");
 
-        assertIllegalArgument("all() as(foo)", "Encountered \" \"as\" \"as \"\" at line 1, column 7.");
-        assertIllegalArgument("all(all() as(foo))", "Encountered \" \"as\" \"as \"\" at line 1, column 11.");
-        assertIllegalArgument("each(all() as(foo))", "Encountered \" \"as\" \"as \"\" at line 1, column 12.");
+        assertIllegalArgument("all() as(foo)", "Encountered \" \"as\" \"as\"\" at line 1, column 7.");
+        assertIllegalArgument("all(all() as(foo))", "Encountered \" \"as\" \"as\"\" at line 1, column 11.");
+        assertIllegalArgument("each(all() as(foo))", "Encountered \" \"as\" \"as\"\" at line 1, column 12.");
     }
 
     @Test
     public void testAttributeName() {
         assertParse("all(group(foo))");
         assertIllegalArgument("all(group(foo.))",
-                              "Encountered \" \")\" \") \"\" at line 1, column 15.");
+                              "Encountered \" \")\" \")\"\" at line 1, column 15.");
         assertParse("all(group(foo.bar))");
         assertIllegalArgument("all(group(foo.bar.))",
-                              "Encountered \" \")\" \") \"\" at line 1, column 19.");
+                              "Encountered \" \")\" \")\"\" at line 1, column 19.");
         assertParse("all(group(foo.bar.baz))");
     }
 
@@ -405,7 +405,7 @@ public class GroupingParserTestCase {
                     "all(output(min(a) as(foo), max(b) as(bar)))");
 
         assertIllegalArgument("all(output(min(a)) as(foo))",
-                              "Encountered \" \"as\" \"as \"\" at line 1, column 20.");
+                              "Encountered \" \"as\" \"as\"\" at line 1, column 20.");
     }
 
     @Test
@@ -418,11 +418,11 @@ public class GroupingParserTestCase {
     @Test
     public void testParseBadRequest() {
         assertIllegalArgument("output(count())",
-                              "Encountered \" \"output\" \"output \"\" at line 1, column 1.");
+                              "Encountered \" \"output\" \"output\"\" at line 1, column 1.");
         assertIllegalArgument("each(output(count()))",
                               "Expression 'count()' not applicable for single hit.");
         assertIllegalArgument("all(output(count())))",
-                              "Encountered \" \")\" \") \"\" at line 1, column 21.");
+                              "Encountered \" \")\" \")\"\" at line 1, column 21.");
     }
 
     @Test
@@ -466,7 +466,7 @@ public class GroupingParserTestCase {
                 "my.map.key", "my.map.value", "", "my_attr.name");
 
         assertIllegalArgument("all(group(my_map{attribute(\"my_attr\")}))",
-                "Encountered \" <STRING> \"\\\"my_attr\\\" \"\" at line 1, column 28");
+                "Encountered \" <STRING> \"\\\"my_attr\\\"\"\" at line 1, column 28");
 
     }
 
@@ -576,18 +576,18 @@ public class GroupingParserTestCase {
         assertParse("all(group(debugwait(artist, 3.3, true)))");
         assertParse("all(group(debugwait(artist, 3.3, false)))");
         assertIllegalArgument("all(group(debugwait(artist, -3.3, true)))",
-                              "Encountered \" \"-\" \"- \"\" at line 1, column 29");
+                              "Encountered \" \"-\" \"-\"\" at line 1, column 29");
         assertIllegalArgument("all(group(debugwait(artist, 3.3, lol)))",
-                              "Encountered \" <IDENTIFIER> \"lol \"\" at line 1, column 34");
+                              "Encountered \" <IDENTIFIER> \"lol\"\" at line 1, column 34");
         assertParse("all(group(artist) each(output(stddev(simple))))");
     }
 
     @Test
     public void requireThatParseExceptionMessagesContainErrorMarker() {
         assertIllegalArgument("foo",
-                              "Encountered \" <IDENTIFIER> \"foo \"\" at line 1, column 1.\n" +
-                              "Was expecting one of:\n" +
-                              "    <SPACE> ...\n" +
+                              "Encountered \" <IDENTIFIER> \"foo\"\" at line 1, column 1.\n\n" +
+                              "Was expecting one of:\n\n" +
+                              "<SPACE> ...\n" +
                               "    \"all\" ...\n" +
                               "    \"each\" ...\n" +
                               "    \n" +
@@ -595,9 +595,9 @@ public class GroupingParserTestCase {
                               "foo\n" +
                               "^");
         assertIllegalArgument("\n foo",
-                              "Encountered \" <IDENTIFIER> \"foo \"\" at line 2, column 2.\n" +
-                              "Was expecting one of:\n" +
-                              "    <SPACE> ...\n" +
+                              "Encountered \" <IDENTIFIER> \"foo\"\" at line 2, column 2.\n\n" +
+                              "Was expecting one of:\n\n" +
+                              "<SPACE> ...\n" +
                               "    \"all\" ...\n" +
                               "    \"each\" ...\n" +
                               "    \n" +
@@ -650,7 +650,9 @@ public class GroupingParserTestCase {
             GroupingOperation.fromString(request).resolveLevel(1);
             fail("Expected: " + expectedException);
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage(), e.getMessage().startsWith(expectedException));
+            if (! e.getMessage().startsWith(expectedException)) {
+                fail("Expected exception with message starting with:\n'" + expectedException + ", but got:\n'" + e.getMessage());
+            }
         }
     }
 }
