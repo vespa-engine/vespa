@@ -245,7 +245,8 @@ public class InternalStepRunner implements StepRunner {
         ApplicationVersion application = setTheStage ? versions.sourceApplication().orElse(versions.targetApplication()) : versions.targetApplication();
         logger.log("Checking installation of " + platform + " and " + application.id() + " ...");
 
-        if (nodesConverged(id.application(), id.type(), platform, logger) && servicesConverged(id.application(), id.type(), logger)) {
+        if (   nodesConverged(id.application(), id.type(), platform, logger)
+            && servicesConverged(id.application(), id.type(), logger)) {
             logger.log("Installation succeeded!");
             return Optional.of(running);
         }
@@ -266,8 +267,10 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(error);
         }
 
+        Version platform = controller.jobController().run(id).get().versions().targetPlatform();
         logger.log("Checking installation of tester container ...");
-        if (servicesConverged(id.tester().id(), id.type(), logger)) {
+        if (   nodesConverged(id.tester().id(), id.type(), platform, logger)
+            && servicesConverged(id.tester().id(), id.type(), logger)) {
             logger.log("Tester container successfully installed!");
             return Optional.of(running);
         }
