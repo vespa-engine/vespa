@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCorpUsEast1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.maintenance.DeploymentIssueReporter.maxFailureAge;
@@ -39,11 +39,11 @@ public class DeploymentIssueReporterTest {
 
     private final static ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
             .environment(Environment.prod)
-            .region("corp-us-east-1")
+            .region("us-west-1")
             .build();
     private final static ApplicationPackage canaryPackage = new ApplicationPackageBuilder()
             .environment(Environment.prod)
-            .region("corp-us-east-1")
+            .region("us-west-1")
             .upgradePolicy("canary")
             .build();
 
@@ -95,7 +95,7 @@ public class DeploymentIssueReporterTest {
         tester.jobCompletion(component).application(app3).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app3, applicationPackage, true, systemTest);
         tester.deployAndNotify(app3, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app3, applicationPackage, false, productionCorpUsEast1);
+        tester.deployAndNotify(app3, applicationPackage, false, productionUsWest1);
 
         reporter.maintain();
         reporter.maintain();
@@ -130,7 +130,7 @@ public class DeploymentIssueReporterTest {
 
 
         // app3 fixes their problems, but the ticket for app3 is left open; see the resolved ticket is not escalated when another escalation period has passed.
-        tester.deployAndNotify(app3, applicationPackage, true, productionCorpUsEast1);
+        tester.deployAndNotify(app3, applicationPackage, true, productionUsWest1);
         tester.clock().advance(maxInactivity.plus(Duration.ofDays(1)));
 
         reporter.maintain();

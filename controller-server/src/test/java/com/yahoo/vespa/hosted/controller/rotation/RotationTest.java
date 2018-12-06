@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.rotation;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -145,6 +146,8 @@ public class RotationTest {
 
     @Test
     public void application_with_only_one_non_corp_region() {
+        tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "corp-us-east-1"),
+                                                          ZoneId.from("prod", "us-east-3"));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .globalServiceId("foo")
                 .region("us-east-3")
@@ -159,6 +162,9 @@ public class RotationTest {
 
     @Test
     public void application_with_corp_region_and_two_non_corp_region() {
+        tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "corp-us-east-1"),
+                                                          ZoneId.from("prod", "us-east-3"),
+                                                          ZoneId.from("prod", "us-west-1"));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .globalServiceId("foo")
                 .region("us-east-3")
@@ -177,7 +183,6 @@ public class RotationTest {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .globalServiceId("foo")
                 .region("us-east-3")
-                .region("corp-us-east-1")
                 .region("us-west-1")
                 .build();
         Application application = tester.createApplication("app2", "tenant2", 22L,
