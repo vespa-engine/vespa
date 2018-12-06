@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
@@ -31,30 +32,33 @@ public class AdjustPositionSummaryFields extends Processor {
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        List<SummaryField> fixupFields = new LinkedList<SummaryField>();
         for (DocumentSummary summary : search.getSummaries().values()) {
-            scanSummary(summary, fixupFields);
-        }
-        for (SummaryField summaryField : fixupFields) {
-            String originalSource = summaryField.getSingleSource();
-            summaryField.getSources().clear();
-            summaryField.addSource(PositionDataType.getZCurveFieldName(originalSource));
+            scanSummary(summary);
         }
     }
 
-    private void scanSummary(DocumentSummary summary, List<SummaryField> fixupFields) {
+    private void scanSummary(DocumentSummary summary) {
         for (SummaryField summaryField : summary.getSummaryFields()) {
             if (isPositionDataType(summaryField.getDataType())) {
                 String originalSource = summaryField.getSingleSource();
-                ImmutableSDField sourceField = getSourceField(originalSource);
-                if (sourceField != null && sourceField.getDataType().equals(summaryField.getDataType())) {
-                    String zCurve = PositionDataType.getZCurveFieldName(originalSource);
-                    if (hasPositionAttribute(zCurve)) {
-                        Source source = new Source(zCurve);
-                        adjustPositionField(summary, summaryField, source);
-                        fixupFields.add(summaryField);
-                    } else {
-                        fail(summaryField, "No position attribute '" + zCurve + "'");
+                if (originalSource.indexOf('.') == -1) { // Eliminate summary fields with pos.x or pos.y as source
+                    ImmutableSDField sourceField = getSourceField(originalSource);
+                    if (sourceField != null) {
+                        String zCurve = null;
+                        if (sourceField.getDataType().equals(summaryField.getDataType())) {
+                            zCurve = PositionDataType.getZCurveFieldName(originalSource);
+                        } else if (sourceField.getDataType().equals(makeZCurveDataType(summaryField.getDataType())) &&
+                            hasZCurveSuffix(originalSource)) {
+                            zCurve = originalSource;
+                        }
+                        if (zCurve != null) {
+                            if (hasPositionAttribute(zCurve)) {
+                                Source source = new Source(zCurve);
+                                adjustPositionField(summary, summaryField, source);
+                            } else if (sourceField.isImportedField() || !summaryField.getName().equals(originalSource)) {
+                                fail(summaryField, "No position attribute '" + zCurve + "'");
+                            }
+                        }
                     }
                 }
             }
@@ -62,9 +66,9 @@ public class AdjustPositionSummaryFields extends Processor {
     }
 
     private void adjustPositionField(DocumentSummary summary, SummaryField summaryField, Source source) {
-        if (summaryField.getTransform() == SummaryTransform.NONE) {
-            summaryField.setTransform(SummaryTransform.GEOPOS);
-        }
+        summaryField.setTransform(SummaryTransform.GEOPOS);
+        summaryField.getSources().clear();
+        summaryField.addSource(source);
         ensureSummaryField(summary, PositionDataType.getPositionSummaryFieldName(summaryField.getName()),
                 DataType.getArray(DataType.STRING), source, SummaryTransform.POSITIONS);
         ensureSummaryField(summary, PositionDataType.getDistanceSummaryFieldName(summaryField.getName()),
@@ -116,8 +120,17 @@ public class AdjustPositionSummaryFields extends Processor {
         return attribute != null && attribute.isPosition();
     }
 
+    private static boolean hasZCurveSuffix(String name) {
+        String suffix = PositionDataType.getZCurveFieldName("");
+        return name.length() > suffix.length() && name.substring(name.length() - suffix.length()).equals(suffix);
+    }
+
     private static boolean isPositionDataType(DataType dataType) {
         return dataType.equals(PositionDataType.INSTANCE) || dataType.equals(DataType.getArray(PositionDataType.INSTANCE));
+    }
+
+    private static DataType makeZCurveDataType(DataType dataType) {
+        return dataType instanceof ArrayDataType ? DataType.getArray(DataType.LONG) : DataType.LONG;
     }
 
     private void fail(SummaryField summaryField, String msg) {

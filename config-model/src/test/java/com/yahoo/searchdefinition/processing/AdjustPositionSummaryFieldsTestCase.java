@@ -54,6 +54,7 @@ public class AdjustPositionSummaryFieldsTestCase {
         SearchModel model = new SearchModel();
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, "pos");
         model.resolve();
+        // SummaryFieldsMustHaveValidSource processing not run in this test.
         model.assertSummaryField("my_pos", PositionDataType.INSTANCE, SummaryTransform.NONE, "pos");
         model.assertNoSummaryField("my_pos.position");
         model.assertNoSummaryField("my_pos.distance");
@@ -67,6 +68,33 @@ public class AdjustPositionSummaryFieldsTestCase {
         model.assertSummaryField("my_pos", DataType.getArray(PositionDataType.INSTANCE), SummaryTransform.NONE, "pos");
         model.assertNoSummaryField("my_pos.position");
         model.assertNoSummaryField("my_pos.distance");
+    }
+
+    @Test
+    public void test_pos_summary_no_attr_no_rename() {
+        SearchModel model = new SearchModel(false, false, false);
+        model.addSummaryField("pos", PositionDataType.INSTANCE, null, "pos");
+        model.resolve();
+        model.assertSummaryField("pos", PositionDataType.INSTANCE, SummaryTransform.NONE, "pos");
+        model.assertNoSummaryField("pos.position");
+        model.assertNoSummaryField("pos.distance");
+    }
+
+    @Test
+    public void test_pos_default_summary_no_attr_no_rename() {
+        SearchModel model = new SearchModel(false, false, false);
+        model.resolve();
+        assertNull(model.childSearch.getSummary("default")); // ImplicitSummaries processing not run in this test
+    }
+
+    @Test
+    public void test_pos_summary_no_rename() {
+        SearchModel model = new SearchModel(false, true, false);
+        model.addSummaryField("pos", PositionDataType.INSTANCE, null, "pos");
+        model.resolve();
+        model.assertSummaryField("pos", PositionDataType.INSTANCE, SummaryTransform.GEOPOS, "pos_zcurve");
+        model.assertSummaryField("pos.position", DataType.getArray(DataType.STRING), SummaryTransform.POSITIONS, "pos_zcurve");
+        model.assertSummaryField("pos.distance", DataType.INT, SummaryTransform.DISTANCE, "pos_zcurve");
     }
 
     @Rule
