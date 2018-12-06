@@ -113,12 +113,12 @@ template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fetchPostings(bool strict)
 {
-    assert (! _fetchPostingsDone);
+    if (_fetchPostingsDone) return;
 
     _fetchPostingsDone = true;
-    if (_uniqueValues < 2u) {
-        return;
-    }
+
+    if (_uniqueValues < 2u) return;
+
     if (strict && !fallbackToFiltering()) {
         size_t sum(countHits());
         if (sum < _docIdLimit / 64) {
