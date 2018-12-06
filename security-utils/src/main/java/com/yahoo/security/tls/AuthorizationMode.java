@@ -1,0 +1,30 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.security.tls;
+
+import java.util.Arrays;
+
+/**
+ * @author bjorncs
+ */
+public enum AuthorizationMode {
+    DISABLE("disable"),
+    LOG_ONLY("log-only"),
+    ENFORCE("enforce");
+
+    final String configValue;
+
+    AuthorizationMode(String configValue) {
+        this.configValue = configValue;
+    }
+
+    public String configValue() {
+        return configValue;
+    }
+
+    static AuthorizationMode fromConfigValue(String configValue) {
+        return Arrays.stream(values())
+                .filter(v -> v.configValue.equals(configValue))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown value: " + configValue));
+    }
+}

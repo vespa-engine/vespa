@@ -59,8 +59,12 @@ public class SslContextBuilder {
     }
 
     public SslContextBuilder withKeyStore(PrivateKey privateKey, X509Certificate certificate) {
+        return withKeyStore(privateKey, singletonList(certificate));
+    }
+
+    public SslContextBuilder withKeyStore(PrivateKey privateKey, List<X509Certificate> certificates) {
         char[] pwd = new char[0];
-        this.keyStoreSupplier = () -> KeyStoreBuilder.withType(KeyStoreType.JKS).withKeyEntry("default", privateKey, certificate).build();
+        this.keyStoreSupplier = () -> KeyStoreBuilder.withType(KeyStoreType.JKS).withKeyEntry("default", privateKey, certificates).build();
         this.keyStorePassword = pwd;
         return this;
     }
