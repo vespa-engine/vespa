@@ -723,13 +723,24 @@ public class ApplicationController {
     public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage) {
         applicationPackage.deploymentSpec().athenzDomain()
                           .ifPresent(identityDomain -> {
-                              AthenzTenant tenant = controller.tenants().athenzTenant(tenantName)
-                                                              .orElseThrow(() -> new IllegalArgumentException("Tenant does not exist"));
-                              AthenzDomain tenantDomain = tenant.domain();
-                              if ( ! Objects.equals(tenantDomain.getName(), identityDomain.value()))
-                                  throw new IllegalArgumentException(String.format("Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
-                                                                                   identityDomain.value(),
-                                                                                   tenantDomain.getName()));
+                              Optional<Tenant> tenant = controller.tenants().tenant(tenantName);
+                              if(!tenant.isPresent()) {
+                                  throw new IllegalArgumentException("Tenant does not exist");
+                              } else {
+                                  AthenzDomain tenantDomain = tenant.filter(t -> t instanceof AthenzTenant)
+                                          .map(t -> (AthenzTenant) t)
+                                          .orElseThrow(() -> new IllegalArgumentException(
+                                                  String.format("Athenz domain defined in deployment.xml, but no Athenz domain for tenant (%s). " +
+                                                                "It is currently not possible to launch Athenz services from personal tenants, use " +
+                                                                "Athenz tenant instead.",
+                                                                tenantName.value())))
+                                          .domain();
+
+                                  if (!Objects.equals(tenantDomain.getName(), identityDomain.value()))
+                                      throw new IllegalArgumentException(String.format("Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
+                                                                                       identityDomain.value(),
+                                                                                       tenantDomain.getName()));
+                              }
                           });
     }
 

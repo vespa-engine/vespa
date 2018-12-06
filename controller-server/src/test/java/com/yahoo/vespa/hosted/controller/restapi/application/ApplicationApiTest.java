@@ -27,13 +27,12 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -44,21 +43,19 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
-import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
-import com.yahoo.vespa.hosted.controller.maintenance.DeploymentMetricsMaintainer;
-import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -71,7 +68,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -986,6 +982,39 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(createApplicationDeployData(applicationPackage, false))
                                       .screwdriverIdentity(screwdriverId),
                               new File("deploy-result.json"));
+
+    }
+
+    @Test
+    public void deployment_fails_for_personal_tenants_when_athenzdomain_specified() {
+        // Setup
+        tester.computeVersionStatus();
+        UserId userId = new UserId("new_user");
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, userId);
+
+        // Create tenant
+        // PUT (create) the authenticated user
+        byte[] data = new byte[0];
+        tester.assertResponse(request("/application/v4/user?user=new_user&domain=by", PUT)
+                                      .data(data)
+                                      .userIdentity(userId), // Normalized to by-new-user by API
+                              new File("create-user-response.json"));
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), com.yahoo.config.provision.AthenzService.from("service"))
+                .environment(Environment.dev)
+                .region("us-west-1")
+                .build();
+
+        // POST (deploy) an application to a dev zone
+        String expectedResult="{\"error-code\":\"BAD_REQUEST\",\"message\":\"Athenz domain defined in deployment.xml, but no Athenz domain for tenant (by-new-user). It is currently not possible to launch Athenz services from personal tenants, use Athenz tenant instead.\"}";
+        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
+        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
+                                      .data(entity)
+                                      .userIdentity(userId),
+                              expectedResult,
+                              400);
 
     }
 
