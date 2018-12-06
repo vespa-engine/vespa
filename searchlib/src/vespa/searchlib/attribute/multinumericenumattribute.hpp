@@ -192,9 +192,9 @@ MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::createFilterIterator(f
 
 template <typename B, typename M>
 MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::ArraySearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched) :
-        NumericAttribute::Range<T>(*qTerm),
-        SearchContext(toBeSearched),
-        _toBeSearched(static_cast<const MultiValueNumericEnumAttribute<B, M> &>(toBeSearched))
+    NumericAttribute::Range<T>(*qTerm),
+    SearchContext(toBeSearched),
+    _toBeSearched(static_cast<const MultiValueNumericEnumAttribute<B, M> &>(toBeSearched))
 { }
 
 template <typename B, typename M>

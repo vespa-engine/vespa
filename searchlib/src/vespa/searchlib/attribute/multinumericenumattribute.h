@@ -135,7 +135,7 @@ protected:
             return -1;
         }
 
-        bool
+        int32_t
         find(DocId doc, int32_t elemId) const
         {
             WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
