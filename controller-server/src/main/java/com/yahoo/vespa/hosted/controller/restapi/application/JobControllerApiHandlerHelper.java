@@ -418,7 +418,7 @@ class JobControllerApiHandlerHelper {
         Optional<Run> run = jobs.last(id, type).flatMap(last -> jobs.active(last.id()));
         if (run.isPresent()) {
             jobs.abort(run.get().id());
-            responseObject.setString("message", "Aborting " + run);
+            responseObject.setString("message", "Aborting " + run.get().id());
         }
         else
             responseObject.setString("message", "Nothing to abort.");
