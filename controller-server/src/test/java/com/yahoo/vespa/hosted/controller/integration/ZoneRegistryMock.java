@@ -40,7 +40,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Inject
     public ZoneRegistryMock() {
-        zones.add(ZoneId.from("prod", "corp-us-east-1"));
         zones.add(ZoneId.from("prod", "us-east-3"));
         zones.add(ZoneId.from("prod", "us-west-1"));
         zones.add(ZoneId.from("prod", "us-central-1"));

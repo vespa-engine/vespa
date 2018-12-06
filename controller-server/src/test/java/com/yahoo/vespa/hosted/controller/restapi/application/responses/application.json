@@ -66,7 +66,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-corp-us-east-1 (platform 6.1, application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-central-1 (platform 6.1, application 1.0.42-commit1)",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -80,7 +80,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-corp-us-east-1 (platform 6.1, application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-central-1 (platform 6.1, application 1.0.42-commit1)",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -94,7 +94,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-corp-us-east-1 (platform 6.1, application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-central-1 (platform 6.1, application 1.0.42-commit1)",
         "at": "(ignore)"
       }
     },
@@ -112,7 +112,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-corp-us-east-1 (platform 6.1, application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-central-1 (platform 6.1, application 1.0.42-commit1)",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -126,7 +126,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-corp-us-east-1 (platform 6.1, application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-central-1 (platform 6.1, application 1.0.42-commit1)",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -140,12 +140,12 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-corp-us-east-1 (platform 6.1, application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-central-1 (platform 6.1, application 1.0.42-commit1)",
         "at": "(ignore)"
       }
     },
     {
-      "type": "production-corp-us-east-1",
+      "type": "production-us-central-1",
       "success": false,
       "lastTriggered": {
         "id": -1,
@@ -231,12 +231,12 @@
     },
     {
       "environment": "prod",
-      "region": "corp-us-east-1",
+      "region": "us-central-1",
       "instance": "default",
       "bcpStatus": {
         "rotationStatus": "UNKNOWN"
       },
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default"
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default"
     }
   ],
   "metrics": {

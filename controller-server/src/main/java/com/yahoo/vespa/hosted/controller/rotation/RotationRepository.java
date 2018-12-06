@@ -104,6 +104,7 @@ public class RotationRepository {
         return allRotations.get(rotation);
     }
 
+    // TODO: Remove after corp zones disappear
     private static boolean isCorp(DeploymentSpec.DeclaredZone zone) {
         return zone.region().isPresent() && zone.region().get().value().contains("corp");
     }

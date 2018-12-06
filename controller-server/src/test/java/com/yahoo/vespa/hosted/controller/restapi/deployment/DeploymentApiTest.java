@@ -20,7 +20,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,13 +39,13 @@ public class DeploymentApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void testDeploymentApi() throws IOException {
+    public void testDeploymentApi() {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
         Version version = Version.fromString("5.0");
         tester.containerTester().upgradeSystem(version);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .region("corp-us-east-1")
+                .region("us-west-1")
                 .build();
 
         // 3 applications deploy on current system version
@@ -61,7 +60,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
         // Deploy once so that job information is stored, then remove the deployment
         deployCompletely(applicationWithoutDeployment, applicationPackage, 3L, true);
-        tester.controller().applications().deactivate(applicationWithoutDeployment.id(), ZoneId.from("prod", "corp-us-east-1"));
+        tester.controller().applications().deactivate(applicationWithoutDeployment.id(), ZoneId.from("prod", "us-west-1"));
 
         // New version released
         version = Version.fromString("5.1");
@@ -121,8 +120,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
               .submit();
         if (success) {
             tester.deploy(application, applicationPackage, ZoneId.from(Environment.prod,
-                                                                       RegionName.from("corp-us-east-1")));
-            tester.jobCompletion(JobType.productionCorpUsEast1)
+                                                                       RegionName.from("us-west-1")));
+            tester.jobCompletion(JobType.productionUsWest1)
                   .application(application)
                   .projectId(projectId)
                   .submit();

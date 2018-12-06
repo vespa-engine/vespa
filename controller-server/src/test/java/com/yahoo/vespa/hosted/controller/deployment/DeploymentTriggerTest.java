@@ -11,15 +11,15 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -41,7 +41,6 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.buildJob;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCorpUsEast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
@@ -184,7 +183,7 @@ public class DeploymentTriggerTest {
         Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .region("corp-us-east-1")
+                .region("us-east-3")
                 .region("us-central-1")
                 .region("us-west-1")
                 .build();
@@ -195,7 +194,7 @@ public class DeploymentTriggerTest {
         // Application is deployed to all test environments and declared zones
         tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
         tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionCorpUsEast1);
+        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsEast3);
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsWest1);
         assertTrue("All jobs consumed", mockBuildService.jobs().isEmpty());
@@ -380,13 +379,13 @@ public class DeploymentTriggerTest {
         Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage previousApplicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .region("corp-us-east-1")
+                .region("us-east-3")
                 .region("us-central-1")
                 .region("us-west-1")
                 .build();
         ApplicationPackage newApplicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .region("corp-us-east-1")
+                .region("us-east-3")
                 .region("us-central-1")
                 .region("us-west-1")
                 .region("eu-west-1")
@@ -399,7 +398,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.systemTest);
         tester.deploy(JobType.stagingTest, application, previousApplicationPackage, true);
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.stagingTest);
-        tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionCorpUsEast1);
+        tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsEast3);
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsCentral1);
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsWest1);
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionEuWest1);
@@ -959,7 +958,7 @@ public class DeploymentTriggerTest {
         Application app = tester.createApplication("app1", "foo", 1, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .region("corp-us-east-1")
+                .region("us-west-1")
                 .build();
 
         // Initial failure
@@ -982,7 +981,7 @@ public class DeploymentTriggerTest {
 
         // Complete deployment
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
 
         // Two repeated failures again.
         // Initial failure
@@ -1086,7 +1085,7 @@ public class DeploymentTriggerTest {
     public void requeueOutOfCapacityStagingJob() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .region("corp-us-east-1")
+                .region("us-east-3")
                 .build();
 
         long project1 = 1;
@@ -1140,9 +1139,9 @@ public class DeploymentTriggerTest {
 
         // Finish deployment for apps 2 and 3, then release a new version, leaving only app1 with an application upgrade.
         tester.deployAndNotify(app2, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app2, applicationPackage, true, productionCorpUsEast1);
+        tester.deployAndNotify(app2, applicationPackage, true, productionUsEast3);
         tester.deployAndNotify(app3, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app3, applicationPackage, true, productionCorpUsEast1);
+        tester.deployAndNotify(app3, applicationPackage, true, productionUsEast3);
 
         tester.upgradeSystem(new Version("6.2"));
         // app1 also gets a new application change, so its time of availability is after the version upgrade.
