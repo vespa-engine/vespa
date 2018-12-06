@@ -10,7 +10,6 @@ import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -27,6 +26,8 @@ import java.util.Optional;
  */
 public class SuperModelManager implements SuperModelProvider {
     private final Zone zone;
+
+    private final Object monitor = new Object();
     private SuperModelConfigProvider superModelConfigProvider;  // Guarded by 'this' monitor
     private final List<SuperModelListener> listeners = new ArrayList<>();  // Guarded by 'this' monitor
 
@@ -46,49 +47,62 @@ public class SuperModelManager implements SuperModelProvider {
     }
 
     @Override
-    public synchronized SuperModel getSuperModel() {
-        return superModelConfigProvider.getSuperModel();
+    public SuperModel getSuperModel() {
+        synchronized (monitor) {
+            return superModelConfigProvider.getSuperModel();
+        }
     }
 
-    public synchronized SuperModelConfigProvider getSuperModelConfigProvider() {
-        return superModelConfigProvider;
+    public SuperModelConfigProvider getSuperModelConfigProvider() {
+        synchronized (monitor) {
+            return superModelConfigProvider;
+        }
     }
 
-    public synchronized long getGeneration() {
-        return generation;
+    public long getGeneration() {
+        synchronized (monitor) {
+            return generation;
+        }
     }
 
     @Override
-    public synchronized SuperModel snapshot(SuperModelListener listener) {
-        listeners.add(listener);
-        return superModelConfigProvider.getSuperModel();
+    public void registerListener(SuperModelListener listener) {
+        synchronized (monitor) {
+            listeners.add(listener);
+            SuperModel superModel = superModelConfigProvider.getSuperModel();
+            superModel.getAllApplicationInfos().forEach(application -> listener.applicationActivated(superModel, application));
+        }
     }
 
     public Zone getZone() {
         return zone;
     }
 
-    public synchronized void configActivated(ApplicationSet applicationSet) {
-        // TODO: Should supermodel care about multiple versions?
-        ApplicationInfo applicationInfo = applicationSet
-                .getForVersionOrLatest(Optional.empty(), Instant.now())
-                .toApplicationInfo();
+    public void configActivated(ApplicationSet applicationSet) {
+        synchronized (monitor) {
+            // TODO: Should supermodel care about multiple versions?
+            ApplicationInfo applicationInfo = applicationSet
+                    .getForVersionOrLatest(Optional.empty(), Instant.now())
+                    .toApplicationInfo();
 
-        SuperModel newSuperModel = this.superModelConfigProvider
-                .getSuperModel()
-                .cloneAndSetApplication(applicationInfo);
-        makeNewSuperModelConfigProvider(newSuperModel);
-        listeners.stream().forEach(listener ->
-                listener.applicationActivated(newSuperModel, applicationInfo));
+            SuperModel newSuperModel = this.superModelConfigProvider
+                    .getSuperModel()
+                    .cloneAndSetApplication(applicationInfo);
+            makeNewSuperModelConfigProvider(newSuperModel);
+            listeners.stream().forEach(listener ->
+                    listener.applicationActivated(newSuperModel, applicationInfo));
+        }
     }
 
-    public synchronized void applicationRemoved(ApplicationId applicationId) {
-        SuperModel newSuperModel = this.superModelConfigProvider
-                .getSuperModel()
-                .cloneAndRemoveApplication(applicationId);
-        makeNewSuperModelConfigProvider(newSuperModel);
-        listeners.stream().forEach(listener ->
-                listener.applicationRemoved(newSuperModel, applicationId));
+    public void applicationRemoved(ApplicationId applicationId) {
+        synchronized (monitor) {
+            SuperModel newSuperModel = this.superModelConfigProvider
+                    .getSuperModel()
+                    .cloneAndRemoveApplication(applicationId);
+            makeNewSuperModelConfigProvider(newSuperModel);
+            listeners.stream().forEach(listener ->
+                    listener.applicationRemoved(newSuperModel, applicationId));
+        }
     }
 
     private void makeNewSuperModelConfigProvider(SuperModel newSuperModel) {

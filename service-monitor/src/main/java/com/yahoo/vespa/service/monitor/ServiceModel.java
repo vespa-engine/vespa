@@ -37,6 +37,6 @@ public class ServiceModel {
         return applications.values().stream()
                 .flatMap(application -> application.serviceClusters().stream())
                 .flatMap(cluster -> cluster.serviceInstances().stream())
-                .collect(Collectors.groupingBy(service -> service.hostName(), Collectors.toList()));
+                .collect(Collectors.groupingBy(ServiceInstance::hostName, Collectors.toList()));
     }
 }

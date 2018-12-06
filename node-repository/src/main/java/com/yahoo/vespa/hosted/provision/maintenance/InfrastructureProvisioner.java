@@ -11,8 +11,8 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.service.monitor.application.DuperModelInfraApi;
-import com.yahoo.vespa.service.monitor.application.InfraApplicationApi;
+import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
+import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 
 import java.time.Duration;
 import java.util.List;

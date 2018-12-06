@@ -8,7 +8,7 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 
 /**
- * @author hakon
+ * @author hakonhall
  */
 public interface ServiceStatusProvider {
     /**
@@ -22,4 +22,7 @@ public interface ServiceStatusProvider {
                             ClusterId clusterId,
                             ServiceType serviceType,
                             ConfigId configId);
+
+    /** Returns true if the status provider would start monitoring the application. */
+    boolean wouldMonitor(ApplicationId applicationId);
 }

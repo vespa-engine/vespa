@@ -31,7 +31,7 @@ import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
+import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;

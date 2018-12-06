@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicyList;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareCount;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.service.monitor.application.DuperModelInfraApi;
+import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Clock;
