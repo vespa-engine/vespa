@@ -45,6 +45,10 @@ public:
     const vespalib::string& cert_chain_pem() const noexcept { return _cert_chain_pem; }
     const vespalib::string& private_key_pem() const noexcept { return _private_key_pem; }
     const AuthorizedPeers& authorized_peers() const noexcept { return _authorized_peers; }
+
+    TransportSecurityOptions copy_without_private_key() const {
+        return TransportSecurityOptions(_ca_certs_pem, _cert_chain_pem, "", _authorized_peers);
+    }
 };
 
 } // vespalib::net::tls

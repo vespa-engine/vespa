@@ -1,0 +1,109 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include "auto_reloading_tls_crypto_engine.h"
+#include "tls_context.h"
+#include "tls_crypto_engine.h"
+#include "transport_security_options.h"
+#include "transport_security_options_reading.h"
+
+#include <functional>
+#include <stdexcept>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".vespalib.net.tls.auto_reloading_tls_crypto_engine");
+
+namespace vespalib::net::tls {
+
+namespace {
+
+std::shared_ptr<TlsCryptoEngine> tls_engine_from_config_file(const vespalib::string& config_file_path) {
+    auto tls_opts = net::tls::read_options_from_json_file(config_file_path);
+    return std::make_shared<TlsCryptoEngine>(*tls_opts);
+}
+
+std::shared_ptr<TlsCryptoEngine> try_create_engine_from_tls_config(const vespalib::string& config_file_path) {
+    try {
+        return tls_engine_from_config_file(config_file_path);
+    } catch (std::exception& e) {
+        LOG(warning, "Failed to reload TLS config file (%s): '%s'. Old config remains in effect.",
+            config_file_path.c_str(), e.what());
+        return {};
+    }
+}
+
+// Unlocks on construction, re-locks on destruction.
+struct UnlockGuard {
+    std::unique_lock<std::mutex>& _lock;
+    explicit UnlockGuard(std::unique_lock<std::mutex>& lock) : _lock(lock) {
+        _lock.unlock();
+    }
+    ~UnlockGuard() {
+        _lock.lock();
+    }
+};
+
+} // anonymous namespace
+
+AutoReloadingTlsCryptoEngine::AutoReloadingTlsCryptoEngine(vespalib::string config_file_path,
+                                                           TimeInterval reload_interval)
+    : _mutex(),
+      _cond(),
+      _shutdown(false),
+      _config_file_path(std::move(config_file_path)),
+      _current_engine(tls_engine_from_config_file(_config_file_path)),
+      _reload_interval(reload_interval),
+      _reload_thread([this](){ run_reload_loop(); })
+{
+}
+
+AutoReloadingTlsCryptoEngine::~AutoReloadingTlsCryptoEngine() {
+    {
+        std::unique_lock lock(_mutex);
+        _shutdown = true;
+        _cond.notify_all();
+    }
+    _reload_thread.join();
+}
+
+std::chrono::steady_clock::time_point AutoReloadingTlsCryptoEngine::make_future_reload_time_point() const noexcept {
+    return std::chrono::steady_clock::now() + _reload_interval;
+}
+
+void AutoReloadingTlsCryptoEngine::run_reload_loop() {
+    std::unique_lock lock(_mutex);
+    auto reload_at_time = make_future_reload_time_point();
+    while (!_shutdown) {
+        if (_cond.wait_until(lock, reload_at_time) == std::cv_status::timeout) {
+            LOG(debug, "TLS config reload time reached, reloading file '%s'", _config_file_path.c_str());
+            try_replace_current_engine(lock);
+            reload_at_time = make_future_reload_time_point();
+        } // else: spurious wakeup or shutdown
+    }
+}
+
+void AutoReloadingTlsCryptoEngine::try_replace_current_engine(std::unique_lock<std::mutex>& held_lock) {
+    std::shared_ptr<TlsCryptoEngine> new_engine;
+    {
+        UnlockGuard guard(held_lock);
+        new_engine = try_create_engine_from_tls_config(_config_file_path);
+    }
+    if (new_engine) {
+        _current_engine = std::move(new_engine);
+    }
+}
+
+AutoReloadingTlsCryptoEngine::EngineSP AutoReloadingTlsCryptoEngine::acquire_current_engine() const {
+    std::lock_guard guard(_mutex);
+    return _current_engine;
+}
+
+CryptoSocket::UP AutoReloadingTlsCryptoEngine::create_crypto_socket(SocketHandle socket, bool is_server) {
+    return acquire_current_engine()->create_crypto_socket(std::move(socket), is_server);
+}
+
+std::unique_ptr<TlsCryptoSocket>
+AutoReloadingTlsCryptoEngine::create_tls_crypto_socket(SocketHandle socket, bool is_server) {
+    return acquire_current_engine()->create_tls_crypto_socket(std::move(socket), is_server);
+}
+
+}

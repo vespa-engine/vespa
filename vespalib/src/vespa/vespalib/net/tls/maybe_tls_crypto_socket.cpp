@@ -14,10 +14,10 @@ class MyCryptoSocket : public CryptoSocket
 private:
     static constexpr size_t SNOOP_SIZE = net::tls::snooping::min_header_bytes_to_observe();
 
-    CryptoSocket::UP                &_self;
-    SocketHandle                     _socket;
-    std::shared_ptr<TlsCryptoEngine> _factory;
-    SmartBuffer                      _buffer;
+    CryptoSocket::UP                        &_self;
+    SocketHandle                             _socket;
+    std::shared_ptr<AbstractTlsCryptoEngine> _factory;
+    SmartBuffer                              _buffer;
 
     bool is_blocked(ssize_t res, int error) const {
         return ((res < 0) && ((error == EWOULDBLOCK) || (error == EAGAIN)));
@@ -28,7 +28,7 @@ private:
     }
 
 public:
-    MyCryptoSocket(CryptoSocket::UP &self, SocketHandle socket, std::shared_ptr<TlsCryptoEngine> tls_engine)
+    MyCryptoSocket(CryptoSocket::UP &self, SocketHandle socket, std::shared_ptr<AbstractTlsCryptoEngine> tls_engine)
         : _self(self), _socket(std::move(socket)), _factory(std::move(tls_engine)), _buffer(4096)
     {
         static_assert(SNOOP_SIZE == 8);
@@ -83,7 +83,7 @@ public:
 
 } // namespace vespalib::<unnamed>
 
-MaybeTlsCryptoSocket::MaybeTlsCryptoSocket(SocketHandle socket, std::shared_ptr<TlsCryptoEngine> tls_engine)
+MaybeTlsCryptoSocket::MaybeTlsCryptoSocket(SocketHandle socket, std::shared_ptr<AbstractTlsCryptoEngine> tls_engine)
     : _socket(std::make_unique<MyCryptoSocket>(_socket, std::move(socket), std::move(tls_engine)))
 {
 }

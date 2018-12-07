@@ -189,7 +189,8 @@ OpenSslTlsContextImpl::OpenSslTlsContextImpl(
         const TransportSecurityOptions& ts_opts,
         std::shared_ptr<CertificateVerificationCallback> cert_verify_callback)
     : _ctx(new_tls_ctx_with_auto_init()),
-      _cert_verify_callback(std::move(cert_verify_callback))
+      _cert_verify_callback(std::move(cert_verify_callback)),
+      _redacted_transport_options(ts_opts.copy_without_private_key())
 {
     if (!_ctx) {
         throw CryptoException("Failed to create new TLS context");
