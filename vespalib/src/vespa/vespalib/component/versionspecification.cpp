@@ -22,7 +22,7 @@ VersionSpecification::VersionSpecification(int major, int minor, int micro, cons
 
 VersionSpecification::VersionSpecification(const VersionSpecification &) = default;
 
-VersionSpecification::~VersionSpecification() { }
+VersionSpecification::~VersionSpecification() = default;
 
 void
 VersionSpecification::initialize()

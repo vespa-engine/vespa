@@ -3,6 +3,8 @@
 #include "assert.h"
 #include <vespa/defaults.h>
 #include <vespa/vespalib/util/backtrace.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/component/vtag.h>
 #include <fstream>
 #include <map>
 #include <mutex>
@@ -21,41 +23,54 @@ std::map<std::string, size_t> _G_assertMap;
 
 }
 
-size_t getNumAsserts(const char *key)
+size_t
+getNumAsserts(const char *key)
 {
     std::lock_guard guard(_G_lock);
     return _G_assertMap[key];
 }
 
-void assertOnceOrLog(const char *expr, const char *key, size_t freq)
+vespalib::string
+getAssertLogFileName(const char *key)
 {
-    std::string relativePath("tmp/");
-    relativePath += key;
-    relativePath += ".assert.";
-    relativePath += vespa::Defaults::vespaUser();
-    std::string rememberAssert = vespa::Defaults::underVespaHome(relativePath.c_str());
-    std::ifstream prevAssertFile(rememberAssert.c_str());
-    if (prevAssertFile) {
-        size_t count(0);
-        {
-            std::lock_guard guard(_G_lock);
-            count = _G_assertMap[key]++;
-        }
+    vespalib::string relative = make_string("var/db/vespa/tmp/%s.%s.assert", key, Vtag::currentVersion.toString().c_str());
+    return vespa::Defaults::underVespaHome(relative.c_str());
+}
+
+void
+assertOnceOrLog(const char *expr, const char *key, size_t freq)
+{
+    size_t count(0);
+    {
+        std::lock_guard guard(_G_lock);
+        count = _G_assertMap[key]++;
+    }
+    if (count) {
         if ((count % freq) == 0) {
             LOG(error, "assert(%s) named '%s' has failed %zu times. Stacktrace = %s",
-                       expr, key, count+1, vespalib::getStackTrace(0).c_str());
+                expr, key, count+1, vespalib::getStackTrace(0).c_str());
         }
     } else {
-        {
-            LOG(error, "assert(%s) named '%s' failed first time. Stacktrace = %s",
-                       expr, key, vespalib::getStackTrace(0).c_str());
-            std::ofstream assertStream(rememberAssert.c_str());
-            std::chrono::time_point now = std::chrono::system_clock::now();
-            std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-            assertStream << std::put_time(std::gmtime(&now_c), "%F %T") << " assert(" << expr << ") failed" << std::endl;
-            assertStream.close();
+        std::string rememberAssert = getAssertLogFileName(key);
+        std::ifstream prevAssertFile(rememberAssert.c_str());
+        if (prevAssertFile) {
+            if ((count % freq) == 0) {
+                LOG(error, "assert(%s) named '%s' has failed %zu times. Stacktrace = %s",
+                    expr, key, count + 1, vespalib::getStackTrace(0).c_str());
+            }
+        } else {
+            {
+                LOG(error, "assert(%s) named '%s' failed first time. Stacktrace = %s",
+                    expr, key, vespalib::getStackTrace(0).c_str());
+                std::ofstream assertStream(rememberAssert.c_str());
+                std::chrono::time_point now = std::chrono::system_clock::now();
+                std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+                assertStream << std::put_time(std::gmtime(&now_c), "%F %T") << " assert(" << expr
+                             << ") named " << key << " failed" << std::endl;
+                assertStream.close();
+            }
+            abort();
         }
-        abort();
     }
 }
 

@@ -19,7 +19,7 @@ Version::Version(int major, int minor, int micro, const string & qualifier)
 
 Version::Version(const Version &) = default;
 Version & Version::operator = (const Version &) = default;
-Version::~Version() { }
+Version::~Version() = default;
 
 void
 Version::initialize()
@@ -150,6 +150,5 @@ Version::compareTo(const Version& other) const
 
     return getQualifier().compare(other.getQualifier());
 }
-
 
 } // namespace vespalib
