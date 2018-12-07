@@ -52,7 +52,8 @@ Full documentation is available on [https://docs.vespa.ai](https://docs.vespa.ai
 
 ## Contribute
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) to learn how to contribute.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) to learn how to contribute - 
+please read the [code of conduct](Code-of-Conduct.md) first.
 
 If you want to contribute to the documentation, see
 [https://github.com/vespa-engine/documentation](https://github.com/vespa-engine/documentation)
