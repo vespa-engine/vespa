@@ -3,9 +3,7 @@ package com.yahoo.yolean;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.NoSuchFileException;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Helper methods for handling exceptions
@@ -48,6 +46,17 @@ public class Exceptions {
             if (message.equals(t.getCause().getClass().getName() + ": " + t.getCause().getMessage())) return null;
         }
         return message;
+    }
+
+    /**
+     * Returns the first cause or the given throwable that is an instance of {@code clazz}
+     */
+    public static <T extends Throwable> Optional<T> findCause(Throwable t, Class<T> clazz) {
+        for (; t != null; t = t.getCause()) {
+            if (clazz.isInstance(t))
+                return Optional.of(clazz.cast(t));
+        }
+        return Optional.empty();
     }
 
     /**

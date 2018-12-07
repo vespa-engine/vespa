@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -15,6 +16,19 @@ import static org.junit.Assert.assertNull;
  * @author bratseth
  */
 public class ExceptionsTestCase {
+
+    @Test
+    public void testFindCause() {
+        IllegalArgumentException e1 = new IllegalArgumentException();
+        IllegalStateException e2 = new IllegalStateException(e1);
+        RuntimeException e3 = new RuntimeException(e2);
+
+        assertEquals(Optional.of(e3), Exceptions.findCause(e3, RuntimeException.class));
+        assertEquals(Optional.of(e1), Exceptions.findCause(e3, IllegalArgumentException.class));
+        assertEquals(Optional.empty(), Exceptions.findCause(e3, NumberFormatException.class));
+
+        assertEquals(Optional.of(e2), Exceptions.findCause(e2, RuntimeException.class));
+    }
 
     @Test
     public void testToMessageStrings() {
