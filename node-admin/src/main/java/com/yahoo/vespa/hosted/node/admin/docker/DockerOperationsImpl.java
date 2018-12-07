@@ -265,9 +265,6 @@ public class DockerOperationsImpl implements DockerOperations {
         return docker.getAllContainersManagedBy(MANAGER_NAME);
     }
 
-    /**
-     * Returns map of directories to mount and whether they should be writable by everyone
-     */
     private static void addMounts(NodeAgentContext context, Docker.CreateContainerCommand command) {
         final Path varLibSia = Paths.get("/var/lib/sia");
 
