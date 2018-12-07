@@ -7,8 +7,6 @@ Vespa is an engine for low-latency computation over large data sets.
 It stores and indexes your data and executes distributed queries including evaluation of
 machine-learned models over many data points in real time.
 
-Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
-
 Travis-CI build status: [![Build Status](https://travis-ci.org/vespa-engine/vespa.svg?branch=master)](https://travis-ci.org/vespa-engine/vespa)
 
 ## Table of contents
@@ -18,6 +16,7 @@ Travis-CI build status: [![Build Status](https://travis-ci.org/vespa-engine/vesp
 - [Usage](#usage)
 - [Contribute](#contribute)
 - [Building](#building)
+- [License](#license)
    
 ## Background
 
@@ -95,3 +94,7 @@ Replace `<source-dir>` with the directory in which you've cloned/unpacked the so
 ### Create RPM packages
 
     sh dist.sh VERSION && rpmbuild -ba ~/rpmbuild/SPECS/vespa-VERSION.spec
+    
+## License
+
+Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
