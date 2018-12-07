@@ -15,8 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * The SuperModel contains the ApplicationInfo of all active applications (applications whose configs have been
- * activated/reloaded and not yet removed).
+ * The SuperModel contains the ApplicationInfo of all active applications
  */
 public class SuperModel {
 
@@ -27,14 +26,6 @@ public class SuperModel {
     }
 
     public SuperModel(Map<ApplicationId, ApplicationInfo> models) {
-        this.models = models;
-    }
-
-    // TODO: The ignored parameter is just to circumvent the fact that you cannot have
-    // two constructors with same type erasure, the above will be removed and this one can
-    // be fixed
-    // TODO: Remove when oldest model used is 6.315 or newer
-    public SuperModel(Map<ApplicationId, ApplicationInfo> models, boolean ignored) {
         this.models = models;
     }
 
