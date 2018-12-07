@@ -127,13 +127,15 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 if (!e.isRetryable()) throw e;
                 lastException = e;
             } catch (Exception e) {
+                lastException = e;
+                if (configServers.size() == 1) break;
+
                 // Failure to communicate with a config server is not abnormal during upgrades
                 if (e.getMessage().contains("(Connection refused)")) {
                     NODE_ADMIN_LOGGER.info("Connection refused to " + configServer + " (upgrading?), will try next");
                 } else {
                     NODE_ADMIN_LOGGER.warning("Failed to communicate with " + configServer + ", will try next: " + e.getMessage());
                 }
-                lastException = e;
             }
         }
 
