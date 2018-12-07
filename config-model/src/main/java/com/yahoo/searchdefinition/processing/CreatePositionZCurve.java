@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.logging.Level;
 
 /**
- * Adds a "fieldName.zcurve" long attribute and a "fieldName.distance" summary field to all position type fields.
+ * Adds a "fieldName_zcurve" long attribute and "fieldName.distance" and "FieldName.position" summary fields to all position type fields.
  *
  * @author bratseth
  */
