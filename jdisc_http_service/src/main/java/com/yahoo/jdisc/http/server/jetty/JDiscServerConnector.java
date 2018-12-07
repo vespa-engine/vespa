@@ -50,6 +50,10 @@ class JDiscServerConnector extends ServerConnector {
 
         this.statistics = new ServerConnectionStatistics();
         addBean(statistics);
+        ConnectorConfig.Throttling throttlingConfig = config.throttling();
+        if (throttlingConfig.enabled()) {
+            new ConnectionThrottler(this, throttlingConfig).registerBeans();
+        }
     }
 
     @Override
