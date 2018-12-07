@@ -70,6 +70,7 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.restapi.cost.NoopCostReportConsumer'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever'/>\n" +
@@ -108,6 +109,9 @@ public class ControllerContainerTest {
             "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.os.OsApiHandler'>\n" +
             "    <binding>http://*/os/v1/*</binding>\n" +
+            "  </handler>\n" +
+            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.cost.CostApiHandler'>\n" +
+            "    <binding>http://*/cost/v1/*</binding>\n" +
             "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.screwdriver.ScrewdriverApiHandler'>\n" +
             "    <binding>http://*/screwdriver/v1/*</binding>\n" +
