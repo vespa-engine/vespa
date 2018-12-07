@@ -10,12 +10,6 @@ public class RoutingEndpoint {
     private final String endpoint;
     private final String hostname;
 
-    public RoutingEndpoint(String endpoint, boolean isGlobal) {
-        this.endpoint = endpoint;
-        this.hostname = null;
-        this.isGlobal = isGlobal;
-    }
-
     public RoutingEndpoint(String endpoint, String hostname, boolean isGlobal) {
         this.endpoint = endpoint;
         this.hostname = hostname;

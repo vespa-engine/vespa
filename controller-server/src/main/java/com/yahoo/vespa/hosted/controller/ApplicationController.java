@@ -240,21 +240,16 @@ public class ApplicationController {
                         .replaceAll(".vespa.oath.cloud", "");
                 String hostname = endpoint.getHostname();
 
-                // This check is needed until the old implementations of
-                // RoutingEndpoints that lacks hostname is gone
-                if (hostname != null) {
+                // Book-keeping
+                if (endpoint.isGlobal()) {
+                    hostToGlobalEndpoint.put(hostname, endpoint);
+                } else {
+                    hostToCanonicalEndpoint.put(hostname, canonicalEndpoint);
+                }
 
-                    // Book-keeping
-                    if (endpoint.isGlobal()) {
-                        hostToGlobalEndpoint.put(hostname, endpoint);
-                    } else {
-                        hostToCanonicalEndpoint.put(hostname, canonicalEndpoint);
-                    }
-
-                    // Return as soon as we have a map between a global and a canonical endpoint
-                    if (hostToGlobalEndpoint.containsKey(hostname) && hostToCanonicalEndpoint.containsKey(hostname)) {
-                        return Optional.of(hostToCanonicalEndpoint.get(hostname));
-                    }
+                // Return as soon as we have a map between a global and a canonical endpoint
+                if (hostToGlobalEndpoint.containsKey(hostname) && hostToCanonicalEndpoint.containsKey(hostname)) {
+                    return Optional.of(hostToCanonicalEndpoint.get(hostname));
                 }
             } catch (URISyntaxException use) {
                 throw new IOException(use);
@@ -263,7 +258,6 @@ public class ApplicationController {
 
         return Optional.empty();
     }
-
 
     /**
      * Creates a new application for an existing tenant.
