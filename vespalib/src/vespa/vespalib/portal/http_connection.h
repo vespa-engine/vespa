@@ -45,6 +45,7 @@ public:
     ~HttpConnection();
     void handle_event(bool read, bool write) override;
     State get_state() const { return _state; }
+    void resolve_host(const vespalib::string &my_host) { _request.resolve_host(my_host); }
     const HttpRequest &get_request() const { return _request; }
     void respond_with_content(const vespalib::string &content_type,
                               const vespalib::string &content);

@@ -2,6 +2,8 @@
 
 #include "portal.h"
 #include "http_connection.h"
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/host_name.h>
 #include <cassert>
 
 namespace vespalib {
@@ -131,6 +133,7 @@ Portal::handle_http(portal::HttpConnection *conn)
             auto guard = lookup_get_handler(conn->get_request().get_uri(), get_handler);
             if (guard.valid()) {
                 assert(get_handler != nullptr);
+                conn->resolve_host(_my_host);
                 get_handler->get(GetRequest(*conn));
             } else {
                 conn->respond_with_error(404, "Not Found");
@@ -149,7 +152,8 @@ Portal::Portal(CryptoEngine::SP crypto, int port)
       _conn_handle(_handle_manager.create()),
       _listener(),
       _lock(),
-      _bind_list()
+      _bind_list(),
+      _my_host()
 {
     _listener = std::make_unique<portal::Listener>(_reactor, port, 
                                                    [this](SocketHandle socket)
@@ -159,6 +163,7 @@ Portal::Portal(CryptoEngine::SP crypto, int port)
                                                            handle_accept(std::move(guard), std::move(socket));
                                                        }
                                                    });
+    _my_host = vespalib::make_string("%s:%d", HostName::get().c_str(), listen_port());
 }
 
 Portal::~Portal()

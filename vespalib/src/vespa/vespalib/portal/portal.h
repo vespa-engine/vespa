@@ -93,6 +93,7 @@ private:
     portal::Listener::UP   _listener;
     std::mutex             _lock;
     std::vector<BindState> _bind_list;
+    vespalib::string       _my_host;
 
     Token::UP make_token();
     void cancel_token(Token &token);
