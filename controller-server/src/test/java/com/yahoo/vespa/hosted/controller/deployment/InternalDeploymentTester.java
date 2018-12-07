@@ -104,6 +104,7 @@ public class InternalDeploymentTester {
                                                                                          id.tenant().value(),
                                                                                          zone.region().value(),
                                                                                          zone.environment().value()),
+                                                                           "host1",
                                                                            false)));
     }
 

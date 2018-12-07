@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -22,7 +21,7 @@ public class RoutingGeneratorMock implements RoutingGenerator {
 
     private final Map<DeploymentId, List<RoutingEndpoint>> allEndpoints = new ConcurrentHashMap<>();
     private static final List<RoutingEndpoint> defaultEndpoints =
-            Arrays.asList(new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", false),
+            Arrays.asList(new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false),
                           new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false),
                           new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false),
                           new RoutingEndpoint("http://global-endpoint.vespa.yahooapis.com:4080", "host1", true),
