@@ -149,15 +149,15 @@ public class DuperModelManagerTest {
         manager.infraApplicationActivated(secondId, hostnames2);
         verify(duperModel, times(1)).add(any());
 
+        // Removing the second config server like application cannot be removed since it wasn't added
+        verify(duperModel, times(0)).remove(any());
+        manager.infraApplicationRemoved(secondId);
+        verify(duperModel, times(0)).remove(any());
+
         verify(duperModel, times(0)).remove(any());
         manager.infraApplicationRemoved(firstId);
         verify(duperModel, times(1)).remove(any());
         when(duperModel.contains(firstId)).thenReturn(false);
-
-        // Removing the second config server like application cannot be removed since it wasn't added
-        verify(duperModel, times(1)).remove(any());
-        manager.infraApplicationRemoved(secondId);
-        verify(duperModel, times(1)).remove(any());
     }
 
     @Test

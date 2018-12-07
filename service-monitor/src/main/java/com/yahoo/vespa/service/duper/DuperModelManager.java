@@ -174,7 +174,7 @@ public class DuperModelManager implements DuperModelInfraApi {
     public void infraApplicationRemoved(ApplicationId applicationId) {
         synchronized (monitor) {
             activeInfraInfos.remove(applicationId);
-            if (duperModel.contains(applicationId)) {
+            if (infraApplicationBelongsInDuperModel(applicationId)) {
                 duperModel.remove(applicationId);
             }
         }
@@ -204,7 +204,7 @@ public class DuperModelManager implements DuperModelInfraApi {
             if (isConfigServerFromConfigInDuperModel()) return false;
             if (!multitenant) return false;
             if (duperModel.contains(configServerApplication.getApplicationId())) {
-                logger.log(LogLevel.WARNING, "Refusing to add controller application to duper model " +
+                logger.log(LogLevel.ERROR, "Refusing to add controller application to duper model " +
                         "since it already contains config server");
                 return false;
             }
@@ -213,7 +213,7 @@ public class DuperModelManager implements DuperModelInfraApi {
             if (isConfigServerFromConfigInDuperModel()) return false;
             if (!multitenant) return false;
             if (duperModel.contains(controllerApplication.getApplicationId())) {
-                logger.log(LogLevel.WARNING, "Refusing to add config server application to duper model " +
+                logger.log(LogLevel.ERROR, "Refusing to add config server application to duper model " +
                         "since it already contains controller");
                 return false;
             }
