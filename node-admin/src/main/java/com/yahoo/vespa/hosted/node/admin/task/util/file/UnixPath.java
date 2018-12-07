@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.ifExists;
 import static com.yahoo.yolean.Exceptions.uncheck;
-import static com.yahoo.yolean.Exceptions.uncheckAndIgnore;
 
 /**
  * Thin wrapper around java.nio.file.Path, especially nice for UNIX-specific features.

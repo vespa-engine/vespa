@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.yolean.Exceptions;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
 import java.util.Optional;

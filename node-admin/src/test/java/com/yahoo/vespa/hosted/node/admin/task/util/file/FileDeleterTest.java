@@ -18,7 +18,7 @@ public class FileDeleterTest {
     private final TaskContext context = mock(TaskContext.class);
 
     @Test
-    public void deleteExisting() throws IOException {
+    public void deleteExisting() {
         assertFalse(deleter.converge(context));
         path.createParents().writeUtf8File("bar");
         assertTrue(deleter.converge(context));
