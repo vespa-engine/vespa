@@ -92,6 +92,14 @@ public class InfrastructureProvisioner extends Maintainer {
                 duperModel.infraApplicationActivated(
                         application.getApplicationId(),
                         hostSpecs.stream().map(HostSpec::hostname).map(HostName::from).collect(Collectors.toList()));
+
+                String detail;
+                if (hostSpecs.size() < 10) {
+                    detail = ": " + hostSpecs.stream().map(HostSpec::hostname).collect(Collectors.joining(","));
+                } else {
+                    detail = " with " + hostSpecs.size() + " hosts";
+                }
+                logger.log(LogLevel.INFO, "Infrastructure application " + application.getApplicationId() + " activated" + detail);
             } catch (RuntimeException e) {
                 logger.log(LogLevel.INFO, "Failed to activate " + application.getApplicationId(), e);
                 // loop around to activate the next application
