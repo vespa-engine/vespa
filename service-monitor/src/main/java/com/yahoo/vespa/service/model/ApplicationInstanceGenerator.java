@@ -17,6 +17,7 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 
 import java.util.HashMap;
@@ -24,8 +25,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.yahoo.vespa.service.duper.ConfigServerApplication.CONFIG_SERVER_APPLICATION;
 
 /**
  * Class to generate an ApplicationInstance given service status for a standard (deployed) application.
@@ -37,10 +36,15 @@ public class ApplicationInstanceGenerator {
 
     private final ApplicationInfo applicationInfo;
     private final Zone zone;
+    private ApplicationId configServerApplicationId;
 
     public ApplicationInstanceGenerator(ApplicationInfo applicationInfo, Zone zone) {
         this.applicationInfo = applicationInfo;
         this.zone = zone;
+
+        // This is cheating a bit, but we don't expect DuperModel's config server application ID to be different.
+        // We do this to avoid passing through the ID through multiple levels.
+        this.configServerApplicationId = new ConfigServerApplication().getApplicationId();
     }
 
     public ApplicationInstance makeApplicationInstance(ServiceStatusProvider serviceStatusProvider) {
@@ -105,7 +109,7 @@ public class ApplicationInstanceGenerator {
     }
 
     private ApplicationInstanceId toApplicationInstanceId(ApplicationInfo applicationInfo, Zone zone) {
-        if (applicationInfo.getApplicationId().equals(CONFIG_SERVER_APPLICATION.getApplicationId())) {
+        if (applicationInfo.getApplicationId().equals(configServerApplicationId)) {
             // Removing this historical discrepancy would break orchestration during rollout.
             // An alternative may be to use a feature flag and flip it between releases,
             // once that's available.

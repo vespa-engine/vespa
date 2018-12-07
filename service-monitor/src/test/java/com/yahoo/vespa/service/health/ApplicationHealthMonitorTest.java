@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.ConfigserverUtil;
@@ -16,6 +17,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ApplicationHealthMonitorTest {
+    private final ConfigServerApplication configServerApplication = new ConfigServerApplication();
+
     @Test
     public void sanityCheck() {
         MonitorFactory monitorFactory = new MonitorFactory();
@@ -36,28 +39,17 @@ public class ApplicationHealthMonitorTest {
                 ConfigserverUtil.makeExampleConfigServer(),
                 monitorFactory);
 
-        ConfigServerApplication configServerApplication = new ConfigServerApplication();
+        assertEquals(ServiceStatus.UP, getStatus(applicationMonitor, "cfg1"));
+        assertEquals(ServiceStatus.DOWN, getStatus(applicationMonitor, "cfg2"));
+        assertEquals(ServiceStatus.NOT_CHECKED, getStatus(applicationMonitor, "cfg3"));
+    }
 
-        ServiceStatus status1 = applicationMonitor.getStatus(
-                ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId(),
-                ConfigServerApplication.CLUSTER_ID,
-                ConfigServerApplication.SERVICE_TYPE,
-                ConfigServerApplication.configIdFrom(0));
-        assertEquals(ServiceStatus.UP, status1);
-
-        ServiceStatus status2 = applicationMonitor.getStatus(
-                ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId(),
-                ConfigServerApplication.CLUSTER_ID,
-                ConfigServerApplication.SERVICE_TYPE,
-                ConfigServerApplication.configIdFrom(1));
-        assertEquals(ServiceStatus.DOWN, status2);
-
-        ServiceStatus status3 = applicationMonitor.getStatus(
-                ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId(),
-                ConfigServerApplication.CLUSTER_ID,
-                ConfigServerApplication.SERVICE_TYPE,
-                ConfigServerApplication.configIdFrom(2));
-        assertEquals(ServiceStatus.NOT_CHECKED, status3);
+    private ServiceStatus getStatus(ApplicationHealthMonitor monitor, String hostname) {
+        return monitor.getStatus(
+                configServerApplication.getApplicationId(),
+                configServerApplication.getClusterId(),
+                configServerApplication.getServiceType(),
+                configServerApplication.configIdFor(HostName.from(hostname)));
     }
 
     private static class MonitorFactory implements Function<HealthEndpoint, HealthMonitor> {

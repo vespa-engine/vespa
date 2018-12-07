@@ -8,10 +8,8 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 /**
  * @author mpolden
  */
-public class ControllerApplication extends InfraApplication {
+public class ControllerApplication extends ConfigServerLikeApplication {
     public ControllerApplication() {
-        super("controller", NodeType.controller, ClusterSpec.Type.container,
-                ClusterSpec.Id.from("controller"), ServiceType.CONTROLLER);
+        super("controller", NodeType.controller, ClusterSpec.Type.container, ServiceType.CONTROLLER);
     }
-
 }

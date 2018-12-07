@@ -6,16 +6,15 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
-import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
-import com.yahoo.vespa.service.monitor.ConfigserverUtil;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
+import com.yahoo.vespa.service.monitor.ConfigserverUtil;
+import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.service.duper.ConfigServerApplication.CONFIG_SERVER_APPLICATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -30,6 +29,7 @@ public class ApplicationInstanceGeneratorTest {
             configServer1,
             configServer2,
             configServer3).collect(Collectors.toList());
+    private static final ConfigServerApplication configServerApplication = new ConfigServerApplication();
 
     private final ServiceStatusProvider statusProvider = mock(ServiceStatusProvider.class);
 
@@ -43,24 +43,24 @@ public class ApplicationInstanceGeneratorTest {
                 configServer2,
                 configServer3);
         Zone zone = mock(Zone.class);
-        ApplicationInfo configServer = CONFIG_SERVER_APPLICATION.makeApplicationInfoFromConfig(config);
+        ApplicationInfo configServer = configServerApplication.makeApplicationInfoFromConfig(config);
         ApplicationInstance applicationInstance = new ApplicationInstanceGenerator(configServer, zone)
                 .makeApplicationInstance(statusProvider);
 
         assertEquals(
-                ConfigServerApplication.APPLICATION_INSTANCE_ID,
+                configServerApplication.getApplicationInstanceId(),
                 applicationInstance.applicationInstanceId());
         assertEquals(
-                ConfigServerApplication.TENANT_ID,
+                configServerApplication.getTenantId(),
                 applicationInstance.tenantId());
 
         assertEquals(
-                ConfigServerApplication.TENANT_ID.toString() +
-                        ":" + ConfigServerApplication.APPLICATION_INSTANCE_ID,
+                configServerApplication.getTenantId().toString() +
+                        ":" + configServerApplication.getApplicationInstanceId(),
                 applicationInstance.reference().toString());
 
         assertEquals(
-                ConfigServerApplication.CLUSTER_ID,
+                configServerApplication.getClusterId(),
                 applicationInstance.serviceClusters().iterator().next().clusterId());
 
         assertEquals(

@@ -52,7 +52,7 @@ public class DuperModelManager implements DuperModelInfraApi {
 
     private final Object monitor = new Object();
     private final DuperModel duperModel;
-    // The set of active infrastructure ApplicationInfo. Not all is necessarily in the DuperModel for historical reasons.
+    // The set of active infrastructure ApplicationInfo. Not all are necessarily in the DuperModel for historical reasons.
     private final Set<ApplicationId> activeInfraInfos = new HashSet<>(2 * supportedInfraApplications.size());
 
     /**

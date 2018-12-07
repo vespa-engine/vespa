@@ -8,7 +8,7 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.service.duper.ConfigServerApplication;
+import com.yahoo.vespa.service.duper.DuperModelManager;
 import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.manager.MonitorManager;
 
@@ -21,9 +21,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class HealthMonitorManager implements MonitorManager {
     private final ConcurrentHashMap<ApplicationId, ApplicationHealthMonitor> healthMonitors = new ConcurrentHashMap<>();
+    private final DuperModelManager duperModel;
 
     @Inject
-    public HealthMonitorManager() { }
+    public HealthMonitorManager(DuperModelManager duperModel) {
+        this.duperModel = duperModel;
+    }
 
     @Override
     public void applicationActivated(ApplicationInfo application) {
@@ -62,7 +65,7 @@ public class HealthMonitorManager implements MonitorManager {
 
     @Override
     public boolean wouldMonitor(ApplicationId id) {
-        if (id.equals(ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId())) {
+        if (id.equals(duperModel.getConfigServerApplication().getApplicationId())) {
             return true;
         }
 
