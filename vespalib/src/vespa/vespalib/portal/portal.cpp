@@ -113,6 +113,7 @@ Portal::evict_handle(uint64_t handle)
 void
 Portal::handle_accept(portal::HandleGuard guard, SocketHandle socket)
 {
+    socket.set_keepalive(true);
     new HttpConnection(std::move(guard), _reactor, _crypto->create_crypto_socket(std::move(socket), true),
                        [this](HttpConnection *conn)
                        {
