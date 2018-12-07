@@ -60,7 +60,7 @@ public class Container {
     }
 
     public enum State {
-        CREATED, RESTARTING, RUNNING, PAUSED, EXITED, DEAD;
+        CREATED, RESTARTING, RUNNING, REMOVING, PAUSED, EXITED, DEAD;
 
         public boolean isRunning() {
             return this == RUNNING;
