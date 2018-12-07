@@ -2,7 +2,7 @@
 
 #include "assert.h"
 #include <vespa/defaults.h>
-
+#include <vespa/vespalib/util/backtrace.h>
 #include <fstream>
 #include <map>
 #include <mutex>
@@ -42,11 +42,13 @@ void assertOnceOrLog(const char *expr, const char *key, size_t freq)
             count = _G_assertMap[key]++;
         }
         if ((count % freq) == 0) {
-            LOG(error,"assert(%s) named '%s' has failed %zu times", expr, key, count+1);
+            LOG(error, "assert(%s) named '%s' has failed %zu times. Stacktrace = %s",
+                       expr, key, count+1, vespalib::getStackTrace(0).c_str());
         }
     } else {
         {
-            LOG(error, "assert(%s) named '%s' failed first time.", expr, key);
+            LOG(error, "assert(%s) named '%s' failed first time. Stacktrace = %s",
+                       expr, key, vespalib::getStackTrace(0).c_str());
             std::ofstream assertStream(rememberAssert.c_str());
             std::chrono::time_point now = std::chrono::system_clock::now();
             std::time_t now_c = std::chrono::system_clock::to_time_t(now);
