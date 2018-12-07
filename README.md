@@ -4,7 +4,7 @@
 
 The big data serving engine - Store, search, rank and organize big data at user serving time.
 Vespa is an engine for low-latency computation over large data sets.
-It stores and indexes your data and executes distributes queries including evaluation of
+It stores and indexes your data and executes distributed queries including evaluation of
 machine-learned models over many data points in real time.
 
 Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
@@ -21,12 +21,12 @@ Travis-CI build status: [![Build Status](https://travis-ci.org/vespa-engine/vesp
    
 ## Background
 
-Use cases such and search, recommendation and personalization need to select a subset of data in a large corpus,
+Use cases such as search, recommendation and personalization need to select a subset of data in a large corpus,
 evaluate machine-learned models over the selected data, organize and aggregate it and return it, typically in less
 than 100 milliseconds, all while the data corpus is continuously changing. 
 
 This is hard to do, especially with large corpuses that needs to be distributed over multiple nodes and evaluated in 
-parallel. Vespa is is a platform which performs these operations for you. It has been in development for many years 
+parallel. Vespa is a platform which performs these operations for you. It has been in development for many years 
 and is used on a number of large internet services and apps which serve hundreds of thousands of queries from 
 Vespa per second.
 
