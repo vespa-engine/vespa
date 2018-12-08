@@ -8,6 +8,8 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
+import com.yahoo.vespa.flags.FeatureFlag;
+import com.yahoo.vespa.flags.FileFlagSource;
 import com.yahoo.vespa.service.duper.DuperModelManager;
 import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.manager.MonitorManager;
@@ -22,16 +24,28 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HealthMonitorManager implements MonitorManager {
     private final ConcurrentHashMap<ApplicationId, ApplicationHealthMonitor> healthMonitors = new ConcurrentHashMap<>();
     private final DuperModelManager duperModel;
+    private final ApplicationHealthMonitorFactory applicationHealthMonitorFactory;
+    private final FeatureFlag monitorInfra;
 
     @Inject
-    public HealthMonitorManager(DuperModelManager duperModel) {
+    public HealthMonitorManager(DuperModelManager duperModel, FileFlagSource flagSource) {
+        this(duperModel,
+                new FeatureFlag("healthmonitor-monitorinfra", true, flagSource),
+                ApplicationHealthMonitor::startMonitoring);
+    }
+
+    HealthMonitorManager(DuperModelManager duperModel,
+                         FeatureFlag monitorInfra,
+                         ApplicationHealthMonitorFactory applicationHealthMonitorFactory) {
         this.duperModel = duperModel;
+        this.applicationHealthMonitorFactory = applicationHealthMonitorFactory;
+        this.monitorInfra = monitorInfra;
     }
 
     @Override
     public void applicationActivated(ApplicationInfo application) {
         if (wouldMonitor(application.getApplicationId())) {
-            ApplicationHealthMonitor monitor = ApplicationHealthMonitor.startMonitoring(application);
+            ApplicationHealthMonitor monitor = applicationHealthMonitorFactory.create(application);
             healthMonitors.put(application.getApplicationId(), monitor);
         }
     }
@@ -65,6 +79,10 @@ public class HealthMonitorManager implements MonitorManager {
 
     @Override
     public boolean wouldMonitor(ApplicationId id) {
+        if (duperModel.isSupportedInfraApplication(id) && monitorInfra.value()) {
+            return true;
+        }
+
         if (id.equals(duperModel.getConfigServerApplication().getApplicationId())) {
             return true;
         }
