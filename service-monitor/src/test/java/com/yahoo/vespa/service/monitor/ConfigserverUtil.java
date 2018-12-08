@@ -33,7 +33,7 @@ public class ConfigserverUtil {
             String configServerHostname1,
             String configServerHostname2,
             String configServerHostname3) {
-        return ConfigServerApplication.CONFIG_SERVER_APPLICATION.makeApplicationInfoFromConfig(create(
+        return new ConfigServerApplication().makeApplicationInfoFromConfig(create(
                 true,
                 true,
                 configServerHostname1,

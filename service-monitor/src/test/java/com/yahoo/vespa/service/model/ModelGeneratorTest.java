@@ -33,6 +33,7 @@ public class ModelGeneratorTest {
     private final String REGION = "us-west-1";
     private final String HOSTNAME = "hostname";
     private final int PORT = 2;
+    private final ConfigServerApplication configServerApplication = new ConfigServerApplication();
 
     @Test
     public void toApplicationModel() throws Exception {
@@ -63,8 +64,7 @@ public class ModelGeneratorTest {
         ApplicationInstance applicationInstance1 = iterator.next().getValue();
         ApplicationInstance applicationInstance2 = iterator.next().getValue();
 
-        if (applicationInstance1.applicationInstanceId().equals(
-                ConfigServerApplication.APPLICATION_INSTANCE_ID)) {
+        if (applicationInstance1.applicationInstanceId().equals(configServerApplication.getApplicationInstanceId())) {
             verifyConfigServerApplication(applicationInstance1);
             verifyOtherApplication(applicationInstance2);
         } else {
@@ -108,7 +108,6 @@ public class ModelGeneratorTest {
 
     private void verifyConfigServerApplication(
             ApplicationInstance applicationInstance) {
-        assertEquals(ConfigServerApplication.APPLICATION_INSTANCE_ID,
-                applicationInstance.applicationInstanceId());
+        assertEquals(configServerApplication.getApplicationInstanceId(), applicationInstance.applicationInstanceId());
     }
 }

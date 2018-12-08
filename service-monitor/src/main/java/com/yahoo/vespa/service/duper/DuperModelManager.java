@@ -32,13 +32,14 @@ public class DuperModelManager implements DuperModelInfraApi {
     private static Logger logger = Logger.getLogger(DuperModelManager.class.getName());
 
     // Infrastructure applications
+    private final ConfigServerHostApplication configServerHostApplication = new ConfigServerHostApplication();
+    private final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
+    private final ControllerApplication controllerApplication = new ControllerApplication();
+    private final ControllerHostApplication controllerHostApplication = new ControllerHostApplication();
+    // this must be static to be referenced in this(). Remove static once legacy config server from config is gone.
     private static final ConfigServerApplication configServerApplication = new ConfigServerApplication();
-    private static final ConfigServerHostApplication configServerHostApplication = new ConfigServerHostApplication();
-    private static final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
-    private static final ControllerApplication controllerApplication = new ControllerApplication();
-    private static final ControllerHostApplication controllerHostApplication = new ControllerHostApplication();
 
-    private static final Map<ApplicationId, InfraApplication> supportedInfraApplications = Stream.of(
+    private final Map<ApplicationId, InfraApplication> supportedInfraApplications = Stream.of(
             configServerApplication,
             configServerHostApplication,
             proxyHostApplication,
@@ -52,18 +53,8 @@ public class DuperModelManager implements DuperModelInfraApi {
 
     private final Object monitor = new Object();
     private final DuperModel duperModel;
-    // The set of active infrastructure ApplicationInfo. Not all is necessarily in the DuperModel for historical reasons.
+    // The set of active infrastructure ApplicationInfo. Not all are necessarily in the DuperModel for historical reasons.
     private final Set<ApplicationId> activeInfraInfos = new HashSet<>(2 * supportedInfraApplications.size());
-
-    /**
-     * Returns true if application is considered an infrastructure application by the DuperModel.
-     *
-     * <p>Note: The tenant host "application" is NOT considered an infrastructure application: It is just a
-     * cluster in the {@link ZoneApplication zone application}.
-     */
-    public static boolean isInfrastructureApplication(ApplicationId applicationId) {
-        return supportedInfraApplications.containsKey(applicationId);
-    }
 
     @Inject
     public DuperModelManager(ConfigserverConfig configServerConfig, FlagSource flagSource, SuperModelProvider superModelProvider) {
@@ -146,6 +137,16 @@ public class DuperModelManager implements DuperModelInfraApi {
     @Override
     public List<InfraApplicationApi> getSupportedInfraApplications() {
         return new ArrayList<>(supportedInfraApplications.values());
+    }
+
+    /**
+     * Returns true if application is considered an infrastructure application by the DuperModel.
+     *
+     * <p>Note: The tenant host "application" is NOT considered an infrastructure application: It is just a
+     * cluster in the {@link ZoneApplication zone application}.
+     */
+    public boolean isSupportedInfraApplication(ApplicationId applicationId) {
+        return supportedInfraApplications.containsKey(applicationId);
     }
 
     @Override

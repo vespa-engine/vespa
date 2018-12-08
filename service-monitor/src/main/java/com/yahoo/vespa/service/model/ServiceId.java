@@ -22,9 +22,9 @@ public class ServiceId {
     private final ConfigId configId;
 
     public ServiceId(ApplicationId applicationId,
-              ClusterId clusterId,
-              ServiceType serviceType,
-              ConfigId configId) {
+                     ClusterId clusterId,
+                     ServiceType serviceType,
+                     ConfigId configId) {
         this.applicationId = applicationId;
         this.clusterId = clusterId;
         this.serviceType = serviceType;

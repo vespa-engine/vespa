@@ -312,7 +312,7 @@ public class ProvisioningTester {
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
 
-        ConfigServerApplication application = ConfigServerApplication.CONFIG_SERVER_APPLICATION;
+        ConfigServerApplication application = new ConfigServerApplication();
         List<HostSpec> hosts = prepare(
                 application.getApplicationId(),
                 application.getClusterSpecWithVersion(configServersVersion),

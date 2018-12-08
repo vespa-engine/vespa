@@ -28,14 +28,16 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
 
     private final Object monitor = new Object();
     private final HashMap<ApplicationId, SlobrokMonitor> slobrokMonitors = new HashMap<>();
+    private final DuperModelManager duperModel;
 
     @Inject
-    public SlobrokMonitorManagerImpl() {
-        this(SlobrokMonitor::new);
+    public SlobrokMonitorManagerImpl(DuperModelManager duperModel) {
+        this(SlobrokMonitor::new, duperModel);
     }
 
-    SlobrokMonitorManagerImpl(Supplier<SlobrokMonitor> slobrokMonitorFactory) {
+    SlobrokMonitorManagerImpl(Supplier<SlobrokMonitor> slobrokMonitorFactory, DuperModelManager duperModel) {
         this.slobrokMonitorFactory = slobrokMonitorFactory;
+        this.duperModel = duperModel;
     }
 
     @Override
@@ -108,7 +110,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
 
     @Override
     public boolean wouldMonitor(ApplicationId applicationId) {
-        if (DuperModelManager.isInfrastructureApplication(applicationId)) {
+        if (duperModel.isSupportedInfraApplication(applicationId)) {
             return false;
         }
 
