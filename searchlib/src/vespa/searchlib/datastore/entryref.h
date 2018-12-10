@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vespa/vespalib/util/assert.h>
 
 namespace search::datastore {
 
@@ -28,7 +29,11 @@ class EntryRefT : public EntryRef {
 public:
     EntryRefT() : EntryRef() {}
     EntryRefT(uint64_t offset_, uint32_t bufferId_) :
-        EntryRef((offset_ << BufferBits) + bufferId_) {}
+        EntryRef((offset_ << BufferBits) + bufferId_)
+    {
+        ASSERT_ONCE_OR_LOG(offset_ < offsetSize(), "EntryRefT.offset_overflow", 10000);
+        ASSERT_ONCE_OR_LOG(bufferId_ < numBuffers(), "EntryRefT.bufferId_overflow", 10000);
+    }
     EntryRefT(const EntryRef & ref_) : EntryRef(ref_.ref()) {}
     uint32_t hash() const { return offset() + (bufferId() << OffsetBits); }
     uint64_t offset() const { return _ref >> BufferBits; }
