@@ -15,6 +15,48 @@ using namespace vespalib;
 using namespace vespalib::net::tls;
 using namespace std::chrono_literals;
 
+/*
+
+Keys and certificates used for these tests generated with commands:
+
+openssl ecparam -name prime256v1 -genkey -noout -out ca.key
+
+# test_ca.pem:
+openssl req -new -x509 -nodes -key ca.key \
+    -sha256 -out test_ca.pem \
+    -subj '/C=US/L=LooneyVille/O=ACME/OU=ACME test CA/CN=acme.example.com' \
+    -days 10000
+
+openssl ecparam -name prime256v1 -genkey -noout -out test_key.pem
+
+openssl req -new -key test_key.pem -out host1.csr \
+    -subj '/C=US/L=LooneyVille/O=Wile. E. Coyote, Ltd./CN=wile.example.com' \
+    -sha256
+
+# cert1_pem:
+openssl x509 -req -in host1.csr \
+    -CA ca.pem \
+    -CAkey ca.key \
+    -CAcreateserial \
+    -out cert1.pem \
+    -days 10000 \
+    -sha256
+
+openssl req -new -key test_key.pem -out host2.csr \
+    -subj '/C=US/L=LooneyVille/O=Wile. E. Coyote, Ltd./CN=wile.example.com' \
+    -sha256
+
+# cert2_pem:
+openssl x509 -req -in host2.csr \
+    -CA ca.pem \
+    -CAkey ca.key \
+    -CAcreateserial \
+    -out cert2.pem \
+    -days 10000 \
+    -sha256
+
+*/
+
 constexpr const char* cert1_pem = R"(-----BEGIN CERTIFICATE-----
 MIIBszCCAVgCCQCXsYrXQWS0bzAKBggqhkjOPQQDAjBkMQswCQYDVQQGEwJVUzEU
 MBIGA1UEBwwLTG9vbmV5VmlsbGUxDTALBgNVBAoMBEFDTUUxFTATBgNVBAsMDEFD

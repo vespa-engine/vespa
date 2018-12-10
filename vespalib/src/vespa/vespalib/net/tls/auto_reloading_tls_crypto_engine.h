@@ -17,16 +17,17 @@ public:
     using EngineSP     = std::shared_ptr<TlsCryptoEngine>;
     using TimeInterval = std::chrono::steady_clock::duration;
 private:
-    mutable std::mutex      _mutex;
-    std::condition_variable _cond;
+    mutable std::mutex      _thread_mutex;
+    std::condition_variable _thread_cond;
+    mutable std::mutex      _engine_mutex;
     bool                    _shutdown;
     const vespalib::string  _config_file_path;
-    EngineSP                _current_engine; // Access must be under _mutex
+    EngineSP                _current_engine; // Access must be under _engine_mutex
     TimeInterval            _reload_interval;
     std::thread             _reload_thread;
 
     void run_reload_loop();
-    void try_replace_current_engine(std::unique_lock<std::mutex>& held_lock);
+    void try_replace_current_engine();
     std::chrono::steady_clock::time_point make_future_reload_time_point() const noexcept;
 
 public:
