@@ -109,6 +109,7 @@ public:
     ~Portal();
     static SP create(CryptoEngine::SP crypto, int port);
     int listen_port() const { return _listener->listen_port(); }
+    const vespalib::string &my_host() const { return _my_host; }
     Token::UP bind(const vespalib::string &path_prefix, const GetHandler &handler);
 };
 
