@@ -19,8 +19,8 @@ public class CostReportMaintainerTest {
 
         CostReportConsumer mockConsumer = csv -> Assert.assertEquals(csv,
                 "Date,Property,Reserved Cpu Cores,Reserved Memory GB,Reserved Disk Space GB,Usage Fraction\n" +
-                        "1970-01-01,Property1,120.0,120.0,2500.0,0.4583333333333333\n" +
-                        "1970-01-01,Property2,200.0,120.0,2500.0,0.5416666666666666");
+                        "1970-01-01,Property1,96.0,96.0,2000.0,0.4583333333333333\n" +
+                        "1970-01-01,Property2,160.0,96.0,2000.0,0.5416666666666666");
 
         tester.createTenant("lsbe", "local-search", 1L);
         tester.createTenant("mediasearch", "msbe", 2L);
