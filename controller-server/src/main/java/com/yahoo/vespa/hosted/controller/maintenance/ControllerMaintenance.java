@@ -14,7 +14,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipI
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumer;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -48,13 +50,15 @@ public class ControllerMaintenance extends AbstractComponent {
     private final OsVersionStatusUpdater osVersionStatusUpdater;
     private final JobRunner jobRunner;
     private final ContactInformationMaintainer contactInformationMaintainer;
+    private final CostReportMaintainer costReportMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
                                  JobControl jobControl, Metric metric, Chef chefClient,
                                  DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
                                  NameService nameService, NodeRepositoryClientInterface nodeRepositoryClient,
-                                 ContactRetriever contactRetriever) {
+                                 ContactRetriever contactRetriever,
+                                 CostReportConsumer reportConsumer) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
@@ -74,6 +78,7 @@ public class ControllerMaintenance extends AbstractComponent {
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
+        costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepositoryClient, Clock.systemUTC());
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -100,6 +105,7 @@ public class ControllerMaintenance extends AbstractComponent {
         osVersionStatusUpdater.deconstruct();
         jobRunner.deconstruct();
         contactInformationMaintainer.deconstruct();
+        costReportMaintainer.deconstruct();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.MaintenanceJobList;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
@@ -34,7 +35,9 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
 
     @Override
     public NodeList listNodes(ZoneId zone, boolean recursive) {
-        throw new UnsupportedOperationException();
+        NodeRepositoryNode nodeA = createNodeA();
+        NodeRepositoryNode nodeB = createNodeB();
+        return new NodeList(Arrays.asList(nodeA, nodeB));
     }
 
     @Override
@@ -49,6 +52,14 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
         node.setHostname("hostA");
         node.setCost(10);
         node.setFlavor("C-2B/24/500");
+        node.setMinCpuCores(24d);
+        node.setMinDiskAvailableGb(500d);
+        node.setMinMainMemoryAvailableGb(24d);
+        NodeOwner owner = new NodeOwner();
+        owner.tenant = "lsbe";
+        owner.application = "local-search";
+        owner.instance = "default";
+        node.setOwner(owner);
         NodeMembership membership = new NodeMembership();
         membership.clusterid = "clusterA";
         membership.clustertype = "container";
@@ -61,6 +72,14 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
         node.setHostname("hostB");
         node.setCost(20);
         node.setFlavor("C-2C/24/500");
+        node.setMinCpuCores(40d);
+        node.setMinDiskAvailableGb(500d);
+        node.setMinMainMemoryAvailableGb(24d);
+        NodeOwner owner = new NodeOwner();
+        owner.tenant = "mediasearch";
+        owner.application = "imagesearch";
+        owner.instance = "default";
+        node.setOwner(owner);
         NodeMembership membership = new NodeMembership();
         membership.clusterid = "clusterB";
         membership.clustertype = "content";
