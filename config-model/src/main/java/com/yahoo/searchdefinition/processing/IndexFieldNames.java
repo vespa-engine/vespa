@@ -34,8 +34,8 @@ public class IndexFieldNames extends Processor {
     }
 
     /**
-     * In {@link CreatePositionZCurve} we add some .position and .distance fields for pos fields. Make an exception for those for now. For 6.0, rename
-     * to _position and _distance and delete this method.
+     * In {@link CreatePositionZCurve} we add some .position and .distance fields for pos fields. Make an exception for those for now.
+     * TODO Vespa 8: Rename to _position and _distance and delete this method.
      *
      * @param field an {@link com.yahoo.searchdefinition.document.SDField}
      * @return true if allowed

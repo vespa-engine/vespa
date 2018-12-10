@@ -43,6 +43,7 @@ public class AddExtraFieldsToDocument extends Processor {
             return;
         }
         for (Attribute atr : field.getAttributes().values()) {
+            // TODO Vespa 8 or before: Check if this sould be removed or changed to _zcurve.
             if (atr.getName().equals(field.getName() + "_position")) {
                 DataType type = PositionDataType.INSTANCE;
                 if (atr.getCollectionType().equals(Attribute.CollectionType.ARRAY)) {
