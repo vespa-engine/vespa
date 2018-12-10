@@ -8,7 +8,7 @@ import java.util.Arrays;
  */
 public enum AuthorizationMode {
     DISABLE("disable"),
-    LOG_ONLY("log-only"),
+    LOG_ONLY("log_only"),
     ENFORCE("enforce");
 
     final String configValue;
