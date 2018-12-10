@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/net/tls/authorization_mode.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/stllike/string.h>
 
@@ -17,6 +18,7 @@ public:
     using EngineSP     = std::shared_ptr<TlsCryptoEngine>;
     using TimeInterval = std::chrono::steady_clock::duration;
 private:
+    AuthorizationMode       _authorization_mode;
     mutable std::mutex      _thread_mutex;
     std::condition_variable _thread_cond;
     mutable std::mutex      _engine_mutex;
@@ -32,6 +34,7 @@ private:
 
 public:
     explicit AutoReloadingTlsCryptoEngine(vespalib::string config_file_path,
+                                          AuthorizationMode mode,
                                           TimeInterval reload_interval = std::chrono::seconds(3600));
     ~AutoReloadingTlsCryptoEngine() override;
 

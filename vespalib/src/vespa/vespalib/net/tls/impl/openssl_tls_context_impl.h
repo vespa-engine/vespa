@@ -11,11 +11,13 @@ namespace vespalib::net::tls::impl {
 
 class OpenSslTlsContextImpl : public TlsContext {
     SslCtxPtr _ctx;
+    AuthorizationMode _authorization_mode;
     std::shared_ptr<CertificateVerificationCallback> _cert_verify_callback;
     TransportSecurityOptions _redacted_transport_options;
 public:
     OpenSslTlsContextImpl(const TransportSecurityOptions& ts_opts,
-                          std::shared_ptr<CertificateVerificationCallback> cert_verify_callback);
+                          std::shared_ptr<CertificateVerificationCallback> cert_verify_callback,
+                          AuthorizationMode authz_mode);
     ~OpenSslTlsContextImpl() override;
 
     ::SSL_CTX* native_context() const noexcept { return _ctx.get(); }
@@ -24,6 +26,8 @@ public:
     const TransportSecurityOptions& transport_security_options() const noexcept {
         return _redacted_transport_options;
     }
+    // AuthorizationMode this context was created with
+    AuthorizationMode authorization_mode() const noexcept { return _authorization_mode; }
 private:
     // Note: single use per instance; does _not_ clear existing chain!
     void add_certificate_authorities(stringref ca_pem);
@@ -39,7 +43,9 @@ private:
     // explicitly to the peer that it's not a supported action.
     void disable_renegotiation();
     void enforce_peer_certificate_verification();
-    void set_provided_certificate_verification_callback();
+    void set_ssl_ctx_self_reference();
+
+    static int verify_cb_wrapper(int preverified_ok, ::X509_STORE_CTX* store_ctx);
 };
 
 }

@@ -21,4 +21,6 @@ struct PeerCredentials {
 
 std::ostream& operator<<(std::ostream&, const PeerCredentials&);
 
+vespalib::string to_string(const PeerCredentials&);
+
 }
