@@ -66,7 +66,7 @@ public class RemoteSessionTest {
 
     @Test
     public void require_that_applications_are_loaded() {
-        RemoteSession session = createSession(3, Arrays.asList(new MockModelFactory(), new VespaModelFactory(new NullConfigModelRegistry())), Clock.systemUTC());
+        RemoteSession session = createSession(3, Arrays.asList(new MockModelFactory(), new VespaModelFactory(new NullConfigModelRegistry())));
         session.loadPrepared();
         ApplicationSet applicationSet = session.ensureApplicationLoaded();
         assertNotNull(applicationSet);
@@ -92,7 +92,7 @@ public class RemoteSessionTest {
         okFactory.vespaVersion = new Version(1, 1, 0);
         okFactory.throwOnLoad = false;
 
-        RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
+        RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory));
         session.loadPrepared();
     }
 
@@ -110,7 +110,7 @@ public class RemoteSessionTest {
         failingFactory.vespaVersion = new Version(2, 0, 0);
         failingFactory.throwOnLoad = true;
 
-        RemoteSession session = createSession(3, Arrays.asList(okFactory1, failingFactory, okFactory2), failingFactory.clock());
+        RemoteSession session = createSession(3, Arrays.asList(okFactory1, failingFactory, okFactory2));
         session.loadPrepared();
     }
 
@@ -125,7 +125,7 @@ public class RemoteSessionTest {
         okFactory.vespaVersion = new Version(1, 2, 0);
         okFactory.throwOnLoad = false;
 
-        RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
+        RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory));
         session.loadPrepared();
     }
 
@@ -160,7 +160,7 @@ public class RemoteSessionTest {
         tooNewFactory.vespaVersion = new Version(2, 0, 0);
         tooNewFactory.throwOnLoad = true;
 
-        RemoteSession session = createSession(3, Arrays.asList(tooNewFactory, okFactory, failingFactory), failingFactory.clock());
+        RemoteSession session = createSession(3, Arrays.asList(tooNewFactory, okFactory, failingFactory));
         session.loadPrepared();
     }
 
@@ -182,7 +182,7 @@ public class RemoteSessionTest {
         okFactory.throwErrorOnLoad = false;
 
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, 3, application);
-        RemoteSession session = createSession(3, zkc, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
+        RemoteSession session = createSession(3, zkc, Arrays.asList(okFactory, failingFactory));
         session.loadPrepared();
 
         // Does not cause an error because model version 3 is skipped
@@ -206,7 +206,7 @@ public class RemoteSessionTest {
         okFactory.throwErrorOnLoad = false;
 
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, 3, application);
-        RemoteSession session = createSession(4, zkc, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
+        RemoteSession session = createSession(4, zkc, Arrays.asList(okFactory, failingFactory));
         session.loadPrepared();
 
         // Does not cause an error because model version 4 is skipped
@@ -229,7 +229,7 @@ public class RemoteSessionTest {
         try {
             int sessionId = 3;
             SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, sessionId);
-            createSession(sessionId, zkc, Collections.singletonList(mockModelFactory), permanentApp, mockModelFactory.clock()).ensureApplicationLoaded();
+            createSession(sessionId, zkc, Collections.singletonList(mockModelFactory), permanentApp, Clock.systemUTC()).ensureApplicationLoaded();
         } catch (Exception e) {
             e.printStackTrace();
             // ignore, we're not interested in deploy errors as long as the below state is OK.
@@ -238,36 +238,51 @@ public class RemoteSessionTest {
         assertTrue(mockModelFactory.modelContext.permanentApplicationPackage().isPresent());
     }
 
+    private RemoteSession createSession(long sessionId) {
+        return createSession(sessionId, Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())), Clock.systemUTC());
+    }
+
     private RemoteSession createSession(long sessionId, Clock clock) {
         return createSession(sessionId, Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())), clock);
     }
+
     private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc, Clock clock) {
         return createSession(sessionId, zkc, Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())), clock);
     }
+
+    private RemoteSession createSession(long sessionId, List<ModelFactory> modelFactories) {
+        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, sessionId);
+        return createSession(sessionId, zkc, modelFactories, Clock.systemUTC());
+    }
+
     private RemoteSession createSession(long sessionId, List<ModelFactory> modelFactories, Clock clock) {
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, sessionId);
         return createSession(sessionId, zkc, modelFactories, clock);
+    }
+
+    private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc, List<ModelFactory> modelFactories) {
+        return createSession(sessionId, zkc, modelFactories, Optional.empty(), Clock.systemUTC());
     }
 
     private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc, List<ModelFactory> modelFactories, Clock clock) {
         return createSession(sessionId, zkc, modelFactories, Optional.empty(), clock);
     }
 
-    private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc, List<ModelFactory> modelFactories, 
-                                        Optional<PermanentApplicationPackage> permanentApplicationPackage, Clock clock) {
+    private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc,
+                                        List<ModelFactory> modelFactories,
+                                        Optional<PermanentApplicationPackage> permanentApplicationPackage,
+                                        Clock clock) {
         zkc.writeStatus(Session.Status.NEW);
         zkc.writeApplicationId(new ApplicationId.Builder().applicationName("foo").instanceName("bim").build());
         TestComponentRegistry.Builder registryBuilder = new TestComponentRegistry.Builder()
                 .curator(curator)
+                .clock(clock)
                 .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories));
         if (permanentApplicationPackage.isPresent())
             registryBuilder.permanentApplicationPackage(permanentApplicationPackage.get());
 
 
-        return new RemoteSession(tenantName, sessionId,
-                                 registryBuilder.build(),
-                                 zkc,
-                                 clock);
+        return new RemoteSession(tenantName, sessionId, registryBuilder.build(), zkc);
     }
 
     private class MockModelFactory implements ModelFactory {

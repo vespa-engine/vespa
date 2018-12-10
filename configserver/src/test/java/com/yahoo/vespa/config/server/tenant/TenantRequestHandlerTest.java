@@ -48,7 +48,6 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -85,7 +84,10 @@ public class TenantRequestHandlerTest {
         List<ReloadListener> listeners = new ArrayList<>();
         listeners.add(listener);
         server = new TenantRequestHandler(sh, tenant, listeners, new UncompressedConfigResponseFactory(), new HostRegistries());
-        componentRegistry = new TestComponentRegistry.Builder().curator(curator).modelFactoryRegistry(createRegistry()).build();
+        componentRegistry = new TestComponentRegistry.Builder()
+                .curator(curator)
+                .modelFactoryRegistry(createRegistry())
+                .build();
     }
 
     private void feedApp(File appDir, long sessionId, ApplicationId appId, boolean  internalRedeploy) throws IOException {
@@ -107,14 +109,14 @@ public class TenantRequestHandlerTest {
                         AllocatedHosts.withHosts(Collections.emptySet()));
     }
 
-    private ApplicationSet reloadConfig(long sessionId, Clock clock) {
-        return reloadConfig(sessionId, "default", clock);
+    private ApplicationSet reloadConfig(long sessionId) {
+        return reloadConfig(sessionId, "default");
     }
 
-    private ApplicationSet reloadConfig(long sessionId, String application, Clock clock) {
+    private ApplicationSet reloadConfig(long sessionId, String application) {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         zkc.writeApplicationId(new ApplicationId.Builder().tenant(tenant).applicationName(application).build());
-        RemoteSession session = new RemoteSession(tenant, sessionId, componentRegistry, zkc, clock);
+        RemoteSession session = new RemoteSession(tenant, sessionId, componentRegistry, zkc);
         return session.ensureApplicationLoaded();
     }
 
@@ -162,17 +164,16 @@ public class TenantRequestHandlerTest {
 
     @Test
     public void testReloadConfig() throws IOException {
-        Clock clock = Clock.systemUTC();
         ApplicationId applicationId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build();
 
-        server.reloadConfig(reloadConfig(1, clock));
+        server.reloadConfig(reloadConfig(1));
         assertThat(listener.reloaded.get(), is(1));
         // Using only payload list for this simple test
     	SimpletypesConfig config = resolve(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
         assertThat(config.intval(), is(1337));
         assertThat(server.getApplicationGeneration(applicationId, Optional.of(vespaVersion)), is(1l));
 
-        server.reloadConfig(reloadConfig(1L, clock));
+        server.reloadConfig(reloadConfig(1L));
         ConfigResponse configResponse = getConfigResponse(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
         assertFalse(configResponse.isInternalRedeploy());
         config = resolve(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
@@ -184,7 +185,7 @@ public class TenantRequestHandlerTest {
 
         listener.reloaded.set(0);
         feedApp(app2, 2, defaultApp(), true);
-        server.reloadConfig(reloadConfig(2L, clock));
+        server.reloadConfig(reloadConfig(2L));
         configResponse = getConfigResponse(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
         assertTrue(configResponse.isInternalRedeploy());
         config = resolve(SimpletypesConfig.class, server, defaultApp(), vespaVersion,"");
@@ -195,7 +196,7 @@ public class TenantRequestHandlerTest {
 
     @Test
     public void testRemoveApplication() {
-        server.reloadConfig(reloadConfig(1, Clock.systemUTC()));
+        server.reloadConfig(reloadConfig(1));
         assertThat(listener.removed.get(), is(0));
         server.removeApplication(new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build());
         assertThat(listener.removed.get(), is(1));
@@ -209,7 +210,7 @@ public class TenantRequestHandlerTest {
                               .tenant(tenant)
                               .applicationName("myapp").instanceName("myinst").build();
         zkc.writeApplicationId(appId);
-        RemoteSession session = new RemoteSession(appId.tenant(), id, componentRegistry, zkc, Clock.systemUTC());
+        RemoteSession session = new RemoteSession(appId.tenant(), id, componentRegistry, zkc);
         server.reloadConfig(session.ensureApplicationLoaded());
         SimpletypesConfig config = resolve(SimpletypesConfig.class, server, appId, vespaVersion, "");
         assertThat(config.intval(), is(1337));
@@ -248,7 +249,7 @@ public class TenantRequestHandlerTest {
         feedApp(appDir, sessionId, appId, false);
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         zkc.writeApplicationId(appId);
-        RemoteSession session = new RemoteSession(tenant, sessionId, componentRegistry, zkc, Clock.systemUTC());
+        RemoteSession session = new RemoteSession(tenant, sessionId, componentRegistry, zkc);
         server.reloadConfig(session.ensureApplicationLoaded());
     }
 
@@ -280,7 +281,7 @@ public class TenantRequestHandlerTest {
     @Test
     public void testHasApplication() {
         assertdefaultAppNotFound();
-        server.reloadConfig(reloadConfig(1l, Clock.systemUTC()));
+        server.reloadConfig(reloadConfig(1));
         assertTrue(server.hasApplication(new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build(),
                                          Optional.of(vespaVersion)));
     }
@@ -292,7 +293,7 @@ public class TenantRequestHandlerTest {
     @Test
     public void testMultipleApplicationsReload() {
         assertdefaultAppNotFound();
-        server.reloadConfig(reloadConfig(1l, "foo", Clock.systemUTC()));
+        server.reloadConfig(reloadConfig(1, "foo"));
         assertdefaultAppNotFound();
         assertTrue(server.hasApplication(new ApplicationId.Builder().tenant(tenant).applicationName("foo").build(),
                                          Optional.of(vespaVersion)));

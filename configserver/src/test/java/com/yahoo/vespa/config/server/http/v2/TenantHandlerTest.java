@@ -112,7 +112,7 @@ public class TenantHandlerTest {
 
         int sessionId = 1;
         ApplicationId app = ApplicationId.from(a, ApplicationName.from("foo"), InstanceName.defaultName());
-        HostHandlerTest.addMockApplication(tenant, app, sessionId, Clock.systemUTC());
+        HostHandlerTest.addMockApplication(tenant, app, sessionId);
 
         try {
             handler.handleDELETE(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.DELETE));

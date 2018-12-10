@@ -213,13 +213,13 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         assertFalse(hostProvisioner.activated);
     }
 
-    private RemoteSession createRemoteSession(long sessionId, Session.Status status, SessionZooKeeperClient zkClient, Clock clock) throws IOException {
+    private RemoteSession createRemoteSession(long sessionId, Session.Status status, SessionZooKeeperClient zkClient) throws IOException {
         zkClient.writeStatus(status);
         ZooKeeperClient zkC = new ZooKeeperClient(componentRegistry.getConfigCurator(), new BaseDeployLogger(), false,
                                                   TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
         zkC.write(Collections.singletonMap(modelFactory.version(), new MockFileRegistry()));
         zkC.write(AllocatedHosts.withHosts(Collections.emptySet()));
-        RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, zkClient, clock);
+        RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, zkClient);
         remoteSessionRepo.addSession(session);
         return session;
     }
@@ -318,7 +318,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
             SessionZooKeeperClient zkClient =
                     new MockSessionZKClient(curator, tenantName, sessionId,
                                             Optional.of(AllocatedHosts.withHosts(Collections.singleton(new HostSpec("bar", Collections.emptyList())))));
-            session = createRemoteSession(sessionId, initialStatus, zkClient, clock);
+            session = createRemoteSession(sessionId, initialStatus, zkClient);
             addLocalSession(sessionId, deployData, zkClient);
             metaData = localRepo.getSession(sessionId).getMetaData();
             actResponse = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
