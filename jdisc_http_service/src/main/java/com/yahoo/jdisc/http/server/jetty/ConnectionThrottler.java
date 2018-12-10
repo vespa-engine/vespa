@@ -40,8 +40,8 @@ class ConnectionThrottler {
         if (config.maxConnections() != -1) {
             beans.add(new CoordinatedConnectionLimit(config.maxConnections(), idleTimeout));
         }
-        if (config.maxMemoryUsage() != -1) {
-            beans.add(new CoordinatedLowResourcesLimit(config.maxMemoryUsage(), idleTimeout));
+        if (config.maxHeapUtilization() != -1) {
+            beans.add(new CoordinatedLowResourcesLimit(config.maxHeapUtilization(), idleTimeout));
         }
     }
 
@@ -70,12 +70,16 @@ class ConnectionThrottler {
         }
         resetters.forEach(Runnable::run);
     }
+    private static long toMaxMemoryUsageInBytes(double maxHeapUtilization) {
+        return (long) (maxHeapUtilization * Runtime.getRuntime().maxMemory());
+    }
 
     private class CoordinatedLowResourcesLimit extends LowResourceMonitor {
-        CoordinatedLowResourcesLimit(int maxMemoryUsageMegaBytes, Duration idleTimeout) {
+
+        CoordinatedLowResourcesLimit(double maxHeapUtilization, Duration idleTimeout) {
             super(connector.getServer());
             super.setMonitoredConnectors(singleton(connector));
-            super.setMaxMemory(maxMemoryUsageMegaBytes * 1024 * 1024L);
+            super.setMaxMemory(toMaxMemoryUsageInBytes(maxHeapUtilization));
             super.setLowResourcesIdleTimeout((int)idleTimeout.toMillis());
         }
 
@@ -90,8 +94,8 @@ class ConnectionThrottler {
             ConnectionThrottler.this.onReset();
         }
     }
-
     private class CoordinatedConnectionLimit extends ConnectionLimit {
+
         CoordinatedConnectionLimit(int maxConnections, Duration idleTimeout) {
             super(maxConnections, connector);
             super.setIdleTimeout(idleTimeout.toMillis());
