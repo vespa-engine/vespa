@@ -9,6 +9,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepo
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 
+import java.time.Clock;
+
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 
 public class CostApiHandler extends LoggingRequestHandler {
@@ -31,7 +33,7 @@ public class CostApiHandler extends LoggingRequestHandler {
         Path path = new Path(request.getUri().getPath());
 
         if (path.matches("/cost/v1/csv")) {
-            return new StringResponse(CostCalculator.toCsv(CostCalculator.calculateCost(nodeRepository, controller)));
+            return new StringResponse(CostCalculator.toCsv(CostCalculator.calculateCost(nodeRepository, controller, Clock.systemUTC())));
         }
 
         return ErrorResponse.notFoundError("Nothing at " + path);
