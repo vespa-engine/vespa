@@ -74,10 +74,12 @@ public class CostCalculator {
     }
 
     public static String toCsv(Map<Property, Double> resourceShareByProperty) {
-        return resourceShareByProperty.entrySet().stream()
+        String header = "Property,Allocated fraction\n";
+        String entries = resourceShareByProperty.entrySet().stream()
                 .sorted((Comparator.comparingDouble(Map.Entry::getValue)))
                 .map(entry -> entry.getKey().id() + "," + entry.getValue())
                 .collect(Collectors.joining("\n"));
+        return header + entries;
     }
 
 }

@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import org.intellij.lang.annotations.Language;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,7 +20,7 @@ public class CostApiTest extends ControllerContainerTest {
 
     private static final String responses = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/cost/responses/";
     private static final AthenzIdentity operator = AthenzUser.fromUserId("operatorUser");
-    private static final CloudName cloud1 = CloudName.from("cloud1");
+    private static final CloudName cloud1 = CloudName.from("yahoo");
     private static final CloudName cloud2 = CloudName.from("cloud2");
     private static final ZoneId zone1 = ZoneId.from("prod", "us-east-3", cloud1.value());
     private static final ZoneId zone2 = ZoneId.from("prod", "us-west-1", cloud1.value());
@@ -38,8 +37,7 @@ public class CostApiTest extends ControllerContainerTest {
 
     @Test
     public void test_api() {
-        // No versions available yet
-        assertResponse(new Request("http://localhost:8080/cost/v1/csv"), "", 200);
+        assertResponse(new Request("http://localhost:8080/cost/v1/csv"), "Property,Allocated fraction\n", 200);
     }
 
     private ZoneRegistryMock zoneRegistryMock() {
@@ -47,7 +45,7 @@ public class CostApiTest extends ControllerContainerTest {
                 .getComponent(ZoneRegistryMock.class.getName());
     }
 
-    private void assertResponse(Request request, @Language("JSON") String body, int statusCode) {
+    private void assertResponse(Request request, String body, int statusCode) {
         addIdentityToRequest(request, operator);
         tester.assertResponse(request, body, statusCode);
     }

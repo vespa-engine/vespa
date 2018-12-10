@@ -15,6 +15,7 @@ public class CostReportMaintainerTest {
         ControllerTester tester = new ControllerTester();
 
         CostReportConsumer mockConsumer = csv -> Assert.assertEquals(csv,
+                "Property,Allocated fraction\n" +
                 "Property1,0.4583333333333333\n" +
                         "Property2,0.5416666666666666");
 
