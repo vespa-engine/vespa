@@ -294,16 +294,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
     public boolean delete(ApplicationId applicationId) {
-        return configserverConfig.deleteApplicationLegacy() ? deleteApplicationLegacy(applicationId) : deleteApplication(applicationId);
-    }
-
-    /**
-     * Deletes an application
-     *
-     * @return true if the application was found and deleted, false if it was not present
-     * @throws RuntimeException if the delete transaction fails. This method is exception safe.
-     */
-    boolean deleteApplication(ApplicationId applicationId) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         if (tenant == null) return false;
 
@@ -329,43 +319,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         NestedTransaction transaction = new NestedTransaction();
         transaction.add(new Rotations(tenant.getCurator(), tenant.getPath()).delete(applicationId)); // TODO: Not unit tested
-        // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
-        // this is done asynchronously in application maintenance by the node repository)
-        transaction.add(tenantApplications.deleteApplication(applicationId));
-
-        hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
-        transaction.onCommitted(() -> log.log(LogLevel.INFO, "Deleted " + applicationId));
-        transaction.commit();
-
-        return true;
-    }
-
-    /**
-     * Deletes an application the legacy way (if there is more than one config server, the call needs to be done
-     * on the config server the application was deployed)
-     *
-     * @return true if the application was found and deleted, false if it was not present
-     * @throws RuntimeException if the delete transaction fails. This method is exception safe.
-     */
-    // TODO: Remove this method, use delete(ApplicationId) instead
-    boolean deleteApplicationLegacy(ApplicationId applicationId) {
-        Optional<Tenant> owner = Optional.ofNullable(tenantRepository.getTenant(applicationId.tenant()));
-        if (!owner.isPresent()) return false;
-
-        TenantApplications tenantApplications = owner.get().getApplicationRepo();
-        if (!tenantApplications.listApplications().contains(applicationId)) return false;
-
-        // TODO: Push lookup logic down
-        long sessionId = tenantApplications.getSessionIdForApplication(applicationId);
-        LocalSessionRepo localSessionRepo = owner.get().getLocalSessionRepo();
-        LocalSession session = localSessionRepo.getSession(sessionId);
-        if (session == null) return false;
-
-        NestedTransaction transaction = new NestedTransaction();
-        localSessionRepo.removeSession(session.getSessionId(), transaction);
-        session.delete(transaction); // TODO: Not unit tested
-
-        transaction.add(new Rotations(owner.get().getCurator(), owner.get().getPath()).delete(applicationId)); // TODO: Not unit tested
         // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
         // this is done asynchronously in application maintenance by the node repository)
         transaction.add(tenantApplications.deleteApplication(applicationId));
