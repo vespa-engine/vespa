@@ -242,7 +242,7 @@ public class ApplicationRepositoryTest {
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
 
             // Delete app and verify that it has been deleted from repos and provisioner
-            assertTrue(applicationRepository.deleteApplication(applicationId()));
+            assertTrue(applicationRepository.delete(applicationId()));
             assertNull(applicationRepository.getActiveSession(applicationId()));
             assertNull(tenant.getLocalSessionRepo().getSession(sessionId));
             assertNull(tenant.getRemoteSessionRepo().getSession(sessionId));
@@ -250,12 +250,12 @@ public class ApplicationRepositoryTest {
             assertThat(provisioner.lastApplicationId.tenant(), is(tenant.getName()));
             assertThat(provisioner.lastApplicationId, is(applicationId()));
 
-            assertFalse(applicationRepository.deleteApplication(applicationId()));
+            assertFalse(applicationRepository.delete(applicationId()));
         }
 
         {
             deployApp(testApp);
-            assertTrue(applicationRepository.deleteApplication(applicationId()));
+            assertTrue(applicationRepository.delete(applicationId()));
             deployApp(testApp);
 
             // Deploy another app (with id fooId)
@@ -265,21 +265,12 @@ public class ApplicationRepositoryTest {
             assertNotNull(applicationRepository.getActiveSession(fooId));
 
             // Delete app with id fooId, should not affect original app
-            assertTrue(applicationRepository.deleteApplication(fooId));
+            assertTrue(applicationRepository.delete(fooId));
             assertThat(provisioner.lastApplicationId, is(fooId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
 
-            assertTrue(applicationRepository.deleteApplication(applicationId()));
+            assertTrue(applicationRepository.delete(applicationId()));
         }
-    }
-
-    @Test
-    public void deleteLegacy() {
-        deployApp(testApp);
-        assertNotNull(applicationRepository.getActiveSession(applicationId()));
-        assertTrue(applicationRepository.deleteApplicationLegacy(applicationId()));
-        assertNull(applicationRepository.getActiveSession(applicationId()));
-        assertFalse(applicationRepository.deleteApplicationLegacy(applicationId()));
     }
 
     @Test
