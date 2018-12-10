@@ -31,23 +31,13 @@ std::shared_ptr<TlsCryptoEngine> try_create_engine_from_tls_config(const vespali
     }
 }
 
-// Unlocks on construction, re-locks on destruction.
-struct UnlockGuard {
-    std::unique_lock<std::mutex>& _lock;
-    explicit UnlockGuard(std::unique_lock<std::mutex>& lock) : _lock(lock) {
-        _lock.unlock();
-    }
-    ~UnlockGuard() {
-        _lock.lock();
-    }
-};
-
 } // anonymous namespace
 
 AutoReloadingTlsCryptoEngine::AutoReloadingTlsCryptoEngine(vespalib::string config_file_path,
                                                            TimeInterval reload_interval)
-    : _mutex(),
-      _cond(),
+    : _thread_mutex(),
+      _thread_cond(),
+      _engine_mutex(),
       _shutdown(false),
       _config_file_path(std::move(config_file_path)),
       _current_engine(tls_engine_from_config_file(_config_file_path)),
@@ -58,9 +48,9 @@ AutoReloadingTlsCryptoEngine::AutoReloadingTlsCryptoEngine(vespalib::string conf
 
 AutoReloadingTlsCryptoEngine::~AutoReloadingTlsCryptoEngine() {
     {
-        std::unique_lock lock(_mutex);
+        std::lock_guard lock(_thread_mutex);
         _shutdown = true;
-        _cond.notify_all();
+        _thread_cond.notify_all();
     }
     _reload_thread.join();
 }
@@ -70,30 +60,27 @@ std::chrono::steady_clock::time_point AutoReloadingTlsCryptoEngine::make_future_
 }
 
 void AutoReloadingTlsCryptoEngine::run_reload_loop() {
-    std::unique_lock lock(_mutex);
+    std::unique_lock lock(_thread_mutex);
     auto reload_at_time = make_future_reload_time_point();
     while (!_shutdown) {
-        if (_cond.wait_until(lock, reload_at_time) == std::cv_status::timeout) {
+        if (_thread_cond.wait_until(lock, reload_at_time) == std::cv_status::timeout) {
             LOG(debug, "TLS config reload time reached, reloading file '%s'", _config_file_path.c_str());
-            try_replace_current_engine(lock);
+            try_replace_current_engine();
             reload_at_time = make_future_reload_time_point();
         } // else: spurious wakeup or shutdown
     }
 }
 
-void AutoReloadingTlsCryptoEngine::try_replace_current_engine(std::unique_lock<std::mutex>& held_lock) {
-    std::shared_ptr<TlsCryptoEngine> new_engine;
-    {
-        UnlockGuard guard(held_lock);
-        new_engine = try_create_engine_from_tls_config(_config_file_path);
-    }
+void AutoReloadingTlsCryptoEngine::try_replace_current_engine() {
+    std::shared_ptr<TlsCryptoEngine> new_engine = try_create_engine_from_tls_config(_config_file_path);
     if (new_engine) {
+        std::lock_guard guard(_engine_mutex);
         _current_engine = std::move(new_engine);
     }
 }
 
 AutoReloadingTlsCryptoEngine::EngineSP AutoReloadingTlsCryptoEngine::acquire_current_engine() const {
-    std::lock_guard guard(_mutex);
+    std::lock_guard guard(_engine_mutex);
     return _current_engine;
 }
 
