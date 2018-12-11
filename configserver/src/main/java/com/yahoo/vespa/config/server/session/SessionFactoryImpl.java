@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.*;
-import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
@@ -47,7 +46,6 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     private final TenantFileSystemDirs tenantFileSystemDirs;
     private final HostValidator<ApplicationId> hostRegistry;
     private final SuperModelGenerationCounter superModelGenerationCounter;
-    private final ConfigDefinitionRepo defRepo;
     private final TenantName tenant;
     private final String serverId;
     private final Optional<NodeFlavors> nodeFlavors;
@@ -68,7 +66,6 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         this.applicationRepo = applicationRepo;
         this.tenantFileSystemDirs = tenantFileSystemDirs;
         this.superModelGenerationCounter = globalComponentRegistry.getSuperModelGenerationCounter();
-        this.defRepo = globalComponentRegistry.getConfigDefinitionRepo();
         this.serverId = globalComponentRegistry.getConfigserverConfig().serverId();
         this.nodeFlavors = globalComponentRegistry.getZone().nodeFlavors();
         this.clock = globalComponentRegistry.getClock();
@@ -146,7 +143,6 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
             SessionZooKeeperClient sessionZooKeeperClient = new SessionZooKeeperClient(curator,
                                                                                        configCurator,
                                                                                        sessionIdPath,
-                                                                                       defRepo,
                                                                                        serverId,
                                                                                        nodeFlavors);
             File userApplicationDir = tenantFileSystemDirs.getUserApplicationDir(sessionId);
@@ -180,7 +176,6 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         SessionZooKeeperClient sessionZKClient = new SessionZooKeeperClient(curator,
                                                                             configCurator,
                                                                             sessionIdPath,
-                                                                            defRepo,
                                                                             serverId,
                                                                             nodeFlavors);
         SessionContext context = new SessionContext(applicationPackage, sessionZKClient, sessionDir, applicationRepo, 

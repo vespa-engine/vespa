@@ -34,6 +34,7 @@ public class StaticConfigDefinitionRepo implements ConfigDefinitionRepo {
         };
     }
 
+    @SuppressWarnings("unused")
     @Inject
     public StaticConfigDefinitionRepo(ConfigServerDB serverDB) {
         this.repo = new com.yahoo.config.model.application.provider.StaticConfigDefinitionRepo(serverDB.serverdefs());

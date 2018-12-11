@@ -103,7 +103,7 @@ public class SessionPreparerTest {
                 hostProvisionerProvider,
                 new PermanentApplicationPackage(componentRegistry.getConfigserverConfig()),
                 componentRegistry.getConfigserverConfig(),
-                componentRegistry.getConfigDefinitionRepo(),
+                componentRegistry.getStaticConfigDefinitionRepo(),
                 curator,
                 componentRegistry.getZone());
     }

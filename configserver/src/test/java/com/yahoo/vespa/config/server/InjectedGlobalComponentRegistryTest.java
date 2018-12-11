@@ -87,7 +87,7 @@ public class InjectedGlobalComponentRegistryTest {
         assertThat(globalComponentRegistry.getReloadListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getTenantListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getSuperModelGenerationCounter(), is(generationCounter));
-        assertThat(globalComponentRegistry.getConfigDefinitionRepo(), is(defRepo));
+        assertThat(globalComponentRegistry.getStaticConfigDefinitionRepo(), is(defRepo));
         assertThat(globalComponentRegistry.getPermanentApplicationPackage(), is(permanentApplicationPackage));
         assertThat(globalComponentRegistry.getHostRegistries(), is(hostRegistries));
         assertThat(globalComponentRegistry.getZone(), is (zone));

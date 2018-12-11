@@ -32,7 +32,7 @@ public interface GlobalComponentRegistry {
     TenantListener getTenantListener();
     ReloadListener getReloadListener();
     SuperModelGenerationCounter getSuperModelGenerationCounter();
-    ConfigDefinitionRepo getConfigDefinitionRepo();
+    ConfigDefinitionRepo getStaticConfigDefinitionRepo();
     PermanentApplicationPackage getPermanentApplicationPackage();
     HostRegistries getHostRegistries();
     ModelFactoryRegistry getModelFactoryRegistry();
