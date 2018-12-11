@@ -161,8 +161,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
             if (ls.getStatus()!=null) zooKeeperClient.writeStatus(ls.getStatus());
             RemoteSession remSess = new RemoteSession(tenant, ls.getSessionId(),
                                                       new TestComponentRegistry.Builder().curator(curator).build(),
-                                                      zooKeeperClient,
-                                                      clock);
+                                                      zooKeeperClient);
             remoteSessionRepo.addSession(remSess);
         }
         return zooKeeperClient;

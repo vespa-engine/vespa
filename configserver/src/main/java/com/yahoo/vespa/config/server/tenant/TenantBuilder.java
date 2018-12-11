@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.*;
 
-import java.time.Clock;
 import java.util.Collections;
 
 /**
@@ -82,7 +81,7 @@ public class TenantBuilder {
     public Tenant build() {
         createTenantRequestHandler();
         createApplicationRepo();
-        createRemoteSessionFactory(componentRegistry.getClock());
+        createRemoteSessionFactory();
         createRemoteSessionRepo();
         createServerDbDirs();
         createSessionFactory();
@@ -143,9 +142,9 @@ public class TenantBuilder {
         }
     }
 
-    private void createRemoteSessionFactory(Clock clock) {
+    private void createRemoteSessionFactory() {
         if (remoteSessionFactory == null) {
-            remoteSessionFactory = new RemoteSessionFactory(componentRegistry, tenant, clock);
+            remoteSessionFactory = new RemoteSessionFactory(componentRegistry, tenant);
         }
     }
 

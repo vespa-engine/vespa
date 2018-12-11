@@ -38,20 +38,19 @@ public class RemoteSession extends Session {
      *
      * @param tenant The name of the tenant creating session
      * @param sessionId The session id for this session.
-     * @param globalComponentRegistry a registry of global components
+     * @param componentRegistry a registry of global components
      * @param zooKeeperClient a SessionZooKeeperClient instance
      */
     public RemoteSession(TenantName tenant,
                          long sessionId,
-                         GlobalComponentRegistry globalComponentRegistry,
-                         SessionZooKeeperClient zooKeeperClient,
-                         Clock clock) {
+                         GlobalComponentRegistry componentRegistry,
+                         SessionZooKeeperClient zooKeeperClient) {
         super(tenant, sessionId, zooKeeperClient);
-        this.applicationLoader = new ActivatedModelsBuilder(tenant, sessionId, zooKeeperClient, globalComponentRegistry);
-        this.clock = clock;
+        this.applicationLoader = new ActivatedModelsBuilder(tenant, sessionId, zooKeeperClient, componentRegistry);
+        this.clock = componentRegistry.getClock();
     }
 
-    public void loadPrepared() {
+    void loadPrepared() {
         Curator.CompletionWaiter waiter = zooKeeperClient.getPrepareWaiter();
         ensureApplicationLoaded();
         notifyCompletion(waiter);
@@ -89,7 +88,7 @@ public class RemoteSession extends Session {
         return zooKeeperClient.createWriteStatusTransaction(Status.DELETE);
     }
 
-    public void makeActive(ReloadHandler reloadHandler) {
+    void makeActive(ReloadHandler reloadHandler) {
         Curator.CompletionWaiter waiter = zooKeeperClient.getActiveWaiter();
         log.log(LogLevel.DEBUG, logPre() + "Getting session from repo: " + getSessionId());
         ApplicationSet app = ensureApplicationLoaded();
@@ -109,7 +108,7 @@ public class RemoteSession extends Session {
         return TenantRepository.logPre(getTenant());
     }
 
-    public void confirmUpload() {
+    void confirmUpload() {
         Curator.CompletionWaiter waiter = zooKeeperClient.getUploadWaiter();
         log.log(LogLevel.DEBUG, "Notifying upload waiter for session " + getSessionId());
         notifyCompletion(waiter);
