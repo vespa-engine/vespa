@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
-import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -13,7 +13,6 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -24,55 +23,45 @@ import static org.junit.Assert.assertFalse;
 
 public class FileServerTest {
 
-    private FileServer fs = new FileServer(new File("."));
-    private List<File> created = new LinkedList<>();
-
-    private void createCleanDir(String name) throws  IOException{
-        File dir = new File(name);
-        IOUtils.recursiveDeleteDir(dir);
-        IOUtils.createDirectory(dir.getName());
-        File dummy = new File(dir.getName() +"/dummy");
-        IOUtils.writeFile(dummy, "test", true);
-        assertTrue(dummy.delete());
-        created.add(dir);
-    }
+    private FileServer fileServer;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    @Test
-    public void requireThatExistingFileCanBeFound() throws IOException {
-        createCleanDir("123");
-        IOUtils.writeFile("123/f1", "test", true);
-        assertTrue(fs.hasFile("123"));
-        cleanup();
+    @Before
+    public void setup() throws IOException {
+        File rootDir = new File(temporaryFolder.newFolder("fileserver-root").getAbsolutePath());
+        fileServer = new FileServer(rootDir);
     }
 
     @Test
-    public void requireThatNonExistingFileCanNotBeFound() throws IOException {
-        assertFalse(fs.hasFile("12x"));
-        createCleanDir("12x");
-        assertFalse(fs.hasFile("12x"));
-        cleanup();
+    public void requireThatExistingFileCanBeFound() throws IOException {
+        File dir = getFileServerRootDir();
+        IOUtils.createDirectory(dir + "/123");
+        IOUtils.writeFile(dir + "/123/f1", "test", false);
+        assertTrue(fileServer.hasFile("123"));
+    }
+
+    @Test
+    public void requireThatNonExistingFileCanNotBeFound() {
+        assertFalse(fileServer.hasFile("12x"));
     }
 
     @Test
     public void requireThatFileReferenceWithDirectoryCanBeFound() throws IOException {
-        createCleanDir("124/subdir");
-        IOUtils.writeFile("124/subdir/f1", "test", false);
-        IOUtils.writeFile("124/subdir/f2", "test", false);
-        assertTrue(fs.hasFile("124/subdir"));
-        cleanup();
+        File dir = getFileServerRootDir();
+        IOUtils.writeFile(dir + "/124/subdir/f1", "test", false);
+        IOUtils.writeFile(dir + "/124/subdir/f2", "test", false);
+        assertTrue(fileServer.hasFile("124/subdir"));
     }
 
     @Test
     public void requireThatWeCanReplayFile() throws IOException, InterruptedException, ExecutionException {
-        createCleanDir("12y");
-        IOUtils.writeFile("12y/f1", "dummy-data", true);
+        File dir = getFileServerRootDir();
+        IOUtils.writeFile(dir + "/12y/f1", "dummy-data", true);
         CompletableFuture<byte []> content = new CompletableFuture<>();
-        fs.startFileServing("12y", new FileReceiver(content));
+        fileServer.startFileServing("12y", new FileReceiver(content));
         assertEquals(new String(content.get()), "dummy-data");
-        cleanup();
     }
 
     @Test
@@ -121,10 +110,8 @@ public class FileServerTest {
         }
     }
 
-    @After
-    public void cleanup() {
-        created.forEach(IOUtils::recursiveDeleteDir);
-        created.clear();
+    private File getFileServerRootDir() {
+        return fileServer.getRootDir().getRoot();
     }
 
 }

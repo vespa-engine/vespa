@@ -93,6 +93,10 @@ public class FileServer {
         return hasFile(new FileReference(fileReference));
     }
 
+    FileDirectory getRootDir() {
+        return root;
+    }
+
     private boolean hasFile(FileReference reference) {
         try {
             return root.getFile(reference).exists();
