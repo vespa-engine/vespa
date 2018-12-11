@@ -72,6 +72,10 @@ public class FileDirectory  {
         return files[0];
     }
 
+    File getRoot() {
+        return root;
+    }
+
     private Long computeHash(File file) throws IOException {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         if (file.isDirectory()) {
