@@ -64,17 +64,17 @@ $top/dist/getversion.pl -M $top > $top/dist/vtag.map
 echo "Downloading all dependencies. This may take a few minutes with an empty Maven cache."
 (
   cd container-dependency-versions
-  mvn_install --threads 1.5C
+  mvn_install
 )
 (
   cd parent
-  mvn_install --threads 1.5C
+  mvn_install
 )
-mvn_install --threads 1.5C -N
+mvn_install -N
 
 # and build plugins first:
 echo "Building Vespa Maven plugins."
-mvn_install --threads 1 -f maven-plugins/pom.xml
+mvn_install --threads 1.5C -f maven-plugins/pom.xml
 
 # now everything else should just work with normal maven dependency resolution:
 
