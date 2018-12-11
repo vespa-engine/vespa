@@ -24,6 +24,7 @@ import java.util.concurrent.Executor;
 public final class RendererRegistry extends ComponentRegistry<com.yahoo.processing.rendering.Renderer<Result>> {
 
     public static final ComponentId xmlRendererId = ComponentId.fromString("DefaultRenderer");
+    private static final ComponentId newXmlRendererId = ComponentId.fromString("XmlRenderer");
     public static final ComponentId jsonRendererId = ComponentId.fromString("JsonRenderer");
     public static final ComponentId defaultRendererId = jsonRendererId;
     
@@ -64,6 +65,11 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         xmlRenderer.initId(xmlRendererId);
         register(xmlRenderer.getId(), xmlRenderer);
 
+        // Add new Vespa 7 xml renderer
+        Renderer newXmlRenderer = new XmlRenderer(executor);
+        newXmlRenderer.initId(newXmlRendererId);
+        register(newXmlRenderer.getId(), newXmlRenderer);
+
         // add application renderers
         for (Renderer renderer : renderers)
             register(renderer.getId(), renderer);
@@ -80,6 +86,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         // deconstruct the renderers which was created by this
         getRenderer(jsonRendererId.toSpecification()).deconstruct();
         getRenderer(xmlRendererId.toSpecification()).deconstruct();
+        getRenderer(newXmlRendererId.toSpecification()).deconstruct();
         getRenderer(tiledRendererId.toSpecification()).deconstruct();
         getRenderer(pageRendererId.toSpecification()).deconstruct();
     }
