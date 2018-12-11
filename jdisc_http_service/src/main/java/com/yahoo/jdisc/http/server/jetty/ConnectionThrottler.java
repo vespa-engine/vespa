@@ -46,7 +46,7 @@ class ConnectionThrottler {
     }
 
     void registerBeans() {
-        beans.forEach(bean -> connector.getServer().addBean(connector));
+        beans.forEach(bean -> connector.getServer().addBean(bean));
     }
 
     private static Duration fromSeconds(double seconds) {
