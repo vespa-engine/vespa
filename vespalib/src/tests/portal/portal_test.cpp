@@ -4,6 +4,7 @@
 #include <vespa/vespalib/portal/portal.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/sync_crypto_socket.h>
@@ -16,13 +17,14 @@ using namespace vespalib;
 
 //-----------------------------------------------------------------------------
 
-vespalib::string do_http(int port, CryptoEngine::SP crypto, const vespalib::string &method, const vespalib::string &uri) {
+vespalib::string do_http(int port, CryptoEngine::SP crypto, const vespalib::string &method, const vespalib::string &uri, bool send_host = true) {
     auto socket = SocketSpec::from_port(port).client_address().connect();
     ASSERT_TRUE(socket.valid());
     auto conn = SyncCryptoSocket::create(*crypto, std::move(socket), false);
     vespalib::string http_req = vespalib::make_string("%s %s HTTP/1.1\r\n"
-                                                      "Host: localhost:%d\r\n"
-                                                      "\r\n", method.c_str(), uri.c_str(), port);
+                                                      "My-Header: my value\r\n"
+                                                      "%s"
+                                                      "\r\n", method.c_str(), uri.c_str(), send_host ? "Host: HOST:42\r\n" : "");
     ASSERT_EQUAL(conn->write(http_req.data(), http_req.size()), ssize_t(http_req.size()));
     char buf[1024];
     vespalib::string result;
@@ -35,8 +37,8 @@ vespalib::string do_http(int port, CryptoEngine::SP crypto, const vespalib::stri
     return result;
 }
 
-vespalib::string fetch(int port, CryptoEngine::SP crypto, const vespalib::string &path) {
-    return do_http(port, std::move(crypto), "GET", path);
+vespalib::string fetch(int port, CryptoEngine::SP crypto, const vespalib::string &path, bool send_host = true) {
+    return do_http(port, std::move(crypto), "GET", path, send_host);
 }
 
 //-----------------------------------------------------------------------------
@@ -123,6 +125,43 @@ TEST("require that simple GET works with various encryption strategies") {
 }
 
 //-----------------------------------------------------------------------------
+
+TEST("require that header values can be inspected") {
+    auto portal = Portal::create(null_crypto(), 0);
+    MyGetHandler handler([](Portal::GetRequest request)
+                         {
+                             EXPECT_EQUAL(request.get_header("my-header"), "my value");
+                             request.respond_with_content("a", "b");
+                         });
+    auto bound = portal->bind("/test", handler);
+    auto result = fetch(portal->listen_port(), null_crypto(), "/test");
+    EXPECT_EQUAL(result, make_expected_response("a", "b"));
+}
+
+TEST("require that request authority can be obtained") {
+    auto portal = Portal::create(null_crypto(), 0);
+    MyGetHandler handler([](Portal::GetRequest request)
+                         {
+                             EXPECT_EQUAL(request.get_host(), "HOST:42");
+                             request.respond_with_content("a", "b");
+                         });
+    auto bound = portal->bind("/test", handler);
+    auto result = fetch(portal->listen_port(), null_crypto(), "/test");
+    EXPECT_EQUAL(result, make_expected_response("a", "b"));
+}
+
+TEST("require that authority has reasonable fallback") {
+    auto portal = Portal::create(null_crypto(), 0);
+    auto expect_host = vespalib::make_string("%s:%d", HostName::get().c_str(), portal->listen_port());
+    MyGetHandler handler([&expect_host](Portal::GetRequest request)
+                         {
+                             EXPECT_EQUAL(request.get_host(), expect_host);
+                             request.respond_with_content("a", "b");
+                         });
+    auto bound = portal->bind("/test", handler);
+    auto result = fetch(portal->listen_port(), null_crypto(), "/test", false);
+    EXPECT_EQUAL(result, make_expected_response("a", "b"));
+}
 
 TEST("require that methods other than GET return not implemented error") {
     auto portal = Portal::create(null_crypto(), 0);
