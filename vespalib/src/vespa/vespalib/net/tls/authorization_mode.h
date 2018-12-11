@@ -11,7 +11,7 @@ enum class AuthorizationMode {
     Enforce
 };
 
-const char* to_string(AuthorizationMode) noexcept;
+const char* enum_name(AuthorizationMode) noexcept;
 
 std::ostream& operator<<(std::ostream&, AuthorizationMode);
 
