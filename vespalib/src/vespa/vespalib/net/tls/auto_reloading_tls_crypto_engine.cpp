@@ -16,14 +16,16 @@ namespace vespalib::net::tls {
 
 namespace {
 
-std::shared_ptr<TlsCryptoEngine> tls_engine_from_config_file(const vespalib::string& config_file_path) {
+std::shared_ptr<TlsCryptoEngine> tls_engine_from_config_file(const vespalib::string& config_file_path,
+                                                             AuthorizationMode authz_mode) {
     auto tls_opts = net::tls::read_options_from_json_file(config_file_path);
-    return std::make_shared<TlsCryptoEngine>(*tls_opts);
+    return std::make_shared<TlsCryptoEngine>(*tls_opts, authz_mode);
 }
 
-std::shared_ptr<TlsCryptoEngine> try_create_engine_from_tls_config(const vespalib::string& config_file_path) {
+std::shared_ptr<TlsCryptoEngine> try_create_engine_from_tls_config(const vespalib::string& config_file_path,
+                                                                   AuthorizationMode authz_mode) {
     try {
-        return tls_engine_from_config_file(config_file_path);
+        return tls_engine_from_config_file(config_file_path, authz_mode);
     } catch (std::exception& e) {
         LOG(warning, "Failed to reload TLS config file (%s): '%s'. Old config remains in effect.",
             config_file_path.c_str(), e.what());
@@ -34,13 +36,15 @@ std::shared_ptr<TlsCryptoEngine> try_create_engine_from_tls_config(const vespali
 } // anonymous namespace
 
 AutoReloadingTlsCryptoEngine::AutoReloadingTlsCryptoEngine(vespalib::string config_file_path,
+                                                           AuthorizationMode mode,
                                                            TimeInterval reload_interval)
-    : _thread_mutex(),
+    : _authorization_mode(mode),
+      _thread_mutex(),
       _thread_cond(),
       _engine_mutex(),
       _shutdown(false),
       _config_file_path(std::move(config_file_path)),
-      _current_engine(tls_engine_from_config_file(_config_file_path)),
+      _current_engine(tls_engine_from_config_file(_config_file_path, _authorization_mode)),
       _reload_interval(reload_interval),
       _reload_thread([this](){ run_reload_loop(); })
 {
@@ -72,7 +76,7 @@ void AutoReloadingTlsCryptoEngine::run_reload_loop() {
 }
 
 void AutoReloadingTlsCryptoEngine::try_replace_current_engine() {
-    std::shared_ptr<TlsCryptoEngine> new_engine = try_create_engine_from_tls_config(_config_file_path);
+    auto new_engine = try_create_engine_from_tls_config(_config_file_path, _authorization_mode);
     if (new_engine) {
         std::lock_guard guard(_engine_mutex);
         _current_engine = std::move(new_engine);

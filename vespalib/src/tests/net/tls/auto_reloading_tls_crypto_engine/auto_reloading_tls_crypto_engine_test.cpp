@@ -91,10 +91,11 @@ void write_file(vespalib::stringref path, vespalib::stringref data) {
 
 struct Fixture {
     std::unique_ptr<AutoReloadingTlsCryptoEngine> engine;
-    explicit Fixture(AutoReloadingTlsCryptoEngine::TimeInterval reload_interval) {
+    explicit Fixture(AutoReloadingTlsCryptoEngine::TimeInterval reload_interval,
+                     AuthorizationMode mode = AuthorizationMode::Enforce) {
         write_file("test_cert.pem", cert1_pem);
         // Must be done after file has been written
-        engine = std::make_unique<AutoReloadingTlsCryptoEngine>("test_config.json", reload_interval);
+        engine = std::make_unique<AutoReloadingTlsCryptoEngine>("test_config.json", mode, reload_interval);
     }
 
     ~Fixture() {
@@ -106,8 +107,16 @@ struct Fixture {
 
     vespalib::string current_cert_chain() const {
         auto impl = engine->acquire_current_engine();
-        auto& ctx_impl = dynamic_cast<impl::OpenSslTlsContextImpl&>(*impl->tls_context());
+        // Leaks implementation details galore, but it's not very likely that we'll use
+        // anything but OpenSSL (or compatible APIs) in practice...
+        auto& ctx_impl = dynamic_cast<const impl::OpenSslTlsContextImpl&>(*impl->tls_context());
         return ctx_impl.transport_security_options().cert_chain_pem();
+    }
+
+    AuthorizationMode current_authorization_mode() const {
+        auto impl = engine->acquire_current_engine();
+        auto& ctx_impl = dynamic_cast<const impl::OpenSslTlsContextImpl&>(*impl->tls_context());
+        return ctx_impl.authorization_mode();
     }
 };
 
@@ -124,6 +133,14 @@ TEST_FF("Config reloading transitively loads updated files", Fixture(50ms), Time
         current_certs = f1.current_cert_chain();
     }
     // If the config is never reloaded, test will go boom.
+}
+
+TEST_FF("Shutting down auto-reloading engine immediately stops background thread", Fixture(600s), TimeBomb(60)) {
+    // This passes just from not having the TimeBomb blow up.
+}
+
+TEST_FF("Authorization mode is propagated to engine", Fixture(50ms, AuthorizationMode::LogOnly), TimeBomb(60)) {
+    EXPECT_EQUAL(AuthorizationMode::LogOnly, f1.current_authorization_mode());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

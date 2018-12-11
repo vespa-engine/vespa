@@ -2,9 +2,10 @@
 #include "crypto_utils.h"
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/net/tls/authorization_mode.h>
+#include <vespa/vespalib/net/tls/crypto_codec.h>
 #include <vespa/vespalib/net/tls/tls_context.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
-#include <vespa/vespalib/net/tls/crypto_codec.h>
 #include <vespa/vespalib/net/tls/impl/openssl_crypto_codec_impl.h>
 #include <vespa/vespalib/net/tls/impl/openssl_tls_context_impl.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
@@ -64,7 +65,7 @@ struct Fixture {
 
     Fixture()
         : tls_opts(vespalib::test::make_tls_options_for_testing()),
-          tls_ctx(TlsContext::create_default_context(tls_opts)),
+          tls_ctx(TlsContext::create_default_context(tls_opts, AuthorizationMode::Enforce)),
           client(create_openssl_codec(tls_ctx, CryptoCodec::Mode::Client)),
           server(create_openssl_codec(tls_ctx, CryptoCodec::Mode::Server)),
           client_to_server(64 * 1024),
@@ -79,7 +80,7 @@ struct Fixture {
 
     static std::unique_ptr<CryptoCodec> create_openssl_codec(
             const TransportSecurityOptions& opts, CryptoCodec::Mode mode) {
-        auto ctx = TlsContext::create_default_context(opts);
+        auto ctx = TlsContext::create_default_context(opts, AuthorizationMode::Enforce);
         return create_openssl_codec(ctx, mode);
     }
 
@@ -87,7 +88,7 @@ struct Fixture {
             const TransportSecurityOptions& opts,
             std::shared_ptr<CertificateVerificationCallback> cert_verify_callback,
             CryptoCodec::Mode mode) {
-        auto ctx = TlsContext::create_default_context(opts, std::move(cert_verify_callback));
+        auto ctx = TlsContext::create_default_context(opts, std::move(cert_verify_callback), AuthorizationMode::Enforce);
         return create_openssl_codec(ctx, mode);
     }
 
@@ -418,6 +419,15 @@ struct CertFixture : Fixture {
         return {std::move(cert), std::move(key)};
     }
 
+    static std::unique_ptr<CryptoCodec> create_openssl_codec_with_authz_mode(
+            const TransportSecurityOptions& opts,
+            std::shared_ptr<CertificateVerificationCallback> cert_verify_callback,
+            CryptoCodec::Mode codec_mode,
+            AuthorizationMode authz_mode) {
+        auto ctx = TlsContext::create_default_context(opts, std::move(cert_verify_callback), authz_mode);
+        return create_openssl_codec(ctx, codec_mode);
+    }
+
     void reset_client_with_cert_opts(const CertKeyWrapper& ck, AuthorizedPeers authorized) {
         TransportSecurityOptions client_opts(root_ca.cert->to_pem(), ck.cert->to_pem(),
                                              ck.key->private_to_pem(), std::move(authorized));
@@ -438,6 +448,13 @@ struct CertFixture : Fixture {
     void reset_server_with_cert_opts(const CertKeyWrapper& ck, std::shared_ptr<CertificateVerificationCallback> cert_cb) {
         TransportSecurityOptions server_opts(root_ca.cert->to_pem(), ck.cert->to_pem(), ck.key->private_to_pem());
         server = create_openssl_codec(server_opts, std::move(cert_cb), CryptoCodec::Mode::Server);
+    }
+
+    void reset_server_with_cert_opts(const CertKeyWrapper& ck,
+                                     std::shared_ptr<CertificateVerificationCallback> cert_cb,
+                                     AuthorizationMode authz_mode) {
+        TransportSecurityOptions server_opts(root_ca.cert->to_pem(), ck.cert->to_pem(), ck.key->private_to_pem());
+        server = create_openssl_codec_with_authz_mode(server_opts, std::move(cert_cb), CryptoCodec::Mode::Server, authz_mode);
     }
 };
 
@@ -582,6 +599,23 @@ TEST_F("Server allows client with certificate that DOES match peer policy", Cert
             {}, {{"DNS:birdseed.wile.example.com"}, {"DNS:crash.wile.example.com"}});
     f.reset_client_with_cert_opts(client_ck, AuthorizedPeers::allow_all_authenticated());
 
+    EXPECT_TRUE(f.handshake());
+}
+
+void reset_peers_with_server_authz_mode(CertFixture& f, AuthorizationMode authz_mode) {
+    auto ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
+
+    f.reset_client_with_cert_opts(ck, std::make_shared<PrintingCertificateCallback>());
+    f.reset_server_with_cert_opts(ck, std::make_shared<AlwaysFailVerifyCallback>(), authz_mode);
+}
+
+TEST_F("Log-only insecure authorization mode ignores verification result", CertFixture) {
+    reset_peers_with_server_authz_mode(f, AuthorizationMode::LogOnly);
+    EXPECT_TRUE(f.handshake());
+}
+
+TEST_F("Disabled insecure authorization mode ignores verification result", CertFixture) {
+    reset_peers_with_server_authz_mode(f, AuthorizationMode::Disable);
     EXPECT_TRUE(f.handshake());
 }
 

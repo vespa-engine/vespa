@@ -187,8 +187,10 @@ SslCtxPtr new_tls_ctx_with_auto_init() {
 
 OpenSslTlsContextImpl::OpenSslTlsContextImpl(
         const TransportSecurityOptions& ts_opts,
-        std::shared_ptr<CertificateVerificationCallback> cert_verify_callback)
+        std::shared_ptr<CertificateVerificationCallback> cert_verify_callback,
+        AuthorizationMode authz_mode)
     : _ctx(new_tls_ctx_with_auto_init()),
+      _authorization_mode(authz_mode),
       _cert_verify_callback(std::move(cert_verify_callback)),
       _redacted_transport_options(ts_opts.copy_without_private_key())
 {
@@ -206,7 +208,7 @@ OpenSslTlsContextImpl::OpenSslTlsContextImpl(
     disable_compression();
     disable_renegotiation();
     enforce_peer_certificate_verification();
-    set_provided_certificate_verification_callback();
+    set_ssl_ctx_self_reference();
     // TODO set accepted cipher suites!
     // TODO `--> If not set in options, use Modern spec from https://wiki.mozilla.org/Security/Server_Side_TLS
 }
@@ -385,6 +387,8 @@ bool fill_certificate_subject_alternate_names(::X509* cert, PeerCredentials& cre
     return true;
 }
 
+} // anon ns
+
 // TODO if/when we want to move per-connection peer credentials into the crypto codec/socket
 // itself, we probably need to set the verification callback (data) on _SSL_, not _SSL_CTX_..!
 // Note: we try to be as conservative as possible. If anything looks out of place, we fail
@@ -393,7 +397,7 @@ bool fill_certificate_subject_alternate_names(::X509* cert, PeerCredentials& cre
 // References:
 // https://github.com/boostorg/asio/blob/develop/include/boost/asio/ssl/impl/context.ipp
 // https://github.com/boostorg/asio/blob/develop/include/boost/asio/ssl/impl/rfc2818_verification.ipp
-int verify_cb_wrapper(int preverified_ok, ::X509_STORE_CTX* store_ctx) {
+int OpenSslTlsContextImpl::verify_cb_wrapper(int preverified_ok, ::X509_STORE_CTX* store_ctx) {
     if (!preverified_ok) {
         return 0; // If it's already known to be broken, we won't do anything more.
     }
@@ -415,9 +419,14 @@ int verify_cb_wrapper(int preverified_ok, ::X509_STORE_CTX* store_ctx) {
     if (!ssl_ctx) {
         return 0;
     }
-    auto* cert_validator = static_cast<CertificateVerificationCallback*>(SSL_CTX_get_app_data(ssl_ctx));
-    if (!cert_validator) {
+    auto* self = static_cast<OpenSslTlsContextImpl*>(SSL_CTX_get_app_data(ssl_ctx));
+    if (!self) {
         return 0;
+    }
+    const auto authz_mode = self->authorization_mode();
+    // TODO consider if we want to fill in peer credentials even if authorization is disabled
+    if (authz_mode == AuthorizationMode::Disable) {
+        return 1;
     }
     ::X509* cert = ::X509_STORE_CTX_get_current_cert(store_ctx); // _not_ owned by us
     if (!cert) {
@@ -432,10 +441,12 @@ int verify_cb_wrapper(int preverified_ok, ::X509_STORE_CTX* store_ctx) {
         return 0;
     }
     try {
-        const bool verified_by_cb = cert_validator->verify(creds);
+        const bool verified_by_cb = self->_cert_verify_callback->verify(creds);
         if (!verified_by_cb) {
-            LOG(debug, "Connection rejected by certificate verification callback");
-            return 0;
+            // TODO we should print the peer's remote address too, but that information is
+            // not currently available to us here.
+            LOG(warning, "Certificate verification failed for %s", to_string(creds).c_str());
+            return (authz_mode == AuthorizationMode::Enforce) ? 0 : 1;
         }
     } catch (std::exception& e) {
         LOG(error, "Got exception during certificate verification callback: %s", e.what());
@@ -444,16 +455,14 @@ int verify_cb_wrapper(int preverified_ok, ::X509_STORE_CTX* store_ctx) {
     return 1;
 }
 
-} // anon ns
-
 void OpenSslTlsContextImpl::enforce_peer_certificate_verification() {
     // We require full mutual certificate verification. No way to configure
     // out of this, at least not for the time being.
     ::SSL_CTX_set_verify(_ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_cb_wrapper);
 }
 
-void OpenSslTlsContextImpl::set_provided_certificate_verification_callback() {
-    SSL_CTX_set_app_data(_ctx.get(), _cert_verify_callback.get());
+void OpenSslTlsContextImpl::set_ssl_ctx_self_reference() {
+    SSL_CTX_set_app_data(_ctx.get(), this);
 }
 
 }
