@@ -35,7 +35,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final RpcServer rpcServer;
     private final ConfigserverConfig configserverConfig;
     private final SuperModelGenerationCounter superModelGenerationCounter;
-    private final ConfigDefinitionRepo defRepo;
+    private final ConfigDefinitionRepo staticConfigDefinitionRepo;
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final HostRegistries hostRegistries;
     private final Optional<Provisioner> hostProvisioner;
@@ -52,7 +52,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            RpcServer rpcServer,
                                            ConfigserverConfig configserverConfig,
                                            SuperModelGenerationCounter superModelGenerationCounter,
-                                           ConfigDefinitionRepo defRepo,
+                                           ConfigDefinitionRepo staticConfigDefinitionRepo,
                                            PermanentApplicationPackage permanentApplicationPackage,
                                            HostRegistries hostRegistries,
                                            HostProvisionerProvider hostProvisionerProvider,
@@ -66,7 +66,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.rpcServer = rpcServer;
         this.configserverConfig = configserverConfig;
         this.superModelGenerationCounter = superModelGenerationCounter;
-        this.defRepo = defRepo;
+        this.staticConfigDefinitionRepo = staticConfigDefinitionRepo;
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.hostRegistries = hostRegistries;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
@@ -91,7 +91,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     @Override
     public SuperModelGenerationCounter getSuperModelGenerationCounter() { return superModelGenerationCounter; }
     @Override
-    public ConfigDefinitionRepo getConfigDefinitionRepo() { return defRepo; }
+    public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return staticConfigDefinitionRepo; }
     @Override
     public PermanentApplicationPackage getPermanentApplicationPackage() { return permanentApplicationPackage; }
     @Override

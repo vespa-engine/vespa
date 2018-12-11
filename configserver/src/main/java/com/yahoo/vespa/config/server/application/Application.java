@@ -37,7 +37,7 @@ import java.util.Set;
 public class Application implements ModelResult {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Application.class.getName());
-    private final long appGeneration; // The generation of the set of configs belonging to an application
+    private final long appGeneration; // The config generation for this application
     private final boolean internalRedeploy;
     private final Version vespaVersion;
     private final Model model;
@@ -161,7 +161,6 @@ public class Application implements ModelResult {
                 debug("No config schema in request for " + configKey);
             }
             return cache.getDef(configDefinitionKey);
-
         } else {
             if (logDebug()) {
                 debug("Got config schema from request, length:" + def.asList().size() + " : " + configKey);

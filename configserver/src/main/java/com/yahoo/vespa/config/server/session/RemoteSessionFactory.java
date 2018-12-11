@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
-import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -19,7 +18,6 @@ public class RemoteSessionFactory {
     private final Curator curator;
     private final ConfigCurator configCurator;
     private final Path sessionsPath;
-    private final ConfigDefinitionRepo defRepo;
     private final TenantName tenant;
     private final ConfigserverConfig configserverConfig;
 
@@ -29,7 +27,6 @@ public class RemoteSessionFactory {
         this.configCurator = componentRegistry.getConfigCurator();
         this.sessionsPath = TenantRepository.getSessionsPath(tenant);
         this.tenant = tenant;
-        this.defRepo = componentRegistry.getConfigDefinitionRepo();
         this.configserverConfig = componentRegistry.getConfigserverConfig();
     }
 
@@ -38,7 +35,6 @@ public class RemoteSessionFactory {
         SessionZooKeeperClient sessionZKClient = new SessionZooKeeperClient(curator,
                                                                             configCurator,
                                                                             sessionPath,
-                                                                            defRepo,
                                                                             configserverConfig.serverId(),
                                                                             componentRegistry.getZone().nodeFlavors());
         return new RemoteSession(tenant, sessionId, componentRegistry, sessionZKClient);

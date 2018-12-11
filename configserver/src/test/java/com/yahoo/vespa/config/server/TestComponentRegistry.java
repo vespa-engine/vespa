@@ -177,7 +177,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     @Override
     public SuperModelGenerationCounter getSuperModelGenerationCounter() { return superModelGenerationCounter; }
     @Override
-    public ConfigDefinitionRepo getConfigDefinitionRepo() { return defRepo; }
+    public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return defRepo; }
     @Override
     public PermanentApplicationPackage getPermanentApplicationPackage() { return permanentApplicationPackage; }
     @Override

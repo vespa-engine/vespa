@@ -20,7 +20,7 @@ public class ServerCache {
     private final ConfigDefinitionRepo builtinConfigDefinitions;
     private final ConfigDefinitionRepo userConfigDefinitions;
 
-    // NOTE: The reason we do a double mapping here is to dedup configs that have the same md5.
+    // NOTE: The reason we do a double mapping here is to de-dupe configs that have the same md5.
     private final Map<ConfigCacheKey, String> md5Sums = new ConcurrentHashMap<>();
     private final Map<String, ConfigResponse> md5ToConfig = new ConcurrentHashMap<>();
 

@@ -13,9 +13,8 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.server.StaticConfigDefinitionRepo;
-import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
@@ -47,18 +46,16 @@ public class SessionZooKeeperClient {
     private final Path sessionPath;
     private final Path sessionStatusPath;
     private final String serverId;
-    private final ServerCacheLoader cacheLoader;
     private final Optional<NodeFlavors> nodeFlavors;
 
     // Only for testing when cache loader does not need cache entries.
     public SessionZooKeeperClient(Curator curator, Path sessionPath) {
-        this(curator, ConfigCurator.create(curator), sessionPath, new StaticConfigDefinitionRepo(), "", Optional.empty());
+        this(curator, ConfigCurator.create(curator), sessionPath, "", Optional.empty());
     }
 
     public SessionZooKeeperClient(Curator curator,
                                   ConfigCurator configCurator,
                                   Path sessionPath,
-                                  ConfigDefinitionRepo definitionRepo,
                                   String serverId,
                                   Optional<NodeFlavors> nodeFlavors) {
         this.curator = curator;
@@ -67,7 +64,6 @@ public class SessionZooKeeperClient {
         this.serverId = serverId;
         this.nodeFlavors = nodeFlavors;
         this.sessionStatusPath = sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
-        this.cacheLoader = new ServerCacheLoader(configCurator, sessionPath, definitionRepo);
     }
 
     public void writeStatus(Session.Status sessionStatus) {
@@ -148,8 +144,8 @@ public class SessionZooKeeperClient {
         return new ZKApplicationPackage(configCurator, sessionPath, nodeFlavors);
     }
 
-    public ServerCache loadServerCache() {
-        return cacheLoader.loadCache();
+    public ConfigDefinitionRepo getUserConfigDefinitions() {
+        return new UserConfigDefinitionRepo(configCurator, sessionPath.append(ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH).getAbsolute());
     }
 
     private String applicationIdPath() {

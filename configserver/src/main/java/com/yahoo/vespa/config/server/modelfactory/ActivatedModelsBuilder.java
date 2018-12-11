@@ -15,6 +15,7 @@ import com.yahoo.component.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -63,7 +64,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.appGeneration = appGeneration;
         this.zkClient = zkClient;
         this.permanentApplicationPackage = globalComponentRegistry.getPermanentApplicationPackage();
-        this.configDefinitionRepo = globalComponentRegistry.getConfigDefinitionRepo();
+        this.configDefinitionRepo = globalComponentRegistry.getStaticConfigDefinitionRepo();
         this.metrics = globalComponentRegistry.getMetrics();
         this.curator = globalComponentRegistry.getCurator();
         this.logger = new SilentDeployLogger();
@@ -92,12 +93,14 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 modelFactory.version(),
                 wantedNodeVespaVersion);
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
+        ServerCache serverCache = new ServerCache(configDefinitionRepo, zkClient.getUserConfigDefinitions());
         return new Application(modelFactory.createModel(modelContext),
-                               zkClient.loadServerCache(),
+                               serverCache,
                                appGeneration,
                                applicationPackage.getMetaData().isInternalRedeploy(),
                                modelFactory.version(),
-                               applicationMetricUpdater, applicationId);
+                               applicationMetricUpdater,
+                               applicationId);
     }
 
     private static <T> Optional<T> getForVersionOrLatest(Map<Version, T> map, Version version) {
