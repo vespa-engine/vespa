@@ -113,42 +113,14 @@ public class CuratorDatabase {
 
     Optional<byte[]> getData(Path path) { return getCache().getData(path); }
 
-    private static class CacheAndGeneration {
-        public CacheAndGeneration(CuratorDatabaseCache cache, long generation)
-        {
-            this.cache = cache;
-            this.generation = generation;
-        }
-        public boolean expired() {
-            return generation != cache.generation();
-        }
-        public CuratorDatabaseCache validCache() {
-            if (expired()) {
-                throw new IllegalStateException("The cache has generation " + cache.generation() +
-                        " while the root genration counter in zookeeper says " + generation +
-                        ". That is totally unacceptable and must be a sever programming error in my close vicinity.");
-            }
-            return cache;
-        }
-
-        private CuratorDatabaseCache cache;
-        private long generation;
-    }
-    private CacheAndGeneration getCacheSnapshot() {
-        return new CacheAndGeneration(cache.get(), changeGenerationCounter.get());
-    }
+    /** Invalidates the current cache if outdated. */
     private CuratorDatabaseCache getCache() {
-        CacheAndGeneration cacheAndGeneration = getCacheSnapshot();
-        while (cacheAndGeneration.expired()) {
-            synchronized (cacheCreationLock) { // Prevent a race for creating new caches
-                cacheAndGeneration = getCacheSnapshot();
-                if (cacheAndGeneration.expired()) {
-                    cache.set(newCache(changeGenerationCounter.get()));
-                    cacheAndGeneration = getCacheSnapshot();
-                }
-            }
+        long generation = changeGenerationCounter.get();
+        synchronized (cacheCreationLock) {
+            if (generation != cache.get().generation)
+                cache.set(newCache(generation));
         }
-        return cacheAndGeneration.validCache();
+        return cache.get();
     }
 
     /** Caches must only be instantiated using this method */
