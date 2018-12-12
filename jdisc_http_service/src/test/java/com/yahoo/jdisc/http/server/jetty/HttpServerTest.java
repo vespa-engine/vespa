@@ -16,7 +16,6 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.ConnectorConfig.Throttling;
 import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
@@ -478,22 +477,6 @@ public class HttpServerTest {
                         .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(startsWith('{' + requestContent + "=[]}"));
-        assertThat(driver.close(), is(true));
-    }
-
-    @Test
-    public void requireThatConnectionThrottleDoesNotBlockConnectionsBelowThreshold() throws Exception {
-        final TestDriver driver = TestDrivers.newConfiguredInstance(
-                new EchoRequestHandler(),
-                new ServerConfig.Builder(),
-                new ConnectorConfig.Builder()
-                        .throttling(new Throttling.Builder()
-                                            .enabled(true)
-                                            .maxAcceptRate(10)
-                                            .maxMemoryUsage(100*1024)
-                                            .maxConnections(10)));
-        driver.client().get("/status.html")
-                .expectStatusCode(is(OK));
         assertThat(driver.close(), is(true));
     }
 
