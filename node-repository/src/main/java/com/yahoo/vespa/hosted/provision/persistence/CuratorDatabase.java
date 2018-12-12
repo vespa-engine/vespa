@@ -23,9 +23,10 @@ import java.util.stream.Collectors;
  * This encapsulated the curator database of the node repo.
  * It serves reads from an in-memory cache of the content which is invalidated when changed on another node
  * using a global, shared counter. The counter is updated on all write operations, ensured by wrapping write
- * operations in a 2pc transaction containing the counter update.
+ * operations in a try block, with the counter increment in a finally block. Locks must be used to ensure consistency.
  *
  * @author bratseth
+ * @author jonmv
  */
 public class CuratorDatabase {
 
@@ -147,7 +148,7 @@ public class CuratorDatabase {
         private final Map<Path, Optional<byte[]>> data = new ConcurrentHashMap<>();
 
         /** Create an empty snapshot at a given generation (as an empty snapshot is a valid partial snapshot) */
-        public CuratorDatabaseCache(long generation, Curator curator) {
+        private CuratorDatabaseCache(long generation, Curator curator) {
             this.generation = generation;
             this.curator = curator;
         }
@@ -156,7 +157,6 @@ public class CuratorDatabase {
 
         /**
          * Returns the children of this path, which may be empty.
-         * Returns null only if it is not present in this state mirror
          */
         public List<String> getChildren(Path path) { 
             return children.computeIfAbsent(path, key -> ImmutableList.copyOf(curator.getChildren(path)));
@@ -164,7 +164,6 @@ public class CuratorDatabase {
 
         /**
          * Returns the a copy of the content of this child - which may be empty.
-         * Returns null only if it is not present in this state mirror
          */
         public Optional<byte[]> getData(Path path) {
             return data.computeIfAbsent(path, key -> curator.getData(path)).map(data -> Arrays.copyOf(data, data.length));
@@ -175,7 +174,7 @@ public class CuratorDatabase {
     /** An implementation of the curator database cache which does no caching */
     private static class DeactivatedCache extends CuratorDatabaseCache {
         
-        public DeactivatedCache(long generation, Curator curator) { super(generation, curator); }
+        private DeactivatedCache(long generation, Curator curator) { super(generation, curator); }
 
         @Override
         public List<String> getChildren(Path path) { return curator.getChildren(path); }
