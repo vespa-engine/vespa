@@ -98,7 +98,7 @@ public class NodeRepository extends AbstractComponent {
      */
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver,
                           DockerImage dockerImage, boolean useCuratorClientCache) {
-        this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCacheIn(zone, useCuratorClientCache));
+        this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
         this.zone = zone;
         this.clock = clock;
         this.flavors = flavors;
@@ -110,14 +110,6 @@ public class NodeRepository extends AbstractComponent {
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
             db.writeTo(state, db.getNodes(state), Agent.system, Optional.empty());
-    }
-
-    private static boolean useCacheIn(Zone zone, boolean useCache) {
-        if (zone.region().value().equals("cd-us-central-1")) {
-            // TODO: Temporarily disabled in CD to see if allocation conflict is related to caching
-            return false;
-        }
-        return useCache;
     }
 
     /** Returns the curator database client used by this */
