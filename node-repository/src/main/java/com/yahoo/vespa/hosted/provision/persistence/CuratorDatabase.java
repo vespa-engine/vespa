@@ -116,11 +116,12 @@ public class CuratorDatabase {
 
     /** Invalidates the current cache if outdated. */
     private CuratorDatabaseCache getCache() {
-        long generation = changeGenerationCounter.get();
-        synchronized (cacheCreationLock) {
-            if (generation != cache.get().generation)
-                cache.set(newCache(generation));
-        }
+        if (changeGenerationCounter.get() != cache.get().generation)
+            synchronized (cacheCreationLock) {
+                while (changeGenerationCounter.get() != cache.get().generation)
+                    cache.set(newCache(changeGenerationCounter.get()));
+            }
+            
         return cache.get();
     }
 
