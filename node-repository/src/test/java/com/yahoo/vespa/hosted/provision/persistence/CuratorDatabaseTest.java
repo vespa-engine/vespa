@@ -9,7 +9,6 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -26,7 +25,7 @@ import static org.junit.Assert.fail;
 public class CuratorDatabaseTest {
 
     @Test
-    public void testTransactionsIncreaseTimer() throws Exception {
+    public void testTransactionsIncreaseCounter() throws Exception {
         MockCurator curator = new MockCurator();
         CuratorDatabase database = new CuratorDatabase(curator, Path.fromString("/"), true);
 
@@ -38,7 +37,6 @@ public class CuratorDatabaseTest {
         commitCreate("/2/1", database);
         assertEquals(4L, (long)curator.counter("/changeCounter").get().get().postValue());
 
-        List<String> children1Call0 = database.getChildren(Path.fromString("/1")); // prime the db; this call returns a different instance
         List<String> children1Call1 = database.getChildren(Path.fromString("/1"));
         List<String> children1Call2 = database.getChildren(Path.fromString("/1"));
         assertTrue("We reuse cached data when there are no commits", children1Call1 == children1Call2);
