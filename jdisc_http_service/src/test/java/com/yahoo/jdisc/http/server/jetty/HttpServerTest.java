@@ -490,7 +490,7 @@ public class HttpServerTest {
                         .throttling(new Throttling.Builder()
                                             .enabled(true)
                                             .maxAcceptRate(10)
-                                            .maxHeapUtilization(0.99)
+                                            .maxMemoryUsage(100*1024)
                                             .maxConnections(10)));
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK));
