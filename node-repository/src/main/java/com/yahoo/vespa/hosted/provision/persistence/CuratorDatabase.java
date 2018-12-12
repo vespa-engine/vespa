@@ -86,9 +86,8 @@ public class CuratorDatabase {
      * Important: It is the nested transaction which must be committed - never the curator transaction directly.
      */
     public CuratorTransaction newCuratorTransactionIn(NestedTransaction transaction) {
-        // Add a counting transaction first, to make sure we always invalidate the current state on any transaction commit
-        transaction.add(new EagerCountingCuratorTransaction(changeGenerationCounter), CuratorTransaction.class);
-        CuratorTransaction curatorTransaction = new CuratorTransaction(curator);
+        // Wrap the curator transaction with an increment of the generation counter.
+        CountingCuratorTransaction curatorTransaction = new CountingCuratorTransaction(curator, changeGenerationCounter);
         transaction.add(curatorTransaction);
         return curatorTransaction;
     }
@@ -97,6 +96,7 @@ public class CuratorDatabase {
     // As this operation does not depend on the prior state we do not need to increment the write counter
     public void create(Path path) {
         curator.create(path);
+        changeGenerationCounter.next(); // Increment counter to ensure getChildren sees any change.
     }
 
     /** Returns whether given path exists */
@@ -106,6 +106,8 @@ public class CuratorDatabase {
 
     // --------- Read operations -------------------------------------------------------------------------------
     // These can read from the memory file system, which accurately mirrors the ZooKeeper content IF
+    // the current generation counter is the same as it was when data was put into the cache, AND
+    // the data to read is protected by a lock which is held now, and during any writes of the data.
 
     /** Returns the immediate, local names of the children under this node in any order */
     public List<String> getChildren(Path path) { return getCache().getChildren(path); }

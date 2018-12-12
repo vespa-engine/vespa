@@ -63,7 +63,12 @@ public class CuratorDatabaseTest {
         assertArrayEquals(new byte[0], database.getData(Path.fromString("/1")).get());
         commitReadingWrite("/1", "hello".getBytes(), database);
         // Data cached during commit of write transaction. Should be invalid now, and re-read.
+        assertEquals(2L, (long)curator.counter("/changeCounter").get().get().postValue());
         assertArrayEquals("hello".getBytes(), database.getData(Path.fromString("/1")).get());
+
+        assertEquals(0, database.getChildren(Path.fromString("/1")).size());
+        commitCreate("/1/1", database);
+        assertEquals(1, database.getChildren(Path.fromString("/1")).size());
     }
 
     @Test
@@ -86,7 +91,7 @@ public class CuratorDatabaseTest {
     }
 
     @Test
-    public void testThatCounterIncreasesAlsoOnCommitFailure() throws Exception {
+    public void testThatCounterIncreasesExactlyOnCommitFailure() throws Exception {
         MockCurator curator = new MockCurator();
         CuratorDatabase database = new CuratorDatabase(curator, Path.fromString("/"), true);
 
@@ -99,31 +104,15 @@ public class CuratorDatabaseTest {
         catch (Exception expected) {
             // expected because the parent does not exist
         }
-        assertEquals(1L, (long)curator.counter("/changeCounter").get().get().postValue());
-    }
-
-    @Test
-    public void testThatCounterIncreasesAlsoOnCommitFailureFromExistingTransaction() throws Exception {
-        MockCurator curator = new MockCurator();
-        CuratorDatabase database = new CuratorDatabase(curator, Path.fromString("/"), true);
-
+        // Counter not increased, since prepare failed.
         assertEquals(0L, (long)curator.counter("/changeCounter").get().get().postValue());
 
         try {
-            NestedTransaction t = new NestedTransaction();
-            CuratorTransaction separateC = new CuratorTransaction(curator);
-            separateC.add(CuratorOperations.create("/1/2")); // fail as parent does not exist
-            t.add(separateC);
-
-            CuratorTransaction c = database.newCuratorTransactionIn(t);
-            c.add(CuratorOperations.create("/1")); // does not fail
-
-            t.commit();
+            commitFailing(database); // fail during commit
             fail("Expected exception");
         }
-        catch (Exception expected) {
-            // expected because the parent does not exist
-        }
+        catch (Exception expected) { }
+        // Counter increased, since commit failed.
         assertEquals(1L, (long)curator.counter("/changeCounter").get().get().postValue());
     }
 
@@ -142,6 +131,14 @@ public class CuratorDatabaseTest {
         curatorTransaction.add(new DummyOperation(() -> assertArrayEquals(oldData, database.getData(Path.fromString(path)).get())));
         curatorTransaction.add(CuratorOperations.setData(path, data));
         transaction.commit();
+    }
+
+    /** Commit an operation which fails during commit. */
+    private void commitFailing(CuratorDatabase database) {
+        NestedTransaction t = new NestedTransaction();
+        CuratorTransaction c = database.newCuratorTransactionIn(t);
+        c.add(new DummyOperation(() -> { throw new RuntimeException(); }));
+        t.commit();
     }
 
     static class DummyOperation implements CuratorOperation {
