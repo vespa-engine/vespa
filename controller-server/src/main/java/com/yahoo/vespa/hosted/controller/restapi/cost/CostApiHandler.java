@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
+import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
 
 import java.time.Clock;
 
@@ -17,11 +18,13 @@ public class CostApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
     private final NodeRepositoryClientInterface nodeRepository;
+    private final SelfHostedCostConfig selfHostedCostConfig;
 
-    public CostApiHandler(Context ctx, Controller controller, NodeRepositoryClientInterface nodeRepository) {
+    public CostApiHandler(Context ctx, Controller controller, NodeRepositoryClientInterface nodeRepository, SelfHostedCostConfig selfHostedCostConfig) {
         super(ctx);
         this.controller = controller;
         this.nodeRepository = nodeRepository;
+        this.selfHostedCostConfig = selfHostedCostConfig;
     }
 
     @Override
@@ -33,7 +36,7 @@ public class CostApiHandler extends LoggingRequestHandler {
         Path path = new Path(request.getUri().getPath());
 
         if (path.matches("/cost/v1/csv")) {
-            return new StringResponse(CostCalculator.toCsv(CostCalculator.calculateCost(nodeRepository, controller, Clock.systemUTC())));
+            return new StringResponse(CostCalculator.toCsv(CostCalculator.calculateCost(nodeRepository, controller, Clock.systemUTC(), selfHostedCostConfig)));
         }
 
         return ErrorResponse.notFoundError("Nothing at " + path);
