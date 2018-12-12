@@ -163,11 +163,11 @@ public class CuratorDatabase {
         }
 
         /**
-         * Returns the content of this child - which may be empty.
+         * Returns the a copy of the content of this child - which may be empty.
          * Returns null only if it is not present in this state mirror
          */
         public Optional<byte[]> getData(Path path) {
-            return data.computeIfAbsent(path, key -> curator.getData(path).map(data -> Arrays.copyOf(data, data.length)));
+            return data.computeIfAbsent(path, key -> curator.getData(path)).map(data -> Arrays.copyOf(data, data.length));
         }
 
     }
