@@ -93,14 +93,13 @@ public class CuratorDatabase {
     }
 
     /** Creates a path in curator and all its parents as necessary. If the path already exists this does nothing. */
-    // As this operation does not depend on the prior state we do not need to increment the write counter
-    public void create(Path path) {
+    void create(Path path) {
         curator.create(path);
         changeGenerationCounter.next(); // Increment counter to ensure getChildren sees any change.
     }
 
     /** Returns whether given path exists */
-    public boolean exists(Path path) {
+    boolean exists(Path path) {
         return curator.exists(path);
     }
 
@@ -110,9 +109,9 @@ public class CuratorDatabase {
     // the data to read is protected by a lock which is held now, and during any writes of the data.
 
     /** Returns the immediate, local names of the children under this node in any order */
-    public List<String> getChildren(Path path) { return getCache().getChildren(path); }
+    List<String> getChildren(Path path) { return getCache().getChildren(path); }
 
-    public Optional<byte[]> getData(Path path) { return getCache().getData(path); }
+    Optional<byte[]> getData(Path path) { return getCache().getData(path); }
 
     private static class CacheAndGeneration {
         public CacheAndGeneration(CuratorDatabaseCache cache, long generation)

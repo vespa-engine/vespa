@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
@@ -76,8 +77,8 @@ public class CuratorDatabaseClient {
         initZK();
     }
 
-    public CuratorDatabase curator() {
-        return curatorDatabase;
+    public List<HostName> cluster() {
+        return curatorDatabase.cluster();
     }
 
     private void initZK() {
