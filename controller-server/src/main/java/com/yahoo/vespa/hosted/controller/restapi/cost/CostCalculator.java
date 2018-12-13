@@ -3,9 +3,11 @@ package com.yahoo.vespa.hosted.controller.restapi.cost;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
+import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 
 import java.time.Clock;
@@ -19,7 +21,13 @@ import java.util.stream.Stream;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 public class CostCalculator {
-    public static Map<Property, ResourceAllocation> calculateCost(NodeRepositoryClientInterface nodeRepository, Controller controller, Clock clock) {
+
+    private static final double SELF_HOSTED_DISCOUNT = .5;
+
+    public static Map<Property, ResourceAllocation> calculateCost(NodeRepositoryClientInterface nodeRepository,
+                                                                  Controller controller,
+                                                                  Clock clock,
+                                                                  SelfHostedCostConfig selfHostedCostConfig) {
 
         String date = LocalDate.now(clock).toString();
 
@@ -29,6 +37,19 @@ public class CostCalculator {
                 .filter(node -> node.getOwner() != null && !node.getOwner().getTenant().equals("hosted-vespa"))
                 .collect(Collectors.toList());
 
+        selfHostedCostConfig.properties().stream().map(property -> {
+            NodeRepositoryNode selfHostedNode = new NodeRepositoryNode();
+
+            NodeOwner owner = new NodeOwner();
+            owner.tenant = property.name();
+            selfHostedNode.setOwner(owner);
+            selfHostedNode.setMinCpuCores(property.cpuCores() * SELF_HOSTED_DISCOUNT);
+            selfHostedNode.setMinMainMemoryAvailableGb(property.memoryGb() * SELF_HOSTED_DISCOUNT);
+            selfHostedNode.setMinDiskAvailableGb(property.diskGb() * SELF_HOSTED_DISCOUNT);
+
+            return selfHostedNode;
+        }).forEach(nodes::add);
+
         ResourceAllocation total = ResourceAllocation.from(date, nodes, null);
 
         Map<String, Property> propertyByTenantName = controller.tenants().asList().stream()
@@ -37,6 +58,10 @@ public class CostCalculator {
                         tenant -> tenant.name().value(),
                         tenant -> ((AthenzTenant) tenant).property()
                 ));
+
+        selfHostedCostConfig.properties().stream()
+                .map(SelfHostedCostConfig.Properties::name)
+                .forEach(name -> propertyByTenantName.put(name, new Property(name)));
 
         return nodes.stream()
                 .filter(node -> propertyByTenantName.containsKey(node.getOwner().tenant))

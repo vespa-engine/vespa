@@ -37,7 +37,8 @@ public class CostApiTest extends ControllerContainerTest {
 
     @Test
     public void test_api() {
-        assertResponse(new Request("http://localhost:8080/cost/v1/csv"), "Date,Property,Reserved Cpu Cores,Reserved Memory GB,Reserved Disk Space GB,Usage Fraction\n", 200);
+        assertResponse(new Request("http://localhost:8080/cost/v1/csv"),
+                "Date,Property,Reserved Cpu Cores,Reserved Memory GB,Reserved Disk Space GB,Usage Fraction\n", 200);
     }
 
     private ZoneRegistryMock zoneRegistryMock() {
