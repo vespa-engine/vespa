@@ -27,6 +27,7 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.net.URI;
 import java.time.Instant;
@@ -51,6 +52,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final Metrics metrics;
     private final Curator curator;
     private final DeployLogger logger;
+    private final FlagSource flagSource;
 
     public ActivatedModelsBuilder(TenantName tenant,
                                   long appGeneration,
@@ -68,6 +70,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.metrics = globalComponentRegistry.getMetrics();
         this.curator = globalComponentRegistry.getCurator();
         this.logger = new SilentDeployLogger();
+        this.flagSource = globalComponentRegistry.getFlagSource();
     }
 
     @Override
@@ -100,7 +103,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                applicationPackage.getMetaData().isInternalRedeploy(),
                                modelFactory.version(),
                                applicationMetricUpdater,
-                               applicationId);
+                               applicationId,
+                               flagSource);
     }
 
     private static <T> Optional<T> getForVersionOrLatest(Map<Version, T> map, Version version) {

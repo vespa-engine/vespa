@@ -16,6 +16,7 @@ import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Clock;
 import java.util.Optional;
@@ -41,6 +42,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
     private final ConfigServerDB configServerDB;
+    private final FlagSource flagSource;
 
     @SuppressWarnings("WeakerAccess")
     @Inject
@@ -57,7 +59,8 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            HostRegistries hostRegistries,
                                            HostProvisionerProvider hostProvisionerProvider,
                                            Zone zone,
-                                           ConfigServerDB configServerDB) {
+                                           ConfigServerDB configServerDB,
+                                           FlagSource flagSource) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.metrics = metrics;
@@ -72,6 +75,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.zone = zone;
         this.configServerDB = configServerDB;
+        this.flagSource = flagSource;
     }
 
     @Override
@@ -114,4 +118,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB; }
+
+    @Override
+    public FlagSource getFlagSource() { return flagSource; }
 }

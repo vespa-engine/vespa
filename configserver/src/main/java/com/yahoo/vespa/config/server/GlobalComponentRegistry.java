@@ -13,6 +13,7 @@ import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Clock;
 import java.util.Optional;
@@ -40,5 +41,6 @@ public interface GlobalComponentRegistry {
     Zone getZone();
     Clock getClock();
     ConfigServerDB getConfigServerDB();
+    FlagSource getFlagSource();
 
 }
