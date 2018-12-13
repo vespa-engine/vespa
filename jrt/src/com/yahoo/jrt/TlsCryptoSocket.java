@@ -1,6 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import com.yahoo.security.tls.authz.AuthorizationResult;
+import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager;
+
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
@@ -11,7 +14,8 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Logger;
 
-import static javax.net.ssl.SSLEngineResult.*;
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import static javax.net.ssl.SSLEngineResult.Status;
 
 /**
  * A {@link CryptoSocket} using TLS ({@link SSLEngine})
@@ -34,6 +38,7 @@ public class TlsCryptoSocket implements CryptoSocket {
     private int sessionApplicationBufferSize;
     private ByteBuffer handshakeDummyBuffer;
     private HandshakeState handshakeState;
+    private AuthorizationResult authorizationResult;
 
     public TlsCryptoSocket(SocketChannel channel, SSLEngine sslEngine) {
         this.channel = channel;
@@ -97,6 +102,10 @@ public class TlsCryptoSocket implements CryptoSocket {
                     return HandshakeState.COMPLETED;
                 case NEED_TASK:
                     sslEngine.getDelegatedTask().run();
+                    if (authorizationResult != null) {
+                        PeerAuthorizerTrustManager.getAuthorizationResult(sslEngine) // only available during handshake
+                                .ifPresent(result -> this.authorizationResult = result);
+                    }
                     break;
                 case NEED_UNWRAP:
                     if (wrapBuffer.bytes() > 0) return HandshakeState.NEED_WRITE;
