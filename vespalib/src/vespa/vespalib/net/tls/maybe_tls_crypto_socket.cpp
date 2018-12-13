@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "maybe_tls_crypto_socket.h"
+#include "statistics.h"
 #include "tls_crypto_socket.h"
 #include "protocol_snooping.h"
 #include <vespa/vespalib/data/smart_buffer.h>
@@ -54,6 +55,7 @@ public:
                 self = std::move(tls_socket);
                 return self->handshake();
             } else {
+                net::tls::ConnectionStatistics::get(true).inc_insecure_connections();
                 _factory.reset();
             }
         }

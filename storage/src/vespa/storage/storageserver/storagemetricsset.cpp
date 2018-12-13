@@ -12,8 +12,9 @@ MessageMemoryUseMetricSet::MessageMemoryUseMetricSet(metrics::MetricSet* owner)
       normalpri("normalpri", {{"memory"}}, "Message use from normal priority storage messages", this),
       highpri("highpri", {{"memory"}}, "Message use from high priority storage messages", this),
       veryhighpri("veryhighpri", {{"memory"}}, "Message use from very high priority storage messages", this)
-{ }
-MessageMemoryUseMetricSet::~MessageMemoryUseMetricSet() {}
+{}
+
+MessageMemoryUseMetricSet::~MessageMemoryUseMetricSet() = default;
 
 DocumentSerializationMetricSet::DocumentSerializationMetricSet(metrics::MetricSet* owner)
     : metrics::MetricSet("document_serialization", {{"docserialization"}},
@@ -42,8 +43,9 @@ DocumentSerializationMetricSet::DocumentSerializationMetricSet(metrics::MetricSe
             "Number of times we reserialized a document because the "
             "compression it had in cache did not match what was configured",
             this)
-{ }
-DocumentSerializationMetricSet::~DocumentSerializationMetricSet() { }
+{}
+
+DocumentSerializationMetricSet::~DocumentSerializationMetricSet() = default;
 
 StorageMetricSet::StorageMetricSet()
     : metrics::MetricSet("server", {{"memory"}},
@@ -52,9 +54,11 @@ StorageMetricSet::StorageMetricSet()
       memoryUse_messages(this),
       memoryUse_visiting("memoryusage_visiting", {{"memory"}},
             "Message use from visiting", this),
-      documentSerialization(this)
-{ }
-StorageMetricSet::~StorageMetricSet() { }
+      documentSerialization(this),
+      tls_metrics(this)
+{}
+
+StorageMetricSet::~StorageMetricSet() = default;
 
 void StorageMetricSet::updateMetrics() {
     document::SerializableArray::Statistics stats(
@@ -72,6 +76,12 @@ void StorageMetricSet::updateMetrics() {
             stats._serializedUncompressed);
     documentSerialization.inputWronglySerialized.set(
             stats._inputWronglySerialized);
+
+    // Delta snapshotting is destructive, so if an explicit snapshot is triggered
+    // (instead of just regular periodic snapshots), some events will effectively
+    // be erased from history. This will no longer be a problem once we move to a
+    // metrics system built around absolute (rather than derived) values.
+    tls_metrics.update_metrics_with_snapshot_delta();
 }
 
 } // storage
