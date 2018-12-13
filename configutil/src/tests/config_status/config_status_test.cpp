@@ -1,49 +1,44 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <lib/configstatus.h>
-#include <vespa/fastlib/net/httpserver.h>
+#include <vespa/vespalib/portal/portal.h>
 #include <vespa/config-model.h>
 #include <vespa/config/config.h>
 #include <vespa/config/subscription/sourcespec.h>
 
 using namespace config;
+using vespalib::Portal;
+using vespalib::NullCryptoEngine;
 
-class HTTPStatus : private Fast_HTTPServer {
+auto create_server() { return Portal::create(std::make_shared<NullCryptoEngine>(), 0); }
+
+class HTTPStatus : public vespalib::Portal::GetHandler {
 private:
+    Portal::SP _server;
     std::string _reply;
     bool _fail;
+    Portal::Token::UP _root;
 
-    void onGetRequest(const string &, const string &, Fast_HTTPConnection &conn) override {
+    void get(Portal::GetRequest request) const override {
         if (_fail) {
-            conn.Output(conn.GetHTTPVersion().c_str());
-            conn.Output(" 500 Error\r\n");
-            conn.Output("Connection: close\r\n");
-            conn.Output("\r\n");
+            request.respond_with_error(500, "Error");
         } else {
-            conn.Output(conn.GetHTTPVersion().c_str());
-            conn.Output(" 200 OK\r\n");
-            conn.Output("Content-Type: application/json\r\n\r\n");
-            conn.Output(_reply.c_str());
+            request.respond_with_content("application/json", _reply);
         }
     };
 
-
 public:
     HTTPStatus(std::string reply)
-        : Fast_HTTPServer(0), _reply(reply), _fail(false)
-        {
-            Start();
-        };
+        : _server(create_server()), _reply(reply), _fail(false),
+          _root(_server->bind("/", *this)) {}
     HTTPStatus(bool fail)
-        : Fast_HTTPServer(0), _reply(""), _fail(fail)
-        {
-            Start();
-        };
+        : _server(create_server()), _reply(""), _fail(fail),
+          _root(_server->bind("/", *this)) {}
 
-    int getListenPort() { return Fast_HTTPServer::getListenPort(); }
+    int getListenPort() { return _server->listen_port(); }
 
     ~HTTPStatus() {
-        Stop();
+        _root.reset();
     };
 };
 
