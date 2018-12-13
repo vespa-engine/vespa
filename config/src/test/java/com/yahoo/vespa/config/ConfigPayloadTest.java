@@ -253,7 +253,10 @@ public class ConfigPayloadTest {
 
     @Test
     public void test_simple_struct() throws Exception {
-        StructtypesConfig config = createStructtypesConfigSimple("foobar", "MALE", new String[] { "foo@bar", "bar@foo" });
+        Slime slime = new Slime();
+        addStructFields(slime.setObject().setObject("simple"), "foobar", "MALE", new String[] { "foo@bar", "bar@foo" });
+        StructtypesConfig config = new ConfigPayload(slime).toInstance(StructtypesConfig.class, "");
+
         assertThat(config.simple().name(), is("foobar"));
         assertThat(config.simple().gender(), is(StructtypesConfig.Simple.Gender.Enum.MALE));
         assertThat(config.simple().emails(0), is("foo@bar"));
@@ -410,12 +413,6 @@ public class ConfigPayloadTest {
                 array.addString(email);
             }
         }
-    }
-
-    private StructtypesConfig createStructtypesConfigSimple(String name, String gender, String [] emails) {
-        Slime slime = new Slime();
-        addStructFields(slime.setObject().setObject("simple"), name, gender, emails);
-        return new ConfigPayload(slime).toInstance(StructtypesConfig.class, "");
     }
 
     private StructtypesConfig createStructtypesConfigArray(String[] names, String[] genders) {
