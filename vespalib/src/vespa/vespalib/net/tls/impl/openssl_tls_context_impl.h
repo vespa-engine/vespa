@@ -7,6 +7,8 @@
 #include <vespa/vespalib/net/tls/certificate_verification_callback.h>
 #include <vespa/vespalib/stllike/string.h>
 
+#include <chrono>
+
 namespace vespalib::net::tls::impl {
 
 class OpenSslTlsContextImpl : public TlsContext {
@@ -21,13 +23,10 @@ public:
     ~OpenSslTlsContextImpl() override;
 
     ::SSL_CTX* native_context() const noexcept { return _ctx.get(); }
-    // Transport options this context was created with, but with the private key
-    // information scrubbed away.
-    const TransportSecurityOptions& transport_security_options() const noexcept {
+    const TransportSecurityOptions& transport_security_options() const noexcept override {
         return _redacted_transport_options;
     }
-    // AuthorizationMode this context was created with
-    AuthorizationMode authorization_mode() const noexcept { return _authorization_mode; }
+    AuthorizationMode authorization_mode() const noexcept override { return _authorization_mode; }
 private:
     // Note: single use per instance; does _not_ clear existing chain!
     void add_certificate_authorities(stringref ca_pem);
@@ -44,6 +43,8 @@ private:
     void disable_renegotiation();
     void enforce_peer_certificate_verification();
     void set_ssl_ctx_self_reference();
+
+    bool verify_trusted_certificate(::X509_STORE_CTX* store_ctx);
 
     static int verify_cb_wrapper(int preverified_ok, ::X509_STORE_CTX* store_ctx);
 };

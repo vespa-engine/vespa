@@ -2,6 +2,7 @@
 #pragma once
 
 #include "authorization_mode.h"
+
 #include <memory>
 
 namespace vespalib::net::tls {
@@ -11,6 +12,12 @@ struct CertificateVerificationCallback;
 
 struct TlsContext {
     virtual ~TlsContext() = default;
+
+    // Transport options this context was created with, but with the private key
+    // information scrubbed away.
+    virtual const TransportSecurityOptions& transport_security_options() const noexcept = 0;
+    // AuthorizationMode this context was created with
+    virtual AuthorizationMode authorization_mode() const noexcept = 0;
 
     // Create a TLS context which verifies certificates according to the provided options'
     // CA trust roots AND authorized peer policies

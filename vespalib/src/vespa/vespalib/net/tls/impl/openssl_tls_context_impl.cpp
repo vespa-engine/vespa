@@ -2,6 +2,7 @@
 #include "openssl_typedefs.h"
 #include "openssl_tls_context_impl.h"
 #include <vespa/vespalib/net/tls/crypto_exception.h>
+#include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <mutex>
@@ -407,52 +408,55 @@ int OpenSslTlsContextImpl::verify_cb_wrapper(int preverified_ok, ::X509_STORE_CT
     // since we trust the intermediates to have done their job.
     const bool is_peer_cert = (::X509_STORE_CTX_get_error_depth(store_ctx) == 0);
     if (!is_peer_cert) {
-        return 1; // OK for root/intermediate cert.
+        return 1; // OK for root/intermediate cert. Callback will be invoked again for other certs.
     }
     // Fetch the SSL instance associated with the X509_STORE_CTX
     const void* data = ::X509_STORE_CTX_get_ex_data(store_ctx, ::SSL_get_ex_data_X509_STORE_CTX_idx());
-    if (!data) {
-        return 0;
-    }
+    LOG_ASSERT(data != nullptr);
     const auto* ssl = static_cast<const ::SSL*>(data);
     const ::SSL_CTX* ssl_ctx = ::SSL_get_SSL_CTX(ssl);
-    if (!ssl_ctx) {
-        return 0;
-    }
+    LOG_ASSERT(ssl_ctx != nullptr);
     auto* self = static_cast<OpenSslTlsContextImpl*>(SSL_CTX_get_app_data(ssl_ctx));
-    if (!self) {
-        return 0;
+    LOG_ASSERT(self != nullptr);
+
+    if (self->verify_trusted_certificate(store_ctx)) {
+        return 1;
     }
-    const auto authz_mode = self->authorization_mode();
+    ConnectionStatistics::get(SSL_in_accept_init(ssl) != 0).inc_invalid_peer_credentials();
+    return 0;
+}
+
+bool OpenSslTlsContextImpl::verify_trusted_certificate(::X509_STORE_CTX* store_ctx) {
+    const auto authz_mode = authorization_mode();
     // TODO consider if we want to fill in peer credentials even if authorization is disabled
     if (authz_mode == AuthorizationMode::Disable) {
-        return 1;
+        return true;
     }
     ::X509* cert = ::X509_STORE_CTX_get_current_cert(store_ctx); // _not_ owned by us
     if (!cert) {
         LOG(error, "Got X509_STORE_CTX with preverified_ok == 1 but no current cert");
-        return 0;
+        return false;
     }
     PeerCredentials creds;
     if (!fill_certificate_common_name(cert, creds)) {
-        return 0;
+        return false;
     }
     if (!fill_certificate_subject_alternate_names(cert, creds)) {
-        return 0;
+        return false;
     }
     try {
-        const bool verified_by_cb = self->_cert_verify_callback->verify(creds);
+        const bool verified_by_cb = _cert_verify_callback->verify(creds);
         if (!verified_by_cb) {
             // TODO we should print the peer's remote address too, but that information is
             // not currently available to us here.
             LOG(warning, "Certificate verification failed for %s", to_string(creds).c_str());
-            return (authz_mode == AuthorizationMode::Enforce) ? 0 : 1;
+            return (authz_mode != AuthorizationMode::Enforce);
         }
     } catch (std::exception& e) {
         LOG(error, "Got exception during certificate verification callback: %s", e.what());
-        return 0;
+        return false;
     } // we don't expect any non-std::exception derived exceptions, so let them terminate the process.
-    return 1;
+    return true;
 }
 
 void OpenSslTlsContextImpl::enforce_peer_certificate_verification() {
