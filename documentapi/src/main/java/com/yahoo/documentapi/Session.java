@@ -18,7 +18,7 @@ public interface Session {
      *
      * @return the next response, or null if no response is ready at this time
      */
-    public Response getNext();
+    Response getNext();
 
     /**
      * Returns the next response of this session. This will block until a response is ready
@@ -28,12 +28,12 @@ public interface Session {
      * @return the next response, or null if no response becomes ready before the timeout expires
      * @throws InterruptedException if this thread is interrupted while waiting
      */
-    public Response getNext(int timeoutMilliseconds) throws InterruptedException;
+    Response getNext(int timeoutMilliseconds) throws InterruptedException;
 
     /**
      * Destroys this session and frees up any resources it has held. Making further calls on a destroyed
      * session causes a runtime exception.
      */
-    public void destroy();
+    void destroy();
 
 }

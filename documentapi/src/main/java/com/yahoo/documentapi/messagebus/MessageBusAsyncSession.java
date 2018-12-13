@@ -32,7 +32,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
 
     private static final Logger log = Logger.getLogger(MessageBusAsyncSession.class.getName());
     private final AtomicLong requestId = new AtomicLong(0);
-    private final BlockingQueue<Response> responses = new LinkedBlockingQueue<Response>();
+    private final BlockingQueue<Response> responses = new LinkedBlockingQueue<>();
     private final ThrottlePolicy throttlePolicy;
     private final SourceSession session;
     private String route;
@@ -120,8 +120,8 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
      * A convenience method for assigning the internal trace level and route string to a message before sending it
      * through the internal mbus session object.
      *
-     * @param msg The message to send.
-     * @return The document api result object.
+     * @param msg the message to send.
+     * @return the document api result object.
      */
     public Result send(Message msg) {
         try {
@@ -292,4 +292,5 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
             }
         }
     }
+
 }
