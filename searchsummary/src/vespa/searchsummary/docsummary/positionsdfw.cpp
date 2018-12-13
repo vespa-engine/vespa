@@ -5,6 +5,8 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <cmath>
 #include <climits>
 
@@ -113,6 +115,63 @@ PositionsDFW::PositionsDFW(const vespalib::string & attrName) :
 }
 
 namespace {
+
+void
+insertPos(int64_t docxy, vespalib::slime::Inserter &target)
+{
+
+    int32_t docx = 0;
+    int32_t docy = 0;
+    vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
+    if (docx == 0 && docy == INT_MIN) {
+        LOG(spam, "skipping empty zcurve value");
+        return;
+    }
+    vespalib::slime::Cursor &obj = target.insertObject();
+    obj.setLong("y", docy);
+    obj.setLong("x", docx);
+
+    double degrees_ns = docy;
+    degrees_ns /= 1000000.0;
+    double degrees_ew = docx;
+    degrees_ew /= 1000000.0;
+
+    vespalib::asciistream latlong;
+    latlong << vespalib::FloatSpec::fixed;
+    if (degrees_ns < 0) {
+        latlong << "S" << (-degrees_ns);
+    } else {
+        latlong << "N" << degrees_ns;
+    }
+    latlong << ";";
+    if (degrees_ew < 0) {
+        latlong << "W" << (-degrees_ew);
+    } else {
+        latlong << "E" << degrees_ew;
+    }
+    obj.setString("latlong", vespalib::Memory(latlong.str()));
+}
+
+void
+insertFromAttr(const attribute::IAttributeVector &attribute, uint32_t docid, vespalib::slime::Inserter &target)
+{
+    std::vector<IAttributeVector::largeint_t> pos(16);
+    uint32_t numValues = attribute.get(docid, &pos[0], pos.size());
+    if (numValues > pos.size()) {
+        pos.resize(numValues);
+        numValues = attribute.get(docid, &pos[0], pos.size());
+        assert(numValues <= pos.size());
+    }
+    LOG(debug, "docid=%d, numValues=%d", docid, numValues);
+    if (numValues > 0) {
+        vespalib::slime::Cursor &arr = target.insertArray();
+        for (uint32_t i = 0; i < numValues; i++) {
+            vespalib::slime::ArrayInserter ai(arr);
+            insertPos(pos[i], ai);
+        }
+    }
+}
+
 vespalib::asciistream
 formatField(const attribute::IAttributeVector &attribute, uint32_t docid, ResType type) {
     vespalib::asciistream target;
@@ -169,6 +228,10 @@ void
 PositionsDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState * dsState,
                           ResType type, vespalib::slime::Inserter &target)
 {
+    if (type == RES_XMLSTRING) {
+        insertFromAttr(vec(*dsState), docid, target);
+        return;
+    }
     vespalib::asciistream val(formatField(vec(*dsState), docid, type));
     target.insertString(vespalib::Memory(val.c_str(), val.size()));
 }
