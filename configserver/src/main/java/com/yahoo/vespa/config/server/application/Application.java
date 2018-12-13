@@ -23,6 +23,9 @@ import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
 import com.yahoo.vespa.config.server.modelfactory.ModelResult;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.util.ConfigUtils;
+import com.yahoo.vespa.flags.FeatureFlag;
+import com.yahoo.vespa.flags.FileFlagSource;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.util.Objects;
 import java.util.Set;
@@ -44,9 +47,15 @@ public class Application implements ModelResult {
     private final ServerCache cache;
     private final MetricUpdater metricUpdater;
     private final ApplicationId app;
+    private final FeatureFlag useConfigServerCache;
 
     public Application(Model model, ServerCache cache, long appGeneration, boolean internalRedeploy,
                        Version vespaVersion, MetricUpdater metricUpdater, ApplicationId app) {
+        this(model, cache, appGeneration, internalRedeploy, vespaVersion, metricUpdater, app, new FileFlagSource());
+    }
+
+    public Application(Model model, ServerCache cache, long appGeneration, boolean internalRedeploy,
+                       Version vespaVersion, MetricUpdater metricUpdater, ApplicationId app, FlagSource flagSource) {
         Objects.requireNonNull(model, "The model cannot be null");
         this.model = model;
         this.cache = cache;
@@ -55,6 +64,7 @@ public class Application implements ModelResult {
         this.vespaVersion = vespaVersion;
         this.metricUpdater = metricUpdater;
         this.app = app;
+        this.useConfigServerCache = new FeatureFlag("use-config-server-cache", true, flagSource);
     }
 
     /**
@@ -109,7 +119,7 @@ public class Application implements ModelResult {
             debug("Resolving config " + cacheKey);
         }
 
-        if ( ! req.noCache()) {
+        if (useCache(req)) {
             ConfigResponse config = cache.get(cacheKey);
             if (config != null) {
                 if (logDebug()) {
@@ -136,12 +146,19 @@ public class Application implements ModelResult {
 
         ConfigResponse configResponse = responseFactory.createResponse(payload, def.getCNode(), appGeneration, internalRedeploy);
         metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
-        if ( ! req.noCache()) {
+        if (useCache(req)) {
             cache.put(cacheKey, configResponse, configResponse.getConfigMd5());
             metricUpdater.setCacheConfigElems(cache.configElems());
             metricUpdater.setCacheChecksumElems(cache.checkSumElems());
         }
         return configResponse;
+    }
+
+    private boolean useCache(GetConfigRequest request) {
+        if (request.noCache())
+            return false;
+        else
+            return useConfigServerCache.value();
     }
 
     private boolean logDebug() {

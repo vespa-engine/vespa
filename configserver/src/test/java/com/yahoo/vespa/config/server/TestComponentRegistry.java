@@ -21,6 +21,8 @@ import com.yahoo.vespa.config.server.tenant.TenantRequestHandlerTest;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.flags.FileFlagSource;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 
 import java.time.Clock;
@@ -196,7 +198,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public Clock getClock() { return clock;}
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB;}
-
+    @Override
+    public FlagSource getFlagSource() { return new FileFlagSource(); }
 
     public FileDistributionFactory getFileDistributionFactory() { return fileDistributionFactory; }
 
