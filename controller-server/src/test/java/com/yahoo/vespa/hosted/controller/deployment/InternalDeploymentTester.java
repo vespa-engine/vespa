@@ -192,6 +192,9 @@ public class InternalDeploymentTester {
         assertEquals(Step.Status.succeeded, jobs.active(run.id()).get().steps().get(Step.installReal));
 
         assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installTester));
+        tester.configServer().nodeRepository().doUpgrade(new DeploymentId(testerId.id(), zone), Optional.empty(), run.versions().targetPlatform());
+        runner.run();
+        assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installTester));
         tester.configServer().convergeServices(testerId.id(), zone);
         runner.run();
         assertEquals(Step.Status.succeeded, jobs.active(run.id()).get().steps().get(Step.installTester));
