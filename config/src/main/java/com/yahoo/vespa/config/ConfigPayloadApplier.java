@@ -422,19 +422,13 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     private String printCurrentConfigName() {
-        StringBuilder sb = new StringBuilder();
         ArrayList<String> stackElements = new ArrayList<>();
         Stack<String> nameStack = stack.peek().nameStack();
         while (!nameStack.empty()) {
             stackElements.add(nameStack.pop());
         }
         Collections.reverse(stackElements);
-        for (String s : stackElements) {
-            sb.append(s);
-            sb.append(".");
-        }
-        sb.deleteCharAt(sb.length() - 1); // remove last .
-        return sb.toString();
+        return String.join(".", stackElements);
     }
 
     private void debug(String message) {
