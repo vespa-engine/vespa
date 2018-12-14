@@ -76,6 +76,7 @@ public class MessageBusSessionFactory implements SessionFactory {
     }
 
     private class SourceSessionWrapper extends SendSession {
+
         private final SourceSession session;
         private final Metric metric;
         private final Metric.Context context;

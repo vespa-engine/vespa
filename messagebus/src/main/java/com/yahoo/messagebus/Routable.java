@@ -69,41 +69,27 @@ public abstract class Routable {
         return callStack.pop(this);
     }
 
-    /**
-     * Return the context of this routable.
-     *
-     * @return The context.
-     */
+    /** Returns the context of this routable. */
     public Object getContext() {
         return context;
     }
 
     /**
-     * Set a new context for this routable. Please note that the context is <u>not</u> something that is passed along a
+     * Sets a new context for this routable. Please note that the context is <u>not</u> something that is passed along a
      * message, it is simply a user context for the handler currently manipulating a message. When the corresponding
      * reply reaches the registered reply handler, its content will be the same as that of the outgoing message. More
      * technically, this context is contained in the callstack of a routable.
-     *
-     * @param context The new context.
      */
     public void setContext(Object context) {
         this.context = context;
     }
 
-    /**
-     * Return the callstack of this routable.
-     *
-     * @return The callstack.
-     */
+    /** Returns the callstack of this routable. */
     public CallStack getCallStack() {
         return callStack;
     }
 
-    /**
-     * Returns the trace object of this routable.
-     *
-     * @return The trace object.
-     */
+    /** Returns the trace object of this routable. */
     public Trace getTrace() {
         return trace;
     }
@@ -112,15 +98,14 @@ public abstract class Routable {
      * Return the name of the protocol that defines this routable. This must be implemented by all inheriting classes,
      * and should then return the result of {@link com.yahoo.messagebus.Protocol#getName} of its protocol.
      *
-     * @return The name of the protocol defining this message.
+     * @return the name of the protocol defining this message.
      */
     public abstract Utf8String getProtocol();
 
     /**
-     * Obtain the type of this routable. The id '0' is reserved for the EmptyReply class. Other ids must be defined by
+     * Returns the type of this routable. The id '0' is reserved for the EmptyReply class. Other ids must be defined by
      * the application protocol.
-     *
-     * @return The message type.
      */
     public abstract int getType();
+
 }

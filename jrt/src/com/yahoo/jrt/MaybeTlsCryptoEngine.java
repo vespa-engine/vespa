@@ -9,7 +9,7 @@ import java.nio.channels.SocketChannel;
  * auto-detected using clever heuristics. The use of tls for outgoing
  * connections is controlled by the useTlsWhenClient flag given to the
  * constructor.
- **/
+ */
 public class MaybeTlsCryptoEngine implements CryptoEngine {
 
     private final TlsCryptoEngine tlsEngine;
@@ -20,7 +20,8 @@ public class MaybeTlsCryptoEngine implements CryptoEngine {
         this.useTlsWhenClient = useTlsWhenClient;
     }
 
-    @Override public CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer) {
+    @Override
+    public CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer) {
         if (isServer) {
             return new MaybeTlsCryptoSocket(channel, tlsEngine);
         } else if (useTlsWhenClient) {
@@ -30,7 +31,8 @@ public class MaybeTlsCryptoEngine implements CryptoEngine {
         }
     }
 
-    @Override public String toString() { return "MaybeTlsCryptoEngine(useTlsWhenClient:" + useTlsWhenClient + ")"; }
+    @Override
+    public String toString() { return "MaybeTlsCryptoEngine(useTlsWhenClient:" + useTlsWhenClient + ")"; }
 
     @Override
     public void close() {

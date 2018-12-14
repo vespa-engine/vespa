@@ -1,25 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingTable;
-import com.yahoo.text.Utf8String;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 /**
- * <p>A session supporting sending new messages.</p>
+ * A session supporting sending new messages.
  *
  * @author Simon Thoresen Hult
  */
 public final class SourceSession implements ReplyHandler, MessageBus.SendBlockedMessages {
 
-    private static Logger log = Logger.getLogger(SourceSession.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final CountDownLatch done = new CountDownLatch(1);
     private final Object lock = new Object();
@@ -116,11 +113,12 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
      * </code>
      *
      * @param msg the message to send
-     * @return The result of <i>initiating</i> sending of this message.
+     * @return the result of <i>initiating</i> sending of this message
      */
     public Result send(Message msg) {
         return sendInternal(updateTiming(msg));
     }
+
     private Message updateTiming(Message msg) {
         msg.setTimeReceivedNow();
         if (msg.getTimeRemaining() <= 0) {
@@ -128,13 +126,14 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
         }
         return msg;
     }
+
     private Result sendInternal(Message msg) {
         synchronized (lock) {
             if (closed) {
                 return new Result(ErrorCode.SEND_QUEUE_CLOSED,
                                   "Source session is closed.");
             }
-            if (throttlePolicy != null && !throttlePolicy.canSend(msg, pendingCount)) {
+            if (throttlePolicy != null && ! throttlePolicy.canSend(msg, pendingCount)) {
                 return new Result(ErrorCode.SEND_QUEUE_FULL,
                                   "Too much pending data (" + pendingCount + " messages).");
             }
@@ -247,7 +246,7 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
 
     private void expireStalledBlockedMessages() {
         synchronized (lock) {
-            final Iterator<BlockedMessage> each = blockedQ.iterator();
+            Iterator<BlockedMessage> each = blockedQ.iterator();
             while (each.hasNext()) {
                 if (each.next().notifyIfExpired()) {
                     each.remove();

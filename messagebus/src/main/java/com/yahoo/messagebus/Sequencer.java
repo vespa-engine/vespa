@@ -103,7 +103,7 @@ public class Sequencer implements MessageHandler, ReplyHandler {
      * sequencing-id, it is simply passed through to the next handler in the chain. Sequenced messages are sent only if
      * there is no queue for their id, otherwise they are queued.
      *
-     * @param msg The message to send.
+     * @param msg the message to send.
      */
     @Override
     public void handleMessage(Message msg) {
