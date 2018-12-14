@@ -11,6 +11,14 @@ search types {
       indexing: index | summary | attribute
     }
 
+    field abool type bool {
+      indexing: summary | attribute
+    }
+
+    field ashortfloat type float16 {
+      indexing: summary | attribute
+    }
+
     field arrayfield type array<int> {
       indexing: attribute
     }

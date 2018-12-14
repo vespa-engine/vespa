@@ -3,6 +3,7 @@ package com.yahoo.document;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
@@ -11,8 +12,8 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
 import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.Float16FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.UriFieldValue;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.objects.Identifiable;
@@ -39,7 +40,6 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     // NOTE: These types are also defined in
     // document/src/vespa/document/datatype/datatype.h
     // Changes here must also be done there
-
     public final static NumericDataType NONE = new NumericDataType("none", -1, IntegerFieldValue.class, IntegerFieldValue.getFactory());
     public final static NumericDataType INT = new NumericDataType("int", 0, IntegerFieldValue.class, IntegerFieldValue.getFactory());
     public final static NumericDataType FLOAT = new NumericDataType("float", 1, FloatFieldValue.class, FloatFieldValue.getFactory());
@@ -47,6 +47,8 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     public final static PrimitiveDataType RAW = new PrimitiveDataType("raw", 3, Raw.class, Raw.getFactory());
     public final static NumericDataType LONG = new NumericDataType("long", 4, LongFieldValue.class, LongFieldValue.getFactory());
     public final static NumericDataType DOUBLE = new NumericDataType("double", 5, DoubleFieldValue.class, DoubleFieldValue.getFactory());
+    public final static PrimitiveDataType BOOL = new PrimitiveDataType("bool", 6, BoolFieldValue.class, BoolFieldValue.getFactory());
+    public final static NumericDataType FLOAT16 = new NumericDataType("float16", 7, Float16FieldValue.class, Float16FieldValue.getFactory());
     public final static DocumentType DOCUMENT = new DocumentType("document");
     public final static PrimitiveDataType URI = new PrimitiveDataType("uri", 10, UriFieldValue.class, new UriFieldValue.Factory());
     public final static NumericDataType BYTE = new NumericDataType("byte", 16, ByteFieldValue.class, ByteFieldValue.getFactory());
@@ -82,7 +84,6 @@ public abstract class DataType extends Identifiable implements Serializable, Com
         this.dataTypeId = dataTypeId;
     }
 
-    @SuppressWarnings("CloneDoesntDeclareCloneNotSupportedException")
     public DataType clone() {
         return (DataType)super.clone();
     }

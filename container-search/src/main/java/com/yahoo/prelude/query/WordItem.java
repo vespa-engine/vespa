@@ -9,14 +9,14 @@ import com.yahoo.protect.Validator;
 import java.nio.ByteBuffer;
 
 /**
- * A term item containing a single word.
+ * A simple word or token to match in some field.
  *
  * @author bratseth
  * @author havardpe
  */
 public class WordItem extends TermItem {
 
-    /** True if this is <b>not</b> part of the special tokens dictionary */
+    /** True if this is not part of the special tokens dictionary */
     private boolean words = true;
 
     /** Is this word stemmed? */
@@ -141,24 +141,20 @@ public class WordItem extends TermItem {
     }
 
     /** Word items uses a empty heading instead of "WORD " */
+    @Override
     protected void appendHeadingString(StringBuilder buffer) {}
 
+    @Override
     public int hashCode() {
         return word.hashCode() + 71 * super.hashCode();
     }
 
+    @Override
     public boolean equals(Object object) {
-        if (!super.equals(object)) {
-            return false;
-        }
+        if (!super.equals(object)) return false;
 
         WordItem other = (WordItem) object; // Ensured by superclass
-
-        if (!this.word.equals(other.word)) {
-            return false;
-        }
-
-        return true;
+        return this.word.equals(other.word);
     }
 
     public int getNumWords() {
@@ -188,4 +184,5 @@ public class WordItem extends TermItem {
         discloser.addProperty("stemmed", stemmed);
         discloser.addProperty("words", words);
     }
+
 }

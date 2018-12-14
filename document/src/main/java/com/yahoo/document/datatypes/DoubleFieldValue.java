@@ -11,16 +11,18 @@ import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.vespa.objects.Ids;
 
 /**
- * FieldValue which encapsulates a double.
+ * A 64-bit float field value
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public final class DoubleFieldValue extends NumericFieldValue {
+
     private static class Factory extends PrimitiveDataType.Factory {
         public FieldValue create() {
             return new DoubleFieldValue();
         }
     }
+
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }
     public static final int classId = registerClass(Ids.document + 14, DoubleFieldValue.class);
     private double value;

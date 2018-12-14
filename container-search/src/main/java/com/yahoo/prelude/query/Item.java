@@ -304,7 +304,7 @@ public abstract class Item implements Cloneable {
     public static void putString(String s, ByteBuffer buffer) {
         putBytes(Utf8.toBytes(s), buffer);
     }
-    public static void putBytes(byte [] bytes, ByteBuffer buffer) {
+    public static void putBytes(byte[] bytes, ByteBuffer buffer) {
         IntegerCompressor.putCompressedPositiveNumber(bytes.length, buffer);
         buffer.put(bytes);
     }
@@ -324,6 +324,7 @@ public abstract class Item implements Cloneable {
      * TODO: Change the output query language into a canonical form of the input
      *       query language
      */
+    @Override
     public String toString() {
         StringBuilder buffer = new StringBuilder();
 

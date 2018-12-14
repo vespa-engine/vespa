@@ -10,8 +10,8 @@ import java.util.Map;
  */
 public class DocumentTypeRepo implements DocumentTypeCollection {
 
-    final Map<Integer, NewDocumentType> typeById = new LinkedHashMap<>();
-    final Map<NewDocumentType.Name, NewDocumentType> typeByName = new LinkedHashMap<>();
+    private final Map<Integer, NewDocumentType> typeById = new LinkedHashMap<>();
+    private final Map<NewDocumentType.Name, NewDocumentType> typeByName = new LinkedHashMap<>();
 
     public final NewDocumentType getDocumentType(String name) {
         return typeByName.get(new NewDocumentType.Name(name));

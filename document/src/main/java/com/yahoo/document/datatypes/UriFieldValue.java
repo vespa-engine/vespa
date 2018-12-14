@@ -10,12 +10,10 @@ import com.yahoo.net.Url;
 import java.net.URI;
 
 /**
- * Created with IntelliJ IDEA.
- * User: magnarn
- * Date: 11/2/12
- * Time: 2:37 PM
+ * @author Magnar Nedland
  */
 public class UriFieldValue extends StringFieldValue {
+
     public static class Factory extends PrimitiveDataType.Factory {
         public FieldValue create() {
             return new UriFieldValue();
@@ -46,4 +44,5 @@ public class UriFieldValue extends StringFieldValue {
         super.deserialize(field, reader);
         Url.fromString(toString());  // Throws if value is invalid.
     }
+
 }

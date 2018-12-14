@@ -247,6 +247,12 @@ public class YqlParserTestCase {
     }
 
     @Test
+    public void testBoolean() {
+        assertParse("select foo from bar where flag = true;", "flag:true");
+        assertParse("select foo from bar where flag = false;", "flag:false");
+    }
+
+    @Test
     public void testTermAnnotations() {
         assertEquals("merkelapp",
                      getRootWord("select foo from bar where baz contains " +

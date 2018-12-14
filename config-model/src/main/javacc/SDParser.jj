@@ -828,14 +828,13 @@ SDDocumentType structDefinition(Search search, SDDocumentType repo) :
  */
 DataType dataType() :
 {
-    String typeName=null;
+    String typeName = null;
     boolean isArrayOldStyle = false;
-    DataType mapType=null;
-	DataType arrayType=null;
-    DataType wsetType=null;
+    DataType mapType = null;
+	DataType arrayType = null;
+    DataType wsetType = null;
     TensorType tensorType;
     TemporaryStructuredDataType referenceType;
-
 }
 {
     (   LOOKAHEAD(<ARRAY> <LESSTHAN>)               ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return DataType.getArray(arrayType); } )
@@ -849,10 +848,9 @@ DataType dataType() :
     {
         DataType type = VespaDocumentType.INSTANCE.getDataType(typeName);
 
-        //is type still null?
         if (type == null) {
-            //we are basically creating TemporaryStructDataType instances for ANYTHING here!!
-            //we must do this and clean them up later.
+            // we are basically creating TemporaryStructDataType instances for ANYTHING here!!
+            // we must do this and clean them up later.
             type = TemporaryStructuredDataType.create(typeName);
         }
 

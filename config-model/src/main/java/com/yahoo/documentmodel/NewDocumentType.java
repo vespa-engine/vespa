@@ -32,7 +32,6 @@ import static java.util.Collections.emptySet;
  */
 public final class NewDocumentType extends StructuredDataType implements DataTypeCollection {
 
-
     public static final class Name {
 
         // TODO: privatize
@@ -381,10 +380,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         return this;
     }
 
-    /**
-     * The field sets defined for this type and its {@link Search}
-     * @return fieldsets
-     */
+    /** The field sets defined for this type and its {@link Search} */
     public Set<FieldSet> getFieldSets() {
         return Collections.unmodifiableSet(fieldSets);
     }

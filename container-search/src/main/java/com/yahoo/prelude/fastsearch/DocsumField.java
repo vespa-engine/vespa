@@ -48,10 +48,12 @@ public abstract class DocsumField {
         fieldFactory = new FieldFactory();
 
         try {
+            fieldFactory.put("bool", BoolField.class);
             fieldFactory.put("byte", ByteField.class);
             fieldFactory.put("short", ShortField.class);
             fieldFactory.put("integer", IntegerField.class);
             fieldFactory.put("int64", Int64Field.class);
+            fieldFactory.put("float16", Float16Field.class);
             fieldFactory.put("float", FloatField.class);
             fieldFactory.put("double", DoubleField.class);
             fieldFactory.put("string", StringField.class);

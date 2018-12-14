@@ -12,8 +12,8 @@ import java.util.Map;
  */
 public class DataTypeRepo implements DataTypeCollection {
 
-    Map<Integer, DataType> typeById = new LinkedHashMap<>();
-    Map<String, DataType> typeByName = new LinkedHashMap<>();
+    private Map<Integer, DataType> typeById = new LinkedHashMap<>();
+    private Map<String, DataType> typeByName = new LinkedHashMap<>();
 
     public DataType getDataType(String name) {
         return typeByName.get(name);

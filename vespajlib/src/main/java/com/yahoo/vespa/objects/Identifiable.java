@@ -175,9 +175,9 @@ public class Identifiable extends Selectable implements Cloneable {
      *
      * <code>public static int classId = registerClass(&lt;id&gt;, &lt;ClassName&gt;.class);</code>
      *
-     * @param id   The class identifier to register with.
-     * @param spec The class to register.
-     * @return the identifier argument.
+     * @param id   the class identifier to register with
+     * @param spec the class to register
+     * @return the identifier argument
      */
     protected static int registerClass(int id, Class<? extends Identifiable> spec) {
         if (registry == null) {

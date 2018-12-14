@@ -4,6 +4,7 @@ package com.yahoo.document.datatypes;
 import com.yahoo.document.DataType;
 
 public abstract class CompositeFieldValue extends FieldValue {
+
     private DataType dataType;
 
     public CompositeFieldValue(DataType dataType) {
@@ -36,4 +37,5 @@ public abstract class CompositeFieldValue extends FieldValue {
         result = 31 * result + (dataType != null ? dataType.hashCode() : 0);
         return result;
     }
+
 }
