@@ -140,15 +140,15 @@ indexing.semiunboundtasklimit int default = 40000 restart
 ## before being used for serving
 index.warmup.time double default=0.0 restart
 
-# Indicate if we also want warm up with full unpack, instead of only  cheaper seek.
+# Indicate if we also want warm up with full unpack, instead of only cheaper seek.
 index.warmup.unpack bool default=false restart
 
-## How many flushed indexes there can be befor fusion is forced while node is
+## How many flushed indexes there can be before fusion is forced while node is
 ## not in retired state.
 ## Setting to 1 will force an immediate fusion.
 index.maxflushed int default=2
 
-## How many flushed indexes there can be befor fusion is forced while node is
+## How many flushed indexes there can be before fusion is forced while node is
 ## in retired state.
 ## Setting to 1 will force an immediate fusion.
 index.maxflushedretired int default=20
@@ -171,7 +171,7 @@ search.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
 search.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
 
 ## Max number of threads allowed to handle large queries concurrently
-## Postitive number means there is a limit, 0 or negative mean no limit.
+## Positive number means there is a limit, 0 or negative means no limit.
 search.memory.limiter.maxthreads int default=0
 
 ## Minimum coverage of corpus to postprocess before applying above concurrency limit.
@@ -219,7 +219,7 @@ summary.cache.maxbytes long default=-5
 summary.cache.allowvisitcaching bool default=true
 
 ## Control number of cache entries preallocated.
-## Default is no preallocation
+## Default is no preallocation.
 ## Can be set to a higher number to avoid resizing.
 summary.cache.initialentries long default=0 restart
 
@@ -262,7 +262,7 @@ summary.log.chunk.maxentries int default=256
 ## Skip crc32 check on read.
 summary.log.chunk.skipcrconread bool default=false
 
-## Control how compation is done, write to the front or to new const file.
+## Control how compaction is done, write to the front or to new const file.
 ## TODO: Remove, will always be false
 summary.log.compact2activefile bool default=false
 
@@ -277,14 +277,13 @@ summary.log.maxentriesperfile long default=20000000
 summary.log.maxdiskbloatfactor double default=0.1
 
 ## Max bucket spread within a single summary file. This will trigger bucket order compacting.
-## Only used when summary.compact2buckets is true.
 summary.log.maxbucketspread double default=2.5
 
 ## If a file goes below this ratio compared to allowed max size it will be joined to the front.
 ## Value in the range [0.0, 1.0]
 summary.log.minfilesizefactor double default=0.2
 
-## Number of threads used for compressing incomming documents/compacting.
+## Number of threads used for compressing incoming documents/compacting.
 ## Deprecated. Use feeding.concurrency instead.
 ## TODO Remove
 summary.log.numthreads int default=8 restart
@@ -444,7 +443,7 @@ hwinfo.disk.writespeed double default = 200.0 restart
 ## Default is 1 GiB.
 hwinfo.disk.samplewritesize long default = 1073741824 restart
 
-## Minimun write speed needed to avoid disk being considered slow.
+## Minimum write speed needed to avoid disk being considered slow.
 ## Unit is MiB/s, default is 100.0 MiB/s.
 hwinfo.disk.slowwritespeedlimit double default = 100.0 restart
 
