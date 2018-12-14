@@ -1,9 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
-import com.yahoo.foo.*;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.InnerCNode;
+import com.yahoo.foo.AppConfig;
+import com.yahoo.foo.ArraytypesConfig;
+import com.yahoo.foo.IntConfig;
+import com.yahoo.foo.MaptypesConfig;
+import com.yahoo.foo.SimpletypesConfig;
+import com.yahoo.foo.StructtypesConfig;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.text.StringUtilities;
@@ -13,7 +18,11 @@ import java.io.IOException;
 import java.io.StringReader;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen                                               3
@@ -263,7 +272,6 @@ public class ConfigPayloadTest {
         assertThat(config.simple().emails(1), is("bar@foo"));
     }
 
-
     @Test
     public void test_simple_struct_arrays() throws Exception {
         StructtypesConfig config = createStructtypesConfigArray(new String[] { "foo", "bar" },
@@ -328,13 +336,121 @@ public class ConfigPayloadTest {
     }
 
     @Test
-    public void test_function_test() {
-        // TODO: Test function test config as a complete config example
+    public void test_simple_map() {
+        Slime slime = new Slime();
+        Cursor map = slime.setObject().setObject("stringmap");
+        map.setString("key","val");
+
+        MaptypesConfig config = new ConfigPayload(slime).toInstance(MaptypesConfig.class, "");
+        assertThat(config.stringmap("key"), is("val"));
     }
 
     @Test
-    public void test_set_nonexistent_field() throws Exception {
-        createSimpletypesConfig("doesnotexist", "blabla");
+    public void test_map_of_struct() {
+        Slime slime = new Slime();
+        Cursor map = slime.setObject().setObject("innermap");
+        map.setObject("one").setLong("foo", 1);
+        map.setObject("two").setLong("foo", 2);
+
+        MaptypesConfig config = new ConfigPayload(slime).toInstance(MaptypesConfig.class, "");
+        assertThat(config.innermap("one").foo(), is(1));
+        assertThat(config.innermap("two").foo(), is(2));
+    }
+
+    @Test
+    public void test_map_of_map() {
+        Slime slime = new Slime();
+        Cursor map = slime.setObject().setObject("nestedmap").setObject("my-nested").setObject("inner");
+        map.setLong("one", 1);
+        map.setLong("two", 2);
+
+        MaptypesConfig config = new ConfigPayload(slime).toInstance(MaptypesConfig.class, "");
+        assertThat(config.nestedmap("my-nested").inner("one"), is(1));
+        assertThat(config.nestedmap("my-nested").inner("two"), is(2));
+    }
+
+    /* Non existent fields of all types must be ignored to allow adding new fields to a config definition
+     * without breaking hosted Vespa applications that have config overrides for the given config class.
+     * The generated payload for the user override will contain the new field (empty as the user doesn't
+     * override it), because it exists in the latest config def version. The config class version follows
+     * the applications's Vespa version, which may be older and doesn't have the new struct. Hence, we just
+     * ignore unknown fields in the payload.
+     */
+
+    @Test
+    public void non_existent_leaf_in_payload_is_ignored() {
+        SimpletypesConfig config = createSimpletypesConfig("non_existent", "");
+        assertNotNull(config);
+    }
+
+    @Test
+    public void non_existent_struct_in_payload_is_ignored() {
+        Slime slime = new Slime();
+        addStructFields(slime.setObject().setObject("non_existent"), "", "", null);
+        StructtypesConfig config = new ConfigPayload(slime).toInstance(StructtypesConfig.class, "");
+        assertNotNull(config);
+    }
+
+    @Test
+    public void non_existent_struct_in_struct_in_payload_is_ignored() {
+        Slime slime = new Slime();
+        addStructFields(slime.setObject().setObject("nested").setObject("non_existent_inner"), "", "", null);
+        StructtypesConfig config = new ConfigPayload(slime).toInstance(StructtypesConfig.class, "");
+        assertNotNull(config);
+    }
+
+    @Test
+    public void non_existent_array_of_struct_in_payload_is_ignored() {
+        Slime slime = new Slime();
+        Cursor array = slime.setObject().setArray("non_existent_arr");
+        array.addObject().setString("name", "val");
+        StructtypesConfig config = new ConfigPayload(slime).toInstance(StructtypesConfig.class, "");
+        assertNotNull(config);
+    }
+
+    @Test
+    public void non_existent_struct_in_array_of_struct_in_payload_is_ignored() {
+        Slime slime = new Slime();
+        Cursor nestedArrEntry = slime.setObject().setArray("nestedarr").addObject();
+        addStructFields(nestedArrEntry.setObject("inner"), "existing", "MALE", null);
+        addStructFields(nestedArrEntry.setObject("non_existent"), "non-existent", "MALE", null);
+
+        StructtypesConfig config =  new ConfigPayload(slime).toInstance(StructtypesConfig.class, "");
+        assertThat(config.nestedarr(0).inner().name(), is("existing"));
+    }
+
+    @Test
+    public void non_existent_simple_map_in_payload_is_ignored() {
+        Slime slime = new Slime();
+        Cursor map = slime.setObject().setObject("non_existent_map");
+        map.setString("key","val");
+        MaptypesConfig config = new ConfigPayload(slime).toInstance(MaptypesConfig.class, "");
+        assertNotNull(config);
+    }
+
+    @Test
+    public void non_existent_map_of_struct_in_payload_is_ignored() {
+        Slime slime = new Slime();
+        Cursor map = slime.setObject().setObject("non_existent_inner_map");
+        map.setObject("one").setLong("foo", 1);
+        MaptypesConfig config = new ConfigPayload(slime).toInstance(MaptypesConfig.class, "");
+        assertNotNull(config);
+    }
+
+    @Test
+    public void non_existent_map_in_map_in_payload_is_ignored() {
+        Slime slime = new Slime();
+        Cursor map = slime.setObject().setObject("nestedmap").setObject("my-nested");
+        map.setObject("inner").setLong("one", 1);
+        map.setObject("non_existent").setLong("non-existent", 0);
+
+        MaptypesConfig config = new ConfigPayload(slime).toInstance(MaptypesConfig.class, "");
+        assertThat(config.nestedmap("my-nested").inner("one"), is(1));
+    }
+
+    @Test
+    public void test_function_test() {
+        // TODO: Test function test config as a complete config example
     }
 
     @Test
@@ -365,7 +481,7 @@ public class ConfigPayloadTest {
         assertThat(payload.toString(true), is("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\",\"newfield\":\"3\"}"));
     }
 
-    /**
+    /*
      * TODO: Test invalid slime trees?
      * TODO: Test sending in wrong class
      */
