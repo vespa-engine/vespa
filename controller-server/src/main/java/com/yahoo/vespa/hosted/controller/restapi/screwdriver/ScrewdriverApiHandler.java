@@ -91,7 +91,10 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
 
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
-        cursor.setString("message", "Triggered " + triggered + " for " + id);
+        String message = triggered.isEmpty()
+                ? "Job " + jobType.jobName() + " for " + id + " not triggered"
+                : "Triggered " + triggered + " for " + id;
+        cursor.setString("message", message);
         return new SlimeJsonResponse(slime);
     }
 
