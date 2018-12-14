@@ -405,10 +405,10 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     /**
-     * Finds a nested class or builder class with the given <code>name</code>name in <code>clazz</code>
+     * Finds a nested class with the given <code>name</code>name in <code>clazz</code>
      * @param clazz a Class
      * @param name a name
-     * @return class found, or throws an exception is no class is found
+     * @return class found, or null if no class is found
      */
     private Class<?> getInnerClass(Class<?> clazz, String name) {
         for (Class<?> cls : clazz.getDeclaredClasses()) {
