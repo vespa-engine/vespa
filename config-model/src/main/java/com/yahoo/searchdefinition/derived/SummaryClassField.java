@@ -22,10 +22,12 @@ public class SummaryClassField {
     /** The summary field type enumeration */
     public enum Type {
 
+        BOOL("bool"),
         BYTE("byte"),
         SHORT("short"),
         INTEGER("integer"),
         INT64("int64"),
+        FLOAT16("float16"),
         FLOAT("float"),
         DOUBLE("double"),
         STRING("string"),
@@ -77,10 +79,14 @@ public class SummaryClassField {
             return Type.INTEGER;
         } else if (fval instanceof LongFieldValue) {
             return Type.INT64;
+        } else if (fval instanceof Float16FieldValue) {
+            return Type.FLOAT16;
         } else if (fval instanceof FloatFieldValue) {
             return Type.FLOAT;
         } else if (fval instanceof DoubleFieldValue) {
             return Type.DOUBLE;
+        } else if (fval instanceof BoolFieldValue) {
+            return Type.BOOL;
         } else if (fval instanceof ByteFieldValue) {
             return Type.BYTE;
         } else if (fval instanceof Raw) {
@@ -102,8 +108,7 @@ public class SummaryClassField {
         } else if (fieldType instanceof ReferenceDataType) {
             return Type.LONGSTRING;
         } else {
-            throw new IllegalArgumentException("Don't know which summary type to " +
-                    "convert " + fieldType + " to");
+            throw new IllegalArgumentException("Don't know which summary type to convert " + fieldType + " to");
         }
     }
 

@@ -109,12 +109,13 @@ public final class Utf8 {
     /**
      * Will try an optimistic approach to utf8 encoding.
      * That is 4.6x faster that the brute encode for ascii, not accounting for reduced memory footprint and GC.
-     * @param str The string to encode.
+     *
+     * @param string The string to encode.
      * @return Utf8 encoded array
      */
-    public static byte[] toBytes(String str) {
-        byte [] utf8 = toBytesAscii(str);
-        return utf8 != null ? utf8 : str.getBytes(StandardCharsets.UTF_8);
+    public static byte[] toBytes(String string) {
+        byte [] utf8 = toBytesAscii(string);
+        return utf8 != null ? utf8 : string.getBytes(StandardCharsets.UTF_8);
     }
     /**
      * Will try an optimistic approach to utf8 decoding.

@@ -14,21 +14,20 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A reference field value allows search queries to access fields in other document instances
+ * <p>A reference field value allows search queries to access fields in other document instances
  * as if they were fields natively stored within the searched document. This allows modelling
  * one-to-many relations such as a parent document with many children containing references
- * back to the parent.
+ * back to the parent.</p>
  *
- * Each <code>ReferenceFieldValue</code> may contain a single document ID which specifies the
+ * <p>Each <code>ReferenceFieldValue</code> may contain a single document ID which specifies the
  * instance the field should refer to. This document ID must have a type matching that of the
- * reference data type of the field itself.
+ * reference data type of the field itself.</p>
  *
- * Note that references are not polymorphic. This means that if you have a document type
+ * <p>Note that references are not polymorphic. This means that if you have a document type
  * "foo" inheriting "bar", you cannot have a <code>reference&lt;bar&gt;</code> field containing
- * a document ID for a "foo" document.
+ * a document ID for a "foo" document.</p>
  *
  * @author vekterli
- * @since 6.65
  */
 public class ReferenceFieldValue extends FieldValue {
 

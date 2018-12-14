@@ -7,7 +7,6 @@ import com.yahoo.document.datatypes.*;
 import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +63,14 @@ public class XmlSerializationHelper {
     }
 
     public static void printFloatXml(FloatFieldValue f, XmlStream xml) {
+        xml.addContent(f.toString());
+    }
+
+    public static void printShortfloatXml(Float16FieldValue f, XmlStream xml) {
+        xml.addContent(f.toString());
+    }
+
+    public static void printBoolXml(BoolFieldValue f, XmlStream xml) {
         xml.addContent(f.toString());
     }
 

@@ -52,6 +52,7 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.TaggableItem;
+import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.prelude.query.ToolBox.QueryVisitor;
 import com.yahoo.prelude.query.WandItem;
@@ -942,13 +943,19 @@ public class YqlParser implements Parser {
     }
 
     @NonNull
-    private IntItem buildEquals(OperatorNode<ExpressionOperator> ast) {
-        IntItem number = new IntItem(fetchConditionWord(ast), fetchConditionIndex(ast));
-        if (isIndexOnLeftHandSide(ast)) {
-            return leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
-        } else {
-            return leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
-        }
+    private TermItem buildEquals(OperatorNode<ExpressionOperator> ast) {
+        String value = fetchConditionWord(ast);
+
+        TermItem item;
+        if (value.equals("true") || value.equals("false"))
+            item = new WordItem(value, fetchConditionIndex(ast));
+        else
+            item = new IntItem(value, fetchConditionIndex(ast));
+
+        if (isIndexOnLeftHandSide(ast))
+            return leafStyleSettings(ast.getArgument(1, OperatorNode.class), item);
+        else
+            return leafStyleSettings(ast.getArgument(0, OperatorNode.class), item);
     }
 
     @NonNull

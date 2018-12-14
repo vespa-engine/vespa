@@ -11,46 +11,41 @@ import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.vespa.objects.Ids;
 
 /**
- * A byte field value
+ * A 16-bit float field value
  *
- * @author Einar M R Rosenvinge
+ * @author bratseth
  */
-public class ByteFieldValue extends NumericFieldValue {
+public final class Float16FieldValue extends NumericFieldValue {
 
     private static class Factory extends PrimitiveDataType.Factory {
         public FieldValue create() {
-            return new ByteFieldValue();
+            return new Float16FieldValue();
         }
     }
 
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }
-    public static final int classId = registerClass(Ids.document + 10, ByteFieldValue.class);
-    private byte value;
+    public static final int classId = registerClass(Ids.document + 18, Float16FieldValue.class);
+    private float value; // 16-bit not supported in Java yet
 
-    public ByteFieldValue() {
-        this((byte) 0);
+    public Float16FieldValue() {
+        this((float) 0);
     }
 
-    public ByteFieldValue(byte value) {
+    public Float16FieldValue(float value) {
         this.value = value;
     }
 
-    public ByteFieldValue(Byte value) {
+    public Float16FieldValue(Float value) {
         this.value = value;
     }
 
-    public ByteFieldValue(Integer value) {
-        this.value = (byte) value.intValue();
-    }
-
-    public ByteFieldValue(String s) { value = Byte.parseByte(s); }
+    public Float16FieldValue(String s) { value = Float.parseFloat(s); }
 
     @Override
-    public ByteFieldValue clone() {
-        ByteFieldValue val = (ByteFieldValue) super.clone();
+    public Float16FieldValue clone() {
+        Float16FieldValue val = (Float16FieldValue) super.clone();
         val.value = value;
         return val;
-
     }
 
     @Override
@@ -60,26 +55,24 @@ public class ByteFieldValue extends NumericFieldValue {
 
     @Override
     public void clear() {
-        value = (byte) 0;
+        value = 0.0f;
     }
 
     @Override
-    public void assign(Object o) {
-        if (!checkAssign(o)) {
-            return;
-        }
-        if (o instanceof Number) {
-            value = ((Number) o).byteValue();
-        } else if (o instanceof NumericFieldValue) {
-            value = ((NumericFieldValue) o).getNumber().byteValue();
-        } else if (o instanceof String || o instanceof StringFieldValue) {
-            value = Byte.parseByte(o.toString());
-        } else {
-            throw new IllegalArgumentException("Class " + o.getClass() + " not applicable to an " + this.getClass() + " instance.");
-        }
+    public void assign(Object obj) {
+        if (!checkAssign(obj)) return;
+
+        if (obj instanceof Number)
+            value = ((Number) obj).floatValue();
+        else if (obj instanceof NumericFieldValue)
+            value = (((NumericFieldValue) obj).getNumber().floatValue());
+        else if (obj instanceof String || obj instanceof StringFieldValue)
+            value = Float.parseFloat(obj.toString());
+        else
+            throw new IllegalArgumentException("Class " + obj.getClass() + " not applicable to an " + this.getClass() + " instance.");
     }
 
-    public byte getByte() {
+    public float getFloat() {
         return value;
     }
 
@@ -90,34 +83,34 @@ public class ByteFieldValue extends NumericFieldValue {
 
     @Override
     public DataType getDataType() {
-        return DataType.BYTE;
+        return DataType.FLOAT16;
     }
 
     @Override
     public void printXml(XmlStream xml) {
-        XmlSerializationHelper.printByteXml(this, xml);
+        XmlSerializationHelper.printShortfloatXml(this, xml);
     }
 
     @Override
     public String toString() {
-        return "" + value;
+        return String.valueOf(value);
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) value;
+        result = 31 * result + (value != +0.0f ? Float.floatToIntBits(value) : 0);
         return result;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ByteFieldValue)) return false;
+        if (!(o instanceof Float16FieldValue)) return false;
         if (!super.equals(o)) return false;
 
-        ByteFieldValue that = (ByteFieldValue) o;
-        if (value != that.value) return false;
+        Float16FieldValue that = (Float16FieldValue) o;
+        if (Float.compare(that.value, value) != 0) return false;
         return true;
     }
 
@@ -137,20 +130,8 @@ public class ByteFieldValue extends NumericFieldValue {
     @Override
     public int compareTo(FieldValue fieldValue) {
         int comp = super.compareTo(fieldValue);
-
-        if (comp != 0) {
-            return comp;
-        }
-
-        //types are equal, this must be of this type
-        ByteFieldValue otherValue = (ByteFieldValue) fieldValue;
-        if (value < otherValue.value) {
-            return -1;
-        } else if (value > otherValue.value) {
-            return 1;
-        } else {
-            return 0;
-        }
+        if (comp != 0) return comp;
+        return Float.compare(value, ((Float16FieldValue) fieldValue).value);
     }
 
 }

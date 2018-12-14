@@ -6,7 +6,7 @@ import com.yahoo.document.DataTypeName;
 import com.yahoo.document.PositionDataType;
 
 /**
- * This class represents the builtin 'doument' document type that all other documenttypes inherits.
+ * This class represents the builtin 'document' document type that all other documenttypes inherits.
  * Remember that changes here must be compatible. Changes to types of fields can not be done here.
  * This must also match the mirroring class in c++.
  *
@@ -32,6 +32,8 @@ public class VespaDocumentType {
         vespa.add(PositionDataType.INSTANCE);
         vespa.add(DataType.URI);
         vespa.add(DataType.PREDICATE);
+        vespa.add(DataType.BOOL);
+        vespa.add(DataType.FLOAT16);
         return vespa;
     }
 

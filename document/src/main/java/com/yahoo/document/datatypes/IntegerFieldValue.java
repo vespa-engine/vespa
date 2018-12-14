@@ -11,9 +11,9 @@ import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.vespa.objects.Ids;
 
 /**
- * FieldValue which encapsulates an int.
+ * A 32-bit integer field value
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public final class IntegerFieldValue extends NumericFieldValue {
 

@@ -8,8 +8,10 @@ package com.yahoo.vespa.objects;
  * @author baldersheim
  */
 public interface Ids {
-    public static int document = 0x1000;
-    public static int searchlib = 0x4000;
-    public static int vespa_configmodel = 0x7000;
-    public static int annotation = 0x10000;
+
+    int document = 0x1000;
+    int searchlib = 0x4000;
+    int vespa_configmodel = 0x7000;
+    int annotation = 0x10000;
+
 }

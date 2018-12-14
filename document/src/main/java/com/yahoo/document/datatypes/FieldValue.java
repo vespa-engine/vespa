@@ -31,6 +31,7 @@ public abstract class FieldValue extends Identifiable implements Comparable<Fiel
 
     /**
      * Get XML representation of a single field and all its children, if any.
+     *
      * @return XML representation of field in a &lt;value&gt; element
      */
     public String toXml() {

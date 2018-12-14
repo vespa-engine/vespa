@@ -7,9 +7,9 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * Date: Apr 16, 2008
+ * Superclass of multivalue field values
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
 public abstract class CollectionFieldValue<T extends FieldValue> extends CompositeFieldValue {
 
@@ -79,4 +79,5 @@ public abstract class CollectionFieldValue<T extends FieldValue> extends Composi
     }
 
     public abstract int size();
+
 }

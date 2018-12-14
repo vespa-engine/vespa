@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
- * FieldValue which encapsulates a Raw value
+ * A field value which is an array of byte data
  *
  * @author Einar M R Rosenvinge
  */

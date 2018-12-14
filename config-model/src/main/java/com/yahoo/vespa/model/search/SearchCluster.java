@@ -86,13 +86,13 @@ public abstract class SearchCluster extends AbstractSearchCluster
 
         SummaryConfig.Builder summaryConfigBuilder = new SummaryConfig.Builder();
         summaryConfigProducer.getConfig(summaryConfigBuilder);
-        SummaryConfig summaryConfig = new SummaryConfig(summaryConfigBuilder);
+        SummaryConfig summaryConfig = summaryConfigBuilder.build();
 
         SummarymapConfig summarymapConfig = null;
         if (summarymapConfigProducer != null) {
             SummarymapConfig.Builder summarymapConfigBuilder = new SummarymapConfig.Builder();
             summarymapConfigProducer.getConfig(summarymapConfigBuilder);
-            summarymapConfig = new SummarymapConfig(summarymapConfigBuilder);
+            summarymapConfig = summarymapConfigBuilder.build();
         }
 
         for (SummaryConfig.Classes sclass : summaryConfig.classes()) {

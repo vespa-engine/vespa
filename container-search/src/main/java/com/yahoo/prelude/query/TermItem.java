@@ -8,12 +8,8 @@ import java.nio.ByteBuffer;
 
 
 /**
- * <p>A query term, that is, not only a term in the query language
- * (an <i>item</i>), but also a term to be found in (or excluded from)
- * the search index.</p>
- *
- * <p>Optionally, a TermItem may also specify the name of an
- * index backend to search.</p>
+ * Superclass of "leaf" conditions containing a single entity which is either matched in
+ * a field or not.
  *
  * @author bratseth
  * @author havardpe
@@ -84,6 +80,7 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
      */
     public boolean isFromQuery() { return isFromQuery; }
 
+    @Override
     public abstract boolean isWords();
 
     /** Sets the origin of this */

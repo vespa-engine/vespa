@@ -146,14 +146,13 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     /**
-       Creates a new field.
-
-       @param name The name of the field
-       @param dataType The datatype of the field
-       @param isHeader Whether this is a "header" field or a "content" field
-       (true = "header").
-       @param owner the owning document (used to check for id collisions)
-    */
+     * Creates a new field.
+     *
+     * @param name The name of the field
+     * @param dataType The datatype of the field
+     * @param isHeader Whether this is a "header" field or a "content" field (true = "header").
+     * @param owner the owning document (used to check for id collisions)
+     */
     protected SDField(SDDocumentType repo, String name, DataType dataType, boolean isHeader, SDDocumentType owner, boolean populate) {
         super(name, dataType, isHeader, owner == null ? null : owner.getDocumentType());
         this.ownerDocType=owner;
@@ -161,30 +160,29 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     /**
-       Creates a new field.
-
-       @param name The name of the field
-       @param dataType The datatype of the field
-       @param isHeader Whether this is a "header" field or a "content" field
-       (true = "header").
-       @param owner The owning document (used to check for id collisions)
-       @param fieldMatching The matching object to set for the field
-    */
-    protected SDField(SDDocumentType repo, String name, DataType dataType, boolean isHeader, SDDocumentType owner, Matching fieldMatching, boolean populate, int recursion) {
+     * Creates a new field.
+     *
+     * @param name The name of the field
+     * @param dataType The datatype of the field
+     * @param isHeader Whether this is a "header" field or a "content" field (true = "header").
+     * @param owner The owning document (used to check for id collisions)
+     * @param fieldMatching The matching object to set for the field
+     */
+    protected SDField(SDDocumentType repo, String name, DataType dataType, boolean isHeader, SDDocumentType owner,
+                      Matching fieldMatching, boolean populate, int recursion) {
         super(name, dataType, isHeader, owner == null ? null : owner.getDocumentType());
         this.ownerDocType=owner;
-        if (fieldMatching != null) {
+        if (fieldMatching != null)
             this.setMatching(fieldMatching);
-        }
         populate(populate, repo, name, dataType, isHeader, fieldMatching, recursion);
     }
 
     /**
-       Constructor for <b>header</b> fields
-
-       @param name The name of the field
-       @param dataType The datatype of the field
-    */
+     * Constructor for <b>header</b> fields
+     *
+     * @param name The name of the field
+     * @param dataType The datatype of the field
+     */
     public SDField(SDDocumentType repo,  String name, DataType dataType) {
         this(repo, name,dataType,true, true);
     }
@@ -759,6 +757,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
 
     /**
      * A list of query commands
+     *
      * @return a list of strings with query commands.
      */
     @Override
@@ -783,19 +782,18 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return ownerDocType;
     }
 
-    /**
-     * Two fields are equal if they have the same name
-     * No, they are not.
-     */
+    @Override
     public boolean equals(Object other) {
         if ( ! (other instanceof SDField)) return false;
         return super.equals(other);
     }
 
+    @Override
     public int hashCode() {
         return getName().hashCode();
     }
 
+    @Override
     public String toString() {
         return "field '" + getName() + "'";
     }

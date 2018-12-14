@@ -4,9 +4,10 @@ package com.yahoo.document;
 import com.yahoo.vespa.objects.Ids;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class NumericDataType extends PrimitiveDataType {
+
     // The global class identifier shared with C++.
     public static int classId = registerClass(Ids.document + 52, NumericDataType.class);
     /**
@@ -24,4 +25,5 @@ public class NumericDataType extends PrimitiveDataType {
     public NumericDataType clone() {
         return (NumericDataType) super.clone();
     }
+
 }

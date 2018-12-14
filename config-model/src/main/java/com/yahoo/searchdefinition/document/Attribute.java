@@ -11,6 +11,7 @@ import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
@@ -19,6 +20,7 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
 import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.Float16FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.tensor.TensorType;
@@ -82,9 +84,11 @@ public final class Attribute implements Cloneable, Serializable {
         SHORT("short", "INT16"),
         INTEGER("integer", "INT32"),
         LONG("long", "INT64"),
+        FLOAT16("float16", "FLOAT16"),
         FLOAT("float", "FLOAT"),
         DOUBLE("double", "DOUBLE"),
         STRING("string", "STRING"),
+        BOOL("bool", "BOOL"),
         PREDICATE("predicate", "PREDICATE"),
         TENSOR("tensor", "TENSOR"),
         REFERENCE("reference", "REFERENCE");
@@ -235,6 +239,10 @@ public final class Attribute implements Cloneable, Serializable {
             return Type.FLOAT;
         } else if (fval instanceof DoubleFieldValue) {
             return Type.DOUBLE;
+        } else if (fval instanceof BoolFieldValue) {
+            return Type.BOOL;
+        } else if (fval instanceof Float16FieldValue) {
+            return Type.FLOAT16;
         } else if (fval instanceof ByteFieldValue) {
             return Type.BYTE;
         } else if (fval instanceof Raw) {
@@ -288,8 +296,10 @@ public final class Attribute implements Cloneable, Serializable {
             case STRING : return DataType.STRING;
             case INTEGER: return DataType.INT;
             case LONG: return DataType.LONG;
+            case FLOAT16: return DataType.FLOAT16;
             case FLOAT: return DataType.FLOAT;
             case DOUBLE: return DataType.DOUBLE;
+            case BOOL: return DataType.BOOL;
             case BYTE: return DataType.BYTE;
             case PREDICATE: return DataType.PREDICATE;
             case TENSOR: return DataType.getTensor(tensorType.orElseThrow(IllegalStateException::new));

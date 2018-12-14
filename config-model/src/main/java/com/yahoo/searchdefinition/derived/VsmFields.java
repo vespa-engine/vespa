@@ -1,8 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.document.*;
-import com.yahoo.document.datatypes.*;
+import com.yahoo.document.CollectionDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.NumericDataType;
+import com.yahoo.document.ReferenceDataType;
+import com.yahoo.document.datatypes.BoolFieldValue;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.PredicateFieldValue;
+import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.searchdefinition.FieldSets;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.FieldSet;
@@ -114,14 +122,16 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         /** The streaming field type enumeration */
         public static class Type {
 
-            public static Type INT8=new Type("int8","INT8");
-            public static Type INT16=new Type("int16","INT16");
-            public static Type INT32=new Type("int32","INT32");
-            public static Type INT64=new Type("int64","INT64");
-            public static Type FLOAT=new Type("float","FLOAT");
-            public static Type DOUBLE=new Type("double","DOUBLE");
-            public static Type STRING=new Type("string","AUTOUTF8");
-            public static Type UNSEARCHABLESTRING=new Type("string","NONE");
+            public static Type INT8 = new Type("int8","INT8");
+            public static Type INT16 = new Type("int16","INT16");
+            public static Type INT32 = new Type("int32","INT32");
+            public static Type INT64 = new Type("int64","INT64");
+            public static Type FLOAT16 = new Type("float16", "FLOAT16");
+            public static Type FLOAT = new Type("float","FLOAT");
+            public static Type DOUBLE = new Type("double","DOUBLE");
+            public static Type STRING = new Type("string","AUTOUTF8");
+            public static Type BOOL = new Type("bool","BOOL");
+            public static Type UNSEARCHABLESTRING = new Type("string","NONE");
 
             private String name;
 
@@ -148,6 +158,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
                 return this.name.equals(((Type)other).name);
             }
 
+            @Override
             public String toString() {
                 return "type: " + name;
             }
@@ -168,18 +179,24 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         /** Converts to the right index type from a field datatype */
         private static Type convertType(DataType fieldType) {
             FieldValue fval = fieldType.createFieldValue();
-            if (fieldType.equals(DataType.FLOAT)) {
+            if (fieldType.equals(DataType.FLOAT16)) {
+                return Type.FLOAT16;
+            } else if (fieldType.equals(DataType.FLOAT)) {
                 return Type.FLOAT;
             } else if (fieldType.equals(DataType.LONG)) {
                 return Type.INT64;
             } else if (fieldType.equals(DataType.DOUBLE)) {
                 return Type.DOUBLE;
+            } else if (fieldType.equals(DataType.BOOL)) {
+                return Type.BOOL;
             } else if (fieldType.equals(DataType.BYTE)) {
                 return Type.INT8;
             } else if (fieldType instanceof NumericDataType) {
                 return Type.INT32;
             } else if (fval instanceof StringFieldValue) {
                 return Type.STRING;
+            } else if (fval instanceof BoolFieldValue) {
+                return Type.BOOL;
             } else if (fval instanceof Raw) {
                 return Type.STRING;
             } else if (fval instanceof PredicateFieldValue) {
@@ -191,8 +208,8 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
             } else if (fieldType instanceof ReferenceDataType) {
                 return Type.UNSEARCHABLESTRING;
             } else {
-                throw new IllegalArgumentException("Don't know which streaming" +
-                        " field type to " + "convert " + fieldType + " to");
+                throw new IllegalArgumentException("Don't know which streaming field type to convert " +
+                                                   fieldType + " to");
             }
         }
 
@@ -245,6 +262,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
     }
 
     private static class StreamingDocumentType {
+
         private final String name;
         private final Map<String, FieldSet> fieldSets = new LinkedHashMap<>();
         private final Map<String, FieldSet> userFieldSets;
@@ -282,4 +300,5 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
             fs.addFieldName(fieldName);
         }
     }
+
 }

@@ -11,16 +11,18 @@ import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.vespa.objects.Ids;
 
 /**
- * FieldValue which encapsulates a float.
+ * A 32-bit float field value
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public final class FloatFieldValue extends NumericFieldValue {
+
     private static class Factory extends PrimitiveDataType.Factory {
         public FieldValue create() {
             return new FloatFieldValue();
         }
     }
+
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }
     public static final int classId = registerClass(Ids.document + 13, FloatFieldValue.class);
     private float value;
@@ -120,9 +122,8 @@ public final class FloatFieldValue extends NumericFieldValue {
     }
 
     /* (non-Javadoc)
-      * @see com.yahoo.document.datatypes.FieldValue#deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)
-      */
-
+     * @see com.yahoo.document.datatypes.FieldValue#deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)
+     */
     @Override
     public void deserialize(Field field, FieldReader reader) {
         reader.read(field, this);

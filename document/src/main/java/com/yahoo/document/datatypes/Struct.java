@@ -12,9 +12,7 @@ import com.yahoo.vespa.objects.Ids;
 import java.util.*;
 
 /**
- * Date: Apr 15, 2008
- *
- * @author humbe
+ * @author Håkon Humberset
  */
 public class Struct extends StructuredFieldValue {
 

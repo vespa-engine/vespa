@@ -4,11 +4,9 @@ package com.yahoo.prelude.fastsearch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.data.access.Inspector;
-import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.container.search.LegacyEmulationConfig;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

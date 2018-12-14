@@ -7,7 +7,9 @@ import java.util.Collection;
  * @author baldersheim
  */
 public interface DocumentTypeCollection {
-    public NewDocumentType getDocumentType(NewDocumentType.Name name);
-    public NewDocumentType getDocumentType(int id);
-    public Collection<NewDocumentType> getTypes();
+
+    NewDocumentType getDocumentType(NewDocumentType.Name name);
+    NewDocumentType getDocumentType(int id);
+    Collection<NewDocumentType> getTypes();
+
 }

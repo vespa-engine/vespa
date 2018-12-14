@@ -20,9 +20,6 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Test;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.ListIterator;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -31,12 +28,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class StringTestCase extends AbstractTypesTest {
 
     @Test
-    public void testDeserialize() throws Exception {
+    public void testDeserialize() {
         byte[] buf = new byte[1500];
         GrowableByteBuffer data = GrowableByteBuffer.wrap(buf);
         //short string
@@ -122,17 +119,8 @@ public class StringTestCase extends AbstractTypesTest {
         assertTrue(blah.equals(blah2));
     }
 
-/*    public void testSpanTree() {
-        StringFieldValue annotatedText = new StringFieldValue("banana airlines");
-        SpanList lingTree = new SpanList();
-        annotatedText.setSpanTree("linguistics", lingTree);
-        for (Annotation anAnnotation : annotatedText.getSpanTree("linguistics")) {
-            System.err.println(anAnnotation);
-        }
-    }*/
-
     @Test
-    public void testSerializeDeserialize() throws Exception {
+    public void testSerializeDeserialize() {
         java.lang.String test = "Hello hello";
         BufferSerializer data = new BufferSerializer(new GrowableByteBuffer(100, 2.0f));
         StringFieldValue value = new StringFieldValue(test);
@@ -171,7 +159,7 @@ public class StringTestCase extends AbstractTypesTest {
     }
 
     @Test
-    public void testNestedSpanTreeBug4187377() {
+    public void testNestedSpanTree() {
         AnnotationType type = new AnnotationType("ann", DataType.STRING);
 
         StringFieldValue outerString = new StringFieldValue("Ballooo");
@@ -224,8 +212,6 @@ public class StringTestCase extends AbstractTypesTest {
 
         doc = annotate(doc, manager);
         doc = serializeAndDeserialize(doc, manager);
-        doc = consume(doc, manager);
-        System.err.println(doc);
     }
 
     private Document serializeAndDeserialize(Document doc, DocumentTypeManager manager) {
@@ -247,11 +233,6 @@ public class StringTestCase extends AbstractTypesTest {
         AnnotationType location = registry.getType("location");
 
         Map<String, AnnotationType> m = registry.getTypes();
-        for (String key : m.keySet()) {
-            System.out.println("Key: " + key);
-            AnnotationType val = m.get(key);
-            parseAnnotationType(val);
-        }
 
         SpanTree tree = new SpanTree("testannotations");
         SpanList root = (SpanList)tree.getRoot();
@@ -335,7 +316,7 @@ public class StringTestCase extends AbstractTypesTest {
         root.remove(branch);
         tree.cleanup();
 
-        System.out.println("No. Of Annotations: " + tree.numAnnotations());
+        assertEquals(5, tree.numAnnotations());
         body.setSpanTree(tree);
 
         document.setFieldValue(document.getField("body"), body);
@@ -343,93 +324,4 @@ public class StringTestCase extends AbstractTypesTest {
         return document;
     }
 
-    @SuppressWarnings("deprecation")
-    public Document consume(Document document, DocumentTypeManager docTypeMgr) {
-        DocumentType type = docTypeMgr.getDocumentType("blog");
-        Collection<Field> fc = type.getFields();
-        for (Field f : fc) {
-            System.out.println("\n\nField Name: " + f.getName());
-            System.out.println("DataType: " + f.getDataType());
-            System.out.println("isHeader? " + f.isHeader());
-
-            FieldValue val = document.getFieldValue(f);
-            if (val instanceof StringFieldValue) {
-                StringFieldValue sfv = (StringFieldValue)val;
-                System.out.println(f.getName() + " is a StringField. Field Value: " + sfv.getString());
-                Collection<SpanTree> c = sfv.getSpanTrees();
-                for (SpanTree tree : c) {
-                    System.out.println(f.getName() + " has annotations");
-                    consumeAnnotations(tree, (SpanList)tree.getRoot());
-                }
-            }
-        }
-
-        return document;
-    }
-
-    public void consumeAnnotations(SpanTree tree, SpanList root) {
-        System.out.println("\n\nSpanList: " + root + " num Children: " + root.numChildren());
-        System.out.println("-------------------");
-        Iterator<SpanNode> childIterator = root.childIterator();
-        while (childIterator.hasNext()) {
-            SpanNode node = childIterator.next();
-            System.out.println("Span Node: " + node); // + " Span Text: " + node.getText(fieldValStr));
-            if (node instanceof SpanList) {
-                System.out.println("Encountered another span list");
-                SpanList spl = (SpanList)node;
-                ListIterator<SpanNode> lli = spl.childIterator();
-                while (lli.hasNext()) {
-                    System.out.print(" " + lli.next() + " ");
-                }
-                consumeAnnotations(tree, (SpanList)node);
-            } else {
-                System.out.println("\nGetting annotations for this span node: " + node);
-                getAnnotationsForNode(tree, node);
-            }
-        }
-        System.out.println("\nGetting annotations for the SpanList itself : " + root);
-        getAnnotationsForNode(tree, root);
-    }
-
-    public void getAnnotationsForNode(SpanTree tree, SpanNode node) {
-        Iterator<Annotation> iter = tree.iterator(node);
-        boolean annotationPresent = false;
-        while (iter.hasNext()) {
-            annotationPresent = true;
-            Annotation xx = iter.next();
-            Struct fValue = (Struct)xx.getFieldValue();
-            System.out.println("Annotation: " + xx);
-            if (fValue == null) {
-                System.out.println("Field Value is null");
-                return;
-            }
-            Iterator fieldIter = fValue.iterator();
-            while (fieldIter.hasNext()) {
-                Map.Entry m = (Map.Entry)fieldIter.next();
-                Field f = (Field)m.getKey();
-                FieldValue val = (FieldValue)m.getValue();
-                System.out.println("Field : " + f + " Value: " + val);
-            }
-        }
-        if (!annotationPresent) {
-            System.out.println("****No annotations found for the span node: " + node);
-        }
-    }
-
-    public void parseAnnotationType(AnnotationType t) {
-        System.out.println("Type Name: " + t.getName());
-        System.out.println("Type ID: " + t.getId());
-        DataType dt = t.getDataType();
-        String dataTypeStr;
-        if (dt == DataType.STRING) {
-            dataTypeStr = "String";
-        } else if (dt == DataType.INT) {
-            dataTypeStr = "Integer";
-        } else if (dt == DataType.URI) {
-            dataTypeStr = "URL";
-        } else {
-            dataTypeStr = "UNKNOWN";
-        }
-        System.out.println("Type DataType: " + dataTypeStr);
-    }
 }
