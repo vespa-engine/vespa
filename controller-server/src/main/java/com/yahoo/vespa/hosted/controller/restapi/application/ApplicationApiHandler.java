@@ -364,7 +364,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             String triggered = controller.applications().deploymentTrigger()
                                          .forceTrigger(id, type, request.getJDiscRequest().getUserPrincipal().getName())
                                          .stream().map(JobType::jobName).collect(joining(", "));
-            return new MessageResponse("Triggered " + triggered + " for " + id);
+            return new MessageResponse(triggered.isEmpty() ? "Job " + type.jobName() + " for " + id + " not triggered"
+                                                           : "Triggered " + triggered + " for " + id);
     }
 
     private HttpResponse pause(ApplicationId id, JobType type) {
