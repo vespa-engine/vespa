@@ -1,16 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <fstream>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/configparser.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcommon/common/schema.h>
+#include <vespa/log/log.h>
 LOG_SETUP("schema_test");
 
 using vespalib::string;
 
-namespace search {
-namespace index {
+namespace search::index {
 
 using schema::DataType;
 using schema::CollectionType;
@@ -426,7 +426,6 @@ TEST("require that schema can be built with imported attribute fields")
     TEST_DO(assertField(SIAF("regular", DataType::INT32, CollectionType::SINGLE), regular[0]));
 }
 
-}  // namespace index
-}  // namespace search
+}
 
 TEST_MAIN() { TEST_RUN_ALL(); }

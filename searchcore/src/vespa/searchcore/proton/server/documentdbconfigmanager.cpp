@@ -9,6 +9,10 @@
 #include <vespa/config-summarymap.h>
 #include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/config/helper/legacy.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-summary.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>

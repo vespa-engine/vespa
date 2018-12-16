@@ -12,6 +12,10 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/config-rank-profiles.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-summary.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <sstream>

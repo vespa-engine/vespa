@@ -28,6 +28,9 @@
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/config-bucketspaces.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-summary.h>
 #include <vespa/vespalib/io/fileutil.h>
 
 #include <vespa/log/log.h>

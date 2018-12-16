@@ -1,6 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "schemaconfigurer.h"
+#include <vespa/config-attributes.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-summary.h>
+#include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchcommon/attribute/collectiontype.h>
+#include <vespa/searchcommon/attribute/basictype.h>
+
 #include <vespa/searchcommon/config/subscriptionproxyng.h>
 
 #include <vespa/log/log.h>
@@ -9,8 +17,7 @@ LOG_SETUP(".index.schemaconfigurer");
 using namespace config;
 using namespace vespa::config::search;
 
-namespace search {
-namespace index {
+namespace search::index {
 
 using schema::DataType;
 using schema::CollectionType;
@@ -53,7 +60,7 @@ convertDataType(const ConfigType &type)
     switch (type) {
     case ConfigType::STRING:
         return DataType::STRING;
-    case ConfigType::UINT1:
+    case ConfigType::BOOL:
         return DataType::UINT1;
     case ConfigType::UINT2:
         return DataType::UINT2;
@@ -228,8 +235,7 @@ SchemaConfigurer::configure(const SummaryConfig & cfg)
     SchemaBuilder::build(cfg, _schema);
 }
 
-SchemaConfigurer::SchemaConfigurer(Schema &schema,
-                                   const vespalib::string &configId)
+SchemaConfigurer::SchemaConfigurer(Schema &schema, const vespalib::string &configId)
     : _schema(schema)
 {
     search::SubscriptionProxyNg<SchemaConfigurer, IndexschemaConfig>
@@ -243,6 +249,4 @@ SchemaConfigurer::SchemaConfigurer(Schema &schema,
     summarySubscriber.subscribe(configId.c_str());
 }
 
-
-} // namespace search::index
-} // namespace search
+}

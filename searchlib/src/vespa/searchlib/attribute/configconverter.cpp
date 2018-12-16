@@ -20,7 +20,7 @@ getDataTypeMap()
 {
     DataTypeMap map;
     map[AttributesConfig::Attribute::STRING] = BasicType::STRING;
-    map[AttributesConfig::Attribute::UINT1] = BasicType::UINT1;
+    map[AttributesConfig::Attribute::BOOL] = BasicType::UINT1;
     map[AttributesConfig::Attribute::UINT2] = BasicType::UINT2;
     map[AttributesConfig::Attribute::UINT4] = BasicType::UINT4;
     map[AttributesConfig::Attribute::INT8] = BasicType::INT8;

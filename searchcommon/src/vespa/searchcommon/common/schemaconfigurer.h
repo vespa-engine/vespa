@@ -2,16 +2,17 @@
 
 #pragma once
 
-#include <vespa/config-attributes.h>
-#include <vespa/config-imported-fields.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-summary.h>
-#include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcommon/attribute/collectiontype.h>
-#include <vespa/searchcommon/attribute/basictype.h>
+#include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace index {
+namespace vespa::config::search::internal {
+    class InternalIndexschemaType;
+    class InternalAttributesType;
+    class InternalSummaryType;
+}
+
+namespace search::index {
+
+class Schema;
 
 /**
  * Schema class used to give a high-level description of the content
@@ -20,34 +21,40 @@ namespace index {
 class SchemaBuilder
 {
 public:
+    using IndexschemaConfig = const vespa::config::search::internal::InternalIndexschemaType;
+    using AttributesConfig = const vespa::config::search::internal::InternalAttributesType;
+    using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
     /**
      * Build from indexschema config.
      *
-     * @param indexCfg vespa::config::search::IndexschemaConfig to use
+     * @param indexCfg IndexschemaConfig to use
      */
-    static void build(const vespa::config::search::IndexschemaConfig &cfg, Schema &schema);
+    static void build(const IndexschemaConfig &cfg, Schema &schema);
     /**
      * Build from attribute config.
      *
-     * @param attributeCfg vespa::config::search::AttributesConfig to use
+     * @param attributeCfg AttributesConfig to use
      **/
-    static void build(const vespa::config::search::AttributesConfig &cfg, Schema &schema);
+    static void build(const AttributesConfig &cfg, Schema &schema);
     /**
      * Build from summary config.
      *
-     * @param summaryCfg vespa::config::search::SummaryConfig to use
+     * @param summaryCfg SummaryConfig to use
      **/
-    static void build(const vespa::config::search::SummaryConfig &cfg, Schema &schema);
+    static void build(const SummaryConfig &cfg, Schema &schema);
 
 };
 
 class SchemaConfigurer
 {
 private:
+    using IndexschemaConfig = SchemaBuilder::IndexschemaConfig;
+    using AttributesConfig = SchemaBuilder::AttributesConfig;
+    using SummaryConfig = SchemaBuilder::SummaryConfig;
     Schema & _schema;
-    void configure(const vespa::config::search::IndexschemaConfig & cfg);
-    void configure(const vespa::config::search::AttributesConfig & cfg);
-    void configure(const vespa::config::search::SummaryConfig & cfg);
+    void configure(const IndexschemaConfig & cfg);
+    void configure(const AttributesConfig & cfg);
+    void configure(const SummaryConfig & cfg);
 
 public:
     /**
@@ -58,6 +65,4 @@ public:
     SchemaConfigurer(Schema & schema, const vespalib::string &configId);
 };
 
-} // namespace search::index
-} // namespace search
-
+}
