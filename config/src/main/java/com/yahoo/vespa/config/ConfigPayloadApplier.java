@@ -94,7 +94,9 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
             trace("top of stack=" + stack.peek().toString());
             String name = stack.peek().nameStack().peek();
             if (inspector.type().equals(Type.OBJECT)) {
-                stack.push(createBuilder(stack.peek(), name));
+                NamedBuilder builder = createBuilder(stack.peek(), name);
+                if (builder == null) return;  // Ignore non-existent struct array class
+                stack.push(builder);
             }
             handleValue(inspector);
             if (inspector.type().equals(Type.OBJECT)) {
@@ -143,7 +145,9 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
                     parentBuilder.nameStack().pop();
                     return;
                 } else {
-                    stack.push(createBuilder(parentBuilder, name));
+                    NamedBuilder builder = createBuilder(parentBuilder, name);
+                    if (builder == null) return;  // Ignore non-existent struct class
+                    stack.push(builder);
                 }
             } else if (inspector.type().equals(Type.ARRAY)) {
                 for (int i = 0; i < inspector.children(); i++) {
@@ -179,6 +183,8 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
     private void handleInnerMap(String name, Inspector inspector) {
         NamedBuilder builder = createBuilder(stack.peek(), stack.peek().peekName());
+        if (builder == null)
+            throw new RuntimeException("Missing map builder (this should never happen): " + stack.peek());
         setMapLeafValue(name, builder.builder());
         stack.push(builder);
         inspector.traverse(new ObjectTraverser() {
@@ -222,7 +228,8 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
     NamedBuilder createBuilder(NamedBuilder parentBuilder, String name) {
         Object builder = parentBuilder.builder();
-        Object newBuilder = getBuilderForStruct(findBuilderName(name), name, builder.getClass().getDeclaringClass());
+        Object newBuilder = getBuilderForStruct(name, builder.getClass().getDeclaringClass());
+        if (newBuilder == null) return null;
         trace("New builder for " + name + "=" + newBuilder);
         trace("Pushing builder for " + name + "=" + newBuilder + " onto stack");
         return new NamedBuilder((ConfigBuilder) newBuilder, name);
@@ -366,38 +373,51 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
 
-    private String findBuilderName(String name) {
+    private String capitalize(String name) {
         StringBuilder sb = new StringBuilder();
         sb.append(name.substring(0, 1).toUpperCase()).append(name.substring(1));
         return sb.toString();
     }
 
-    private Constructor<?> lookupBuilderForStruct(String builderName, String name, Class<?> currentClass) {
+    private Constructor<?> lookupBuilderForStruct(String structName, String name, Class<?> currentClass) {
         final String currentClassName = currentClass.getName();
-        trace("builderName=" + builderName + ", name=" + name + ",current class=" + currentClassName);
-        Class<?> structClass = findClass(currentClass, currentClassName + "$" + builderName);
-        Class<?> structBuilderClass = findClass(structClass, currentClassName + "$" + builderName + "$Builder");
+        trace("structName=" + structName + ", name=" + name + ",current class=" + currentClassName);
+        Class<?> structClass = getInnerClass(currentClass, currentClassName + "$" + structName);
+        if (structClass == null) {
+            log.info("Could not find nested class '" + currentClassName + "$" + structName +
+                             "'. Ignoring it, assuming it's been added to a newer version of the config.");
+            return null;
+        }
+        return getStructBuilderConstructor(structClass, currentClassName, structName);
+    }
+
+    private Constructor<?> getStructBuilderConstructor(Class<?> structClass, String currentClassName, String builderName) {
+        String structBuilderName = currentClassName + "$" + builderName + "$Builder";
+        Class<?> structBuilderClass = getInnerClass(structClass, structBuilderName);
+        if (structBuilderClass == null)
+            throw new RuntimeException("Could not find builder class " + structBuilderName);
         try {
             return structBuilderClass.getDeclaredConstructor(new Class<?>[]{});
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Could not create class '" + "'" + structBuilderClass.getName() + "'");
         }
+
     }
 
     /**
-     * Finds a nested class or builder class with the given <code>name</code>name in <code>clazz</code>
+     * Finds a nested class with the given <code>name</code>name in <code>clazz</code>
      * @param clazz a Class
      * @param name a name
-     * @return class found, or throws an exception is no class is found
+     * @return class found, or null if no class is found
      */
-    private Class<?> findClass(Class<?> clazz, String name) {
+    private Class<?> getInnerClass(Class<?> clazz, String name) {
         for (Class<?> cls : clazz.getDeclaredClasses()) {
             if (cls.getName().equals(name)) {
                 trace("Found class " + cls.getName());
                 return cls;
             }
         }
-        throw new RuntimeException("could not find class representing '" + printCurrentConfigName() + "'");
+        return null;
     }
 
     private final Map<String, Constructor<?>> constructorCache = new HashMap<>();
@@ -405,11 +425,13 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         return builderName + "." + name + "." + currentClass.getName();
     }
 
-    private Object getBuilderForStruct(String builderName, String name, Class<?> currentClass) {
-        String key = constructorCacheKey(builderName, name, currentClass);
+    private Object getBuilderForStruct(String name, Class<?> currentClass) {
+        String structName = capitalize(name);
+        String key = constructorCacheKey(structName, name, currentClass);
         Constructor<?> ctor = constructorCache.get(key);
         if (ctor == null) {
-            ctor = lookupBuilderForStruct(builderName, name, currentClass);
+            ctor = lookupBuilderForStruct(structName, name, currentClass);
+            if (ctor == null) return null;
             constructorCache.put(key, ctor);
         }
         Object builder;
@@ -419,22 +441,6 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
             throw new RuntimeException("Could not create class '" + "'" + ctor.getDeclaringClass().getName() + "'");
         }
         return builder;
-    }
-
-    private String printCurrentConfigName() {
-        StringBuilder sb = new StringBuilder();
-        ArrayList<String> stackElements = new ArrayList<>();
-        Stack<String> nameStack = stack.peek().nameStack();
-        while (!nameStack.empty()) {
-            stackElements.add(nameStack.pop());
-        }
-        Collections.reverse(stackElements);
-        for (String s : stackElements) {
-            sb.append(s);
-            sb.append(".");
-        }
-        sb.deleteCharAt(sb.length() - 1); // remove last .
-        return sb.toString();
     }
 
     private void debug(String message) {
