@@ -322,7 +322,7 @@ public:
      **/
     virtual bool isIntegerType() const {
         BasicType::Type t = getBasicType();
-        return t == BasicType::UINT1 ||
+        return t == BasicType::BOOL ||
                t == BasicType::UINT2 ||
                t == BasicType::UINT4 ||
                t == BasicType::INT8 ||

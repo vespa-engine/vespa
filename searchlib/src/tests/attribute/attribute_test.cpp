@@ -45,7 +45,7 @@ bool
 isUnsignedSmallIntAttribute(const BasicType::Type &type)
 {
     switch (type) {
-    case BasicType::UINT1:
+    case BasicType::BOOL:
     case BasicType::UINT2:
     case BasicType::UINT4:
         return true;
@@ -531,9 +531,9 @@ void AttributeTest::testReload()
         testReloadInt(iv1, iv2, iv3, 100);
     }
     {
-        AttributePtr iv1 = createAttribute("suint1_1", Config(BasicType::UINT1, CollectionType::SINGLE));
-        AttributePtr iv2 = createAttribute("suint1_2", Config(BasicType::UINT1, CollectionType::SINGLE));
-        AttributePtr iv3 = createAttribute("suint1_3", Config(BasicType::UINT1, CollectionType::SINGLE));
+        AttributePtr iv1 = createAttribute("suint1_1", Config(BasicType::BOOL, CollectionType::SINGLE));
+        AttributePtr iv2 = createAttribute("suint1_2", Config(BasicType::BOOL, CollectionType::SINGLE));
+        AttributePtr iv3 = createAttribute("suint1_3", Config(BasicType::BOOL, CollectionType::SINGLE));
         testReloadInt(iv1, iv2, iv3, 0);
         testReloadInt(iv1, iv2, iv3, 100);
     }
@@ -2038,7 +2038,7 @@ void
 AttributeTest::testCompactLidSpace(const Config &config)
 {
     switch (config.basicType().type()) {
-    case BasicType::UINT1:
+    case BasicType::BOOL:
     case BasicType::UINT2:
     case BasicType::UINT4:
     case BasicType::INT8:
@@ -2074,7 +2074,7 @@ AttributeTest::testCompactLidSpace(const Config &config)
 void
 AttributeTest::testCompactLidSpace()
 {
-    TEST_DO(testCompactLidSpace(Config(BasicType::UINT1, CollectionType::SINGLE)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::BOOL, CollectionType::SINGLE)));
     TEST_DO(testCompactLidSpace(Config(BasicType::UINT2, CollectionType::SINGLE)));
     TEST_DO(testCompactLidSpace(Config(BasicType::UINT4, CollectionType::SINGLE)));
     TEST_DO(testCompactLidSpace(Config(BasicType::INT8, CollectionType::SINGLE)));

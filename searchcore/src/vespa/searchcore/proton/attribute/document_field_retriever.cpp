@@ -110,15 +110,14 @@ DocumentFieldRetriever::populate(DocumentIdT lid,
                                  bool isIndexField)
 {
     switch (attr.getBasicType()) {
-    case BasicType::UINT1:
+    case BasicType::BOOL:
     case BasicType::UINT2:
     case BasicType::UINT4:
     case BasicType::INT8:
     case BasicType::INT16:
     case BasicType::INT32:
     case BasicType::INT64:
-        setValue<IAttributeVector::largeint_t>(
-                lid, doc, fieldName, attr);
+        setValue<IAttributeVector::largeint_t>(lid, doc, fieldName, attr);
         break;
     case BasicType::FLOAT:
     case BasicType::DOUBLE:

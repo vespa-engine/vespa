@@ -58,7 +58,7 @@ getValue(const Context &context) const
             return Value::UP(new StringValue(content[0]));
         } while (0);
         break;
-    case BasicType::UINT1:
+    case BasicType::BOOL:
     case BasicType::UINT2:
     case BasicType::UINT4:
     case BasicType::INT8:

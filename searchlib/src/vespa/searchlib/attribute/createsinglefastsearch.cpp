@@ -29,7 +29,7 @@ AttributeFactory::createSingleFastSearch(stringref name, const Config & info)
     assert(info.fastSearch());
     AttributeVector::SP ret;
     switch(info.basicType().type()) {
-    case BasicType::UINT1:
+    case BasicType::BOOL:
     case BasicType::UINT2:
     case BasicType::UINT4:
         break;

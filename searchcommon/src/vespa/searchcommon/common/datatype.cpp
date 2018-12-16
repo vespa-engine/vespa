@@ -11,7 +11,7 @@ using config::InvalidConfigException;
 
 DataType
 dataTypeFromName(vespalib::stringref name) {
-    if      (name == "UINT1")   { return DataType::UINT1; }
+    if      (name == "BOOL")   { return DataType::BOOL; }
     else if (name == "UINT2")   { return DataType::UINT2; }
     else if (name == "UINT4")   { return DataType::UINT4; }
     else if (name == "INT8")    { return DataType::INT8; }
@@ -30,7 +30,7 @@ dataTypeFromName(vespalib::stringref name) {
     }
 }
 
-const char *datatype_str[] = { "UINT1",
+const char *datatype_str[] = { "BOOL",
                                "UINT2",
                                "UINT4",
                                "INT8",

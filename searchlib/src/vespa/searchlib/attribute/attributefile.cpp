@@ -319,7 +319,7 @@ AttributeFile::getRecord()
 {
     std::unique_ptr<Record> record;
     switch (_config.basicType().type()) {
-        case BasicType::UINT1:
+        case BasicType::BOOL:
         case BasicType::UINT2:
         case BasicType::UINT4:
         case BasicType::INT8:

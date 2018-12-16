@@ -61,7 +61,7 @@ convertDataType(const ConfigType &type)
     case ConfigType::STRING:
         return DataType::STRING;
     case ConfigType::BOOL:
-        return DataType::UINT1;
+        return DataType::BOOL;
     case ConfigType::UINT2:
         return DataType::UINT2;
     case ConfigType::UINT4:

@@ -181,7 +181,7 @@ MultiAttrDFW::insertField(uint32_t docid,
             }
         }
         return; }
-    case BasicType::UINT1:
+    case BasicType::BOOL:
     case BasicType::UINT2:
     case BasicType::UINT4:
     case BasicType::INT8:

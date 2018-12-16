@@ -284,7 +284,7 @@ createConfig(BasicType bt, CollectionType ct, const GrowStrategy & grow) {
 SingleValueBitNumericAttribute::
 SingleValueBitNumericAttribute(const vespalib::string &baseFileName, const GrowStrategy & grow)
     : SingleValueSmallNumericAttribute(baseFileName,
-                                       createConfig(BasicType::UINT1, CollectionType::SINGLE, grow),
+                                       createConfig(BasicType::BOOL, CollectionType::SINGLE, grow),
                                        0x01u /* valueMask */,
                                        0x00u /* valueShiftShift */,
                                        8 * sizeof(Word) - 1 /* valueShiftMask */,
@@ -308,7 +308,7 @@ SingleValueSemiNibbleNumericAttribute(const vespalib::string &baseFileName, cons
 SingleValueNibbleNumericAttribute::
 SingleValueNibbleNumericAttribute(const vespalib::string &baseFileName, const search::GrowStrategy & grow)
     : SingleValueSmallNumericAttribute(baseFileName,
-                                       createConfig(BasicType::UINT1, CollectionType::SINGLE, grow),
+                                       createConfig(BasicType::BOOL, CollectionType::SINGLE, grow),
                                        0x0fu /* valueMask */,
                                        0x02u /* valueShiftShift */,
                                        2 * sizeof(Word) - 1 /* valueShiftMask */,
