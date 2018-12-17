@@ -13,15 +13,20 @@ import java.util.Objects;
 public class Mail {
 
     private final List<String> recipients;
+    private final String subject;
     private final String message;
 
-    public Mail(List<String> recipients, String message) {
+    public Mail(List<String> recipients, String subject, String message) {
+        if (recipients.isEmpty())
+            throw new IllegalArgumentException("Empty recipient list is not allowed.");
         recipients.forEach(Objects::requireNonNull);
         this.recipients = ImmutableList.copyOf(recipients);
+        this.subject = Objects.requireNonNull(subject);
         this.message = Objects.requireNonNull(message);
     }
 
     public List<String> recipients() { return recipients; }
+    public String subject() { return subject; }
     public String message() { return message; }
 
 }
