@@ -8,6 +8,29 @@
 #include <tests/common/teststorageapp.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/util/stringutil.h>
+#include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/socket_spec.h>
+#include <vespa/vespalib/net/sync_crypto_socket.h>
+
+vespalib::string fetch(int port, const vespalib::string &path) {
+    auto crypto = vespalib::CryptoEngine::get_default();
+    auto socket = vespalib::SocketSpec::from_port(port).client_address().connect();
+    CPPUNIT_ASSERT(socket.valid());
+    auto conn = vespalib::SyncCryptoSocket::create(*crypto, std::move(socket), false);
+    vespalib::string http_req = vespalib::make_string("GET %s HTTP/1.1\r\n"
+                                                      "Host: localhost:%d\r\n"
+                                                      "\r\n", path.c_str(), port);
+    CPPUNIT_ASSERT_EQUAL(conn->write(http_req.data(), http_req.size()), ssize_t(http_req.size()));
+    char buf[1024];
+    vespalib::string result;
+    ssize_t res = conn->read(buf, sizeof(buf));
+    while (res > 0) {
+        result.append(vespalib::stringref(buf, res));
+        res = conn->read(buf, sizeof(buf));
+    }
+    CPPUNIT_ASSERT_EQUAL(res, ssize_t(0));
+    return result;
+}
 
 namespace storage {
 
@@ -27,7 +50,6 @@ struct StatusTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testHtmlStatus);
     CPPUNIT_TEST(testXmlStatus);
     CPPUNIT_TEST(test404);
-    CPPUNIT_TEST(requireThatServerSpecIsConstructedCorrectly);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -102,14 +124,12 @@ StatusTest::testIndexStatusPage()
                             "barid", "Bar impl", "<p>info</p>"));
     StatusWebServer webServer(_node->getComponentRegister(),
                               _node->getComponentRegister(),
-                              "raw:httpport -1");
-    std::ostringstream ss;
-    framework::HttpUrlPath path("");
-    webServer.handlePage(path, ss);
+                              "raw:httpport 0");
+    auto actual = fetch(webServer.getListenPort(), "/");
     std::string expected(
             "HTTP\\/1.1 200 OK\r\n"
-            "Connection: Close\r\n"
-            "Content-type: text\\/html\r\n"
+            "Connection: close\r\n"
+            "Content-Type: text\\/html\r\n"
             "\r\n"
             "<html>\n"
             "<head>\n"
@@ -123,7 +143,7 @@ StatusTest::testIndexStatusPage()
             "<\\/body>\n"
             "<\\/html>\n"
     );
-    CPPUNIT_ASSERT_MATCH_REGEX(expected, ss.str());
+    CPPUNIT_ASSERT_MATCH_REGEX(expected, actual);
 }
 
 void
@@ -134,14 +154,12 @@ StatusTest::testHtmlStatus()
                 "fooid", "Foo impl", "<p>info</p>", "<!-- script -->"));
     StatusWebServer webServer(_node->getComponentRegister(),
                               _node->getComponentRegister(),
-                              "raw:httpport -1");
-    std::ostringstream ost;
-    framework::HttpUrlPath path("/fooid?unusedParam");
-    webServer.handlePage(path, ost);
+                              "raw:httpport 0");
+    auto actual = fetch(webServer.getListenPort(), "/fooid?unusedParam");
     std::string expected(
             "HTTP/1.1 200 OK\r\n"
-            "Connection: Close\r\n"
-            "Content-type: text/html\r\n"
+            "Connection: close\r\n"
+            "Content-Type: text/html\r\n"
             "\r\n"
             "<html>\n"
             "<head>\n"
@@ -152,7 +170,7 @@ StatusTest::testHtmlStatus()
             "<p>info</p></body>\n"
             "</html>\n"
     );
-    CPPUNIT_ASSERT_EQUAL(expected, ost.str());
+    CPPUNIT_ASSERT_EQUAL(expected, std::string(actual));
 }
 
 void
@@ -163,21 +181,19 @@ StatusTest::testXmlStatus()
                 "fooid", "Foo impl"));
     StatusWebServer webServer(_node->getComponentRegister(),
                               _node->getComponentRegister(),
-                              "raw:httpport -1");
-    std::ostringstream ost;
-    framework::HttpUrlPath path("/fooid?unusedParam");
-    webServer.handlePage(path, ost);
+                              "raw:httpport 0");
+    auto actual = fetch(webServer.getListenPort(), "/fooid?unusedParam");
     std::string expected(
             "HTTP/1.1 200 OK\r\n"
-            "Connection: Close\r\n"
-            "Content-type: application/xml\r\n"
+            "Connection: close\r\n"
+            "Content-Type: application/xml\r\n"
             "\r\n"
             "<?xml version=\"1.0\"?>\n"
             "<status id=\"fooid\" name=\"Foo impl\">\n"
             "<mytag foo=\"bar\">content</mytag>\n"
             "</status>"
     );
-    CPPUNIT_ASSERT_EQUAL(expected, ost.str());
+    CPPUNIT_ASSERT_EQUAL(expected, std::string(actual));
 }
 
 void
@@ -185,30 +201,14 @@ StatusTest::test404()
 {
     StatusWebServer webServer(_node->getComponentRegister(),
                               _node->getComponentRegister(),
-                              "raw:httpport -1");
-    std::ostringstream ost;
-    framework::HttpUrlPath path("/fooid?unusedParam");
-    webServer.handlePage(path, ost);
+                              "raw:httpport 0");
+    auto actual = fetch(webServer.getListenPort(), "/fooid?unusedParam");
     std::string expected(
-            "HTTP/1.1 404 Not found\r\n"
-            "Connection: Close\r\n"
-            "Content-type: text/html\r\n"
+            "HTTP/1.1 404 Not Found\r\n"
+            "Connection: close\r\n"
             "\r\n"
-            "<html><head><title>404 Not found</title></head>\r\n"
-            "<body><h1>404 Not found</h1>\r\n"
-            "<p></p></body>\r\n"
-            "</html>\r\n"
     );
-    CPPUNIT_ASSERT_EQUAL_ESCAPED(expected, ost.str());
-}
-
-void
-StatusTest::requireThatServerSpecIsConstructedCorrectly()
-{
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("requesthost:10"),
-            StatusWebServer::getServerSpec("requesthost:10", "serverhost:20"));
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("serverhost:20"),
-            StatusWebServer::getServerSpec("", "serverhost:20"));
+    CPPUNIT_ASSERT_EQUAL_ESCAPED(expected, std::string(actual));
 }
 
 } // storage

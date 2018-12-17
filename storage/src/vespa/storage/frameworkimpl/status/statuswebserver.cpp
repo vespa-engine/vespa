@@ -7,6 +7,8 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/component/vtag.h>
+#include <vespa/vespalib/net/crypto_engine.h>
+#include <functional>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".status");
@@ -22,16 +24,10 @@ StatusWebServer::StatusWebServer(
       _port(0),
       _httpServer(),
       _configFetcher(configUri.getContext()),
-      _queuedRequests(),
-      _component(std::make_unique<framework::Component>(componentRegister, "Status")),
-      _thread()
+      _component(std::make_unique<framework::Component>(componentRegister, "Status"))
 {
     _configFetcher.subscribe<vespa::config::content::core::StorStatusConfig>(configUri.getConfigId(), this);
     _configFetcher.start();
-    framework::MilliSecTime maxProcessingTime(60 * 60 * 1000);
-    framework::MilliSecTime maxWaitTime(10 * 1000);
-    _thread = _component->startThread(*this, maxProcessingTime, maxWaitTime);
-
 }
 
 StatusWebServer::~StatusWebServer()
@@ -44,11 +40,6 @@ StatusWebServer::~StatusWebServer()
     }
     // Delete http server to ensure that no more incoming requests reach us.
     _httpServer.reset(0);
-
-    // Stop internal thread such that we don't process anymore web requests
-    if (_thread.get() != 0) {
-        _thread->interruptAndJoin(&_workerMonitor);
-    }
 }
 
 void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::StorStatusConfig> config)
@@ -65,37 +56,6 @@ void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::St
         // Negative port number means don't run the web server
     if (newPort >= 0) {
         server.reset(new WebServer(*this, newPort));
-        server->SetKeepAlive(false);
-
-        bool started = false;
-        switch (server->Start()) {
-            case FASTLIB_SUCCESS:
-                started = true;
-                break;
-            case FASTLIB_HTTPSERVER_BADLISTEN:
-                LOG(warning, "Listen failed on port %u", newPort);
-                break;
-            case FASTLIB_HTTPSERVER_NEWTHREADFAILED:
-                LOG(warning, "Failed starting thread for status server on port %u", newPort);
-                break;
-            case FASTLIB_HTTPSERVER_ALREADYSTARTED:
-                LOG(warning, "Failed starting status server on port %u (already started?)", newPort);
-                break;
-            default:
-                LOG(warning, "Failed starting status server on port %u (unknown reason)", newPort);
-                break;
-        }
-        if (!started) {
-            std::ostringstream ost;
-            ost << "Failed to start status HTTP server using port " << newPort << ".";
-            if (_httpServer) {
-                ost << " Status server still running on port " << _port << " instead of suggested port " << newPort;
-            }
-            LOG(fatal, "%s.", ost.str().c_str());
-            _component->requestShutdown(ost.str());
-            _httpServer.reset();
-            return;
-        }
             // Now that we know config update went well, update internal state
         _port = server->getListenPort();
         LOG(config, "Status pages now available on port %u", _port);
@@ -112,45 +72,47 @@ void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::St
 }
 
 StatusWebServer::WebServer::WebServer(StatusWebServer& status, uint16_t port)
-    : Fast_HTTPServer(port, NULL, 100, false, 128*1024, 10),
-      _status(status),
-      _serverSpec(vespalib::make_string("%s:%d", vespalib::HostName::get().c_str(), port))
+    : _status(status),
+      _server(vespalib::Portal::create(vespalib::CryptoEngine::get_default(), port)),
+      _executor(1, 256 * 1024),
+      _root(_server->bind("/", *this))
 {
 }
 
+StatusWebServer::WebServer::~WebServer()
+{
+    _root.reset();
+    _executor.shutdown().sync();    
+}
 
 namespace {
-    /** Utility class for printing HTTP errors. */
-    struct HttpErrorWriter {
-        std::ostream& _out;
 
-        HttpErrorWriter(std::ostream& out, vespalib::stringref error)
-            : _out(out)
-        {
-            _out << "HTTP/1.1 " << error << "\r\n"
-                    "Connection: Close\r\n"
-                    "Content-type: text/html\r\n\r\n"
-                    "<html><head><title>" << error << "</title></head>\r\n"
-                    "<body><h1>" << error << "</h1>\r\n"
-                    "<p>";
-        }
+struct HandleGetTask : vespalib::Executor::Task {
+    vespalib::Portal::GetRequest request;
+    std::function<void(vespalib::Portal::GetRequest)> fun;
+    HandleGetTask(vespalib::Portal::GetRequest request_in,
+                  std::function<void(vespalib::Portal::GetRequest)> fun_in)
+        : request(std::move(request_in)), fun(fun_in) {}
+    void run() override { fun(std::move(request)); }
+};
 
-        template<typename T>
-        HttpErrorWriter& operator<<(const T& t) {
-            _out << t;
-            return *this;
-        }
+}
 
-        ~HttpErrorWriter() {
-            _out << "</p></body>\r\n"
-                    "</html>\r\n";
-        }
-    };
+
+void
+StatusWebServer::WebServer::get(vespalib::Portal::GetRequest request)
+{
+    auto fun = [this](vespalib::Portal::GetRequest req)
+               {
+                   handle_get(std::move(req));
+               };
+    _executor.execute(std::make_unique<HandleGetTask>(std::move(request), std::move(fun)));
 }
 
 void
-StatusWebServer::WebServer::onGetRequest(const string & tmpurl, const string &serverSpec, Fast_HTTPConnection& conn)
+StatusWebServer::WebServer::handle_get(vespalib::Portal::GetRequest request)
 {
+    const vespalib::string &tmpurl = request.get_uri();
     Fast_URL urlCodec;
     int bufLength = tmpurl.length() * 2 + 10;
     char * encodedUrl = new char[bufLength];
@@ -160,65 +122,11 @@ StatusWebServer::WebServer::onGetRequest(const string & tmpurl, const string &se
     urlCodec.decode(encodedUrl, decodedUrl, bufLength);
     delete [] encodedUrl;
 
-    string url = decodedUrl;
+    vespalib::string url = decodedUrl;
 
     LOG(debug, "Status got get request '%s'", url.c_str());
-    framework::HttpUrlPath urlpath(url.c_str(),
-            StatusWebServer::getServerSpec(serverSpec, getServerSpec()));
-    std::string link(urlpath.getPath());
-    if (link.size() > 0 && link[0] == '/') link = link.substr(1);
-        // Only allow crucial components not locking to answer directly.
-        // (We want deadlockdetector status page to be available during a
-        // deadlock
-    if (link == "" || link == "deadlockdetector") {
-        std::ostringstream ost;
-        _status.handlePage(urlpath, ost);
-        conn.Output(ost.str().c_str());
-    } else {
-            // Route other status requests that can possibly deadlock to a
-            // worker thread.
-        vespalib::MonitorGuard monitor(_status._workerMonitor);
-        _status._queuedRequests.emplace_back(std::make_shared<HttpRequest>(url.c_str(), urlpath.getServerSpec()));
-        HttpRequest* req = _status._queuedRequests.back().get();
-        framework::SecondTime timeout(urlpath.get("timeout", 30u));
-        framework::SecondTime timeoutTime(_status._component->getClock().getTimeInSeconds() + timeout);
-        monitor.signal();
-        while (true) {
-            monitor.wait(100);
-            bool done = false;
-            if (req->_result.get()) {
-                conn.Output(req->_result->c_str());
-                LOG(debug, "Finished status request for '%s'", req->_url.c_str());
-                done = true;
-            } else {
-                if (_status._component->getClock().getTimeInSeconds() > timeoutTime)
-                {
-                    std::ostringstream ost;
-                    {
-                        HttpErrorWriter writer(ost, "500 Internal Server Error");
-                        writer << "Request " << url.c_str() << " timed out "
-                               << "after " << timeout << " seconds.";
-                    }
-                    LOG(debug, "HTTP status request failed: %s. %zu requests queued",
-                        ost.str().c_str(), _status._queuedRequests.size() - 1);
-                    conn.Output(ost.str().c_str());
-                    done = true;
-                }
-            }
-            if (done) {
-                for (std::list<HttpRequest::SP>::iterator it
-                        = _status._queuedRequests.begin();
-                     it != _status._queuedRequests.end(); ++it)
-                {
-                    if (it->get() == req) {
-                        _status._queuedRequests.erase(it);
-                        break;
-                    }
-                }
-                break;
-            }
-        }
-    }
+    framework::HttpUrlPath urlpath(url.c_str(), request.get_host());
+    _status.handlePage(urlpath, std::move(request));
 }
 
 namespace {
@@ -236,8 +144,15 @@ namespace {
     };
 }
 
+
+int
+StatusWebServer::getListenPort() const
+{
+    return _httpServer ? _httpServer->getListenPort() : -1;
+}
+
 void
-StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, std::ostream& out)
+StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, vespalib::Portal::GetRequest request)
 {
     vespalib::string link(urlpath.getPath());
     if (link.size() > 0 && link[0] == '/') link = link.substr(1);
@@ -245,28 +160,23 @@ StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, std::ostream&
     size_t slashPos = link.find('/');
     if (slashPos != std::string::npos) link = link.substr(0, slashPos);
 
-    bool pageExisted = false;
     if ( ! link.empty()) {
         const framework::StatusReporter *reporter = _reporterMap.getStatusReporter(link);
         if (reporter != nullptr) {
             try {
-                pageExisted = reporter->reportHttpHeader(out, urlpath);
-                if (pageExisted) {
-                    pageExisted = reporter->reportStatus(out, urlpath);
+                std::ostringstream content;
+                auto content_type = reporter->getReportContentType(urlpath);
+                if (reporter->reportStatus(content, urlpath)) {
+                    request.respond_with_content(content_type, content.str());
+                } else {
+                    request.respond_with_error(404, "Not Found");
                 }
             } catch (std::exception &e) {
-                HttpErrorWriter writer(out, "500 Internal Server Error");
-                writer << "<pre>" << e.what() << "</pre>";
-                pageExisted = true;
+                request.respond_with_error(500, "Internal Server Error");
             }
-            if (pageExisted) {
-                LOG(spam, "Status finished request");
-                return;
-            }
+        } else {
+            request.respond_with_error(404, "Not Found");
         }
-    }
-    if (!pageExisted && link.size() > 0) {
-        HttpErrorWriter writer(out, "404 Not found");
     } else {
         IndexPageReporter indexRep;
         indexRep << "<p><b>Binary version of Vespa:</b> "
@@ -278,52 +188,12 @@ StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, std::ostream&
                          << reporter->getName() << "</a><br>\n";
             }
         }
-        indexRep.reportHttpHeader(out, urlpath);
-        indexRep.reportStatus(out, urlpath);
+        std::ostringstream content;
+        auto content_type = indexRep.getReportContentType(urlpath);
+        indexRep.reportStatus(content, urlpath);
+        request.respond_with_content(content_type, content.str());
     }
     LOG(spam, "Status finished request");
-}
-
-vespalib::string
-StatusWebServer::getServerSpec(const vespalib::string &specFromRequest,
-                               const vespalib::string &specFromServer)
-{
-    if (specFromRequest.empty()) {
-        // This is a fallback in case the request spec is not given (HTTP 1.0 header)
-        return specFromServer;
-    }
-    return specFromRequest;
-}
-
-void
-StatusWebServer::run(framework::ThreadHandle& thread)
-{
-    while (!thread.interrupted()) {
-        HttpRequest::SP request;
-        {
-            vespalib::MonitorGuard monitor(_workerMonitor);
-            for (const HttpRequest::SP & cur : _queuedRequests) {
-                if ( ! cur->_result ) {
-                    request = cur;
-                    break;
-                }
-            }
-            if (!request.get()) {
-                monitor.wait(10 * 1000);
-                thread.registerTick(framework::WAIT_CYCLE);
-                continue;
-            }
-        }
-        framework::HttpUrlPath urlpath(request->_url, request->_serverSpec);
-        std::ostringstream ost;
-        handlePage(urlpath, ost);
-        // If the same request is still in front of the queue
-        // (it hasn't timed out), add the result to it.
-        vespalib::MonitorGuard monitor(_workerMonitor);
-        request->_result.reset(new vespalib::string(ost.str()));
-        monitor.signal();
-        thread.registerTick(framework::PROCESS_CYCLE);
-    }
 }
 
 } // storage
