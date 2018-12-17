@@ -1,16 +1,18 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.URL;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -19,7 +21,14 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class HealthClientTest {
+public class StateV1HealthUpdaterTest {
+    private URL url;
+
+    @Before
+    public void setUp() throws Exception{
+        url = new URL("http://host.com:19071");
+    }
+
     @Test
     public void successfulRequestResponse() throws IOException {
         HealthInfo info = getHealthInfoFromJsonResponse("{\n" +
@@ -96,7 +105,6 @@ public class HealthClientTest {
 
     private HealthInfo getHealthInfoFromJsonResponse(String content)
             throws IOException {
-        HealthEndpoint endpoint = HealthEndpoint.forHttp(HostName.from("host.com"), 19071);
         CloseableHttpClient client = mock(CloseableHttpClient.class);
 
         CloseableHttpResponse response = mock(CloseableHttpResponse.class);
@@ -110,22 +118,22 @@ public class HealthClientTest {
         HttpEntity httpEntity = mock(HttpEntity.class);
         when(response.getEntity()).thenReturn(httpEntity);
 
-        try (HealthClient healthClient = new HealthClient(endpoint, client, entry -> content)) {
-
+        try (StateV1HealthUpdater updater = makeUpdater(client, entry -> content)) {
             when(httpEntity.getContentLength()).thenReturn((long) content.length());
-            return healthClient.getHealthInfo();
+            updater.run();
+            return updater.getLatestHealthInfo();
         }
     }
 
     @Test
     public void testRequestException() throws IOException {
-        HealthEndpoint endpoint = HealthEndpoint.forHttp(HostName.from("host.com"), 19071);
         CloseableHttpClient client = mock(CloseableHttpClient.class);
 
         when(client.execute(any())).thenThrow(new ConnectTimeoutException("exception string"));
 
-        try (HealthClient healthClient = new HealthClient(endpoint, client, entry -> "")) {
-            HealthInfo info = healthClient.getHealthInfo();
+        try (StateV1HealthUpdater updater = makeUpdater(client, entry -> "")) {
+            updater.run();
+            HealthInfo info = updater.getLatestHealthInfo();
             assertFalse(info.isHealthy());
             assertEquals(ServiceStatus.DOWN, info.toServiceStatus());
             assertEquals("Exception: exception string", info.toString());
@@ -135,7 +143,6 @@ public class HealthClientTest {
     @Test
     public void testBadHttpResponseCode()
             throws IOException {
-        HealthEndpoint endpoint = HealthEndpoint.forHttp(HostName.from("host.com"), 19071);
         CloseableHttpClient client = mock(CloseableHttpClient.class);
 
         CloseableHttpResponse response = mock(CloseableHttpResponse.class);
@@ -150,13 +157,19 @@ public class HealthClientTest {
         when(response.getEntity()).thenReturn(httpEntity);
 
         String content = "{}";
-        try (HealthClient healthClient = new HealthClient(endpoint, client, entry -> content)) {
-
+        try (HealthUpdater updater = makeUpdater(client, entry -> content)) {
             when(httpEntity.getContentLength()).thenReturn((long) content.length());
-            HealthInfo info = healthClient.getHealthInfo();
+            updater.run();
+            HealthInfo info = updater.getLatestHealthInfo();
             assertFalse(info.isHealthy());
             assertEquals(ServiceStatus.DOWN, info.toServiceStatus());
             assertEquals("Bad HTTP response status code 500", info.toString());
         }
+    }
+
+    private StateV1HealthUpdater makeUpdater(CloseableHttpClient client, Function<HttpEntity, String> getContentFunction) {
+        ApacheHttpClient apacheHttpClient = new ApacheHttpClient(url, client);
+        StateV1HealthClient healthClient = new StateV1HealthClient(apacheHttpClient, getContentFunction);
+        return new StateV1HealthUpdater(healthClient);
     }
 }
