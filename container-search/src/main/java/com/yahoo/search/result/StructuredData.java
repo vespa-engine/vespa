@@ -29,11 +29,6 @@ public class StructuredData implements Inspectable, JsonProducer, XmlProducer {
     }
 
     @Override
-    public String toXML() {
-        return writeXML(new StringBuilder()).toString();
-    }
-
-    @Override
     public StringBuilder writeXML(StringBuilder target) {
         return XmlRenderer.render(target, value);
     }
