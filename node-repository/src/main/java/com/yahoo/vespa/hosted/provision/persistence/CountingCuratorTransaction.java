@@ -12,9 +12,10 @@ import com.yahoo.vespa.curator.transaction.TransactionChanges;
  * CuratorTransaction wrapper which increments a counter, to signal invalidation of node repository caches.
  *
  * This class ensures a CuratorTransaction against the cached data (the node repository data) is
- * accompanied by an increment of the data generation counter. This increment must occur <em>after</em>
+ * accompanied by an increment of the data generation counter. An increment must occur <em>after</em>
  * the write has completed, successfully or not. It is therefore placed in a {@code finally} block,
  * wrapping the super class' {@link #commit()}.
+ * Likewise, {@link #prepare()} is also wrapped with an increment, in case it fails due to an inconsistent cache.
  * The cache is invalid whenever the generation counter is higher than what the cache contents were read with.
  * The usual locking for modifications of shared data is then enough to ensure the cache provides a
  * consistent view of the shared data, with one exception: when incrementing the counter fails. This is
@@ -33,8 +34,13 @@ class CountingCuratorTransaction extends CuratorTransaction {
 
     @Override
     public void prepare() {
-        counter.get();
-        super.prepare();
+        try {
+            counter.get();
+            super.prepare();
+        }
+        finally {
+            counter.next();
+        }
     }
 
     @Override

@@ -39,7 +39,7 @@ public class CuratorDatabaseTest {
         commitCreate("/2", database);
         commitCreate("/1/1", database);
         commitCreate("/2/1", database);
-        assertEquals(4L, (long)curator.counter("/changeCounter").get().get().postValue());
+        assertEquals(8L, (long)curator.counter("/changeCounter").get().get().postValue());
 
         List<String> children1Call1 = database.getChildren(Path.fromString("/1"));
         List<String> children1Call2 = database.getChildren(Path.fromString("/1"));
@@ -63,7 +63,7 @@ public class CuratorDatabaseTest {
         assertArrayEquals(new byte[0], database.getData(Path.fromString("/1")).get());
         commitReadingWrite("/1", "hello".getBytes(), database);
         // Data cached during commit of write transaction. Should be invalid now, and re-read.
-        assertEquals(2L, (long)curator.counter("/changeCounter").get().get().postValue());
+        assertEquals(4L, (long)curator.counter("/changeCounter").get().get().postValue());
         assertArrayEquals("hello".getBytes(), database.getData(Path.fromString("/1")).get());
 
         assertEquals(0, database.getChildren(Path.fromString("/1")).size());
@@ -82,7 +82,7 @@ public class CuratorDatabaseTest {
         commitCreate("/2", database);
         commitCreate("/1/1", database);
         commitCreate("/2/1", database);
-        assertEquals(4L, (long)curator.counter("/changeCounter").get().get().postValue());
+        assertEquals(8L, (long)curator.counter("/changeCounter").get().get().postValue());
 
         List<String> children1Call0 = database.getChildren(Path.fromString("/1")); // prime the db; this call returns a different instance
         List<String> children1Call1 = database.getChildren(Path.fromString("/1"));
@@ -104,16 +104,16 @@ public class CuratorDatabaseTest {
         catch (Exception expected) {
             // expected because the parent does not exist
         }
-        // Counter not increased, since prepare failed.
-        assertEquals(0L, (long)curator.counter("/changeCounter").get().get().postValue());
+        // Counter increased once, since prepare failed.
+        assertEquals(1L, (long)curator.counter("/changeCounter").get().get().postValue());
 
         try {
             commitFailing(database); // fail during commit
             fail("Expected exception");
         }
         catch (Exception expected) { }
-        // Counter increased, since commit failed.
-        assertEquals(1L, (long)curator.counter("/changeCounter").get().get().postValue());
+        // Counter increased, even though commit failed.
+        assertEquals(3L, (long)curator.counter("/changeCounter").get().get().postValue());
     }
 
     private void commitCreate(String path, CuratorDatabase database) {
