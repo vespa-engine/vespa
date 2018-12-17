@@ -19,9 +19,11 @@ public interface JsonProducer {
 
     /**
      * Convenience method equivalent to:
-     * makeJson(new StringBuilder()).toString()
+     * writeJson(new StringBuilder()).toString()
      * @return String containing JSON representation of this object's data.
      */
-    String toJson();
+    default String toJson() {
+        return writeJson(new StringBuilder()).toString();
+    }
 
 }
