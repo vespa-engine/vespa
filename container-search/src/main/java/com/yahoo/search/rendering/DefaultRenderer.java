@@ -2,6 +2,7 @@
 package com.yahoo.search.rendering;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
+import com.yahoo.data.XmlProducer;
 import com.yahoo.io.ByteWriter;
 import com.yahoo.net.URI;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
@@ -198,6 +199,8 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
     private String asXML(Object value) {
         if (value == null)
             return "(null)";
+        else if (value instanceof XmlProducer)
+            return ((XmlProducer)value).toXML();
         else if (value instanceof HitField)
             return ((HitField)value).quotedContent(false);
         else if (value instanceof StructuredData || value instanceof XMLString || value instanceof JSONString)

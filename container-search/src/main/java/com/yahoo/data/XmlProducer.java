@@ -15,10 +15,11 @@ public interface XmlProducer {
 
     /**
      * Convenience method equivalent to:
-     * makeXML(new StringBuilder()).toString()
+     * writeXML(new StringBuilder()).toString()
      * @return String containing XML representation of this object's data.
      */
-    String toXML();
+    default String toXML() {
+        return writeXML(new StringBuilder()).toString();
+    }
 
 }
-
