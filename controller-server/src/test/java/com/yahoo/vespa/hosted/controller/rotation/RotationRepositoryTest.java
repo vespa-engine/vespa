@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.rotation;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -24,7 +23,7 @@ import static org.junit.Assert.assertFalse;
  * @author Oyvind Gronnesby
  * @author mpolden
  */
-public class RotationTest {
+public class RotationRepositoryTest {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -145,40 +144,6 @@ public class RotationTest {
     }
 
     @Test
-    public void application_with_only_one_non_corp_region() {
-        tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "corp-us-east-1"),
-                                                          ZoneId.from("prod", "us-east-3"));
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .globalServiceId("foo")
-                .region("us-east-3")
-                .region("corp-us-east-1")
-                .build();
-        Application application = tester.createApplication("app2", "tenant2", 22L,
-                                                           2L);
-        thrown.expect(RuntimeException.class);
-        thrown.expectMessage("less than 2 prod zones are defined");
-        tester.deployCompletely(application, applicationPackage);
-    }
-
-    @Test
-    public void application_with_corp_region_and_two_non_corp_region() {
-        tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "corp-us-east-1"),
-                                                          ZoneId.from("prod", "us-east-3"),
-                                                          ZoneId.from("prod", "us-west-1"));
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .globalServiceId("foo")
-                .region("us-east-3")
-                .region("corp-us-east-1")
-                .region("us-west-1")
-                .build();
-        Application application = tester.createApplication("app2", "tenant2", 22L,
-                                                           2L);
-        tester.deployCompletely(application, applicationPackage);
-        assertEquals(new RotationId("foo-1"), tester.applications().require(application.id())
-                                                    .rotation().get());
-    }
-
-    @Test
     public void prefixes_system_when_not_main() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .globalServiceId("foo")
@@ -193,4 +158,5 @@ public class RotationTest {
         assertEquals("https://cd--app2--tenant2.global.vespa.yahooapis.com:4443/", tester.applications().require(application.id())
                 .globalDnsName(SystemName.cd).get().secureUrl().toString());
     }
+
 }

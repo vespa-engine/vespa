@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.rotation;
 
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -69,8 +68,6 @@ public class RotationRepository {
         }
         long productionZones = application.deploymentSpec().zones().stream()
                                           .filter(zone -> zone.deploysTo(Environment.prod))
-                                          // Global rotations don't work for nodes in corp network
-                                          .filter(zone -> !isCorp(zone))
                                           .count();
         if (productionZones < 2) {
             throw new IllegalArgumentException("global-service-id is set but less than 2 prod zones are defined");
@@ -102,11 +99,6 @@ public class RotationRepository {
         RotationId rotation = availableRotations.keySet().iterator().next();
         log.info(String.format("Offering %s to application %s", rotation, application.id()));
         return allRotations.get(rotation);
-    }
-
-    // TODO: Remove after corp zones disappear
-    private static boolean isCorp(DeploymentSpec.DeclaredZone zone) {
-        return zone.region().isPresent() && zone.region().get().value().contains("corp");
     }
 
     /** Returns a immutable map of rotation ID to rotation sorted by rotation ID */
