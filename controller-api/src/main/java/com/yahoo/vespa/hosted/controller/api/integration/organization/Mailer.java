@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 /**
- * Allows sending e-mail from a particular user@domain.
+ * Allows sending e-mail from a particular <code>user@domain</code>.
  *
  * @author jonmv
  */
