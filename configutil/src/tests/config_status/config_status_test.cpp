@@ -19,7 +19,7 @@ private:
     bool _fail;
     Portal::Token::UP _root;
 
-    void get(Portal::GetRequest request) const override {
+    void get(Portal::GetRequest request) override {
         if (_fail) {
             request.respond_with_error(500, "Error");
         } else {

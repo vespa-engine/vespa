@@ -83,7 +83,7 @@ struct MyGetHandler : public Portal::GetHandler {
     std::function<void(Portal::GetRequest)> fun;
     template <typename F>
     MyGetHandler(F &&f) : fun(std::move(f)) {}
-    void get(Portal::GetRequest request) const override {
+    void get(Portal::GetRequest request) override {
         fun(std::move(request));
     }
     ~MyGetHandler();

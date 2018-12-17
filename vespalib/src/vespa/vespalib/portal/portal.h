@@ -67,7 +67,7 @@ public:
     };
 
     struct GetHandler {
-        virtual void get(GetRequest request) const = 0;
+        virtual void get(GetRequest request) = 0;
         virtual ~GetHandler();
     };
 
@@ -75,8 +75,8 @@ private:
     struct BindState {
         uint64_t handle;
         vespalib::string prefix;
-        const GetHandler *handler;
-        BindState(uint64_t handle_in, vespalib::string prefix_in, const GetHandler &handler_in)
+        GetHandler *handler;
+        BindState(uint64_t handle_in, vespalib::string prefix_in, GetHandler &handler_in)
             : handle(handle_in), prefix(prefix_in), handler(&handler_in) {}
         bool operator<(const BindState &rhs) const {
             if (prefix.size() == rhs.prefix.size()) {
@@ -98,7 +98,7 @@ private:
     Token::UP make_token();
     void cancel_token(Token &token);
 
-    portal::HandleGuard lookup_get_handler(const vespalib::string &uri, const GetHandler *&handler);
+    portal::HandleGuard lookup_get_handler(const vespalib::string &uri, GetHandler *&handler);
     void evict_handle(uint64_t handle);
 
     void handle_accept(portal::HandleGuard guard, SocketHandle socket);
@@ -110,7 +110,7 @@ public:
     static SP create(CryptoEngine::SP crypto, int port);
     int listen_port() const { return _listener->listen_port(); }
     const vespalib::string &my_host() const { return _my_host; }
-    Token::UP bind(const vespalib::string &path_prefix, const GetHandler &handler);
+    Token::UP bind(const vespalib::string &path_prefix, GetHandler &handler);
 };
 
 } // namespace vespalib

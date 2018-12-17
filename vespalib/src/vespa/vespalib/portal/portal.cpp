@@ -88,7 +88,7 @@ Portal::cancel_token(Token &token)
 }
 
 portal::HandleGuard
-Portal::lookup_get_handler(const vespalib::string &uri, const GetHandler *&handler)
+Portal::lookup_get_handler(const vespalib::string &uri, GetHandler *&handler)
 {
     std::lock_guard guard(_lock);
     for (const auto &entry: _bind_list) {
@@ -130,7 +130,7 @@ Portal::handle_http(portal::HttpConnection *conn)
         } else if (!conn->get_request().is_get()) {
             conn->respond_with_error(501, "Not Implemented");
         } else {
-            const GetHandler *get_handler = nullptr;
+            GetHandler *get_handler = nullptr;
             auto guard = lookup_get_handler(conn->get_request().get_uri(), get_handler);
             if (guard.valid()) {
                 assert(get_handler != nullptr);
@@ -182,7 +182,7 @@ Portal::create(CryptoEngine::SP crypto, int port)
 }
 
 Portal::Token::UP
-Portal::bind(const vespalib::string &path_prefix, const GetHandler &handler)
+Portal::bind(const vespalib::string &path_prefix, GetHandler &handler)
 {
     auto token = make_token();    
     std::lock_guard guard(_lock);
