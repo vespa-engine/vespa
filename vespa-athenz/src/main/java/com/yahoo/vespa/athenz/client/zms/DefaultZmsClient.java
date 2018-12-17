@@ -122,8 +122,8 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
     @Override
     public boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity) {
-        URI uri = zmsUrl.resolve(String.format("access/%s/%s?domain=%s&principal=%s",
-                                               action, resource.toResourceNameString(), identity.getDomainName(), identity.getName()));
+        URI uri = zmsUrl.resolve(String.format("access/%s/%s?principal=%s",
+                                               action, resource.toResourceNameString(), identity.getFullName()));
         HttpUriRequest request = RequestBuilder.get()
                 .setUri(uri)
                 .build();
