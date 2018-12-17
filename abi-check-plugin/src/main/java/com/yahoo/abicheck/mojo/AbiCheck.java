@@ -10,6 +10,7 @@ import com.yahoo.abicheck.collector.AnnotationCollector;
 import com.yahoo.abicheck.collector.PublicSignatureCollector;
 import com.yahoo.abicheck.setmatcher.SetMatcher;
 import com.yahoo.abicheck.signature.JavaClassSignature;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -52,8 +53,8 @@ public class AbiCheck extends AbstractMojo {
 
   // CLOVER:OFF
   // Testing that Gson can read JSON files is not very useful
-  private static Map<String, JavaClassSignature> readSpec(String fileName) throws IOException {
-    try (FileReader reader = new FileReader(fileName)) {
+  private static Map<String, JavaClassSignature> readSpec(File file) throws IOException {
+    try (FileReader reader = new FileReader(file)) {
       TypeToken<Map<String, JavaClassSignature>> typeToken =
           new TypeToken<Map<String, JavaClassSignature>>() {
           };
@@ -65,10 +66,10 @@ public class AbiCheck extends AbstractMojo {
 
   // CLOVER:OFF
   // Testing that Gson can write JSON files is not very useful
-  private static void writeSpec(Map<String, JavaClassSignature> signatures, String fileName)
+  private static void writeSpec(Map<String, JavaClassSignature> signatures, File file)
       throws IOException {
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    try (FileWriter writer = new FileWriter(fileName)) {
+    try (FileWriter writer = new FileWriter(file)) {
       gson.toJson(signatures, writer);
     }
   }
@@ -157,6 +158,7 @@ public class AbiCheck extends AbstractMojo {
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     Artifact mainArtifact = project.getArtifact();
+    File specFile = new File(project.getBasedir(), specFileName);
     if (mainArtifact.getFile() == null) {
       throw new MojoExecutionException("Missing project artifact file");
     } else if (!mainArtifact.getType().equals("jar")) {
@@ -165,6 +167,7 @@ public class AbiCheck extends AbstractMojo {
 
     getLog().debug("Analyzing " + mainArtifact.getFile());
 
+
     try (JarFile jarFile = new JarFile(mainArtifact.getFile())) {
       ClassFileTree tree = ClassFileTree.fromJar(jarFile);
       Map<String, JavaClassSignature> signatures = new LinkedHashMap<>();
@@ -172,10 +175,10 @@ public class AbiCheck extends AbstractMojo {
         signatures.putAll(collectPublicAbiSignatures(pkg, publicApiAnnotation));
       }
       if (System.getProperty(WRITE_SPEC_PROPERTY) != null) {
-        getLog().info("Writing ABI specs to " + specFileName);
-        writeSpec(signatures, specFileName);
+        getLog().info("Writing ABI specs to " + specFile.getPath());
+        writeSpec(signatures, specFile);
       } else {
-        Map<String, JavaClassSignature> abiSpec = readSpec(specFileName);
+        Map<String, JavaClassSignature> abiSpec = readSpec(specFile);
         if (!compareSignatures(abiSpec, signatures, getLog())) {
           throw new MojoFailureException("ABI spec mismatch");
         }
