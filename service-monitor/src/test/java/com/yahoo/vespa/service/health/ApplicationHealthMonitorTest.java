@@ -1,47 +1,92 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
+import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
+import com.yahoo.vespa.service.model.ServiceId;
 import com.yahoo.vespa.service.monitor.ConfigserverUtil;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class ApplicationHealthMonitorTest {
     private final ConfigServerApplication configServerApplication = new ConfigServerApplication();
 
     @Test
-    public void sanityCheck() {
-        MonitorFactory monitorFactory = new MonitorFactory();
-
+    public void activationAndRemoval() {
         HealthMonitor monitor1 = mock(HealthMonitor.class);
         HealthMonitor monitor2 = mock(HealthMonitor.class);
         HealthMonitor monitor3 = mock(HealthMonitor.class);
 
-        monitorFactory.expectEndpoint("http://cfg1:19071/state/v1/health", monitor1);
-        monitorFactory.expectEndpoint("http://cfg2:19071/state/v1/health", monitor2);
-        monitorFactory.expectEndpoint("http://cfg3:19071/state/v1/health", monitor3);
+        ApplicationInfo configServer = ConfigserverUtil.makeExampleConfigServer();
+        StateV1HealthModel model = mock(StateV1HealthModel.class);
+        ApplicationHealthMonitor applicationMonitor = new ApplicationHealthMonitor(configServer.getApplicationId(), model);
+
+        // Activate with cfg1-2
+        HealthEndpoint endpoint1 = mock(HealthEndpoint.class);
+        HealthEndpoint endpoint2 = mock(HealthEndpoint.class);
+        Map<ServiceId, HealthEndpoint> initialEndpoints = new HashMap<>();
+        initialEndpoints.put(serviceIdOf("cfg1"), endpoint1);
+        initialEndpoints.put(serviceIdOf("cfg2"), endpoint2);
+
+        when(model.extractHealthEndpoints(configServer)).thenReturn(initialEndpoints);
+        when(endpoint1.startMonitoring()).thenReturn(monitor1);
+        when(endpoint2.startMonitoring()).thenReturn(monitor2);
+        applicationMonitor.monitor(configServer);
+
+        verify(endpoint1, times(1)).startMonitoring();
+        verify(endpoint2, times(1)).startMonitoring();
 
         when(monitor1.getStatus()).thenReturn(ServiceStatus.UP);
         when(monitor2.getStatus()).thenReturn(ServiceStatus.DOWN);
-        when(monitor3.getStatus()).thenReturn(ServiceStatus.NOT_CHECKED);
-
-        ApplicationHealthMonitor applicationMonitor = ApplicationHealthMonitor.startMonitoring(
-                ConfigserverUtil.makeExampleConfigServer(),
-                monitorFactory);
+        when(monitor3.getStatus()).thenReturn(ServiceStatus.UP);
 
         assertEquals(ServiceStatus.UP, getStatus(applicationMonitor, "cfg1"));
         assertEquals(ServiceStatus.DOWN, getStatus(applicationMonitor, "cfg2"));
         assertEquals(ServiceStatus.NOT_CHECKED, getStatus(applicationMonitor, "cfg3"));
+
+        // Update application to contain cfg2-3
+        HealthEndpoint endpoint3 = mock(HealthEndpoint.class);
+        when(endpoint3.startMonitoring()).thenReturn(monitor3);
+        Map<ServiceId, HealthEndpoint> endpoints = new HashMap<>();
+        endpoints.put(serviceIdOf("cfg2"), endpoint2);
+        endpoints.put(serviceIdOf("cfg3"), endpoint3);
+        when(model.extractHealthEndpoints(configServer)).thenReturn(endpoints);
+        applicationMonitor.monitor(configServer);
+
+        // Only monitor1 has been removed and had its close called
+        verify(monitor1, times(1)).close();
+        verify(monitor2, never()).close();
+        verify(monitor3, never()).close();
+
+        // Only endpoint3 started monitoring from last monitor()
+        verify(endpoint1, times(1)).startMonitoring();
+        verify(endpoint2, times(1)).startMonitoring();
+        verify(endpoint3, times(1)).startMonitoring();
+
+        // Now cfg1 will be NOT_CHECKED, while cfg3 should be UP.
+        assertEquals(ServiceStatus.NOT_CHECKED, getStatus(applicationMonitor, "cfg1"));
+        assertEquals(ServiceStatus.DOWN, getStatus(applicationMonitor, "cfg2"));
+        assertEquals(ServiceStatus.UP, getStatus(applicationMonitor, "cfg3"));
+
+        applicationMonitor.close();
+    }
+
+    private ServiceId serviceIdOf(String hostname) {
+        return new ServiceId(configServerApplication.getApplicationId(),
+                configServerApplication.getClusterId(),
+                configServerApplication.getServiceType(),
+                configServerApplication.configIdFor(HostName.from(hostname)));
     }
 
     private ServiceStatus getStatus(ApplicationHealthMonitor monitor, String hostname) {
@@ -50,71 +95,5 @@ public class ApplicationHealthMonitorTest {
                 configServerApplication.getClusterId(),
                 configServerApplication.getServiceType(),
                 configServerApplication.configIdFor(HostName.from(hostname)));
-    }
-
-    private static class MonitorFactory implements Function<HealthEndpoint, HealthMonitor> {
-        private Map<String, EndpointInfo> endpointMonitors = new HashMap<>();
-
-        public void expectEndpoint(String url, HealthMonitor monitorToReturn) {
-            endpointMonitors.put(url, new EndpointInfo(url, monitorToReturn));
-        }
-
-        @Override
-        public HealthMonitor apply(HealthEndpoint endpoint) {
-            String url = endpoint.getStateV1HealthUrl().toString();
-            EndpointInfo info = endpointMonitors.get(url);
-            if (info == null) {
-                throw new IllegalArgumentException("Endpoint not expected: " + url);
-            }
-
-            if (info.isEndpointDiscovered()) {
-                throw new IllegalArgumentException("A HealthMonitor has already been created to " + url);
-            }
-
-            info.setEndpointDiscovered(true);
-
-            return info.getMonitorToReturn();
-        }
-    }
-
-    private static class EndpointInfo {
-        private final String url;
-        private final HealthMonitor monitorToReturn;
-
-        private boolean endpointDiscovered = false;
-
-        private EndpointInfo(String url, HealthMonitor monitorToReturn) {
-            this.url = url;
-            this.monitorToReturn = monitorToReturn;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-
-        public boolean isEndpointDiscovered() {
-            return endpointDiscovered;
-        }
-
-        public void setEndpointDiscovered(boolean endpointDiscovered) {
-            this.endpointDiscovered = endpointDiscovered;
-        }
-
-        public HealthMonitor getMonitorToReturn() {
-            return monitorToReturn;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            EndpointInfo that = (EndpointInfo) o;
-            return Objects.equals(url, that.url);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(url);
-        }
     }
 }

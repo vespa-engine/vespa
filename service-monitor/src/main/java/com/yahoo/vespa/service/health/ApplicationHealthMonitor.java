@@ -2,53 +2,48 @@
 package com.yahoo.vespa.service.health;
 
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.config.model.api.HostInfo;
-import com.yahoo.config.model.api.PortInfo;
-import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
-import com.yahoo.vespa.service.model.ApplicationInstanceGenerator;
 import com.yahoo.vespa.service.model.ServiceId;
+import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
+import java.util.Set;
 
 /**
  * Responsible for monitoring a whole application using /state/v1/health.
  *
  * @author hakon
  */
-public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoCloseable {
-    public static final String PORT_TAG_STATE = "STATE";
-    public static final String PORT_TAG_HTTP = "HTTP";
-    /** Port tags implying /state/v1/health is served */
-    public static final List<String> PORT_TAGS_HEALTH =
-            Collections.unmodifiableList(Arrays.asList(PORT_TAG_HTTP, PORT_TAG_STATE));
+class ApplicationHealthMonitor implements ServiceStatusProvider, AutoCloseable {
+    private final ApplicationId applicationId;
+    private final StateV1HealthModel healthModel;
+    private final Map<ServiceId, HealthMonitor> monitors = new HashMap<>();
 
-    private final Map<ServiceId, HealthMonitor> healthMonitors;
-
-    public static ApplicationHealthMonitor startMonitoring(ApplicationInfo application) {
-        return startMonitoring(application, HealthMonitor::new);
+    ApplicationHealthMonitor(ApplicationId applicationId, StateV1HealthModel healthModel) {
+        this.applicationId = applicationId;
+        this.healthModel = healthModel;
     }
 
-    /** For testing. */
-    static ApplicationHealthMonitor startMonitoring(ApplicationInfo application,
-                                                    Function<HealthEndpoint, HealthMonitor> mapper) {
-        return new ApplicationHealthMonitor(makeHealthMonitors(application, mapper));
-    }
+    void monitor(ApplicationInfo applicationInfo) {
+        if (!applicationInfo.getApplicationId().equals(applicationId)) {
+            throw new IllegalArgumentException("Monitors " + applicationId + " but was asked to monitor " + applicationInfo.getApplicationId());
+        }
 
-    private ApplicationHealthMonitor(Map<ServiceId, HealthMonitor> healthMonitors) {
-        this.healthMonitors = healthMonitors;
+        Map<ServiceId, HealthEndpoint> endpoints = healthModel.extractHealthEndpoints(applicationInfo);
+
+        // Remove obsolete monitors
+        Set<ServiceId> removed = new HashSet<>(monitors.keySet());
+        removed.removeAll(endpoints.keySet());
+        removed.stream().map(monitors::remove).forEach(HealthMonitor::close);
+
+        // Add new monitors.
+        endpoints.forEach((serviceId, endpoint) -> monitors.computeIfAbsent(serviceId, ignoredId -> endpoint.startMonitoring()));
     }
 
     @Override
@@ -62,7 +57,7 @@ public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoClos
                                    ServiceType serviceType,
                                    ConfigId configId) {
         ServiceId serviceId = new ServiceId(applicationId, clusterId, serviceType, configId);
-        HealthMonitor monitor = healthMonitors.get(serviceId);
+        HealthMonitor monitor = monitors.get(serviceId);
         if (monitor == null) {
             return ServiceStatus.NOT_CHECKED;
         }
@@ -72,45 +67,7 @@ public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoClos
 
     @Override
     public void close() {
-        healthMonitors.values().forEach(HealthMonitor::close);
-        healthMonitors.clear();
-    }
-
-    private static Map<ServiceId, HealthMonitor> makeHealthMonitors(
-            ApplicationInfo application, Function<HealthEndpoint, HealthMonitor> monitorFactory) {
-        Map<ServiceId, HealthMonitor> healthMonitors = new HashMap<>();
-        for (HostInfo hostInfo : application.getModel().getHosts()) {
-            for (ServiceInfo serviceInfo : hostInfo.getServices()) {
-                for (PortInfo portInfo : serviceInfo.getPorts()) {
-                    maybeCreateHealthMonitor(
-                            application,
-                            hostInfo,
-                            serviceInfo,
-                            portInfo,
-                            monitorFactory)
-                            .ifPresent(healthMonitor -> healthMonitors.put(
-                                    ApplicationInstanceGenerator.getServiceId(application, serviceInfo),
-                                    healthMonitor));
-                }
-            }
-        }
-        return healthMonitors;
-    }
-
-    private static Optional<HealthMonitor> maybeCreateHealthMonitor(
-            ApplicationInfo applicationInfo,
-            HostInfo hostInfo,
-            ServiceInfo serviceInfo,
-            PortInfo portInfo,
-            Function<HealthEndpoint, HealthMonitor> monitorFactory) {
-        if (portInfo.getTags().containsAll(PORT_TAGS_HEALTH)) {
-            HostName hostname = HostName.from(hostInfo.getHostname());
-            HealthEndpoint endpoint = HealthEndpoint.forHttp(hostname, portInfo.getPort());
-            HealthMonitor healthMonitor = monitorFactory.apply(endpoint);
-            healthMonitor.startMonitoring();
-            return Optional.of(healthMonitor);
-        }
-
-        return Optional.empty();
+        monitors.values().forEach(HealthMonitor::close);
+        monitors.clear();
     }
 }

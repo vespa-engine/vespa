@@ -13,7 +13,7 @@ import java.util.TreeMap;
 import java.util.logging.Logger;
 
 /**
- * A non-thread-safe mutable container of ApplicationInfo in the DuperModel, also taking care of listeners on changes.
+ * A non-thread-safe mutable container of ApplicationInfo, also taking care of listeners on changes.
  *
  * @author hakonhall
  */

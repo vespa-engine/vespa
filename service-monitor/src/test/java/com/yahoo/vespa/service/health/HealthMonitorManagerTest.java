@@ -49,7 +49,9 @@ public class HealthMonitorManagerTest {
         when(monitorInfra.value()).thenReturn(false);
         ApplicationInfo applicationInfo = ConfigserverUtil.makeExampleConfigServer();
         manager.applicationActivated(applicationInfo);
+        verify(monitor, times(1)).monitor(applicationInfo);
         manager.applicationRemoved(applicationInfo.getApplicationId());
+        verify(monitor, times(1)).close();
     }
 
     @Test
@@ -73,7 +75,7 @@ public class HealthMonitorManagerTest {
         ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
         manager.applicationActivated(proxyHostApplicationInfo);
-        verify(monitorFactory, never()).create(proxyHostApplicationInfo);
+        verify(monitorFactory, never()).create(proxyHostApplicationInfo.getApplicationId());
 
         assertStatus(ServiceStatus.NOT_CHECKED, 0, proxyHostApplication, "proxyhost1");
     }
@@ -88,7 +90,7 @@ public class HealthMonitorManagerTest {
         ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
         manager.applicationActivated(proxyHostApplicationInfo);
-        verify(monitorFactory, times(1)).create(proxyHostApplicationInfo);
+        verify(monitorFactory, times(1)).create(proxyHostApplicationInfo.getApplicationId());
 
         when(monitor.getStatus(any(), any(), any(), any())).thenReturn(ServiceStatus.UP);
         assertStatus(ServiceStatus.UP, 1, proxyHostApplication, "proxyhost1");
@@ -96,6 +98,11 @@ public class HealthMonitorManagerTest {
         ControllerHostApplication controllerHostApplication = new ControllerHostApplication();
         when(duperModel.isSupportedInfraApplication(controllerHostApplication.getApplicationId())).thenReturn(true);
         assertStatus(ServiceStatus.NOT_CHECKED, 0, controllerHostApplication, "controllerhost1");
+    }
+
+    @Test
+    public void threadPoolSize() {
+        assertEquals(9, HealthMonitorManager.THREAD_POOL_SIZE);
     }
 
     private void assertStatus(ServiceStatus expected, int verifyTimes, InfraApplication infraApplication, String hostname) {

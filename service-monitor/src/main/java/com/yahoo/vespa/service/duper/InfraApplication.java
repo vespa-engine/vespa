@@ -17,7 +17,7 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
-import com.yahoo.vespa.service.health.ApplicationHealthMonitor;
+import com.yahoo.vespa.service.health.StateV1HealthModel;
 import com.yahoo.vespa.service.model.ModelGenerator;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 
@@ -107,7 +107,7 @@ public abstract class InfraApplication implements InfraApplicationApi {
     }
 
     private HostInfo makeHostInfo(HostName hostname) {
-        PortInfo portInfo = new PortInfo(healthPort, ApplicationHealthMonitor.PORT_TAGS_HEALTH);
+        PortInfo portInfo = new PortInfo(healthPort, StateV1HealthModel.HTTP_HEALTH_PORT_TAGS);
 
         Map<String, String> properties = new HashMap<>();
         properties.put(ModelGenerator.CLUSTER_ID_PROPERTY_NAME, getClusterId().s());
