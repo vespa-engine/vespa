@@ -5,6 +5,13 @@
       "enabled": false,
       "enabledHostnames": [],
       "enabledApplications": []
+    },
+    {
+      "id": "new-cache-counting",
+      "enabled": false,
+      "enabledHostnames": [],
+      "enabledApplications": []
     }
+
   ]
 }

@@ -81,7 +81,6 @@ public class NodeRepository extends AbstractComponent {
     private final NameResolver nameResolver;
     private final DockerImage dockerImage;
     private final OsVersions osVersions;
-    private final Flags flags;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -105,7 +104,6 @@ public class NodeRepository extends AbstractComponent {
         this.nameResolver = nameResolver;
         this.dockerImage = dockerImage;
         this.osVersions = new OsVersions(this.db);
-        this.flags = new Flags(this.db);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
@@ -126,7 +124,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns feature flags of this node repository */
     public Flags flags() {
-        return flags;
+        return db.flags();
     }
 
     // ---------------- Query API ----------------------------------------------------------------
