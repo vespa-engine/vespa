@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "lidstatevector.h"
 #include <vespa/vespalib/util/generationhandler.h>
 #include <deque>
 
 namespace proton {
+
+class LidStateVector;
 
 /**
  * Class used to hold <lid, generation> pairs before reuse.
@@ -22,21 +23,14 @@ private:
     ElementDeque _holdList;
 
 public:
-    LidHoldList()
-        : _holdList()
-    {
-    }
+    LidHoldList();
+    ~LidHoldList();
 
     /**
      * Adds a new element with the given generation.
      * Elements must be added with ascending generations.
      **/
-    void add(const uint32_t data, generation_t generation) {
-        if (!_holdList.empty()) {
-            assert(generation >= _holdList.back().second);
-        }
-        _holdList.push_back(std::make_pair(data, generation));
-    }
+    void add(const uint32_t data, generation_t generation);
 
     /**
      * Returns the total number of elements.
@@ -46,19 +40,12 @@ public:
     /**
      * Clears the free list.
      **/
-    void clear() { _holdList.clear(); }
+    void clear();
 
     /**
      * Frees up elements with generation < first used generation for reuse.
      **/
-    void trimHoldLists(generation_t firstUsed, LidStateVector &freeLids)
-    {
-        while (!_holdList.empty() && _holdList.front().second < firstUsed) {
-            uint32_t lid = _holdList.front().first;
-            freeLids.setBit(lid);
-            _holdList.pop_front();
-        }
-    }
+    void trimHoldLists(generation_t firstUsed, LidStateVector &freeLids);
 };
 
 

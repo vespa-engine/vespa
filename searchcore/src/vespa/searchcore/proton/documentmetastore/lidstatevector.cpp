@@ -6,11 +6,9 @@ namespace proton {
 
 using vespalib::GenerationHolder;
 
-LidStateVector::LidStateVector(unsigned int newSize,
-                               unsigned int newCapacity,
+LidStateVector::LidStateVector(unsigned int newSize, unsigned int newCapacity,
                                GenerationHolder &generationHolder,
-                               bool trackLowest,
-                               bool trackHighest)
+                               bool trackLowest, bool trackHighest)
     : _bv(newSize, newCapacity, generationHolder),
       _lowest(trackLowest ? newSize : 0u),
       _highest(0),
@@ -20,11 +18,7 @@ LidStateVector::LidStateVector(unsigned int newSize,
 {
 }
 
-
-LidStateVector::~LidStateVector()
-{
-}
-
+LidStateVector::~LidStateVector() = default;
 
 void
 LidStateVector::resizeVector(uint32_t newSize, uint32_t newCapacity)

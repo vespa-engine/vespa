@@ -8,7 +8,6 @@
 #include "lid_allocator.h"
 #include "lid_gid_key_comparator.h"
 #include "lid_hold_list.h"
-#include "lidstatevector.h"
 #include "raw_document_meta_data.h"
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/subdbtype.h>
