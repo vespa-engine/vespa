@@ -93,7 +93,6 @@ public class XMLRendererTestCase {
                 "  <group relevancy=\"1.0\">\n" +
                 "    <hit type=\"summary\" relevancy=\"0.9\">\n" +
                 "      <field name=\"relevancy\">0.9</field>\n" +
-                "      <field name=\"uri\">http://localhost/1</field>\n" +
                 "      <field name=\"c\">d</field>\n" +
                 "    </hit>\n" +
                 "  </group>\n" +
@@ -102,7 +101,6 @@ public class XMLRendererTestCase {
                 "  </hit>\n" +
                 "  <hit type=\"summary\" relevancy=\"0.95\">\n" +
                 "    <field name=\"relevancy\">0.95</field>\n" +
-                "    <field name=\"uri\">http://localhost/</field>\n" +
                 "    <field name=\"b\">foo</field>\n" +
                 "  </hit>\n" +
                 "</result>\n";
