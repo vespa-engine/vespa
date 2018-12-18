@@ -13,28 +13,28 @@ namespace fef { class TermFieldMatchData; }
 class BitVectorIterator : public queryeval::SearchIterator
 {
 protected:
-    BitVectorIterator(const BitVector & other, uint32_t docIdLimit, fef::TermFieldMatchData &matchData);
+    BitVectorIterator(const BitVector & bv, uint32_t docIdLimit, fef::TermFieldMatchData &matchData);
     void initRange(uint32_t begin, uint32_t end) override;
 
     uint32_t          _docIdLimit;
     const BitVector & _bv;
 private:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    void doSeek(uint32_t docId) override;
     void doUnpack(uint32_t docId) override;
-    BitVector::UP get_hits(uint32_t begin_id) override;
-    void or_hits_into(BitVector &result, uint32_t begin_id) override;
-    void and_hits_into(BitVector &result, uint32_t begin_id) override;
     bool isBitVector() const override { return true; }
     fef::TermFieldMatchData  &_tfmd;
 public:
-    const void * getBitValues() const { return _bv.getStart(); }
+    virtual bool isInverted() const = 0;
+    const void *getBitValues() const { return _bv.getStart(); }
 
     Trinary is_strict() const override { return Trinary::False; }
     virtual bool isStrict() const { return (is_strict() == Trinary::True); }
     uint32_t getDocIdLimit() const { return _docIdLimit; }
     static UP create(const BitVector *const other, const fef::TermFieldMatchDataArray &matchData, bool strict);
-    static UP create(const BitVector *const other, uint32_t docIdLimit, fef::TermFieldMatchData &matchData, bool strict);
+    static UP create(const BitVector *const other, uint32_t docIdLimit,
+                     fef::TermFieldMatchData &matchData, bool strict);
+    static UP createInverse(const BitVector *const other, uint32_t docIdLimit,
+                            fef::TermFieldMatchData &matchData, bool strict);
 };
 
 } // namespace search

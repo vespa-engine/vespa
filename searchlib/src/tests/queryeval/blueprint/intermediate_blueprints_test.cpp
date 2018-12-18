@@ -1218,7 +1218,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
         const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
-        EXPECT_EQUAL("search::BitVectorIteratorStrict", e.getChildren()[0]->getClassName());
+        EXPECT_EQUAL("search::BitVectorIteratorStrictT<false>", e.getChildren()[0]->getClassName());
         EXPECT_EQUAL("search::diskindex::Zc4RareWordPosOccIterator<true>", e.getChildren()[1]->getClassName());
         EXPECT_EQUAL("search::diskindex::Zc4RareWordPosOccIterator<true>", e.getChildren()[2]->getClassName());
     }
@@ -1228,7 +1228,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
         const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
-        EXPECT_EQUAL("search::BitVectorIteratorStrict", e.getChildren()[0]->getClassName());
+        EXPECT_EQUAL("search::BitVectorIteratorStrictT<false>", e.getChildren()[0]->getClassName());
         EXPECT_EQUAL("search::diskindex::Zc4RareWordPosOccIterator<true>", e.getChildren()[1]->getClassName());
         EXPECT_EQUAL("search::diskindex::Zc4RareWordPosOccIterator<true>", e.getChildren()[2]->getClassName());
     }

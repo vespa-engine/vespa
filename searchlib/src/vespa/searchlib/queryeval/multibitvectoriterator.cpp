@@ -11,8 +11,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/util/optimized.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 namespace {
 
@@ -111,8 +110,8 @@ typedef MultiBitVectorIteratorStrict<Or> OrBVIteratorStrict;
 bool hasAtLeast2Bitvectors(const MultiSearch::Children & children)
 {
     size_t count(0);
-    for (auto it(children.begin()); it != children.end(); it++) {
-        if ((*it)->isBitVector()) {
+    for (const SearchIterator * search : children) {
+        if (search->isBitVector()) {
             count++;
         }
     }
@@ -137,26 +136,25 @@ MultiBitVectorIteratorBase::MultiBitVectorIteratorBase(const Children & children
     _numDocs(std::numeric_limits<unsigned int>::max()),
     _lastValue(0),
     _lastMaxDocIdLimit(0),
-    _bvs(children.size())
+    _bvs()
 {
+    _bvs.reserve(children.size());
     for (size_t i(0); i < children.size(); i++) {
-        const BitVectorIterator * bv = static_cast<const BitVectorIterator *>(children[i]);
-        _bvs[i] = reinterpret_cast<const Word *>(bv->getBitValues());
+        const auto * bv = static_cast<const BitVectorIterator *>(children[i]);
+        _bvs.emplace_back(reinterpret_cast<const Word *>(bv->getBitValues()), bv->isInverted());
         _numDocs = std::min(_numDocs, bv->getDocIdLimit());
     }
 }
 
-MultiBitVectorIteratorBase::~MultiBitVectorIteratorBase()
-{
-}
+MultiBitVectorIteratorBase::~MultiBitVectorIteratorBase() = default;
 
 SearchIterator::UP
 MultiBitVectorIteratorBase::andWith(UP filter, uint32_t estimate)
 {
     (void) estimate;
     if (filter->isBitVector() && acceptExtraFilter()) {
-        const BitVectorIterator & bv = static_cast<const BitVectorIterator &>(*filter);
-        _bvs.push_back(reinterpret_cast<const Word *>(bv.getBitValues()));
+        const auto & bv = static_cast<const BitVectorIterator &>(*filter);
+        _bvs.emplace_back(reinterpret_cast<const Word *>(bv.getBitValues()), bv.isInverted());
         insert(getChildren().size(), std::move(filter));
         _lastMaxDocIdLimit = 0;  // force reload
     }
@@ -170,8 +168,7 @@ MultiBitVectorIteratorBase::doUnpack(uint32_t docid)
         MultiSearch::doUnpack(docid);
     } else {
         auto &children = getChildren();
-        _unpackInfo.each([&children,docid](size_t i){children[i]->doUnpack(docid);},
-                         children.size());
+        _unpackInfo.each([&children,docid](size_t i){children[i]->doUnpack(docid);}, children.size());
     }
 }
 
@@ -179,7 +176,7 @@ SearchIterator::UP
 MultiBitVectorIteratorBase::optimize(SearchIterator::UP parentIt)
 {
     if (parentIt->isSourceBlender()) {
-        SourceBlenderSearch & parent(static_cast<SourceBlenderSearch &>(*parentIt));
+        auto & parent(static_cast<SourceBlenderSearch &>(*parentIt));
         for (size_t i(0); i < parent.getNumChildren(); i++) {
             parent.setChild(i, optimize(parent.steal(i)));
         }
@@ -192,7 +189,7 @@ MultiBitVectorIteratorBase::optimize(SearchIterator::UP parentIt)
 SearchIterator::UP
 MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
 {
-    MultiSearch & parent(static_cast<MultiSearch &>(*parentIt));
+    auto & parent(static_cast<MultiSearch &>(*parentIt));
     if (canOptimize(parent)) {
         MultiSearch::Children stolen;
         std::vector<size_t> _unpackIndex;
@@ -218,24 +215,24 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
         SearchIterator::UP next;
         if (parent.isAnd()) {
             if (strict) {
-                next.reset(new AndBVIteratorStrict(stolen));
+                next = std::make_unique<AndBVIteratorStrict>(stolen);
             } else {
-                next.reset(new AndBVIterator(stolen));
+                next = std::make_unique<AndBVIterator>(stolen);
             }
         } else if (parent.isOr()) {
             if (strict) {
-                next.reset(new OrBVIteratorStrict(stolen));
+                next = std::make_unique<OrBVIteratorStrict>(stolen);
             } else {
-                next.reset(new OrBVIterator(stolen));
+                next = std::make_unique<OrBVIterator>(stolen);
             }
         } else if (parent.isAndNot()) {
             if (strict) {
-                next.reset(new OrBVIteratorStrict(stolen));
+                next = std::make_unique<OrBVIteratorStrict>(stolen);
             } else {
-                next.reset(new OrBVIterator(stolen));
+                next = std::make_unique<OrBVIterator>(stolen);
             }
         }
-        MultiBitVectorIteratorBase & nextM(static_cast<MultiBitVectorIteratorBase &>(*next));
+        auto & nextM(static_cast<MultiBitVectorIteratorBase &>(*next));
         for (size_t index : _unpackIndex) {
             nextM.addUnpackIndex(index);
         }
@@ -245,14 +242,12 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
             parent.insert(insertPosition, std::move(next));
         }
     }
-    MultiSearch::Children & toOptimize(const_cast<MultiSearch::Children &>(parent.getChildren()));
-    for (size_t i(0); i < toOptimize.size(); i++) {
-        toOptimize[i] = optimize(MultiSearch::UP(toOptimize[i])).release();
+    auto & toOptimize(const_cast<MultiSearch::Children &>(parent.getChildren()));
+    for (SearchIterator * & search : toOptimize) {
+        search = optimize(MultiSearch::UP(search)).release();
     }
 
     return parentIt;
 }
 
 }
-
-} // namespace search
