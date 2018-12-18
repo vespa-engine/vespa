@@ -134,7 +134,7 @@ class NodesResponse extends HttpResponse {
     private void toSlime(Node node, boolean allFields, Cursor object) {
         object.setString("url", nodeParentUrl + node.hostname());
         if ( ! allFields) return;
-        object.setString("id", node.id());
+        object.setString("id", node.hostname());
         object.setString("state", serializer.toString(node.state()));
         object.setString("type", node.type().name());
         object.setString("hostname", node.hostname());

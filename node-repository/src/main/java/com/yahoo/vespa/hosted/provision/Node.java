@@ -29,7 +29,6 @@ import java.util.Set;
  */
 public final class Node {
 
-    private final String id;
     private final Set<String> ipAddresses;
     private final IP.AddressPool ipAddressPool;
     private final String hostname;
@@ -78,7 +77,6 @@ public final class Node {
         Objects.requireNonNull(history, "A null node history is not permitted");
         Objects.requireNonNull(type, "A null node type is not permitted");
 
-        this.id = hostname;
         this.ipAddresses = ImmutableSortedSet.copyOf(IP.naturalOrder, ipAddresses);
         this.ipAddressPool = new IP.AddressPool(this, ipAddressPool);
         this.hostname = hostname;
@@ -91,12 +89,6 @@ public final class Node {
         this.history = history;
         this.type = type;
     }
-
-    /**
-     * Returns the unique id of this host.
-     * This may be the host name or some other opaque id which is unique across hosts
-     */
-    public String id() { return id; }
 
     /** Returns the IP addresses of this node */
     public Set<String> ipAddresses() { return ipAddresses; }
@@ -271,23 +263,24 @@ public final class Node {
     }
 
     @Override
-    public int hashCode() {
-        return id.hashCode();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Node node = (Node) o;
+        return hostname.equals(node.hostname);
     }
 
     @Override
-    public boolean equals(Object other) {
-        if (this == other) return true;
-        if ( ! other.getClass().equals(this.getClass())) return false;
-        return ((Node)other).id.equals(this.id);
+    public int hashCode() {
+        return Objects.hash(hostname);
     }
 
     @Override
     public String toString() {
         return state + " node " +
-               (hostname !=null ? hostname : id) +
-               (allocation.isPresent() ? " " + allocation.get() : "") +
-               (parentHostname.isPresent() ? " [on: " + parentHostname.get() + "]" : "");
+               hostname +
+               (allocation.map(allocation1 -> " " + allocation1).orElse("")) +
+               (parentHostname.map(parent -> " [on: " + parent + "]").orElse(""));
     }
 
     public enum State {
