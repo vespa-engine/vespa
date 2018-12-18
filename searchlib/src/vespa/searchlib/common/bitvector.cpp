@@ -297,27 +297,21 @@ BitVector::getFileBytes(Index bits)
 class MMappedBitVector : public BitVector
 {
 public:
-    MMappedBitVector(Index numberOfElements,
-                     FastOS_FileInterface &file,
-                     int64_t offset,
-                     Index doccount);
+    MMappedBitVector(Index numberOfElements, FastOS_FileInterface &file,
+                     int64_t offset, Index doccount);
 
 private:
-    void read(Index numberOfElements,
-              FastOS_FileInterface &file,
-              int64_t offset,
-              Index doccount);
+    void read(Index numberOfElements, FastOS_FileInterface &file,
+              int64_t offset, Index doccount);
 };
 
 BitVector::UP
-BitVector::create(Index numberOfElements,
-                      FastOS_FileInterface &file,
-                      int64_t offset,
-                      Index doccount)
+BitVector::create(Index numberOfElements, FastOS_FileInterface &file,
+                  int64_t offset, Index doccount)
 {
     UP bv;
     if (file.IsMemoryMapped()) {
-        bv.reset(new MMappedBitVector(numberOfElements, file, offset, doccount));
+        bv = std::make_unique<MMappedBitVector>(numberOfElements, file, offset, doccount);
     } else {
         size_t padbefore, padafter;
         size_t vectorsize = getFileBytes(numberOfElements);
@@ -326,7 +320,7 @@ BitVector::create(Index numberOfElements,
         AllocatedBitVector::Alloc alloc = Alloc::alloc(padbefore + vectorsize + padafter, 0x1000000, 0x1000);
         void * alignedBuffer = alloc.get();
         file.ReadBuf(alignedBuffer, alloc.size(), offset - padbefore);
-        bv.reset(new AllocatedBitVector(numberOfElements, std::move(alloc), padbefore));
+        bv = std::make_unique<AllocatedBitVector>(numberOfElements, std::move(alloc), padbefore);
         bv->setTrueBits(doccount);
         // Check guard bit for getNextTrueBit()
         assert(bv->testBit(bv->size()));
@@ -339,7 +333,7 @@ BitVector::create(Index start, Index end)
 {
     return (start == 0)
            ? create(end)
-           : UP(new PartialBitVector(start, end));
+           : std::make_unique<PartialBitVector>(start, end);
 }
 
 BitVector::UP
@@ -347,46 +341,42 @@ BitVector::create(const BitVector & org, Index start, Index end)
 {
     return (start == 0)
            ? create(end)
-           : UP(new PartialBitVector(org, start, end));
+           : std::make_unique<PartialBitVector>(org, start, end);
 }
 
 BitVector::UP
 BitVector::create(Index numberOfElements)
 {
-    return UP(new AllocatedBitVector(numberOfElements));
+    return std::make_unique<AllocatedBitVector>(numberOfElements);
 }
 
 BitVector::UP
 BitVector::create(const BitVector & rhs)
 {
-    return UP(new AllocatedBitVector(rhs));
+    return std::make_unique<AllocatedBitVector>(rhs);
 }
 
 BitVector::UP
 BitVector::create(Index numberOfElements, Index newCapacity, GenerationHolder &generationHolder)
 {
-    return UP(new GrowableBitVector(numberOfElements, newCapacity, generationHolder));
+    return std::make_unique<GrowableBitVector>(numberOfElements, newCapacity, generationHolder);
 }
 
-MMappedBitVector::MMappedBitVector(Index numberOfElements,
-                                   FastOS_FileInterface &file,
-                                   int64_t offset,
-                                   Index doccount) :
+MMappedBitVector::MMappedBitVector(Index numberOfElements, FastOS_FileInterface &file,
+                                   int64_t offset, Index doccount) :
     BitVector()
 {
     read(numberOfElements, file, offset, doccount);
 }
 
 void
-MMappedBitVector::read(Index numberOfElements,
-                       FastOS_FileInterface &file,
-                       int64_t offset,
-                       Index doccount)
+MMappedBitVector::read(Index numberOfElements, FastOS_FileInterface &file,
+                       int64_t offset, Index doccount)
 {
     assert((offset & (getAlignment() - 1)) == 0);
     void *mapptr = file.MemoryMapPtr(offset);
-    assert(mapptr != NULL);
-    if (mapptr != NULL) {
+    assert(mapptr != nullptr);
+    if (mapptr != nullptr) {
         init(mapptr, 0, numberOfElements);
     }
     setTrueBits(doccount);
