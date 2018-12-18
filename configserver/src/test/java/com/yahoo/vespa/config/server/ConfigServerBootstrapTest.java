@@ -68,8 +68,7 @@ public class ConfigServerBootstrapTest {
         provisioner.allocations().values().iterator().next().remove(0);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
                                                                     versionState, createStateMonitor(), vipStatus,
-                                                                    ConfigServerBootstrap.Mode.INITIALIZE_ONLY,
-                                                                    ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE);
+                                                                    ConfigServerBootstrap.Mode.INITIALIZE_ONLY);
         assertFalse(vipStatus.isInRotation());
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
@@ -102,8 +101,7 @@ public class ConfigServerBootstrapTest {
         VipStatus vipStatus = new VipStatus();
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
                                                                     createStateMonitor(), vipStatus,
-                                                                    ConfigServerBootstrap.Mode.INITIALIZE_ONLY,
-                                                                    ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE);
+                                                                    ConfigServerBootstrap.Mode.INITIALIZE_ONLY);
         assertFalse(vipStatus.isInRotation());
         // Call method directly, to be sure that it is finished redeploying all applications and we can check status
         bootstrap.start();
@@ -144,7 +142,8 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         VipStatus vipStatus = new VipStatus();
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    createStateMonitor(), vipStatus);
+                                                                    createStateMonitor(), vipStatus,
+                                                                    ConfigServerBootstrap.Mode.BOOTSTRAP_IN_SEPARATE_THREAD);
 
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");

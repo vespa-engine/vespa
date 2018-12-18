@@ -70,4 +70,3 @@ sleepTimeWhenRedeployingFails long default=30
 buildMinimalSetOfConfigModels bool default=true
 useDedicatedNodeForLogserver bool default=true
 throwIfBootstrappingTenantRepoFails bool default=true
-bootstrapInSeparateThread bool default=true
