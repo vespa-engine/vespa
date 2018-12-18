@@ -28,6 +28,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+
+import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.*;
 
 /**
  * Main component that bootstraps and starts config server threads.
@@ -41,10 +44,11 @@ import java.util.concurrent.TimeUnit;
  */
 public class ConfigServerBootstrap extends AbstractComponent implements Runnable {
 
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ConfigServerBootstrap.class.getName());
-    static final String bootstrapFeatureFlag = "config-server-bootstrap-in-separate-thread";
+    private static final Logger log = Logger.getLogger(ConfigServerBootstrap.class.getName());
+    private static final String bootstrapFeatureFlag = "config-server-bootstrap-in-separate-thread";
 
-    enum Mode {BOOTSTRAP_IN_CONSTRUCTOR, BOOTSTRAP_IN_SEPARATE_THREAD, INITIALIZE_ONLY} // INITIALIZE_ONLY is for testing only
+    // INITIALIZE_ONLY is for testing only
+    enum Mode {BOOTSTRAP_IN_CONSTRUCTOR, BOOTSTRAP_IN_SEPARATE_THREAD, INITIALIZE_ONLY}
     enum RedeployingApplicationsFails {EXIT_JVM, CONTINUE}
 
     private final ApplicationRepository applicationRepository;
@@ -59,20 +63,27 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
     private final ExecutorService rpcServerExecutor;
 
-    @SuppressWarnings("WeakerAccess")
+    @SuppressWarnings("unused")
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
                                  VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
                                  FlagSource flagSource) {
         this(applicationRepository, server, versionState, stateMonitor, vipStatus,
-             new FeatureFlag(bootstrapFeatureFlag, true, flagSource).value() ? Mode.BOOTSTRAP_IN_SEPARATE_THREAD : Mode.BOOTSTRAP_IN_CONSTRUCTOR,
-             RedeployingApplicationsFails.EXIT_JVM);
+             new FeatureFlag(bootstrapFeatureFlag, true, flagSource).value()
+                     ? Mode.BOOTSTRAP_IN_SEPARATE_THREAD
+                     : Mode.BOOTSTRAP_IN_CONSTRUCTOR,
+             EXIT_JVM);
     }
 
     // For testing only
     ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server, VersionState versionState,
-                          StateMonitor stateMonitor, VipStatus vipStatus, Mode mode,
-                          RedeployingApplicationsFails exitIfRedeployingApplicationsFails) {
+                          StateMonitor stateMonitor, VipStatus vipStatus, Mode mode) {
+        this(applicationRepository, server, versionState, stateMonitor, vipStatus, mode, CONTINUE);
+    }
+
+    private ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
+                                  VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
+                                  Mode mode, RedeployingApplicationsFails exitIfRedeployingApplicationsFails) {
         this.applicationRepository = applicationRepository;
         this.server = server;
         this.versionState = versionState;
@@ -192,7 +203,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     }
 
     private void redeployingApplicationsFailed() {
-        if (exitIfRedeployingApplicationsFails == RedeployingApplicationsFails.EXIT_JVM) System.exit(1);
+        if (exitIfRedeployingApplicationsFails == EXIT_JVM) System.exit(1);
     }
 
     private boolean redeployAllApplications() throws InterruptedException {
