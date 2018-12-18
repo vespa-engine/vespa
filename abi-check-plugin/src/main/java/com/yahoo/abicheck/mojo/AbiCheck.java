@@ -161,7 +161,7 @@ public class AbiCheck extends AbstractMojo {
     File specFile = new File(project.getBasedir(), specFileName);
     if (mainArtifact.getFile() == null) {
       throw new MojoExecutionException("Missing project artifact file");
-    } else if (!mainArtifact.getType().equals("jar")) {
+    } else if (!mainArtifact.getFile().getName().endsWith(".jar")) {
       throw new MojoExecutionException("Project artifact is not a JAR");
     }
 
