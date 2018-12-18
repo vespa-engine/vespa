@@ -68,7 +68,7 @@ public class AbiCheck extends AbstractMojo {
   // Testing that Gson can write JSON files is not very useful
   private static void writeSpec(Map<String, JavaClassSignature> signatures, File file)
       throws IOException {
-    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     try (FileWriter writer = new FileWriter(file)) {
       gson.toJson(signatures, writer);
     }
