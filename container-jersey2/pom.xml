@@ -61,6 +61,22 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
       </plugin>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>abi-check-plugin</artifactId>
+        <version>${project.version}</version>
+        <configuration>
+          <publicApiAnnotation>com.yahoo.api.annotations.PublicApi</publicApiAnnotation>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>abicheck</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
