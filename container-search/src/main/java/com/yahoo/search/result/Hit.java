@@ -418,7 +418,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      */
     public void forEachFieldAsRaw(RawUtf8Consumer consumer) {
         if (fields == null) return;
-        fields.forEach(consumer); // No utf-8 fields available in Hit
+        fields.forEach(consumer);
     }
 
     /** Returns the fields of this as a read-only map. This is more costly than fieldIterator() */
@@ -680,8 +680,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
          *
          * @param fieldName the name of the field
          * @param utf8Data raw utf-8 data. The reciver <b>must not</b> modify this data
-         * @param offset the start index of the data to accept into the utf8Data array
-         * @param length the length of the data to accept into the utf8Data array
+         * @param offset the start index in the utf8Data array of the data to accept
+         * @param length the length starting from offset in the utf8Data array of the data to accept
          */
         void accept(String fieldName, byte[] utf8Data, int offset, int length);
 

@@ -9,6 +9,7 @@ import com.yahoo.vespa.orchestrator.status.HostStatus;
 import java.util.List;
 
 public class Host {
+
     private final HostName hostName;
     private final HostStatus hostStatus;
     private final ApplicationInstanceReference applicationInstanceReference;
@@ -39,4 +40,5 @@ public class Host {
     public List<ServiceInstance> getServiceInstances() {
         return serviceInstances;
     }
+
 }
