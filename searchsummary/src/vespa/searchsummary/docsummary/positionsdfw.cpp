@@ -3,6 +3,7 @@
 #include "positionsdfw.h"
 #include "docsumstate.h"
 #include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/slime/cursor.h>
@@ -18,6 +19,7 @@ namespace search::docsummary {
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::attribute::BasicType;
+using search::attribute::IntegerContent;
 using search::common::Location;
 
 AbsDistanceDFW::AbsDistanceDFW(const vespalib::string & attrName) :
@@ -33,13 +35,9 @@ AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state)
     uint64_t absdist = std::numeric_limits<int64_t>::max();
     int32_t docx = 0;
     int32_t docy = 0;
-    std::vector<IAttributeVector::largeint_t> pos(16);
-    uint32_t numValues = attribute.get(docid, &pos[0], pos.size());
-    if (numValues > pos.size()) {
-        pos.resize(numValues);
-        numValues = attribute.get(docid, &pos[0], pos.size());
-        assert(numValues <= pos.size());
-    }
+    IntegerContent pos;
+    pos.fill(attribute, docid);
+    uint32_t numValues = pos.size();
     for (uint32_t i = 0; i < numValues; i++) {
         int64_t docxy(pos[i]);
         vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
@@ -155,13 +153,9 @@ insertPos(int64_t docxy, vespalib::slime::Inserter &target)
 void
 insertFromAttr(const attribute::IAttributeVector &attribute, uint32_t docid, vespalib::slime::Inserter &target)
 {
-    std::vector<IAttributeVector::largeint_t> pos(16);
-    uint32_t numValues = attribute.get(docid, &pos[0], pos.size());
-    if (numValues > pos.size()) {
-        pos.resize(numValues);
-        numValues = attribute.get(docid, &pos[0], pos.size());
-        assert(numValues <= pos.size());
-    }
+    IntegerContent pos;
+    pos.fill(attribute, docid);
+    uint32_t numValues = pos.size();
     LOG(debug, "docid=%d, numValues=%d", docid, numValues);
     if (numValues > 0) {
         vespalib::slime::Cursor &arr = target.insertArray();
@@ -178,13 +172,9 @@ formatField(const attribute::IAttributeVector &attribute, uint32_t docid, ResTyp
     int32_t docx = 0;
     int32_t docy = 0;
 
-    std::vector<IAttributeVector::largeint_t> pos(16);
-    uint32_t numValues = attribute.get(docid, &pos[0], pos.size());
-    if (numValues > pos.size()) {
-        pos.resize(numValues);
-        numValues = attribute.get(docid, &pos[0], pos.size());
-        assert(numValues <= pos.size());
-    }
+    IntegerContent pos;
+    pos.fill(attribute, docid);
+    uint32_t numValues = pos.size();
     LOG(debug, "docid=%d, numValues=%d", docid, numValues);
 
     bool isShort = !IDocsumFieldWriter::IsBinaryCompatible(type, RES_LONG_STRING);
