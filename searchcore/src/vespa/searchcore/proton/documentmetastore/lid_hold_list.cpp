@@ -24,10 +24,10 @@ LidHoldList::clear() {
 void
 LidHoldList::trimHoldLists(generation_t firstUsed, LidStateVector &freeLids)
 {
-        while (!_holdList.empty() && _holdList.front().second < firstUsed) {
-            uint32_t lid = _holdList.front().first;
+    while (!_holdList.empty() && _holdList.front().second < firstUsed) {
+        uint32_t lid = _holdList.front().first;
         freeLids.setBit(lid);
-            _holdList.pop_front();
+        _holdList.pop_front();
     }
 }
 
