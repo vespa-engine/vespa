@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "tls_statistics_metrics_wrapper.h"
-
 #include <vespa/metrics/metrics.h>
 
 namespace storage {
@@ -40,8 +38,6 @@ struct StorageMetricSet : public metrics::MetricSet
     MessageMemoryUseMetricSet memoryUse_messages;
     metrics::LongValueMetric memoryUse_visiting;
     DocumentSerializationMetricSet documentSerialization;
-
-    TlsStatisticsMetricsWrapper tls_metrics;
 
     StorageMetricSet();
     ~StorageMetricSet();

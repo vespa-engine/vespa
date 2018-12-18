@@ -2,7 +2,6 @@
 
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/tls/auto_reloading_tls_crypto_engine.h>
-#include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/net/tls/impl/openssl_tls_context_impl.h>
@@ -107,11 +106,17 @@ struct Fixture {
     }
 
     vespalib::string current_cert_chain() const {
-        return engine->acquire_current_engine()->tls_context()->transport_security_options().cert_chain_pem();
+        auto impl = engine->acquire_current_engine();
+        // Leaks implementation details galore, but it's not very likely that we'll use
+        // anything but OpenSSL (or compatible APIs) in practice...
+        auto& ctx_impl = dynamic_cast<const impl::OpenSslTlsContextImpl&>(*impl->tls_context());
+        return ctx_impl.transport_security_options().cert_chain_pem();
     }
 
     AuthorizationMode current_authorization_mode() const {
-        return engine->acquire_current_engine()->tls_context()->authorization_mode();
+        auto impl = engine->acquire_current_engine();
+        auto& ctx_impl = dynamic_cast<const impl::OpenSslTlsContextImpl&>(*impl->tls_context());
+        return ctx_impl.authorization_mode();
     }
 };
 
@@ -136,17 +141,6 @@ TEST_FF("Shutting down auto-reloading engine immediately stops background thread
 
 TEST_FF("Authorization mode is propagated to engine", Fixture(50ms, AuthorizationMode::LogOnly), TimeBomb(60)) {
     EXPECT_EQUAL(AuthorizationMode::LogOnly, f1.current_authorization_mode());
-}
-
-TEST_FF("Config reload failure increments failure statistic", Fixture(50ms), TimeBomb(60)) {
-    auto before = ConfigStatistics::get().snapshot();
-
-    write_file("test_cert.pem.tmp", "Broken file oh no :(");
-    rename("test_cert.pem.tmp", "test_cert.pem", false, false);
-
-    while (ConfigStatistics::get().snapshot().subtract(before).failed_config_reloads == 0) {
-        std::this_thread::sleep_for(10ms);
-    }
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
