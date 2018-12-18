@@ -2,12 +2,16 @@
 #include "openssl_crypto_codec_impl.h"
 #include "openssl_tls_context_impl.h"
 #include "direct_buffer_bio.h"
+
 #include <vespa/vespalib/net/tls/crypto_codec.h>
 #include <vespa/vespalib/net/tls/crypto_exception.h>
+#include <vespa/vespalib/net/tls/statistics.h>
+
 #include <mutex>
 #include <vector>
 #include <memory>
 #include <stdexcept>
+
 #include <openssl/ssl.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
@@ -250,9 +254,11 @@ HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_byte
             return handshake_failed();
         }
         LOG(debug, "SSL_do_handshake() is complete, using protocol %s", SSL_get_version(_ssl.get()));
+        ConnectionStatistics::get(_mode == Mode::Server).inc_tls_connections();
         return handshake_consumed_bytes_and_is_complete(static_cast<size_t>(consumed));
     } else {
         log_ssl_error("SSL_do_handshake()", ssl_result);
+        ConnectionStatistics::get(_mode == Mode::Server).inc_failed_tls_handshakes();
         return handshake_failed();
     }
 }
@@ -277,6 +283,7 @@ EncodeResult OpenSslCryptoCodecImpl::encode(const char* plaintext, size_t plaint
         const int consumed = ::SSL_write(_ssl.get(), plaintext, to_consume);
         if (consumed < 0) {
             log_ssl_error("SSL_write()", ::SSL_get_error(_ssl.get(), consumed));
+            ConnectionStatistics::get(_mode == Mode::Server).inc_broken_tls_connections();
             return encode_failed(); // TODO explicitly detect and log TLS renegotiation error (SSL_ERROR_WANT_READ)?
         } else if (consumed != to_consume) {
             LOG(error, "SSL_write() returned OK but did not consume all requested plaintext");
@@ -340,6 +347,7 @@ DecodeResult OpenSslCryptoCodecImpl::remap_ssl_read_failure_to_decode_result(int
         return decode_peer_has_closed();
     default:
         log_ssl_error("SSL_read()", ssl_error);
+        ConnectionStatistics::get(_mode == Mode::Server).inc_broken_tls_connections();
         return decode_failed();
     }
 }

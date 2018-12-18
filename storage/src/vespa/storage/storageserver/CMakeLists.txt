@@ -27,6 +27,7 @@ vespa_add_library(storage_storageserver
     storagemetricsset.cpp
     storagenode.cpp
     storagenodecontext.cpp
+    tls_statistics_metrics_wrapper.cpp
     INSTALL lib64
     DEPENDS
     storage
