@@ -159,6 +159,7 @@ public class ConfigInstanceBuilderTest
                 refwithdef(":parent:").
                 fileVal("etc").
                 pathVal(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))).
+                urlVal(new UrlReference("http://docs.vespa.ai")).
                 boolarr(false).
                 longarr(9223372036854775807L).
                 longarr(-9223372036854775808L).
@@ -173,6 +174,8 @@ public class ConfigInstanceBuilderTest
                 stringMap("one", "first").
                 filemap("f1", "/var").
                 filemap("f2", "/store").
+                urlMap("u1", new UrlReference("http://docs.vespa.ai/1")).
+                urlMap("u2", new UrlReference("http://docs.vespa.ai/2")).
 
                 basicStruct(new BasicStruct.Builder().
                         foo("basicFoo").
@@ -198,6 +201,7 @@ public class ConfigInstanceBuilderTest
                         enumval(Myarray.Enumval.INNER).
                         refval(":parent:").
                         fileVal("file0").
+                        urlVal(new UrlReference("http://docs.vespa.ai/1")).
                         anotherarray(new Myarray.Anotherarray.Builder().
                                 foo(7)).
                         myStruct(new Myarray.MyStruct.Builder().
@@ -209,6 +213,7 @@ public class ConfigInstanceBuilderTest
                         enumval(Myarray.Enumval.INNER).
                         refval(":parent:").
                         fileVal("file1").
+                        urlVal(new UrlReference("http://docs.vespa.ai/2")).
                         anotherarray(new Myarray.Anotherarray.Builder().
                                 foo(1).
                                 foo(2)).
@@ -344,7 +349,7 @@ public class ConfigInstanceBuilderTest
         funcBuilder.intMap.put("three", 3);
         funcBuilder.myarray.get(1).intval(17);
         funcBuilder.myarray.get(0).anotherarray.get(0).foo(32);
-        funcBuilder.myarray.add(new Myarray.Builder().refval("refval").fileVal("fileval").myStruct(new Myarray.MyStruct.Builder().a(4)));
+        funcBuilder.myarray.add(new Myarray.Builder().refval("refval").fileVal("fileval").urlVal(new UrlReference("urlval")).myStruct(new Myarray.MyStruct.Builder().a(4)));
         funcBuilder.myStructMap.put("new", new MyStructMap.Builder().myString("string").myInt(13));
         funcBuilder.basicStruct(new BasicStruct.Builder().bar(1234));
         FunctionTestConfig function2 = new FunctionTestConfig(funcBuilder);

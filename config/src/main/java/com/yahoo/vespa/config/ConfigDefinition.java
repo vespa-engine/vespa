@@ -34,6 +34,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     private Map<String, RefDef> referenceDefs = new LinkedHashMap<String, RefDef>();
     private Map<String, FileDef> fileDefs = new LinkedHashMap<String, FileDef>();
     private Map<String, PathDef> pathDefs = new LinkedHashMap<>();
+    private Map<String, UrlDef> urlDefs = new LinkedHashMap<>();
     private Map<String, StructDef> structDefs = new LinkedHashMap<String, StructDef>();
     private Map<String, InnerArrayDef> innerArrayDefs = new LinkedHashMap<String, InnerArrayDef>();
     private Map<String, ArrayDef> arrayDefs = new LinkedHashMap<String, ArrayDef>();
@@ -100,6 +101,8 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
             verifyFile(id);
         } else if (pathDefs.containsKey(id)) {
             verifyPath(id);
+        } else if (urlDefs.containsKey(id)) {
+            verifyUrl(id);
         } else if (boolDefs.containsKey(id)) {
             verifyBool(id, val);
         } else if (intDefs.containsKey(id)) {
@@ -605,6 +608,19 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
         }
     }
 
+    public static class UrlDef implements DefaultValued<String>{
+        private String defVal;
+
+        public UrlDef(String defVal) {
+            this.defVal = defVal;
+        }
+
+        @Override
+        public String getDefVal() {
+            return defVal;
+        }
+    }
+
     public void addEnumDef(String id, EnumDef def) {
         enumDefs.put(id, def);
     }
@@ -704,6 +720,14 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
 
     public void addPathDef(String refId) {
         pathDefs.put(refId, new PathDef(null));
+    }
+
+    public void addUrlDef(String url, String defVal) {
+        urlDefs.put(url, new UrlDef(defVal));
+    }
+
+    public void addUrlDef(String url) {
+        urlDefs.put(url, new UrlDef(null));
     }
 
     public Map<String, StringDef> getStringDefs() {
@@ -964,6 +988,14 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     private boolean verifyPath(String id) {
         if (!pathDefs.containsKey(id)) {
             defFail("No such path in " + verifyWarning(id));
+            return false;
+        }
+        return true;
+    }
+
+    private boolean verifyUrl(String id) {
+        if (!urlDefs.containsKey(id)) {
+            defFail("No such url in " + verifyWarning(id));
             return false;
         }
         return true;

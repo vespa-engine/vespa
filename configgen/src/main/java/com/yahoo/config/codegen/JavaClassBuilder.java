@@ -71,6 +71,7 @@ public class JavaClassBuilder implements ClassBuilder {
                 "package " + javaPackage + ";\n" + //
                 "\n" + //
                 "import java.util.*;\n" + //
+                "import java.io.File;\n" + //
                 "import java.nio.file.Path;\n" + //
                 "import edu.umd.cs.findbugs.annotations.NonNull;\n" + //
                 getImportFrameworkClasses(root.getNamespace());

@@ -28,7 +28,7 @@ public class DefParserTest {
         CNode root = new DefParser("test", new FileReader(defFile)).getTree();
         assertNotNull(root);
         CNode[] children = root.getChildren();
-        assertThat(children.length, is(31));
+        assertThat(children.length, is(34));
 
         int numGrandChildren = 0;
         int numGreatGrandChildren = 0;
@@ -70,7 +70,7 @@ public class DefParserTest {
     public void testMd5Sum() throws IOException {
         File defFile = new File(DEF_NAME);
         CNode root = new DefParser("test", new FileReader(defFile)).getTree();
-        assertThat(root.defMd5, is("eb2d24dbbcf054b21be729e2cfaafd93"));
+        assertThat(root.defMd5, is("f901bdc5c96e7005130399c63f247823"));
     }
 
     @Test

@@ -179,7 +179,7 @@ public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
 
     /**
      * Normalizes this hierarchical uri according to FRC 2396 and the Overture
-     * standard. Before normalizing, some simple heuritics are use to make
+     * standard. Before normalizing, some simple heuristics are use to make
      * the uri complete if needed. After normalizing, the scheme,
      * host, port and rest of this uri is set if defined.
      *

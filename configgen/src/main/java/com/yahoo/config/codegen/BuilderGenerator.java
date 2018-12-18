@@ -3,6 +3,7 @@ package com.yahoo.config.codegen;
 
 import com.yahoo.config.codegen.LeafCNode.FileLeaf;
 import com.yahoo.config.codegen.LeafCNode.PathLeaf;
+import com.yahoo.config.codegen.LeafCNode.UrlLeaf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -169,7 +170,7 @@ public class BuilderGenerator {
         }
 
         private static String privateLeafNodeSetter(LeafCNode n) {
-            if ("String".equals(builderType(n)) || "FileReference".equals(builderType(n))) {
+            if ("String".equals(builderType(n)) || "FileReference".equals(builderType(n)) || "UrlReference".equals(builderType(n))) {
                 return "";
             } else {
                 return "\n\n" + //
@@ -197,7 +198,7 @@ public class BuilderGenerator {
         }
 
         private static String privateLeafMapSetter(CNode n) {
-            if ("String".equals(builderType(n)) || "FileReference".equals(builderType(n))) {
+            if ("String".equals(builderType(n)) || "FileReference".equals(builderType(n)) || "UrlReference".equals(builderType(n))) {
                 return "";
             } else {
                 return "\n\n" + //
@@ -219,7 +220,7 @@ public class BuilderGenerator {
                     : "";
 
             String bType = builderType(n);
-            String stringSetter = "String".equals(bType) || "FileReference".equals(bType) ? ""
+            String stringSetter = "String".equals(bType) || "FileReference".equals(bType)  || "UrlReference".equals(bType) ? ""
                     : String.format("\nprivate Builder %s(String %svalue) {\n" + //
                             "  return %s(%s.valueOf(%svalue));\n" + //
                             "}", name, INTERNAL_PREFIX, name, boxedDataType(n), INTERNAL_PREFIX);
@@ -251,6 +252,12 @@ public class BuilderGenerator {
             return name + "(" + nodeClass(child) + ".toFileReferenceMap(config." + name + "));";
         } else if (child instanceof PathLeaf) {
             return name + "(config." + name + ".getFileReference());";
+        } else if (child instanceof UrlLeaf && isArray) {
+            return name + "(" + nodeClass(child) + ".toUrlReferences(config." + name + "));";
+        } else if (child instanceof UrlLeaf && isMap) {
+            return name + "(" + nodeClass(child) + ".toUrlReferenceMap(config." + name + "));";
+        } else if (child instanceof UrlLeaf) {
+            return name + "(config." + name + ".getUrlReference());";
         } else if (child instanceof LeafCNode) {
             return name + "(config." + name + "());";
         } else if (child instanceof InnerCNode && isArray) {
@@ -340,6 +347,8 @@ public class BuilderGenerator {
             return "String";
         } else if (node instanceof PathLeaf) {
             return "FileReference";
+        } else if (node instanceof UrlLeaf) {
+            return "UrlReference";
         } else if (node instanceof LeafCNode && (node.isArray || node.isMap)) {
             return boxedDataType(node);
         } else {
@@ -352,6 +361,8 @@ public class BuilderGenerator {
             return "String";
         } else if (node instanceof PathLeaf) {
             return "FileReference";
+        } else if (node instanceof UrlLeaf) {
+            return "UrlReference";
         } else {
             return boxedDataType(node);
         }

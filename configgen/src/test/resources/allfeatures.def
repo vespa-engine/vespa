@@ -39,6 +39,7 @@ refVal reference
 refwithdef reference default=":parent:"
 fileVal file
 pathVal path
+urlVal url
 
 boolarr[] bool
 intarr[] int
@@ -49,9 +50,11 @@ enumarr[] enum { ARRAY, VALUES }
 refarr[] reference
 filearr[] file
 pathArr[] path
+urlArr[] url
 
 intMap{} int
 pathMap{} file
+urlMap{} url
 
 # A basic struct
 basic_struct.foo string default="foo"

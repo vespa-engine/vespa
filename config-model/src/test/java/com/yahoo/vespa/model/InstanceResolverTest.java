@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import com.yahoo.config.UrlReference;
 import com.yahoo.test.FunctionTestConfig;
 import com.yahoo.test.FunctionTestConfig.*;
 import com.yahoo.test.SimpletypesConfig;
@@ -47,6 +48,10 @@ public class InstanceResolverTest {
         assertTrue(c.rootStruct().innerArr(0).boolVal());
         assertEquals(c.rootStruct().innerArr(0).stringVal(), "deep");
         assertEquals(c.myarray(0).intval(), -123424);
+        assertEquals(c.urlVal().toString(), "url");
+        assertEquals(c.urlArr(0).toString(), "url");
+        assertEquals(c.myarray(0).urlVal().toString(), "url1");
+        assertEquals(c.myarray(1).urlVal().toString(), "url2");
     }
 
     /**
@@ -88,6 +93,7 @@ public class InstanceResolverTest {
                 refval(":parent:").
                 refwithdef(":parent:").
                 fileVal("etc").
+                urlVal(new UrlReference("url")).
                 boolarr(false).
                 longarr(9223372036854775807L).
                 longarr(-9223372036854775808L).
@@ -97,6 +103,7 @@ public class InstanceResolverTest {
                 enumarr(Enumarr.VALUES).
                 refarr(Arrays.asList(":parent:", ":parent", "parent:")).  // test collection based setter
                 fileArr("bin").
+                urlArr(new UrlReference("url")).
 
                 basicStruct(new BasicStruct.Builder().
                         //foo("basicFoo").
@@ -119,6 +126,7 @@ public class InstanceResolverTest {
                         enumval(Myarray.Enumval.INNER).
                         refval(":parent:").
                         fileVal("file0").
+                        urlVal(new UrlReference("url1")).
                         anotherarray(new Myarray.Anotherarray.Builder().
                                 foo(7)).
                         myStruct(new Myarray.MyStruct.Builder().
@@ -130,6 +138,7 @@ public class InstanceResolverTest {
                         enumval(Myarray.Enumval.INNER).
                         refval(":parent:").
                         fileVal("file1").
+                        urlVal(new UrlReference("url2")).
                         anotherarray(new Myarray.Anotherarray.Builder().
                                 foo(1).
                                 foo(2)).

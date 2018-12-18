@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import java.nio.file.Path;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author gjoranv
@@ -60,6 +59,13 @@ public class LeafNodeMaps {
             pathNodeMap.put(e.getKey(), new PathNode(e.getValue()));
         }
         return Collections.unmodifiableMap(pathNodeMap);
+    }
+
+    public static Map<String, UrlNode> asUrlNodeMap(Map<String, UrlReference> urlReferenceMap) {
+        return Collections.unmodifiableMap(
+                    urlReferenceMap.entrySet().stream().collect(
+                        Collectors.toMap(Map.Entry::getKey, e -> new UrlNode(e.getValue()))
+                    ));
     }
 
 }
