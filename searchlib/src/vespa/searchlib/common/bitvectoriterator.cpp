@@ -61,7 +61,7 @@ private:
 
 template<bool inverse>
 BitVectorIteratorT<inverse>::BitVectorIteratorT(const BitVector & bv, uint32_t docIdLimit, TermFieldMatchData & matchData) :
-        BitVectorIterator(bv, docIdLimit, matchData)
+    BitVectorIterator(bv, docIdLimit, matchData)
 {
 }
 
@@ -86,10 +86,10 @@ private:
     void doSeek(uint32_t docId) override;
     Trinary is_strict() const override { return Trinary::True; }
     uint32_t getNextBit(uint32_t docId) const {
-        return inverse ? ! this->_bv.getNextFalseBit(docId) : this->_bv.getNextTrueBit(docId);
+        return inverse ? this->_bv.getNextFalseBit(docId) : this->_bv.getNextTrueBit(docId);
     }
     uint32_t getFirstBit(uint32_t docId) const {
-        return inverse ? ! this->_bv.getFirstFalseBit(docId) : this->_bv.getFirstTrueBit(docId);
+        return inverse ? this->_bv.getFirstFalseBit(docId) : this->_bv.getFirstTrueBit(docId);
     }
 };
 
