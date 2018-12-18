@@ -68,7 +68,7 @@ public class CuratorTransaction extends AbstractTransaction {
 
     @Override
     public String toString() {
-        return String.join(",", operations().stream().map(operation -> operation.toString()).collect(Collectors.toList()));
+        return operations().stream().map(Object::toString).collect(Collectors.joining(","));
     }
 
 }
