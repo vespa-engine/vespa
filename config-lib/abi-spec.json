@@ -272,7 +272,8 @@
       "public static java.util.Map asValueMap(java.util.Map)",
       "public static java.util.Map asNodeMap(java.util.Map, com.yahoo.config.LeafNode)",
       "public static java.util.Map asFileNodeMap(java.util.Map)",
-      "public static java.util.Map asPathNodeMap(java.util.Map)"
+      "public static java.util.Map asPathNodeMap(java.util.Map)",
+      "public static java.util.Map asUrlNodeMap(java.util.Map)"
     ],
     "fields": []
   },
@@ -286,7 +287,8 @@
       "public void <init>(java.util.List, com.yahoo.config.LeafNode)",
       "public java.util.List asList()",
       "public static com.yahoo.config.LeafNodeVector createFileNodeVector(java.util.Collection)",
-      "public static com.yahoo.config.LeafNodeVector createPathNodeVector(java.util.Collection)"
+      "public static com.yahoo.config.LeafNodeVector createPathNodeVector(java.util.Collection)",
+      "public static com.yahoo.config.LeafNodeVector createUrlNodeVector(java.util.Collection)"
     ],
     "fields": []
   },
@@ -453,6 +455,42 @@
       "public static java.lang.String unescapeQuotedString(java.lang.String)",
       "protected boolean doSetValue(java.lang.String)",
       "public bridge synthetic java.lang.Object value()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.UrlNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.config.UrlReference)",
+      "public java.io.File value()",
+      "public java.lang.String toString()",
+      "public java.lang.String getValue()",
+      "protected boolean doSetValue(java.lang.String)",
+      "public com.yahoo.config.UrlReference getUrlReference()",
+      "public static java.util.List toUrlReferences(java.util.List)",
+      "public static java.util.Map toUrlReferenceMap(java.util.Map)",
+      "public bridge synthetic java.lang.Object value()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.UrlReference": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String value()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public java.lang.String toString()"
     ],
     "fields": []
   }
