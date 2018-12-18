@@ -25,7 +25,7 @@ SingleValueStringAttributeT(const vespalib::string &name,
 { }
 
 template <typename B>
-SingleValueStringAttributeT<B>::~SingleValueStringAttributeT() { }
+SingleValueStringAttributeT<B>::~SingleValueStringAttributeT() = default;
 
 template <typename B>
 void
@@ -39,8 +39,7 @@ AttributeVector::SearchContext::UP
 SingleValueStringAttributeT<B>::getSearch(QueryTermSimpleUP qTerm,
                                           const attribute::SearchContextParams &) const
 {
-    return std::unique_ptr<AttributeVector::SearchContext>
-        (new StringTemplSearchContext(std::move(qTerm), *this));
+    return std::make_unique<StringTemplSearchContext>(std::move(qTerm), *this);
 }
 
 template <typename B>

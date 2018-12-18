@@ -78,9 +78,7 @@ protected:
     {
         assert(c.basicType() == BasicType::fromType(T()));
     }
-    IntegerAttributeTemplate(const vespalib::string & name,
-                             const Config & c,
-                             const BasicType &realType)
+    IntegerAttributeTemplate(const vespalib::string & name, const Config & c, const BasicType &realType)
         :  IntegerAttribute(name, c),
            _defaultValue(ChangeBase::UPDATE, 0, 0u)
     {

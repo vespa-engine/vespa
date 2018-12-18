@@ -4,12 +4,10 @@
 
 #include <memory>
 
-namespace search {
+namespace search::queryeval { class SearchIterator; }
+namespace search::fef { class TermFieldMatchData; }
 
-namespace queryeval { class SearchIterator; }
-namespace fef { class TermFieldMatchData; }
-
-namespace attribute {
+namespace search::attribute {
 
 
 /**
@@ -32,5 +30,4 @@ public:
     virtual unsigned int approximateHits() const = 0;
 };
 
-} // namespace attribute
-} // namespace search
+}

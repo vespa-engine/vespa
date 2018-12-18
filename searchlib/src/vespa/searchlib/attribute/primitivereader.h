@@ -19,6 +19,7 @@ namespace search {
         virtual ~PrimitiveReader() { }
         T getNextData() { return _datReader.readHostOrder(); }
         size_t getDataCount() const { return getDataCountHelper(sizeof(T)); }
+        FileReader<T> & getReader() { return _datReader; }
     private:
         FileReader<T> _datReader;
     };

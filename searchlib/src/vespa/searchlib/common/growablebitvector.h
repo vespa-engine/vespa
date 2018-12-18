@@ -2,22 +2,22 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/allocatedbitvector.h>
+#include "allocatedbitvector.h"
 
 namespace search {
 
 class GrowableBitVector : public AllocatedBitVector
 {
 public:
-    GrowableBitVector(Index newSize,
-                      Index newCapacity,
+    GrowableBitVector(Index newSize, Index newCapacity,
                       GenerationHolder &generationHolder);
 
-    void reserve(Index newCapacity);
-    void shrink(Index newCapacity);
-    void extend(Index newCapacity);
+    /** Will return true if a a buffer is held */
+    bool reserve(Index newCapacity);
+    bool shrink(Index newCapacity);
+    bool extend(Index newCapacity);
 private:
-    VESPA_DLL_LOCAL void hold(GenerationHeldBase::UP v);
+    VESPA_DLL_LOCAL bool hold(GenerationHeldBase::UP v);
     GenerationHolder &_generationHolder;
 };
 
