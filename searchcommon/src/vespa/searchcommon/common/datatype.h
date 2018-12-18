@@ -9,7 +9,8 @@ namespace search::index::schema {
 /**
  * Basic data type for a field.
  **/
-enum class DataType { UINT1 = 0,
+enum class DataType {
+    BOOL = 0,
     UINT2 = 1,
     UINT4 = 2,
     INT8 = 3,

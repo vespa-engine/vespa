@@ -8,7 +8,7 @@ namespace search::attribute {
 const BasicType::TypeInfo BasicType::_typeTable[BasicType::MAX_TYPE] = {
     { BasicType::NONE,      0,                "none" },
     { BasicType::STRING,    0,                "string" },
-    { BasicType::UINT1,     sizeof(int8_t),   "uint1" },
+    { BasicType::BOOL,      sizeof(int8_t),   "bool" },
     { BasicType::UINT2,     sizeof(int8_t),   "uint2" },
     { BasicType::UINT4,     sizeof(int8_t),   "uint4" },
     { BasicType::INT8,      sizeof(int8_t),   "int8" },
@@ -18,7 +18,7 @@ const BasicType::TypeInfo BasicType::_typeTable[BasicType::MAX_TYPE] = {
     { BasicType::FLOAT,     sizeof(float),    "float" },
     { BasicType::DOUBLE,    sizeof(double),   "double" },
     { BasicType::PREDICATE, 0,                "predicate" },
-    { BasicType::TENSOR, 0,                   "tensor" },
+    { BasicType::TENSOR,    0,                "tensor" },
     { BasicType::REFERENCE, 12,               "reference" }
 };
 

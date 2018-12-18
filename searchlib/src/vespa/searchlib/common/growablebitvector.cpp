@@ -8,8 +8,7 @@ namespace search {
 using vespalib::GenerationHeldBase;
 using vespalib::GenerationHolder;
 
-GrowableBitVector::GrowableBitVector(Index newSize,
-                                     Index newCapacity,
+GrowableBitVector::GrowableBitVector(Index newSize, Index newCapacity,
                                      GenerationHolder &generationHolder)
     : AllocatedBitVector(newSize, newCapacity, nullptr, 0),
       _generationHolder(generationHolder)
@@ -17,36 +16,39 @@ GrowableBitVector::GrowableBitVector(Index newSize,
     assert(newSize <= newCapacity);
 }
 
-void
+bool
 GrowableBitVector::reserve(Index newCapacity)
 {
     Index oldCapacity = capacity();
     assert(newCapacity >= oldCapacity);
     if (newCapacity == oldCapacity)
-        return;
-    hold(grow(size(), newCapacity));
+        return false;
+    return hold(grow(size(), newCapacity));
 }
 
-void GrowableBitVector::hold(GenerationHeldBase::UP v)
+bool
+GrowableBitVector::hold(GenerationHeldBase::UP v)
 {
     if (v) {
         _generationHolder.hold(std::move(v));
+        return true;
     }
+    return false;
 }
 
-void
+bool
 GrowableBitVector::shrink(Index newCapacity)
 {
     Index oldCapacity = capacity();
     assert(newCapacity <= oldCapacity);
     (void) oldCapacity;
-    hold(grow(newCapacity, std::max(capacity(), newCapacity)));
+    return hold(grow(newCapacity, std::max(capacity(), newCapacity)));
 }
 
-void
+bool
 GrowableBitVector::extend(Index newCapacity)
 {
-    hold(grow(newCapacity, std::max(capacity(), newCapacity)));
+    return hold(grow(newCapacity, std::max(capacity(), newCapacity)));
 }
 
 } // namespace search

@@ -12,7 +12,7 @@ class BasicType
     enum Type {
         NONE      =  0,
         STRING    =  1,
-        UINT1     =  2,
+        BOOL      =  2,
         UINT2     =  3,
         UINT4     =  4,
         INT8      =  5,
@@ -36,6 +36,7 @@ class BasicType
     const char * asString() const { return asString(_type); }
     bool isUnsigned() const { return isUnsigned(_type); }
     size_t fixedSize() const { return fixedSize(_type); }
+    static BasicType fromType(bool) { return BOOL; }
     static BasicType fromType(int8_t) { return INT8; }
     static BasicType fromType(int16_t) { return INT16; }
     static BasicType fromType(int32_t) { return INT32; }

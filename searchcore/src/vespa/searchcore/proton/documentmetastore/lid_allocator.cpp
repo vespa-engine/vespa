@@ -56,8 +56,7 @@ LidAllocator::peekFreeLid(DocId lidLimit)
 }
 
 void
-LidAllocator::ensureSpace(uint32_t newSize,
-                          uint32_t newCapacity)
+LidAllocator::ensureSpace(uint32_t newSize, uint32_t newCapacity)
 {
     _freeLids.resizeVector(newSize, newCapacity);
     _usedLids.resizeVector(newSize, newCapacity);

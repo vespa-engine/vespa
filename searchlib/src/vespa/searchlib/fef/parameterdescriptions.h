@@ -53,7 +53,7 @@ private:
         return (1u << static_cast<unsigned int>(dataType));
     }
     static uint32_t normalTypesMask() {
-        return (asMask(DataType::UINT1)  |
+        return (asMask(DataType::BOOL)  |
                 asMask(DataType::UINT2)  |
                 asMask(DataType::UINT4)  |
                 asMask(DataType::INT8)   |

@@ -23,7 +23,7 @@ AttributeFactory::createSingleStd(stringref name, const Config & info)
     assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
     AttributeVector::SP ret;
     switch(info.basicType().type()) {
-    case BasicType::UINT1:
+    case BasicType::BOOL:
         ret.reset(new SingleValueBitNumericAttribute(name, info.getGrowStrategy()));
         break;
     case BasicType::UINT2:

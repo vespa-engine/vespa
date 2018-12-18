@@ -31,7 +31,7 @@ isUnsignedSmallIntAttribute(const AttributeVector &a)
 {
     switch (a.getBasicType())
     {
-    case attribute::BasicType::UINT1:
+    case attribute::BasicType::BOOL:
     case attribute::BasicType::UINT2:
     case attribute::BasicType::UINT4:
         return true;

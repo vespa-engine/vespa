@@ -94,9 +94,9 @@ TEST("test that OR.andWith is a NOOP") {
     ch.push_back(new TrueSearch(tfmd));
     ch.push_back(new TrueSearch(tfmd));
     SearchIterator::UP search(OrSearch::create(ch, true));
-    SearchIterator::UP filter(new TrueSearch(tfmd));
+    auto filter = std::make_unique<TrueSearch>(tfmd);
 
-    EXPECT_TRUE(nullptr != search->andWith(std::move(filter), 1).get());
+    EXPECT_TRUE(search->andWith(std::move(filter), 1));
 }
 
 TEST("test that non-strict AND.andWith is a NOOP") {
@@ -105,9 +105,9 @@ TEST("test that non-strict AND.andWith is a NOOP") {
     ch.push_back(new TrueSearch(tfmd));
     ch.push_back(new TrueSearch(tfmd));
     SearchIterator::UP search(AndSearch::create(ch, false));
-    SearchIterator::UP filter(new TrueSearch(tfmd));
+    SearchIterator::UP filter = std::make_unique<TrueSearch>(tfmd);
     filter = search->andWith(std::move(filter), 8);
-    EXPECT_TRUE(nullptr != filter.get());
+    EXPECT_TRUE(filter);
 }
 
 TEST("test that strict AND.andWith steals filter and places it correctly based on estimate") {
@@ -117,7 +117,7 @@ TEST("test that strict AND.andWith steals filter and places it correctly based o
     ch.push_back(new TrueSearch(tfmd));
     SearchIterator::UP search(AndSearch::create(ch, true));
     static_cast<AndSearch &>(*search).estimate(7);
-    SearchIterator::UP filter(new TrueSearch(tfmd));
+    auto filter = std::make_unique<TrueSearch>(tfmd);
     SearchIterator * filterP = filter.get();
 
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 8).get());
@@ -127,7 +127,7 @@ TEST("test that strict AND.andWith steals filter and places it correctly based o
     EXPECT_EQUAL(filterP, andChildren[1]);
     EXPECT_EQUAL(ch[1], andChildren[2]);
 
-    SearchIterator::UP filter2(new TrueSearch(tfmd));
+    auto filter2 = std::make_unique<TrueSearch>(tfmd);
     SearchIterator * filter2P = filter2.get();
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter2), 6).get());
     EXPECT_EQUAL(4u, andChildren.size());
@@ -151,7 +151,7 @@ TEST("test that strict AND.andWith does not place non-strict iterator first") {
     ch.push_back(new TrueSearch(tfmd));
     SearchIterator::UP search(AndSearch::create(ch, true));
     static_cast<AndSearch &>(*search).estimate(7);
-    SearchIterator::UP filter(new NonStrictTrueSearch(tfmd));
+    auto filter = std::make_unique<NonStrictTrueSearch>(tfmd);
     SearchIterator * filterP = filter.get();
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 6).get());
     const MultiSearch::Children & andChildren = static_cast<MultiSearch &>(*search).getChildren();
@@ -170,7 +170,7 @@ TEST("test that strict rank search forwards to its greedy first child") {
                 .add(new TrueSearch(tfmd)),
             true)
     );
-    SearchIterator::UP filter(new TrueSearch(tfmd));
+    auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 8).get());
 }
 
@@ -183,7 +183,7 @@ TEST("test that non-strict rank search does NOT forward to its greedy first chil
                 .add(new TrueSearch(tfmd)),
             false)
     );
-    SearchIterator::UP filter(new TrueSearch(tfmd));
+    auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr != search->andWith(std::move(filter), 8).get());
 }
 
@@ -196,7 +196,7 @@ TEST("test that strict andnot search forwards to its greedy first child") {
                 .add(new TrueSearch(tfmd)),
             true)
     );
-    SearchIterator::UP filter(new TrueSearch(tfmd));
+    auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 8).get());
 }
 
@@ -209,7 +209,7 @@ TEST("test that non-strict andnot search does NOT forward to its greedy first ch
                 .add(new TrueSearch(tfmd)),
             false)
     );
-    SearchIterator::UP filter(new TrueSearch(tfmd));
+    auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr != search->andWith(std::move(filter), 8).get());
 }
 
@@ -220,12 +220,11 @@ TEST("testAnd") {
     b.addHit(3).addHit(5).addHit(17).addHit(30).addHit(52);
 
     MatchData::UP md(MatchData::makeTestInstance(100, 10));
-    AndBlueprint *and_b = new AndBlueprint();
-    and_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
-    and_b->addChild(Blueprint::UP(new SimpleBlueprint(b)));
-    Blueprint::UP bp(and_b);
-    bp->fetchPostings(true);
-    SearchIterator::UP and_ab = bp->createSearch(*md, true);
+    auto and_b = std::make_unique<AndBlueprint>();
+    and_b->addChild(std::make_unique<SimpleBlueprint>(a));
+    and_b->addChild(std::make_unique<SimpleBlueprint>(b));
+    and_b->fetchPostings(true);
+    SearchIterator::UP and_ab = and_b->createSearch(*md, true);
 
     EXPECT_TRUE(dynamic_cast<const AndSearch *>(and_ab.get()) != nullptr);
     EXPECT_EQUAL(4u, dynamic_cast<AndSearch &>(*and_ab).estimate());
@@ -248,12 +247,11 @@ TEST("testOr") {
         b.addHit(5).addHit(17).addHit(30);
 
         MatchData::UP md(MatchData::makeTestInstance(100, 10));
-        OrBlueprint *or_b = new OrBlueprint();
-        or_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
-        or_b->addChild(Blueprint::UP(new SimpleBlueprint(b)));
-        Blueprint::UP bp(or_b);
-        bp->fetchPostings(true);
-        SearchIterator::UP or_ab = bp->createSearch(*md, true);
+        auto or_b = std::make_unique<OrBlueprint>();
+        or_b->addChild(std::make_unique<SimpleBlueprint>(a));
+        or_b->addChild(std::make_unique<SimpleBlueprint>(b));
+        or_b->fetchPostings(true);
+        SearchIterator::UP or_ab = or_b->createSearch(*md, true);
 
         SimpleResult res;
         res.search(*or_ab);
@@ -281,12 +279,12 @@ public:
         _accumRemove(0),
         _accumInsert(0)
     { }
-    virtual void onRemove(size_t index) override { _accumRemove += index; }
-    virtual void onInsert(size_t index) override { _accumInsert += index; }
+    void onRemove(size_t index) override { _accumRemove += index; }
+    void onInsert(size_t index) override { _accumInsert += index; }
     size_t _accumRemove;
     size_t _accumInsert;
 private:
-    virtual void doSeek(uint32_t docid) override { (void) docid; }
+    void doSeek(uint32_t docid) override { (void) docid; }
 };
 
 struct MultiSearchRemoveTest {
@@ -339,7 +337,7 @@ public:
             _a.update(docId, 1);
         }
         _a.commit();
-        _sc = _a.getSearch(search::QueryTermSimple::UP(new search::QueryTermSimple("1", search::QueryTermSimple::WORD)),
+        _sc = _a.getSearch(std::make_unique<search::QueryTermSimple>("1", search::QueryTermSimple::WORD),
                            SearchContextParams().useBitVector(true));
     }
     virtual SearchIterator::UP
@@ -363,12 +361,11 @@ TEST("testAndNot") {
         b.addHit(5).addHit(17).addHit(30);
 
         MatchData::UP md(MatchData::makeTestInstance(100, 10));
-        AndNotBlueprint *andnot_b = new AndNotBlueprint();
-        andnot_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
-        andnot_b->addChild(Blueprint::UP(new SimpleBlueprint(b)));
-        Blueprint::UP bp(andnot_b);
-        bp->fetchPostings(true);
-        SearchIterator::UP andnot_ab = bp->createSearch(*md, true);
+        auto andnot_b = std::make_unique<AndNotBlueprint>();
+        andnot_b->addChild(std::make_unique<SimpleBlueprint>(a));
+        andnot_b->addChild(std::make_unique<SimpleBlueprint>(b));
+        andnot_b->fetchPostings(true);
+        SearchIterator::UP andnot_ab = andnot_b->createSearch(*md, true);
 
         SimpleResult res;
         res.search(*andnot_ab);
@@ -384,13 +381,12 @@ TEST("testAndNot") {
         b.addHit(5).addHit(17).addHit(30);
 
         MatchData::UP md(MatchData::makeTestInstance(100, 10));
-        AndNotBlueprint *andnot_b = new AndNotBlueprint();
-        andnot_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
-        andnot_b->addChild(Blueprint::UP(new DummySingleValueBitNumericAttributeBlueprint(b)));
-        Blueprint::UP bp(andnot_b);
-        bp->fetchPostings(true);
-        SearchIterator::UP andnot_ab = bp->createSearch(*md, true);
-        EXPECT_TRUE(dynamic_cast<const OptimizedAndNotForBlackListing *>(andnot_ab.get()) != NULL);
+        auto andnot_b = std::make_unique<AndNotBlueprint>();
+        andnot_b->addChild(std::make_unique<SimpleBlueprint>(a));
+        andnot_b->addChild(std::make_unique<DummySingleValueBitNumericAttributeBlueprint>(b));
+        andnot_b->fetchPostings(true);
+        SearchIterator::UP andnot_ab = andnot_b->createSearch(*md, true);
+        EXPECT_TRUE(dynamic_cast<const OptimizedAndNotForBlackListing *>(andnot_ab.get()) != nullptr);
 
         SimpleResult res;
         res.search(*andnot_ab);
@@ -408,16 +404,15 @@ TEST("testAndNot") {
         c.addHit(1).addHit(5).addHit(10).addHit(17).addHit(30);
 
         MatchData::UP md(MatchData::makeTestInstance(100, 10));
-        AndNotBlueprint *andnot_b = new AndNotBlueprint();
-        andnot_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
-        andnot_b->addChild(Blueprint::UP(new SimpleBlueprint(b)));
+        auto andnot_b = std::make_unique<AndNotBlueprint>();
+        andnot_b->addChild(std::make_unique<SimpleBlueprint>(a));
+        andnot_b->addChild(std::make_unique<SimpleBlueprint>(b));
 
-        AndBlueprint *and_b = new AndBlueprint();
-        and_b->addChild(Blueprint::UP(new SimpleBlueprint(c)));
-        and_b->addChild(Blueprint::UP(andnot_b));
-        Blueprint::UP bp(and_b);
-        bp->fetchPostings(true);
-        SearchIterator::UP and_cab = bp->createSearch(*md, true);
+        auto and_b = std::make_unique<AndBlueprint>();
+        and_b->addChild(std::make_unique<SimpleBlueprint>(c));
+        and_b->addChild(std::move(andnot_b));
+        and_b->fetchPostings(true);
+        SearchIterator::UP and_cab = and_b->createSearch(*md, true);
 
         SimpleResult res;
         res.search(*and_cab);
@@ -438,12 +433,11 @@ TEST("testRank") {
         b.addHit(3).addHit(5).addHit(17).addHit(30).addHit(52);
 
         MatchData::UP md(MatchData::makeTestInstance(100, 10));
-        RankBlueprint *rank_b = new RankBlueprint();
-        rank_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
-        rank_b->addChild(Blueprint::UP(new SimpleBlueprint(b)));
-        Blueprint::UP bp(rank_b);
-        bp->fetchPostings(true);
-        SearchIterator::UP rank_ab = bp->createSearch(*md, true);
+        auto rank_b = std::make_unique<RankBlueprint>();
+        rank_b->addChild(std::make_unique<SimpleBlueprint>(a));
+        rank_b->addChild(std::make_unique<SimpleBlueprint>(b));
+        rank_b->fetchPostings(true);
+        SearchIterator::UP rank_ab = rank_b->createSearch(*md, true);
 
         SimpleResult res;
         res.search(*rank_ab);

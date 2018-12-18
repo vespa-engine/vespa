@@ -27,7 +27,7 @@ AttributeFactory::createArrayStd(stringref name, const Config & info)
     assert(info.collectionType().type() == attribute::CollectionType::ARRAY);
     AttributeVector::SP ret;
     switch(info.basicType().type()) {
-    case BasicType::UINT1:
+    case BasicType::BOOL:
     case BasicType::UINT2:
     case BasicType::UINT4:
         break;

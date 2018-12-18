@@ -5,15 +5,13 @@
 #include <vespa/document/repo/configbuilder.h>
 
 using namespace document;
-using namespace search::index;
 
-namespace search {
-namespace index {
+namespace search::index {
 namespace {
 
 const DataType *convert(Schema::DataType type) {
     switch (type) {
-    case schema::DataType::UINT1:
+    case schema::DataType::BOOL:
     case schema::DataType::UINT2:
     case schema::DataType::UINT4:
     case schema::DataType::INT8:
@@ -340,6 +338,4 @@ DocTypeBuilder::makeConfig(const DocumentType &docType)
     return cfg;
 }
 
-
-} // namespace search::index
-} // namespace search
+}
