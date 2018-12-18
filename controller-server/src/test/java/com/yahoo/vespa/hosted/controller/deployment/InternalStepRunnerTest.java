@@ -72,13 +72,14 @@ public class InternalStepRunnerTest {
         tester.setEndpoints(appId, JobType.productionUsEast3.zone(tester.tester().controller().system()));
 
         tester.deployNewSubmission();
+        tester.deployNewSubmission();
 
         tester.deployNewPlatform(new Version("7.1"));
 
         tester.jobs().unregister(appId);
         try {
             tester.tester().deployCompletely(tester.app(), InternalDeploymentTester.applicationPackage, BuildJob.defaultBuildNumber + 1);
-            throw new IllegalStateException("Component job should get ahead again with build numbers to produce a change.");
+            throw new IllegalStateException("Component job should get even again with build numbers to produce a change.");
         }
         catch (AssertionError expected) { }
         tester.tester().deployCompletely(tester.app(), InternalDeploymentTester.applicationPackage, BuildJob.defaultBuildNumber + 2);

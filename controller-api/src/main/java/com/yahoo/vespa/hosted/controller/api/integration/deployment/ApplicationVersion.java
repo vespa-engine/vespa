@@ -85,12 +85,13 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         if (!(o instanceof ApplicationVersion)) return false;
         ApplicationVersion that = (ApplicationVersion) o;
         return Objects.equals(source, that.source) &&
+               Objects.equals(authorEmail, that.authorEmail) &&
                Objects.equals(buildNumber, that.buildNumber);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(source, buildNumber);
+        return Objects.hash(source, authorEmail, buildNumber);
     }
 
     @Override

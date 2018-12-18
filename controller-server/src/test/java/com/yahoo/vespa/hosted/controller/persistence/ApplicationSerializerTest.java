@@ -123,7 +123,6 @@ public class ApplicationSerializerTest {
         assertEquals(2, serialized.deployments().size());
         assertEquals(original.deployments().get(zone1).applicationVersion(), serialized.deployments().get(zone1).applicationVersion());
         assertEquals(original.deployments().get(zone2).applicationVersion(), serialized.deployments().get(zone2).applicationVersion());
-        assertEquals(original.deployments().get(zone2).applicationVersion().authorEmail(), serialized.deployments().get(zone2).applicationVersion().authorEmail());
         assertEquals(original.deployments().get(zone1).version(), serialized.deployments().get(zone1).version());
         assertEquals(original.deployments().get(zone2).version(), serialized.deployments().get(zone2).version());
         assertEquals(original.deployments().get(zone1).at(), serialized.deployments().get(zone1).at());

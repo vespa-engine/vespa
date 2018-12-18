@@ -76,7 +76,6 @@ public class JobControllerApiHandlerHelperTest {
         assertEquals(revision2, tester.app().deployments().get(productionUsCentral1.zone(tester.tester().controller().system())).applicationVersion());
         assertEquals(revision1, tester.app().deployments().get(productionUsEast3.zone(tester.tester().controller().system())).applicationVersion());
         assertEquals(revision2, tester.app().deployments().get(productionUsWest1.zone(tester.tester().controller().system())).applicationVersion());
-        assertEquals("a@b", tester.app().deployments().get(productionUsWest1.zone(tester.tester().controller().system())).applicationVersion().authorEmail().get());
 
         tester.clock().advance(Duration.ofMillis(1000));
 
