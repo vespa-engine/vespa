@@ -22,6 +22,8 @@ import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.FlagId;
+import com.yahoo.vespa.flags.FlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -38,9 +40,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
+import static com.yahoo.vespa.config.server.ConfigServerBootstrap.bootstrapFeatureFlag;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Ulf Lilleengen
@@ -143,8 +148,11 @@ public class ConfigServerBootstrapTest {
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
         VipStatus vipStatus = new VipStatus();
+        FlagSource flagSource = mock(FlagSource.class);
+        when(flagSource.getString(new FlagId(bootstrapFeatureFlag))).thenReturn(Optional.of("true"));
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    createStateMonitor(), vipStatus);
+                                                                    createStateMonitor(), vipStatus,
+                                                                    flagSource);
 
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");

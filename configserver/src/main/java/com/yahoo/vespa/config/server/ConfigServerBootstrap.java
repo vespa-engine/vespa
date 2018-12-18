@@ -12,6 +12,8 @@ import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
+import com.yahoo.vespa.flags.FeatureFlag;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -40,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 public class ConfigServerBootstrap extends AbstractComponent implements Runnable {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ConfigServerBootstrap.class.getName());
+    static final String bootstrapFeatureFlag = "config-server-bootstrap-in-separate-thread";
 
     enum Mode {BOOTSTRAP_IN_CONSTRUCTOR, BOOTSTRAP_IN_SEPARATE_THREAD, INITIALIZE_ONLY} // INITIALIZE_ONLY is for testing only
     enum RedeployingApplicationsFails {EXIT_JVM, CONTINUE}
@@ -56,14 +59,13 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
     private final ExecutorService rpcServerExecutor;
 
-    // The tenants object is injected so that all initial requests handlers are
-    // added to the rpc server before it starts answering rpc requests.
     @SuppressWarnings("WeakerAccess")
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
-                                 VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus) {
+                                 VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
+                                 FlagSource flagSource) {
         this(applicationRepository, server, versionState, stateMonitor, vipStatus,
-             applicationRepository.configserverConfig().bootstrapInSeparateThread () ? Mode.BOOTSTRAP_IN_SEPARATE_THREAD : Mode.BOOTSTRAP_IN_CONSTRUCTOR,
+             new FeatureFlag(bootstrapFeatureFlag, true, flagSource).value() ? Mode.BOOTSTRAP_IN_SEPARATE_THREAD : Mode.BOOTSTRAP_IN_CONSTRUCTOR,
              RedeployingApplicationsFails.EXIT_JVM);
     }
 
