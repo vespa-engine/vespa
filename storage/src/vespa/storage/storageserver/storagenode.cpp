@@ -7,7 +7,6 @@
 #include "statereporter.h"
 #include "storagemetricsset.h"
 #include "storagenodecontext.h"
-#include "tls_statistics_metrics_wrapper.h"
 
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
 #include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
@@ -160,7 +159,7 @@ StorageNode::initialize()
     _context.getComponentRegister().setPriorityConfig(*_priorityConfig);
     _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
 
-    _metrics = std::make_shared<StorageMetricSet>();
+    _metrics.reset(new StorageMetricSet);
     _component.reset(new StorageComponent(_context.getComponentRegister(), "storagenode"));
     _component->registerMetric(*_metrics);
     if (!_context.getComponentRegister().hasMetricManager()) {

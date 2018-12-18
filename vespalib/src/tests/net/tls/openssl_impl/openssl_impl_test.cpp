@@ -4,7 +4,6 @@
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/net/tls/authorization_mode.h>
 #include <vespa/vespalib/net/tls/crypto_codec.h>
-#include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/net/tls/tls_context.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/impl/openssl_crypto_codec_impl.h>
@@ -618,37 +617,6 @@ TEST_F("Log-only insecure authorization mode ignores verification result", CertF
 TEST_F("Disabled insecure authorization mode ignores verification result", CertFixture) {
     reset_peers_with_server_authz_mode(f, AuthorizationMode::Disable);
     EXPECT_TRUE(f.handshake());
-}
-
-TEST_F("Failure statistics are incremented on authorization failures", CertFixture) {
-    reset_peers_with_server_authz_mode(f, AuthorizationMode::Enforce);
-    auto server_before = ConnectionStatistics::get(true).snapshot();
-    auto client_before = ConnectionStatistics::get(false).snapshot();
-    EXPECT_FALSE(f.handshake());
-    auto server_stats = ConnectionStatistics::get(true).snapshot().subtract(server_before);
-    auto client_stats = ConnectionStatistics::get(false).snapshot().subtract(client_before);
-
-    EXPECT_EQUAL(1u, server_stats.invalid_peer_credentials);
-    EXPECT_EQUAL(0u, client_stats.invalid_peer_credentials);
-    EXPECT_EQUAL(1u, server_stats.failed_tls_handshakes);
-    EXPECT_EQUAL(0u, server_stats.tls_connections);
-    EXPECT_EQUAL(0u, client_stats.tls_connections);
-}
-
-TEST_F("Success statistics are incremented on OK authorization", CertFixture) {
-    reset_peers_with_server_authz_mode(f, AuthorizationMode::Disable);
-    auto server_before = ConnectionStatistics::get(true).snapshot();
-    auto client_before = ConnectionStatistics::get(false).snapshot();
-    EXPECT_TRUE(f.handshake());
-    auto server_stats = ConnectionStatistics::get(true).snapshot().subtract(server_before);
-    auto client_stats = ConnectionStatistics::get(false).snapshot().subtract(client_before);
-
-    EXPECT_EQUAL(0u, server_stats.invalid_peer_credentials);
-    EXPECT_EQUAL(0u, client_stats.invalid_peer_credentials);
-    EXPECT_EQUAL(0u, server_stats.failed_tls_handshakes);
-    EXPECT_EQUAL(0u, client_stats.failed_tls_handshakes);
-    EXPECT_EQUAL(1u, server_stats.tls_connections);
-    EXPECT_EQUAL(1u, client_stats.tls_connections);
 }
 
 // TODO we can't test embedded nulls since the OpenSSL v3 extension APIs
