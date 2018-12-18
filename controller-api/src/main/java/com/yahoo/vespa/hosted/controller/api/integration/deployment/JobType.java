@@ -16,8 +16,6 @@ public enum JobType {
     component              ("component"                   , null                                                       , null                                                          ),
     systemTest             ("system-test"                 , ZoneId.from("test"   , "us-east-1")      , ZoneId.from("test"   , "cd-us-central-1")  ),
     stagingTest            ("staging-test"                , ZoneId.from("staging", "us-east-3")      , ZoneId.from("staging", "cd-us-central-1")  ),
-    // TODO: Remove after corp zone disappears
-    productionCorpUsEast1  ("production-corp-us-east-1"   , ZoneId.from("prod"   , "corp-us-east-1") , null                                                          ),
     productionUsEast3      ("production-us-east-3"        , ZoneId.from("prod"   , "us-east-3")      , null                                                          ),
     productionUsWest1      ("production-us-west-1"        , ZoneId.from("prod"   , "us-west-1")      , null                                                          ),
     productionUsCentral1   ("production-us-central-1"     , ZoneId.from("prod"   , "us-central-1")   , null                                                          ),
@@ -48,7 +46,7 @@ public enum JobType {
     /** Returns the zone for this job in the given system, or throws if this job does not have a zone */
     public ZoneId zone(SystemName system) {
         if ( ! zones.containsKey(system))
-            throw new AssertionError(this + " does not have any zones in " + system + ".");
+            throw new IllegalArgumentException(this + " does not have any zones in " + system);
 
         return zones.get(system);
     }
