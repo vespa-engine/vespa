@@ -23,9 +23,10 @@ import java.util.stream.Collectors;
  * This encapsulated the curator database of the node repo.
  * It serves reads from an in-memory cache of the content which is invalidated when changed on another node
  * using a global, shared counter. The counter is updated on all write operations, ensured by wrapping write
- * operations in a 2pc transaction containing the counter update.
+ * operations in a try block, with the counter increment in a finally block. Locks must be used to ensure consistency.
  *
  * @author bratseth
+ * @author jonmv
  */
 public class CuratorDatabase {
 
@@ -86,6 +87,15 @@ public class CuratorDatabase {
      * Important: It is the nested transaction which must be committed - never the curator transaction directly.
      */
     public CuratorTransaction newCuratorTransactionIn(NestedTransaction transaction) {
+        // Wrap the curator transaction with an increment of the generation counter.
+        CountingCuratorTransaction curatorTransaction = new CountingCuratorTransaction(curator, changeGenerationCounter);
+        transaction.add(curatorTransaction);
+        return curatorTransaction;
+    }
+
+    // TODO jvenstad: remove.
+    /** Kept for now to be able to revert to old caching behaviour. */
+    CuratorTransaction newEagerCuratorTransactionIn(NestedTransaction transaction) {
         // Add a counting transaction first, to make sure we always invalidate the current state on any transaction commit
         transaction.add(new EagerCountingCuratorTransaction(changeGenerationCounter), CuratorTransaction.class);
         CuratorTransaction curatorTransaction = new CuratorTransaction(curator);
@@ -94,60 +104,35 @@ public class CuratorDatabase {
     }
 
     /** Creates a path in curator and all its parents as necessary. If the path already exists this does nothing. */
-    // As this operation does not depend on the prior state we do not need to increment the write counter
-    public void create(Path path) {
+    void create(Path path) {
         curator.create(path);
+        changeGenerationCounter.next(); // Increment counter to ensure getChildren sees any change.
     }
 
     /** Returns whether given path exists */
-    public boolean exists(Path path) {
+    boolean exists(Path path) {
         return curator.exists(path);
     }
 
     // --------- Read operations -------------------------------------------------------------------------------
     // These can read from the memory file system, which accurately mirrors the ZooKeeper content IF
+    // the current generation counter is the same as it was when data was put into the cache, AND
+    // the data to read is protected by a lock which is held now, and during any writes of the data.
 
     /** Returns the immediate, local names of the children under this node in any order */
-    public List<String> getChildren(Path path) { return getCache().getChildren(path); }
+    List<String> getChildren(Path path) { return getCache().getChildren(path); }
 
-    public Optional<byte[]> getData(Path path) { return getCache().getData(path); }
+    Optional<byte[]> getData(Path path) { return getCache().getData(path); }
 
-    private static class CacheAndGeneration {
-        public CacheAndGeneration(CuratorDatabaseCache cache, long generation)
-        {
-            this.cache = cache;
-            this.generation = generation;
-        }
-        public boolean expired() {
-            return generation != cache.generation();
-        }
-        public CuratorDatabaseCache validCache() {
-            if (expired()) {
-                throw new IllegalStateException("The cache has generation " + cache.generation() +
-                        " while the root genration counter in zookeeper says " + generation +
-                        ". That is totally unacceptable and must be a sever programming error in my close vicinity.");
-            }
-            return cache;
-        }
-
-        private CuratorDatabaseCache cache;
-        private long generation;
-    }
-    private CacheAndGeneration getCacheSnapshot() {
-        return new CacheAndGeneration(cache.get(), changeGenerationCounter.get());
-    }
+    /** Invalidates the current cache if outdated. */
     private CuratorDatabaseCache getCache() {
-        CacheAndGeneration cacheAndGeneration = getCacheSnapshot();
-        while (cacheAndGeneration.expired()) {
-            synchronized (cacheCreationLock) { // Prevent a race for creating new caches
-                cacheAndGeneration = getCacheSnapshot();
-                if (cacheAndGeneration.expired()) {
+        if (changeGenerationCounter.get() != cache.get().generation)
+            synchronized (cacheCreationLock) {
+                while (changeGenerationCounter.get() != cache.get().generation)
                     cache.set(newCache(changeGenerationCounter.get()));
-                    cacheAndGeneration = getCacheSnapshot();
-                }
             }
-        }
-        return cacheAndGeneration.validCache();
+            
+        return cache.get();
     }
 
     /** Caches must only be instantiated using this method */
@@ -174,7 +159,7 @@ public class CuratorDatabase {
         private final Map<Path, Optional<byte[]>> data = new ConcurrentHashMap<>();
 
         /** Create an empty snapshot at a given generation (as an empty snapshot is a valid partial snapshot) */
-        public CuratorDatabaseCache(long generation, Curator curator) {
+        private CuratorDatabaseCache(long generation, Curator curator) {
             this.generation = generation;
             this.curator = curator;
         }
@@ -183,18 +168,16 @@ public class CuratorDatabase {
 
         /**
          * Returns the children of this path, which may be empty.
-         * Returns null only if it is not present in this state mirror
          */
         public List<String> getChildren(Path path) { 
             return children.computeIfAbsent(path, key -> ImmutableList.copyOf(curator.getChildren(path)));
         }
 
         /**
-         * Returns the content of this child - which may be empty.
-         * Returns null only if it is not present in this state mirror
+         * Returns the a copy of the content of this child - which may be empty.
          */
         public Optional<byte[]> getData(Path path) {
-            return data.computeIfAbsent(path, key -> curator.getData(path).map(data -> Arrays.copyOf(data, data.length)));
+            return data.computeIfAbsent(path, key -> curator.getData(path)).map(data -> Arrays.copyOf(data, data.length));
         }
 
     }
@@ -202,7 +185,7 @@ public class CuratorDatabase {
     /** An implementation of the curator database cache which does no caching */
     private static class DeactivatedCache extends CuratorDatabaseCache {
         
-        public DeactivatedCache(long generation, Curator curator) { super(generation, curator); }
+        private DeactivatedCache(long generation, Curator curator) { super(generation, curator); }
 
         @Override
         public List<String> getChildren(Path path) { return curator.getChildren(path); }
