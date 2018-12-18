@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "auto_reloading_tls_crypto_engine.h"
+#include "statistics.h"
 #include "tls_context.h"
 #include "tls_crypto_engine.h"
 #include "transport_security_options.h"
@@ -29,6 +30,7 @@ std::shared_ptr<TlsCryptoEngine> try_create_engine_from_tls_config(const vespali
     } catch (std::exception& e) {
         LOG(warning, "Failed to reload TLS config file (%s): '%s'. Old config remains in effect.",
             config_file_path.c_str(), e.what());
+        ConfigStatistics::get().inc_failed_config_reloads();
         return {};
     }
 }
@@ -78,6 +80,7 @@ void AutoReloadingTlsCryptoEngine::run_reload_loop() {
 void AutoReloadingTlsCryptoEngine::try_replace_current_engine() {
     auto new_engine = try_create_engine_from_tls_config(_config_file_path, _authorization_mode);
     if (new_engine) {
+        ConfigStatistics::get().inc_successful_config_reloads();
         std::lock_guard guard(_engine_mutex);
         _current_engine = std::move(new_engine);
     }

@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/net/tls/authorization_mode.h>
 #include <vespa/vespalib/net/tls/auto_reloading_tls_crypto_engine.h>
+#include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
@@ -243,8 +244,9 @@ CryptoEngine::get_default()
 }
 
 CryptoSocket::UP
-NullCryptoEngine::create_crypto_socket(SocketHandle socket, bool)
+NullCryptoEngine::create_crypto_socket(SocketHandle socket, bool is_server)
 {
+    net::tls::ConnectionStatistics::get(is_server).inc_insecure_connections();
     return std::make_unique<NullCryptoSocket>(std::move(socket));
 }
 
