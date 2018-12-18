@@ -85,15 +85,15 @@ class NodeIdentifier {
     }
 
     private String getHostFromCalypsoCertificate(List<SubjectAlternativeName> sans) {
-        String openstackId = getUniqueInstanceId(sans);
+        String openStackId = getUniqueInstanceId(sans);
         return nodeCache.get().stream()
-                .filter(node -> node.openStackId().equals(openstackId))
+                .filter(node -> node.id().equals(openStackId))
                 .map(Node::hostname)
                 .findFirst()
                 .orElseThrow(() -> new NodeIdentifierException(
                         String.format(
                                 "Cannot find node with openstack-id '%s' in node repository (SANs=%s)",
-                                openstackId,
+                                openStackId,
                                 sans.stream().map(SubjectAlternativeName::getValue).collect(Collectors.joining(",", "[", "]")))));
     }
 

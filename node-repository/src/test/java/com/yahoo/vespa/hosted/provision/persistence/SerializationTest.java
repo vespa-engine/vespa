@@ -50,7 +50,7 @@ public class SerializationTest {
 
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
         assertEquals(node.hostname(), copy.hostname());
-        assertEquals(node.openStackId(), copy.openStackId());
+        assertEquals(node.id(), copy.id());
         assertEquals(node.state(), copy.state());
         assertFalse(copy.allocation().isPresent());
         assertEquals(0, copy.history().events().size());
@@ -77,7 +77,7 @@ public class SerializationTest {
         node = node.with(NodeType.tenant);
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
 
-        assertEquals(node.openStackId(), copy.openStackId());
+        assertEquals(node.id(), copy.id());
         assertEquals(node.hostname(), copy.hostname());
         assertEquals(node.state(), copy.state());
         assertEquals(1, copy.allocation().get().restartGeneration().wanted());

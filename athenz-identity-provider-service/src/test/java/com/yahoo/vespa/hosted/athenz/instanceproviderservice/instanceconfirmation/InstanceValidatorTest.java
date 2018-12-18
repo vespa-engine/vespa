@@ -226,7 +226,7 @@ public class InstanceValidatorTest {
     }
 
     private List<Node> allocateNode(List<Node> nodeList, Node node, ApplicationId applicationId) {
-        nodeList.removeIf(n -> n.openStackId().equals(node.openStackId()));
+        nodeList.removeIf(n -> n.id().equals(node.id()));
         nodeList.add(node.allocate(applicationId, ClusterMembership.from("container/default/0/0", Version.fromString("6.123.4")), Instant.now()));
         return nodeList;
     }

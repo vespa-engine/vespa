@@ -36,8 +36,6 @@ import java.util.Optional;
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.*;
-import static com.yahoo.security.KeyAlgorithm.RSA;
-import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.CONFIGSERVER_HOST_IDENTITY;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.PROXY_HOST_IDENTITY;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.TENANT_DOCKER_CONTAINER_IDENTITY;
@@ -231,7 +229,6 @@ public class NodeIdentifierTest {
     private static Node createNode(String clusterId, int clusterIndex, String tenant, String application) {
         return Node
                 .createDockerNode(
-                        OPENSTACK_ID,
                         singleton("1.2.3.4"),
                         emptySet(),
                         HOSTNAME,

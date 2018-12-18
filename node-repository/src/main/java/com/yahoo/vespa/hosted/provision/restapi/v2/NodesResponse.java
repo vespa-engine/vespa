@@ -142,7 +142,7 @@ class NodesResponse extends HttpResponse {
         if (node.parentHostname().isPresent()) {
             object.setString("parentHostname", node.parentHostname().get());
         }
-        object.setString("openStackId", node.openStackId());
+        object.setString("openStackId", node.id());
         object.setString("flavor", node.flavor().name());
         object.setString("canonicalFlavor", node.flavor().canonicalName());
         object.setDouble("minDiskAvailableGb", node.flavor().getMinDiskAvailableGb());
