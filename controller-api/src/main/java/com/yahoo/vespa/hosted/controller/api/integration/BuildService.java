@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 
 import com.yahoo.config.provision.ApplicationId;
 
+import java.util.Objects;
+
 /**
  * @author jonmv
  */
@@ -58,21 +60,17 @@ public interface BuildService {
         public String jobName() { return jobName; }
 
         @Override
-        public final boolean equals(Object o) {
+        public boolean equals(Object o) {
             if (this == o) return true;
-            if ( ! (o instanceof BuildJob)) return false;
-
-            BuildJob buildJob = (BuildJob) o;
-
-            if (projectId != buildJob.projectId) return false;
-            return jobName.equals(buildJob.jobName);
+            if (!(o instanceof BuildJob)) return false;
+            BuildJob job = (BuildJob) o;
+            return Objects.equals(applicationId, job.applicationId) &&
+                   Objects.equals(jobName, job.jobName);
         }
 
         @Override
-        public final int hashCode() {
-            int result = (int) (projectId ^ (projectId >>> 32));
-            result = 31 * result + jobName.hashCode();
-            return result;
+        public int hashCode() {
+            return Objects.hash(applicationId, jobName);
         }
 
         @Override

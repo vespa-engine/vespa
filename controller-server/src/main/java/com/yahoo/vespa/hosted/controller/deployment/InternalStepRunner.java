@@ -31,7 +31,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
@@ -447,12 +446,10 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns a generated job report for the given run. */
     private DeploymentJobs.JobReport report(Run run) {
-        return new DeploymentJobs.JobReport(run.id().application(),
-                                            run.id().type(),
-                                            controller.applications().require(run.id().application()).deploymentJobs().projectId().orElse(1),
-                                            run.id().number(),
-                                            Optional.empty(),
-                                            run.hasFailed() ? Optional.of(DeploymentJobs.JobError.unknown) : Optional.empty());
+        return DeploymentJobs.JobReport.ofJob(run.id().application(),
+                                              run.id().type(),
+                                              run.id().number(),
+                                              run.hasFailed() ? Optional.of(DeploymentJobs.JobError.unknown) : Optional.empty());
     }
 
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */

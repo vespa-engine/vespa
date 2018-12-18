@@ -45,12 +45,11 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
                                    app.id().tenant().value() + "/application/" + app.id().application().value(),
                                    new byte[0], Request.Method.POST, () -> "user"),
                        200, "{\"message\":\"Triggered component for tenant1.application1\"}");
-        tester.controller().applications().deploymentTrigger().notifyOfCompletion(new JobReport(app.id(),
-                                                                                                JobType.component,
-                                                                                                1,
-                                                                                                42,
-                                                                                                Optional.of(new SourceRevision("repo", "branch", "commit")),
-                                                                                                Optional.empty()));
+        tester.controller().applications().deploymentTrigger().notifyOfCompletion(JobReport.ofComponent(app.id(),
+                                                                                                        1,
+                                                                                                        42,
+                                                                                                        Optional.empty(),
+                                                                                                        new SourceRevision("repo", "branch", "commit")));
 
         // Triggers specific job when given, when job is a test, or tested.
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +

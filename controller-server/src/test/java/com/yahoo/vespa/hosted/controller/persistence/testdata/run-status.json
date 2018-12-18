@@ -25,6 +25,7 @@
       "branch": "master",
       "commit": "f00bad",
       "build": 123,
+      "authorEmail": "a@b",
       "source": {
         "platform": "1.2.2",
         "repository": "git@github.com:user/repo.git",

@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
@@ -78,12 +79,14 @@ public class RunSerializerTest {
                                                                 "f00bad"),
                                              123),
                      run.versions().targetApplication());
+        assertEquals("a@b", run.versions().targetApplication().authorEmail().get());
         assertEquals(new Version(1, 2, 2), run.versions().sourcePlatform().get());
         assertEquals(ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
                                                                 "master",
                                                                 "badb17"),
                                              122),
                      run.versions().sourceApplication().get());
+        assertEquals(Optional.empty(), run.versions().sourceApplication().get().authorEmail());
         assertEquals(ImmutableMap.<Step, Step.Status>builder()
                              .put(deployInitialReal, unfinished)
                              .put(installInitialReal, failed)

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -144,26 +145,39 @@ public class DeploymentJobs {
         private final JobType jobType;
         private final long projectId;
         private final long buildNumber;
-        private final Optional<SourceRevision> sourceRevision;
+        private final Optional<ApplicationVersion> version;
         private final Optional<JobError> jobError;
 
-        public JobReport(ApplicationId applicationId, JobType jobType, long projectId, long buildNumber,
-                         Optional<SourceRevision> sourceRevision, Optional<JobError> jobError) {
+        private JobReport(ApplicationId applicationId, JobType jobType, long projectId, long buildNumber,
+                          Optional<JobError> jobError, Optional<ApplicationVersion> version) {
             Objects.requireNonNull(applicationId, "applicationId cannot be null");
             Objects.requireNonNull(jobType, "jobType cannot be null");
-            Objects.requireNonNull(sourceRevision, "sourceRevision cannot be null");
             Objects.requireNonNull(jobError, "jobError cannot be null");
-
-            if (jobType == JobType.component && !sourceRevision.isPresent()) {
-                throw new IllegalArgumentException("sourceRevision is required for job " + jobType);
-            }
+            Objects.requireNonNull(version, "version cannot be null");
+            if (version.isPresent() && version.get().buildNumber().isPresent() && version.get().buildNumber().getAsLong() != buildNumber)
+                throw new IllegalArgumentException("Build number in application version must match the one given here.");
 
             this.applicationId = applicationId;
             this.projectId = projectId;
             this.buildNumber = buildNumber;
             this.jobType = jobType;
-            this.sourceRevision = sourceRevision;
             this.jobError = jobError;
+            this.version = version;
+        }
+
+        public static JobReport ofComponent(ApplicationId applicationId, long projectId, long buildNumber,
+                                            Optional<JobError> jobError, SourceRevision sourceRevision) {
+            return new JobReport(applicationId, JobType.component, projectId, buildNumber,
+                                 jobError, Optional.of(ApplicationVersion.from(sourceRevision, buildNumber)));
+        }
+
+        public static JobReport ofSubmission(ApplicationId applicationId, long projectId, ApplicationVersion version) {
+            return new JobReport(applicationId, JobType.component, projectId, version.buildNumber().getAsLong(),
+                                 Optional.empty(), Optional.of(version));
+        }
+
+        public static JobReport ofJob(ApplicationId applicationId, JobType jobType, long buildNumber, Optional<JobError> jobError) {
+            return new JobReport(applicationId, jobType, -1, buildNumber, jobError, Optional.empty());
         }
 
         public ApplicationId applicationId() { return applicationId; }
@@ -171,7 +185,7 @@ public class DeploymentJobs {
         public long projectId() { return projectId; }
         public long buildNumber() { return buildNumber; }
         public boolean success() { return ! jobError.isPresent(); }
-        public Optional<SourceRevision> sourceRevision() { return sourceRevision; }
+        public Optional<ApplicationVersion> version() { return version; }
         public Optional<JobError> jobError() { return jobError; }
         public BuildService.BuildJob buildJob() { return BuildService.BuildJob.of(applicationId, projectId, jobType.jobName()); }
 

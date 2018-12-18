@@ -222,7 +222,7 @@ public class JobController {
     /**
      * Accepts and stores a new application package and test jar pair under a generated application version key.
      */
-    public ApplicationVersion submit(ApplicationId id, SourceRevision revision, long projectId,
+    public ApplicationVersion submit(ApplicationId id, SourceRevision revision, String authorEmail, long projectId,
                                      byte[] packageBytes, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
@@ -239,7 +239,7 @@ public class JobController {
             }
 
             long run = nextBuild(id);
-            version.set(ApplicationVersion.from(revision, run));
+            version.set(ApplicationVersion.from(revision, run, authorEmail));
 
             controller.applications().applicationStore().put(id,
                                                              version.get(),
@@ -251,7 +251,7 @@ public class JobController {
             prunePackages(id);
             controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
 
-            notifyOfNewSubmission(id, projectId, revision, run);
+            controller.applications().deploymentTrigger().notifyOfCompletion(DeploymentJobs.JobReport.ofSubmission(id, projectId, version.get()));
         });
         return version.get();
     }
@@ -328,17 +328,6 @@ public class JobController {
                              .flatMap(JobStatus::lastCompleted)
                              .map(JobStatus.JobRun::id)
                              .orElse(0L);
-    }
-
-    // TODO jvenstad: Find a more appropriate way of doing this when this is the only build service.
-    private void notifyOfNewSubmission(ApplicationId id, long projectId, SourceRevision revision, long number) {
-        DeploymentJobs.JobReport report = new DeploymentJobs.JobReport(id,
-                                                                       JobType.component,
-                                                                       projectId,
-                                                                       number,
-                                                                       Optional.of(revision),
-                                                                       Optional.empty());
-        controller.applications().deploymentTrigger().notifyOfCompletion(report);
     }
 
     private void prunePackages(ApplicationId id) {

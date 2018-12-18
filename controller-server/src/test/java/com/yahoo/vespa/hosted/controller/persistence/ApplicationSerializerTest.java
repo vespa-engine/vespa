@@ -70,7 +70,7 @@ public class ApplicationSerializerTest {
         List<Deployment> deployments = new ArrayList<>();
         ApplicationVersion applicationVersion1 = ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 31);
         ApplicationVersion applicationVersion2 = ApplicationVersion
-                .from(new SourceRevision("repo1", "branch1", "commit1"), 32);
+                .from(new SourceRevision("repo1", "branch1", "commit1"), 32, "a@b");
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
@@ -123,6 +123,7 @@ public class ApplicationSerializerTest {
         assertEquals(2, serialized.deployments().size());
         assertEquals(original.deployments().get(zone1).applicationVersion(), serialized.deployments().get(zone1).applicationVersion());
         assertEquals(original.deployments().get(zone2).applicationVersion(), serialized.deployments().get(zone2).applicationVersion());
+        assertEquals(original.deployments().get(zone2).applicationVersion().authorEmail(), serialized.deployments().get(zone2).applicationVersion().authorEmail());
         assertEquals(original.deployments().get(zone1).version(), serialized.deployments().get(zone1).version());
         assertEquals(original.deployments().get(zone2).version(), serialized.deployments().get(zone2).version());
         assertEquals(original.deployments().get(zone1).at(), serialized.deployments().get(zone1).at());

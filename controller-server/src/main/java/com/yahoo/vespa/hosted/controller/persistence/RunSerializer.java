@@ -67,6 +67,7 @@ class RunSerializer {
     private static final String repositoryField = "repository";
     private static final String branchField = "branch";
     private static final String commitField = "commit";
+    private static final String authorEmailField = "authorEmail";
     private static final String buildField = "build";
     private static final String sourceField = "source";
     private static final String lastTestRecordField = "lastTestRecord";
@@ -105,21 +106,26 @@ class RunSerializer {
 
     private Versions versionsFromSlime(Inspector versionsObject) {
         Version targetPlatformVersion = Version.fromString(versionsObject.field(platformVersionField).asString());
-        ApplicationVersion targetApplicationVersion = ApplicationVersion.from(new SourceRevision(versionsObject.field(repositoryField).asString(),
-                                                                                                 versionsObject.field(branchField).asString(),
-                                                                                                 versionsObject.field(commitField).asString()),
-                                                                              versionsObject.field(buildField).asLong());
+        ApplicationVersion targetApplicationVersion = applicationVersionFrom(versionsObject);
+
         Optional<Version> sourcePlatformVersion = versionsObject.field(sourceField).valid()
                 ? Optional.of(Version.fromString(versionsObject.field(sourceField).field(platformVersionField).asString()))
                 : Optional.empty();
         Optional<ApplicationVersion> sourceApplicationVersion = versionsObject.field(sourceField).valid()
-                ? Optional.of(ApplicationVersion.from(new SourceRevision(versionsObject.field(sourceField).field(repositoryField).asString(),
-                                                                         versionsObject.field(sourceField).field(branchField).asString(),
-                                                                         versionsObject.field(sourceField).field(commitField).asString()),
-                                                      versionsObject.field(sourceField).field(buildField).asLong()))
+                ? Optional.of(applicationVersionFrom(versionsObject.field(sourceField)))
                 : Optional.empty();
 
         return new Versions(targetPlatformVersion, targetApplicationVersion, sourcePlatformVersion, sourceApplicationVersion);
+    }
+
+    private ApplicationVersion applicationVersionFrom(Inspector versionObject) {
+        SourceRevision revision = new SourceRevision(versionObject.field(repositoryField).asString(),
+                                                     versionObject.field(branchField).asString(),
+                                                     versionObject.field(commitField).asString());
+        long buildNumber = versionObject.field(buildField).asLong();
+        return versionObject.field(authorEmailField).valid()
+                ? ApplicationVersion.from(revision, buildNumber, versionObject.field(authorEmailField).asString())
+                : ApplicationVersion.from(revision, buildNumber);
     }
 
     Slime toSlime(Iterable<Run> runs) {
@@ -159,13 +165,14 @@ class RunSerializer {
 
     private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {
         versionsObject.setString(platformVersionField, platformVersion.toString());
-        SourceRevision targetSourceRevision = applicationVersion.source()
-                                                                .orElseThrow(() -> new IllegalArgumentException("Source revision must be present in target application version."));
-        versionsObject.setString(repositoryField, targetSourceRevision.repository());
-        versionsObject.setString(branchField, targetSourceRevision.branch());
-        versionsObject.setString(commitField, targetSourceRevision.commit());
+        SourceRevision revision = applicationVersion.source()
+                                                    .orElseThrow(() -> new IllegalArgumentException("Source revision must be present in application version."));
+        versionsObject.setString(repositoryField, revision.repository());
+        versionsObject.setString(branchField, revision.branch());
+        versionsObject.setString(commitField, revision.commit());
         versionsObject.setLong(buildField, applicationVersion.buildNumber()
-                                                             .orElseThrow(() -> new IllegalArgumentException("Build number must be present in target application version.")));
+                                                             .orElseThrow(() -> new IllegalArgumentException("Build number must be present in application version.")));
+        applicationVersion.authorEmail().ifPresent(email -> versionsObject.setString(authorEmailField, email));
     }
 
     static String valueOf(Step step) {
