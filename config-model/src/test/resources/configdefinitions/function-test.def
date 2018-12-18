@@ -40,6 +40,7 @@ onechoice enum { ONLYFOO } default=ONLYFOO
 refval reference
 refwithdef reference default=":parent:"
 fileVal file
+urlVal url
 
 boolarr[] bool
 intarr[] int
@@ -49,6 +50,7 @@ stringarr[] string
 enumarr[] enum { ARRAY, VALUES }
 refarr[] reference
 fileArr[] file
+urlArr[] url
 
 # A basic struct
 basicStruct.foo string default="basic"
@@ -68,6 +70,7 @@ myarray[].stringval[] string
 myarray[].enumval enum { INNER, ENUM, TYPE } default=TYPE
 myarray[].refval reference # Value in array without default
 myarray[].fileVal file
+myarray[].urlVal url
 myarray[].anotherarray[].foo int default=-4
 myarray[].myStruct.a int
 myarray[].myStruct.b int default=2

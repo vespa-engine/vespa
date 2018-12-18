@@ -131,6 +131,7 @@ public class ConfigInstanceEqualsTest {
                 refval(":parent:").
                 fileVal("etc").
                 pathVal(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))).
+                urlVal(new UrlReference("http://docs.vespa.ai")).
                 boolarr(false).
                 longarr(9223372036854775807L).
                 longarr(-9223372036854775808L).
@@ -140,6 +141,7 @@ public class ConfigInstanceEqualsTest {
                 enumarr(Enumarr.VALUES).
                 refarr(Arrays.asList(":parent:", ":parent", "parent:")).  // test collection based setter
                 fileArr("bin").
+                urlArr(new UrlReference("http://docs.vespa.ai")).
 
                 basicStruct(new BasicStruct.Builder().
                         foo("basicFoo").
@@ -162,6 +164,7 @@ public class ConfigInstanceEqualsTest {
                         enumval(Myarray.Enumval.INNER).
                         refval(":parent:").
                         fileVal("file0").
+                        urlVal(new UrlReference("http://docs.vespa.ai/1")).
                         anotherarray(new Myarray.Anotherarray.Builder().
                                 foo(7)).
                         myStruct(new Myarray.MyStruct.Builder().
@@ -173,6 +176,7 @@ public class ConfigInstanceEqualsTest {
                         enumval(Myarray.Enumval.INNER).
                         refval(":parent:").
                         fileVal("file1").
+                        urlVal(new UrlReference("http://docs.vespa.ai/2")).
                         anotherarray(new Myarray.Anotherarray.Builder().
                                 foo(1).
                                 foo(2)).

@@ -48,8 +48,8 @@ public class ConfigDefinitionBuilder {
                         new ConfigDefinition.TypeSpec(name, ((LeafCNode) node).getType(), null, enumValues, null, null));
 
             } else if (node.isMap) {
-		//System.out.println("Adding leaf map node " + name);
-		def.leafMapDef(name).setTypeSpec(new ConfigDefinition.TypeSpec(name, ((LeafCNode) node).getType(), null, null, null, null));
+                //System.out.println("Adding leaf map node " + name);
+                def.leafMapDef(name).setTypeSpec(new ConfigDefinition.TypeSpec(name, ((LeafCNode) node).getType(), null, null, null, null));
             } else {
                 //System.out.println("Adding basic node " + name);
                 if (node instanceof LeafCNode.IntegerLeaf) {
@@ -67,7 +67,9 @@ public class ConfigDefinitionBuilder {
                     addNode(def, (LeafCNode.FileLeaf) node);
                 } else if (node instanceof LeafCNode.PathLeaf) {
                     addNode(def, (LeafCNode.PathLeaf) node);
-                }else if (node instanceof LeafCNode.StringLeaf) {
+                } else if (node instanceof LeafCNode.UrlLeaf) {
+                    addNode(def, (LeafCNode.UrlLeaf) node);
+                } else if (node instanceof LeafCNode.StringLeaf) {
                     addNode(def, (LeafCNode.StringLeaf) node);
                 } else if (node instanceof LeafCNode.EnumLeaf) {
                     addNode(def, (LeafCNode.EnumLeaf) node);
@@ -87,9 +89,9 @@ public class ConfigDefinitionBuilder {
                     }
                 }
             } else if (node.isMap) {
-		//System.out.println("Adding struct map node " + name);
-		newDef = def.structMapDef(name);
-		if (node.getChildren() != null && node.getChildren().length > 0) {
+                //System.out.println("Adding struct map node " + name);
+                newDef = def.structMapDef(name);
+                if (node.getChildren() != null && node.getChildren().length > 0) {
                     for (CNode childNode : node.getChildren()) {
                         //System.out.println("\tChild node " + childNode.getName());
                         addNode(newDef, childNode);
@@ -171,6 +173,14 @@ public class ConfigDefinitionBuilder {
             def.addPathDef(leaf.getName(), leaf.getDefaultValue().getValue());
         } else {
             def.addPathDef(leaf.getName(), null);
+        }
+    }
+
+    static void addNode(ConfigDefinition def, LeafCNode.UrlLeaf leaf) {
+        if (leaf.getDefaultValue() != null) {
+            def.addUrlDef(leaf.getName(), leaf.getDefaultValue().getValue());
+        } else {
+            def.addUrlDef(leaf.getName(), null);
         }
     }
 

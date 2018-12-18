@@ -35,6 +35,8 @@ public class JavaClassBuilderTest {
                 "namespace=test\n" + //
                 "p path\n" + //
                 "pathArr[] path\n" + //
+                "u url\n" + //
+                "urlArr[] url\n" + //
                 "f file\n" + //
                 "fileArr[] file\n" + //
                 "i int default=0\n" + //
@@ -116,7 +118,7 @@ public class JavaClassBuilderTest {
 
         for (int i = 0; i < referenceClassLines.size(); i++) {
             if (configClassLines.length <= i)
-                fail("Missing lines i generated comnfig class. First missing line:\n" + referenceClassLines.get(i));
+                fail("Missing lines i generated config class. First missing line:\n" + referenceClassLines.get(i));
             assertEquals("Line " + i, referenceClassLines.get(i), configClassLines[i]);
         }
     }

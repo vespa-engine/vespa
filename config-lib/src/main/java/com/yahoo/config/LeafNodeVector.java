@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -68,7 +69,15 @@ public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVecto
         List<Path> paths = new ArrayList<>();
         for (FileReference fileReference : values)
             paths.add(Paths.get(fileReference.value()));
-
         return new LeafNodeVector<>(paths, new PathNode());
     }
+
+    public static LeafNodeVector<File, UrlNode> createUrlNodeVector(Collection<UrlReference> values) {
+        List<File> files = new ArrayList<>();
+        for (UrlReference urlReference : values)
+            files.add(new File(urlReference.value()));
+        return new LeafNodeVector<>(files, new UrlNode());
+    }
+
+
 }

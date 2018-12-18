@@ -4,6 +4,7 @@ package com.yahoo.vespa.config;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.UrlReference;
 import com.yahoo.log.LogLevel;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.slime.ArrayTraverser;
@@ -254,6 +255,11 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
             if (isPathField(builder, methodName)) {
                 FileReference wrappedPath = resolvePath(Utf8.toString(value.asUtf8()));
                 invokeSetter(builder, methodName, wrappedPath);
+
+            // Need to convert url into actual file if 'url' type is used
+            } else if (isUrlField(builder, methodName)) {
+                throw new UnsupportedOperationException("'url' type is not yet implemented");
+
             } else {
                 Object object = getValueFromInspector(value);
                 invokeSetter(builder, methodName, object);
@@ -337,41 +343,49 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
      * Checks whether or not this field is of type 'path', in which
      * case some special handling might be needed. Caches the result.
      */
-    private Set<String> pathFieldSet = new HashSet<>();
     private boolean isPathField(Object builder, String methodName) {
-        String key = pathFieldKey(builder, methodName);
-        if (pathFieldSet.contains(key)) {
+        // Paths are stored as FileReference in Builder.
+        return isFieldType(builder, methodName, FileReference.class);
+    }
+
+    private boolean isUrlField(Object builder, String methodName) {
+        // Urls are stored as UrlReference in Builder.
+        return isFieldType(builder, methodName, UrlReference.class);
+    }
+
+    private Set<String> fieldSet = new HashSet<>();
+    private boolean isFieldType(Object builder, String methodName, java.lang.reflect.Type type) {
+        String key = fieldKey(builder, methodName);
+        if (fieldSet.contains(key)) {
             return true;
         }
-        boolean isPath = false;
+        boolean isType = false;
         try {
             Field field = builder.getClass().getDeclaredField(methodName);
-            //Paths are stored as FileReference in Builder.
             java.lang.reflect.Type fieldType = field.getGenericType();
-            if (fieldType instanceof Class<?> && fieldType == FileReference.class) {
-                isPath = true;
+            if (fieldType instanceof Class<?> && fieldType == type) {
+                isType = true;
             } else if (fieldType instanceof ParameterizedType) {
-                isPath = isParameterizedWithPath((ParameterizedType) fieldType);
+                isType = isParameterizedWith((ParameterizedType) fieldType, type);
             }
         } catch (NoSuchFieldException e) {
         }
-        if (isPath) {
-            pathFieldSet.add(key);
+        if (isType) {
+            fieldSet.add(key);
         }
-        return isPath;
+        return isType;
     }
 
-    private static String pathFieldKey(Object builder, String methodName) {
+    private static String fieldKey(Object builder, String methodName) {
         return builder.getClass().getName() + "." + methodName;
     }
 
-    private boolean isParameterizedWithPath(ParameterizedType fieldType) {
+    private boolean isParameterizedWith(ParameterizedType fieldType, java.lang.reflect.Type type) {
         int numTypeArgs = fieldType.getActualTypeArguments().length;
         if (numTypeArgs > 0)
-             return fieldType.getActualTypeArguments()[numTypeArgs - 1] == FileReference.class;
+             return fieldType.getActualTypeArguments()[numTypeArgs - 1] == type;
         return false;
     }
-
 
     private String capitalize(String name) {
         StringBuilder sb = new StringBuilder();

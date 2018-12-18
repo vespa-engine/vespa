@@ -10,6 +10,7 @@ import com.yahoo.config.codegen.LeafCNode.LongLeaf;
 import com.yahoo.config.codegen.LeafCNode.PathLeaf;
 import com.yahoo.config.codegen.LeafCNode.ReferenceLeaf;
 import com.yahoo.config.codegen.LeafCNode.StringLeaf;
+import com.yahoo.config.codegen.LeafCNode.UrlLeaf;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -163,12 +164,16 @@ public class ConfigGenerator {
             return name + " = LeafNodeVector.createFileNodeVector(builder." + name + ");";
         } else if (child instanceof PathLeaf && isArray) {
             return name + " = LeafNodeVector.createPathNodeVector(builder." + name + ");";
+        } else if (child instanceof UrlLeaf && isArray) {
+            return name + " = LeafNodeVector.createUrlNodeVector(builder." + name + ");";
         } else if (child instanceof LeafCNode && isArray) {
             return name + " = new LeafNodeVector<>(builder." + name + ", new " + className + "());";
         } else if (child instanceof FileLeaf && isMap) {
             return name + " = LeafNodeMaps.asFileNodeMap(builder." + name + ");";
         } else if (child instanceof PathLeaf && isMap) {
             return name + " = LeafNodeMaps.asPathNodeMap(builder." + name + ");";
+        } else if (child instanceof UrlLeaf && isMap) {
+            return name + " = LeafNodeMaps.asUrlNodeMap(builder." + name + ");";
         } else if (child instanceof LeafCNode && isMap) {
             return name + " = LeafNodeMaps.asNodeMap(builder." + name + ", new " + className + "());";
         } else if (child instanceof InnerCNode && isArray) {
@@ -178,7 +183,7 @@ public class ConfigGenerator {
         } else if (child instanceof InnerCNode) {
             return name + " = new " + className + "(builder." + name + ", throwIfUninitialized);";
         } else if (child instanceof LeafCNode) {
-            return name + " = (builder." + name + " == null) ?\n" +//
+            return name + " = (builder." + name + " == null) ?\n" +
                     "    new " + className + "(" + scalarDefault((LeafCNode) child) + ") : new " + className + "(builder." + name + ");";
         } else {
             throw new IllegalStateException("Cannot create assignment for node"); // should not happen
@@ -391,6 +396,8 @@ public class ConfigGenerator {
             return "FileNode";
         } else if (node instanceof PathLeaf) {
             return "PathNode";
+        } else if (node instanceof UrlLeaf) {
+            return "UrlNode";
         } else if (node instanceof IntegerLeaf) {
             return "IntegerNode";
         } else if (node instanceof LongLeaf) {
@@ -417,6 +424,8 @@ public class ConfigGenerator {
             return "FileReference";
         } else if (node instanceof PathLeaf) {
             return "Path";
+        } else if (node instanceof UrlLeaf) {
+            return "File";
         } else if (node instanceof IntegerLeaf) {
             return "int";
         } else if (node instanceof LongLeaf) {

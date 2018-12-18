@@ -27,6 +27,7 @@ public abstract class LeafCNode extends CNode {
                 case "file": return new FileLeaf(parent, name);
                 case "path": return new PathLeaf(parent, name);
                 case "enum": return new EnumLeaf(parent, name, type.enumArray);
+                case "url" : return new UrlLeaf(parent, name);
                 default: return null;
             }
         } catch (NumberFormatException e) {
@@ -214,6 +215,17 @@ public abstract class LeafCNode extends CNode {
         @Override
         public String getType() {
             return "path";
+        }
+    }
+
+    public static class UrlLeaf extends NoClassNoDefaultLeafCNode {
+        UrlLeaf(InnerCNode parent, String name) {
+            super(parent, name);
+        }
+
+        @Override
+        public String getType() {
+            return "url";
         }
     }
 

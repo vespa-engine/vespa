@@ -44,6 +44,7 @@ refval reference restart
 refwithdef reference default=":parent:" restart
 fileVal file restart
 pathVal path restart
+urlVal url
 
 boolarr[] bool restart
 intarr[] int restart
@@ -54,12 +55,14 @@ enumarr[] enum { ARRAY, VALUES } restart
 refarr[] reference restart
 fileArr[] file restart
 pathArr[] path restart
+urlArr[] url
 
 #This is a map of ints.
 intMap{} int restart
 stringMap{} string restart
 filemap{} file restart
 pathMap{} path restart
+urlMap{} url
 
 # A basic struct
 basicStruct.foo string default="basic" restart
@@ -80,6 +83,7 @@ myarray[].stringval[] string restart
 myarray[].enumval enum { INNER, ENUM, TYPE } default=TYPE restart
 myarray[].refval reference # Value in array without default restart
 myarray[].fileVal file restart
+myarray[].urlVal url
 myarray[].anotherarray[].foo int default=-4 restart
 myarray[].myStruct.a int restart
 myarray[].myStruct.b int default=2 restart

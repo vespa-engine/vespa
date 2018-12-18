@@ -6,6 +6,7 @@
 package com.yahoo.configgen;
 
 import java.util.*;
+import java.io.File;
 import java.nio.file.Path;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import com.yahoo.config.*;
@@ -35,7 +36,7 @@ import com.yahoo.config.*;
  */
 public final class AllfeaturesConfig extends ConfigInstance {
 
-  public final static String CONFIG_DEF_MD5 = "eb2d24dbbcf054b21be729e2cfaafd93";
+  public final static String CONFIG_DEF_MD5 = "f901bdc5c96e7005130399c63f247823";
   public final static String CONFIG_DEF_NAME = "allfeatures";
   public final static String CONFIG_DEF_NAMESPACE = "configgen";
   public final static String CONFIG_DEF_VERSION = "";
@@ -57,6 +58,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
     "refwithdef reference default=\":parent:\"",
     "fileVal file",
     "pathVal path",
+    "urlVal url",
     "boolarr[] bool",
     "intarr[] int",
     "longarr[] long",
@@ -66,8 +68,10 @@ public final class AllfeaturesConfig extends ConfigInstance {
     "refarr[] reference",
     "filearr[] file",
     "pathArr[] path",
+    "urlArr[] url",
     "intMap{} int",
     "pathMap{} file",
+    "urlMap{} url",
     "basic_struct.foo string default=\"foo\"",
     "basic_struct.bar int default=0",
     "struct_of_struct.inner0.name string default=\"inner0\"",
@@ -105,7 +109,8 @@ public final class AllfeaturesConfig extends ConfigInstance {
       "enumVal",
       "refVal",
       "fileVal",
-      "pathVal"
+      "pathVal",
+      "urlVal"
       ));
 
     private Boolean boolVal = null;
@@ -124,6 +129,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
     private String refwithdef = null;
     private String fileVal = null;
     private FileReference pathVal = null;
+    private UrlReference urlVal = null;
     public List<Boolean> boolarr = new ArrayList<>();
     public List<Integer> intarr = new ArrayList<>();
     public List<Long> longarr = new ArrayList<>();
@@ -133,8 +139,10 @@ public final class AllfeaturesConfig extends ConfigInstance {
     public List<String> refarr = new ArrayList<>();
     public List<String> filearr = new ArrayList<>();
     public List<FileReference> pathArr = new ArrayList<>();
+    public List<UrlReference> urlArr = new ArrayList<>();
     public Map<String, Integer> intMap = new LinkedHashMap<>();
     public Map<String, String> pathMap = new LinkedHashMap<>();
+    public Map<String, UrlReference> urlMap = new LinkedHashMap<>();
     public Basic_struct.Builder basic_struct = new Basic_struct.Builder();
     public Struct_of_struct.Builder struct_of_struct = new Struct_of_struct.Builder();
     public List<MyArray.Builder> myArray = new ArrayList<>();
@@ -159,6 +167,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
       refwithdef(config.refwithdef());
       fileVal(config.fileVal().value());
       pathVal(config.pathVal.getFileReference());
+      urlVal(config.urlVal.getUrlReference());
       boolarr(config.boolarr());
       intarr(config.intarr());
       longarr(config.longarr());
@@ -168,8 +177,10 @@ public final class AllfeaturesConfig extends ConfigInstance {
       refarr(config.refarr());
       filearr(FileReference.toValues(config.filearr()));
       pathArr(PathNode.toFileReferences(config.pathArr));
+      urlArr(UrlNode.toUrlReferences(config.urlArr));
       intMap(config.intMap());
       pathMap(FileReference.toValueMap(config.pathMap()));
+      urlMap(UrlNode.toUrlReferenceMap(config.urlMap));
       basic_struct(new Basic_struct.Builder(config.basic_struct()));
       struct_of_struct(new Struct_of_struct.Builder(config.struct_of_struct()));
       for (MyArray m : config.myArray()) {
@@ -213,6 +224,8 @@ public final class AllfeaturesConfig extends ConfigInstance {
         fileVal(__superior.fileVal);
       if (__superior.pathVal != null)
         pathVal(__superior.pathVal);
+      if (__superior.urlVal != null)
+        urlVal(__superior.urlVal);
       if (!__superior.boolarr.isEmpty())
         boolarr.addAll(__superior.boolarr);
       if (!__superior.intarr.isEmpty())
@@ -231,8 +244,11 @@ public final class AllfeaturesConfig extends ConfigInstance {
         filearr.addAll(__superior.filearr);
       if (!__superior.pathArr.isEmpty())
         pathArr.addAll(__superior.pathArr);
+      if (!__superior.urlArr.isEmpty())
+        urlArr.addAll(__superior.urlArr);
       intMap(__superior.intMap);
       pathMap(__superior.pathMap);
+      urlMap(__superior.urlMap);
       basic_struct(basic_struct.override(__superior.basic_struct));
       struct_of_struct(struct_of_struct.override(__superior.struct_of_struct));
       if (!__superior.myArray.isEmpty())
@@ -384,6 +400,14 @@ public final class AllfeaturesConfig extends ConfigInstance {
     }
 
 
+    public Builder urlVal(UrlReference __value) {
+    if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+      urlVal = __value;
+      __uninitialized.remove("urlVal");
+      return this;
+    }
+
+
     public Builder boolarr(Boolean __value) {
       boolarr.add(__value);
       return this;
@@ -494,6 +518,16 @@ public final class AllfeaturesConfig extends ConfigInstance {
       return this;
     }
 
+    public Builder urlArr(UrlReference __value) {
+      urlArr.add(__value);
+      return this;
+    }
+
+    public Builder urlArr(Collection<UrlReference> __values) {
+      urlArr.addAll(__values);
+      return this;
+    }
+
     public Builder intMap(String __key, Integer __value) {
       intMap.put(__key, __value);
       return this;
@@ -515,6 +549,16 @@ public final class AllfeaturesConfig extends ConfigInstance {
 
     public Builder pathMap(Map<String, String> __values) {
       pathMap.putAll(__values);
+      return this;
+    }
+
+    public Builder urlMap(String __key, UrlReference __value) {
+      urlMap.put(__key, __value);
+      return this;
+    }
+
+    public Builder urlMap(Map<String, UrlReference> __values) {
+      urlMap.putAll(__values);
       return this;
     }
 
@@ -600,6 +644,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
   private final ReferenceNode refwithdef;
   private final FileNode fileVal;
   private final PathNode pathVal;
+  private final UrlNode urlVal;
   private final LeafNodeVector<Boolean, BooleanNode> boolarr;
   private final LeafNodeVector<Integer, IntegerNode> intarr;
   private final LeafNodeVector<Long, LongNode> longarr;
@@ -609,8 +654,10 @@ public final class AllfeaturesConfig extends ConfigInstance {
   private final LeafNodeVector<String, ReferenceNode> refarr;
   private final LeafNodeVector<FileReference, FileNode> filearr;
   private final LeafNodeVector<Path, PathNode> pathArr;
+  private final LeafNodeVector<File, UrlNode> urlArr;
   private final Map<String, IntegerNode> intMap;
   private final Map<String, FileNode> pathMap;
+  private final Map<String, UrlNode> urlMap;
   private final Basic_struct basic_struct;
   private final Struct_of_struct struct_of_struct;
   private final InnerNodeVector<MyArray> myArray;
@@ -657,6 +704,8 @@ public final class AllfeaturesConfig extends ConfigInstance {
         new FileNode() : new FileNode(builder.fileVal);
     pathVal = (builder.pathVal == null) ?
         new PathNode() : new PathNode(builder.pathVal);
+    urlVal = (builder.urlVal == null) ?
+        new UrlNode() : new UrlNode(builder.urlVal);
     boolarr = new LeafNodeVector<>(builder.boolarr, new BooleanNode());
     intarr = new LeafNodeVector<>(builder.intarr, new IntegerNode());
     longarr = new LeafNodeVector<>(builder.longarr, new LongNode());
@@ -666,8 +715,10 @@ public final class AllfeaturesConfig extends ConfigInstance {
     refarr = new LeafNodeVector<>(builder.refarr, new ReferenceNode());
     filearr = LeafNodeVector.createFileNodeVector(builder.filearr);
     pathArr = LeafNodeVector.createPathNodeVector(builder.pathArr);
+    urlArr = LeafNodeVector.createUrlNodeVector(builder.urlArr);
     intMap = LeafNodeMaps.asNodeMap(builder.intMap, new IntegerNode());
     pathMap = LeafNodeMaps.asFileNodeMap(builder.pathMap);
+    urlMap = LeafNodeMaps.asUrlNodeMap(builder.urlMap);
     basic_struct = new Basic_struct(builder.basic_struct, throwIfUninitialized);
     struct_of_struct = new Struct_of_struct(builder.struct_of_struct, throwIfUninitialized);
     myArray = MyArray.createVector(builder.myArray);
@@ -784,6 +835,13 @@ public final class AllfeaturesConfig extends ConfigInstance {
    */
   public Path pathVal() {
     return pathVal.value();
+  }
+
+  /**
+   * @return allfeatures.urlVal
+   */
+  public File urlVal() {
+    return urlVal.value();
   }
 
   /**
@@ -922,6 +980,21 @@ public final class AllfeaturesConfig extends ConfigInstance {
   }
 
   /**
+   * @return allfeatures.urlArr[]
+   */
+  public List<File> urlArr() {
+    return urlArr.asList();
+  }
+
+  /**
+   * @param i the index of the value to return
+   * @return allfeatures.urlArr[]
+   */
+  public File urlArr(int i) {
+    return urlArr.get(i).value();
+  }
+
+  /**
    * @return allfeatures.intMap{}
    */
   public Map<String, Integer> intMap() {
@@ -949,6 +1022,21 @@ public final class AllfeaturesConfig extends ConfigInstance {
    */
   public FileReference pathMap(String key) {
     return pathMap.get(key).value();
+  }
+
+  /**
+   * @return allfeatures.urlMap{}
+   */
+  public Map<String, File> urlMap() {
+    return LeafNodeMaps.asValueMap(urlMap);
+  }
+
+  /**
+   * @param key the key of the value to return
+   * @return allfeatures.urlMap{}
+   */
+  public File urlMap(String key) {
+    return urlMap.get(key).value();
   }
 
   /**

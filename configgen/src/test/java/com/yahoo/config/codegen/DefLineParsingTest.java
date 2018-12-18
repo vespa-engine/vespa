@@ -102,6 +102,26 @@ public class DefLineParsingTest {
     }
 
     @Test
+    public void testParseUrls() {
+        DefLine l = new DefLine("urlVal url");
+
+        assertEquals("urlVal", l.getName());
+        assertNull(l.getDefault());
+        assertEquals("url", l.getType().getName());
+    }
+
+    @Test
+    public void testParseDefaultUrls() {
+        DefLine l = new DefLine("urlVal url default=\"http://docs.vespa.ai\"");
+
+        assertEquals("urlVal", l.getName());
+        assertEquals("http://docs.vespa.ai", l.getDefault().getValue());
+        assertEquals("\"http://docs.vespa.ai\"", l.getDefault().getStringRepresentation());
+        assertEquals("url", l.getType().getName());
+    }
+
+
+    @Test
     public void testParseDefaultInt() {
         DefLine l = new DefLine("foo int default=1000");
 

@@ -68,7 +68,7 @@ public class NormalizedDefinitionTest {
         }
 
         assertNotNull(out);
-        assertThat(out.size(), is(69));
+        assertThat(out.size(), is(72));
 
         assertNotNull(fileReader);
         fileReader.close();
