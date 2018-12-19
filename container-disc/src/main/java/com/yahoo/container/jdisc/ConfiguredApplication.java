@@ -191,7 +191,6 @@ public final class ConfiguredApplication implements Application {
     private static void hackToInitializeServer(QrConfig config) {
         try {
             Container.get().setupFileAcquirer(config.filedistributor());
-            com.yahoo.container.Server.get().initialize(config);
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Caught exception when initializing server. Exiting.", e);
             Runtime.getRuntime().halt(1);
