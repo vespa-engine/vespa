@@ -76,7 +76,7 @@ public class GetDocSumsPacket extends Packet {
         boolean useQueryCache = query.getRanking().getQueryCache();
         // If feature cache is used we need to include the sessionId as key.
         if (useQueryCache) { // TODO: Move this decision (and the key) to ranking
-            query.getRanking().getProperties().put(sessionIdKey, query.getSessionId(false).toString());
+            query.getRanking().getProperties().put(sessionIdKey, query.getSessionId().toString());
         }
 
         // set the default features
