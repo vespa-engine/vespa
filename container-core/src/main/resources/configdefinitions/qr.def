@@ -2,8 +2,7 @@
 namespace=container
 
 ### All params must be flagged as 'restart' because this config is manually
-### retrieved by ConfiguredApplication.start to init the rpc server in
-### com.yahoo.container.Server.
+### retrieved by ConfiguredApplication.start to init the rpc server
 
 ## filedistributor rpc configuration
 filedistributor.configid reference default="" restart
