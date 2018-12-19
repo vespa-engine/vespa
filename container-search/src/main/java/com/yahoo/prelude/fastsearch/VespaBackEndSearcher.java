@@ -372,7 +372,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             s.append(" ranking.queryCache=true");
         }
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
-            s.append(" sessionId=").append(query.getSessionId(false));
+            s.append(" sessionId=").append(query.getSessionId());
         }
 
         List<Grouping> grouping = GroupingExecutor.getGroupingList(query);
