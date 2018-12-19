@@ -386,7 +386,6 @@ TEST("testAndNot") {
         andnot_b->addChild(std::make_unique<DummySingleValueBitNumericAttributeBlueprint>(b));
         andnot_b->fetchPostings(true);
         SearchIterator::UP andnot_ab = andnot_b->createSearch(*md, true);
-        EXPECT_TRUE(dynamic_cast<const OptimizedAndNotForBlackListing *>(andnot_ab.get()) != nullptr);
 
         SimpleResult res;
         res.search(*andnot_ab);
