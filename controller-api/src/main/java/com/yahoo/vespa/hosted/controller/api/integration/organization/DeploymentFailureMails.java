@@ -62,7 +62,7 @@ public class DeploymentFailureMails {
                                       jobToString(id.type()),
                                       id.application(),
                                       messageDetail,
-                                      registry.dashboardUrl(id.application()),
+                                      registry.dashboardUrl(id),
                                       registry.supportUrl()));
     }
 
