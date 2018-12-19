@@ -127,14 +127,14 @@ public class Versions {
 
     private static Version targetPlatform(Application application, Change change, Optional<Deployment> deployment,
                                           Version defaultVersion) {
-        return max(deployment.map(Deployment::version), change.platform())
+        return max(change.platform(), deployment.map(Deployment::version))
                 .orElse(application.oldestDeployedPlatform()
                                    .orElse(defaultVersion));
     }
 
     private static ApplicationVersion targetApplication(Application application, Change change,
                                                         Optional<Deployment> deployment) {
-        return max(deployment.map(Deployment::applicationVersion), change.application())
+        return max(change.application(), deployment.map(Deployment::applicationVersion))
                 .orElse(application.oldestDeployedApplication()
                                    .orElse(application.deploymentJobs().jobStatus().get(JobType.component)
                                                       .lastSuccess()

@@ -460,12 +460,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
-                                      .data(asJson(new DeploymentJobs.JobReport(app1,
-                                                                                JobType.component,
-                                                                                1234,
-                                                                                123,
-                                                                                Optional.of(BuildJob.defaultSourceRevision),
-                                                                                Optional.empty()))),
+                                      .data(asJson(DeploymentJobs.JobReport.ofComponent(app1,
+                                                                                        1234,
+                                                                                        123,
+                                                                                        Optional.empty(),
+                                                                                        BuildJob.defaultSourceRevision))),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"" + app1 + " is set up to be deployed from internally," +
                               " and no longer accepts submissions from Screwdriver v3 jobs. If you need to revert " +
                               "to the old pipeline, please file a ticket at yo/vespa-support and request this.\"}",
@@ -481,12 +480,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
-                                      .data(asJson(new DeploymentJobs.JobReport(app1,
-                                                                                JobType.component,
-                                                                                1234,
-                                                                                123,
-                                                                                Optional.of(BuildJob.defaultSourceRevision),
-                                                                                Optional.empty()))),
+                                      .data(asJson(DeploymentJobs.JobReport.ofComponent(app1,
+                                                                                        1234,
+                                                                                        123,
+                                                                                        Optional.empty(),
+                                                                                        BuildJob.defaultSourceRevision))),
                               "{\"message\":\"ok\"}");
 
         // PUT (create) the authenticated user
@@ -1143,7 +1141,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         cursor.setString("jobName", report.jobType().jobName());
         cursor.setLong("buildNumber", report.buildNumber());
         report.jobError().ifPresent(jobError -> cursor.setString("jobError", jobError.name()));
-        report.sourceRevision().ifPresent(sr -> {
+        report.version().flatMap(ApplicationVersion::source).ifPresent(sr -> {
             Cursor sourceRevision = cursor.setObject("sourceRevision");
             sourceRevision.setString("repository", sr.repository());
             sourceRevision.setString("branch", sr.branch());
@@ -1178,7 +1176,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private HttpEntity createApplicationSubmissionData(ApplicationPackage applicationPackage) {
         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
         builder.addTextBody(EnvironmentResource.SUBMIT_OPTIONS,
-                            "{\"repository\":\"repo\",\"branch\":\"master\",\"commit\":\"d00d\"}",
+                            "{\"repository\":\"repo\",\"branch\":\"master\",\"commit\":\"d00d\",\"authorEmail\":\"a@b\"}",
                             ContentType.APPLICATION_JSON);
         builder.addBinaryBody(EnvironmentResource.APPLICATION_ZIP, applicationPackage.zippedContent());
         builder.addBinaryBody(EnvironmentResource.APPLICATION_TEST_ZIP, "content".getBytes());

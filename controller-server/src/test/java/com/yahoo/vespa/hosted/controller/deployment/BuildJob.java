@@ -14,6 +14,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
+
 /**
  * Create a build job for testing purposes. In most cases this should be constructed by calling
  * DeploymentTester.jobCompletion.
@@ -100,14 +102,15 @@ public class BuildJob {
 
     /** Create a job report for this build job */
     public DeploymentJobs.JobReport report() {
-        return new DeploymentJobs.JobReport(applicationId, job, projectId, buildNumber, sourceRevision, jobError);
+        return job == component ? DeploymentJobs.JobReport.ofComponent(applicationId, projectId, buildNumber, jobError, sourceRevision.get())
+                                : DeploymentJobs.JobReport.ofJob(applicationId, job, buildNumber, jobError);
     }
 
     /** Upload given application package to artifact repository as part of this job */
     public BuildJob uploadArtifact(ApplicationPackage applicationPackage) {
         Objects.requireNonNull(job, "job cannot be null");
         Objects.requireNonNull(applicationId, "applicationId cannot be null");
-        if (job != JobType.component) {
+        if (job != component) {
             throw new IllegalStateException(job + " cannot upload artifact");
         }
         artifactRepository.put(applicationId, applicationPackage, ApplicationVersion.from(sourceRevision.get(), buildNumber).id());
@@ -116,7 +119,7 @@ public class BuildJob {
 
     /** Send report for this build job to the controller */
     public void submit() {
-        if (job == JobType.component &&
+        if (job == component &&
             !artifactRepository.contains(applicationId, ApplicationVersion.from(sourceRevision.get(), buildNumber).id())) {
             throw new IllegalStateException(job + " must upload artifact before reporting completion");
         }

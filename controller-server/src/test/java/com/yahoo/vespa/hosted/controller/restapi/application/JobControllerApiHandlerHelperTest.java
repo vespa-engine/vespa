@@ -80,7 +80,7 @@ public class JobControllerApiHandlerHelperTest {
         tester.clock().advance(Duration.ofMillis(1000));
 
         // Revision 3 starts.
-        ApplicationVersion revision3 = tester.newSubmission();
+        tester.newSubmission();
         tester.runJob(systemTest);
         tester.runJob(stagingTest);
         tester.tester().readyJobTrigger().maintain(); // Starts a run for us-central-1.

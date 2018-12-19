@@ -106,7 +106,7 @@ public class DeploymentTrigger {
         applications().lockOrThrow(report.applicationId(), application -> {
             JobRun triggering;
             if (report.jobType() == component) {
-                ApplicationVersion applicationVersion = ApplicationVersion.from(report.sourceRevision().get(), report.buildNumber());
+                ApplicationVersion applicationVersion = report.version().get();
                 triggering = JobRun.triggering(applications().oldestInstalledPlatform(report.applicationId()), applicationVersion,
                                                Optional.empty(), Optional.empty(), "Application commit", clock.instant());
                 if (report.success()) {

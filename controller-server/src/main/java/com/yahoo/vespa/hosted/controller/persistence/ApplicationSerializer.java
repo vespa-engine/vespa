@@ -79,6 +79,7 @@ public class ApplicationSerializer {
     private final String repositoryField = "repositoryField";
     private final String branchField = "branchField";
     private final String commitField = "commitField";
+    private final String authorEmailField = "authorEmailField";
     private final String lastQueriedField = "lastQueried";
     private final String lastWrittenField = "lastWritten";
     private final String lastQueriesPerSecondField = "lastQueriesPerSecond";
@@ -228,6 +229,7 @@ public class ApplicationSerializer {
         if (applicationVersion.buildNumber().isPresent() && applicationVersion.source().isPresent()) {
             object.setLong(applicationBuildNumberField, applicationVersion.buildNumber().getAsLong());
             toSlime(applicationVersion.source().get(), object.setObject(sourceRevisionField));
+            applicationVersion.authorEmail().ifPresent(email -> object.setString(authorEmailField, email));
         }
     }
 
@@ -404,7 +406,9 @@ public class ApplicationSerializer {
         if (!sourceRevision.isPresent() || !applicationBuildNumber.isPresent()) {
             return ApplicationVersion.unknown;
         }
-        return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong());
+        return object.field(authorEmailField).valid()
+                ? ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong(), object.field(authorEmailField).asString())
+                : ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong());
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {

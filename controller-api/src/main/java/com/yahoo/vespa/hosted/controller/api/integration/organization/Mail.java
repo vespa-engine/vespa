@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A message with a sender and a set of recipients.
+ * A message with a subject and a nonempty set of recipients.
  *
  * @author jonmv
  */

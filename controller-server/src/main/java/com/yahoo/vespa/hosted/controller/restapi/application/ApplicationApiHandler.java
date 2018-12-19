@@ -842,7 +842,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             if (applicationPackage.isPresent())
                 throw new IllegalArgumentException("Application version and application package can't both be provided.");
 
-            applicationVersion = Optional.of(ApplicationVersion.from(toSourceRevision(sourceRevision).get(),
+            applicationVersion = Optional.of(ApplicationVersion.from(toSourceRevision(sourceRevision),
                                                                      buildNumber.asLong()));
             applicationPackage = Optional.of(controller.applications().getApplicationPackage(controller.applications().require(applicationId), applicationVersion.get()));
         }
@@ -952,24 +952,28 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (report.field("jobError").valid()) {
             jobError = Optional.of(DeploymentJobs.JobError.valueOf(report.field("jobError").asString()));
         }
-        return new DeploymentJobs.JobReport(
-                ApplicationId.from(tenantName, applicationName, report.field("instance").asString()),
-                JobType.fromJobName(report.field("jobName").asString()),
-                report.field("projectId").asLong(),
-                report.field("buildNumber").asLong(),
-                toSourceRevision(report.field("sourceRevision")),
-                jobError
-        );
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, report.field("instance").asString());
+        JobType type = JobType.fromJobName(report.field("jobName").asString());
+        long buildNumber = report.field("buildNumber").asLong();
+        if (type == JobType.component)
+            return DeploymentJobs.JobReport.ofComponent(id,
+                                                        report.field("projectId").asLong(),
+                                                        buildNumber,
+                                                        jobError,
+                                                        toSourceRevision(report.field("sourceRevision")));
+        else
+            return DeploymentJobs.JobReport.ofJob(id, type, buildNumber, jobError);
     }
 
-    private static Optional<SourceRevision> toSourceRevision(Inspector object) {
+    private static SourceRevision toSourceRevision(Inspector object) {
         if (!object.field("repository").valid() ||
                 !object.field("branch").valid() ||
                 !object.field("commit").valid()) {
-            return Optional.empty();
+            throw new IllegalArgumentException("Must specify \"repository\", \"branch\", and \"commit\".");
         }
-        return Optional.of(new SourceRevision(object.field("repository").asString(), object.field("branch").asString(),
-                                              object.field("commit").asString()));
+        return new SourceRevision(object.field("repository").asString(),
+                                  object.field("branch").asString(),
+                                  object.field("commit").asString());
     }
 
     private Tenant getTenantOrThrow(String tenantName) {
@@ -1275,8 +1279,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
         Map<String, byte[]> dataParts = new MultipartParser().parse(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
-        SourceRevision sourceRevision = toSourceRevision(submitOptions).orElseThrow(() ->
-                new IllegalArgumentException("Must specify 'repository', 'branch', and 'commit'"));
+        SourceRevision sourceRevision = toSourceRevision(submitOptions);
+        String authorEmail = submitOptions.field("authorEmail").asString();
         long projectId = Math.max(1, submitOptions.field("projectId").asLong());
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
@@ -1288,6 +1292,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                             tenant,
                                                             application,
                                                             sourceRevision,
+                                                            authorEmail,
                                                             projectId,
                                                             applicationPackage.zippedContent(),
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));

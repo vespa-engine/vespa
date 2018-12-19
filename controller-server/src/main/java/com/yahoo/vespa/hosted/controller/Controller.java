@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -76,6 +77,7 @@ public class Controller extends AbstractComponent {
     private final MetricsService metricsService;
     private final Chef chef;
     private final ZmsClientFacade zmsClient;
+    private final Mailer mailer;
 
     /**
      * Creates a controller 
@@ -89,12 +91,12 @@ public class Controller extends AbstractComponent {
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
-                      BuildService buildService, RunDataStore runDataStore) {
+                      BuildService buildService, RunDataStore runDataStore, Mailer mailer) {
         this(curator, rotationsConfig,
              gitHub, entityService, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
              Clock.systemUTC(), athenzClientFactory, artifactRepository, applicationStore, testerCloud,
-             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost);
+             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
@@ -104,7 +106,8 @@ public class Controller extends AbstractComponent {
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
                       AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
                       ApplicationStore applicationStore, TesterCloud testerCloud,
-                      BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier) {
+                      BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
+                      Mailer mailer) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
@@ -116,6 +119,7 @@ public class Controller extends AbstractComponent {
         this.chef = Objects.requireNonNull(chef, "Chef cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.zmsClient = new ZmsClientFacade(athenzClientFactory.createZmsClient(), athenzClientFactory.getControllerIdentity());
+        this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, athenzClientFactory,
@@ -146,6 +150,10 @@ public class Controller extends AbstractComponent {
 
     public List<AthenzDomain> getDomainList(String prefix) {
         return zmsClient.getDomainList(prefix);
+    }
+
+    public Mailer mailer() {
+        return mailer;
     }
 
     /**
