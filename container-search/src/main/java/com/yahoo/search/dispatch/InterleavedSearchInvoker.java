@@ -20,7 +20,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_ADAPTIVE_TIMEOUT;
@@ -54,6 +53,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private long answeredSoonActiveDocs = 0;
     private int askedNodes = 0;
     private int answeredNodes = 0;
+    private int answeredNodesParticipated = 0;
     private boolean timedOut = false;
     private boolean degradedByMatchPhase = false;
 
@@ -101,9 +101,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             while (!invokers.isEmpty() && nextTimeout >= 0) {
                 SearchInvoker invoker = availableForProcessing.poll(nextTimeout, TimeUnit.MILLISECONDS);
                 if (invoker == null) {
-                    if (log.isLoggable(Level.FINE)) {
-                        log.fine("Search timed out with " + askedNodes + " requests made, " + answeredNodes + " responses received");
-                    }
+                    log.fine(() -> "Search timed out with " + askedNodes + " requests made, " + answeredNodes + " responses received");
                     break;
                 } else {
                     invokers.remove(invoker);
@@ -202,14 +200,15 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         answeredDocs += source.getDocs();
         answeredActiveDocs += source.getActive();
         answeredSoonActiveDocs += source.getSoonActive();
-        answeredNodes += source.getNodes();
+        answeredNodesParticipated += source.getNodes();
+        answeredNodes++;
         degradedByMatchPhase |= source.isDegradedByMatchPhase();
         timedOut |= source.isDegradedByTimeout();
     }
 
     private Coverage createCoverage() {
         adjustDegradedCoverage();
-        Coverage coverage = new Coverage(answeredDocs, answeredActiveDocs, answeredNodes, 1);
+        Coverage coverage = new Coverage(answeredDocs, answeredActiveDocs, answeredNodesParticipated, 1);
         coverage.setNodesTried(askedNodes);
         coverage.setSoonActive(answeredSoonActiveDocs);
         int degradedReason = 0;
@@ -224,21 +223,21 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     }
 
     private void adjustDegradedCoverage() {
-        if (askedNodes == answeredNodes) {
+        if (askedNodes == answeredNodesParticipated) {
             return;
         }
-        int notAnswered = askedNodes - answeredNodes;
+        int notAnswered = askedNodes - answeredNodesParticipated;
 
-        if (adaptiveTimeoutCalculated) {
-            answeredActiveDocs += (notAnswered * answeredActiveDocs / answeredNodes);
-            answeredSoonActiveDocs += (notAnswered * answeredSoonActiveDocs / answeredNodes);
+        if (adaptiveTimeoutCalculated && answeredNodesParticipated > 0) {
+            answeredActiveDocs += (notAnswered * answeredActiveDocs / answeredNodesParticipated);
+            answeredSoonActiveDocs += (notAnswered * answeredSoonActiveDocs / answeredNodesParticipated);
         } else {
-            if (askedNodes > answeredNodes) {
+            if (askedNodes > answeredNodesParticipated) {
                 int searchableCopies = (int) searchCluster.dispatchConfig().searchableCopies();
                 int missingNodes = notAnswered - (searchableCopies - 1);
-                if (answeredNodes > 0) {
-                    answeredActiveDocs += (missingNodes * answeredActiveDocs / answeredNodes);
-                    answeredSoonActiveDocs += (missingNodes * answeredSoonActiveDocs / answeredNodes);
+                if (answeredNodesParticipated > 0) {
+                    answeredActiveDocs += (missingNodes * answeredActiveDocs / answeredNodesParticipated);
+                    answeredSoonActiveDocs += (missingNodes * answeredSoonActiveDocs / answeredNodesParticipated);
                     timedOut = true;
                 }
             }

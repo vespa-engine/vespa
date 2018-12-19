@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -58,9 +57,7 @@ public class LoadBalancer {
                 GroupStatus gs = best.get();
                 gs.allocate();
                 Group ret = gs.group;
-                if (log.isLoggable(Level.FINE)) {
-                    log.fine("Offering <" + ret + "> for query connection");
-                }
+                log.fine(() -> "Offering <" + ret + "> for query connection");
                 return Optional.of(ret);
             } else {
                 return Optional.empty();
