@@ -83,13 +83,13 @@ DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda, bool 
     if (_bitVector && (_useBitVector || (tfmda[0]->isNotNeeded() && !_hasEquivParent))) {
         LOG(debug, "Return BitVectorIterator: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_lookupRes->indexId).c_str(), _lookupRes->wordNum, _lookupRes->counts._numDocs);
-        return BitVectorIterator::create(_bitVector.get(), tfmda, strict);
+        return BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict);
     }
     SearchIterator::UP search(_postingHandle->createIterator(_lookupRes->counts, tfmda, _useBitVector));
     if (_useBitVector) {
         LOG(debug, "Return BooleanMatchIteratorWrapper: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_lookupRes->indexId).c_str(), _lookupRes->wordNum, _lookupRes->counts._numDocs);
-        return SearchIterator::UP(new BooleanMatchIteratorWrapper(std::move(search), tfmda));
+        return std::make_unique<BooleanMatchIteratorWrapper>(std::move(search), tfmda);
     }
     LOG(debug, "Return posting list iterator: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
         getName(_lookupRes->indexId).c_str(), _lookupRes->wordNum, _lookupRes->counts._numDocs);

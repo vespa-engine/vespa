@@ -132,36 +132,31 @@ BitVectorIteratorStrictT<inverse>::initRange(uint32_t begin, uint32_t end)
 }
 
 queryeval::SearchIterator::UP
-BitVectorIterator::create(const BitVector *const bv, const TermFieldMatchDataArray &matchData, bool strict)
+BitVectorIterator::create(const BitVector *const bv, TermFieldMatchData &matchData, bool strict, bool inverted)
 {
-    assert(matchData.size() == 1);
-    return create(bv, bv->size(), *matchData[0], strict);
+    return create(bv, bv->size(), matchData, strict, inverted);
 }
 
 queryeval::SearchIterator::UP
-BitVectorIterator::create(const BitVector *const bv, uint32_t docIdLimit, TermFieldMatchData &matchData, bool strict)
+BitVectorIterator::create(const BitVector *const bv, uint32_t docIdLimit,
+                          TermFieldMatchData &matchData, bool strict, bool inverted)
 {
     if (bv == nullptr) {
         return std::make_unique<queryeval::EmptySearch>();
     } else if (strict) {
-        return std::make_unique<BitVectorIteratorStrictT<false>>(*bv, docIdLimit, matchData);
+        if (inverted) {
+            return std::make_unique<BitVectorIteratorStrictT<true>>(*bv, docIdLimit, matchData);
+        } else {
+            return std::make_unique<BitVectorIteratorStrictT<false>>(*bv, docIdLimit, matchData);
+        }
     } else {
-        return std::make_unique<BitVectorIteratorT<false>>(*bv, docIdLimit, matchData);
+        if (inverted) {
+            return std::make_unique<BitVectorIteratorT<true>>(*bv, docIdLimit, matchData);
+        } else {
+            return std::make_unique<BitVectorIteratorT<false>>(*bv, docIdLimit, matchData);
+        }
     }
 }
-
-queryeval::SearchIterator::UP
-BitVectorIterator::createInverse(const BitVector *const bv, uint32_t docIdLimit, TermFieldMatchData &matchData, bool strict)
-{
-    if (bv == nullptr) {
-        return std::make_unique<queryeval::EmptySearch>();
-    } else if (strict) {
-        return std::make_unique<BitVectorIteratorStrictT<true>>(*bv, docIdLimit, matchData);
-    } else {
-        return std::make_unique<BitVectorIteratorT<true>>(*bv, docIdLimit, matchData);
-    }
-}
-
 
 template<bool inverse>
 BitVector::UP
