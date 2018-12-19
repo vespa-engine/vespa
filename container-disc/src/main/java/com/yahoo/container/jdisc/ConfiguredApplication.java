@@ -39,6 +39,7 @@ import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
 import com.yahoo.net.HostName;
+import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 
@@ -114,6 +115,7 @@ public final class ConfiguredApplication implements Application {
 
     }
 
+    @SuppressWarnings("deprecation") // TODO: Remove when the Container line below is removed
     @Inject
     public ConfiguredApplication(ContainerActivator activator,
                                  OsgiFramework osgiFramework,
@@ -125,6 +127,7 @@ public final class ConfiguredApplication implements Application {
         this.subscriberFactory = subscriberFactory;
         this.configId = System.getProperty("config.id");
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
+        Container.get().setOsgi(new OsgiImpl(osgiFramework)); // TODO: Remove, not necessary
 
         applicationWithLegacySetup = new ContainerDiscApplication(configId);
     }
@@ -189,6 +192,7 @@ public final class ConfiguredApplication implements Application {
         try {
             Container.get().setupFileAcquirer(config.filedistributor());
             Container.get().setupUrlDownloader();
+            com.yahoo.container.Server.get().initialize(config);
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Caught exception when initializing server. Exiting.", e);
             Runtime.getRuntime().halt(1);
