@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
-import com.yahoo.container.Server;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -23,17 +21,6 @@ public class UniqueRequestId {
 
     @Override
     public String toString() { return id; }
-
-    /**
-     * Creates a session id which is unique across the cluster this runtime is a member of each time this is called.
-     * Calling this causes synchronization.
-     *
-     * @deprecated use nextId(serverId) instead
-     */
-    @Deprecated
-    public static UniqueRequestId next() {
-        return new UniqueRequestId(Server.get().getServerDiscriminator(), System.currentTimeMillis(), sequenceCounter.getAndIncrement());
-    }
 
     /**
      * Creates a session id which is unique across the cluster this runtime is a member of each time this is called.
