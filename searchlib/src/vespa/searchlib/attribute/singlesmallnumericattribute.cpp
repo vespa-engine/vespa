@@ -4,11 +4,8 @@
 #include "attributevector.hpp"
 #include "primitivereader.h"
 #include "attributeiterators.hpp"
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include "iattributesavetarget.h"
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.single_small_numeric_attribute");
+#include <vespa/searchlib/queryeval/emptysearch.h>
 
 namespace search {
 
@@ -30,8 +27,7 @@ SingleValueSmallNumericAttribute(const vespalib::string & baseFileName,
                 getGenerationHolder())
 {
     assert(_valueMask + 1 == (1u << (1u << valueShiftShift)));
-    assert((_valueShiftMask + 1) * (1u << valueShiftShift) ==
-           8 * sizeof(Word));
+    assert((_valueShiftMask + 1) * (1u << valueShiftShift) == 8 * sizeof(Word));
     assert(_valueShiftMask + 1 == (1u << wordShift));
 }
 
@@ -58,8 +54,7 @@ SingleValueSmallNumericAttribute::onCommit()
             if (change._type == ChangeBase::UPDATE) {
                 std::atomic_thread_fence(std::memory_order_release);
                 set(change._doc, change._data);
-            } else if (change._type >= ChangeBase::ADD &&
-                       change._type <= ChangeBase::DIV) {
+            } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
                 std::atomic_thread_fence(std::memory_order_release);
                 set(change._doc, applyArithmetic(getFast(change._doc), change));
             } else if (change._type == ChangeBase::CLEARDOC) {
@@ -169,15 +164,12 @@ SingleValueSmallNumericAttribute::onSave(IAttributeSaveTarget &saveTarget)
     assert(numDocs == getCommittedDocIdLimit());
 }
 
-
 AttributeVector::SearchContext::UP
 SingleValueSmallNumericAttribute::getSearch(std::unique_ptr<QueryTermSimple> qTerm,
-                                            const attribute::SearchContextParams & params) const
+                                            const attribute::SearchContextParams &) const
 {
-    (void) params;
-    return SearchContext::UP(new SingleSearchContext(std::move(qTerm), *this));
+    return std::make_unique<SingleSearchContext>(std::move(qTerm), *this);
 }
-
 
 void
 SingleValueSmallNumericAttribute::clearDocs(DocId lidLow, DocId lidLimit)
@@ -191,7 +183,6 @@ SingleValueSmallNumericAttribute::clearDocs(DocId lidLow, DocId lidLimit)
     }
 }
 
-
 void
 SingleValueSmallNumericAttribute::onShrinkLidSpace()
 {
@@ -202,7 +193,6 @@ SingleValueSmallNumericAttribute::onShrinkLidSpace()
     _wordData.shrink(numDataWords);
     setNumDocs(committedDocIdLimit);
 }
-
 
 uint64_t
 SingleValueSmallNumericAttribute::getEstimatedSaveByteSize() const
@@ -218,13 +208,13 @@ bool SingleValueSmallNumericAttribute::SingleSearchContext::valid() const { retu
 
 
 SingleValueSmallNumericAttribute::SingleSearchContext::SingleSearchContext(std::unique_ptr<QueryTermSimple> qTerm,
-                                                                           const NumericAttribute & toBeSearched)
+                                                                           const SingleValueSmallNumericAttribute & toBeSearched)
     : NumericAttribute::Range<T>(*qTerm),
-      SearchContext(toBeSearched), _wordData(&static_cast<const SingleValueSmallNumericAttribute &>(toBeSearched)._wordData[0]),
-      _valueMask(static_cast<const SingleValueSmallNumericAttribute &>(toBeSearched)._valueMask),
-      _valueShiftShift(static_cast<const SingleValueSmallNumericAttribute &>(toBeSearched)._valueShiftShift),
-      _valueShiftMask(static_cast<const SingleValueSmallNumericAttribute &>(toBeSearched)._valueShiftMask),
-      _wordShift(static_cast<const SingleValueSmallNumericAttribute &>(toBeSearched)._wordShift)
+      SearchContext(toBeSearched), _wordData(&toBeSearched._wordData[0]),
+      _valueMask(toBeSearched._valueMask),
+      _valueShiftShift(toBeSearched._valueShiftShift),
+      _valueShiftMask(toBeSearched._valueShiftMask),
+      _wordShift(toBeSearched._wordShift)
 { }
 
 Int64Range
@@ -233,26 +223,22 @@ SingleValueSmallNumericAttribute::SingleSearchContext::getAsIntegerTerm() const 
 }
 
 std::unique_ptr<queryeval::SearchIterator>
-SingleValueSmallNumericAttribute::SingleSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData,
-                                                                            bool strict)
+SingleValueSmallNumericAttribute::SingleSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
 {
     if (!valid()) {
-        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+        return std::make_unique<queryeval::EmptySearch>();
     }
     if (getIsFilter()) {
-        return queryeval::SearchIterator::UP
-                (strict
-                 ? new FilterAttributeIteratorStrict<SingleSearchContext>(*this, matchData)
-                 : new FilterAttributeIteratorT<SingleSearchContext>(*this, matchData));
+        return strict
+                 ? std::make_unique<FilterAttributeIteratorStrict<SingleSearchContext>>(*this, matchData)
+                 : std::make_unique<FilterAttributeIteratorT<SingleSearchContext>>(*this, matchData);
     }
-    return queryeval::SearchIterator::UP
-            (strict
-             ? new AttributeIteratorStrict<SingleSearchContext>(*this, matchData)
-             : new AttributeIteratorT<SingleSearchContext>(*this, matchData));
+    return strict
+             ? std::make_unique<AttributeIteratorStrict<SingleSearchContext>>(*this, matchData)
+             : std::make_unique<AttributeIteratorT<SingleSearchContext>>(*this, matchData);
 }
 
-namespace
-{
+namespace {
 
 template <typename TT>
 uint32_t
@@ -281,18 +267,6 @@ createConfig(BasicType bt, CollectionType ct, const GrowStrategy & grow) {
 
 }
 
-SingleValueBitNumericAttribute::
-SingleValueBitNumericAttribute(const vespalib::string &baseFileName, const GrowStrategy & grow)
-    : SingleValueSmallNumericAttribute(baseFileName,
-                                       createConfig(BasicType::BOOL, CollectionType::SINGLE, grow),
-                                       0x01u /* valueMask */,
-                                       0x00u /* valueShiftShift */,
-                                       8 * sizeof(Word) - 1 /* valueShiftMask */,
-                                       log2bits<Word>() /* wordShift */)
-{
-}
-
-
 SingleValueSemiNibbleNumericAttribute::
 SingleValueSemiNibbleNumericAttribute(const vespalib::string &baseFileName, const search::GrowStrategy & grow)
     : SingleValueSmallNumericAttribute(baseFileName,
@@ -308,13 +282,12 @@ SingleValueSemiNibbleNumericAttribute(const vespalib::string &baseFileName, cons
 SingleValueNibbleNumericAttribute::
 SingleValueNibbleNumericAttribute(const vespalib::string &baseFileName, const search::GrowStrategy & grow)
     : SingleValueSmallNumericAttribute(baseFileName,
-                                       createConfig(BasicType::BOOL, CollectionType::SINGLE, grow),
+                                       createConfig(BasicType::UINT4, CollectionType::SINGLE, grow),
                                        0x0fu /* valueMask */,
                                        0x02u /* valueShiftShift */,
                                        2 * sizeof(Word) - 1 /* valueShiftMask */,
                                        log2bits<Word>() - 2/* wordShift */)
 {
 }
-
 
 }

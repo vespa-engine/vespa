@@ -54,7 +54,7 @@ protected:
     }
 
 public:
-    virtual uint32_t getRawValues(DocId doc, const WType * & values) const final override {
+    uint32_t getRawValues(DocId doc, const WType * & values) const final override {
         return get(doc, values);
     }
     /*

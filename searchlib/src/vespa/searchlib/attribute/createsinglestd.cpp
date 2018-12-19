@@ -7,6 +7,7 @@
 #include "attributevector.hpp"
 #include "singlenumericattribute.hpp"
 #include "singlestringattribute.h"
+#include "singleboolattribute.h"
 #include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 
@@ -24,7 +25,7 @@ AttributeFactory::createSingleStd(stringref name, const Config & info)
     AttributeVector::SP ret;
     switch(info.basicType().type()) {
     case BasicType::BOOL:
-        ret.reset(new SingleValueBitNumericAttribute(name, info.getGrowStrategy()));
+        ret.reset(new SingleBoolAttribute(name, info.getGrowStrategy()));
         break;
     case BasicType::UINT2:
         ret.reset(new SingleValueSemiNibbleNumericAttribute(name, info.getGrowStrategy()));

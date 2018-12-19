@@ -30,7 +30,6 @@ using search::DocumentMetaData;
 using search::GrowStrategy;
 using search::LidUsageStats;
 using search::QueryTermSimple;
-using search::SingleValueBitNumericAttribute;
 using search::TuneFileAttributes;
 using search::attribute::SearchContextParams;
 using search::fef::MatchData;

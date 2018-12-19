@@ -93,6 +93,7 @@ vespa_add_library(searchlib_attribute OBJECT
     singlenumericattributesaver.cpp
     singlenumericenumattribute.cpp
     singlenumericpostattribute.cpp
+    singleboolattribute.cpp
     singlesmallnumericattribute.cpp
     singlestringattribute.cpp
     singlestringpostattribute.cpp

@@ -16,6 +16,7 @@
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
+#include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/fef/fef.h>
@@ -347,7 +348,7 @@ public:
         return _sc->createIterator(&_tfmd, strict);
     }
 private:
-    search::SingleValueBitNumericAttribute     _a;
+    search::SingleBoolAttribute     _a;
     search::AttributeVector::SearchContext::UP _sc;
     mutable TermFieldMatchData _tfmd;
 };
