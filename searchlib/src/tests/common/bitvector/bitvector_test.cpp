@@ -128,9 +128,7 @@ assertBV(const std::string & exp, const BitVector & act)
 {
     bool res1 = EXPECT_EQUAL(exp, toString(act));
     search::fef::TermFieldMatchData f;
-    search::fef::TermFieldMatchDataArray a;
-    a.add(&f);
-    queryeval::SearchIterator::UP it(BitVectorIterator::create(&act, a, true));
+    queryeval::SearchIterator::UP it(BitVectorIterator::create(&act, f, true));
     BitVectorIterator & b(dynamic_cast<BitVectorIterator &>(*it));
     bool res2 = EXPECT_EQUAL(exp, toString(b));
     return res1 && res2;
@@ -296,9 +294,7 @@ TEST("requireThatSequentialOperationsOnPartialWorks")
 TEST("requireThatInitRangeStaysWithinBounds") {
     AllocatedBitVector v1(128);
     search::fef::TermFieldMatchData f;
-    search::fef::TermFieldMatchDataArray a;
-    a.add(&f);
-    queryeval::SearchIterator::UP it(BitVectorIterator::create(&v1, a, true));
+    queryeval::SearchIterator::UP it(BitVectorIterator::create(&v1, f, true));
     it->initRange(700, 800);
     EXPECT_TRUE(it->isAtEnd());
 }

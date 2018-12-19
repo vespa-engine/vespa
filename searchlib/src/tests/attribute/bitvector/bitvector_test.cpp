@@ -616,9 +616,7 @@ public:
     ~Verifier();
 
     SearchIterator::UP create(bool strict) const override {
-        return _inverted
-                   ? BitVectorIterator::createInverse(_bv.get(), getDocIdLimit(), _tfmd, strict)
-                   : BitVectorIterator::create(_bv.get(), getDocIdLimit(), _tfmd, strict);
+        return BitVectorIterator::create(_bv.get(), getDocIdLimit(), _tfmd, strict, _inverted);
     }
 
 private:
