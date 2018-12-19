@@ -2,6 +2,7 @@
 package com.yahoo.search.dispatch;
 
 import java.io.Closeable;
+import java.util.function.BiConsumer;
 
 /**
  * CloseableInvoker is an abstract implementation of {@link Closeable} with an additional hook for
@@ -13,16 +14,23 @@ import java.io.Closeable;
 public abstract class CloseableInvoker implements Closeable {
     protected abstract void release();
 
-    private Runnable teardown = null;
+    private BiConsumer<Boolean, Long> teardown = null;
+    private boolean success = false;
+    private long startTime = 0;
 
-    public void teardown(Runnable teardown) {
+    public void teardown(BiConsumer<Boolean, Long> teardown) {
         this.teardown = teardown;
+        this.startTime = System.currentTimeMillis();
+    }
+
+    protected void setFinalStatus(boolean success) {
+        this.success = success;
     }
 
     @Override
     public final void close() {
         if (teardown != null) {
-            teardown.run();
+            teardown.accept(success, System.currentTimeMillis() - startTime);
             teardown = null;
         }
         release();

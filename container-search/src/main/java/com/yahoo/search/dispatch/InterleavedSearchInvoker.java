@@ -24,6 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_ADAPTIVE_TIMEOUT;
+import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
 
 /**
@@ -54,6 +55,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private int askedNodes = 0;
     private int answeredNodes = 0;
     private boolean timedOut = false;
+    private boolean degradedByMatchPhase = false;
 
     private boolean trimResult = false;
 
@@ -144,7 +146,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                 message = "Backend communication timeout";
             }
             result.hits().addError(ErrorMessage.createBackendCommunicationError(message));
-            invoker.getErrorCoverage().ifPresent(this::collectCoverage);
             timedOut = true;
         }
     }
@@ -201,7 +202,9 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         answeredDocs += source.getDocs();
         answeredActiveDocs += source.getActive();
         answeredSoonActiveDocs += source.getSoonActive();
-        answeredNodes++;
+        answeredNodes += source.getNodes();
+        degradedByMatchPhase |= source.isDegradedByMatchPhase();
+        timedOut |= source.isDegradedByTimeout();
     }
 
     private Coverage createCoverage() {
@@ -209,9 +212,14 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         Coverage coverage = new Coverage(answeredDocs, answeredActiveDocs, answeredNodes, 1);
         coverage.setNodesTried(askedNodes);
         coverage.setSoonActive(answeredSoonActiveDocs);
+        int degradedReason = 0;
         if (timedOut) {
-            coverage.setDegradedReason(adaptiveTimeoutCalculated ? DEGRADED_BY_ADAPTIVE_TIMEOUT : DEGRADED_BY_TIMEOUT);
+            degradedReason |= (adaptiveTimeoutCalculated ? DEGRADED_BY_ADAPTIVE_TIMEOUT : DEGRADED_BY_TIMEOUT);
         }
+        if (degradedByMatchPhase) {
+            degradedReason |= DEGRADED_BY_MATCH_PHASE;
+        }
+        coverage.setDegradedReason(degradedReason);
         return coverage;
     }
 
