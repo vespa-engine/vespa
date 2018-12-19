@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.zone;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Provides information about zones in a hosted Vespa system.
+ * Provides information about zones in a hosted Vespa system, and about the system.
  *
  * @author mpolden
  */
@@ -60,5 +61,11 @@ public interface ZoneRegistry {
 
     /** Returns all OS upgrade policies */
     List<UpgradePolicy> osUpgradePolicies();
+
+    /** Returns a URL which displays information about the given application. */
+    URI dashboardUrl(ApplicationId id);
+
+    /** Returns a URL used to request support from the Vespa team. */
+    URI supportUrl();
 
 }
