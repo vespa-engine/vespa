@@ -192,7 +192,6 @@ public final class ConfiguredApplication implements Application {
         try {
             Container.get().setupFileAcquirer(config.filedistributor());
             Container.get().setupUrlDownloader();
-            com.yahoo.container.Server.get().initialize(config);
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Caught exception when initializing server. Exiting.", e);
             Runtime.getRuntime().halt(1);
