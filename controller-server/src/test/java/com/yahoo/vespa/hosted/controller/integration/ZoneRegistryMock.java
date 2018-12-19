@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -107,6 +108,16 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public List<UpgradePolicy> osUpgradePolicies() {
         return ImmutableList.copyOf(osUpgradePolicies.values());
+    }
+
+    @Override
+    public URI dashboardUrl(ApplicationId id) {
+        return URI.create("https://dashboard.tld/" + id);
+    }
+
+    @Override
+    public URI supportUrl() {
+        return URI.create("https://help.tld");
     }
 
     @Override
