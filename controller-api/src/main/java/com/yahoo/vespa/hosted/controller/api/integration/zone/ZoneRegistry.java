@@ -7,6 +7,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
 import java.net.URI;
 import java.time.Duration;
@@ -62,8 +63,14 @@ public interface ZoneRegistry {
     /** Returns all OS upgrade policies */
     List<UpgradePolicy> osUpgradePolicies();
 
+    /** Returns a URL where an informative dashboard can be found. */
+    URI dashboardUrl();
+
     /** Returns a URL which displays information about the given application. */
     URI dashboardUrl(ApplicationId id);
+
+    /** Returns a URL which displays information about the given job run. */
+    URI dashboardUrl(RunId id);
 
     /** Returns a URL used to request support from the Vespa team. */
     URI supportUrl();

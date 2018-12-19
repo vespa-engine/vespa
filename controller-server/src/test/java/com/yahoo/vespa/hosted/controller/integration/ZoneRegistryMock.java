@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -111,8 +112,18 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
+    public URI dashboardUrl() {
+        return URI.create("https://dashboard.tld");
+    }
+
+    @Override
     public URI dashboardUrl(ApplicationId id) {
         return URI.create("https://dashboard.tld/" + id);
+    }
+
+    @Override
+    public URI dashboardUrl(RunId id) {
+        return URI.create("https://dashboard.tld" + id);
     }
 
     @Override
