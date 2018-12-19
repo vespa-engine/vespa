@@ -331,7 +331,7 @@ public class FastSearcherTestCase {
         byte[] actual = new byte[buf.remaining()];
         buf.get(actual);
 
-        SessionId sessionId = query.getSessionId(false);
+        SessionId sessionId = query.getSessionId();
         byte IGNORE = 69;
         ByteBuffer answer = ByteBuffer.allocate(1024);
         answer.put(new byte[] { 0, 0, 0, (byte)(141+sessionId.asUtf8String().getByteLength()), 0, 0, 0, -37, 0, 0, 16, 17, 0, 0, 0, 0,
