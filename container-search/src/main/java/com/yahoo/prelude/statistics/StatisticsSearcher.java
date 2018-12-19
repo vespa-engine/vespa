@@ -3,7 +3,6 @@ package com.yahoo.prelude.statistics;
 
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.container.Server;
 import com.yahoo.container.protect.Error;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
@@ -18,9 +17,7 @@ import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
-import com.yahoo.statistics.Callback;
 import com.yahoo.statistics.Counter;
-import com.yahoo.statistics.Handle;
 import com.yahoo.statistics.Value;
 
 import java.util.HashMap;
