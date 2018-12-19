@@ -180,15 +180,12 @@ private:
     void testSingle();
 
     // CollectionType::ARRAY
-    template <typename BufferType>
-    void printArray(const AttributePtr & ptr);
     template <typename VectorType, typename BufferType>
     void testArray(const AttributePtr & ptr, const std::vector<BufferType> & values);
     void testArray();
 
     // CollectionType::WSET
-    template <typename BufferType>
-    void printWeightedSet(const AttributePtr & ptr);
+
     template <typename VectorType, typename BufferType>
     void testWeightedSet(const AttributePtr & ptr, const std::vector<BufferType> & values);
     void testWeightedSet();
@@ -245,9 +242,11 @@ private:
     void testPendingCompaction();
 
 public:
-    AttributeTest() { }
+    AttributeTest();
     int Main() override;
 };
+
+AttributeTest::AttributeTest() = default;
 
 void AttributeTest::testBaseName()
 {
@@ -385,8 +384,8 @@ void AttributeTest::compare(VectorType & a, VectorType & b)
     ASSERT_TRUE(a.getNumDocs() == b.getNumDocs());
     uint32_t asz(a.getMaxValueCount());
     uint32_t bsz(b.getMaxValueCount());
-    BufferType *av = new BufferType[asz];
-    BufferType *bv = new BufferType[bsz];
+    auto *av = new BufferType[asz];
+    auto *bv = new BufferType[bsz];
 
     for (size_t i(0), m(a.getNumDocs()); i < m; i++) {
         ASSERT_TRUE(asz >= static_cast<uint32_t>(a.getValueCount(i)));
@@ -780,7 +779,7 @@ AttributeTest::fillString(std::vector<string> & values, uint32_t numValues)
     for (uint32_t i = 0; i < numValues; ++i) {
         vespalib::asciistream ss;
         ss << "string" << (i < 10 ? "0" : "") << i;
-        values.push_back(ss.str());
+        values.emplace_back(ss.str());
     }
 }
 
@@ -833,7 +832,7 @@ void
 AttributeTest::testSingle(const AttributePtr & ptr, const std::vector<BufferType> & values)
 {
     LOG(info, "testSingle: vector '%s' with %u documents and %lu values",
-        ptr->getName().c_str(), ptr->getNumDocs(), static_cast<unsigned long>(values.size()));
+        ptr->getName().c_str(), ptr->getNumDocs(), values.size());
 
     VectorType & v = *(static_cast<VectorType *>(ptr.get()));
     uint32_t numUniques = values.size();
@@ -966,7 +965,7 @@ void
 AttributeTest::testArray(const AttributePtr & ptr, const std::vector<BufferType> & values)
 {
     LOG(info, "testArray: vector '%s' with %i documents and %lu values",
-        ptr->getName().c_str(), ptr->getNumDocs(), static_cast<unsigned long>(values.size()));
+        ptr->getName().c_str(), ptr->getNumDocs(), values.size());
 
     VectorType & v = *(static_cast<VectorType *>(ptr.get()));
     uint32_t numUniques = values.size();
@@ -1069,21 +1068,6 @@ AttributeTest::testArray(const AttributePtr & ptr, const std::vector<BufferType>
     EXPECT_TRUE(!v.clearDoc(ptr->getNumDocs()));
 }
 
-template <typename BufferType>
-void
-AttributeTest::printArray(const AttributePtr & ptr)
-{
-    uint32_t bufferSize = ptr->getMaxValueCount();
-    std::vector<BufferType> buffer(bufferSize);
-    for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
-        uint32_t valueCount = ptr->get(doc, &buffer[0], buffer.size());
-        for (uint32_t i = 0; i < valueCount; ++i) {
-            std::cout << "doc[" << doc << "][" << i << "] = " << buffer[i]
-                << std::endl;
-        }
-    }
-}
-
 void
 AttributeTest::testArray()
 {
@@ -1151,26 +1135,12 @@ AttributeTest::testArray()
 // CollectionType::WSET
 //-----------------------------------------------------------------------------
 
-template <typename BufferType>
-void
-AttributeTest::printWeightedSet(const AttributePtr & ptr)
-{
-    std::vector<BufferType> buffer(ptr->getMaxValueCount());
-    for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
-        uint32_t valueCount = ptr->get(doc, &buffer[0], buffer.size());
-        for (uint32_t i = 0; i < valueCount; ++i) {
-            std::cout << "doc[" << doc << "][" << i << "] = {" << buffer[i].getValue()
-                << ", " << buffer[i].getWeight() << "}" << std::endl;
-        }
-    }
-}
-
 template <typename VectorType, typename BufferType>
 void
 AttributeTest::testWeightedSet(const AttributePtr & ptr, const std::vector<BufferType> & values)
 {
     LOG(info, "testWeightedSet: vector '%s' with %u documents and %lu values",
-        ptr->getName().c_str(), ptr->getNumDocs(), static_cast<unsigned long>(values.size()));
+        ptr->getName().c_str(), ptr->getNumDocs(),values.size());
 
     VectorType & v = *(static_cast<VectorType *>(ptr.get()));
     uint32_t numDocs = v.getNumDocs();
@@ -1259,7 +1229,7 @@ AttributeTest::testWeightedSet()
         std::vector<AttributeVector::WeightedInt> values;
         values.reserve(numValues);
         for (uint32_t i = 0; i < numValues; ++i) {
-            values.push_back(AttributeVector::WeightedInt(i, i + numValues));
+            values.emplace_back(i, i + numValues);
         }
 
         {
@@ -1284,7 +1254,7 @@ AttributeTest::testWeightedSet()
         std::vector<AttributeVector::WeightedFloat> values;
         values.reserve(numValues);
         for (uint32_t i = 0; i < numValues; ++i) {
-            values.push_back(AttributeVector::WeightedFloat(i, i + numValues));
+            values.emplace_back(i, i + numValues);
         }
 
         {
@@ -1311,7 +1281,7 @@ AttributeTest::testWeightedSet()
         for (uint32_t i = 0; i < numValues; ++i) {
             vespalib::asciistream ss;
             ss << "string" << (i < 10 ? "0" : "") << i;
-            values.push_back(AttributeVector::WeightedString(ss.str(), i + numValues));
+            values.emplace_back(ss.str(), i + numValues);
         }
 
         {
@@ -1340,7 +1310,7 @@ AttributeTest::testArithmeticValueUpdate(const AttributePtr & ptr)
     LOG(info, "testArithmeticValueUpdate: vector '%s'", ptr->getName().c_str());
 
     typedef document::ArithmeticValueUpdate Arith;
-    VectorType & vec = static_cast<VectorType &>(*ptr.get());
+    auto & vec = static_cast<VectorType &>(*ptr.get());
     addDocs(ptr, 13);
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 0u);
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 0u);
@@ -1509,7 +1479,7 @@ AttributeTest::testArithmeticWithUndefinedValue(const AttributePtr & ptr, BaseTy
     LOG(info, "testArithmeticWithUndefinedValue: vector '%s'", ptr->getName().c_str());
 
     typedef document::ArithmeticValueUpdate Arith;
-    VectorType & vec = static_cast<VectorType &>(*ptr.get());
+    auto & vec = static_cast<VectorType &>(*ptr.get());
     addDocs(ptr, 1);
     ASSERT_TRUE(vec.update(0, before));
     ptr->commit();
@@ -1557,7 +1527,7 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     LOG(info, "testMapValueUpdate: vector '%s'", ptr->getName().c_str());
     typedef MapValueUpdate MapVU;
     typedef ArithmeticValueUpdate ArithVU;
-    VectorType & vec = static_cast<VectorType &>(*ptr.get());
+    auto & vec = static_cast<VectorType &>(*ptr.get());
 
     addDocs(ptr, 6);
     for (uint32_t doc = 0; doc < 6; ++doc) {
@@ -1708,7 +1678,7 @@ AttributeTest::testStatus()
         Config cfg(BasicType::STRING, CollectionType::ARRAY);
         AttributePtr ptr = createAttribute("as", cfg);
         addDocs(ptr, numDocs);
-        StringAttribute & sa = *(static_cast<StringAttribute *>(ptr.get()));
+        auto & sa = *(static_cast<StringAttribute *>(ptr.get()));
         for (uint32_t i = 0; i < numDocs; ++i) {
             EXPECT_TRUE(appendToVector(sa, i, 1, values));
         }
@@ -1729,7 +1699,7 @@ AttributeTest::testStatus()
         Config cfg(BasicType::STRING, CollectionType::ARRAY);
         AttributePtr ptr = createAttribute("as", cfg);
         addDocs(ptr, numDocs);
-        StringAttribute & sa = *(static_cast<StringAttribute *>(ptr.get()));
+        auto & sa = *(static_cast<StringAttribute *>(ptr.get()));
         const size_t numUniq(16);
         const size_t numValuesPerDoc(16);
         for (uint32_t i = 0; i < numDocs; ++i) {
@@ -1785,7 +1755,7 @@ AttributeTest::testNullProtection()
         AttributeVector::DocId docId;
         std::vector<string> buf(16);
         AttributePtr attr = createAttribute("string", Config(BasicType::STRING, CollectionType::ARRAY));
-        StringAttribute &v = static_cast<StringAttribute &>(*attr.get());
+        auto &v = static_cast<StringAttribute &>(*attr.get());
         EXPECT_TRUE(v.addDoc(docId));
         EXPECT_TRUE(v.append(0, good, 1));
         EXPECT_TRUE(v.append(0, evil, 1));
@@ -1801,7 +1771,7 @@ AttributeTest::testNullProtection()
         AttributeVector::DocId docId;
         std::vector<StringAttribute::WeightedString> buf(16);
         AttributePtr attr = createAttribute("string", Config(BasicType::STRING, CollectionType::WSET));
-        StringAttribute &v = static_cast<StringAttribute &>(*attr.get());
+        auto &v = static_cast<StringAttribute &>(*attr.get());
         EXPECT_TRUE(v.addDoc(docId));
         EXPECT_TRUE(v.append(0, good, 10));
         EXPECT_TRUE(v.append(0, evil, 20));
@@ -1830,7 +1800,7 @@ void
 AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
 {
     LOG(info, "testGeneration(%s)", attr->getName().c_str());
-    IntegerAttribute & ia = static_cast<IntegerAttribute &>(*attr.get());
+    auto & ia = static_cast<IntegerAttribute &>(*attr.get());
     // add docs to trigger inc generation when data vector is full
     AttributeVector::DocId docId;
     EXPECT_EQUAL(0u, ia.getCurrentGeneration());
@@ -1990,12 +1960,12 @@ AttributeTest::testCompactLidSpace(const Config &config,
     vespalib::string name = clsDir + "/" + bts + "-" + cts + fas + ess;
     LOG(info, "testCompactLidSpace(%s)", name.c_str());
     AttributePtr attr = AttributeFactory::createAttribute(name, cfg);
-    VectorType &v = static_cast<VectorType &>(*attr.get());
+    auto &v = static_cast<VectorType &>(*attr.get());
     attr->enableEnumeratedSave(es);
     attr->addDocs(highDocs);
     populate(v, 17);
     AttributePtr attr2 = AttributeFactory::createAttribute(name, cfg);
-    VectorType &v2 = static_cast<VectorType &>(*attr2.get());
+    auto &v2 = static_cast<VectorType &>(*attr2.get());
     attr2->enableEnumeratedSave(es);
     attr2->addDocs(trimmedDocs);
     populate(v2, 17);
@@ -2013,7 +1983,7 @@ AttributeTest::testCompactLidSpace(const Config &config,
     EXPECT_TRUE(attr3->load());
     EXPECT_EQUAL(trimmedDocs, attr3->getNumDocs());
     EXPECT_EQUAL(trimmedDocs, attr3->getCommittedDocIdLimit());
-    VectorType &v3 = static_cast<VectorType &>(*attr3.get());
+    auto &v3 = static_cast<VectorType &>(*attr3.get());
     compare<VectorType, BufferType>(v2, v3);
     attr->shrinkLidSpace();
     EXPECT_EQUAL(trimmedDocs, attr->getNumDocs());
@@ -2179,7 +2149,7 @@ AttributeTest::testReaderDuringLastUpdate(const Config &config, bool fs, bool co
 
     LOG(info, "testReaderDuringLastUpdate(%s)", name.c_str());
     AttributePtr attr = AttributeFactory::createAttribute(name, cfg);
-    AttributeType &v = static_cast<AttributeType &>(*attr.get());
+    auto &v = static_cast<AttributeType &>(*attr.get());
     constexpr uint32_t numDocs = 200;
     AttributeGuard guard;
     if (!compact) {
@@ -2233,7 +2203,7 @@ AttributeTest::testPendingCompaction()
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
     cfg.setFastSearch(true);
     AttributePtr v = createAttribute("sfsint32_pc", cfg);
-    IntegerAttribute &iv = static_cast<IntegerAttribute &>(*v.get());
+    auto &iv = static_cast<IntegerAttribute &>(*v.get());
     addClearedDocs(v, 1000);   // first compaction, success
     AttributeGuard guard1(v);
     populateSimple(iv, 1, 3);  // 2nd compaction, success
