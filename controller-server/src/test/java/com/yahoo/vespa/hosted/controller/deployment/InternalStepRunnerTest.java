@@ -275,7 +275,7 @@ public class InternalStepRunnerTest {
         tester.cloud().set(TesterCloud.Status.NOT_STARTED);
         tester.runner().run();
         for (Mail mail : ((MockMailer) tester.tester().controller().mailer()).inbox("a@b"))
-            assertEquals("Failing deployment of tenant.application", mail.subject());
+            assertEquals("Vespa application tenant.application: System test failing due to system error", mail.subject());
     }
 
     private void assertTestLogEntries(RunId id, Step step, LogEntry... entries) {

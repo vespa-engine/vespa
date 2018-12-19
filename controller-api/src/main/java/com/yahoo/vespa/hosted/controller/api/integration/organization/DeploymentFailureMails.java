@@ -52,7 +52,7 @@ public class DeploymentFailureMails {
 
     private Mail mail(RunId id, List<String> recipients, String summaryDetail, String messageDetail) {
         return new Mail(recipients,
-                        String.format("Vespa application %s %s failing %s",
+                        String.format("Vespa application %s: %s failing %s",
                                       id.application(),
                                       jobToString(id.type()),
                                       summaryDetail),
