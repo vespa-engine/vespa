@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -67,6 +68,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static java.util.logging.Level.INFO;
@@ -90,9 +92,11 @@ public class InternalStepRunner implements StepRunner {
     static final Duration installationTimeout = Duration.ofMinutes(150);
 
     private final Controller controller;
+    private final DeploymentFailureMails mails;
 
     public InternalStepRunner(Controller controller) {
         this.controller = controller;
+        this.mails = new DeploymentFailureMails(controller.zoneRegistry());
     }
 
     @Override
@@ -448,10 +452,19 @@ public class InternalStepRunner implements StepRunner {
     /** Sends a mail with a notification of a failed run, if one should be sent. */
     private void sendNotification(Run run, DualLogger logger) {
         try {
-            String subject = "Failing deployment of " + run.id().application();
-            String message = "Test.";
-
-            controller.mailer().send(new Mail(Collections.singletonList(run.versions().targetApplication().authorEmail().get()), subject, message));
+            run.versions().targetApplication().authorEmail().ifPresent(author -> {
+                List<String> recipients = Collections.singletonList(author);
+            if (run.status() == outOfCapacity && run.id().type().isProduction())
+                controller.mailer().send(mails.outOfCapacity(run.id(), recipients));
+            if (run.status() == deploymentFailed)
+                controller.mailer().send(mails.deploymentFailure(run.id(), recipients));
+            if (run.status() == installationFailed)
+                controller.mailer().send(mails.installationFailure(run.id(), recipients));
+            if (run.status() == testFailure)
+                controller.mailer().send(mails.testFailure(run.id(), recipients));
+            if (run.status() == error)
+                controller.mailer().send(mails.systemError(run.id(), recipients));
+            });
         }
         catch (RuntimeException e) {
             logger.log(INFO, "Exception trying to send mail for " + run.id(), e);
