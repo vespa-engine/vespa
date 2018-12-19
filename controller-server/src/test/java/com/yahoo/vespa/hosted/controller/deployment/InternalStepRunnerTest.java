@@ -17,6 +17,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,6 +42,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTes
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -99,12 +102,12 @@ public class InternalStepRunnerTest {
     public void refeedRequirementBlocksDeployment() {
         RunId id = tester.newRun(JobType.productionUsCentral1);
         tester.configServer().setConfigChangeActions(new ConfigChangeActions(Collections.emptyList(),
-                                                                                      Collections.singletonList(new RefeedAction("Refeed",
+                                                                                      singletonList(new RefeedAction("Refeed",
                                                                                                                         false,
                                                                                                                         "doctype",
                                                                                                                         "cluster",
                                                                                                                         Collections.emptyList(),
-                                                                                                                        Collections.singletonList("Refeed it!")))));
+                                                                                                                        singletonList("Refeed it!")))));
         tester.runner().run();
 
         assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.deployReal));
@@ -115,15 +118,15 @@ public class InternalStepRunnerTest {
         RunId id = tester.newRun(JobType.productionUsCentral1);
         ZoneId zone = id.type().zone(tester.tester().controller().system());
         HostName host = tester.configServer().hostFor(appId, zone);
-        tester.configServer().setConfigChangeActions(new ConfigChangeActions(Collections.singletonList(new RestartAction("cluster",
-                                                                                                                                  "container",
-                                                                                                                                  "search",
-                                                                                                                                  Collections.singletonList(new ServiceInfo("queries",
+        tester.configServer().setConfigChangeActions(new ConfigChangeActions(singletonList(new RestartAction("cluster",
+                                                                                                             "container",
+                                                                                                             "search",
+                                                                                                             singletonList(new ServiceInfo("queries",
                                                                                                                                                                    "search",
                                                                                                                                                                    "config",
                                                                                                                                                                    host.value())),
-                                                                                                                                  Collections.singletonList("Restart it!"))),
-                                                                                      Collections.emptyList()));
+                                                                                                             singletonList("Restart it!"))),
+                                                                             Collections.emptyList()));
         tester.runner().run();
         assertEquals(succeeded, tester.jobs().run(id).get().steps().get(Step.deployReal));
 
@@ -264,6 +267,15 @@ public class InternalStepRunnerTest {
                              new LogEntry(lastId + 3, 12345, info, "Success!"),
                              new LogEntry(lastId + 4, tester.clock().millis(), debug, "Tests completed successfully."));
         assertEquals(succeeded, tester.jobs().run(id).get().steps().get(Step.endTests));
+    }
+
+    @Test
+    public void notificationIsSent() {
+        RunId id = tester.startSystemTestTests();
+        tester.cloud().set(TesterCloud.Status.NOT_STARTED);
+        tester.runner().run();
+        for (Mail mail : ((MockMailer) tester.tester().controller().mailer()).inbox("a@b"))
+            assertEquals("Failing deployment of tenant.application", mail.subject());
     }
 
     private void assertTestLogEntries(RunId id, Step step, LogEntry... entries) {

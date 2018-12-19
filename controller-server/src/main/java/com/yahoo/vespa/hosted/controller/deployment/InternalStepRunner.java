@@ -23,14 +23,16 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
@@ -42,6 +44,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -421,12 +424,38 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
         try {
-            controller.jobController().active(id).ifPresent(run -> controller.applications().deploymentTrigger().notifyOfCompletion(report(run)));
+            controller.jobController().active(id).ifPresent(run -> {
+                JobReport report = JobReport.ofJob(run.id().application(),
+                                                   run.id().type(),
+                                                   run.id().number(),
+                                                   run.hasFailed() ? Optional.of(DeploymentJobs.JobError.unknown) : Optional.empty());
+                controller.applications().deploymentTrigger().notifyOfCompletion(report);
+
+                boolean newCommit = controller.applications().require(id.application())
+                                              .change().application()
+                                              .map(run.versions().targetApplication()::equals)
+                                              .orElse(false);
+                if (run.hasFailed() && newCommit)
+                    sendNotification(run, logger);
+            });
         }
         catch (IllegalStateException e) {
             logger.log(INFO, "Job '" + id.type() + "'no longer supposed to run?:", e);
         }
         return Optional.of(running);
+    }
+
+    /** Sends a mail with a notification of a failed run, if one should be sent. */
+    private void sendNotification(Run run, DualLogger logger) {
+        try {
+            String subject = "Failing deployment of " + run.id().application();
+            String message = "Test.";
+
+            controller.mailer().send(new Mail(Collections.singletonList(run.versions().targetApplication().authorEmail().get()), subject, message));
+        }
+        catch (RuntimeException e) {
+            logger.log(INFO, "Exception trying to send mail for " + run.id(), e);
+        }
     }
 
     /** Returns the deployment of the real application in the zone of the given job, if it exists. */
@@ -445,8 +474,8 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns a generated job report for the given run. */
-    private DeploymentJobs.JobReport report(Run run) {
-        return DeploymentJobs.JobReport.ofJob(run.id().application(),
+    private JobReport report(Run run) {
+        return JobReport.ofJob(run.id().application(),
                                               run.id().type(),
                                               run.id().number(),
                                               run.hasFailed() ? Optional.of(DeploymentJobs.JobError.unknown) : Optional.empty());
