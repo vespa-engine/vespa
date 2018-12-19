@@ -3,13 +3,11 @@ package com.yahoo.container;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.container.core.config.BundleLoader;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirerFactory;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
-import com.yahoo.osgi.Osgi;
 import com.yahoo.vespa.config.ConfigTransformer;
 
 import java.util.concurrent.TimeUnit;
@@ -32,20 +30,12 @@ public class Container {
     private volatile ComponentRegistry<AbstractComponent> componentRegistry;
     private volatile FileAcquirer fileAcquirer;
 
-    private volatile BundleLoader bundleLoader;
-
     private static Logger logger = Logger.getLogger(Container.class.getName());
 
     // TODO: Make this final again.
     private static Container instance = new Container();
 
     public static Container get() { return instance; }
-
-    /** @deprecated do not use */
-    @Deprecated // TODO: Remove
-    public void setOsgi(Osgi osgi) {
-        bundleLoader = new BundleLoader(osgi);
-    }
 
     public void shutdown() {
         if (fileAcquirer != null)
@@ -55,14 +45,6 @@ public class Container {
     //Used to acquire files originating from the application package.
     public FileAcquirer getFileAcquirer() {
         return fileAcquirer;
-    }
-
-    /** @deprecated do not use */
-    @Deprecated // TODO: Remove
-    public BundleLoader getBundleLoader() {
-        if (bundleLoader == null)
-            bundleLoader = new BundleLoader(null);
-        return bundleLoader;
     }
 
     /**
