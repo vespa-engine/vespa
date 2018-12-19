@@ -68,15 +68,17 @@ void * mallocThreadProxy (void * arg)
 }
 
 
-extern "C" VESPA_DLL_EXPORT int local_pthread_create (pthread_t *thread,
-                                     const pthread_attr_t *attrOrg,
-                                     void * (*start_routine) (void *),
-                                     void * arg) __asm__("pthread_create");
+extern "C" VESPA_DLL_EXPORT int
+local_pthread_create (pthread_t *thread,
+                      const pthread_attr_t *attrOrg,
+                      void * (*start_routine) (void *),
+                      void * arg) __asm__("pthread_create");
 
-VESPA_DLL_EXPORT int local_pthread_create (pthread_t *thread,
-                          const pthread_attr_t *attrOrg,
-                          void * (*start_routine) (void *),
-                          void * arg)
+VESPA_DLL_EXPORT int
+local_pthread_create (pthread_t *thread,
+                      const pthread_attr_t *attrOrg,
+                      void * (*start_routine) (void *),
+                      void * arg)
 {
     size_t numThreads = _G_threadCount;
     while ((numThreads < vespamalloc::_G_myMemP->getMaxNumThreads())
@@ -84,7 +86,14 @@ VESPA_DLL_EXPORT int local_pthread_create (pthread_t *thread,
     { }
 
     if (numThreads >= vespamalloc::_G_myMemP->getMaxNumThreads()) {
+#if 1
+        // Just abort when max threads are reached.
+        // Future option is to make the behaviour optional.
+        fprintf (stderr, "All %ld threads are active! Aborting so you can start again.\n", numThreads);
+        abort();
+#else
         return EAGAIN;
+#endif
     }
     // A pointer to the library version of pthread_create.
     static pthread_create_function real_pthread_create = NULL;

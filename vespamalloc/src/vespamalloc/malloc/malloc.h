@@ -23,7 +23,7 @@ public:
     void setReturnAddressStop(const void * returnAddressStop) override {
         MemBlockPtrT::Stack::setStopAddress(returnAddressStop);
     }
-    virtual size_t getMaxNumThreads() const override { return _threadList.getMaxNumThreads(); }
+    size_t getMaxNumThreads() const override { return _threadList.getMaxNumThreads(); }
 
     void *malloc(size_t sz);
     void *realloc(void *oldPtr, size_t sz);
