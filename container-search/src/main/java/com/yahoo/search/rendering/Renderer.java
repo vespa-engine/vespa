@@ -16,7 +16,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 
 /**
- * Renders a search result to a writer synchronously - the result is completely rendered when the render method returns..
+ * Renders a search result to a writer synchronously
+ * - the result is completely rendered when the render method returns.
  * The renderers are cloned just before rendering,
  * and must therefore obey the following contract:
  *

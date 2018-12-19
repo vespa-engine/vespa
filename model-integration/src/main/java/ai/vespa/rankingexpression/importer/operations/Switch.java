@@ -23,8 +23,7 @@ public class Switch extends IntermediateOperation {
         }
         Optional<OrderedTensorType> predicate = inputs.get(1).type();
         if (predicate.get().type().rank() != 0) {
-            throw new IllegalArgumentException("Switch in " + name + ": " +
-                    "predicate must be a scalar");
+            throw new IllegalArgumentException("Switch in " + name + ": predicate must be a scalar");
         }
         return inputs.get(0).type().orElse(null);
     }
@@ -33,12 +32,10 @@ public class Switch extends IntermediateOperation {
     protected TensorFunction lazyGetFunction() {
         IntermediateOperation predicateOperation = inputs().get(1);
         if (!predicateOperation.getConstantValue().isPresent()) {
-            throw new IllegalArgumentException("Switch in " + name + ": " +
-                    "predicate must be a constant");
+            throw new IllegalArgumentException("Switch in " + name + ": predicate must be a constant");
         }
         if (port < 0 || port > 1) {
-            throw new IllegalArgumentException("Switch in " + name + ": " +
-                    "choice should be boolean");
+            throw new IllegalArgumentException("Switch in " + name + ": choice should be boolean");
         }
 
         double predicate = predicateOperation.getConstantValue().get().asDouble();

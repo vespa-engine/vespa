@@ -245,7 +245,7 @@ public class ScalarFunctions {
         @Override
         public double applyAsDouble(double operand) { return scale * (operand >= 0.0 ? operand : alpha * (Math.exp(operand)-1)); }
         @Override
-        public String toString() { return String.format("f(a)(%f * if(a >= 0, a, %f*(exp(a)-1)))", scale, alpha); }
+        public String toString() { return "f(a)(" + scale + " * if(a >= 0, a, " + alpha + " * (exp(a) - 1)))"; }
     }
 
     public static class Sin implements DoubleUnaryOperator {
@@ -296,8 +296,6 @@ public class ScalarFunctions {
         @Override
         public String toString() { return "f(a)(tanh(a))"; }
     }
-
-
 
 
     // Variable-length operators -----------------------------------------------------------------------------
