@@ -146,8 +146,8 @@ public abstract class IntermediateOperation {
 
     boolean verifyInputs(int expected, Function<IntermediateOperation, Optional<?>> func) {
         if (inputs.size() != expected) {
-            throw new IllegalArgumentException("Expected " + expected + " inputs " +
-                    "for '" + name + "', got " + inputs.size());
+            throw new IllegalArgumentException("Expected " + expected + " inputs for '" +
+                                               name + "', got " + inputs.size());
         }
         return inputs.stream().map(func).allMatch(Optional::isPresent);
     }

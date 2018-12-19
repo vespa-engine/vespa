@@ -19,7 +19,6 @@ public class MnistImportTestCase {
     public void testMnistImport() {
         TestableTensorFlowModel model = new TestableTensorFlowModel("test", "src/test/models/tensorflow/mnist/saved");
         ImportedModel.Signature signature = model.get().signature("serving_default");
-
         Assert.assertEquals("Has skipped outputs",
                             0, model.get().signature("serving_default").skippedOutputs().size());
 
