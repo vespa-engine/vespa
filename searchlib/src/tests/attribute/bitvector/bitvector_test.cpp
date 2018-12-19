@@ -612,30 +612,45 @@ TEST_F("Test bitvectors with weighted set value string", BitVectorTest)
 
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
-    Verifier();
+    Verifier(bool inverted);
     ~Verifier();
 
     SearchIterator::UP create(bool strict) const override {
-        return BitVectorIterator::create(_bv.get(), getDocIdLimit(), _tfmd, strict);
+        return BitVectorIterator::create(_bv.get(), getDocIdLimit(), _tfmd, strict, _inverted);
     }
 
 private:
+    bool _inverted;
     mutable TermFieldMatchData _tfmd;
     BitVector::UP _bv;
 };
 
-Verifier::Verifier()
-    : _bv(BitVector::create(getDocIdLimit()))
+Verifier::Verifier(bool inverted)
+    : _inverted(inverted),
+      _bv(BitVector::create(getDocIdLimit()))
 {
+    if (inverted) {
+        _bv->setInterval(0, getDocIdLimit());
+    }
     for (uint32_t docId: getExpectedDocIds()) {
-        _bv->setBit(docId);
+        if (inverted) {
+            _bv->clearBit(docId);
+        } else {
+            _bv->setBit(docId);
+        }
     }
 }
-Verifier::~Verifier() {}
+Verifier::~Verifier() = default;
 
 TEST("Test that bitvector iterators adheres to SearchIterator requirements") {
-    Verifier searchIteratorVerifier;
-    searchIteratorVerifier.verify();
+    {
+        Verifier searchIteratorVerifier(false);
+        searchIteratorVerifier.verify();
+    }
+    {
+        Verifier searchIteratorVerifier(true);
+        searchIteratorVerifier.verify();
+    }
 }
 
 

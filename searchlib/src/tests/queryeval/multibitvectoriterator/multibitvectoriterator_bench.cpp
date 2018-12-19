@@ -96,11 +96,9 @@ void
 Test::testSearch(bool strict)
 {
     TermFieldMatchData tfmd;
-    TermFieldMatchDataArray tfmda;
-    tfmda.add(&tfmd);
     MultiSearch::Children andd;
     for (size_t i(0); i < _bvs.size(); i++) {
-        andd.push_back(BitVectorIterator::create(_bvs[i].get(), tfmda, strict).release());
+        andd.push_back(BitVectorIterator::create(_bvs[i].get(), tfmd, strict, false).release());
     }
     SearchIterator::UP s(T::create(andd, strict));
     if (_optimize) {

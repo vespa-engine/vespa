@@ -6,8 +6,7 @@
 #include "unpackinfo.h"
 #include <vespa/searchlib/common/bitword.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 class MultiBitVectorIteratorBase : public MultiSearch, protected BitWord
 {
@@ -22,11 +21,19 @@ public:
     static SearchIterator::UP optimize(SearchIterator::UP parent);
 protected:
     MultiBitVectorIteratorBase(const Children & children);
+    class MetaWord {
+    public:
+        MetaWord(const Word * words, bool inverted) : _words(words), _inverted(inverted) { }
+        Word operator [] (uint32_t index) const { return _inverted ? ~_words[index] : _words[index]; }
+    private:
+        const Word * _words;
+        bool         _inverted;
+    };
 
     uint32_t                _numDocs;
     Word                    _lastValue; // Last value computed
     uint32_t                _lastMaxDocIdLimit; // next documentid requiring recomputation.
-    std::vector<const Word  *> _bvs;
+    std::vector<MetaWord>   _bvs;
 private:
     virtual bool acceptExtraFilter() const = 0;
     UP andWith(UP filter, uint32_t estimate) override;
@@ -35,6 +42,4 @@ private:
     static SearchIterator::UP optimizeMultiSearch(SearchIterator::UP parent);
 };
 
-} // namespace queryeval
-} // namespace search
-
+}
