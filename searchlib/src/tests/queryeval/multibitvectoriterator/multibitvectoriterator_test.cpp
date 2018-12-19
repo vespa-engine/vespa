@@ -27,16 +27,16 @@ public:
     void testAnd();
     void testBug7163266();
     void testOr();
-    void testAndWith();
-    void testEndGuard();
+    void testAndWith(bool invert);
+    void testEndGuard(bool invert);
     template<typename T>
     void testThatOptimizePreservesUnpack();
     template <typename T>
-    void testOptimizeCommon(bool isAnd);
+    void testOptimizeCommon(bool isAnd, bool invert);
     template <typename T>
-    void testOptimizeAndOr();
+    void testOptimizeAndOr(bool invert);
     template <typename T>
-    void testSearch(bool strict);
+    void testSearch(bool strict, bool invert);
     int Main() override;
 private:
     void verifySelectiveUnpack(SearchIterator & s, const TermFieldMatchData * tfmd);
@@ -103,26 +103,26 @@ seek(SearchIterator & s, uint32_t docIdLimit)
 }
 
 void
-Test::testAndWith()
+Test::testAndWith(bool invert)
 {
     TermFieldMatchData tfmd;
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, false).release());
-        children.push_back(createIter(1, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, false).release());
+        children.push_back(createIter(1, invert, tfmd, false).release());
     
         SearchIterator::UP s(AndSearch::create(children, false));
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
 
         s->initFullRange();
         H firstHits2 = seekNoReset(*s, 1, 130);
-        SearchIterator::UP filter(s->andWith(createIter(2, false, tfmd, false), 9));
+        SearchIterator::UP filter(s->andWith(createIter(2, invert, tfmd, false), 9));
         H lastHits2F = seekNoReset(*s, 130, _bvs[0]->size());
         
         children.clear();
-        children.push_back(createIter(0, false, tfmd, false).release());
-        children.push_back(createIter(1, false, tfmd, false).release());
-        children.push_back(createIter(2, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, false).release());
+        children.push_back(createIter(1, invert, tfmd, false).release());
+        children.push_back(createIter(2, invert, tfmd, false).release());
         s.reset(AndSearch::create(children, false));
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         s->initFullRange();
@@ -142,27 +142,33 @@ Test::testAndWith()
 void
 Test::testAndNot()
 {
-    testOptimizeCommon<AndNotSearch>(false);
-    testSearch<AndNotSearch>(false);
-    testSearch<AndNotSearch>(true);
+    for (bool invert : {false, true}) {
+        testOptimizeCommon<AndNotSearch>(false, invert);
+        testSearch<AndNotSearch>(false, invert);
+        testSearch<AndNotSearch>(true, invert);
+    }
 }
 
 void
 Test::testAnd()
 {
-    testOptimizeCommon<AndSearch>(true);
-    testOptimizeAndOr<AndSearch>();
-    testSearch<AndSearch>(false);
-    testSearch<AndSearch>(true);
+    for (bool invert : {false, true}) {
+        testOptimizeCommon<AndSearch>(true, invert);
+        testOptimizeAndOr<AndSearch>(invert);
+        testSearch<AndSearch>(false, invert);
+        testSearch<AndSearch>(true, invert);
+    }
 }
 
 void
 Test::testOr()
 {
-    testOptimizeCommon< OrSearch >(false);
-    testOptimizeAndOr< OrSearch >();
-    testSearch<OrSearch>(false);
-    testSearch<OrSearch>(true);
+    for (bool invert : {false, true}) {
+        testOptimizeCommon< OrSearch >(false, invert);
+        testOptimizeAndOr< OrSearch >(invert);
+        testSearch<OrSearch>(false, invert);
+        testSearch<OrSearch>(true, invert);
+    }
 }
 
 void
@@ -265,28 +271,28 @@ Test::searchAndCompare(SearchIterator::UP s, uint32_t docIdLimit)
 
 template <typename T>
 void
-Test::testSearch(bool strict)
+Test::testSearch(bool strict, bool invert)
 {
     TermFieldMatchData tfmd;
     uint32_t docIdLimit(_bvs[0]->size());
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, strict).release());
+        children.push_back(createIter(0, invert, tfmd, strict).release());
         SearchIterator::UP s(T::create(children, strict));
         searchAndCompare(std::move(s), docIdLimit);
     }
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, strict).release());
-        children.push_back(createIter(1, false, tfmd, strict).release());
+        children.push_back(createIter(0, invert, tfmd, strict).release());
+        children.push_back(createIter(1, invert, tfmd, strict).release());
         SearchIterator::UP s(T::create(children, strict));
         searchAndCompare(std::move(s), docIdLimit);
     }
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, strict).release());
-        children.push_back(createIter(1, false, tfmd, strict).release());
-        children.push_back(createIter(2, false, tfmd, strict).release());
+        children.push_back(createIter(0, invert, tfmd, strict).release());
+        children.push_back(createIter(1, invert, tfmd, strict).release());
+        children.push_back(createIter(2, invert, tfmd, strict).release());
         SearchIterator::UP s(T::create(children, strict));
         searchAndCompare(std::move(s), docIdLimit);
     }
@@ -294,13 +300,13 @@ Test::testSearch(bool strict)
 
 template <typename T>
 void
-Test::testOptimizeCommon(bool isAnd)
+Test::testOptimizeCommon(bool isAnd, bool invert)
 {
     TermFieldMatchData tfmd;
 
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, false).release());
 
         SearchIterator::UP s(T::create(children, false));
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
@@ -311,7 +317,7 @@ Test::testOptimizeCommon(bool isAnd)
     }
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, false).release());
         children.push_back(new EmptySearch());
 
         SearchIterator::UP s(T::create(children, false));
@@ -325,7 +331,7 @@ Test::testOptimizeCommon(bool isAnd)
     {
         MultiSearch::Children children;
         children.push_back(new EmptySearch());
-        children.push_back(createIter(0, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, false).release());
 
         SearchIterator::UP s(T::create(children, false));
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
@@ -338,8 +344,8 @@ Test::testOptimizeCommon(bool isAnd)
     {
         MultiSearch::Children children;
         children.push_back(new EmptySearch());
-        children.push_back(createIter(0, false, tfmd, false).release());
-        children.push_back(createIter(1, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, false).release());
+        children.push_back(createIter(1, invert, tfmd, false).release());
     
         SearchIterator::UP s(T::create(children, false));
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
@@ -354,8 +360,8 @@ Test::testOptimizeCommon(bool isAnd)
     {
         MultiSearch::Children children;
         children.push_back(new EmptySearch());
-        children.push_back(createIter(0, false, tfmd, true).release());
-        children.push_back(createIter(1, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, true).release());
+        children.push_back(createIter(1, invert, tfmd, false).release());
     
         SearchIterator::UP s(T::create(children, false));
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
@@ -369,12 +375,12 @@ Test::testOptimizeCommon(bool isAnd)
     }
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, false).release());
-        children.push_back(createIter(1, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, false).release());
+        children.push_back(createIter(1, invert, tfmd, false).release());
     
         SearchIterator::UP s(T::create(children, false));
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
-        SearchIterator::UP filter(s->andWith(createIter(2, false, tfmd, false), 9));
+        SearchIterator::UP filter(s->andWith(createIter(2, invert, tfmd, false), 9));
 
         if (isAnd) {
             EXPECT_TRUE(nullptr == filter.get());
@@ -383,11 +389,11 @@ Test::testOptimizeCommon(bool isAnd)
         }
 
         children.clear();
-        children.push_back(createIter(0, false, tfmd, false).release());
-        children.push_back(createIter(1, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, false).release());
+        children.push_back(createIter(1, invert, tfmd, false).release());
         s.reset(T::create(children, true));
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
-        filter = s->andWith(createIter(2, false, tfmd, false), 9);
+        filter = s->andWith(createIter(2, invert, tfmd, false), 9);
 
         if (isAnd) {
             EXPECT_TRUE(nullptr == filter.get());
@@ -399,14 +405,14 @@ Test::testOptimizeCommon(bool isAnd)
 
 template <typename T>
 void
-Test::testOptimizeAndOr()
+Test::testOptimizeAndOr(bool invert)
 {
     TermFieldMatchData tfmd;
 
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, false).release());
-        children.push_back(createIter(1, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, false).release());
+        children.push_back(createIter(1, invert, tfmd, false).release());
     
         SearchIterator::UP s(T::create(children, false));
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
@@ -416,9 +422,9 @@ Test::testOptimizeAndOr()
     }
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, false).release());
         children.push_back(new EmptySearch());
-        children.push_back(createIter(1, false, tfmd, false).release());
+        children.push_back(createIter(1, invert, tfmd, false).release());
     
         SearchIterator::UP s(T::create(children, false));
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
@@ -432,8 +438,8 @@ Test::testOptimizeAndOr()
     }
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, false).release());
-        children.push_back(createIter(1, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, false).release());
+        children.push_back(createIter(1, invert, tfmd, false).release());
         children.push_back(new EmptySearch());
     
         SearchIterator::UP s(T::create(children, false));
@@ -448,9 +454,9 @@ Test::testOptimizeAndOr()
     }
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, true).release());
+        children.push_back(createIter(0, invert, tfmd, true).release());
         children.push_back(new EmptySearch());
-        children.push_back(createIter(1, false, tfmd, false).release());
+        children.push_back(createIter(1, invert, tfmd, false).release());
     
         SearchIterator::UP s(T::create(children, false));
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
@@ -464,8 +470,8 @@ Test::testOptimizeAndOr()
     }
     {
         MultiSearch::Children children;
-        children.push_back(createIter(0, false, tfmd, true).release());
-        children.push_back(createIter(1, false, tfmd, false).release());
+        children.push_back(createIter(0, invert, tfmd, true).release());
+        children.push_back(createIter(1, invert, tfmd, false).release());
         children.push_back(new EmptySearch());
     
         SearchIterator::UP s(T::create(children, false));
@@ -481,14 +487,14 @@ Test::testOptimizeAndOr()
 }
 
 void
-Test::testEndGuard()
+Test::testEndGuard(bool invert)
 {
     typedef AndSearch T;
     TermFieldMatchData tfmd;
 
     MultiSearch::Children children;
-    children.push_back(createIter(0, false, tfmd, true).release());
-    children.push_back(createIter(1, false, tfmd, true).release());
+    children.push_back(createIter(0, invert, tfmd, true).release());
+    children.push_back(createIter(1, invert, tfmd, true).release());
     SearchIterator::UP s(T::create(children, false));
     s = MultiBitVectorIteratorBase::optimize(std::move(s));
     s->initFullRange();
@@ -509,7 +515,8 @@ Test::Main()
     testThatOptimizePreservesUnpack<OrSearch>();
     testThatOptimizePreservesUnpack<AndSearch>();
     TEST_FLUSH();
-    testEndGuard();
+    testEndGuard(false);
+    testEndGuard(true);
     TEST_FLUSH();
     testAndNot();
     TEST_FLUSH();
@@ -517,7 +524,8 @@ Test::Main()
     TEST_FLUSH();
     testOr();
     TEST_FLUSH();
-    testAndWith();
+    testAndWith(false);
+    testAndWith(true);
     TEST_FLUSH();
     TEST_DONE();
 }
