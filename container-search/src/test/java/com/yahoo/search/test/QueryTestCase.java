@@ -684,34 +684,34 @@ public class QueryTestCase {
     @Test
     public void testThatSessionIdIsUniquePerQuery() {
         Query q = new Query();
-        assertNull(q.getSessionId());
-        assertNull(q.getSessionId());
-        SessionId s1 = q.getSessionId("node-0");
+        assertNull(q.getSessionId(false));
+        assertNull(q.getSessionId(false));
+        SessionId s1 = q.getSessionId(true);
         assertNotNull(s1);
-        SessionId s2 = q.getSessionId("node-0");
+        SessionId s2 = q.getSessionId(true);
         assertNotSame(s1, s2);
         assertEquals(s1, s2);
         assertEquals(s1.toString(), s2.toString());
 
         Query q2 = new Query();
-        assertNotEquals(q.getSessionId(), q2.getSessionId("node-0"));
-        assertNotEquals(q.getSessionId().toString(), q2.getSessionId("node-0").toString());
+        assertNotEquals(q.getSessionId(false), q2.getSessionId(true));
+        assertNotEquals(q.getSessionId(false).toString(), q2.getSessionId(true).toString());
     }
     @Test
     public void testThatCloneGetANewSessionId() {
         Query q = new Query();
-        q.getSessionId("node-0");
+        q.getSessionId(true);
         Query clonedQ = q.clone();
-        assertNull(clonedQ.getSessionId());
-        assertNotEquals(q.getSessionId(), clonedQ.getSessionId("node-0"));
+        assertNull(clonedQ.getSessionId(false));
+        assertNotEquals(q.getSessionId(false), clonedQ.getSessionId(true));
     }
 
     @Test
     public void testThatSessionIdIsUniquePerRankProfilePerQuery() {
         Query q = new Query();
-        SessionId s1 = q.getSessionId("node-0");
+        SessionId s1 = q.getSessionId(true);
         q.getRanking().setProfile("my-profile");
-        SessionId s2 = q.getSessionId();
+        SessionId s2 = q.getSessionId(false);
         assertNotEquals(s1, s2);
     }
 
@@ -719,14 +719,14 @@ public class QueryTestCase {
     public void testThatSessionIdIsNotSharedIfCreatedAfterClone() {
         Query q = new Query();
         Query q2 = q.clone();
-        assertNull(q.getSessionId());
-        assertNull(q2.getSessionId());
+        assertNull(q.getSessionId(false));
+        assertNull(q2.getSessionId(false));
 
-        assertNotNull(q.getSessionId("node-0"));
-        assertNull(q2.getSessionId());
+        assertNotNull(q.getSessionId(true));
+        assertNull(q2.getSessionId(false));
 
-        assertNotNull(q2.getSessionId("node-0"));
-        assertNotEquals(q.getSessionId(), q2.getSessionId());
+        assertNotNull(q2.getSessionId(true));
+        assertNotEquals(q.getSessionId(false), q2.getSessionId(false));
     }
 
     @Test
