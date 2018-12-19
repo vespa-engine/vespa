@@ -982,22 +982,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      */
      public HttpRequest getHttpRequest() { return httpRequest; }
 
-    /**
-     * Returns the unique and stable session id of this query.
-     *
-     * @param create if true this is created if not already set
-     * @return the session id of this query, or null if not set and create is false
-     * @deprecated use getSessionId() or getSessionId(serverId) instead
-     */
-    @Deprecated
-    public SessionId getSessionId(boolean create) {
-        if ( ! create) return getSessionId();
-
-        if (requestId == null)
-            requestId = UniqueRequestId.next();
-        return new SessionId(requestId, getRanking().getProfile());
-    }
-
     /** Returns the session id of this query, or null if none is assigned */
     public SessionId getSessionId() {
         if (requestId == null) return null;
