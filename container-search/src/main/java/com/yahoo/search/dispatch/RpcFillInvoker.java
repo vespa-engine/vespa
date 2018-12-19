@@ -110,7 +110,7 @@ public class RpcFillInvoker extends FillInvoker {
         Query query = result.getQuery();
         String rankProfile = query.getRanking().getProfile();
         byte[] serializedSlime = BinaryFormat
-                .encode(toSlime(rankProfile, summaryClass, query.getModel().getDocumentDb(), query.getSessionId(false), hits));
+                .encode(toSlime(rankProfile, summaryClass, query.getModel().getDocumentDb(), query.getSessionId(), hits));
         double timeoutSeconds = ((double) query.getTimeLeft() - 3.0) / 1000.0;
         Compressor.Compression compressionResult = resourcePool.compressor().compress(compression, serializedSlime);
         resourcePool.client().getDocsums(hits, node, compressionResult.type(), serializedSlime.length, compressionResult.data(),
