@@ -5,13 +5,13 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.*;
 import com.yahoo.system.CommandLineParser;
-import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.protocol.*;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -93,11 +93,8 @@ public class LoadTester {
         for (File f : files) {
             String name = f.getName();
             if (!name.endsWith(".def")) continue;
-            String[] splitted = name.split("\\.");
-            if (splitted.length<2) continue;
-            String nam = splitted[splitted.length - 2];
             String contents = IOUtils.readFile(f);
-            ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromDefContent(nam, Utf8.toBytes(contents));
+            ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromDefFile(f);
             ret.put(key, new Tuple2<>(ConfigUtils.getDefMd5(Arrays.asList(contents.split("\n"))), contents.split("\n")));
         }
         System.out.println("#  Read "+ret.size()+" def files from "+defDir.getPath());
