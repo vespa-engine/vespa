@@ -3,20 +3,33 @@ package com.yahoo.vespa.config.benchmark;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.io.IOUtils;
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
 import com.yahoo.system.CommandLineParser;
-import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.protocol.*;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 
 /**
- * A load client for a config server or proxy.
- *
+ * A config client for generating load against a config server or config proxy.
+ * <p>
  * Log messages from a run will have a # first in the line, the end result will not.
  *
  * @author vegardh
@@ -42,7 +55,7 @@ public class LoadTester {
         parser.addRequiredBinarySwitch("-p", "port");
         parser.addRequiredBinarySwitch("-i", "iterations per thread");
         parser.addRequiredBinarySwitch("-t", "threads");
-        parser.addLegalBinarySwitch("-l", "configs file, on form name,configid. (To get list: configproxy-cmd -m cache | cut -d ',' -f1-2)");
+        parser.addLegalBinarySwitch("-l", "configs file, on form name,configid. (To get list: vespa-configproxy-cmd -m cache | cut -d ',' -f1-2)");
         parser.addLegalBinarySwitch("-dd", "dir with def files, must be of form name.def");
         parser.parse();
         String host = parser.getBinarySwitches().get("-c");
@@ -79,28 +92,25 @@ public class LoadTester {
 
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> readDefs(String defPath) throws IOException {
         Map<ConfigDefinitionKey, Tuple2<String, String[]>> ret = new HashMap<>();
-        if (defPath==null) return ret;
+        if (defPath == null) return ret;
         File defDir = new File(defPath);
         if (!defDir.isDirectory()) {
-            System.out.println("# Given def file dir is not a directory: "+defDir.getPath()+" , will not send def contents in requests.");
+            System.out.println("# Given def file dir is not a directory: " + defDir.getPath() + " , will not send def contents in requests.");
             return ret;
         }
         final File[] files = defDir.listFiles();
         if (files == null) {
-            System.out.println("# Given def file dir has no files: "+defDir.getPath()+" , will not send def contents in requests.");
+            System.out.println("# Given def file dir has no files: " + defDir.getPath() + " , will not send def contents in requests.");
             return ret;
         }
         for (File f : files) {
             String name = f.getName();
             if (!name.endsWith(".def")) continue;
-            String[] splitted = name.split("\\.");
-            if (splitted.length<2) continue;
-            String nam = splitted[splitted.length - 2];
             String contents = IOUtils.readFile(f);
-            ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromDefContent(nam, Utf8.toBytes(contents));
+            ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromDefFile(f);
             ret.put(key, new Tuple2<>(ConfigUtils.getDefMd5(Arrays.asList(contents.split("\n"))), contents.split("\n")));
         }
-        System.out.println("#  Read "+ret.size()+" def files from "+defDir.getPath());
+        System.out.println("#  Read " + ret.size() + " def files from " + defDir.getPath());
         return ret;
     }
 
@@ -121,7 +131,7 @@ public class LoadTester {
 
     private List<ConfigKey<?>> readConfigs(String configsList) throws IOException {
         List<ConfigKey<?>> ret = new ArrayList<>();
-        BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(configsList), "UTF-8"));
+        BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(configsList), StandardCharsets.UTF_8));
         String str = br.readLine();
         while (str != null) {
             String[] nameAndId = str.split(",");
@@ -135,11 +145,12 @@ public class LoadTester {
     }
 
     private class Metrics {
-        public long totBytes = 0;
-        public long totLatency = 0;
-        public long failedRequests = 0;
-        public long maxLatency = Long.MIN_VALUE;
-        public long minLatency = Long.MAX_VALUE;
+
+        long totBytes = 0;
+        long totLatency = 0;
+        long failedRequests = 0;
+        long maxLatency = Long.MIN_VALUE;
+        long minLatency = Long.MAX_VALUE;
 
         public void merge(Metrics m) {
             this.totBytes += m.totBytes;
@@ -148,7 +159,6 @@ public class LoadTester {
             updateMin(m.minLatency);
             updateMax(m.maxLatency);
         }
-
 
         public void update(long bytes, long latency) {
             this.totBytes += bytes;
@@ -173,12 +183,13 @@ public class LoadTester {
     }
 
     private class LoadThread extends Thread {
+
         int iterations = 0;
         String host = "";
         int port = 0;
         Metrics metrics = new Metrics();
 
-        public LoadThread(int iterations, String host, int port) {
+        LoadThread(int iterations, String host, int port) {
             this.iterations = iterations;
             this.host = host;
             this.port = port;
@@ -196,8 +207,8 @@ public class LoadTester {
                 reqKey = configs.get(random.nextInt(totConfs));
                 ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
                 Tuple2<String, String[]> defContent = defs.get(dKey);
-                if (defContent==null && defs.size()>0) { // Only complain if we actually did run with a def dir
-                    System.out.println("# No def found for "+dKey+", not sending in request.");
+                if (defContent == null && defs.size() > 0) { // Only complain if we actually did run with a def dir
+                    System.out.println("# No def found for " + dKey + ", not sending in request.");
                 }/* else {
                     System.out.println("# FOUND: "+dKey+" : "+ StringUtilities.implode(defContent, "\n"));
                 }*/
@@ -241,7 +252,7 @@ public class LoadTester {
         }
 
         private JRTClientConfigRequest getRequest(ConfigKey<?> reqKey, String[] defContent) {
-            if (defContent==null) defContent=new String[0];
+            if (defContent == null) defContent = new String[0];
             final long serverTimeout = 1000;
             if (protocolVersion == 3) {
                 return JRTClientConfigRequestV3.createWithParams(reqKey, DefContent.fromList(Arrays.asList(defContent)),
