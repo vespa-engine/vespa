@@ -1,24 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hadoop.mapreduce;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.List;
-import java.util.Random;
-import java.util.StringTokenizer;
-import java.util.logging.Logger;
-
-import javax.xml.namespace.QName;
-import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
-
-import org.apache.hadoop.mapreduce.RecordWriter;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -35,6 +17,22 @@ import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.FeedParams;
 import com.yahoo.vespa.http.client.config.FeedParams.DataFormat;
 import com.yahoo.vespa.http.client.config.SessionParams;
+import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+
+import javax.xml.namespace.QName;
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
 
 /**
  * VespaRecordWriter sends the output &lt;key, value&gt; to one or more Vespa
@@ -133,7 +131,7 @@ public class VespaRecordWriter extends RecordWriter {
     
     private void initialize() {
         if (!configuration.dryrun() && configuration.randomStartupSleepMs() > 0) {
-            int delay = new Random().nextInt(configuration.randomStartupSleepMs());
+            int delay = ThreadLocalRandom.current().nextInt(configuration.randomStartupSleepMs());
             log.info("VespaStorage: Delaying startup by " + delay + " ms");
             try {
                 Thread.sleep(delay);

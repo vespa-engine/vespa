@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * When the gateways says it can not handle more load, we should send less load. That is the responsibility
@@ -13,7 +13,6 @@ public class GatewayThrottler {
 
     private long backOffTimeMs = 0;
     private final long maxSleepTimeMs;
-    private static Random random = new Random();
 
     public GatewayThrottler(long maxSleepTimeMs) {
         this.maxSleepTimeMs = maxSleepTimeMs;
@@ -39,7 +38,7 @@ public class GatewayThrottler {
     }
 
     public int distribute(int expected) {
-        double factor = 0.5 + random.nextDouble();
+        double factor = 0.5 + ThreadLocalRandom.current().nextDouble();
         Double result = expected * factor;
         return result.intValue();
     }
