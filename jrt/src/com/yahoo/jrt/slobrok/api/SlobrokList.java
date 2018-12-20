@@ -2,7 +2,7 @@
 package com.yahoo.jrt.slobrok.api;
 
 import java.util.Arrays;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class SlobrokList {
 
@@ -67,10 +67,9 @@ public class SlobrokList {
             for (int i = 0; i < slobroks.length; i++) {
                 next[i] = slobroks[i];
             }
-            Random rnd = new Random();
             for (int i = 0; i + 1 < next.length; i++) {
                 int lim = next.length - i;
-                int x = rnd.nextInt(lim);
+                int x = ThreadLocalRandom.current().nextInt(lim);
                 if (x != 0) {
                     String tmp = next[i];
                     next[i] = next[i+x];

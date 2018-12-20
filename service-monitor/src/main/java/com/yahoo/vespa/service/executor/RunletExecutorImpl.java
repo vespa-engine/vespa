@@ -4,10 +4,10 @@ package com.yahoo.vespa.service.executor;
 import com.yahoo.log.LogLevel;
 
 import java.time.Duration;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -18,9 +18,6 @@ import java.util.logging.Logger;
 public class RunletExecutorImpl implements RunletExecutor {
     private static Logger logger = Logger.getLogger(RunletExecutorImpl.class.getName());
 
-    // About 'static': Javadoc says "Instances of java.util.Random are threadsafe."
-    private static final Random random = new Random();
-
     private final AtomicInteger executionId = new AtomicInteger(0);
     private final ConcurrentHashMap<Integer, CancellableImpl> cancellables = new ConcurrentHashMap<>();
     private final ScheduledThreadPoolExecutor executor;
@@ -30,7 +27,7 @@ public class RunletExecutorImpl implements RunletExecutor {
     }
 
     public Cancellable scheduleWithFixedDelay(Runlet runlet, Duration delay) {
-        Duration initialDelay = Duration.ofMillis((long) random.nextInt((int) delay.toMillis()));
+        Duration initialDelay = Duration.ofMillis((long) ThreadLocalRandom.current().nextInt((int) delay.toMillis()));
         CancellableImpl cancellable = new CancellableImpl(runlet);
         ScheduledFuture<?> future = executor.scheduleWithFixedDelay(cancellable, initialDelay.toMillis(), delay.toMillis(), TimeUnit.MILLISECONDS);
         cancellable.setPeriodicExecutionCancellationCallback(() -> future.cancel(false));

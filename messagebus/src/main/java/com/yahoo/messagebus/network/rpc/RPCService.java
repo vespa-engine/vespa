@@ -4,7 +4,7 @@ package com.yahoo.messagebus.network.rpc;
 import com.yahoo.jrt.slobrok.api.IMirror;
 import com.yahoo.jrt.slobrok.api.Mirror;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * An RPCService represents a set of remote sessions matching a service pattern. The sessions are monitored using the
@@ -16,7 +16,7 @@ public class RPCService {
 
     private final IMirror mirror;
     private final String pattern;
-    private int addressIdx = new Random().nextInt(Integer.MAX_VALUE);
+    private int addressIdx = ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);
     private int addressGen = 0;
     private Mirror.Entry[] addressList = null;
 
