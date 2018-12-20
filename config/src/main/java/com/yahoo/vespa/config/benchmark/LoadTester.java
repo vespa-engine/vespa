@@ -10,7 +10,12 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.system.CommandLineParser;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.protocol.*;
+import com.yahoo.vespa.config.protocol.CompressionType;
+import com.yahoo.vespa.config.protocol.DefContent;
+import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
+import com.yahoo.vespa.config.protocol.JRTClientConfigRequestV3;
+import com.yahoo.vespa.config.protocol.JRTConfigRequestFactory;
+import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.io.BufferedReader;
@@ -25,7 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A config client for generating load against a config server or config proxy.
@@ -40,7 +45,6 @@ public class LoadTester {
     private Transport transport = new Transport();
     protected Supervisor supervisor = new Supervisor(transport);
     private List<ConfigKey<?>> configs = new ArrayList<>();
-    private Random random = new Random(System.currentTimeMillis());
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> defs = new HashMap<>();
     private long protocolVersion = Long.parseLong(JRTConfigRequestFactory.getProtocolVersion());
     private CompressionType compressionType = JRTConfigRequestFactory.getCompressionType();
@@ -204,7 +208,7 @@ public class LoadTester {
             int totConfs = configs.size();
             boolean reconnCycle = false; // to log reconn message only once, for instance at restart
             for (int i = 0; i < iterations; i++) {
-                reqKey = configs.get(random.nextInt(totConfs));
+                reqKey = configs.get(ThreadLocalRandom.current().nextInt(totConfs));
                 ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
                 Tuple2<String, String[]> defContent = defs.get(dKey);
                 if (defContent == null && defs.size() > 0) { // Only complain if we actually did run with a def dir

@@ -7,8 +7,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * The idea behind this class is twofold:
@@ -66,10 +66,8 @@ public class JaxRsStrategyFactory {
         return new NoRetryJaxRsStrategy<T>(hostName, port, jaxRsClientFactory, apiClass, pathPrefix, scheme);
     }
 
-    private static final Random random = new Random();
-
     private static <T> T getRandom(final Collection<? extends T> collection) {
-        int index = random.nextInt(collection.size());
+        int index = ThreadLocalRandom.current().nextInt(collection.size());
         return getIndex(collection, index);
     }
 

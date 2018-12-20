@@ -3,7 +3,7 @@ package com.yahoo.vespa.http.client.core.operationProcessor;
 
 import com.yahoo.vespa.http.client.core.ThrottlePolicy;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Adjusts in-flight operations based on throughput. It will walk the graph and try to find
@@ -34,11 +34,10 @@ public class IncompleteResultsThrottler {
     private final ConcurrentDocumentOperationBlocker blocker = new ConcurrentDocumentOperationBlocker();
     private final int maxInFlightValue;
     private final int minInFlightValue;
-    private final Random random = new Random();
     private final ThrottlePolicy policy;
 
     // 9-11 seconds with some randomness to avoid fully synchronous feeders.
-    public final long phaseSizeMs = 9000 + (random.nextInt() % 2000);
+    public final long phaseSizeMs = 9000 + (ThreadLocalRandom.current().nextInt() % 2000);
     private final Clock clock;
 
     private final Object monitor = new Object();
@@ -129,7 +128,7 @@ public class IncompleteResultsThrottler {
 
     private void adjustCycle() {
         adjustCycleCount++;
-        stabilizingPhasesLeft = adjustCycleCount < 5 ? 1 : 2 + random.nextInt() % 2;
+        stabilizingPhasesLeft = adjustCycleCount < 5 ? 1 : 2 + ThreadLocalRandom.current().nextInt() % 2;
 
         double maxPerformanceChange = getCeilingDifferencePerformance(adjustCycleCount);
         boolean messagesQueued = minPermitsAvailable < 2;
