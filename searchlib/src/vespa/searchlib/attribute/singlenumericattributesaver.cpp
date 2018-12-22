@@ -30,9 +30,8 @@ SingleValueNumericAttributeSaver(const attribute::AttributeHeader &header,
 }
 
 
-SingleValueNumericAttributeSaver::~SingleValueNumericAttributeSaver()
-{
-}
+SingleValueNumericAttributeSaver::~SingleValueNumericAttributeSaver() = default;
+
 
 
 bool

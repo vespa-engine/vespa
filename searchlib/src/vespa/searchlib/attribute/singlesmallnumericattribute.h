@@ -35,14 +35,12 @@ private:
     typedef search::attribute::RcuVectorBase<Word> DataVector;
     DataVector _wordData;
 
-    T getFromEnum(EnumHandle e) const override {
-        (void) e;
+    T getFromEnum(EnumHandle) const override {
         return T();
     }
 
 protected:
-    bool findEnum(T value, EnumHandle & e) const override {
-        (void) value; (void) e;
+    bool findEnum(T, EnumHandle &) const override {
         return false;
     }
 
@@ -78,7 +76,7 @@ public:
         bool valid() const override;
 
     public:
-        SingleSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const NumericAttribute & toBeSearched);
+        SingleSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const SingleValueSmallNumericAttribute & toBeSearched);
 
         int32_t find(DocId docId, int32_t elemId, int32_t & weight) const {
             if ( elemId != 0) return -1;
@@ -144,8 +142,7 @@ public:
     double getFloat(DocId doc) const override {
         return static_cast<double>(getFast(doc));
     }
-    uint32_t getEnum(DocId doc) const override {
-        (void) doc;
+    uint32_t getEnum(DocId) const override {
         return std::numeric_limits<uint32_t>::max(); // does not have enum
     }
     uint32_t getAll(DocId doc, T * v, uint32_t sz) const override {
@@ -172,10 +169,7 @@ public:
         }
         return 1;
     }
-    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const override {
-        (void) doc; (void) v; (void) sz;
-        return 0;
-    }
+    uint32_t getAll(DocId, Weighted *, uint32_t) const override { return 0; }
     uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = WeightedInt(static_cast<largeint_t>(getFast(doc)));
@@ -197,14 +191,6 @@ public:
     void onShrinkLidSpace() override;
     uint64_t getEstimatedSaveByteSize() const override;
 };
-
-
-class SingleValueBitNumericAttribute : public SingleValueSmallNumericAttribute
-{
-public:
-    SingleValueBitNumericAttribute(const vespalib::string & baseFileName, const search::GrowStrategy & grow);
-};
-
 
 class SingleValueSemiNibbleNumericAttribute : public SingleValueSmallNumericAttribute
 {

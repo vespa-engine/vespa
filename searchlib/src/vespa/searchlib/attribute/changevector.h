@@ -167,6 +167,7 @@ public:
     const T & back()       const { return _v.back(); }
     T & back()                   { return _v.back(); }
     size_t size()          const { return _v.size(); }
+    bool empty()           const { return _v.empty(); }
     void clear();
     const_iterator begin() const { return const_iterator(_v, 0); }
     const_iterator end()   const { return const_iterator(_v, size()); }
