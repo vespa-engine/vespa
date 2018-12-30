@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
  * @author hakonhall
  */
 @Immutable
-public class FlagId {
+public class FlagId implements Comparable<FlagId> {
     private static final Pattern ID_PATTERN = Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9._-]*$");
 
     private final String id;
@@ -20,6 +20,11 @@ public class FlagId {
         }
 
         this.id = id;
+    }
+
+    @Override
+    public int compareTo(FlagId that) {
+        return this.id.compareTo(that.id);
     }
 
     @Override

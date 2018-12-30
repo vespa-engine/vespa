@@ -13,9 +13,10 @@
     </parent>
 
     <artifactId>flags</artifactId>
-    <version>6-SNAPSHOT</version>
     <packaging>container-plugin</packaging>
+    <version>6-SNAPSHOT</version>
     <name>${project.artifactId}</name>
+    <description>Feature flags.</description>
 
     <dependencies>
         <dependency>
@@ -54,6 +55,14 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -5,9 +5,11 @@ import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
@@ -22,18 +24,18 @@ public class FileFlagSourceTest {
 
     @Test
     public void testFeatureLikeFlags() throws IOException {
-        FeatureFlag featureFlag = new FeatureFlag(id, false, source);
-        FeatureFlag byDefaultTrue = new FeatureFlag(id, true, source);
+        Flag<Boolean> featureFlag = new Flag<>(id, false, source, Flags.BOOLEAN_SERIALIZER);
+        Flag<Boolean> byDefaultTrue = new Flag<>(id, true, source, Flags.BOOLEAN_SERIALIZER);
 
         assertFalse(featureFlag.value());
         assertTrue(byDefaultTrue.value());
 
-        writeFlag(id.toString(), "True\n");
+        writeFlag(id.toString(), "true\n");
 
         assertTrue(featureFlag.value());
         assertTrue(byDefaultTrue.value());
 
-        writeFlag(id.toString(), "False\n");
+        writeFlag(id.toString(), "false\n");
 
         assertFalse(featureFlag.value());
         assertFalse(byDefaultTrue.value());
@@ -41,33 +43,46 @@ public class FileFlagSourceTest {
 
     @Test
     public void testIntegerLikeFlags() throws IOException {
-        StringFlag stringFlag = new StringFlag(id, "default", source);
-        IntFlag intFlag = new IntFlag(id, -1, source);
-        LongFlag longFlag = new LongFlag(id, -2L, source);
+        Flag<Integer> intFlag = new Flag<>(id, -1, source, Flags.INT_SERIALIZER);
+        Flag<Long> longFlag = new Flag<>(id, -2L, source, Flags.LONG_SERIALIZER);
 
-        assertFalse(source.getString(id).isPresent());
-        assertEquals("default", stringFlag.value());
-        assertEquals(-1, intFlag.value());
-        assertEquals(-2L, longFlag.value());
+        assertFalse(fetch().isPresent());
+        assertFalse(fetch().isPresent());
+        assertEquals(-1, (int) intFlag.value());
+        assertEquals(-2L, (long) longFlag.value());
 
         writeFlag(id.toString(), "1\n");
 
-        assertTrue(source.getString(id).isPresent());
+        assertTrue(fetch().isPresent());
+        assertTrue(fetch().isPresent());
+        assertEquals(1, (int) intFlag.value());
+        assertEquals(1L, (long) longFlag.value());
+    }
+
+    @Test
+    public void testStringFlag() throws IOException {
+        Flag<String> stringFlag = new Flag<>(id, "default", source, Flags.STRING_SERIALIZER);
+        assertFalse(fetch().isPresent());
+        assertEquals("default", stringFlag.value());
+
+        writeFlag(id.toString(), "\"1\\n\"\n");
         assertEquals("1\n", stringFlag.value());
-        assertEquals(1, intFlag.value());
-        assertEquals(1L, longFlag.value());
     }
 
     @Test
     public void parseFailure() throws IOException {
-        FeatureFlag featureFlag = new FeatureFlag(id, false, source);
+        Flag<Boolean> featureFlag = new Flag<>(id, false, source, Flags.BOOLEAN_SERIALIZER);
         writeFlag(featureFlag.id().toString(), "garbage");
 
         try {
             featureFlag.value();
-        } catch (IllegalArgumentException e) {
+        } catch (UncheckedIOException e) {
             assertThat(e.getMessage(), containsString("garbage"));
         }
+    }
+
+    private Optional<RawFlag> fetch() {
+        return source.fetch(id, new FetchVector());
     }
 
     private void writeFlag(String flagId, String value) throws IOException {

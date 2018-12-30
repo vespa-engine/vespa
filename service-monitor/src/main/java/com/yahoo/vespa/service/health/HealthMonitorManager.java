@@ -8,8 +8,9 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.flags.FeatureFlag;
-import com.yahoo.vespa.flags.FileFlagSource;
+import com.yahoo.vespa.flags.Flag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.duper.DuperModelManager;
 import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.executor.RunletExecutorImpl;
@@ -49,23 +50,23 @@ public class HealthMonitorManager implements MonitorManager {
     private final ConcurrentHashMap<ApplicationId, ApplicationHealthMonitor> healthMonitors = new ConcurrentHashMap<>();
     private final DuperModelManager duperModel;
     private final ApplicationHealthMonitorFactory applicationHealthMonitorFactory;
-    private final FeatureFlag monitorInfra;
+    private final Flag<Boolean> monitorInfra;
 
     @Inject
-    public HealthMonitorManager(DuperModelManager duperModel, FileFlagSource flagSource) {
+    public HealthMonitorManager(DuperModelManager duperModel, FlagSource flagSource) {
         this(duperModel,
-                new FeatureFlag("healthmonitor-monitorinfra", true, flagSource),
+                Flags.HEALTHMONITOR_MONITOR_INFRA.bindTo(flagSource),
                 new StateV1HealthModel(TARGET_HEALTH_STALENESS, HEALTH_REQUEST_TIMEOUT, KEEP_ALIVE, new RunletExecutorImpl(THREAD_POOL_SIZE)));
     }
 
     private HealthMonitorManager(DuperModelManager duperModel,
-                                 FeatureFlag monitorInfra,
+                                 Flag<Boolean> monitorInfra,
                                  StateV1HealthModel healthModel) {
         this(duperModel, monitorInfra, id -> new ApplicationHealthMonitor(id, healthModel));
     }
 
     HealthMonitorManager(DuperModelManager duperModel,
-                         FeatureFlag monitorInfra,
+                         Flag<Boolean> monitorInfra,
                          ApplicationHealthMonitorFactory applicationHealthMonitorFactory) {
         this.duperModel = duperModel;
         this.monitorInfra = monitorInfra;

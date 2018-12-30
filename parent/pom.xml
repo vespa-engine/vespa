@@ -104,15 +104,15 @@
                         <showWarnings>true</showWarnings>
                         <optimize>true</optimize>
                         <showDeprecation>false</showDeprecation>
-	                <compilerArgs>
-	                    <arg>-Xlint:all</arg>
-	                    <arg>-Xlint:-serial</arg>
-	                    <arg>-Xlint:-try</arg>
-	                    <arg>-Xlint:-processing</arg>
-	                    <arg>-Xlint:-varargs</arg>
+                        <compilerArgs>
+                            <arg>-Xlint:all</arg>
+                            <arg>-Xlint:-serial</arg>
+                            <arg>-Xlint:-try</arg>
+                            <arg>-Xlint:-processing</arg>
+                            <arg>-Xlint:-varargs</arg>
                         <arg>-Xlint:-options</arg>
-	                    <arg>-Werror</arg>
-	                </compilerArgs>
+                            <arg>-Werror</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -404,11 +404,11 @@
                 <artifactId>commons-exec</artifactId>
                 <version>1.3</version>
             </dependency>
-	    <dependency>
-	      <groupId>org.apache.velocity</groupId>
-	      <artifactId>velocity</artifactId>
-	      <version>1.7</version>
-	    </dependency>
+            <dependency>
+              <groupId>org.apache.velocity</groupId>
+              <artifactId>velocity</artifactId>
+              <version>1.7</version>
+            </dependency>
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>airline</artifactId>
@@ -723,7 +723,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <test.hide>true</test.hide>
-    	<doclint>all</doclint>
+        <doclint>all</doclint>
         <surefire.version>2.21.0</surefire.version>
     </properties>
 

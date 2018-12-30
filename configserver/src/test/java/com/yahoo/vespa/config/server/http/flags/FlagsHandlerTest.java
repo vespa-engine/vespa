@@ -1,0 +1,161 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.config.server.http.flags;
+
+import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.configserver.flags.db.FlagsDbImpl;
+import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagId;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.UnboundFlag;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+
+/**
+ * @author hakonhall
+ */
+public class FlagsHandlerTest {
+    private static final UnboundFlag<Boolean> FLAG1 =
+            Flags.defineBoolean("id1", false, "desc1", "mod1");
+    private static final UnboundFlag<Boolean> FLAG2 =
+            Flags.defineBoolean("id2", true, "desc2", "mod2",
+                    FetchVector.Dimension.HOSTNAME, FetchVector.Dimension.APPLICATION_ID);
+
+    private static final String FLAGS_V1_URL = "https://foo.com:4443/flags/v1";
+
+    private final FlagsDbImpl flagsDb = new FlagsDbImpl(new MockCurator());
+    private final FlagsHandler handler = new FlagsHandler(FlagsHandler.testOnlyContext(), flagsDb);
+
+    @Test
+    public void testV1() {
+        verifySuccessfulRequest(Method.GET, "", "",
+                "{\"data\":{\"url\":\"https://foo.com:4443/flags/v1/data\"}}");
+        verifySuccessfulRequest(Method.GET, "/", "",
+                "{\"data\":{\"url\":\"https://foo.com:4443/flags/v1/data\"}}");
+    }
+
+    @Test
+    public void testData() {
+        // PUT flag with ID id1
+        verifySuccessfulRequest(Method.PUT, "/data/" + FLAG1.id(),
+                "{\n" +
+                        "  \"rules\": [\n" +
+                        "    {\n" +
+                        "      \"value\": true\n" +
+                        "    }\n" +
+                        "  ]\n" +
+                        "}",
+                "{\"rules\":[{\"value\":true}]}");
+
+        // GET on ID id1 should return the same as the put (this will also issue a payload for the get,
+        // which we assume will be ignored).
+        verifySuccessfulRequest(Method.GET, "/data/" + FLAG1.id(),
+                "", "{\"rules\":[{\"value\":true}]}");
+
+        // List all flags should list only id1
+        verifySuccessfulRequest(Method.GET, "/data",
+                "", "{\"id1\":{\"url\":\"https://foo.com:4443/flags/v1/data/id1\"}}");
+
+        // Should be identical to above: suffix / on path should be ignored
+        verifySuccessfulRequest(Method.GET, "/data/",
+                "", "{\"id1\":{\"url\":\"https://foo.com:4443/flags/v1/data/id1\"}}");
+
+        // PUT id2
+        verifySuccessfulRequest(Method.PUT, "/data/" + FLAG2.id(),
+                "{\n" +
+                        "  \"rules\": [\n" +
+                        "    {\n" +
+                        "      \"conditions\": [\n" +
+                        "        {\n" +
+                        "          \"type\": \"whitelist\",\n" +
+                        "          \"dimension\": \"hostname\",\n" +
+                        "          \"values\": [ \"host1\", \"host2\" ]\n" +
+                        "        },\n" +
+                        "        {\n" +
+                        "          \"type\": \"blacklist\",\n" +
+                        "          \"dimension\": \"application\",\n" +
+                        "          \"values\": [ \"app1\", \"app2\" ]\n" +
+                        "        }\n" +
+                        "      ],\n" +
+                        "      \"value\": true\n" +
+                        "    }\n" +
+                        "  ],\n" +
+                        "  \"attributes\": {\n" +
+                        "    \"zone\": \"zone1\"\n" +
+                        "  }\n" +
+                        "}\n",
+                "{\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"host1\",\"host2\"]},{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"app2\",\"app1\"]}],\"value\":true}],\"attributes\":{\"zone\":\"zone1\"}}");
+
+        // The list of flag data should return id1 and id2
+        verifySuccessfulRequest(Method.GET, "/data",
+                "",
+                "{\"id1\":{\"url\":\"https://foo.com:4443/flags/v1/data/id1\"},\"id2\":{\"url\":\"https://foo.com:4443/flags/v1/data/id2\"}}");
+
+        // Putting (overriding) id1 should work silently
+        verifySuccessfulRequest(Method.PUT, "/data/" + FLAG1.id(),
+                "{\n" +
+                        "  \"rules\": [\n" +
+                        "    {\n" +
+                        "      \"value\": false\n" +
+                        "    }\n" +
+                        "  ]\n" +
+                        "}\n",
+                "{\"rules\":[{\"value\":false}]}");
+
+        // Get all recursivelly displays all flag data
+        verifySuccessfulRequest(Method.GET, "/data?recursive=true", "",
+                "{\"id1\":{\"rules\":[{\"value\":false}]},\"id2\":{\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"host1\",\"host2\"]},{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"app2\",\"app1\"]}],\"value\":true}],\"attributes\":{\"zone\":\"zone1\"}}}");
+
+        // Deleting both flags
+        verifySuccessfulRequest(Method.DELETE, "/data/" + FLAG1.id(), "", "");
+        verifySuccessfulRequest(Method.DELETE, "/data/" + FLAG2.id(), "", "");
+
+        // And the list of data flags should now be empty
+        verifySuccessfulRequest(Method.GET, "/data", "", "{}");
+    }
+
+    @Test
+    public void testForcing() {
+        FlagId undefinedFlagId = new FlagId("undef");
+        HttpResponse response = handle(Method.PUT, "/data/" + undefinedFlagId, "");
+
+        assertEquals(404, response.getStatus());
+        assertEquals("application/json", response.getContentType());
+
+    }
+
+    private void verifySuccessfulRequest(Method method, String pathSuffix, String requestBody, String expectedResponseBody) {
+        HttpResponse response = handle(method, pathSuffix, requestBody);
+
+        assertEquals(200, response.getStatus());
+        assertEquals("application/json", response.getContentType());
+        String actualResponse = uncheck(() -> SessionHandlerTest.getRenderedString(response));
+
+        assertThat(actualResponse, is(expectedResponseBody));
+    }
+
+    private HttpResponse handle(Method method, String pathSuffix, String requestBody) {
+        String uri = FLAGS_V1_URL + pathSuffix;
+        HttpRequest request = HttpRequest.createTestRequest(uri, method, makeInputStream(requestBody));
+        return handler.handle(request);
+    }
+
+    private String makeUrl(String component) {
+        return FLAGS_V1_URL + "/" + component;
+    }
+
+    private InputStream makeInputStream(String content) {
+        return new ByteArrayInputStream(Utf8.toBytes(content));
+    }
+}

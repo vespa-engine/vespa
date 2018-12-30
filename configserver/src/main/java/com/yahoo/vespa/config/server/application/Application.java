@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.component.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -15,17 +15,19 @@ import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
-import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.ServerCache;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
 import com.yahoo.vespa.config.server.modelfactory.ModelResult;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
+import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.util.ConfigUtils;
-import com.yahoo.vespa.flags.FeatureFlag;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FileFlagSource;
+import com.yahoo.vespa.flags.Flag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 
 import java.util.Objects;
 import java.util.Set;
@@ -47,7 +49,7 @@ public class Application implements ModelResult {
     private final ServerCache cache;
     private final MetricUpdater metricUpdater;
     private final ApplicationId app;
-    private final FeatureFlag useConfigServerCache;
+    private final Flag<Boolean> useConfigServerCache;
 
     public Application(Model model, ServerCache cache, long appGeneration, boolean internalRedeploy,
                        Version vespaVersion, MetricUpdater metricUpdater, ApplicationId app) {
@@ -64,7 +66,9 @@ public class Application implements ModelResult {
         this.vespaVersion = vespaVersion;
         this.metricUpdater = metricUpdater;
         this.app = app;
-        this.useConfigServerCache = new FeatureFlag("use-config-server-cache", true, flagSource);
+        this.useConfigServerCache = Flags.USE_CONFIG_SERVER_CACHE
+                .with(FetchVector.Dimension.APPLICATION_ID, app.serializedForm())
+                .bindTo(flagSource);
     }
 
     /**

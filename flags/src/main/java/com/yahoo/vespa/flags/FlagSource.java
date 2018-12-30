@@ -7,6 +7,5 @@ import java.util.Optional;
  * @author hakonhall
  */
 public interface FlagSource {
-    /** The String value of a flag, or empty if not set by the source. */
-    Optional<String> getString(FlagId id);
+    Optional<RawFlag> fetch(FlagId id, FetchVector vector);
 }

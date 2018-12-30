@@ -10,8 +10,8 @@ import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.flags.FeatureFlag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 
@@ -59,12 +59,8 @@ public class DuperModelManager implements DuperModelInfraApi {
     @Inject
     public DuperModelManager(ConfigserverConfig configServerConfig, FlagSource flagSource, SuperModelProvider superModelProvider) {
         this(
-                // Whether to include activate infrastructure applications (except from controller/config apps - see below).
-                new FeatureFlag("dupermodel-contains-infra", true, flagSource).value(),
-                // For historical reasons, the ApplicationInfo in the DuperModel for controllers and config servers
-                // is based on the ConfigserverConfig (this flag is true). We want to transition to use the
-                // infrastructure application activated by the InfrastructureProvisioner once that supports health.
-                new FeatureFlag("dupermodel-use-configserverconfig", true, flagSource).value(),
+                Flags.DUPERMODEL_CONTAINS_INFRA.bindTo(flagSource).value(),
+                Flags.DUPERMODEL_USE_CONFIGSERVERCONFIG.bindTo(flagSource).value(),
                 configServerConfig.multitenant(),
                 configServerApplication.makeApplicationInfoFromConfig(configServerConfig),
                 superModelProvider,
