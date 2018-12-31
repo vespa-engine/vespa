@@ -62,39 +62,42 @@ public class InfrastructureProvisioner extends Maintainer {
                     continue;
                 }
 
-                List<Version> wantedVersions = nodeRepository()
-                        .getNodes(nodeType, Node.State.ready, Node.State.reserved, Node.State.active, Node.State.inactive)
-                        .stream()
-                        .map(node -> node.allocation()
-                                .map(allocation -> allocation.membership().cluster().vespaVersion())
-                                .orElse(null))
-                        .collect(Collectors.toList());
-                if (wantedVersions.isEmpty()) {
+                List<Node> candidateNodes = nodeRepository()
+                        .getNodes(nodeType, Node.State.ready, Node.State.reserved, Node.State.active, Node.State.inactive);
+                if (candidateNodes.isEmpty()) {
                     logger.log(LogLevel.DEBUG, "No nodes to provision for " + nodeType + ", removing application");
                     removeApplication(application.getApplicationId());
                     continue;
                 }
 
-                List<HostSpec> hostSpecs = provisioner.prepare(
-                        application.getApplicationId(),
-                        application.getClusterSpecWithVersion(targetVersion.get()),
-                        application.getCapacity(),
-                        1, // groups
-                        logger::log);
+                if (!candidateNodes.stream().allMatch(node ->
+                    node.state() == Node.State.active &&
+                            node.allocation()
+                                    .map(allocation -> allocation.membership().cluster().vespaVersion().equals(targetVersion.get()))
+                                    .orElse(false))) {
+                    List<HostSpec> hostSpecs = provisioner.prepare(
+                            application.getApplicationId(),
+                            application.getClusterSpecWithVersion(targetVersion.get()),
+                            application.getCapacity(),
+                            1, // groups
+                            logger::log);
 
-                NestedTransaction nestedTransaction = new NestedTransaction();
-                provisioner.activate(nestedTransaction, application.getApplicationId(), hostSpecs);
-                nestedTransaction.commit();
+                    // Sanity-check hostSpecs is the same list as candidateNodes?
+
+                    NestedTransaction nestedTransaction = new NestedTransaction();
+                    provisioner.activate(nestedTransaction, application.getApplicationId(), hostSpecs);
+                    nestedTransaction.commit();
+                }
 
                 duperModel.infraApplicationActivated(
                         application.getApplicationId(),
-                        hostSpecs.stream().map(HostSpec::hostname).map(HostName::from).collect(Collectors.toList()));
+                        candidateNodes.stream().map(Node::hostname).map(HostName::from).collect(Collectors.toList()));
 
                 String detail;
-                if (hostSpecs.size() < 10) {
-                    detail = ": " + hostSpecs.stream().map(HostSpec::hostname).collect(Collectors.joining(","));
+                if (candidateNodes.size() < 10) {
+                    detail = ": " + candidateNodes.stream().map(Node::hostname).collect(Collectors.joining(","));
                 } else {
-                    detail = " with " + hostSpecs.size() + " hosts";
+                    detail = " with " + candidateNodes.size() + " hosts";
                 }
                 logger.log(LogLevel.DEBUG, "Infrastructure application " + application.getApplicationId() + " activated" + detail);
             } catch (RuntimeException e) {
