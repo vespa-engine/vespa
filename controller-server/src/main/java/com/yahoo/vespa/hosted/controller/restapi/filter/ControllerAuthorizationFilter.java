@@ -120,6 +120,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
         return path.matches("/controller/v1/{*}") ||
                path.matches("/provision/v2/{*}") ||
                path.matches("/screwdriver/v1/trigger/tenant/{*}") ||
+               path.matches("/flags/v1/{*}") ||
                path.matches("/os/v1/{*}") ||
                path.matches("/zone/v2/{*}") ||
                path.matches("/nodes/v2/{*}") ||

@@ -32,7 +32,7 @@ public class Flags {
     public static final FlagSerializer<Integer> INT_SERIALIZER = new SimpleFlagSerializer<>(IntNode::new, JsonNode::isIntegralNumber, JsonNode::asInt);
     public static final FlagSerializer<Long> LONG_SERIALIZER = new SimpleFlagSerializer<>(LongNode::new, JsonNode::isIntegralNumber, JsonNode::asLong);
 
-    private static final ConcurrentHashMap<FlagId, FlagDefinition<?>> flags = new ConcurrentHashMap<>();
+    private static volatile ConcurrentHashMap<FlagId, FlagDefinition<?>> flags = new ConcurrentHashMap<>();
 
     public static final UnboundFlag<Boolean> HEALTHMONITOR_MONITOR_INFRA = defineBoolean(
             "healthmonitor-monitorinfra", true,
@@ -66,6 +66,32 @@ public class Flags {
             "Whether to run config server/controller bootstrap in a separate thread.",
             "Takes effect only at bootstrap of config server/controller",
             FetchVector.Dimension.HOSTNAME);
+
+    public static final UnboundFlag<Boolean> PROXYHOST_USES_REAL_ORCHESTRATOR = defineBoolean(
+            "proxyhost-uses-real-orchestrator", true,
+            "Whether proxy hosts uses the real Orchestrator when suspending/resuming, or a synthetic.",
+            "Takes effect immediately when changed.",
+            FetchVector.Dimension.HOSTNAME);
+
+    public static final UnboundFlag<Boolean> CONFIGHOST_USES_REAL_ORCHESTRATOR = defineBoolean(
+            "confighost-uses-real-orchestrator", false,
+            "Whether the config server hosts uses the real Orchestrator when suspending/resuming, or a synthetic.",
+            "Takes effect immediately when changed.",
+            FetchVector.Dimension.HOSTNAME);
+
+    public static final UnboundFlag<Boolean> ENABLE_DOCKER_1_13 = defineBoolean(
+            "enable-docker-1.13", true,
+            "Whether to upgrade to Docker version 1.13.",
+            "Takes effect on next host admin tick.",
+            FetchVector.Dimension.HOSTNAME);
+
+    public static final UnboundFlag<Boolean> ENABLE_CROWDSTRIKE = defineBoolean(
+            "enable-crowdstrike", true,
+            "Whether to enable CrowdStrike.", "Takes effect on next host admin tick");
+
+    public static final UnboundFlag<Boolean> ENABLE_NESSUS = defineBoolean(
+            "enable-nessus", true,
+            "Whether to enable Nessus.", "Takes effect on next host admin tick");
 
     public static UnboundFlag<Boolean> defineBoolean(String flagId, boolean defaultValue, String description,
                                                      String modificationEffect, FetchVector.Dimension... dimensions) {
@@ -126,5 +152,23 @@ public class Flags {
 
     public static Optional<FlagDefinition<?>> getFlag(FlagId flagId) {
         return Optional.ofNullable(flags.get(flagId));
+    }
+
+    public static Replacer clearFlagsForTesting() {
+        return new Replacer();
+    }
+
+    public static class Replacer implements AutoCloseable {
+        private final ConcurrentHashMap<FlagId, FlagDefinition<?>> savedFlags;
+
+        private Replacer() {
+            this.savedFlags = Flags.flags;
+            Flags.flags = new ConcurrentHashMap<>();
+        }
+
+        @Override
+        public void close() {
+            Flags.flags = savedFlags;
+        }
     }
 }

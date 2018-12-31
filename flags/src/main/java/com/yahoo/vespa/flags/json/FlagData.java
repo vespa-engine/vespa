@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.RawFlag;
-import com.yahoo.vespa.flags.json.wire.FetchVectorHelper;
 import com.yahoo.vespa.flags.json.wire.WireFlagData;
 import com.yahoo.vespa.flags.json.wire.WireRule;
 

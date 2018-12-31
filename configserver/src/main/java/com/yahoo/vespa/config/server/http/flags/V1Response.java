@@ -9,21 +9,26 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.http.StaticResponse;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author hakonhall
  */
 public class V1Response extends StaticResponse {
-    public V1Response(String flagsV1Uri) {
-        super(Response.Status.OK, HttpConfigResponse.JSON_CONTENT_TYPE, generateBody(flagsV1Uri));
+    public V1Response(String flagsV1Uri, String... names) {
+        super(Response.Status.OK, HttpConfigResponse.JSON_CONTENT_TYPE, generateBody(flagsV1Uri, Arrays.asList(names)));
     }
 
-    private static String generateBody(String flagsV1Uri) {
+    private static String generateBody(String flagsV1Uri, List<String> names) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        Cursor data = root.setObject("data");
-        data.setString("url", flagsV1Uri + "/data");
+        names.forEach(name -> {
+            Cursor data = root.setObject(name);
+            data.setString("url", flagsV1Uri + "/" + name);
+        });
         return Utf8.toString(uncheck(() -> SlimeUtils.toJsonBytes(slime)));
     }
 }

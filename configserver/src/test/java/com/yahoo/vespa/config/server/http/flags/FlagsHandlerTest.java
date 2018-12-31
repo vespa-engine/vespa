@@ -16,6 +16,8 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,11 +41,26 @@ public class FlagsHandlerTest {
 
     @Test
     public void testV1() {
-        verifySuccessfulRequest(Method.GET, "", "",
-                "{\"data\":{\"url\":\"https://foo.com:4443/flags/v1/data\"}}");
-        verifySuccessfulRequest(Method.GET, "/", "",
-                "{\"data\":{\"url\":\"https://foo.com:4443/flags/v1/data\"}}");
+        String expectedResponse = "{" +
+                Stream.of("data", "defined")
+                        .map(name -> "\"" + name + "\":{\"url\":\"https://foo.com:4443/flags/v1/" + name + "\"}")
+                        .collect(Collectors.joining(",")) +
+                "}";
+        verifySuccessfulRequest(Method.GET, "", "", expectedResponse);
+        verifySuccessfulRequest(Method.GET, "/", "", expectedResponse);
     }
+
+    @Test
+    public void testDefined() {
+        try (Flags.Replacer replacer = Flags.clearFlagsForTesting()) {
+            fixUnusedWarning(replacer);
+            Flags.defineBoolean("id", false, "desc", "mod", FetchVector.Dimension.HOSTNAME);
+            verifySuccessfulRequest(Method.GET, "/defined", "",
+                    "{\"id\":{\"description\":\"desc\",\"modification-effect\":\"mod\",\"dimensions\":[\"hostname\"]}}");
+        }
+    }
+
+    private void fixUnusedWarning(Flags.Replacer replacer) { }
 
     @Test
     public void testData() {

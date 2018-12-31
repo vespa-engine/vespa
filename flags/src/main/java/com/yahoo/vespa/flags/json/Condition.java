@@ -2,7 +2,6 @@
 package com.yahoo.vespa.flags.json;
 
 import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.json.wire.DimensionHelper;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
 import java.util.Arrays;
