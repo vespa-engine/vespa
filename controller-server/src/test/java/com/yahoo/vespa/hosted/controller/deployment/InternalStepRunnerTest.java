@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.debug;
@@ -271,11 +272,16 @@ public class InternalStepRunnerTest {
 
     @Test
     public void notificationIsSent() {
-        RunId id = tester.startSystemTestTests();
+        tester.startSystemTestTests();
         tester.cloud().set(TesterCloud.Status.NOT_STARTED);
         tester.runner().run();
-        for (Mail mail : ((MockMailer) tester.tester().controller().mailer()).inbox("a@b"))
-            assertEquals("Vespa application tenant.application: System test failing due to system error", mail.subject());
+        MockMailer mailer = ((MockMailer) tester.tester().controller().mailer());
+        assertEquals(1, mailer.inbox("a@b").size());
+        assertEquals("Vespa application tenant.application: System test failing due to system error",
+                     mailer.inbox("a@b").get(0).subject());
+        assertEquals(1, mailer.inbox("b@a").size());
+        assertEquals("Vespa application tenant.application: System test failing due to system error",
+                     mailer.inbox("b@a").get(0).subject());
     }
 
     private void assertTestLogEntries(RunId id, Step step, LogEntry... entries) {

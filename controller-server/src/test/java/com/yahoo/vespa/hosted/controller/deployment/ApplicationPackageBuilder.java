@@ -145,7 +145,7 @@ public class ApplicationPackageBuilder {
                 xml.append("  <author />\n");
             for (String email : notifications.staticEmails())
                 xml.append("  <email>").append(email).append("</email>\n");
-            xml.append("</notifications>");
+            xml.append("</notifications>\n");
         }
         xml.append(blockChange);
         xml.append("  <");
