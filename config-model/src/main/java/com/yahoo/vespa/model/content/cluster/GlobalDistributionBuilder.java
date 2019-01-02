@@ -24,6 +24,9 @@ public class GlobalDistributionBuilder {
     }
 
     public Set<NewDocumentType> build(ModelElement documentsElement) {
+        if (documentsElement == null || documentsElement.subElements("document").isEmpty())
+            return Collections.emptySet();
+
         return documentsElement.subElements("document")
                 .stream()
                 .filter(GlobalDistributionBuilder::isGloballyDistributed)

@@ -88,8 +88,8 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         }
 
         private boolean clusterContainsIndexedDocumentType(ModelElement documentsNode) {
-            // The presence of at least one <document> and its mode attribute is schema-enforced.
-            return documentsNode.subElements("document").stream()
+            return documentsNode != null
+                    && documentsNode.subElements("document").stream()
                     .anyMatch(node -> documentModeImpliesIndexing(node.getStringAttribute("mode")));
         }
 
