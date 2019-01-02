@@ -150,6 +150,7 @@ public class ClusterSearcher extends Searcher {
                                                        documentDbConfig);
             addBackendSearcher(searcher);
         } else {
+            System.out.println("Dispatchers: " + searchClusterConfig.dispatcher().size());
             for (int dispatcherIndex = 0; dispatcherIndex < searchClusterConfig.dispatcher().size(); dispatcherIndex++) {
                 try {
                     if ( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {
@@ -160,12 +161,13 @@ public class ClusterSearcher extends Searcher {
                         addBackendSearcher(searcher);
                     }
                 } catch (UnknownHostException e) {
+                    e.printStackTrace();
                     throw new RuntimeException(e);
                 }
             }
         }
         if ( server == null ) {
-            log.log(Level.SEVERE, "ClusterSearcher should have a top level dispatch.");
+            throw new IllegalStateException("ClusterSearcher should have a top level dispatch.");
         }
         monitor.freeze();
         monitor.startPingThread();
@@ -192,8 +194,7 @@ public class ClusterSearcher extends Searcher {
     private static ClusterParams makeClusterParams(int searchclusterIndex,
                                                    LegacyEmulationConfig emulConfig,
                                                    int dispatchIndex) {
-        return new ClusterParams("sc" + searchclusterIndex + ".num" + dispatchIndex,
-                                 emulConfig);
+        return new ClusterParams("sc" + searchclusterIndex + ".num" + dispatchIndex, emulConfig);
     }
 
     private static FastSearcher searchDispatch(int searchclusterIndex,
@@ -205,8 +206,7 @@ public class ClusterSearcher extends Searcher {
                                                Backend backend,
                                                Dispatcher dispatcher,
                                                int dispatcherIndex) {
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
-                                                        emulConfig, dispatcherIndex);
+        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, emulConfig, dispatcherIndex);
         return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams, 
                                 documentdbInfoConfig);
     }

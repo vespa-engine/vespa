@@ -517,29 +517,36 @@ public class ClusterSearcherTestCase {
 
     private static ClusterSearcher createSearcher(Double maxQueryTimeout,
                                                   Double maxQueryCacheTimeout) {
-        ComponentId id = new ComponentId("test-id");
-        QrSearchersConfig qrsCfg = new QrSearchersConfig(new QrSearchersConfig.Builder().
-                searchcluster(new QrSearchersConfig.Searchcluster.Builder().name("test-cluster")));
-        ClusterConfig.Builder clusterCfgBld = new ClusterConfig.Builder().clusterName("test-cluster");
-        if (maxQueryTimeout != null) {
-            clusterCfgBld.maxQueryTimeout(maxQueryTimeout);
-        }
-        if (maxQueryCacheTimeout != null) {
-            clusterCfgBld.maxQueryCacheTimeout(maxQueryCacheTimeout);
-        }
-        ClusterConfig clusterCfg = new ClusterConfig(clusterCfgBld);
-        DocumentdbInfoConfig documentDbCfg = new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().
-                documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("type1")));
-        LegacyEmulationConfig emulationCfg = new LegacyEmulationConfig(new LegacyEmulationConfig.Builder());
-        QrMonitorConfig monitorCfg = new QrMonitorConfig(new QrMonitorConfig.Builder());
-        Statistics statistics = Statistics.nullImplementation;
-        Fs4Config fs4Cfg = new Fs4Config(new Fs4Config.Builder());
-        FS4ResourcePool fs4ResourcePool = new FS4ResourcePool(fs4Cfg, new QrConfig(new QrConfig.Builder()));
-        ClusterSearcher searcher = new ClusterSearcher(id, qrsCfg, clusterCfg, documentDbCfg, emulationCfg, monitorCfg, 
-                                                       new DispatchConfig(new DispatchConfig.Builder()), 
-                                                       createClusterInfoConfig(),
-                                                       statistics, fs4ResourcePool, new VipStatus());
-        return searcher;
+        QrSearchersConfig.Builder qrSearchersConfig = new QrSearchersConfig.Builder();
+        QrSearchersConfig.Searchcluster.Builder searchClusterConfig =
+                new QrSearchersConfig.Searchcluster.Builder().name("test-cluster");
+        qrSearchersConfig.searchcluster(searchClusterConfig);
+        QrSearchersConfig.Searchcluster.Dispatcher.Builder dispatcherConfig =
+                new QrSearchersConfig.Searchcluster.Dispatcher.Builder();
+        dispatcherConfig.host("localhost");
+        dispatcherConfig.port(0);
+        searchClusterConfig.dispatcher(dispatcherConfig);
+
+        ClusterConfig.Builder clusterConfig = new ClusterConfig.Builder().clusterName("test-cluster");
+        if (maxQueryTimeout != null)
+            clusterConfig.maxQueryTimeout(maxQueryTimeout);
+        if (maxQueryCacheTimeout != null)
+            clusterConfig.maxQueryCacheTimeout(maxQueryCacheTimeout);
+
+        DocumentdbInfoConfig.Builder documentDbConfig = new DocumentdbInfoConfig.Builder();
+        documentDbConfig.documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("type1"));
+
+        return new ClusterSearcher(new ComponentId("test-id"),
+                                   qrSearchersConfig.build(),
+                                   clusterConfig.build(),
+                                   documentDbConfig.build(),
+                                   new LegacyEmulationConfig.Builder().build(),
+                                   new QrMonitorConfig.Builder().build(),
+                                   new DispatchConfig.Builder().build(),
+                                   createClusterInfoConfig(),
+                                   Statistics.nullImplementation,
+                                   new FS4ResourcePool(new Fs4Config.Builder().build(), new QrConfig.Builder().build()),
+                                   new VipStatus());
     }
 
     private static ClusterInfoConfig createClusterInfoConfig() {
