@@ -43,6 +43,7 @@ public class InternalDeploymentTester {
             .upgradePolicy("default")
             .region("us-central-1")
             .parallel("us-west-1", "us-east-3")
+            .notifyAuthor(true)
             .build();
     public static final ApplicationId appId = ApplicationId.from("tenant", "application", "default");
     public static final TesterId testerId = TesterId.of(appId);

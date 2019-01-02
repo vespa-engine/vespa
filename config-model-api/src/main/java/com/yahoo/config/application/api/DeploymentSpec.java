@@ -462,7 +462,7 @@ public class DeploymentSpec {
      */
     public static class Notifications {
 
-        private static final Notifications none = of(Collections.emptyList(), false);
+        private static final Notifications none = new Notifications(Collections.emptyList(), false);
         public static Notifications none() { return none; }
 
         private final List<String> staticEmails;
