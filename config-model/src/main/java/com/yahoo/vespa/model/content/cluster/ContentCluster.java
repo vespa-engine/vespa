@@ -356,7 +356,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             List<HostResource> hostsByIndex = drawContentHostsRecursively(count, true, rootGroup);
             // if (hosts.size() < count) // supply with containers TODO: Currently disabled due to leading to topology change problems
             //     hosts.addAll(drawContainerHosts(count - hosts.size(), containers, new HashSet<>(hosts)));
-            List<HostResource> hosts = HostResource.pickHosts(hostsByName, hostsByIndex, count, 2);
+            List<HostResource> hosts = HostResource.pickHosts(hostsByName, hostsByIndex, count, 3);
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
