@@ -29,11 +29,10 @@ import java.util.Set;
  */
 public final class Node {
 
-    private final String id;
     private final Set<String> ipAddresses;
     private final IP.AddressPool ipAddressPool;
     private final String hostname;
-    private final String openStackId;
+    private final String id;
     private final Optional<String> parentHostname;
     private final Flavor flavor;
     private final Status status;
@@ -47,27 +46,27 @@ public final class Node {
     private Optional<Allocation> allocation;
 
     /** Temporary method until we can merge it with the other create method */
-    public static Node createDockerNode(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
-        return new Node(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.reserved,
-            Optional.empty(), History.empty(), type);
+    public static Node createDockerNode(Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
+        return new Node("fake-" + hostname, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.reserved,
+                        Optional.empty(), History.empty(), type);
     }
 
     /** Creates a node in the initial state (reserved for docker containers, provisioned otherwise) */
     public static Node create(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
         return new Node(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
-                Optional.empty(), History.empty(), type);
+                        Optional.empty(), History.empty(), type);
     }
 
     /** Do not use. Construct nodes by calling {@link NodeRepository#createNode} */
-    private Node(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
+    private Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
                  Flavor flavor, Status status, State state, Allocation allocation, History history, NodeType type) {
-        this(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type);
+        this(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type);
     }
 
-    public Node(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
+    public Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation,
                 History history, NodeType type) {
-        Objects.requireNonNull(openStackId, "A node must have an openstack id");
+        Objects.requireNonNull(id, "A node must have an ID");
         requireIpAddresses(ipAddresses, "A node must have at least one valid IP address");
         requireNonEmptyString(hostname, "A node must have a hostname");
         requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
@@ -78,12 +77,11 @@ public final class Node {
         Objects.requireNonNull(history, "A null node history is not permitted");
         Objects.requireNonNull(type, "A null node type is not permitted");
 
-        this.id = hostname;
         this.ipAddresses = ImmutableSortedSet.copyOf(IP.naturalOrder, ipAddresses);
         this.ipAddressPool = new IP.AddressPool(this, ipAddressPool);
         this.hostname = hostname;
         this.parentHostname = parentHostname;
-        this.openStackId = openStackId;
+        this.id = id;
         this.flavor = flavor;
         this.status = status;
         this.state = state;
@@ -91,12 +89,6 @@ public final class Node {
         this.history = history;
         this.type = type;
     }
-
-    /**
-     * Returns the unique id of this host.
-     * This may be the host name or some other opaque id which is unique across hosts
-     */
-    public String id() { return id; }
 
     /** Returns the IP addresses of this node */
     public Set<String> ipAddresses() { return ipAddresses; }
@@ -108,9 +100,17 @@ public final class Node {
     /** Returns the host name of this node */
     public String hostname() { return hostname; }
 
-    // TODO: Different meaning for vms and docker hosts?
-    /** Returns the OpenStack id of this node, or of its docker host if this is a virtual node */
-    public String openStackId() { return openStackId; }
+    /**
+     * Unique identifier for this node. Code should not depend on this as its main purpose is to aid human operators in
+     * mapping a node to the corresponding cloud instance. No particular format is enforced.
+     *
+     * Formats used vary between the underlying cloud providers:
+     *
+     * - OpenStack: UUID
+     * - AWS: Instance ID
+     * - Docker containers: fake-[hostname]
+     */
+    public String id() { return id; }
 
     /** Returns the parent hostname for this node if this node is a docker container or a VM (i.e. it has a parent host). Otherwise, empty **/
     public Optional<String> parentHostname() { return parentHostname; }
@@ -167,22 +167,22 @@ public final class Node {
 
     /** Returns a node with the status assigned to the given value */
     public Node with(Status status) {
-        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a node with the type assigned to the given value */
     public Node with(NodeType type) {
-        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a node with the flavor assigned to the given value */
     public Node with(Flavor flavor) {
-        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this with the reboot generation set to generation */
     public Node withReboot(Generation generation) {
-        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status.withReboot(generation), state,
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status.withReboot(generation), state,
                         allocation, history, type);
     }
 
@@ -212,24 +212,24 @@ public final class Node {
      * Do not use this to allocate a node.
      */
     public Node with(Allocation allocation) {
-        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this node with the IP addresses set to the given value. */
     public Node withIpAddresses(Set<String> ipAddresses) {
-        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state,
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state,
                         allocation, history, type);
     }
 
     /** Returns a copy of this node with IP address pool set to the given value. */
     public Node withIpAddressPool(Set<String> ipAddressPool) {
-        return new Node(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state,
+        return new Node(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state,
                         allocation, history, type);
     }
 
     /** Returns a copy of this node with the parent hostname assigned to the given value. */
     public Node withParentHostname(String parentHostname) {
-        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, Optional.of(parentHostname), flavor, status, state,
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, Optional.of(parentHostname), flavor, status, state,
                         allocation, history, type);
     }
 
@@ -244,7 +244,7 @@ public final class Node {
 
     /** Returns a copy of this node with the given history. */
     public Node with(History history) {
-        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     private static void requireNonEmptyString(Optional<String> value, String message) {
@@ -271,23 +271,24 @@ public final class Node {
     }
 
     @Override
-    public int hashCode() {
-        return id.hashCode();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Node node = (Node) o;
+        return hostname.equals(node.hostname);
     }
 
     @Override
-    public boolean equals(Object other) {
-        if (this == other) return true;
-        if ( ! other.getClass().equals(this.getClass())) return false;
-        return ((Node)other).id.equals(this.id);
+    public int hashCode() {
+        return Objects.hash(hostname);
     }
 
     @Override
     public String toString() {
         return state + " node " +
-               (hostname !=null ? hostname : id) +
-               (allocation.isPresent() ? " " + allocation.get() : "") +
-               (parentHostname.isPresent() ? " [on: " + parentHostname.get() + "]" : "");
+               hostname +
+               (allocation.map(allocation1 -> " " + allocation1).orElse("")) +
+               (parentHostname.map(parent -> " [on: " + parent + "]").orElse(""));
     }
 
     public enum State {

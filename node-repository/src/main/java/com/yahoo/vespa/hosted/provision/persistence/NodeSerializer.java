@@ -45,7 +45,7 @@ public class NodeSerializer {
     private static final String hostnameKey = "hostname";
     private static final String ipAddressesKey = "ipAddresses";
     private static final String ipAddressPoolKey = "additionalIpAddresses";
-    private static final String openStackIdKey = "openStackId";
+    private static final String idKey = "openStackId";
     private static final String parentHostnameKey = "parentHostname";
     private static final String historyKey = "history";
     private static final String instanceKey = "instance"; // legacy name, TODO: change to allocation with backwards compat
@@ -100,7 +100,7 @@ public class NodeSerializer {
         object.setString(hostnameKey, node.hostname());
         toSlime(node.ipAddresses(), object.setArray(ipAddressesKey));
         toSlime(node.ipAddressPool().asSet(), object.setArray(ipAddressPoolKey));
-        object.setString(openStackIdKey, node.openStackId());
+        object.setString(idKey, node.id());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         object.setString(flavorKey, node.flavor().name());
         object.setLong(rebootGenerationKey, node.status().reboot().wanted());
@@ -151,7 +151,7 @@ public class NodeSerializer {
     }
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
-        return new Node(object.field(openStackIdKey).asString(),
+        return new Node(object.field(idKey).asString(),
                         ipAddressesFromSlime(object, ipAddressesKey),
                         ipAddressesFromSlime(object, ipAddressPoolKey),
                         object.field(hostnameKey).asString(),

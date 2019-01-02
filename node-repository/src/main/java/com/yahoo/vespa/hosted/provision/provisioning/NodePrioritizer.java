@@ -143,8 +143,7 @@ public class NodePrioritizer {
                 continue;
             }
 
-            Node newNode = Node.createDockerNode("fake-" + allocation.get().hostname(),
-                                                 allocation.get().addresses(),
+            Node newNode = Node.createDockerNode(allocation.get().addresses(),
                                                  Collections.emptySet(),
                                                  allocation.get().hostname(),
                                                  Optional.of(node.hostname()),

@@ -211,7 +211,7 @@ public class CuratorDatabaseClient {
 
         CuratorTransaction curatorTransaction = newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
-            Node newNode = new Node(node.openStackId(), node.ipAddresses(), node.ipAddressPool().asSet(), node.hostname(),
+            Node newNode = new Node(node.id(), node.ipAddresses(), node.ipAddressPool().asSet(), node.hostname(),
                                     node.parentHostname(), node.flavor(),
                                     newNodeStatus(node, toState),
                                     toState,
