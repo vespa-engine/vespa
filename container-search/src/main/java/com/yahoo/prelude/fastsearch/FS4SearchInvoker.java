@@ -13,6 +13,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.ResponseMonitor;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 
@@ -127,7 +128,9 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
 
     private Result errorResult(ErrorMessage errorMessage) {
         Result error = new Result(query, errorMessage);
-        getErrorCoverage().ifPresent(error::setCoverage);
+        Coverage errorCoverage = new Coverage(0, 0, 0);
+        errorCoverage.setNodesTried(1);
+        error.setCoverage(errorCoverage);
         return error;
     }
 

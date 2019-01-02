@@ -114,12 +114,12 @@ public class FS4InvokerFactory {
     }
 
     private SearchInvoker createCoverageErrorInvoker(List<Node> nodes, Set<Integer> failed) {
-        long activeDocuments = 0;
         StringBuilder down = new StringBuilder("Connection failure on nodes with distribution-keys: ");
         Integer key = null;
+        int count = 0;
         for (Node node : nodes) {
             if (failed.contains(node.key())) {
-                activeDocuments += node.getActiveDocuments();
+                count++;
                 if (key == null) {
                     key = node.key();
                 } else {
@@ -128,8 +128,8 @@ public class FS4InvokerFactory {
                 down.append(node.key());
             }
         }
-        Coverage coverage = new Coverage(0, activeDocuments, 0);
-        coverage.setNodesTried(1);
+        Coverage coverage = new Coverage(0, 0, 0);
+        coverage.setNodesTried(count);
         return new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError(down.toString()), coverage);
     }
 

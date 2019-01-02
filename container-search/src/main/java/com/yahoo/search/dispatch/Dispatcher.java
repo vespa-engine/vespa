@@ -144,10 +144,10 @@ public class Dispatcher extends AbstractComponent {
             if (invoker.isPresent()) {
                 query.trace(false, 2, "Dispatching internally to search group ", group.id());
                 query.getModel().setSearchPath("/" + group.id());
-                invoker.get().teardown(() -> loadBalancer.releaseGroup(group));
+                invoker.get().teardown((success, time) -> loadBalancer.releaseGroup(group, success, time));
                 return invoker;
             } else {
-                loadBalancer.releaseGroup(group);
+                loadBalancer.releaseGroup(group, false, 0);
                 if (rejected == null) {
                     rejected = new HashSet<>();
                 }

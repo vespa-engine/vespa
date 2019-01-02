@@ -6,7 +6,6 @@ import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import com.yahoo.search.result.Coverage;
 import com.yahoo.search.searchchain.Execution;
 
 import java.io.IOException;
@@ -33,7 +32,9 @@ public abstract class SearchInvoker extends CloseableInvoker {
      */
     public Result search(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) throws IOException {
         sendSearchRequest(query, queryPacket);
-        return getSearchResult(cacheKey, execution);
+        Result result = getSearchResult(cacheKey, execution);
+        setFinalStatus(result.hits().getError() == null);
+        return result;
     }
 
     protected abstract void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException;
@@ -52,15 +53,5 @@ public abstract class SearchInvoker extends CloseableInvoker {
 
     protected Optional<Integer> distributionKey() {
         return node.map(Node::key);
-    }
-
-    protected Optional<Coverage> getErrorCoverage() {
-        if (node.isPresent()) {
-            Coverage error = new Coverage(0, node.get().getActiveDocuments(), 0);
-            error.setNodesTried(1);
-            return Optional.of(error);
-        } else {
-            return Optional.empty();
-        }
     }
 }
