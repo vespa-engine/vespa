@@ -24,7 +24,9 @@ import com.yahoo.vespa.model.search.*;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,133 +39,12 @@ import static org.junit.Assert.*;
  * @author baldersheim
  */
 public class ContentBuilderTest extends DomBuilderTest {
-    private ContentCluster createContent(String xml) throws Exception {
-        String combined =  "" +
-                "<services>"+
-                "  <admin version='2.0'>" +
-                "    <adminserver hostalias='mockhost'/>" +
-                "  </admin>" +
-                xml +
-                "</services>";
 
-
-        VespaModel m = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
-                                                                .withHosts(getHosts())
-                                                                .withServices(combined)
-                                                                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
-                                                                .build())
-                .create();
-
-        return m.getContentClusters().isEmpty()
-                ? null
-                : m.getContentClusters().values().iterator().next();
-    }
-    private ContentCluster createContentWithBooksToo(String xml) throws Exception {
-        String combined =  "" +
-                "<services>"+
-                "  <admin version='2.0'>" +
-                "    <adminserver hostalias='mockhost'/>" +
-                "  </admin>" +
-                xml +
-                "</services>";
-
-        VespaModel m = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
-                                                                .withHosts(getHosts())
-                                                                .withServices(combined)
-                                                                .withSearchDefinitions(Arrays.asList(MockApplicationPackage.MUSIC_SEARCHDEFINITION,
-                                                                                                     MockApplicationPackage.BOOK_SEARCHDEFINITION))
-                                                                .build())
-                .create();
-
-        return m.getContentClusters().isEmpty()
-                ? null
-                : m.getContentClusters().values().iterator().next();
-    }
-
-    private String getHosts() {
-        return "<?xml version='1.0' encoding='utf-8' ?>" +
-            "<hosts>" +
-            "  <host name='node0'>" +
-            "    <alias>mockhost</alias>" +
-            "  </host>" +
-            "  <host name='node1'>" +
-            "    <alias>mockhost2</alias>" +
-            "  </host>" +
-            "  <host name='node2'>" +
-            "    <alias>mockhost3</alias>" +
-            "  </host>" +
-            "</hosts>";
-    }
-
-    private String getServices(String groupXml) {
-        return getConfigOverrideServices(groupXml, "");
-    }
-
-    private String getConfigOverrideServices(String groupXml, String documentOverrides) {
-        return "" +
-                "<services>"+
-                "  <admin version='2.0'>" +
-                "    <adminserver hostalias='mockhost'/>" +
-                "  </admin>" +
-                "  <jdisc version='1.0' id='qrc'>" +
-                "      <search/>" +
-                "      <nodes>" +
-                "        <node hostalias='mockhost' />" +
-                "      </nodes>" +
-                "  </jdisc>" +
-                "  <content version='1.0' id='clu'>" +
-                "    <documents>" +
-                "      <document type='music' mode='index'>" +
-                documentOverrides +
-                "      </document>" +
-                "    </documents>" +
-                "    <redundancy>3</redundancy>"+
-                "    <engine>" +
-                "      <proton>" +
-                "        <query-timeout>7.3</query-timeout>" +
-                "      </proton>" +
-                "    </engine>" +
-                "    <group>"+
-                groupXml +
-                "    </group>"+
-                "  </content>" +
-                "</services>";
-    }
-
-    private String getBasicServices() {
-        return getServices("<node hostalias='mockhost' distribution-key='0'/>");
-    }
-
-    public static void assertServices(HostResource host, String [] services) {
-        String missing = "";
-
-        for (String s : services) {
-            if (host.getService(s) == null) {
-                missing += s + ",";
-            }
-        }
-
-        String extra = "";
-        for (Service s : host.getServices()) {
-            boolean found = false;
-            for (String n : services) {
-                if (n.equals(s.getServiceName())) {
-                    found = true;
-                }
-            }
-
-            if (!found) {
-                extra += s.getServiceName() + ",";
-            }
-        }
-
-        assertEquals("Missing:  Extra: ", "Missing: " + missing+ " Extra: " + extra);
-
-        assertEquals(services.length, host.getServices().size());
-    }
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void handleSingleNonSearchPersistentDummy() throws Exception {
+    public void handleSingleNonSearchPersistentDummy() {
         ContentCluster a = createContent(
                 "<content version =\"1.0\" id=\"a\">"+
                 "    <redundancy>3</redundancy>"+
@@ -186,7 +67,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleSingleNonSearchPersistentVds() throws Exception {
+    public void handleSingleNonSearchPersistentVds() {
         ContentCluster a = createContent(
                 "<content version =\"1.0\" id=\"a\">"+
                 "    <redundancy>3</redundancy>"+
@@ -208,7 +89,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleSingleNonSearchPersistentProton() throws Exception {
+    public void handleSingleNonSearchPersistentProton() {
         ContentCluster a = createContent(
                 "<content version =\"1.0\" id=\"a\">"+
                 "    <redundancy>3</redundancy>"+
@@ -233,7 +114,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleSingleNonSearchNonPersistentCluster() throws Exception {
+    public void handleSingleNonSearchNonPersistentCluster() {
         ContentCluster a = createContent(
                 "<content version =\"1.0\" id=\"a\">"+
                 "    <redundancy>3</redundancy>"+
@@ -262,7 +143,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleIndexedOnlyWithoutPersistence() throws Exception {
+    public void handleIndexedOnlyWithoutPersistence() {
         VespaModel m = new VespaModelCreatorWithMockPkg(createAppWithMusic(getHosts(), getBasicServices())).create();
 
         ContentCluster c = CollectionUtil.first(m.getContentClusters().values());
@@ -293,7 +174,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testConfigIdLookup() throws Exception {
+    public void testConfigIdLookup() {
         VespaModel m = new VespaModelCreatorWithMockPkg(createAppWithMusic(getHosts(), getBasicServices())).create();
 
         PartitionsConfig partitionsConfig = new PartitionsConfig((PartitionsConfig.Builder)
@@ -302,7 +183,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testMultipleSearchNodesOnSameHost() throws Exception {
+    public void testMultipleSearchNodesOnSameHost() {
         String services = getServices("<node hostalias='mockhost' distribution-key='0'/>" +
                                       "<node hostalias='mockhost' distribution-key='1'/>");
         VespaModel m = new VespaModelCreatorWithMockPkg(createAppWithMusic(getHosts(), services)).create();
@@ -314,8 +195,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleStreamingOnlyWithoutPersistence() throws Exception
-    {
+    public void handleStreamingOnlyWithoutPersistence() {
         final String musicClusterId = "music-cluster-id";
 
         ContentCluster cluster = createContent(
@@ -365,8 +245,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatContentStreamingHandlesMultipleSearchDefinitions() throws Exception
-    {
+    public void requireThatContentStreamingHandlesMultipleSearchDefinitions() {
         final String musicClusterId = "music-cluster-id";
 
         ContentCluster cluster = createContentWithBooksToo(
@@ -406,8 +285,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleIndexedWithoutPersistence() throws Exception
-    {
+    public void handleIndexedWithoutPersistence() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                 "    <redundancy>3</redundancy>"+
@@ -438,7 +316,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureMmapNoCoreLimit() throws Exception {
+    public void canConfigureMmapNoCoreLimit() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                 "    <redundancy>2</redundancy>" +
@@ -467,7 +345,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureCoreOnOOM() throws Exception {
+    public void canConfigureCoreOnOOM() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                 "    <redundancy>2</redundancy>" +
@@ -496,7 +374,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void defaultCoreOnOOMIsFalse() throws Exception {
+    public void defaultCoreOnOOMIsFalse() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                 "    <redundancy>2</redundancy>" +
@@ -522,7 +400,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureMmapNoCoreLimitPerHost() throws Exception {
+    public void canConfigureMmapNoCoreLimitPerHost() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                 "    <redundancy>2</redundancy>" +
@@ -548,7 +426,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureCoreOnOOMPerHost() throws Exception {
+    public void canConfigureCoreOnOOMPerHost() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                 "    <redundancy>2</redundancy>" +
@@ -574,7 +452,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureVespaMalloc() throws Exception {
+    public void canConfigureVespaMalloc() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                 "    <redundancy>2</redundancy>" +
@@ -616,7 +494,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureVespaMallocPerHost() throws Exception {
+    public void canConfigureVespaMallocPerHost() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                 "    <redundancy>2</redundancy>" +
@@ -647,8 +525,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureCpuAffinity() throws Exception
-    {
+    public void canConfigureCpuAffinity() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                 "    <redundancy>2</redundancy>"+
@@ -679,8 +556,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void canConfigureCpuAffinityAutomatically() throws Exception
-    {
+    public void canConfigureCpuAffinityAutomatically() {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
                 "    <redundancy>2</redundancy>"+
@@ -735,7 +611,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireBug5357273() throws Exception {
+    public void requireBug5357273() {
         try {
             createContent(
                 "  <content version='1.0' id='storage'>\n" +
@@ -751,7 +627,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "      </engine>\n" +
                 "  </content>\n");
 
-            assertFalse(true);
+            fail();
         } catch (Exception e) {
             e.printStackTrace();
             assertEquals("Persistence engine does not allow for indexed search. Please use <proton> as your engine.", e.getMessage());
@@ -759,7 +635,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void handleProtonTuning() throws Exception{
+    public void handleProtonTuning() {
         ContentCluster a = createContent(
                 "<content version =\"1.0\" id=\"a\">" +
                 "    <redundancy>3</redundancy>" +
@@ -806,7 +682,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatUserConfigCanBeSpecifiedForASearchDefinition() throws Exception {
+    public void requireThatUserConfigCanBeSpecifiedForASearchDefinition() {
         String services =  getConfigOverrideServices(
                 "<node hostalias='mockhost' distribution-key='0'/>",
                 "  <config name='mynamespace.myconfig'>" +
@@ -825,7 +701,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireOneTldPerSearchContainer() throws Exception {
+    public void requireOneTldPerSearchContainer() {
         ContentCluster content = createContent(
                 "  <content version='1.0' id='storage'>\n" +
                 "    <redundancy>1</redundancy>\n" +
@@ -865,7 +741,7 @@ public class ContentBuilderTest extends DomBuilderTest {
 
     @Test
     @Ignore
-    public void ensureOverrideAppendedOnlyOnce() throws Exception {
+    public void ensureOverrideAppendedOnlyOnce() {
         ContentCluster content = createContent(
                 "<content version='1.0' id='search'>" +
                 "  <config name=\"vespa.config.search.core.proton\">" +
@@ -893,7 +769,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void ensurePruneRemovedDocumentsAgeForHostedVespa() throws Exception {
+    public void ensurePruneRemovedDocumentsAgeForHostedVespa() {
         {
             ContentCluster contentNonHosted = createContent(
                     "<content version='1.0' id='search'>" +
@@ -935,6 +811,22 @@ public class ContentBuilderTest extends DomBuilderTest {
         }
     }
 
+    @Test
+    public void failWhenNoDocumentsElementSpecified() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("The specified content engine requires the <documents> element to be specified.");
+        createContent(
+                "<content version =\"1.0\" id=\"a\">" +
+                        "    <redundancy>3</redundancy>" +
+                        "    <engine>" +
+                        "      <dummy/>" +
+                        "    </engine>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                        "    </group>" +
+                        "</content>");
+    }
+
     private ProtonConfig getProtonConfig(ContentCluster content) {
         ProtonConfig.Builder configBuilder = new ProtonConfig.Builder();
         content.getSearch().getIndexed().getSearchNode(0).cascadeConfig(configBuilder);
@@ -943,11 +835,137 @@ public class ContentBuilderTest extends DomBuilderTest {
         return new ProtonConfig(configBuilder);
     }
 
-    ApplicationPackage createAppWithMusic(String hosts, String services) {
+    private ApplicationPackage createAppWithMusic(String hosts, String services) {
         return new MockApplicationPackage.Builder()
                 .withHosts(hosts)
                 .withServices(services)
                 .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
                 .build();
     }
+
+    private ContentCluster createContent(String xml) {
+        String combined =  "" +
+                "<services>"+
+                "  <admin version='2.0'>" +
+                "    <adminserver hostalias='mockhost'/>" +
+                "  </admin>" +
+                xml +
+                "</services>";
+
+
+        VespaModel m = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                                                                .withHosts(getHosts())
+                                                                .withServices(combined)
+                                                                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                                                                .build())
+                .create();
+
+        return m.getContentClusters().isEmpty()
+                ? null
+                : m.getContentClusters().values().iterator().next();
+    }
+    private ContentCluster createContentWithBooksToo(String xml) {
+        String combined =  "" +
+                "<services>"+
+                "  <admin version='2.0'>" +
+                "    <adminserver hostalias='mockhost'/>" +
+                "  </admin>" +
+                xml +
+                "</services>";
+
+        VespaModel m = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                                                                .withHosts(getHosts())
+                                                                .withServices(combined)
+                                                                .withSearchDefinitions(Arrays.asList(MockApplicationPackage.MUSIC_SEARCHDEFINITION,
+                                                                                                     MockApplicationPackage.BOOK_SEARCHDEFINITION))
+                                                                .build())
+                .create();
+
+        return m.getContentClusters().isEmpty()
+                ? null
+                : m.getContentClusters().values().iterator().next();
+    }
+
+    private String getHosts() {
+        return "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<hosts>" +
+                "  <host name='node0'>" +
+                "    <alias>mockhost</alias>" +
+                "  </host>" +
+                "  <host name='node1'>" +
+                "    <alias>mockhost2</alias>" +
+                "  </host>" +
+                "  <host name='node2'>" +
+                "    <alias>mockhost3</alias>" +
+                "  </host>" +
+                "</hosts>";
+    }
+
+    private String getServices(String groupXml) {
+        return getConfigOverrideServices(groupXml, "");
+    }
+
+    private String getConfigOverrideServices(String groupXml, String documentOverrides) {
+        return "" +
+                "<services>"+
+                "  <admin version='2.0'>" +
+                "    <adminserver hostalias='mockhost'/>" +
+                "  </admin>" +
+                "  <jdisc version='1.0' id='qrc'>" +
+                "      <search/>" +
+                "      <nodes>" +
+                "        <node hostalias='mockhost' />" +
+                "      </nodes>" +
+                "  </jdisc>" +
+                "  <content version='1.0' id='clu'>" +
+                "    <documents>" +
+                "      <document type='music' mode='index'>" +
+                documentOverrides +
+                "      </document>" +
+                "    </documents>" +
+                "    <redundancy>3</redundancy>"+
+                "    <engine>" +
+                "      <proton>" +
+                "        <query-timeout>7.3</query-timeout>" +
+                "      </proton>" +
+                "    </engine>" +
+                "    <group>"+
+                groupXml +
+                "    </group>"+
+                "  </content>" +
+                "</services>";
+    }
+
+    private String getBasicServices() {
+        return getServices("<node hostalias='mockhost' distribution-key='0'/>");
+    }
+
+    private static void assertServices(HostResource host, String[] services) {
+        String missing = "";
+
+        for (String s : services) {
+            if (host.getService(s) == null) {
+                missing += s + ",";
+            }
+        }
+
+        String extra = "";
+        for (Service s : host.getServices()) {
+            boolean found = false;
+            for (String n : services) {
+                if (n.equals(s.getServiceName())) {
+                    found = true;
+                }
+            }
+
+            if (!found) {
+                extra += s.getServiceName() + ",";
+            }
+        }
+
+        assertEquals("Missing:  Extra: ", "Missing: " + missing+ " Extra: " + extra);
+
+        assertEquals(services.length, host.getServices().size());
+    }
+
 }
