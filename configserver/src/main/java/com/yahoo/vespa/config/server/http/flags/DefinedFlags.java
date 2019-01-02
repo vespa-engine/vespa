@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
+import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.flags.FlagDefinition;
 import com.yahoo.vespa.flags.json.DimensionHelper;
 
@@ -44,6 +45,6 @@ public class DefinedFlags extends HttpResponse {
 
     @Override
     public String getContentType() {
-        return "application/json";
+        return HttpConfigResponse.JSON_CONTENT_TYPE;
     }
 }

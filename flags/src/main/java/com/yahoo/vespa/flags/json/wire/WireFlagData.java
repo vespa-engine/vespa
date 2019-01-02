@@ -20,6 +20,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class WireFlagData {
+    @JsonProperty("id") public String id;
     @JsonProperty("rules") public List<WireRule> rules;
     @JsonProperty("attributes") public Map<String, String> defaultFetchVector;
 

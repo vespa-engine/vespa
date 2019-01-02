@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.flags.json.wire.WireFlagData;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -26,20 +28,26 @@ import java.util.stream.Collectors;
  */
 @Immutable
 public class FlagData {
+    private final FlagId id;
     private final List<Rule> rules;
     private final FetchVector defaultFetchVector;
 
-    public FlagData() {
-        this(new FetchVector(), Collections.emptyList());
+    public FlagData(FlagId id) {
+        this(id, new FetchVector(), Collections.emptyList());
     }
 
-    public FlagData(FetchVector defaultFetchVector, Rule... rules) {
-        this(defaultFetchVector, Arrays.asList(rules));
+    public FlagData(FlagId id, FetchVector defaultFetchVector, Rule... rules) {
+        this(id, defaultFetchVector, Arrays.asList(rules));
     }
 
-    public FlagData(FetchVector defaultFetchVector, List<Rule> rules) {
+    public FlagData(FlagId id, FetchVector defaultFetchVector, List<Rule> rules) {
+        this.id = id;
         this.rules = Collections.unmodifiableList(new ArrayList<>(rules));
         this.defaultFetchVector = defaultFetchVector;
+    }
+
+    public FlagId id() {
+        return id;
     }
 
     public Optional<RawFlag> resolve(FetchVector fetchVector) {
@@ -68,6 +76,8 @@ public class FlagData {
     private WireFlagData toWire() {
         WireFlagData wireFlagData = new WireFlagData();
 
+        wireFlagData.id = id.toString();
+
         if (!rules.isEmpty()) {
             wireFlagData.rules = rules.stream().map(Rule::toWire).collect(Collectors.toList());
         }
@@ -91,7 +101,9 @@ public class FlagData {
 
     private static FlagData fromWire(WireFlagData wireFlagData) {
         return new FlagData(
-                FetchVectorHelper.fromWire(wireFlagData.defaultFetchVector), rulesFromWire(wireFlagData.rules)
+                new FlagId(Objects.requireNonNull(wireFlagData.id)),
+                FetchVectorHelper.fromWire(wireFlagData.defaultFetchVector),
+                rulesFromWire(wireFlagData.rules)
         );
     }
 

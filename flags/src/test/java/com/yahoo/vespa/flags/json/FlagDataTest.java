@@ -16,6 +16,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class FlagDataTest {
     private final String json = "{\n" +
+            "    \"id\": \"id1\",\n" +
             "    \"rules\": [\n" +
             "        {\n" +
             "            \"conditions\": [\n" +
@@ -69,6 +70,7 @@ public class FlagDataTest {
 
     private void verify(Optional<String> expectedValue, FetchVector vector) {
         FlagData data = FlagData.deserialize(json);
+        assertEquals("id1", data.id().toString());
         Optional<RawFlag> rawFlag = data.resolve(vector);
 
         if (expectedValue.isPresent()) {

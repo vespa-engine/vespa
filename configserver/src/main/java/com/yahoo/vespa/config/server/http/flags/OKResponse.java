@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.http.flags;
 
 import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.jdisc.Response;
+import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 
 /**
  * @author hakonhall
@@ -14,6 +15,6 @@ public class OKResponse extends EmptyResponse {
 
     @Override
     public String getContentType() {
-        return "application/json";
+        return HttpConfigResponse.JSON_CONTENT_TYPE;
     }
 }

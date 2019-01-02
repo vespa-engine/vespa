@@ -75,9 +75,7 @@ public class FlagsHandler extends HttpHandler {
 
     private HttpResponse putFlagData(HttpRequest request, FlagId flagId) {
         flagsDb.setValue(flagId, FlagData.deserialize(request.getData()));
-
-        // The set & get is not atomic, but no harm is done in showing an outdated flag value in the response.
-        return getFlagData(flagId);
+        return new OKResponse();
     }
 
     private HttpResponse deleteFlagData(FlagId flagId) {

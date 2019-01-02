@@ -31,15 +31,14 @@ public class FlagsDbImplTest {
 
         Condition condition1 = new Condition(Condition.Type.WHITELIST, FetchVector.Dimension.HOSTNAME, "host1");
         Rule rule1 = new Rule(Optional.of(JsonNodeRawFlag.fromJson("13")), condition1);
-        FlagData data = new FlagData(new FetchVector().with(FetchVector.Dimension.ZONE_ID, "zone-a"), rule1);
         FlagId flagId = new FlagId("id");
+        FlagData data = new FlagData(flagId, new FetchVector().with(FetchVector.Dimension.ZONE_ID, "zone-a"), rule1);
         db.setValue(flagId, data);
 
-        assertTrue(db.getValue(flagId).isPresent());
         Optional<FlagData> dataCopy = db.getValue(flagId);
         assertTrue(dataCopy.isPresent());
 
-        assertEquals("{\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\"," +
+        assertEquals("{\"id\":\"id\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\"," +
                 "\"values\":[\"host1\"]}],\"value\":13}],\"attributes\":{\"zone\":\"zone-a\"}}",
                 dataCopy.get().serializeToJson());
 

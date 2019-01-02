@@ -67,30 +67,31 @@ public class FlagsHandlerTest {
         // PUT flag with ID id1
         verifySuccessfulRequest(Method.PUT, "/data/" + FLAG1.id(),
                 "{\n" +
+                        "  \"id\": \"id1\",\n" +
                         "  \"rules\": [\n" +
                         "    {\n" +
                         "      \"value\": true\n" +
                         "    }\n" +
                         "  ]\n" +
                         "}",
-                "{\"rules\":[{\"value\":true}]}");
+                "");
 
-        // GET on ID id1 should return the same as the put (this will also issue a payload for the get,
-        // which we assume will be ignored).
+        // GET on ID id1 should return the same as the put.
         verifySuccessfulRequest(Method.GET, "/data/" + FLAG1.id(),
-                "", "{\"rules\":[{\"value\":true}]}");
+                "", "{\"id\":\"id1\",\"rules\":[{\"value\":true}]}");
 
         // List all flags should list only id1
         verifySuccessfulRequest(Method.GET, "/data",
-                "", "{\"id1\":{\"url\":\"https://foo.com:4443/flags/v1/data/id1\"}}");
+                "", "{\"flags\":[{\"id\":\"id1\",\"url\":\"https://foo.com:4443/flags/v1/data/id1\"}]}");
 
         // Should be identical to above: suffix / on path should be ignored
         verifySuccessfulRequest(Method.GET, "/data/",
-                "", "{\"id1\":{\"url\":\"https://foo.com:4443/flags/v1/data/id1\"}}");
+                "", "{\"flags\":[{\"id\":\"id1\",\"url\":\"https://foo.com:4443/flags/v1/data/id1\"}]}");
 
         // PUT id2
         verifySuccessfulRequest(Method.PUT, "/data/" + FLAG2.id(),
                 "{\n" +
+                        "  \"id\": \"id2\",\n" +
                         "  \"rules\": [\n" +
                         "    {\n" +
                         "      \"conditions\": [\n" +
@@ -112,34 +113,42 @@ public class FlagsHandlerTest {
                         "    \"zone\": \"zone1\"\n" +
                         "  }\n" +
                         "}\n",
-                "{\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"host1\",\"host2\"]},{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"app2\",\"app1\"]}],\"value\":true}],\"attributes\":{\"zone\":\"zone1\"}}");
+                "");
+
+        // GET on id2 should now return what was put
+        verifySuccessfulRequest(Method.GET, "/data/" + FLAG2.id(), "",
+                "{\"id\":\"id2\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"host1\",\"host2\"]},{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"app2\",\"app1\"]}],\"value\":true}],\"attributes\":{\"zone\":\"zone1\"}}");
 
         // The list of flag data should return id1 and id2
         verifySuccessfulRequest(Method.GET, "/data",
                 "",
-                "{\"id1\":{\"url\":\"https://foo.com:4443/flags/v1/data/id1\"},\"id2\":{\"url\":\"https://foo.com:4443/flags/v1/data/id2\"}}");
+                "{\"flags\":[{\"id\":\"id1\",\"url\":\"https://foo.com:4443/flags/v1/data/id1\"},{\"id\":\"id2\",\"url\":\"https://foo.com:4443/flags/v1/data/id2\"}]}");
 
         // Putting (overriding) id1 should work silently
         verifySuccessfulRequest(Method.PUT, "/data/" + FLAG1.id(),
                 "{\n" +
+                        "  \"id\": \"id1\",\n" +
                         "  \"rules\": [\n" +
                         "    {\n" +
                         "      \"value\": false\n" +
                         "    }\n" +
                         "  ]\n" +
                         "}\n",
-                "{\"rules\":[{\"value\":false}]}");
+                "");
+
+        // Verify PUT
+        verifySuccessfulRequest(Method.GET, "/data/" + FLAG1.id(), "", "{\"id\":\"id1\",\"rules\":[{\"value\":false}]}");
 
         // Get all recursivelly displays all flag data
         verifySuccessfulRequest(Method.GET, "/data?recursive=true", "",
-                "{\"id1\":{\"rules\":[{\"value\":false}]},\"id2\":{\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"host1\",\"host2\"]},{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"app2\",\"app1\"]}],\"value\":true}],\"attributes\":{\"zone\":\"zone1\"}}}");
+                "{\"flags\":[{\"id\":\"id1\",\"rules\":[{\"value\":false}]},{\"id\":\"id2\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"host1\",\"host2\"]},{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"app2\",\"app1\"]}],\"value\":true}],\"attributes\":{\"zone\":\"zone1\"}}]}");
 
         // Deleting both flags
         verifySuccessfulRequest(Method.DELETE, "/data/" + FLAG1.id(), "", "");
         verifySuccessfulRequest(Method.DELETE, "/data/" + FLAG2.id(), "", "");
 
         // And the list of data flags should now be empty
-        verifySuccessfulRequest(Method.GET, "/data", "", "{}");
+        verifySuccessfulRequest(Method.GET, "/data", "", "{\"flags\":[]}");
     }
 
     @Test

@@ -57,11 +57,11 @@ public class FileFlagSource implements FlagSource {
             // version 2: File contains FileResolver as a JSON (which may contain many values, one for each rule)
             // version 1 files should probably be discontinued
             Rule rule = new Rule(Optional.of(JsonNodeRawFlag.fromJson(v1String.get())), Collections.emptyList());
-            return new FlagData(new FetchVector(), Collections.singletonList(rule));
+            return new FlagData(flagId, new FetchVector(), Collections.singletonList(rule));
         }
 
         // Will eventually resolve to empty RawFlag
-        return new FlagData();
+        return new FlagData(flagId);
     }
 
     private Optional<String> getString(FlagId id, String suffix) {

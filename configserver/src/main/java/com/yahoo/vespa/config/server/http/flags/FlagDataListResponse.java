@@ -2,9 +2,11 @@
 package com.yahoo.vespa.config.server.http.flags;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
+import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
 
@@ -22,24 +24,27 @@ public class FlagDataListResponse extends HttpResponse {
 
     private final String flagsV1Uri;
     private final Map<FlagId, FlagData> flags;
-    private final boolean showDataInsteadOfUrl;
+    private final boolean recursive;
 
-    public FlagDataListResponse(String flagsV1Uri, Map<FlagId, FlagData> flags, boolean showDataInsteadOfUrl) {
+    public FlagDataListResponse(String flagsV1Uri, Map<FlagId, FlagData> flags, boolean recursive) {
         super(Response.Status.OK);
         this.flagsV1Uri = flagsV1Uri;
         this.flags = flags;
-        this.showDataInsteadOfUrl = showDataInsteadOfUrl;
+        this.recursive = recursive;
     }
 
     @Override
     public void render(OutputStream outputStream) {
         ObjectNode rootNode = mapper.createObjectNode();
+        ArrayNode flagsArray = rootNode.putArray("flags");
         // Order flags by ID
-        new TreeMap<>(flags).forEach((flagId, flagData) -> {
-            if (showDataInsteadOfUrl) {
-                rootNode.set(flagId.toString(), flagData.toJsonNode());
+        new TreeMap<>(this.flags).forEach((flagId, flagData) -> {
+            if (recursive) {
+                flagsArray.add(flagData.toJsonNode());
             } else {
-                rootNode.putObject(flagId.toString()).put("url", flagsV1Uri + "/data/" + flagId.toString());
+                ObjectNode object = flagsArray.addObject();
+                object.put("id", flagId.toString());
+                object.put("url", flagsV1Uri + "/data/" + flagId.toString());
             }
         });
         uncheck(() -> mapper.writeValue(outputStream, rootNode));
@@ -47,6 +52,6 @@ public class FlagDataListResponse extends HttpResponse {
 
     @Override
     public String getContentType() {
-        return "application/json";
+        return HttpConfigResponse.JSON_CONTENT_TYPE;
     }
 }

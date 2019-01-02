@@ -23,18 +23,20 @@ import static org.hamcrest.Matchers.nullValue;
 public class SerializationTest {
     @Test
     public void emptyJson() throws IOException {
-        String json = "{}";
+        String json = "{\"id\":\"id1\"}";
         WireFlagData wireData = WireFlagData.deserialize(json);
+        assertThat(wireData.id, equalTo("id1"));
         assertThat(wireData.defaultFetchVector, nullValue());
         assertThat(wireData.rules, nullValue());
         assertThat(wireData.serializeToJson(), equalTo(json));
 
-        assertThat(FlagData.deserialize(json).serializeToJson(), equalTo("{}"));
+        assertThat(FlagData.deserialize(json).serializeToJson(), equalTo(json));
     }
 
     @Test
     public void deserialization() throws IOException {
         String json = "{\n" +
+                "    \"id\": \"id2\",\n" +
                 "    \"rules\": [\n" +
                 "        {\n" +
                 "            \"conditions\": [\n" +
@@ -61,6 +63,7 @@ public class SerializationTest {
 
         WireFlagData wireData = WireFlagData.deserialize(json);
 
+        assertThat(wireData.id, equalTo("id2"));
         // rule
         assertThat(wireData.rules.size(), equalTo(1));
         assertThat(wireData.rules.get(0).andConditions.size(), equalTo(2));
@@ -95,6 +98,7 @@ public class SerializationTest {
     @Test
     public void jsonWithStrayFields() {
         String json = "{\n" +
+                "    \"id\": \"id3\",\n" +
                 "    \"foo\": true,\n" +
                 "    \"rules\": [\n" +
                 "        {\n" +
@@ -123,8 +127,8 @@ public class SerializationTest {
         assertThat(wireData.rules.get(0).value, nullValue());
         assertThat(wireData.defaultFetchVector, anEmptyMap());
 
-        assertThat(wireData.serializeToJson(), equalTo("{\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"zone\"}]}],\"attributes\":{}}"));
+        assertThat(wireData.serializeToJson(), equalTo("{\"id\":\"id3\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"zone\"}]}],\"attributes\":{}}"));
 
-        assertThat(FlagData.deserialize(json).serializeToJson(), equalTo("{\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"zone\"}]}]}"));
+        assertThat(FlagData.deserialize(json).serializeToJson(), equalTo("{\"id\":\"id3\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"zone\"}]}]}"));
     }
 }
