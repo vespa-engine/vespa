@@ -79,6 +79,7 @@ Manage Vespa standalone jdisc container service.
 Options:
   -u USER      Run as USER. Overrides any VESPA_USER environment variable.
   -s SERVICE   The service name.
+  -f           Force the command by skipping some checks.
   -- ARGS...   Pass the rest of the arguments (ARGS) to the Java invocation
 EOF
 
@@ -101,7 +102,8 @@ FixDataDirectory() {
 
 StartCommand() {
     local service="$1"
-    shift
+    local force="$2"
+    shift 2
     local -a jvm_arguments=("$@")
 
     local service_regex='^[0-9a-zA-Z_-]+$'
@@ -110,7 +112,7 @@ StartCommand() {
     fi
 
     local pidfile="$VESPA_HOME/var/run/$service.pid"
-    if test -r "$pidfile"; then
+    if [ "$force" = false ] && test -r "$pidfile"; then
 	echo "$service is already running as PID $(< "$pidfile") according to $pidfile"
 	return
     fi
@@ -241,24 +243,8 @@ Kill() {
 
 StopCommand() {
     local user="$1"
-    shift
-
-    local force=false
-    while (( $# > 0 )); do
-	case "$1" in
-	    -f|--force)
-		force=true
-		shift
-		;;
-	    *) break ;;
-	esac
-    done
-
-    if (( $# != 1 )); then
-	Fail "Stop command takes exactly one argument"
-    fi
-
-    local service="$1"
+    local force="$2"
+    local service="$3"
 
     local pidfile="$VESPA_HOME/var/run/$service.pid"
     if ! test -r "$pidfile"; then
@@ -285,6 +271,7 @@ Main() {
 
     local service="standalone/container"
     local user="$VESPA_USER"
+    local force=false
     local -a jvm_arguments=()
 
     while (( $# > 0 )); do
@@ -297,6 +284,10 @@ Main() {
 	    --user|-u)
 		user="$2"
 		shift 2
+		;;
+	    --force|-f)
+		force=true
+		shift
 		;;
 	    --)
 		shift
@@ -324,8 +315,8 @@ Main() {
 
     case "$command" in
 	help) Usage ;;
-	start) StartCommand "$service" "${jvm_arguments[@]}" ;;
-	stop) StopCommand "$user" "$service" "$@" ;;
+	start) StartCommand "$service" "$force" "${jvm_arguments[@]}" ;;
+	stop) StopCommand "$user" "$service" "$force" "$@" ;;
 	*) Fail "Unknown command '$command'" ;;
     esac
 }
