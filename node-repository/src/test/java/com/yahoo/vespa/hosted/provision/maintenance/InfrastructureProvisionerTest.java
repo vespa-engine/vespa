@@ -33,8 +33,8 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -80,7 +80,7 @@ public class InfrastructureProvisionerTest {
         addNode(1, Node.State.active, Optional.of(target));
         infrastructureProvisioner.maintain();
         verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
-        verifyNoMoreInteractions(provisioner);
+        verifyRemoved(1);
     }
 
     @Test
@@ -90,11 +90,11 @@ public class InfrastructureProvisionerTest {
         addNode(2, Node.State.parked, Optional.empty());
         infrastructureProvisioner.maintain();
         verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
-        verifyNoMoreInteractions(provisioner);
+        verifyRemoved(1);
     }
 
     @Test
-    public void no_op_if_nodes_active_and_on_target_version() {
+    public void activate_when_no_op() {
         when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
 
         addNode(1, Node.State.failed, Optional.of(oldVersion));
@@ -107,8 +107,8 @@ public class InfrastructureProvisionerTest {
 
         infrastructureProvisioner.maintain();
         verify(duperModelInfraApi, never()).infraApplicationRemoved(any());
-        verify(duperModelInfraApi, never()).infraApplicationActivated(any(), any());
-        verifyNoMoreInteractions(provisioner);
+        verify(duperModelInfraApi).infraApplicationActivated(any(), any());
+        verify(provisioner).activate(any(), any(), any());
     }
 
     @Test
@@ -123,19 +123,18 @@ public class InfrastructureProvisionerTest {
 
         when(provisioner.prepare(any(), any(), any(), anyInt(), any())).thenReturn(Arrays.asList(
                 new HostSpec(node1.value(), Collections.emptyList()),
-                new HostSpec(node2.value(), Collections.emptyList()),
                 new HostSpec(node3.value(), Collections.emptyList())));
 
         infrastructureProvisioner.maintain();
 
         verify(provisioner).prepare(eq(application.getApplicationId()), any(), any(), anyInt(), any());
         verify(provisioner).activate(any(), eq(application.getApplicationId()), any());
-        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), Arrays.asList(node1, node2, node3));
+        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), Arrays.asList(node3, node1));
     }
 
 
     @Test
-    public void activates_the_first_time_after_jvm_start() {
+    public void always_activates_for_dupermodel() {
         when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
 
         addNode(1, Node.State.active, Optional.of(target));
@@ -146,9 +145,15 @@ public class InfrastructureProvisionerTest {
 
         infrastructureProvisioner.maintain();
 
-        verify(provisioner).prepare(eq(application.getApplicationId()), any(), any(), anyInt(), any());
-        verify(provisioner).activate(any(), eq(application.getApplicationId()), any());
-        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), Arrays.asList(node1));
+        verify(provisioner, never()).prepare(any(), any(), any(), anyInt(), any());
+        verify(provisioner, never()).activate(any(), any(), any());
+        verify(duperModelInfraApi, times(1)).infraApplicationActivated(application.getApplicationId(), Arrays.asList(node1));
+
+        infrastructureProvisioner.maintain();
+
+        verify(provisioner, never()).prepare(any(), any(), any(), anyInt(), any());
+        verify(provisioner, never()).activate(any(), any(), any());
+        verify(duperModelInfraApi, times(2)).infraApplicationActivated(application.getApplicationId(), Arrays.asList(node1));
     }
 
     @Test
@@ -168,7 +173,7 @@ public class InfrastructureProvisionerTest {
 
         verify(provisioner).prepare(eq(application.getApplicationId()), any(), any(), anyInt(), any());
         verify(provisioner).activate(any(), eq(application.getApplicationId()), any());
-        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), Arrays.asList(node2, node3));
+        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), Arrays.asList(node3, node2));
     }
 
     @Test
@@ -196,14 +201,19 @@ public class InfrastructureProvisionerTest {
         when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
 
         infrastructureProvisioner.maintain();
-        verifyNoMoreInteractions(provisioner);
+        verifyRemoved(1);
 
         // Add nodes in non-provisionable states
         addNode(1, Node.State.dirty, Optional.empty());
         addNode(2, Node.State.failed, Optional.empty());
 
         infrastructureProvisioner.maintain();
-        verifyNoMoreInteractions(provisioner);
+        verifyRemoved(2);
+    }
+
+    private void verifyRemoved(int removedCount) {
+        verify(provisioner, times(removedCount)).remove(any(), any());
+        verify(duperModelInfraApi, times(removedCount)).infraApplicationRemoved(any());
     }
 
     private Node addNode(int id, Node.State state, Optional<Version> wantedVespaVersion) {
