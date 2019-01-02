@@ -490,14 +490,6 @@ public class InternalStepRunner implements StepRunner {
         return deployment.at().isBefore(controller.clock().instant().minus(timeout));
     }
 
-    /** Returns a generated job report for the given run. */
-    private JobReport report(Run run) {
-        return JobReport.ofJob(run.id().application(),
-                                              run.id().type(),
-                                              run.id().number(),
-                                              run.hasFailed() ? Optional.of(DeploymentJobs.JobError.unknown) : Optional.empty());
-    }
-
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
