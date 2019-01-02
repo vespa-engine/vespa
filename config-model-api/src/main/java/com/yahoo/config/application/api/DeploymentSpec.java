@@ -55,16 +55,6 @@ public class DeploymentSpec {
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<AthenzService> athenzService;
 
-    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
-                          List<ChangeBlocker> changeBlockers, List<Step> steps) {
-        this(globalServiceId, upgradePolicy, Optional.empty(), changeBlockers, steps, null, Optional.empty(), Optional.empty());
-    }
-
-    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
-                          List<ChangeBlocker> changeBlockers, List<Step> steps) {
-        this(globalServiceId, upgradePolicy, majorVersion, changeBlockers, steps, null, Optional.empty(), Optional.empty());
-    }
-
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
                           List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm,
                           Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
