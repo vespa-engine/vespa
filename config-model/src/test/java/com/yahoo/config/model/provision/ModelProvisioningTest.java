@@ -455,9 +455,9 @@ public class ModelProvisioningTest {
         clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("baz-controllers", clusterControllers.getName());
-        assertEquals("default01", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("default27", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("default26", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default27", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default26", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default25", clusterControllers.getContainers().get(2).getHostName());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(27, cluster.getRootGroup().getSubgroups().size());
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getIndex(), is("0"));
