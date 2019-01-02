@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.io.StringReader;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -434,4 +435,34 @@ public class DeploymentSpecTest {
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
     }
+
+    @Test
+    public void noNotifications() {
+        assertEquals(DeploymentSpec.Notifications.none(),
+                     DeploymentSpec.fromXml("<deployment />").notifications());
+    }
+
+    @Test
+    public void emptyNotifications() {
+        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
+                                                     "  <notifications />" +
+                                                     "</deployment>");
+        assertEquals(DeploymentSpec.Notifications.none(),
+                     spec.notifications());
+    }
+
+    @Test
+    public void someNotifications() {
+        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
+                                                     "  <notifications>\n" +
+                                                     "    <author />\n" +
+                                                     "    <email>john@dev</email>\n" +
+                                                     "    <email>jane@dev</email>\n" +
+                                                     "  </notifications>\n" +
+                                                     "</deployment>");
+        assertTrue(spec.notifications().includeAuthor());
+        assertEquals(Arrays.asList("john@dev", "jane@dev"),
+                     spec.notifications().staticEmails());
+    }
+
 }

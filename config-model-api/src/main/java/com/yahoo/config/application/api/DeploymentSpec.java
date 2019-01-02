@@ -44,7 +44,8 @@ public class DeploymentSpec {
                                                                   Collections.emptyList(),
                                                                   "<deployment version='1.0'/>",
                                                                   Optional.empty(),
-                                                                  Optional.empty());
+                                                                  Optional.empty(),
+                                                                  Notifications.none());
     
     private final Optional<String> globalServiceId;
     private final UpgradePolicy upgradePolicy;
@@ -54,20 +55,11 @@ public class DeploymentSpec {
     private final String xmlForm;
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<AthenzService> athenzService;
-
-    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
-                          List<ChangeBlocker> changeBlockers, List<Step> steps) {
-        this(globalServiceId, upgradePolicy, Optional.empty(), changeBlockers, steps, null, Optional.empty(), Optional.empty());
-    }
-
-    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
-                          List<ChangeBlocker> changeBlockers, List<Step> steps) {
-        this(globalServiceId, upgradePolicy, majorVersion, changeBlockers, steps, null, Optional.empty(), Optional.empty());
-    }
+    private final Notifications notifications;
 
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
                           List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm,
-                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
+                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService, Notifications notifications) {
         validateTotalDelay(steps);
         this.globalServiceId = globalServiceId;
         this.upgradePolicy = upgradePolicy;
@@ -77,6 +69,7 @@ public class DeploymentSpec {
         this.xmlForm = xmlForm;
         this.athenzDomain = athenzDomain;
         this.athenzService = athenzService;
+        this.notifications = notifications;
         validateZones(this.steps);
         validateAthenz();
     }
@@ -201,6 +194,9 @@ public class DeploymentSpec {
                 .flatMap(step -> step.zones().stream())
                 .collect(Collectors.toList());
     }
+
+    /** Returns the notification configuration */
+    public Notifications notifications() { return notifications; }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
@@ -456,6 +452,42 @@ public class DeploymentSpec {
         public boolean blocksVersions() { return version; }
         public TimeWindow window() { return window; }
         
+    }
+
+
+    /**
+     * Configuration of notifications for deployment jobs.
+     *
+     * Supports a list of email recipients, and a flag for whether to send to the commit author.
+     */
+    public static class Notifications {
+
+        private static final Notifications none = new Notifications(Collections.emptyList(), false);
+        public static Notifications none() { return none; }
+
+        private final List<String> staticEmails;
+        private final boolean includeAuthor;
+
+        private Notifications(List<String> staticEmails, boolean includeAuthor) {
+            this.staticEmails = ImmutableList.copyOf(staticEmails);
+            this.includeAuthor = includeAuthor;
+        }
+
+        public static Notifications of(List<String> staticEmails, boolean includeAuthor) {
+            if (staticEmails.isEmpty() && ! includeAuthor)
+                return none;
+
+            return new Notifications(staticEmails, includeAuthor);
+        }
+
+        public List<String> staticEmails() {
+            return staticEmails;
+        }
+
+        public boolean includeAuthor() {
+            return includeAuthor;
+        }
+
     }
 
 }

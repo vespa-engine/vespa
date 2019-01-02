@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
@@ -16,7 +17,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -37,6 +40,7 @@ public class ApplicationPackageBuilder {
     private String globalServiceId = null;
     private String athenzIdentityAttributes = null;
     private String searchDefinition = "search test { }";
+    private DeploymentSpec.Notifications notifications = DeploymentSpec.Notifications.none();
 
     public ApplicationPackageBuilder majorVersion(int majorVersion) {
         this.majorVersion = Optional.of(majorVersion);
@@ -106,6 +110,16 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder notifyAuthor(boolean notify) {
+        this.notifications = DeploymentSpec.Notifications.of(this.notifications.staticEmails(), notify);
+        return this;
+    }
+
+    public ApplicationPackageBuilder notifyEmails(List<String> emails) {
+        this.notifications = DeploymentSpec.Notifications.of(emails, this.notifications.includeAuthor());
+        return this;
+    }
+
     /** Sets the content of the search definition test.sd */
     public ApplicationPackageBuilder searchDefinition(String testSearchDefinition) {
         this.searchDefinition = testSearchDefinition;
@@ -124,6 +138,14 @@ public class ApplicationPackageBuilder {
             xml.append("<upgrade policy='");
             xml.append(upgradePolicy);
             xml.append("'/>\n");
+        }
+        if (notifications != DeploymentSpec.Notifications.none()) {
+            xml.append("<notifications>\n");
+            if (notifications.includeAuthor())
+                xml.append("  <author />\n");
+            for (String email : notifications.staticEmails())
+                xml.append("  <email>").append(email).append("</email>\n");
+            xml.append("</notifications>\n");
         }
         xml.append(blockChange);
         xml.append("  <");

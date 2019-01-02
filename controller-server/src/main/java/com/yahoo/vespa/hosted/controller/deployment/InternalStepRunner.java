@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.DeploymentSpec.Notifications;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
@@ -435,12 +436,12 @@ public class InternalStepRunner implements StepRunner {
                                                    run.hasFailed() ? Optional.of(DeploymentJobs.JobError.unknown) : Optional.empty());
                 controller.applications().deploymentTrigger().notifyOfCompletion(report);
 
-                boolean newCommit = controller.applications().require(id.application())
-                                              .change().application()
-                                              .map(run.versions().targetApplication()::equals)
-                                              .orElse(false);
+                Application application = controller.applications().require(id.application());
+                boolean newCommit = application.change().application()
+                                               .map(run.versions().targetApplication()::equals)
+                                               .orElse(false);
                 if (run.hasFailed() && newCommit)
-                    sendNotification(run, logger);
+                    sendNotification(run, application.deploymentSpec().notifications(), logger);
             });
         }
         catch (IllegalStateException e) {
@@ -450,24 +451,27 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Sends a mail with a notification of a failed run, if one should be sent. */
-    private void sendNotification(Run run, DualLogger logger) {
-        try {
-            run.versions().targetApplication().authorEmail().ifPresent(author -> {
-                List<String> recipients = Collections.singletonList(author);
-            if (run.status() == outOfCapacity && run.id().type().isProduction())
-                controller.mailer().send(mails.outOfCapacity(run.id(), recipients));
-            if (run.status() == deploymentFailed)
-                controller.mailer().send(mails.deploymentFailure(run.id(), recipients));
-            if (run.status() == installationFailed)
-                controller.mailer().send(mails.installationFailure(run.id(), recipients));
-            if (run.status() == testFailure)
-                controller.mailer().send(mails.testFailure(run.id(), recipients));
-            if (run.status() == error)
-                controller.mailer().send(mails.systemError(run.id(), recipients));
-            });
-        }
-        catch (RuntimeException e) {
-            logger.log(INFO, "Exception trying to send mail for " + run.id(), e);
+    private void sendNotification(Run run, Notifications notifications, DualLogger logger) {
+        if (notifications != Notifications.none()) {
+            try {
+                List<String> recipients = new ArrayList<>(notifications.staticEmails());
+                if (notifications.includeAuthor())
+                    run.versions().targetApplication().authorEmail().ifPresent(recipients::add);
+
+                if (run.status() == outOfCapacity && run.id().type().isProduction())
+                    controller.mailer().send(mails.outOfCapacity(run.id(), recipients));
+                if (run.status() == deploymentFailed)
+                    controller.mailer().send(mails.deploymentFailure(run.id(), recipients));
+                if (run.status() == installationFailed)
+                    controller.mailer().send(mails.installationFailure(run.id(), recipients));
+                if (run.status() == testFailure)
+                    controller.mailer().send(mails.testFailure(run.id(), recipients));
+                if (run.status() == error)
+                    controller.mailer().send(mails.systemError(run.id(), recipients));
+            }
+            catch (RuntimeException e) {
+                logger.log(INFO, "Exception trying to send mail for " + run.id(), e);
+            }
         }
     }
 
@@ -484,14 +488,6 @@ public class InternalStepRunner implements StepRunner {
     /** Returns whether the time elapsed since the last real deployment in the given zone is more than the given timeout. */
     private boolean timedOut(Deployment deployment, Duration timeout) {
         return deployment.at().isBefore(controller.clock().instant().minus(timeout));
-    }
-
-    /** Returns a generated job report for the given run. */
-    private JobReport report(Run run) {
-        return JobReport.ofJob(run.id().application(),
-                                              run.id().type(),
-                                              run.id().number(),
-                                              run.hasFailed() ? Optional.of(DeploymentJobs.JobError.unknown) : Optional.empty());
     }
 
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
