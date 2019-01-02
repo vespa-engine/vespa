@@ -352,11 +352,9 @@ public class ContentCluster extends AbstractConfigProducer implements
         }
 
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
-            List<HostResource> hostsByName = drawContentHostsRecursively(count, false, rootGroup);
-            List<HostResource> hostsByIndex = drawContentHostsRecursively(count, true, rootGroup);
+            List<HostResource> hosts = drawContentHostsRecursively(count, rootGroup);
             // if (hosts.size() < count) // supply with containers TODO: Currently disabled due to leading to topology change problems
             //     hosts.addAll(drawContainerHosts(count - hosts.size(), containers, new HashSet<>(hosts)));
-            List<HostResource> hosts = HostResource.pickHosts(hostsByName, hostsByIndex, count, 3);
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
@@ -429,12 +427,12 @@ public class ContentCluster extends AbstractConfigProducer implements
          */
         // Note: This method cannot be changed to draw different nodes without ensuring that it will draw nodes
         //       which overlaps with previously drawn nodes as this will prevent rolling upgrade
-        private List<HostResource> drawContentHostsRecursively(int count, boolean byIndex, StorageGroup group) {
+        private List<HostResource> drawContentHostsRecursively(int count, StorageGroup group) {
             Set<HostResource> hosts = new HashSet<>();
             if (group.getNodes().isEmpty()) {
                 int hostsPerSubgroup = (int)Math.ceil((double)count / group.getSubgroups().size());
                 for (StorageGroup subgroup : group.getSubgroups())
-                    hosts.addAll(drawContentHostsRecursively(hostsPerSubgroup, byIndex, subgroup));
+                    hosts.addAll(drawContentHostsRecursively(hostsPerSubgroup, subgroup));
             }
             else {
                 hosts.addAll(group.getNodes().stream()
@@ -443,10 +441,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             }
 
             List<HostResource> sortedHosts = new ArrayList<>(hosts);
-            if (byIndex)
-                sortedHosts.sort((a, b) -> (a.comparePrimarilyByIndexTo(b)));
-            else // by name
-                Collections.sort(sortedHosts);
+            sortedHosts.sort((a, b) -> (a.comparePrimarilyByIndexTo(b)));
             sortedHosts = sortedHosts.subList(0, Math.min(count, hosts.size()));
             return sortedHosts;
         }
