@@ -109,7 +109,20 @@ public class DeploymentSpecXmlReader {
                                   steps,
                                   xmlForm,
                                   athenzDomain,
-                                  athenzService);
+                                  athenzService,
+                                  readNotifications(root));
+    }
+
+    private DeploymentSpec.Notifications readNotifications(Element root) {
+        Element notificationsElement = XML.getChild(root, "notifications");
+        if (notificationsElement == null)
+            return DeploymentSpec.Notifications.none();
+
+        List<String> staticEmails = XML.getChildren(notificationsElement, "email").stream()
+                .map(XML::getValue)
+                .collect(Collectors.toList());
+        boolean includeAuthor = XML.getChild(notificationsElement, "author") != null;
+        return DeploymentSpec.Notifications.of(staticEmails, includeAuthor);
     }
 
     /** Imposes some constraints on tag order which are not expressible in the schema */
