@@ -269,8 +269,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default/", POST)
                                       .data(entity)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
-                              "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"NullPointerException\"}",
-                              500);
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No application package found for tenant1.application1 with version 1.0.41-commit1\"}",
+                              400);
 
         // POST an application deployment to a production zone - operator emergency deployment - works with known package
         entity = createApplicationDeployData(Optional.empty(),
