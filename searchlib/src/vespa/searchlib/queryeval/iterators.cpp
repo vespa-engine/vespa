@@ -2,9 +2,7 @@
 
 #include "iterators.h"
 
-namespace search {
-
-namespace queryeval {
+namespace search::queryeval {
 
 RankedSearchIteratorBase::
 RankedSearchIteratorBase(const fef::TermFieldMatchDataArray &matchData)
@@ -13,6 +11,4 @@ RankedSearchIteratorBase(const fef::TermFieldMatchDataArray &matchData)
       _needUnpack(1)
 { }
 
-} // namespace queryeval
-
-} // namespace search
+}

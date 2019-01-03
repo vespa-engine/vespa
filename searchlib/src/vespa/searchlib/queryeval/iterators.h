@@ -5,9 +5,7 @@
 #include "searchiterator.h"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 
-namespace search {
-
-namespace queryeval {
+namespace search::queryeval {
 
 class DocIdAndFeatures;
 
@@ -28,7 +26,4 @@ public:
     RankedSearchIteratorBase(const fef::TermFieldMatchDataArray &matchData);
 };
 
-} // namespace queryeval
-
-} // namespace search
-
+}
