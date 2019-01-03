@@ -9,12 +9,11 @@ import org.junit.Test;
 import java.io.StringReader;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.Optional;
 
-import static com.yahoo.config.application.api.DeploymentSpec.Notifications.Role.author;
-import static com.yahoo.config.application.api.DeploymentSpec.Notifications.When.failing;
-import static com.yahoo.config.application.api.DeploymentSpec.Notifications.When.failingCommit;
+import static com.yahoo.config.application.api.Notifications.Role.author;
+import static com.yahoo.config.application.api.Notifications.When.failing;
+import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -442,7 +441,7 @@ public class DeploymentSpecTest {
 
     @Test
     public void noNotifications() {
-        assertEquals(DeploymentSpec.Notifications.none(),
+        assertEquals(Notifications.none(),
                      DeploymentSpec.fromXml("<deployment />").notifications());
     }
 
@@ -451,7 +450,7 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
                                                      "  <notifications />" +
                                                      "</deployment>");
-        assertEquals(DeploymentSpec.Notifications.none(),
+        assertEquals(Notifications.none(),
                      spec.notifications());
     }
 

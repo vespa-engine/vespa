@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
 import com.yahoo.config.application.api.DeploymentSpec.Delay;
 import com.yahoo.config.application.api.DeploymentSpec.ParallelZones;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
+import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.TimeWindow;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
@@ -115,10 +116,10 @@ public class DeploymentSpecXmlReader {
                                   readNotifications(root));
     }
 
-    private DeploymentSpec.Notifications readNotifications(Element root) {
+    private Notifications readNotifications(Element root) {
         Element notificationsElement = XML.getChild(root, "notifications");
         if (notificationsElement == null)
-            return DeploymentSpec.Notifications.none();
+            return Notifications.none();
 
         Optional<String> when = stringAttribute("when", notificationsElement);
         Map<String, Optional<String>> staticEmails = new HashMap<>();
@@ -133,7 +134,7 @@ public class DeploymentSpecXmlReader {
             addressAttribute.ifPresent(address -> staticEmails.put(address, stringAttribute("when", emailElement)));
             roleAttribute.ifPresent(role -> roleEmails.put(role, stringAttribute("when", emailElement)));
         }
-        return DeploymentSpec.Notifications.of(when, staticEmails, roleEmails);
+        return Notifications.of(when, staticEmails, roleEmails);
     }
 
     /** Imposes some constraints on tag order which are not expressible in the schema */
