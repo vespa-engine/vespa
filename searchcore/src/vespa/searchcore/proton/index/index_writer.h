@@ -31,6 +31,7 @@ public:
 
     virtual void
     heartBeat(search::SerialNum serialNum) override;
+    void compactLidSpace(search::SerialNum serialNum, const search::DocumentIdT lid) override;
 };
 
 } // namespace proton

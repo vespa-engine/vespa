@@ -38,8 +38,9 @@ public:
     // Inherit doc from ISourceSelector
     void setSource(uint32_t docId, queryeval::Source source) final override;
     uint32_t getDocIdLimit() const final override {
-        return _source.getNumDocs() - 1;
+        return _source.getCommittedDocIdLimit() - 1;
     }
+    void compactLidSpace(uint32_t lidLimit) override;
     std::unique_ptr<IIterator> createIterator() const final override {
         return std::make_unique<Iterator>(*this);
     }

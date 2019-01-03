@@ -140,12 +140,14 @@ struct MyIndexWriter : public test::MockIndexWriter
     MyLidVector _removes;
     int _heartBeatCount;
     uint32_t _commitCount;
+    uint32_t _wantedLidLimit;
     MyTracer &_tracer;
     MyIndexWriter(MyTracer &tracer)
         : test::MockIndexWriter(IIndexManager::SP(new test::MockIndexManager())),
           _removes(),
           _heartBeatCount(0),
           _commitCount(0),
+          _wantedLidLimit(0),
           _tracer(tracer)
     {}
     virtual void put(SerialNum serialNum, const document::Document &doc,
@@ -164,6 +166,9 @@ struct MyIndexWriter : public test::MockIndexWriter
         _tracer.traceCommit(indexAdapterTypeName, serialNum);
     }
     virtual void heartBeat(SerialNum) override { ++_heartBeatCount; }
+    void compactLidSpace(SerialNum, uint32_t lidLimit) override {
+        _wantedLidLimit = lidLimit;
+    }
 };
 
 struct MyGidToLidChangeHandler : public MockGidToLidChangeHandler
@@ -1144,7 +1149,7 @@ TEST_F("require that compactLidSpace() propagates to document meta store and doc
     f.compactLidSpaceAndWait(2);
     // performIndexForceCommit in index thread, then completion callback
     // in master thread.
-    EXPECT_TRUE(assertThreadObserver(7, 4, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(7, 5, 3, f.writeServiceObserver()));
     EXPECT_EQUAL(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
@@ -1162,7 +1167,7 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
     op.setSerialNum(0);
     f.runInMaster([&] () { f.fv.handleCompactLidSpace(op); });
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(6, 3, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(6, 4, 3, f.writeServiceObserver()));
     EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
@@ -1176,6 +1181,13 @@ TEST_F("require that compactLidSpace() propagates to attributeadapter",
     EXPECT_EQUAL(2u, f.maw._wantedLidLimit);
 }
 
+TEST_F("require that compactLidSpace() propagates to index writer",
+       SearchableFeedViewFixture)
+{
+    f.populateBeforeCompactLidSpace();
+    f.compactLidSpaceAndWait(2);
+    EXPECT_EQUAL(2u, f.miw._wantedLidLimit);
+}
 
 TEST_F("require that commit is called if visibility delay is 0",
        SearchableFeedViewFixture)
