@@ -129,7 +129,7 @@ public class NodePatcher {
             case "additionalIpAddresses" :
                 return node.withIpAddressPool(asStringSet(value));
             case WANT_TO_RETIRE :
-                return node.with(node.status().withWantToRetire(asBoolean(value)));
+                return node.withWantToRetire(asBoolean(value), nodeRepository.clock().instant());
             case WANT_TO_DEPROVISION :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
             case "hardwareDivergence" :

@@ -268,6 +268,7 @@ public class NodeSerializer {
             case "readied" : return History.Event.Type.readied;
             case "reserved" : return History.Event.Type.reserved;
             case "activated" : return History.Event.Type.activated;
+            case "wantToRetire": return History.Event.Type.wantToRetire;
             case "retired" : return History.Event.Type.retired;
             case "deactivated" : return History.Event.Type.deactivated;
             case "parked" : return History.Event.Type.parked;
@@ -285,6 +286,7 @@ public class NodeSerializer {
             case readied : return "readied";
             case reserved : return "reserved";
             case activated : return "activated";
+            case wantToRetire: return "wantToRetire";
             case retired : return "retired";
             case deactivated : return "deactivated";
             case parked : return "parked";

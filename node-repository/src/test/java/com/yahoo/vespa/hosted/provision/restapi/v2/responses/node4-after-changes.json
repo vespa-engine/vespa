@@ -71,6 +71,11 @@
       "event": "rebooted",
       "at": 123,
       "agent": "system"
+    },
+    {
+      "event": "wantToRetire",
+      "at": 123,
+      "agent": "operator"
     }
   ],
   "ipAddresses": [
