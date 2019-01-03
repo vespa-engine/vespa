@@ -494,5 +494,11 @@ public class JSONSearchHandlerTestCase {
     }
 
 
+    @Test
+    public void testContentTypeParsing() throws Exception {
+        JSONObject json = new JSONObject();
+        json.put("query", "abc");
+        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), "Application/JSON; charset=utf-8"), jsonResult);
+    }
 
 }
