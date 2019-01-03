@@ -1,13 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.yahoo.fs4.QueryPacket;
-import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
-import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.result.Coverage;
+import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -17,11 +15,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
+import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
 import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -84,9 +85,122 @@ public class InterleavedSearchInvokerTest {
         assertTrue("Degradataion reason is an adaptive timeout", result.getCoverage(false).isDegradedByAdapativeTimeout());
     }
 
+    @Test
+    public void requireCorrectCoverageCalculationWhenAllNodesOk() throws IOException {
+        SearchCluster cluster = new MockSearchCluster("!", 1, 2);
+        invokers.add(new MockInvoker(0, createCoverage(50155, 50155, 50155, 1, 1, 0)));
+        invokers.add(new MockInvoker(1, createCoverage(49845, 49845, 49845, 1, 1, 0)));
+        SearchInvoker invoker = createInterleavedInvoker(cluster, 0);
+
+        expectedEvents.add(new Event(null, 100, 0));
+        expectedEvents.add(new Event(null, 200, 1));
+
+        Result result = invoker.search(query, null, null, null);
+
+        Coverage cov = result.getCoverage(true);
+        assertThat(cov.getDocs(), is(100000L));
+        assertThat(cov.getNodes(), is(2));
+        assertThat(cov.getFull(), is(true));
+        assertThat(cov.getResultPercentage(), is(100));
+        assertThat(cov.getResultSets(), is(1));
+        assertThat(cov.getFullResultSets(), is(1));
+    }
+
+    @Test
+    public void requireCorrectCoverageCalculationWhenResultsAreLimitedByMatchPhase() throws IOException {
+        SearchCluster cluster = new MockSearchCluster("!", 1, 2);
+        invokers.add(new MockInvoker(0, createCoverage(10101, 50155, 50155, 1, 1, DEGRADED_BY_MATCH_PHASE)));
+        invokers.add(new MockInvoker(1, createCoverage(13319, 49845, 49845, 1, 1, DEGRADED_BY_MATCH_PHASE)));
+        SearchInvoker invoker = createInterleavedInvoker(cluster, 0);
+
+        expectedEvents.add(new Event(null, 100, 0));
+        expectedEvents.add(new Event(null, 200, 1));
+
+        Result result = invoker.search(query, null, null, null);
+
+        Coverage cov = result.getCoverage(true);
+        assertThat(cov.getDocs(), is(23420L));
+        assertThat(cov.getNodes(), is(2));
+        assertThat(cov.getFull(), is(false));
+        assertThat(cov.getResultPercentage(), is(23));
+        assertThat(cov.getResultSets(), is(1));
+        assertThat(cov.getFullResultSets(), is(0));
+        assertThat(cov.isDegradedByMatchPhase(), is(true));
+    }
+
+    @Test
+    public void requireCorrectCoverageCalculationWhenResultsAreLimitedBySoftTimeout() throws IOException {
+        SearchCluster cluster = new MockSearchCluster("!", 1, 2);
+        invokers.add(new MockInvoker(0, createCoverage(5000, 50155, 50155, 1, 1, DEGRADED_BY_TIMEOUT)));
+        invokers.add(new MockInvoker(1, createCoverage(4900, 49845, 49845, 1, 1, DEGRADED_BY_TIMEOUT)));
+        SearchInvoker invoker = createInterleavedInvoker(cluster, 0);
+
+        expectedEvents.add(new Event(null, 100, 0));
+        expectedEvents.add(new Event(null, 200, 1));
+
+        Result result = invoker.search(query, null, null, null);
+
+        Coverage cov = result.getCoverage(true);
+        assertThat(cov.getDocs(), is(9900L));
+        assertThat(cov.getNodes(), is(2));
+        assertThat(cov.getFull(), is(false));
+        assertThat(cov.getResultPercentage(), is(10));
+        assertThat(cov.getResultSets(), is(1));
+        assertThat(cov.getFullResultSets(), is(0));
+        assertThat(cov.isDegradedByTimeout(), is(true));
+    }
+
+    @Test
+    public void requireCorrectCoverageCalculationWhenOneNodeIsUnexpectedlyDown() throws IOException {
+        SearchCluster cluster = new MockSearchCluster("!", 1, 2);
+        invokers.add(new MockInvoker(0, createCoverage(50155, 50155, 50155, 1, 1, 0)));
+        invokers.add(new MockInvoker(1, createCoverage(49845, 49845, 49845, 1, 1, 0)));
+        SearchInvoker invoker = createInterleavedInvoker(cluster, 0);
+
+        expectedEvents.add(new Event(null, 100, 0));
+        expectedEvents.add(null);
+
+        Result result = invoker.search(query, null, null, null);
+
+        Coverage cov = result.getCoverage(true);
+        assertThat(cov.getDocs(), is(50155L));
+        assertThat(cov.getNodes(), is(1));
+        assertThat(cov.getNodesTried(), is(2));
+        assertThat(cov.getFull(), is(false));
+        assertThat(cov.getResultPercentage(), is(50));
+        assertThat(cov.getResultSets(), is(1));
+        assertThat(cov.getFullResultSets(), is(0));
+        assertThat(cov.isDegradedByTimeout(), is(true));
+    }
+
+    @Test
+    public void requireCorrectCoverageCalculationWhenDegradedCoverageIsExpected() throws IOException {
+        SearchCluster cluster = new MockSearchCluster("!", 1, 2);
+        invokers.add(new MockInvoker(0, createCoverage(50155, 50155, 50155, 1, 1, 0)));
+        Coverage errorCoverage = new Coverage(0, 0, 0);
+        errorCoverage.setNodesTried(1);
+        invokers.add(new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError("node is down"), errorCoverage));
+        SearchInvoker invoker = createInterleavedInvoker(cluster, 0);
+
+        expectedEvents.add(new Event(null,   1, 1));
+        expectedEvents.add(new Event(null, 100, 0));
+
+        Result result = invoker.search(query, null, null, null);
+
+        Coverage cov = result.getCoverage(true);
+        assertThat(cov.getDocs(), is(50155L));
+        assertThat(cov.getNodes(), is(1));
+        assertThat(cov.getNodesTried(), is(2));
+        assertThat(cov.getFull(), is(false));
+        assertThat(cov.getResultPercentage(), is(50));
+        assertThat(cov.getResultSets(), is(1));
+        assertThat(cov.getFullResultSets(), is(0));
+        assertThat(cov.isDegradedByTimeout(), is(true));
+    }
+
     private InterleavedSearchInvoker createInterleavedInvoker(SearchCluster searchCluster, int numInvokers) {
         for (int i = 0; i < numInvokers; i++) {
-            invokers.add(new TestInvoker());
+            invokers.add(new MockInvoker(i));
         }
 
         return new InterleavedSearchInvoker(invokers, null, searchCluster) {
@@ -113,13 +227,23 @@ public class InterleavedSearchInvokerTest {
         };
     }
 
+    private static Coverage createCoverage(int docs, int activeDocs, int soonActiveDocs, int nodes, int nodesTried, int degradedReason) {
+        Coverage coverage = new Coverage(docs, activeDocs, nodes);
+        coverage.setSoonActive(soonActiveDocs);
+        coverage.setNodesTried(nodesTried);
+        coverage.setDegradedReason(degradedReason);
+        return coverage;
+    }
+
     private class Event {
         Long expectedTimeout;
         long delay;
         Integer invokerIndex;
 
         public Event(Integer expectedTimeout, int delay, Integer invokerIndex) {
-            this.expectedTimeout = (long) expectedTimeout;
+            if (expectedTimeout != null) {
+                this.expectedTimeout = (long) expectedTimeout;
+            }
             this.delay = delay;
             this.invokerIndex = invokerIndex;
         }
@@ -137,25 +261,6 @@ public class InterleavedSearchInvokerTest {
             } else {
                 return invokers.get(invokerIndex);
             }
-        }
-    }
-
-    private class TestInvoker extends SearchInvoker {
-        protected TestInvoker() {
-            super(Optional.of(new Node(42, "?", 0, 0)));
-        }
-
-        @Override
-        protected void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException {
-        }
-
-        @Override
-        protected Result getSearchResult(CacheKey cacheKey, Execution execution) throws IOException {
-            return new Result(query);
-        }
-
-        @Override
-        protected void release() {
         }
     }
 

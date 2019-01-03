@@ -115,16 +115,13 @@ public class FS4InvokerFactory {
 
     private SearchInvoker createCoverageErrorInvoker(List<Node> nodes, Set<Integer> failed) {
         StringBuilder down = new StringBuilder("Connection failure on nodes with distribution-keys: ");
-        Integer key = null;
         int count = 0;
         for (Node node : nodes) {
             if (failed.contains(node.key())) {
-                count++;
-                if (key == null) {
-                    key = node.key();
-                } else {
+                if (count > 0) {
                     down.append(", ");
                 }
+                count++;
                 down.append(node.key());
             }
         }
