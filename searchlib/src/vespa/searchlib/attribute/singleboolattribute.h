@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -8,6 +8,10 @@
 
 namespace search {
 
+/**
+ * Attributevector for boolean field values occupying a bit per document
+ * and backed by a growable rcu bit vector.
+ */
 class SingleBoolAttribute : public IntegerAttributeTemplate<int8_t>
 {
 public:
