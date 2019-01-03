@@ -557,10 +557,23 @@ public class SearchHandler extends LoggingRequestHandler {
         return searchChainRegistry;
     }
 
+    static private String getMediaType(HttpRequest request) {
+        String header = request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE);
+        if (header == null) {
+            return "";
+        }
+        int semi = header.indexOf(';');
+        if (semi != -1) {
+            header = header.substring(0, semi);
+        }
+        return com.yahoo.text.Lowercase.toLowerCase(header.trim());
+    }
+
     private Map<String, String> requestMapFromRequest(HttpRequest request) {
 
         if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST
-            && JSON_CONTENT_TYPE.equals(request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE))) {
+            && JSON_CONTENT_TYPE.equals(getMediaType(request)))
+        {
             Inspector inspector;
             try {
                 byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
