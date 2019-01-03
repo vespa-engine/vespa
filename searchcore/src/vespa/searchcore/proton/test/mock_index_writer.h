@@ -20,7 +20,6 @@ struct MockIndexWriter : public IIndexWriter
     virtual void remove(search::SerialNum, const search::DocumentIdT) override {}
     virtual void commit(search::SerialNum, OnWriteDoneType) override {}
     virtual void heartBeat(search::SerialNum) override {}
-    void compactLidSpace(search::SerialNum, const search::DocumentIdT) override {}
 };
 
 } // namespace test

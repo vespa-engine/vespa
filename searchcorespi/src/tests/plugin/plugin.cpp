@@ -20,7 +20,6 @@ public:
     virtual void removeDocument(uint32_t, SerialNum) override { }
     virtual void commit(SerialNum, OnWriteDoneType) override { }
     virtual void heartBeat(SerialNum ) override {}
-    void compactLidSpace(uint32_t, SerialNum) override {}
     virtual SerialNum getCurrentSerialNum() const override { return 0; }
     virtual SerialNum getFlushedSerialNum() const override { return 0; }
     virtual IndexSearchable::SP getSearchable() const override {
