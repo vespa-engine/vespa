@@ -562,11 +562,9 @@ public class SearchHandler extends LoggingRequestHandler {
         if (header == null) {
             return "";
         }
-System.err.println("header is: "+header);
         int semi = header.indexOf(';');
         if (semi != -1) {
             header = header.substring(0, semi);
-System.err.println("header main part is: "+header);
         }
         return com.yahoo.text.Lowercase.toLowerCase(header.trim());
     }
