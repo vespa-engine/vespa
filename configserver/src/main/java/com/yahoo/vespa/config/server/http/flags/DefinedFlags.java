@@ -20,12 +20,12 @@ import java.util.List;
  */
 public class DefinedFlags extends HttpResponse {
     private static ObjectMapper mapper = new ObjectMapper();
-    private static final Comparator<FlagDefinition<?>> sortByFlagId =
+    private static final Comparator<FlagDefinition> sortByFlagId =
             (left, right) -> left.getUnboundFlag().id().compareTo(right.getUnboundFlag().id());
 
-    private final List<FlagDefinition<?>> flags;
+    private final List<FlagDefinition> flags;
 
-    public DefinedFlags(List<FlagDefinition<?>> flags) {
+    public DefinedFlags(List<FlagDefinition> flags) {
         super(Response.Status.OK);
         this.flags = flags;
     }

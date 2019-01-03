@@ -1,53 +1,33 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.LongNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Definitions of most/all flags.
- *
- * <p>The flags are centrally defined in this module to allow 1. all code to access flags that may be used in
- * quite different modules and processes, and 2. in particular allow the config server to access all flags
- * so operators have a nicer UI for setting, modifying, or removing flag values.
- *
- * <p>This class should have been an enum, but unfortunately enums cannot be generic, which will eventually be
- * fixed with <a href="https://openjdk.java.net/jeps/301">JEP 301: Enhanced Enums</a>.
- *
  * @author hakonhall
  */
 public class Flags {
-    public static final FlagSerializer<Boolean> BOOLEAN_SERIALIZER = new SimpleFlagSerializer<>(BooleanNode::valueOf, JsonNode::isBoolean, JsonNode::asBoolean);
-    public static final FlagSerializer<String> STRING_SERIALIZER = new SimpleFlagSerializer<>(TextNode::new, JsonNode::isTextual, JsonNode::asText);
-    public static final FlagSerializer<Integer> INT_SERIALIZER = new SimpleFlagSerializer<>(IntNode::new, JsonNode::isIntegralNumber, JsonNode::asInt);
-    public static final FlagSerializer<Long> LONG_SERIALIZER = new SimpleFlagSerializer<>(LongNode::new, JsonNode::isIntegralNumber, JsonNode::asLong);
+    private static volatile ConcurrentHashMap<FlagId, FlagDefinition> flags = new ConcurrentHashMap<>();
 
-    private static volatile ConcurrentHashMap<FlagId, FlagDefinition<?>> flags = new ConcurrentHashMap<>();
-
-    public static final UnboundFlag<Boolean> HEALTHMONITOR_MONITOR_INFRA = defineBoolean(
+    public static final UnboundBooleanFlag HEALTHMONITOR_MONITOR_INFRA = defineFeatureFlag(
             "healthmonitor-monitorinfra", true,
-            "Whether the health monitor in service monitor monitors the health of infrastructure applications.",
-            "Affects all applications activated after the value is changed.",
+                    "Whether the health monitor in service monitor monitors the health of infrastructure applications.",
+                    "Affects all applications activated after the value is changed.",
             FetchVector.Dimension.HOSTNAME);
 
-    public static final UnboundFlag<Boolean> DUPERMODEL_CONTAINS_INFRA = defineBoolean(
+    public static final UnboundBooleanFlag DUPERMODEL_CONTAINS_INFRA = defineFeatureFlag(
             "dupermodel-contains-infra", true,
             "Whether the DuperModel in config server/controller includes active infrastructure applications " +
                     "(except from controller/config apps).",
             "Requires restart of config server/controller to take effect.",
             FetchVector.Dimension.HOSTNAME);
 
-    public static final UnboundFlag<Boolean> DUPERMODEL_USE_CONFIGSERVERCONFIG = defineBoolean(
+    public static final UnboundBooleanFlag DUPERMODEL_USE_CONFIGSERVERCONFIG = defineFeatureFlag(
             "dupermodel-use-configserverconfig", true,
             "For historical reasons, the ApplicationInfo in the DuperModel for controllers and config servers " +
                     "is based on the ConfigserverConfig (this flag is true). We want to transition to use the " +
@@ -55,75 +35,86 @@ public class Flags {
             "Requires restart of config server/controller to take effect.",
             FetchVector.Dimension.HOSTNAME);
 
-    public static final UnboundFlag<Boolean> USE_CONFIG_SERVER_CACHE = defineBoolean(
+    public static final UnboundBooleanFlag USE_CONFIG_SERVER_CACHE = defineFeatureFlag(
             "use-config-server-cache", true,
             "Whether config server will use cache to answer config requests.",
             "Takes effect immediately when changed.",
             FetchVector.Dimension.HOSTNAME, FetchVector.Dimension.APPLICATION_ID);
 
-    public static final UnboundFlag<Boolean> CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD = defineBoolean(
+    public static final UnboundBooleanFlag CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD = defineFeatureFlag(
             "config-server-bootstrap-in-separate-thread", true,
             "Whether to run config server/controller bootstrap in a separate thread.",
             "Takes effect only at bootstrap of config server/controller",
             FetchVector.Dimension.HOSTNAME);
 
-    public static final UnboundFlag<Boolean> PROXYHOST_USES_REAL_ORCHESTRATOR = defineBoolean(
+    public static final UnboundBooleanFlag PROXYHOST_USES_REAL_ORCHESTRATOR = defineFeatureFlag(
             "proxyhost-uses-real-orchestrator", true,
             "Whether proxy hosts uses the real Orchestrator when suspending/resuming, or a synthetic.",
             "Takes effect immediately when changed.",
             FetchVector.Dimension.HOSTNAME);
 
-    public static final UnboundFlag<Boolean> CONFIGHOST_USES_REAL_ORCHESTRATOR = defineBoolean(
+    public static final UnboundBooleanFlag CONFIGHOST_USES_REAL_ORCHESTRATOR = defineFeatureFlag(
             "confighost-uses-real-orchestrator", false,
             "Whether the config server hosts uses the real Orchestrator when suspending/resuming, or a synthetic.",
             "Takes effect immediately when changed.",
             FetchVector.Dimension.HOSTNAME);
 
-    public static final UnboundFlag<Boolean> ENABLE_DOCKER_1_13 = defineBoolean(
+    public static final UnboundBooleanFlag ENABLE_DOCKER_1_13 = defineFeatureFlag(
             "enable-docker-1.13", true,
             "Whether to upgrade to Docker version 1.13.",
             "Takes effect on next host admin tick.",
             FetchVector.Dimension.HOSTNAME);
 
-    public static final UnboundFlag<Boolean> ENABLE_CROWDSTRIKE = defineBoolean(
+    public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
             "enable-crowdstrike", true,
             "Whether to enable CrowdStrike.", "Takes effect on next host admin tick");
 
-    public static final UnboundFlag<Boolean> ENABLE_NESSUS = defineBoolean(
+    public static final UnboundBooleanFlag ENABLE_NESSUS = defineFeatureFlag(
             "enable-nessus", true,
             "Whether to enable Nessus.", "Takes effect on next host admin tick");
 
-    public static UnboundFlag<Boolean> defineBoolean(String flagId, boolean defaultValue, String description,
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
+                                                       String modificationEffect, FetchVector.Dimension... dimensions) {
+        return define(UnboundBooleanFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
+    }
+
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static UnboundStringFlag defineStringFlag(String flagId, String defaultValue, String description,
                                                      String modificationEffect, FetchVector.Dimension... dimensions) {
-        return define(flagId, defaultValue, BOOLEAN_SERIALIZER, description, modificationEffect, dimensions);
+        return define(UnboundStringFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
     }
 
-    public static UnboundFlag<String> defineString(String flagId, String defaultValue, String description,
-                                                   String modificationEffect, FetchVector.Dimension... dimensions) {
-        return define(flagId, defaultValue, STRING_SERIALIZER, description, modificationEffect, dimensions);
-    }
-
-    public static UnboundFlag<Integer> defineInt(String flagId, Integer defaultValue, String description,
-                                                 String modificationEffect, FetchVector.Dimension... dimensions) {
-        return define(flagId, defaultValue, INT_SERIALIZER, description, modificationEffect, dimensions);
-    }
-
-    public static UnboundFlag<Long> defineLong(String flagId, Long defaultValue, String description,
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static UnboundIntFlag defineIntFlag(String flagId, int defaultValue, String description,
                                                String modificationEffect, FetchVector.Dimension... dimensions) {
-        return define(flagId, defaultValue, LONG_SERIALIZER, description, modificationEffect, dimensions);
+        return define(UnboundIntFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
     }
 
-    public static <T> UnboundFlag<T> defineJackson(String flagId, Class<T> jacksonClass, T defaultValue, String description,
-                                                   String modificationEffect, FetchVector.Dimension... dimensions) {
-        return define(flagId, defaultValue, new JacksonSerializer<>(jacksonClass), description, modificationEffect, dimensions);
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static UnboundLongFlag defineLongFlag(String flagId, long defaultValue, String description,
+                                                 String modificationEffect, FetchVector.Dimension... dimensions) {
+        return define(UnboundLongFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
+    }
+
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static <T> UnboundJacksonFlag<T> defineJacksonFlag(String flagId, T defaultValue, Class<T> jacksonClass, String description,
+                                                              String modificationEffect, FetchVector.Dimension... dimensions) {
+        return define((id2, defaultValue2, vector2) -> new UnboundJacksonFlag<>(id2, defaultValue2, vector2, jacksonClass),
+                flagId, defaultValue, description, modificationEffect, dimensions);
+    }
+
+    @FunctionalInterface
+    private interface TypedUnboundFlagFactory<T, U extends UnboundFlag<?, ?, ?>> {
+        U create(FlagId id, T defaultVale, FetchVector defaultFetchVector);
     }
 
     /**
      * Defines a Flag.
      *
+     * @param factory            Factory for creating unbound flag of type U
      * @param flagId             The globally unique FlagId.
      * @param defaultValue       The default value if none is present after resolution.
-     * @param deserializer       Deserialize JSON to value type.
      * @param description        Description of how the flag is used.
      * @param modificationEffect What is required for the flag to take effect? A restart of process? immediately? etc.
      * @param dimensions         What dimensions will be set in the {@link FetchVector} when fetching
@@ -132,34 +123,46 @@ public class Flags {
      *                           For instance, if APPLICATION is one of the dimensions here, you should make sure
      *                           APPLICATION is set to the ApplicationId in the fetch vector when fetching the RawFlag
      *                           from the FlagSource.
-     * @param <T>                The type of the flag value, typically Boolean for flags guarding features.
+     * @param <T>                The boxed type of the flag value, e.g. Boolean for flags guarding features.
+     * @param <U>                The type of the unbound flag, e.g. UnboundBooleanFlag.
      * @return An unbound flag with {@link FetchVector.Dimension#HOSTNAME HOSTNAME} environment. The ZONE environment
      *         is typically implicit.
      */
-    private static <T> UnboundFlag<T> define(String flagId, T defaultValue, Deserializer<T> deserializer,
-                                             String description, String modificationEffect,
-                                             FetchVector.Dimension... dimensions) {
-        UnboundFlag<T> flag = new UnboundFlag<>(flagId, defaultValue, deserializer)
-                .with(FetchVector.Dimension.HOSTNAME, Defaults.getDefaults().vespaHostname());
-        FlagDefinition<T> definition = new FlagDefinition<>(flag, description, modificationEffect, Arrays.asList(dimensions));
-        flags.put(flag.id(), definition);
-        return flag;
+    private static <T, U extends UnboundFlag<?, ?, ?>> U define(TypedUnboundFlagFactory<T, U> factory,
+                                                                String flagId,
+                                                                T defaultValue,
+                                                                String description,
+                                                                String modificationEffect,
+                                                                FetchVector.Dimension[] dimensions) {
+        FlagId id = new FlagId(flagId);
+        FetchVector vector = new FetchVector().with(FetchVector.Dimension.HOSTNAME, Defaults.getDefaults().vespaHostname());
+        U unboundFlag = factory.create(id, defaultValue, vector);
+        FlagDefinition definition = new FlagDefinition(unboundFlag, description, modificationEffect, dimensions);
+        flags.put(id, definition);
+        return unboundFlag;
     }
 
-    public static List<FlagDefinition<?>> getAllFlags() {
+    public static List<FlagDefinition> getAllFlags() {
         return new ArrayList<>(flags.values());
     }
 
-    public static Optional<FlagDefinition<?>> getFlag(FlagId flagId) {
+    public static Optional<FlagDefinition> getFlag(FlagId flagId) {
         return Optional.ofNullable(flags.get(flagId));
     }
 
+    /**
+     * Allows the statically defined flags to be controlled in a test.
+     *
+     * <p>Returns a Replacer instance to be used with e.g. a try-with-resources block. Within the block,
+     * the flags starts out as cleared. Flags can be defined, etc. When leaving the block, the flags from
+     * before the block is reinserted.
+     * */
     public static Replacer clearFlagsForTesting() {
         return new Replacer();
     }
 
     public static class Replacer implements AutoCloseable {
-        private final ConcurrentHashMap<FlagId, FlagDefinition<?>> savedFlags;
+        private final ConcurrentHashMap<FlagId, FlagDefinition> savedFlags;
 
         private Replacer() {
             this.savedFlags = Flags.flags;

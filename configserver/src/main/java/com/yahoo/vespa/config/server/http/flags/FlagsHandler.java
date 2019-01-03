@@ -6,13 +6,17 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.restapi.Path;
+import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.configserver.flags.FlagsDb;
+import com.yahoo.vespa.flags.FlagDefinition;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.json.FlagData;
+import com.yahoo.yolean.Exceptions;
 
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.util.Objects;
 
@@ -74,7 +78,19 @@ public class FlagsHandler extends HttpHandler {
     }
 
     private HttpResponse putFlagData(HttpRequest request, FlagId flagId) {
-        flagsDb.setValue(flagId, FlagData.deserialize(request.getData()));
+        FlagData data;
+        try {
+            data = FlagData.deserialize(request.getData());
+        } catch (UncheckedIOException e) {
+            return HttpErrorResponse.badRequest("Failed to deserialize request data: " + Exceptions.toMessageString(e));
+        }
+
+        if (!isForce(request)) {
+            FlagDefinition definition = Flags.getFlag(flagId).get(); // FlagId has been validated in findFlagId()
+            data.validate(definition.getUnboundFlag().serializer());
+        }
+
+        flagsDb.setValue(flagId, data);
         return new OKResponse();
     }
 
@@ -86,12 +102,15 @@ public class FlagsHandler extends HttpHandler {
     private FlagId findFlagId(HttpRequest request, Path path) {
         FlagId flagId = new FlagId(path.get("flagId"));
 
-        if (!Objects.equals(request.getProperty("force"), "true")) {
-            if (Flags.getAllFlags().stream().noneMatch(definition -> flagId.equals(definition.getUnboundFlag().id()))) {
-                throw new NotFoundException("There is no flag '" + flagId + "' (use ?force=true to override)");
-            }
+        if (!isForce(request)) {
+            Flags.getFlag(flagId).orElseThrow(() ->
+                    new NotFoundException("There is no flag '" + flagId + "' (use ?force=true to override)"));
         }
 
         return flagId;
+    }
+
+    private boolean isForce(HttpRequest request) {
+        return Objects.equals(request.getProperty("force"), "true");
     }
 }

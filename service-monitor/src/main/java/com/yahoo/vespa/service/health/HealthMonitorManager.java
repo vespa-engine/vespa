@@ -8,7 +8,7 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.flags.Flag;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.duper.DuperModelManager;
@@ -50,7 +50,7 @@ public class HealthMonitorManager implements MonitorManager {
     private final ConcurrentHashMap<ApplicationId, ApplicationHealthMonitor> healthMonitors = new ConcurrentHashMap<>();
     private final DuperModelManager duperModel;
     private final ApplicationHealthMonitorFactory applicationHealthMonitorFactory;
-    private final Flag<Boolean> monitorInfra;
+    private final BooleanFlag monitorInfra;
 
     @Inject
     public HealthMonitorManager(DuperModelManager duperModel, FlagSource flagSource) {
@@ -60,13 +60,13 @@ public class HealthMonitorManager implements MonitorManager {
     }
 
     private HealthMonitorManager(DuperModelManager duperModel,
-                                 Flag<Boolean> monitorInfra,
+                                 BooleanFlag monitorInfra,
                                  StateV1HealthModel healthModel) {
         this(duperModel, monitorInfra, id -> new ApplicationHealthMonitor(id, healthModel));
     }
 
     HealthMonitorManager(DuperModelManager duperModel,
-                         Flag<Boolean> monitorInfra,
+                         BooleanFlag monitorInfra,
                          ApplicationHealthMonitorFactory applicationHealthMonitorFactory) {
         this.duperModel = duperModel;
         this.monitorInfra = monitorInfra;

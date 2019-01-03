@@ -24,44 +24,44 @@ public class FileFlagSourceTest {
 
     @Test
     public void testFeatureLikeFlags() throws IOException {
-        Flag<Boolean> featureFlag = new Flag<>(id, false, source, Flags.BOOLEAN_SERIALIZER);
-        Flag<Boolean> byDefaultTrue = new Flag<>(id, true, source, Flags.BOOLEAN_SERIALIZER);
+        BooleanFlag booleanFlag = new UnboundBooleanFlag(id).bindTo(source);
+        BooleanFlag byDefaultTrue = new UnboundBooleanFlag(id, true).bindTo(source);
 
-        assertFalse(featureFlag.value());
+        assertFalse(booleanFlag.value());
         assertTrue(byDefaultTrue.value());
 
         writeFlag(id.toString(), "true\n");
 
-        assertTrue(featureFlag.value());
+        assertTrue(booleanFlag.value());
         assertTrue(byDefaultTrue.value());
 
         writeFlag(id.toString(), "false\n");
 
-        assertFalse(featureFlag.value());
+        assertFalse(booleanFlag.value());
         assertFalse(byDefaultTrue.value());
     }
 
     @Test
     public void testIntegerLikeFlags() throws IOException {
-        Flag<Integer> intFlag = new Flag<>(id, -1, source, Flags.INT_SERIALIZER);
-        Flag<Long> longFlag = new Flag<>(id, -2L, source, Flags.LONG_SERIALIZER);
+        IntFlag intFlag = new UnboundIntFlag(id, -1).bindTo(source);
+        LongFlag longFlag = new UnboundLongFlag(id, -2L).bindTo(source);
 
         assertFalse(fetch().isPresent());
         assertFalse(fetch().isPresent());
-        assertEquals(-1, (int) intFlag.value());
-        assertEquals(-2L, (long) longFlag.value());
+        assertEquals(-1, intFlag.value());
+        assertEquals(-2L, longFlag.value());
 
         writeFlag(id.toString(), "1\n");
 
         assertTrue(fetch().isPresent());
         assertTrue(fetch().isPresent());
-        assertEquals(1, (int) intFlag.value());
-        assertEquals(1L, (long) longFlag.value());
+        assertEquals(1, intFlag.value());
+        assertEquals(1L, longFlag.value());
     }
 
     @Test
     public void testStringFlag() throws IOException {
-        Flag<String> stringFlag = new Flag<>(id, "default", source, Flags.STRING_SERIALIZER);
+        StringFlag stringFlag = new UnboundStringFlag(id, "default").bindTo(source);
         assertFalse(fetch().isPresent());
         assertEquals("default", stringFlag.value());
 
@@ -71,11 +71,11 @@ public class FileFlagSourceTest {
 
     @Test
     public void parseFailure() throws IOException {
-        Flag<Boolean> featureFlag = new Flag<>(id, false, source, Flags.BOOLEAN_SERIALIZER);
-        writeFlag(featureFlag.id().toString(), "garbage");
+        BooleanFlag booleanFlag = new UnboundBooleanFlag(id).bindTo(source);
+        writeFlag(booleanFlag.id().toString(), "garbage");
 
         try {
-            featureFlag.value();
+            booleanFlag.value();
         } catch (UncheckedIOException e) {
             assertThat(e.getMessage(), containsString("garbage"));
         }

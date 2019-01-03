@@ -15,7 +15,6 @@ public class OrderedFlagSource implements FlagSource {
     private final List<FlagSource> sources;
 
     /**
-     *
      * @param sources Flag sources in descending priority order.
      */
     public OrderedFlagSource(FlagSource... sources) {
