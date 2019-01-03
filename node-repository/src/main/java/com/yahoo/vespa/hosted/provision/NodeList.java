@@ -78,6 +78,13 @@ public class NodeList {
                        .collect(collectingAndThen(Collectors.toList(), NodeList::new));
     }
 
+    /** Returns the subset of nodes that are parents */
+    public NodeList parents() {
+        return nodes.stream()
+                    .filter(n -> !n.parentHostname().isPresent())
+                    .collect(collectingAndThen(Collectors.toList(), NodeList::new));
+    }
+
     /** Returns the child nodes of the given parent node */
     public NodeList childrenOf(Node parent) {
         return nodes.stream()

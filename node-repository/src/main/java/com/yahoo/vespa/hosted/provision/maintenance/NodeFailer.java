@@ -12,6 +12,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -33,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
 
 /**
@@ -122,6 +124,7 @@ public class NodeFailer extends Maintainer {
             failActive(node, reason);
         }
 
+        metric.set(throttlingActiveMetric, Math.min( 1, throttledNodeFailures), null);
         metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
     }
 
@@ -326,20 +329,21 @@ public class NodeFailer extends Maintainer {
         if (throttlePolicy == ThrottlePolicy.disabled) return false;
         Instant startOfThrottleWindow = clock.instant().minus(throttlePolicy.throttleWindow);
         List<Node> nodes = nodeRepository().getNodes();
-        long recentlyFailedNodes = nodes.stream()
-                .filter(n -> n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow))
-                .count();
-        int allowedFailedNodes = (int) Math.max(nodes.size() * throttlePolicy.fractionAllowedToFail,
-                                                throttlePolicy.minimumAllowedToFail);
+        NodeList recentlyFailedNodes = nodes.stream()
+                                            .filter(n -> n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow))
+                                            .collect(collectingAndThen(Collectors.toList(), NodeList::new));
 
-        boolean throttle = allowedFailedNodes < recentlyFailedNodes ||
-                (allowedFailedNodes == recentlyFailedNodes && !node.type().isDockerHost());
-        if (throttle) {
-            log.info(String.format("Want to fail node %s, but throttling is in effect: %s", node.hostname(),
-                                   throttlePolicy.toHumanReadableString()));
-        }
-        metric.set(throttlingActiveMetric, throttle ? 1 : 0, null);
-        return throttle;
+        // Allow failing nodes within policy
+        if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(nodes.size())) return false;
+
+        // Always allow failing parents up to minimum limit
+        if (!node.parentHostname().isPresent() &&
+            recentlyFailedNodes.parents().size() < throttlePolicy.minimumAllowedToFail) return false;
+
+        log.info(String.format("Want to fail node %s, but throttling is in effect: %s", node.hostname(),
+                               throttlePolicy.toHumanReadableString(nodes.size())));
+
+        return true;
     }
 
     public enum ThrottlePolicy {
@@ -347,9 +351,9 @@ public class NodeFailer extends Maintainer {
         hosted(Duration.ofDays(1), 0.01, 2),
         disabled(Duration.ZERO, 0, 0);
 
-        public final Duration throttleWindow;
-        public final double fractionAllowedToFail;
-        public final int minimumAllowedToFail;
+        private final Duration throttleWindow;
+        private final double fractionAllowedToFail;
+        private final int minimumAllowedToFail;
 
         ThrottlePolicy(Duration throttleWindow, double fractionAllowedToFail, int minimumAllowedToFail) {
             this.throttleWindow = throttleWindow;
@@ -357,10 +361,16 @@ public class NodeFailer extends Maintainer {
             this.minimumAllowedToFail = minimumAllowedToFail;
         }
 
-        public String toHumanReadableString() {
-            return String.format("Max %.0f%% or %d nodes can fail over a period of %s", fractionAllowedToFail*100,
+        public int allowedToFailOf(int totalNodes) {
+            return (int) Math.max(totalNodes * fractionAllowedToFail, minimumAllowedToFail);
+        }
+
+        public String toHumanReadableString(int totalNodes) {
+            return String.format("Max %.0f%% (%d) or %d nodes can fail over a period of %s", fractionAllowedToFail*100,
+                                 allowedToFailOf(totalNodes),
                                  minimumAllowedToFail, throttleWindow);
         }
+
     }
 
 }
