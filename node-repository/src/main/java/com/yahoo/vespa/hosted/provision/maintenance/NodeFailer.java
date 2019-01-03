@@ -348,7 +348,7 @@ public class NodeFailer extends Maintainer {
 
     public enum ThrottlePolicy {
 
-        hosted(Duration.ofDays(1), 0.01, 2),
+        hosted(Duration.ofDays(1), 0.02, 2),
         disabled(Duration.ZERO, 0, 0);
 
         private final Duration throttleWindow;
