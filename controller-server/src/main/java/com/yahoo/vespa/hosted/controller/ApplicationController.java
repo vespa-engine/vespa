@@ -384,11 +384,17 @@ public class ApplicationController {
                     : new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), version.id()));
         }
         catch (RuntimeException e) { // If application has switched deployment pipeline, artifacts stored prior to the switch are in the other artifact store.
-            log.info("Fetching application package for " + application.id() + " from alternate repository; it is now deployed "
-                     + (application.deploymentJobs().deployedInternally() ? "internally" : "externally") + "\nException was: " + Exceptions.toMessageString(e));
-            return application.deploymentJobs().deployedInternally()
-                    ? new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), version.id()))
-                    : new ApplicationPackage(applicationStore.get(application.id(), version));
+            try {
+                log.info("Fetching application package for " + application.id() + " from alternate repository; it is now deployed "
+                         + (application.deploymentJobs().deployedInternally() ? "internally" : "externally") + "\nException was: " + Exceptions.toMessageString(e));
+                return application.deploymentJobs().deployedInternally()
+                        ? new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), version.id()))
+                        : new ApplicationPackage(applicationStore.get(application.id(), version));
+            }
+            catch (RuntimeException s) { // If this fails, too, the first failure is most likely the relevant one.
+                e.addSuppressed(s);
+                throw e;
+            }
         }
     }
 
