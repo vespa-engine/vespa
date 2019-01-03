@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
@@ -8,9 +9,11 @@ import org.junit.Test;
 import java.io.StringReader;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.Optional;
 
+import static com.yahoo.config.application.api.Notifications.Role.author;
+import static com.yahoo.config.application.api.Notifications.When.failing;
+import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -438,7 +441,7 @@ public class DeploymentSpecTest {
 
     @Test
     public void noNotifications() {
-        assertEquals(DeploymentSpec.Notifications.none(),
+        assertEquals(Notifications.none(),
                      DeploymentSpec.fromXml("<deployment />").notifications());
     }
 
@@ -447,21 +450,23 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
                                                      "  <notifications />" +
                                                      "</deployment>");
-        assertEquals(DeploymentSpec.Notifications.none(),
+        assertEquals(Notifications.none(),
                      spec.notifications());
     }
 
     @Test
     public void someNotifications() {
         DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
-                                                     "  <notifications>\n" +
-                                                     "    <author />\n" +
-                                                     "    <email>john@dev</email>\n" +
-                                                     "    <email>jane@dev</email>\n" +
+                                                     "  <notifications when=\"failing\">\n" +
+                                                     "    <email role=\"author\"/>\n" +
+                                                     "    <email address=\"john@dev\" when=\"failing-commit\"/>\n" +
+                                                     "    <email address=\"jane@dev\"/>\n" +
                                                      "  </notifications>\n" +
                                                      "</deployment>");
-        assertTrue(spec.notifications().includeAuthor());
-        assertEquals(Arrays.asList("john@dev", "jane@dev"),
+        assertEquals(ImmutableMap.of(author, failing),
+                     spec.notifications().roleEmails());
+        assertEquals(ImmutableMap.of("john@dev", failingCommit,
+                                     "jane@dev", failing),
                      spec.notifications().staticEmails());
     }
 

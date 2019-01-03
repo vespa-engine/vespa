@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -33,6 +34,9 @@ public class ApplicationPackageBuilder {
     private final StringBuilder environmentBody = new StringBuilder();
     private final StringBuilder validationOverridesBody = new StringBuilder();
     private final StringBuilder blockChange = new StringBuilder();
+    private final StringJoiner notifications = new StringJoiner("/>\n  <email ",
+                                                                "<notifications>\n  <email ",
+                                                                "/>\n</notifications>\n").setEmptyValue("");
 
     private Optional<Integer> majorVersion = Optional.empty();
     private String upgradePolicy = null;
@@ -40,7 +44,6 @@ public class ApplicationPackageBuilder {
     private String globalServiceId = null;
     private String athenzIdentityAttributes = null;
     private String searchDefinition = "search test { }";
-    private DeploymentSpec.Notifications notifications = DeploymentSpec.Notifications.none();
 
     public ApplicationPackageBuilder majorVersion(int majorVersion) {
         this.majorVersion = Optional.of(majorVersion);
@@ -110,13 +113,13 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
-    public ApplicationPackageBuilder notifyAuthor(boolean notify) {
-        this.notifications = DeploymentSpec.Notifications.of(this.notifications.staticEmails(), notify);
+    public ApplicationPackageBuilder emailRole(String role) {
+        this.notifications.add("role=\"" + role + "\"");
         return this;
     }
 
-    public ApplicationPackageBuilder notifyEmails(List<String> emails) {
-        this.notifications = DeploymentSpec.Notifications.of(emails, this.notifications.includeAuthor());
+    public ApplicationPackageBuilder emailAddress(String address) {
+        this.notifications.add("address=\"" + address + "\"");
         return this;
     }
 
@@ -139,14 +142,7 @@ public class ApplicationPackageBuilder {
             xml.append(upgradePolicy);
             xml.append("'/>\n");
         }
-        if (notifications != DeploymentSpec.Notifications.none()) {
-            xml.append("<notifications>\n");
-            if (notifications.includeAuthor())
-                xml.append("  <author />\n");
-            for (String email : notifications.staticEmails())
-                xml.append("  <email>").append(email).append("</email>\n");
-            xml.append("</notifications>\n");
-        }
+        xml.append(notifications);
         xml.append(blockChange);
         xml.append("  <");
         xml.append(environment.value());

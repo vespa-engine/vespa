@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
 import com.yahoo.config.application.api.DeploymentSpec.Delay;
 import com.yahoo.config.application.api.DeploymentSpec.ParallelZones;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
+import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.TimeWindow;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
@@ -21,7 +22,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -113,16 +116,25 @@ public class DeploymentSpecXmlReader {
                                   readNotifications(root));
     }
 
-    private DeploymentSpec.Notifications readNotifications(Element root) {
+    private Notifications readNotifications(Element root) {
         Element notificationsElement = XML.getChild(root, "notifications");
         if (notificationsElement == null)
-            return DeploymentSpec.Notifications.none();
+            return Notifications.none();
 
-        List<String> staticEmails = XML.getChildren(notificationsElement, "email").stream()
-                .map(XML::getValue)
-                .collect(Collectors.toList());
-        boolean includeAuthor = XML.getChild(notificationsElement, "author") != null;
-        return DeploymentSpec.Notifications.of(staticEmails, includeAuthor);
+        Optional<String> when = stringAttribute("when", notificationsElement);
+        Map<String, Optional<String>> staticEmails = new HashMap<>();
+        Map<String, Optional<String>> roleEmails = new HashMap<>();
+
+        for (Element emailElement : XML.getChildren(notificationsElement, "email")) {
+            Optional<String> addressAttribute = stringAttribute("address", emailElement);
+            Optional<String> roleAttribute = stringAttribute("role", emailElement);
+            if (addressAttribute.isPresent() == roleAttribute.isPresent())
+                throw new IllegalArgumentException("Exactly one of 'role' and 'address' must be present in 'email' elements.");
+
+            addressAttribute.ifPresent(address -> staticEmails.put(address, stringAttribute("when", emailElement)));
+            roleAttribute.ifPresent(role -> roleEmails.put(role, stringAttribute("when", emailElement)));
+        }
+        return Notifications.of(when, staticEmails, roleEmails);
     }
 
     /** Imposes some constraints on tag order which are not expressible in the schema */

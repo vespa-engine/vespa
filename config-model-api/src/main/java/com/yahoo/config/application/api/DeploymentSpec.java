@@ -455,39 +455,4 @@ public class DeploymentSpec {
     }
 
 
-    /**
-     * Configuration of notifications for deployment jobs.
-     *
-     * Supports a list of email recipients, and a flag for whether to send to the commit author.
-     */
-    public static class Notifications {
-
-        private static final Notifications none = new Notifications(Collections.emptyList(), false);
-        public static Notifications none() { return none; }
-
-        private final List<String> staticEmails;
-        private final boolean includeAuthor;
-
-        private Notifications(List<String> staticEmails, boolean includeAuthor) {
-            this.staticEmails = ImmutableList.copyOf(staticEmails);
-            this.includeAuthor = includeAuthor;
-        }
-
-        public static Notifications of(List<String> staticEmails, boolean includeAuthor) {
-            if (staticEmails.isEmpty() && ! includeAuthor)
-                return none;
-
-            return new Notifications(staticEmails, includeAuthor);
-        }
-
-        public List<String> staticEmails() {
-            return staticEmails;
-        }
-
-        public boolean includeAuthor() {
-            return includeAuthor;
-        }
-
-    }
-
 }
