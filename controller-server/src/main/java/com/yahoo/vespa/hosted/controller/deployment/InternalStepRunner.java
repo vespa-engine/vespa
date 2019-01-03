@@ -29,7 +29,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -46,7 +45,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -436,12 +435,8 @@ public class InternalStepRunner implements StepRunner {
                                                    run.hasFailed() ? Optional.of(DeploymentJobs.JobError.unknown) : Optional.empty());
                 controller.applications().deploymentTrigger().notifyOfCompletion(report);
 
-                Application application = controller.applications().require(id.application());
-                boolean newCommit = application.change().application()
-                                               .map(run.versions().targetApplication()::equals)
-                                               .orElse(false);
-                if (run.hasFailed() && newCommit)
-                    sendNotification(run, application.deploymentSpec().notifications(), logger);
+                if (run.hasFailed())
+                    sendNotification(run, logger);
             });
         }
         catch (IllegalStateException e) {
@@ -451,23 +446,33 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Sends a mail with a notification of a failed run, if one should be sent. */
-    private void sendNotification(Run run, Notifications notifications, DualLogger logger) {
+    private void sendNotification(Run run, DualLogger logger) {
+        Application application = controller.applications().require(run.id().application());
+        Notifications notifications = application.deploymentSpec().notifications();
         if (notifications != Notifications.none()) {
-            try {
-                List<String> recipients = new ArrayList<>(notifications.staticEmails());
-                if (notifications.includeAuthor())
-                    run.versions().targetApplication().authorEmail().ifPresent(recipients::add);
+            boolean newCommit = application.change().application()
+                                           .map(run.versions().targetApplication()::equals)
+                                           .orElse(false);
 
+            Map<String, Notifications.When> recipients = new HashMap<>(notifications.staticEmails());
+            if (notifications.roleEmails().containsKey(Notifications.Role.author))
+                run.versions().targetApplication().authorEmail()
+                   .ifPresent(address -> recipients.put(address, notifications.roleEmails().get(Notifications.Role.author)));
+
+            if ( ! newCommit)
+                recipients.values().removeIf(Notifications.When.failingCommit::equals);
+
+            try {
                 if (run.status() == outOfCapacity && run.id().type().isProduction())
-                    controller.mailer().send(mails.outOfCapacity(run.id(), recipients));
+                    controller.mailer().send(mails.outOfCapacity(run.id(), recipients.keySet()));
                 if (run.status() == deploymentFailed)
-                    controller.mailer().send(mails.deploymentFailure(run.id(), recipients));
+                    controller.mailer().send(mails.deploymentFailure(run.id(), recipients.keySet()));
                 if (run.status() == installationFailed)
-                    controller.mailer().send(mails.installationFailure(run.id(), recipients));
+                    controller.mailer().send(mails.installationFailure(run.id(), recipients.keySet()));
                 if (run.status() == testFailure)
-                    controller.mailer().send(mails.testFailure(run.id(), recipients));
+                    controller.mailer().send(mails.testFailure(run.id(), recipients.keySet()));
                 if (run.status() == error)
-                    controller.mailer().send(mails.systemError(run.id(), recipients));
+                    controller.mailer().send(mails.systemError(run.id(), recipients.keySet()));
             }
             catch (RuntimeException e) {
                 logger.log(INFO, "Exception trying to send mail for " + run.id(), e);

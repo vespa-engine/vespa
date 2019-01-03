@@ -4,7 +4,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Used to create mails for different kinds of deployment failure.
@@ -19,38 +19,38 @@ public class DeploymentFailureMails {
         this.registry = registry;
     }
 
-    public Mail outOfCapacity(RunId id, List<String> recipients) {
+    public Mail outOfCapacity(RunId id, Collection<String> recipients) {
         return mail(id, recipients, " due to lack of capacity",
                     "as the zone does not have enough free capacity to " +
                     "accomodate the deployment. Please contact the Vespa team to request more!");
     }
 
-    public Mail deploymentFailure(RunId id, List<String> recipients) {
+    public Mail deploymentFailure(RunId id, Collection<String> recipients) {
         return mail(id, recipients, " deployment",
                     "and any previous deployment in the zone is unaffected. " +
                     "This is usually due to an invalid application configuration, or because " +
                     "of timeouts waiting for other deployments of the same application to finish.");
     }
 
-    public Mail installationFailure(RunId id, List<String> recipients) {
+    public Mail installationFailure(RunId id, Collection<String> recipients) {
         return mail(id, recipients, "installation",
                     "as nodes were not able to start the new Java containers. " +
                     "This is very often due to a misconfiguration of the components of an " +
                     "application, where one or more of these can not be instantiated.");
     }
 
-    public Mail testFailure(RunId id, List<String> recipients) {
+    public Mail testFailure(RunId id, Collection<String> recipients) {
         return mail(id, recipients, "tests",
                     "as one or more verification tests against the deployment failed.");
     }
 
-    public Mail systemError(RunId id, List<String> recipients) {
+    public Mail systemError(RunId id, Collection<String> recipients) {
         return mail(id, recipients, "due to system error",
                     "as something in the framework went wrong. Such errors are " +
                     "usually transient. Please contact the Vespa team if the problem persists!");
     }
 
-    private Mail mail(RunId id, List<String> recipients, String summaryDetail, String messageDetail) {
+    private Mail mail(RunId id, Collection<String> recipients, String summaryDetail, String messageDetail) {
         return new Mail(recipients,
                         String.format("Vespa application %s: %s failing %s",
                                       id.application(),

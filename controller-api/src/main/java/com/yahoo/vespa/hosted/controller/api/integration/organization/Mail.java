@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.google.common.collect.ImmutableList;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -12,11 +13,11 @@ import java.util.Objects;
  */
 public class Mail {
 
-    private final List<String> recipients;
+    private final Collection<String> recipients;
     private final String subject;
     private final String message;
 
-    public Mail(List<String> recipients, String subject, String message) {
+    public Mail(Collection<String> recipients, String subject, String message) {
         if (recipients.isEmpty())
             throw new IllegalArgumentException("Empty recipient list is not allowed.");
         recipients.forEach(Objects::requireNonNull);
@@ -25,7 +26,7 @@ public class Mail {
         this.message = Objects.requireNonNull(message);
     }
 
-    public List<String> recipients() { return recipients; }
+    public Collection<String> recipients() { return recipients; }
     public String subject() { return subject; }
     public String message() { return message; }
 
