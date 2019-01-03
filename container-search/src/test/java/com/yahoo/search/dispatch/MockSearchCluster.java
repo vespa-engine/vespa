@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.yahoo.search.dispatch.searchcluster.Group;
@@ -18,6 +19,7 @@ import java.util.Optional;
 public class MockSearchCluster extends SearchCluster {
     private final int numGroups;
     private final int numNodesPerGroup;
+    private final ImmutableList<Group> orderedGroups;
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
 
@@ -28,6 +30,7 @@ public class MockSearchCluster extends SearchCluster {
     public MockSearchCluster(String clusterId, DispatchConfig dispatchConfig, int groups, int nodesPerGroup) {
         super(clusterId, dispatchConfig, null, 1, null);
 
+        ImmutableList.Builder<Group> orderedGroupBuilder = ImmutableList.builder();
         ImmutableMap.Builder<Integer, Group> groupBuilder = ImmutableMap.builder();
         ImmutableMultimap.Builder<String, Node> hostBuilder = ImmutableMultimap.builder();
         int dk = 1;
@@ -40,8 +43,11 @@ public class MockSearchCluster extends SearchCluster {
                 hostBuilder.put(n.hostname(), n);
                 dk++;
             }
-            groupBuilder.put(group, new Group(group, nodes));
+            Group g = new Group(group, nodes);
+            groupBuilder.put(group, g);
+            orderedGroupBuilder.add(g);
         }
+        this.orderedGroups = orderedGroupBuilder.build();
         this.groups = groupBuilder.build();
         this.nodesByHost = hostBuilder.build();
         this.numGroups = groups;
@@ -49,18 +55,26 @@ public class MockSearchCluster extends SearchCluster {
     }
 
     @Override
+    public ImmutableList<Group> orderedGroups() {
+        return orderedGroups;
+    }
+
+    @Override
     public int size() {
         return numGroups * numNodesPerGroup;
     }
 
+    @Override
     public ImmutableMap<Integer, Group> groups() {
         return groups;
     }
 
+    @Override
     public int groupSize() {
         return numNodesPerGroup;
     }
 
+    @Override
     public Optional<Group> group(int n) {
         if (n < numGroups) {
             return Optional.of(groups.get(n));
@@ -69,18 +83,22 @@ public class MockSearchCluster extends SearchCluster {
         }
     }
 
+    @Override
     public ImmutableMultimap<String, Node> nodesByHost() {
         return nodesByHost;
     }
 
+    @Override
     public Optional<Node> directDispatchTarget() {
         return Optional.empty();
     }
 
+    @Override
     public void working(Node node) {
         node.setWorking(true);
     }
 
+    @Override
     public void failed(Node node) {
         node.setWorking(false);
     }
@@ -95,7 +113,7 @@ public class MockSearchCluster extends SearchCluster {
         builder.minGroupCoverage(99.0);
         builder.maxNodesDownPerGroup(0);
         builder.minSearchCoverage(minSearchCoverage);
-        if(minSearchCoverage < 100.0) {
+        if (minSearchCoverage < 100.0) {
             builder.minWaitAfterCoverageFactor(0);
             builder.maxWaitAfterCoverageFactor(0.5);
         }

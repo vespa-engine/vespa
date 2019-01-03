@@ -49,7 +49,11 @@ public class Dispatcher extends AbstractComponent {
     private final boolean multilevelDispatch;
 
     public Dispatcher(String clusterId, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
-        this.searchCluster = new SearchCluster(clusterId, dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus);
+        this(new SearchCluster(clusterId, dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus), dispatchConfig);
+    }
+
+    public Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig) {
+        this.searchCluster = searchCluster;
         this.loadBalancer = new LoadBalancer(searchCluster,
                 dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
         this.rpcResourcePool = new RpcResourcePool(dispatchConfig);
