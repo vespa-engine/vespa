@@ -336,7 +336,7 @@ public class NodeFailer extends Maintainer {
         // Allow failing nodes within policy
         if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(nodes.size())) return false;
 
-        // Always allow failing parents up to minimum limit
+        // Always allow failing physical nodes up to minimum limit
         if (!node.parentHostname().isPresent() &&
             recentlyFailedNodes.parents().size() < throttlePolicy.minimumAllowedToFail) return false;
 

@@ -477,7 +477,7 @@ public class NodeFailerTest {
             List<Node> hosts = tester.nodeRepository.getNodes(NodeType.host);
             List<Node> deadNodes = readyNodes.subList(0, 4);
 
-            // 2 hours pass, 4 nodes die
+            // 2 hours pass, 4 physical nodes die
             for (int minutes = 0, interval = 30; minutes < 2 * 60; minutes += interval) {
                 tester.clock.advance(Duration.ofMinutes(interval));
                 tester.allNodesMakeAConfigRequestExcept(deadNodes);
@@ -499,7 +499,7 @@ public class NodeFailerTest {
             assertEquals("Throttling is indicated by the metric", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("Throttled node failures", 2, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
 
-            // 18 more hours pass, the remaining 2 down nodes are allowed to fail
+            // 18 more hours pass, the remaining dead nodes are allowed to fail
             for (int minutes = 0, interval = 30; minutes < 18 * 60; minutes += interval) {
                 tester.clock.advance(Duration.ofMinutes(interval));
                 tester.allNodesMakeAConfigRequestExcept(deadNodes);
@@ -541,7 +541,7 @@ public class NodeFailerTest {
             assertEquals("Throttling is indicated by the metric", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("Throttled node failures", 1, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
 
-            // The final Docker host and its containers are failed out
+            // The final host and its containers are failed out
             tester.clock.advance(Duration.ofMinutes(30));
             tester.failer.run();
             assertEquals(16, tester.nodeRepository.getNodes(Node.State.failed).size());
