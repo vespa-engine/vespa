@@ -12,9 +12,7 @@ namespace search::fakedata {
 
 using index::Schema;
 
-FPFactory::~FPFactory(void)
-{
-}
+FPFactory::~FPFactory() = default;
 
 void
 FPFactory::setup(const FakeWordSet &fws)
@@ -43,7 +41,7 @@ FPFactory::setup(const std::vector<const FakeWord *> &fws)
 typedef std::map<const std::string, FPFactoryMaker *const>
 FPFactoryMap;
 
-static FPFactoryMap *fpFactoryMap = NULL;
+static FPFactoryMap *fpFactoryMap = nullptr;
 
 /*
  * Posting list factory glue.
@@ -52,15 +50,15 @@ static FPFactoryMap *fpFactoryMap = NULL;
 FPFactory *
 getFPFactory(const std::string &name, const Schema &schema)
 {
-    if (fpFactoryMap == NULL)
-        return NULL;
+    if (fpFactoryMap == nullptr)
+        return nullptr;
 
     FPFactoryMap::const_iterator i(fpFactoryMap->find(name));
 
     if (i != fpFactoryMap->end())
         return i->second(schema);
     else
-        return NULL;
+        return nullptr;
 }
 
 
@@ -69,7 +67,7 @@ getPostingTypes()
 {
     std::vector<std::string> res;
 
-    if (fpFactoryMap != NULL)
+    if (fpFactoryMap != nullptr)
         for (FPFactoryMap::const_iterator i(fpFactoryMap->begin());
              i != fpFactoryMap->end();
              ++i)
@@ -81,20 +79,20 @@ getPostingTypes()
 FPFactoryInit::FPFactoryInit(const FPFactoryMapEntry &fpFactoryMapEntry)
     : _key(fpFactoryMapEntry.first)
 {
-    if (fpFactoryMap == NULL)
+    if (fpFactoryMap == nullptr)
         fpFactoryMap = new FPFactoryMap;
     fpFactoryMap->insert(fpFactoryMapEntry);
 }
 
 FPFactoryInit::~FPFactoryInit()
 {
-    assert(fpFactoryMap != NULL);
+    assert(fpFactoryMap != nullptr);
     size_t eraseRes = fpFactoryMap->erase(_key);
     assert(eraseRes == 1);
     (void) eraseRes;
     if (fpFactoryMap->empty()) {
         delete fpFactoryMap;
-        fpFactoryMap = NULL;
+        fpFactoryMap = nullptr;
     }
 }
 
