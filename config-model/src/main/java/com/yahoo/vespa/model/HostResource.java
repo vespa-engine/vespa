@@ -291,10 +291,15 @@ public class HostResource implements Comparable<HostResource> {
             return this.getHostname().compareTo(other.getHostname());
     }
 
+    public static List<HostResource> pickHosts(List<HostResource> hostsSelectedByIndex, int count) {
+        return hostsSelectedByIndex.subList(0, Math.min(count, hostsSelectedByIndex.size()));
+    }
+
     /**
      * Picks hosts by some mixture of host name and index 
      * (where the mix of one or the other is decided by the last parameter).
      */
+    // TODO: Use pickHosts with 2 arguments (above) instead of this
     public static List<HostResource> pickHosts(Collection<HostResource> hosts, int count, int targetHostsSelectedByIndex) {
         targetHostsSelectedByIndex = Math.min(Math.min(targetHostsSelectedByIndex, count), hosts.size());
 
@@ -303,17 +308,14 @@ public class HostResource implements Comparable<HostResource> {
 
         List<HostResource> hostsSortedByIndex = new ArrayList<>(hosts);
         hostsSortedByIndex.sort((a, b) -> a.comparePrimarilyByIndexTo(b));
-        return pickHosts(hostsSortedByName, hostsSortedByIndex, count, targetHostsSelectedByIndex);
-    }
-    public static List<HostResource> pickHosts(List<HostResource> hostsSelectedByName, List<HostResource> hostsSelectedByIndex, 
-                                               int count, int targetHostsSelectedByIndex) {
-        hostsSelectedByName = hostsSelectedByName.subList(0, Math.min(count - targetHostsSelectedByIndex, hostsSelectedByName.size()));
-        hostsSelectedByIndex.removeAll(hostsSelectedByName);
-        hostsSelectedByIndex = hostsSelectedByIndex.subList(0, Math.min(targetHostsSelectedByIndex, hostsSelectedByIndex.size()));
+
+        hostsSortedByName = hostsSortedByName.subList(0, Math.min(count - targetHostsSelectedByIndex, hostsSortedByName.size()));
+        hostsSortedByIndex.removeAll(hostsSortedByName);
+        hostsSortedByIndex = hostsSortedByIndex.subList(0, Math.min(targetHostsSelectedByIndex, hostsSortedByIndex.size()));
 
         List<HostResource> finalHosts = new ArrayList<>();
-        finalHosts.addAll(hostsSelectedByName);
-        finalHosts.addAll(hostsSelectedByIndex);
+        finalHosts.addAll(hostsSortedByName);
+        finalHosts.addAll(hostsSortedByIndex);
         return finalHosts;
     }
 

@@ -155,9 +155,8 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         Collection<ContainerModel> containerModelsWithSlobrok = containerModels.stream()
                 .filter(this::shouldHaveSlobrok)
                 .collect(Collectors.toList());
-        int hostsPerCluster = (int) Math.max(
-                minHostsPerContainerCluster,
-                Math.ceil((double) count / containerModelsWithSlobrok.size()));
+        int hostsPerCluster = (int) Math.max(minHostsPerContainerCluster,
+                                             Math.ceil((double) count / containerModelsWithSlobrok.size()));
 
         // Pick from all container clusters to make sure we don't lose all nodes at once if some clusters are removed.
         // This will overshoot the desired size (due to ceil and picking at least one node per cluster).

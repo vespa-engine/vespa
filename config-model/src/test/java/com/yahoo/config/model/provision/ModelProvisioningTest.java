@@ -416,9 +416,9 @@ public class ModelProvisioningTest {
         ContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("default28", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("default54", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("default51", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default54", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default51", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default48", clusterControllers.getContainers().get(2).getHostName());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(9, cluster.getRootGroup().getSubgroups().size());
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getIndex(), is("0"));
@@ -455,9 +455,9 @@ public class ModelProvisioningTest {
         clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("baz-controllers", clusterControllers.getName());
-        assertEquals("default01", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("default27", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("default26", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default27", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default26", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default25", clusterControllers.getContainers().get(2).getHostName());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(27, cluster.getRootGroup().getSubgroups().size());
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getIndex(), is("0"));
@@ -508,9 +508,9 @@ public class ModelProvisioningTest {
         ContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("default01", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("default08", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("default07", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default08", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default07", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default06", clusterControllers.getContainers().get(2).getHostName());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(8, cluster.getRootGroup().getSubgroups().size());
         assertEquals(8, cluster.distributionBits());
@@ -565,11 +565,11 @@ public class ModelProvisioningTest {
         assertEquals( 8, cluster.distributionBits());
         assertEquals("We get the closest odd number", 5, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("default01", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("default02", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("default04", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default09", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default08", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default06", clusterControllers.getContainers().get(2).getHostName());
         assertEquals("default05", clusterControllers.getContainers().get(3).getHostName());
-        assertEquals("default09", clusterControllers.getContainers().get(4).getHostName());
+        assertEquals("default03", clusterControllers.getContainers().get(4).getHostName());
         assertEquals("default09", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getHostName());
         assertEquals("default08", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(1).getHostName());
         assertEquals("default06", cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getHostName());
@@ -605,9 +605,9 @@ public class ModelProvisioningTest {
         ContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals("We get the closest odd number", 3, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("default01", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("default08", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("default06", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default08", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default06", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default04", clusterControllers.getContainers().get(2).getHostName());
     }
 
     @Test
@@ -672,9 +672,9 @@ public class ModelProvisioningTest {
         ContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("Skipping retired default09", "default01", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("Skipping retired default06", "default08", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("Skipping retired default03", "default05", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("Skipping retired default09", "default08", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("Skipping retired default06", "default05", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("Skipping retired default03", "default02", clusterControllers.getContainers().get(2).getHostName());
     }
 
     @Test
