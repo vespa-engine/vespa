@@ -12,8 +12,8 @@ import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
-import com.yahoo.vespa.flags.FeatureFlag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -30,7 +30,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.*;
+import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE;
+import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.EXIT_JVM;
 
 /**
  * Main component that bootstraps and starts config server threads.
@@ -45,7 +46,6 @@ import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApp
 public class ConfigServerBootstrap extends AbstractComponent implements Runnable {
 
     private static final Logger log = Logger.getLogger(ConfigServerBootstrap.class.getName());
-    private static final String bootstrapFeatureFlag = "config-server-bootstrap-in-separate-thread";
 
     // INITIALIZE_ONLY is for testing only
     enum Mode {BOOTSTRAP_IN_CONSTRUCTOR, BOOTSTRAP_IN_SEPARATE_THREAD, INITIALIZE_ONLY}
@@ -69,7 +69,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                                  VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
                                  FlagSource flagSource) {
         this(applicationRepository, server, versionState, stateMonitor, vipStatus,
-             new FeatureFlag(bootstrapFeatureFlag, true, flagSource).value()
+                Flags.CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD.bindTo(flagSource).value()
                      ? Mode.BOOTSTRAP_IN_SEPARATE_THREAD
                      : Mode.BOOTSTRAP_IN_CONSTRUCTOR,
              EXIT_JVM);

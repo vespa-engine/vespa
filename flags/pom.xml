@@ -13,9 +13,10 @@
     </parent>
 
     <artifactId>flags</artifactId>
-    <version>6-SNAPSHOT</version>
     <packaging>container-plugin</packaging>
+    <version>6-SNAPSHOT</version>
     <name>${project.artifactId}</name>
+    <description>Feature flags.</description>
 
     <dependencies>
         <dependency>
