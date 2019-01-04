@@ -98,4 +98,5 @@ public class Result {
         /** Condition specified in operation not met error  */
         CONDITION_NOT_MET_ERROR
     }
+
 }
