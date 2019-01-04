@@ -8,8 +8,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
-namespace search {
-namespace test {
+namespace search::test {
 
 class DocumentWeightAttributeHelper
 {
@@ -51,5 +50,4 @@ public:
     const IDocumentWeightAttribute &dwa() const { return *_dwa; }
 };
 
-} // namespace search::test
-} // namespace search
+}
