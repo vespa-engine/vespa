@@ -40,12 +40,7 @@ struct StatusReporter
     virtual bool isValidStatusRequest() const { return true; }
 
     /**
-     * Overwrite to get full control of header writes.
-     * Returning false means the page specified by path does not exist.
-     */
-    virtual bool reportHttpHeader(std::ostream&, const HttpUrlPath&) const;
-    /**
-     * Called by default writeHttpHeader implementation to get content type.
+     * Called to get content type.
      * An empty string indicates page not found.
      */
     virtual vespalib::string getReportContentType(const HttpUrlPath&) const = 0;

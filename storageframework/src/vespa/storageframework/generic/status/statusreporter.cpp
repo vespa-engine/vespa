@@ -15,17 +15,5 @@ StatusReporter::~StatusReporter()
 {
 }
 
-bool
-StatusReporter::reportHttpHeader(std::ostream& out,
-                                 const HttpUrlPath& path) const
-{
-    vespalib::string contentType(getReportContentType(path));
-    if (contentType == "") return false;
-    out << "HTTP/1.1 200 OK\r\n"
-           "Connection: Close\r\n"
-           "Content-type: " << contentType << "\r\n\r\n";
-    return true;
-}
-
 } // framework
 } // storage
