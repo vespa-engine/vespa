@@ -17,13 +17,9 @@ cd /vespa
 yum -y install epel-release
 yum -y install centos-release-scl
 
-# CentOS messed up the source repo. The source repos are marked as enabled=0, but
-# the yum-builddep below does not respect this setting. Hack around it for now.
-sed -i 's,http://vault.centos.org/centos/7/sclo/Source/rh/,http://vault.centos.org/centos/7/sclo/Source/sclo/,g' /etc/yum.repos.d/CentOS-SCLo-scl-rh.repo
-
 yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
 
-yum-builddep -y ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
+yum-builddep -y --setopt="centos-sclo-rh-source.skip_if_unavailable=true" ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
 rpmbuild -bb ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
 chown ${CALLER_UID}:${CALLER_GID} ~/rpmbuild/RPMS/x86_64/*.rpm
 mv ~/rpmbuild/RPMS/x86_64/*.rpm /vespa/docker 
