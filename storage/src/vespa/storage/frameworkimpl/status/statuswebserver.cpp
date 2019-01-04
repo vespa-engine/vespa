@@ -92,7 +92,7 @@ struct HandleGetTask : vespalib::Executor::Task {
     std::function<void(vespalib::Portal::GetRequest)> fun;
     HandleGetTask(vespalib::Portal::GetRequest request_in,
                   std::function<void(vespalib::Portal::GetRequest)> fun_in)
-        : request(std::move(request_in)), fun(fun_in) {}
+        : request(std::move(request_in)), fun(std::move(fun_in)) {}
     void run() override { fun(std::move(request)); }
 };
 
