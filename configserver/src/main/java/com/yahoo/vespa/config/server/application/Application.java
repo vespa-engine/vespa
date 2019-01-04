@@ -23,9 +23,9 @@ import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.util.ConfigUtils;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FileFlagSource;
-import com.yahoo.vespa.flags.Flag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 
@@ -49,7 +49,7 @@ public class Application implements ModelResult {
     private final ServerCache cache;
     private final MetricUpdater metricUpdater;
     private final ApplicationId app;
-    private final Flag<Boolean> useConfigServerCache;
+    private final BooleanFlag useConfigServerCache;
 
     public Application(Model model, ServerCache cache, long appGeneration, boolean internalRedeploy,
                        Version vespaVersion, MetricUpdater metricUpdater, ApplicationId app) {

@@ -31,7 +31,7 @@ public class FlagsTest {
     public void testBoolean() {
         final boolean defaultValue = false;
         FlagSource source = mock(FlagSource.class);
-        Flag<Boolean> booleanFlag = Flags.defineBoolean("id", defaultValue, "description",
+        BooleanFlag booleanFlag = Flags.defineFeatureFlag("id", defaultValue, "description",
                 "modification effect", FetchVector.Dimension.ZONE_ID, FetchVector.Dimension.HOSTNAME)
                 .with(FetchVector.Dimension.ZONE_ID, "a-zone")
                 .bindTo(source);
@@ -65,19 +65,19 @@ public class FlagsTest {
 
     @Test
     public void testString() {
-        testGeneric(Flags.defineString("string-id", "default value", "description",
+        testGeneric(Flags.defineStringFlag("string-id", "default value", "description",
                 "modification effect", FetchVector.Dimension.ZONE_ID, FetchVector.Dimension.HOSTNAME),
                 "default value", "other value");
     }
 
     @Test
     public void testInt() {
-        testGeneric(Flags.defineInt("int-id", 2, "desc", "mod"), 2, 3);
+        testGeneric(Flags.defineIntFlag("int-id", 2, "desc", "mod"), 2, 3);
     }
 
     @Test
     public void testLong() {
-        testGeneric(Flags.defineLong("long-id", 1L, "desc", "mod"), 1L, 2L);
+        testGeneric(Flags.defineLongFlag("long-id", 1L, "desc", "mod"), 1L, 2L);
     }
 
     @Test
@@ -87,24 +87,23 @@ public class FlagsTest {
         instance.integer = -2;
         instance.string = "foo";
 
-        testGeneric(Flags.defineJackson("jackson-id", ExampleJacksonClass.class, defaultInstance,
+        testGeneric(Flags.defineJacksonFlag("jackson-id", defaultInstance, ExampleJacksonClass.class,
                 "description", "modification effect", FetchVector.Dimension.HOSTNAME),
                 defaultInstance, instance);
     }
 
-    private <T> void testGeneric(UnboundFlag<T> unboundFlag, T defaultValue, T value) {
+    private <T> void testGeneric(UnboundFlag<?, ?, ?> unboundFlag, T defaultValue, T value) {
         FlagSource source = mock(FlagSource.class);
-        Flag<T> flag = unboundFlag.bindTo(source);
+        Flag<?, ?> flag = unboundFlag.bindTo(source);
 
         when(source.fetch(any(), any())).thenReturn(Optional.empty());
-        assertThat(flag.value(), equalTo(defaultValue));
+        assertThat(flag.boxedValue(), equalTo(defaultValue));
 
         when(source.fetch(any(), any())).thenReturn(Optional.of(JsonNodeRawFlag.fromJacksonClass(value)));
-        assertThat(flag.value(), equalTo(value));
+        assertThat(flag.boxedValue(), equalTo(value));
 
         assertTrue(Flags.getFlag(unboundFlag.id()).isPresent());
     }
-
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class ExampleJacksonClass {

@@ -1,0 +1,18 @@
+// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.flags;
+
+import javax.annotation.concurrent.Immutable;
+
+/**
+ * @author hakonhall
+ */
+@Immutable
+public class StringFlag extends FlagImpl<String, StringFlag> {
+    public StringFlag(FlagId id, String defaultValue, FetchVector vector, FlagSerializer<String> serializer, FlagSource source) {
+        super(id, defaultValue, vector, serializer, source, StringFlag::new);
+    }
+
+    public String value() {
+        return boxedValue();
+    }
+}

@@ -11,7 +11,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.UnboundFlag;
+import com.yahoo.vespa.flags.UnboundBooleanFlag;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 
@@ -28,11 +29,11 @@ import static org.junit.Assert.assertEquals;
  * @author hakonhall
  */
 public class FlagsHandlerTest {
-    private static final UnboundFlag<Boolean> FLAG1 =
-            Flags.defineBoolean("id1", false, "desc1", "mod1");
-    private static final UnboundFlag<Boolean> FLAG2 =
-            Flags.defineBoolean("id2", true, "desc2", "mod2",
-                    FetchVector.Dimension.HOSTNAME, FetchVector.Dimension.APPLICATION_ID);
+    private static final UnboundBooleanFlag FLAG1 = Flags.defineFeatureFlag(
+            "id1", false, "desc1", "mod1");
+    private static final UnboundBooleanFlag FLAG2 = Flags.defineFeatureFlag(
+            "id2", true, "desc2", "mod2",
+            FetchVector.Dimension.HOSTNAME, FetchVector.Dimension.APPLICATION_ID);
 
     private static final String FLAGS_V1_URL = "https://foo.com:4443/flags/v1";
 
@@ -54,7 +55,7 @@ public class FlagsHandlerTest {
     public void testDefined() {
         try (Flags.Replacer replacer = Flags.clearFlagsForTesting()) {
             fixUnusedWarning(replacer);
-            Flags.defineBoolean("id", false, "desc", "mod", FetchVector.Dimension.HOSTNAME);
+            Flags.defineFeatureFlag("id", false, "desc", "mod", FetchVector.Dimension.HOSTNAME);
             verifySuccessfulRequest(Method.GET, "/defined", "",
                     "{\"id\":{\"description\":\"desc\",\"modification-effect\":\"mod\",\"dimensions\":[\"hostname\"]}}");
         }
@@ -153,32 +154,33 @@ public class FlagsHandlerTest {
 
     @Test
     public void testForcing() {
-        FlagId undefinedFlagId = new FlagId("undef");
-        HttpResponse response = handle(Method.PUT, "/data/" + undefinedFlagId, "");
+        assertThat(handle(Method.PUT, "/data/" + new FlagId("undef"), "", 404),
+                containsString("There is no flag 'undef'"));
 
-        assertEquals(404, response.getStatus());
-        assertEquals("application/json", response.getContentType());
+        assertThat(handle(Method.PUT, "/data/" + new FlagId("undef") + "?force=true", "", 400),
+                containsString("No content to map due to end-of-input"));
 
+        assertThat(handle(Method.PUT, "/data/" + FLAG1.id(), "{}", 400),
+                containsString("Flag ID missing"));
+
+        assertThat(handle(Method.PUT, "/data/" + FLAG1.id(), "{\"id\": \"id1\",\"rules\": [{\"value\":\"string\"}]}", 400),
+                containsString("Wrong type of JsonNode: STRING"));
+
+        assertThat(handle(Method.PUT, "/data/" + FLAG1.id() + "?force=true", "{\"id\": \"id1\",\"rules\": [{\"value\":\"string\"}]}", 200),
+                is(""));
     }
 
     private void verifySuccessfulRequest(Method method, String pathSuffix, String requestBody, String expectedResponseBody) {
-        HttpResponse response = handle(method, pathSuffix, requestBody);
-
-        assertEquals(200, response.getStatus());
-        assertEquals("application/json", response.getContentType());
-        String actualResponse = uncheck(() -> SessionHandlerTest.getRenderedString(response));
-
-        assertThat(actualResponse, is(expectedResponseBody));
+        assertThat(handle(method, pathSuffix, requestBody, 200), is(expectedResponseBody));
     }
 
-    private HttpResponse handle(Method method, String pathSuffix, String requestBody) {
+    private String handle(Method method, String pathSuffix, String requestBody, int expectedStatus) {
         String uri = FLAGS_V1_URL + pathSuffix;
         HttpRequest request = HttpRequest.createTestRequest(uri, method, makeInputStream(requestBody));
-        return handler.handle(request);
-    }
-
-    private String makeUrl(String component) {
-        return FLAGS_V1_URL + "/" + component;
+        HttpResponse response = handler.handle(request);
+        assertEquals(expectedStatus, response.getStatus());
+        assertEquals("application/json", response.getContentType());
+        return uncheck(() -> SessionHandlerTest.getRenderedString(response));
     }
 
     private InputStream makeInputStream(String content) {

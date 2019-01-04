@@ -7,7 +7,7 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.flags.Flag;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import com.yahoo.vespa.service.duper.ControllerHostApplication;
 import com.yahoo.vespa.service.duper.DuperModelManager;
@@ -33,8 +33,7 @@ import static org.mockito.Mockito.when;
 public class HealthMonitorManagerTest {
     private final ConfigServerApplication configServerApplication = new ConfigServerApplication();
     private final DuperModelManager duperModel = mock(DuperModelManager.class);
-    @SuppressWarnings("unchecked")
-    private final Flag<Boolean> monitorInfra = (Flag<Boolean>) mock(Flag.class);
+    private final BooleanFlag monitorInfra = mock(BooleanFlag.class);
     private final ApplicationHealthMonitor monitor = mock(ApplicationHealthMonitor.class);
     private final ApplicationHealthMonitorFactory monitorFactory = mock(ApplicationHealthMonitorFactory.class);
     private final HealthMonitorManager manager = new HealthMonitorManager(duperModel, monitorInfra, monitorFactory);

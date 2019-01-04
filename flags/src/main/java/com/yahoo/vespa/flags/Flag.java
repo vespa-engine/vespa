@@ -1,44 +1,23 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import javax.annotation.concurrent.Immutable;
-
 /**
+ * Interface for flag.
+ *
+ * @param <T> The type of the flag value (boxed for primitives)
+ * @param <F> The concrete subclass type of the flag
  * @author hakonhall
  */
-@Immutable
-public class Flag<T> {
-    private final FlagId id;
-    private final T defaultValue;
-    private final FlagSource source;
-    private final Deserializer<T> deserializer;
-    private final FetchVector fetchVector;
+public interface Flag<T, F> {
+    /** The flag ID. */
+    FlagId id();
 
-    public Flag(String flagId, T defaultValue, FlagSource source, Deserializer<T> deserializer) {
-        this(new FlagId(flagId), defaultValue, source, deserializer);
-    }
+    /** Returns the flag serializer. */
+    FlagSerializer<T> serializer();
 
-    public Flag(FlagId id, T defaultValue, FlagSource source, Deserializer<T> deserializer) {
-        this(id, defaultValue, deserializer, new FetchVector(), source);
-    }
+    /** Returns an immutable clone of the current object, except with the dimension set accordingly. */
+    F with(FetchVector.Dimension dimension, String dimensionValue);
 
-    public Flag(FlagId id, T defaultValue, Deserializer<T> deserializer, FetchVector fetchVector, FlagSource source) {
-        this.id = id;
-        this.defaultValue = defaultValue;
-        this.source = source;
-        this.deserializer = deserializer;
-        this.fetchVector = fetchVector;
-    }
-
-    public FlagId id() {
-        return id;
-    }
-
-    public Flag<T> with(FetchVector.Dimension dimension, String value) {
-        return new Flag<>(id, defaultValue, deserializer, fetchVector.with(dimension, value), source);
-    }
-
-    public T value() {
-        return source.fetch(id, fetchVector).map(deserializer::deserialize).orElse(defaultValue);
-    }
+    /** Returns the value, boxed if the flag wraps a primitive type. */
+    T boxedValue();
 }

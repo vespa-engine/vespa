@@ -2,6 +2,7 @@
 package com.yahoo.vespa.flags.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.yahoo.vespa.flags.Deserializer;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.FlagSource;
@@ -16,9 +17,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A data structure containing all data for a single flag, that can be serialized to/from JSON,
@@ -100,8 +101,12 @@ public class FlagData {
     }
 
     private static FlagData fromWire(WireFlagData wireFlagData) {
+        if (wireFlagData.id == null) {
+            throw new IllegalArgumentException("Flag ID missing");
+        }
+
         return new FlagData(
-                new FlagId(Objects.requireNonNull(wireFlagData.id)),
+                new FlagId(wireFlagData.id),
                 FetchVectorHelper.fromWire(wireFlagData.defaultFetchVector),
                 rulesFromWire(wireFlagData.rules)
         );
@@ -110,6 +115,14 @@ public class FlagData {
     private static List<Rule> rulesFromWire(List<WireRule> wireRules) {
         if (wireRules == null) return Collections.emptyList();
         return wireRules.stream().map(Rule::fromWire).collect(Collectors.toList());
+    }
+
+    /** E.g. verify all RawFlag can be deserialized. */
+    public void validate(Deserializer<?> deserializer) {
+        rules.stream()
+                .flatMap(rule -> rule.getValueToApply().map(Stream::of).orElse(null))
+                .forEach(deserializer::deserialize);
+
     }
 }
 
