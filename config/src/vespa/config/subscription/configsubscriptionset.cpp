@@ -76,6 +76,8 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
         timeLeft = timeoutInMillis - static_cast<uint64_t>(timer.MilliSecsToNow());
         if (!inSync && timeLeft > 0) {
             std::this_thread::sleep_for(10ms);
+        } else {
+            break;
         }
     }
 
