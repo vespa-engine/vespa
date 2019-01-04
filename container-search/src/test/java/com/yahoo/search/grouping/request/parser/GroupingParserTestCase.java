@@ -150,7 +150,6 @@ public class GroupingParserTestCase {
                                             "xor",
                                             "xorbit",
                                             "y",
-                                            "ymum",
                                             "zcurve");
         for (String image : images) {
             assertParse("all(group(" + image + "))", "all(group(" + image + "))");
@@ -512,7 +511,6 @@ public class GroupingParserTestCase {
         assertParse("all(group(artist) max(2) each(each(output(summary()))))");
         assertParse("all(group(artist) max(2) each(each(output(summary(simple)))))");
         assertParse("all(group(artist) max(5) each(output(count()) each(output(summary()))))");
-        assertParse("all(group(ymum()))");
         assertParse("all(group(strlen(attr)))");
         assertParse("all(group(normalizesubject(attr)))");
         assertParse("all(group(strcat(attr, attr2)))");

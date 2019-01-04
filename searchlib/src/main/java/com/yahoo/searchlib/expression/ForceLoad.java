@@ -37,7 +37,6 @@ public class ForceLoad {
                 "BitFunctionNode",
                 "FixedWidthBucketFunctionNode",
                 "RangeBucketPreDefFunctionNode",
-                "GetYMUMChecksumFunctionNode",
                 "DocumentFieldNode",
                 "NullResultNode",
                 "FunctionNode",

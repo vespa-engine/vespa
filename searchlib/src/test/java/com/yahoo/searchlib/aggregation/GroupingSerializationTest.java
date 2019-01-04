@@ -72,7 +72,6 @@ public class GroupingSerializationTest {
             t.assertMatch(new AttributeNode("testattribute"));
             t.assertMatch(new DocumentFieldNode("testdocumentfield"));
             t.assertMatch(new GetDocIdNamespaceSpecificFunctionNode(new IntegerResultNode(7)));
-            t.assertMatch(new GetYMUMChecksumFunctionNode());
         }
     }
 
@@ -363,11 +362,13 @@ public class GroupingSerializationTest {
 
         @Override
         public void close() throws IOException {
-            boolean moreDataAvailable = in.read() != -1;
+            int bytesLeft = 0;
+            while (in.read() != -1)
+                bytesLeft++;
             in.close();
-            if (moreDataAvailable) {
-                fail("The file was not fully consumed. Did you forget to deserialize an object on Java side?");
-            }
+            if (bytesLeft > 0)
+                fail(FILE_PATH + "/" + fileName + " has " + bytesLeft + " bytes left. " +
+                     "Did you forget to deserialize an object on Java side?");
         }
 
         private static String toHexString(byte[] data) {
