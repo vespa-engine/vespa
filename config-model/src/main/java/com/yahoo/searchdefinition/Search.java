@@ -523,6 +523,7 @@ public class Search implements Serializable, ImmutableSearch {
         return summaryFields;
     }
 
+    @Override
     public int hashCode() {
         return name.hashCode();
     }
@@ -543,6 +544,7 @@ public class Search implements Serializable, ImmutableSearch {
         return null;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof Search)) {
             return false;
@@ -552,6 +554,7 @@ public class Search implements Serializable, ImmutableSearch {
         return getName().equals(other.getName());
     }
 
+    @Override
     public String toString() {
         return "search definition '" + getName() + "'";
     }
