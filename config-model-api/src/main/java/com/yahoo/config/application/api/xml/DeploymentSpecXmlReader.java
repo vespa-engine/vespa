@@ -7,6 +7,8 @@ import com.yahoo.config.application.api.DeploymentSpec.Delay;
 import com.yahoo.config.application.api.DeploymentSpec.ParallelZones;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.application.api.Notifications;
+import com.yahoo.config.application.api.Notifications.Role;
+import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.application.api.TimeWindow;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
@@ -121,20 +123,25 @@ public class DeploymentSpecXmlReader {
         if (notificationsElement == null)
             return Notifications.none();
 
-        Optional<String> when = stringAttribute("when", notificationsElement);
-        Map<String, Optional<String>> staticEmails = new HashMap<>();
-        Map<String, Optional<String>> roleEmails = new HashMap<>();
+        When defaultWhen = stringAttribute("when", notificationsElement).map(When::fromValue).orElse(When.failingCommit);
+        Map<When, List<String>> emailAddresses = new HashMap<>();
+        Map<When, List<Role>> emailRoles = new HashMap<>();
+        for (When when : When.values()) {
+            emailAddresses.put(when, new ArrayList<>());
+            emailRoles.put(when, new ArrayList<>());
+        }
 
         for (Element emailElement : XML.getChildren(notificationsElement, "email")) {
             Optional<String> addressAttribute = stringAttribute("address", emailElement);
-            Optional<String> roleAttribute = stringAttribute("role", emailElement);
+            Optional<Role> roleAttribute = stringAttribute("role", emailElement).map(Role::fromValue);
+            When when = stringAttribute("when", emailElement).map(When::fromValue).orElse(defaultWhen);
             if (addressAttribute.isPresent() == roleAttribute.isPresent())
                 throw new IllegalArgumentException("Exactly one of 'role' and 'address' must be present in 'email' elements.");
 
-            addressAttribute.ifPresent(address -> staticEmails.put(address, stringAttribute("when", emailElement)));
-            roleAttribute.ifPresent(role -> roleEmails.put(role, stringAttribute("when", emailElement)));
+            addressAttribute.ifPresent(address -> emailAddresses.get(when).add(address));
+            roleAttribute.ifPresent(role -> emailRoles.get(when).add(role));
         }
-        return Notifications.of(when, staticEmails, roleEmails);
+        return Notifications.of(emailAddresses, emailRoles);
     }
 
     /** Imposes some constraints on tag order which are not expressible in the schema */

@@ -1,11 +1,16 @@
 package com.yahoo.config.application.api;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Set;
+
+import static java.util.Collections.emptyList;
 
 /**
  * Configuration of notifications for deployment jobs.
@@ -23,41 +28,51 @@ public class Notifications {
     private static final Notifications none = new Notifications(Collections.emptyMap(), Collections.emptyMap());
     public static Notifications none() { return none; }
 
-    private final Map<String, When> staticEmails;
-    private final Map<Role, When> roleEmails;
+    private final Map<When, List<String>> emailAddresses;
+    private final Map<When, List<Role>> emailRoles;
 
-    private Notifications(Map<String, When> staticEmails, Map<Role, When> roleEmails) {
-        this.staticEmails = ImmutableMap.copyOf(staticEmails);
-        this.roleEmails = ImmutableMap.copyOf(roleEmails);
+    private Notifications(Map<When, List<String>> emailAddresses, Map<When, List<Role>> emailRoles) {
+        this.emailAddresses = emailAddresses;
+        this.emailRoles = emailRoles;
     }
 
     /**
      * Returns a new Notifications as specified by the given String input.
      *
-     * @param when Optional string name of the default condition for sending notifications; defaults to failingCommit.
-     * @param staticEmails Map from email addresses to optional overrides for when to send to these.
-     * @param roleEmails Map from email roles to optional overrides for when to send to these.
+     * @param emailAddressesByWhen What email addresses to notify, indexed by when to notify them.
+     * @param emailRolesByWhen What roles to infer email addresses for, and notify, indexed by when to notify them.
      * @return The Notifications as specified.
      */
-    public static Notifications of(Optional<String> when, Map<String, Optional<String>> staticEmails, Map<String, Optional<String>> roleEmails) {
-        if (staticEmails.isEmpty() && roleEmails.isEmpty())
+    public static Notifications of(Map<When, List<String>> emailAddressesByWhen, Map<When, List<Role>> emailRolesByWhen) {
+        if (   emailAddressesByWhen.values().stream().allMatch(List::isEmpty)
+            && emailRolesByWhen.values().stream().allMatch(List::isEmpty))
             return none;
 
-        When defaultWhen = when.map(When::fromValue).orElse(When.failingCommit);
-        return new Notifications(staticEmails.entrySet().stream()
-                                             .collect(Collectors.toMap(entry -> entry.getKey(),
-                                                                       entry -> entry.getValue().map(When::fromValue).orElse(defaultWhen))),
-                                 roleEmails.entrySet().stream()
-                                           .collect(Collectors.toMap(entry -> Role.fromValue(entry.getKey()),
-                                                                     entry -> entry.getValue().map(When::fromValue).orElse(defaultWhen))));
+        ImmutableMap.Builder<When, List<String>> emailAddresses = ImmutableMap.builder();
+        emailAddressesByWhen.forEach((when, addresses) -> emailAddresses.put(when, ImmutableList.copyOf(addresses)));
+
+        ImmutableMap.Builder<When, List<Role>> emailRoles = ImmutableMap.builder();
+        emailRolesByWhen.forEach((when, roles) -> emailRoles.put(when, ImmutableList.copyOf(roles)));
+
+        return new Notifications(emailAddresses.build(), emailRoles.build());
     }
 
-    public Map<String, When> staticEmails() {
-        return staticEmails;
+    /** Returns all email addresses to notify for the given condition. */
+    public Set<String> emailAddressesFor(When when) {
+        ImmutableSet.Builder<String> addresses = ImmutableSet.builder();
+        addresses.addAll(emailAddresses.getOrDefault(when, emptyList()));
+        for (When include : when.includes)
+            addresses.addAll(emailAddressesFor(include));
+        return addresses.build();
     }
 
-    public Map<Role, When> roleEmails() {
-        return roleEmails;
+    /** Returns all roles for which email notification is to be sent for the given condition. */
+    public Set<Role> emailRolesFor(When when) {
+        ImmutableSet.Builder<Role> roles = ImmutableSet.builder();
+        roles.addAll(emailRoles.getOrDefault(when, emptyList()));
+        for (When include : when.includes)
+            roles.addAll(emailRolesFor(include));
+        return roles.build();
     }
 
 
@@ -89,7 +104,13 @@ public class Notifications {
         failing,
 
         /** Send notifications whenever a job fails while deploying a new commit. */
-        failingCommit;
+        failingCommit(failing);
+
+        private final List<When> includes;
+
+        When(When... includes) {
+            this.includes = Arrays.asList(includes);
+        }
 
         public static String toValue(When when) {
             switch (when) {
