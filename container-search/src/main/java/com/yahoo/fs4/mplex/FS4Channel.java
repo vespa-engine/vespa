@@ -199,9 +199,7 @@ public class FS4Channel {
         throws InterruptedException, InvalidChannelException
     {
         ensureValidQ().put(packet);
-        if(monitor != null) {
-            monitor.responseAvailable(this);
-        }
+        notifyMonitor();
     }
 
     /**
@@ -248,5 +246,11 @@ public class FS4Channel {
 
     public void setResponseMonitor(ResponseMonitor<FS4Channel> monitor) {
         this.monitor = monitor;
+    }
+
+    protected void notifyMonitor() {
+        if(monitor != null) {
+            monitor.responseAvailable(this);
+        }
     }
 }

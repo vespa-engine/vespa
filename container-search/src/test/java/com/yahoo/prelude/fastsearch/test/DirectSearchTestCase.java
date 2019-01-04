@@ -11,7 +11,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Tests that FastSearcher will bypass dispatch when the conditions are right
- * 
+ *
  * @author bratseth
  */
 public class DirectSearchTestCase {
@@ -26,7 +26,7 @@ public class DirectSearchTestCase {
     @Test
     public void testDirectSearchDisabled() {
         FastSearcherTester tester = new FastSearcherTester(1, FastSearcherTester.selfHostname + ":9999:0");
-        tester.search("?query=test&dispatch.direct=false");
+        tester.search("?query=test&dispatch.direct=false&dispatch.internal=false");
         assertEquals(0, tester.requestCount(FastSearcherTester.selfHostname, 9999));
     }
 
@@ -40,7 +40,7 @@ public class DirectSearchTestCase {
     @Test
     public void testNoDirectSearchWhenMoreSearchNodesThanContainers() {
         FastSearcherTester tester = new FastSearcherTester(1, FastSearcherTester.selfHostname + ":9999:0", "otherhost:9999:1");
-        tester.search("?query=test&dispatch.direct=true");
+        tester.search("?query=test&dispatch.direct=true&dispatch.internal=false");
         assertEquals(0, tester.requestCount(FastSearcherTester.selfHostname, 9999));
     }
 
@@ -65,7 +65,7 @@ public class DirectSearchTestCase {
     @Test
     public void testNoDirectSearchWhenMultipleNodesPerGroup() {
         FastSearcherTester tester = new FastSearcherTester(2, FastSearcherTester.selfHostname + ":9999:0", "otherhost:9999:0");
-        tester.search("?query=test&dispatch.direct=true");
+        tester.search("?query=test&dispatch.direct=true&dispatch.internal=false");
         assertEquals(0, tester.requestCount(FastSearcherTester.selfHostname, 9999));
     }
 
@@ -123,7 +123,7 @@ public class DirectSearchTestCase {
                      4, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         tester.waitForInRotationIs(false);
     }
-    
+
     @Test
     public void testCoverageWithSingleGroup() {
         FastSearcherTester tester = new FastSearcherTester(1, FastSearcherTester.selfHostname + ":9999:0");

@@ -36,6 +36,7 @@ import java.util.Set;
  * @author ollvir
  */
 public class Dispatcher extends AbstractComponent {
+    private static final boolean INTERNAL_BY_DEFAULT = false;
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
 
     /** If enabled, this internal dispatcher will be preferred over fdispatch whenever possible */
@@ -76,7 +77,7 @@ public class Dispatcher extends AbstractComponent {
         if (rpcInvoker.isPresent()) {
             return rpcInvoker;
         }
-        if (result.getQuery().properties().getBoolean(dispatchInternal, false)) {
+        if (result.getQuery().properties().getBoolean(dispatchInternal, INTERNAL_BY_DEFAULT)) {
             Optional<FillInvoker> fs4Invoker = fs4InvokerFactory.getFillInvoker(result);
             if (fs4Invoker.isPresent()) {
                 return fs4Invoker;
@@ -86,7 +87,7 @@ public class Dispatcher extends AbstractComponent {
     }
 
     public Optional<SearchInvoker> getSearchInvoker(Query query, FS4InvokerFactory fs4InvokerFactory) {
-        if (multilevelDispatch || ! query.properties().getBoolean(dispatchInternal, false)) {
+        if (multilevelDispatch || ! query.properties().getBoolean(dispatchInternal, INTERNAL_BY_DEFAULT)) {
             return Optional.empty();
         }
 
