@@ -2,6 +2,7 @@
 package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
@@ -463,11 +464,10 @@ public class DeploymentSpecTest {
                                                      "    <email address=\"jane@dev\"/>\n" +
                                                      "  </notifications>\n" +
                                                      "</deployment>");
-        assertEquals(ImmutableMap.of(author, failing),
-                     spec.notifications().roleEmails());
-        assertEquals(ImmutableMap.of("john@dev", failingCommit,
-                                     "jane@dev", failing),
-                     spec.notifications().staticEmails());
+        assertEquals(ImmutableSet.of(author), spec.notifications().emailRolesFor(failing));
+        assertEquals(ImmutableSet.of(author), spec.notifications().emailRolesFor(failingCommit));
+        assertEquals(ImmutableSet.of("john@dev", "jane@dev"), spec.notifications().emailAddressesFor(failingCommit));
+        assertEquals(ImmutableSet.of("jane@dev"), spec.notifications().emailAddressesFor(failing));
     }
 
 }

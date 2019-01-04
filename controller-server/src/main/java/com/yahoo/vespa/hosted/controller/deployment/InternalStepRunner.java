@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Notifications;
+import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
@@ -46,6 +47,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,6 +58,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.config.application.api.Notifications.Role.author;
+import static com.yahoo.config.application.api.Notifications.When.failing;
+import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static com.yahoo.log.LogLevel.DEBUG;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.ACTIVATION_CONFLICT;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE;
@@ -453,26 +458,23 @@ public class InternalStepRunner implements StepRunner {
             boolean newCommit = application.change().application()
                                            .map(run.versions().targetApplication()::equals)
                                            .orElse(false);
+            When when = newCommit ? failingCommit : failing;
 
-            Map<String, Notifications.When> recipients = new HashMap<>(notifications.staticEmails());
-            if (notifications.roleEmails().containsKey(Notifications.Role.author))
-                run.versions().targetApplication().authorEmail()
-                   .ifPresent(address -> recipients.put(address, notifications.roleEmails().get(Notifications.Role.author)));
-
-            if ( ! newCommit)
-                recipients.values().removeIf(Notifications.When.failingCommit::equals);
+            List<String> recipients = new ArrayList<>(notifications.emailAddressesFor(when));
+            if (notifications.emailRolesFor(when).contains(author))
+                run.versions().targetApplication().authorEmail().ifPresent(recipients::add);
 
             try {
                 if (run.status() == outOfCapacity && run.id().type().isProduction())
-                    controller.mailer().send(mails.outOfCapacity(run.id(), recipients.keySet()));
+                    controller.mailer().send(mails.outOfCapacity(run.id(), recipients));
                 if (run.status() == deploymentFailed)
-                    controller.mailer().send(mails.deploymentFailure(run.id(), recipients.keySet()));
+                    controller.mailer().send(mails.deploymentFailure(run.id(), recipients));
                 if (run.status() == installationFailed)
-                    controller.mailer().send(mails.installationFailure(run.id(), recipients.keySet()));
+                    controller.mailer().send(mails.installationFailure(run.id(), recipients));
                 if (run.status() == testFailure)
-                    controller.mailer().send(mails.testFailure(run.id(), recipients.keySet()));
+                    controller.mailer().send(mails.testFailure(run.id(), recipients));
                 if (run.status() == error)
-                    controller.mailer().send(mails.systemError(run.id(), recipients.keySet()));
+                    controller.mailer().send(mails.systemError(run.id(), recipients));
             }
             catch (RuntimeException e) {
                 logger.log(INFO, "Exception trying to send mail for " + run.id(), e);
