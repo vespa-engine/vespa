@@ -6,7 +6,7 @@ import com.yahoo.vespa.defaults.Defaults;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 
@@ -14,7 +14,7 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
  * @author hakonhall
  */
 public class Flags {
-    private static volatile ConcurrentHashMap<FlagId, FlagDefinition> flags = new ConcurrentHashMap<>();
+    private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
     public static final UnboundBooleanFlag HEALTHMONITOR_MONITOR_INFRA = defineFeatureFlag(
             "healthmonitor-monitorinfra", true,
@@ -160,22 +160,39 @@ public class Flags {
      * <p>Returns a Replacer instance to be used with e.g. a try-with-resources block. Within the block,
      * the flags starts out as cleared. Flags can be defined, etc. When leaving the block, the flags from
      * before the block is reinserted.
-     * */
+     *
+     * <p>NOT thread-safe. Tests using this cannot run in parallel.
+     */
     public static Replacer clearFlagsForTesting() {
         return new Replacer();
     }
 
     public static class Replacer implements AutoCloseable {
-        private final ConcurrentHashMap<FlagId, FlagDefinition> savedFlags;
+        private static volatile boolean flagsCleared = false;
+
+        private final TreeMap<FlagId, FlagDefinition> savedFlags;
 
         private Replacer() {
+            verifyAndSetFlagsCleared(true);
             this.savedFlags = Flags.flags;
-            Flags.flags = new ConcurrentHashMap<>();
+            Flags.flags = new TreeMap<>();
         }
 
         @Override
         public void close() {
+            verifyAndSetFlagsCleared(false);
             Flags.flags = savedFlags;
+        }
+
+        /**
+         * Used to implement a simple verification that Replacer is not used by multiple threads.
+         * For instance two different tests running in parallel cannot both use Replacer.
+         */
+        private static void verifyAndSetFlagsCleared(boolean newValue) {
+            if (flagsCleared == newValue) {
+                throw new IllegalStateException("clearFlagsForTesting called while already cleared - running tests in parallell!?");
+            }
+            flagsCleared = newValue;
         }
     }
 }
