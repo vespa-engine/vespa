@@ -450,6 +450,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.globalDnsName(controller.system()).ifPresent(rotation -> {
             globalRotationsArray.addString(rotation.url().toString());
             globalRotationsArray.addString(rotation.secureUrl().toString());
+            globalRotationsArray.addString(rotation.oathUrl().toString());
             object.setString("rotationId", application.rotation().get().asString());
         });
 
