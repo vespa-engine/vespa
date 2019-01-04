@@ -1,83 +1,33 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "http_server.h"
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/host_name.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 namespace vespalib {
 
-namespace {
-
-void respond_not_found(Fast_HTTPConnection &conn) {
-    conn.Output(conn.GetHTTPVersion().c_str());
-    conn.Output(" 404 Not Found\r\n");
-    conn.Output("Connection: close\r\n\r\n");
-}
-
-void write_json_header(Fast_HTTPConnection &conn) {
-    conn.Output(conn.GetHTTPVersion().c_str());
-    conn.Output(" 200 OK\r\n");
-    conn.Output("Connection: close\r\n");
-    conn.Output("Content-Type: application/json\r\n\r\n");
-}
-
-} // namespace vespalib::<unnamed>
-
 void
-HttpServer::handle_get(const string &url, const string &host_in,
-                       Fast_HTTPConnection &conn) const
+HttpServer::get(Portal::GetRequest req)
 {
-    std::map<vespalib::string,vespalib::string> params;
-    vespalib::string json_result = _handler_repo.get(host_in.empty() ? _my_host : host_in, url, params);
+    vespalib::string json_result = _handler_repo.get(req.get_host(), req.get_uri(), {});
     if (json_result.empty()) {
-        respond_not_found(conn);
+        req.respond_with_error(404, "Not Found");
     } else {
-        write_json_header(conn);
-        conn.OutputData(json_result.data(), json_result.size());
+        req.respond_with_content("application/json", json_result);
     }
 }
 
 //-----------------------------------------------------------------------------
 
 HttpServer::HttpServer(int port_in)
-    : _requested_port(port_in),
-      _started(false),
-      _actual_port(0),
-      _my_host(),
-      _handler_repo(),
-      _server(new Server(port_in, *this))
+    : _handler_repo(),
+      _server(Portal::create(CryptoEngine::get_default(), port_in)),
+      _root(_server->bind("/", *this))
 {
-    _server->SetKeepAlive(false);
 }
 
-HttpServer::~HttpServer() { }
-
-void
-HttpServer::start()
+HttpServer::~HttpServer()
 {
-    if (_started) {
-        return;
-    }
-    int ret_code = _server->Start();
-    if (ret_code != FASTLIB_SUCCESS &&
-        ret_code != FASTLIB_HTTPSERVER_ALREADYSTARTED)
-    {
-        if (ret_code == FASTLIB_HTTPSERVER_BADLISTEN) {
-            throw PortListenException(_requested_port, "HTTP");
-        } else {
-            throw FatalException("failed to start vespalib HTTP server");
-        }
-    }
-    _actual_port = _server->getListenPort();
-    _my_host = make_string("%s:%d", HostName::get().c_str(), _actual_port);
-    _started = true;
-}
-
-void
-HttpServer::stop()
-{
-    _server.reset(nullptr);
+    _root.reset();
 }
 
 } // namespace vespalib

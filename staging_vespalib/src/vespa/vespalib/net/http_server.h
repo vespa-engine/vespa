@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/fastlib/net/httpserver.h>
+#include <vespa/vespalib/portal/portal.h>
 #include "json_handler_repo.h"
 
 namespace vespalib {
@@ -15,38 +15,21 @@ namespace vespalib {
  * the server has been started. Request dispatching is done using a
  * JsonHandlerRepo.
  **/
-class HttpServer
+class HttpServer : public Portal::GetHandler
 {
 private:
-    struct Server : Fast_HTTPServer {
-        typedef std::unique_ptr<Server> UP;
-        const HttpServer &parent;
-        virtual void onGetRequest(const vespalib::string &url, const vespalib::string &host,
-                                  Fast_HTTPConnection &conn) override
-        {
-            parent.handle_get(url, host, conn);
-        }
-        Server(int port, const HttpServer &parent_in) : Fast_HTTPServer(port), parent(parent_in) {}
-    };
-
-    int _requested_port;
-    volatile bool _started;
-    int _actual_port;
-    vespalib::string _my_host;
     JsonHandlerRepo _handler_repo;
-    Server::UP _server; // need separate object for controlled shutdown
+    Portal::SP _server;
+    Portal::Token::UP _root;
 
-    void handle_get(const vespalib::string &url, const vespalib::string &host,
-                    Fast_HTTPConnection &conn) const;
+    void get(Portal::GetRequest req) override;
 public:
     typedef std::unique_ptr<HttpServer> UP;
     HttpServer(int port_in);
     ~HttpServer();
-    const vespalib::string &host() const { return _my_host; }
+    const vespalib::string &host() const { return _server->my_host(); }
     JsonHandlerRepo &repo() { return _handler_repo; }
-    void start();
-    int port() const { return (_actual_port != 0) ? _actual_port : _requested_port; }
-    void stop();
+    int port() const { return _server->listen_port(); }
 };
 
 } // namespace vespalib

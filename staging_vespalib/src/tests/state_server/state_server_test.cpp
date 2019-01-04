@@ -40,10 +40,7 @@ vespalib::string run_cmd(const vespalib::string &cmd) {
 }
 
 vespalib::string getPage(int port, const vespalib::string &path, const vespalib::string &extra_params = "") {
-    vespalib::string result = run_cmd(make_string("curl -s %s http://localhost:%d%s", extra_params.c_str(), port, path.c_str()));
-    vespalib::string chunked_result = run_cmd(make_string("curl -H transfer-encoding:chunked -s %s http://localhost:%d%s", extra_params.c_str(), port, path.c_str()));
-    ASSERT_EQUAL(result, chunked_result);
-    return result;
+    return run_cmd(make_string("curl -s %s http://localhost:%d%s", extra_params.c_str(), port, path.c_str()));
 }
 
 vespalib::string getFull(int port, const vespalib::string &path) { return getPage(port, path, "-D -"); }
@@ -63,7 +60,6 @@ struct DummyHandler : JsonGetHandler {
 //-----------------------------------------------------------------------------
 
 TEST_F("require that unknown url returns 404 response", HttpServer(0)) {
-    f1.start();
     std::string expect("HTTP/1.1 404 Not Found\r\n"
                        "Connection: close\r\n"
                        "\r\n");
@@ -73,7 +69,6 @@ TEST_F("require that unknown url returns 404 response", HttpServer(0)) {
 
 TEST_FF("require that empty known url returns 404 response", DummyHandler(""), HttpServer(0)) {
     auto token = f2.repo().bind(my_path, f1);
-    f2.start();
     std::string expect("HTTP/1.1 404 Not Found\r\n"
                        "Connection: close\r\n"
                        "\r\n");
@@ -83,7 +78,6 @@ TEST_FF("require that empty known url returns 404 response", DummyHandler(""), H
 
 TEST_FF("require that non-empty known url returns expected headers", DummyHandler("[123]"), HttpServer(0)) {
     auto token = f2.repo().bind(my_path, f1);
-    f2.start();
     vespalib::string expect("HTTP/1.1 200 OK\r\n"
                             "Connection: close\r\n"
                             "Content-Type: application/json\r\n"
@@ -100,7 +94,6 @@ TEST_FFFF("require that handler is selected based on longest matching url prefix
     auto token2 = f4.repo().bind("/foo/bar", f2);
     auto token1 = f4.repo().bind("/foo", f1);
     auto token3 = f4.repo().bind("/foo/bar/baz", f3);
-    f4.start();
     int port = f4.port();
     EXPECT_EQUAL("", getPage(port, "/fox"));
     EXPECT_EQUAL("[1]", getPage(port, "/foo"));
@@ -121,7 +114,6 @@ struct EchoHost : JsonGetHandler {
 
 TEST_FF("require that host is passed correctly", EchoHost(), HttpServer(0)) {
     auto token = f2.repo().bind(my_path, f1);
-    f2.start();
     EXPECT_EQUAL(make_string("%s:%d", HostName::get().c_str(), f2.port()), f2.host());
     vespalib::string default_result = make_string("[\"%s\"]", f2.host().c_str());
     vespalib::string localhost_result = make_string("[\"%s:%d\"]", "localhost", f2.port());

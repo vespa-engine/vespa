@@ -14,7 +14,6 @@ StateServer::StateServer(int port,
 {
     _tokens.push_back(_server.repo().bind("/state/v1", _api));
     _tokens.push_back(_server.repo().bind("/metrics/total", _api));
-    _server.start();
 }
 
 StateServer::~StateServer() = default;
