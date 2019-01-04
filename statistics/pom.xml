@@ -77,6 +77,10 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>abi-check-plugin</artifactId>
+      </plugin>
     </plugins>
   </build>
 </project>

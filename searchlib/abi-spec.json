@@ -1,0 +1,1632 @@
+{
+  "com.yahoo.searchlib.ranking.features.ElementCompleteness$Item": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, double)",
+      "public java.lang.String value()",
+      "public double weight()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.ElementCompleteness": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static com.yahoo.searchlib.ranking.features.Features compute(java.util.Map, com.yahoo.searchlib.ranking.features.ElementCompleteness$Item[])"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.Features": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value get(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.FieldTermMatch": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static com.yahoo.searchlib.ranking.features.Features compute(java.lang.String, java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.fieldmatch.Field$Term": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, float)",
+      "public java.lang.String value()",
+      "public float exactness()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.fieldmatch.Field": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.util.List)",
+      "public java.util.List terms()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetrics": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.Cloneable"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetricsComputer)",
+      "public boolean isComplete()",
+      "public void setComplete(boolean)",
+      "public java.util.List getSegmentStarts()",
+      "public float get(java.lang.String)",
+      "public int getOutOfOrder()",
+      "public int getSegments()",
+      "public int getGaps()",
+      "public int getGapLength()",
+      "public int getLongestSequence()",
+      "public int getHead()",
+      "public int getTail()",
+      "public int getMatches()",
+      "public int getPairs()",
+      "public float getAbsoluteProximity()",
+      "public float getUnweightedProximity()",
+      "public float getSegmentDistance()",
+      "public float getWeight()",
+      "public float getSignificance()",
+      "public float getOccurrence()",
+      "public float getAbsoluteOccurrence()",
+      "public float getWeightedOccurrence()",
+      "public float getWeightedAbsoluteOccurrence()",
+      "public float getSignificantOccurrence()",
+      "public float getExactness()",
+      "public float getQueryCompleteness()",
+      "public float getFieldCompleteness()",
+      "public float getCompleteness()",
+      "public float getOrderness()",
+      "public float getRelatedness()",
+      "public float getLongestSequenceRatio()",
+      "public float getSegmentProximity()",
+      "public float getProximity()",
+      "public float getImportance()",
+      "public float getEarliness()",
+      "public float getMatch()",
+      "public com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetrics clone()",
+      "public java.lang.String toString()",
+      "public java.lang.String toStringDump()",
+      "public com.yahoo.searchlib.ranking.features.fieldmatch.Trace trace()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetricsComputer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetricsParameters)",
+      "public com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetrics compute(java.lang.String, java.lang.String)",
+      "public com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetrics compute(com.yahoo.searchlib.ranking.features.fieldmatch.Query, java.lang.String)",
+      "public com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetrics compute(com.yahoo.searchlib.ranking.features.fieldmatch.Query, java.lang.String, boolean)",
+      "public com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetrics compute(com.yahoo.searchlib.ranking.features.fieldmatch.Query, com.yahoo.searchlib.ranking.features.fieldmatch.Field, boolean)",
+      "public com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetricsParameters getParameters()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetricsParameters": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public static com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetricsParameters defaultParameters()",
+      "public void <init>()",
+      "public void setProximityLimit(int)",
+      "public int getProximityLimit()",
+      "public void setProximityTable(float[])",
+      "public float[] getProximityTable()",
+      "public float getProximity(int)",
+      "public int getMaxAlternativeSegmentations()",
+      "public void setMaxAlternativeSegmentations(int)",
+      "public int getMaxOccurrences()",
+      "public void setMaxOccurrences(int)",
+      "public float getFieldCompletenessImportance()",
+      "public void setFieldCompletenessImportance(float)",
+      "public float getProximityCompletenessImportance()",
+      "public void setProximityCompletenessImportance(float)",
+      "public float getEarlinessImportance()",
+      "public void setEarlinessImportance(float)",
+      "public float getSegmentProximityImportance()",
+      "public void setSegmentProximityImportance(float)",
+      "public float getOccurrenceImportance()",
+      "public void setOccurrenceImportance(float)",
+      "public float getRelatednessImportance()",
+      "public void setRelatednessImportance(float)",
+      "public void freeze()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.fieldmatch.Main": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static void main(java.lang.String[])"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.fieldmatch.Query": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(com.yahoo.searchlib.ranking.features.fieldmatch.QueryTerm[])",
+      "public com.yahoo.searchlib.ranking.features.fieldmatch.QueryTerm[] getTerms()",
+      "public int getTotalTermWeight()",
+      "public void setTotalTermWeight(int)",
+      "public float getTotalSignificance()",
+      "public void setTotalSignificance(float)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.fieldmatch.QueryTerm": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, float)",
+      "public void setTerm(java.lang.String)",
+      "public java.lang.String getTerm()",
+      "public float getConnectedness()",
+      "public void setConnectedness(float)",
+      "public void setWeight(int)",
+      "public int getWeight()",
+      "public void setSignificance(float)",
+      "public float getSignificance()",
+      "public float getExactness()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.ranking.features.fieldmatch.Trace": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void add(java.lang.String)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.ExpressionFunction$Instance": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.ExpressionFunction, java.lang.String, java.lang.String)",
+      "public java.lang.String getName()",
+      "public java.lang.String getExpressionString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.ExpressionFunction": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, com.yahoo.searchlib.rankingexpression.RankingExpression)",
+      "public void <init>(java.lang.String, java.util.List, com.yahoo.searchlib.rankingexpression.RankingExpression)",
+      "public void <init>(java.lang.String, java.util.List, com.yahoo.searchlib.rankingexpression.RankingExpression, java.util.Map, java.util.Optional)",
+      "public java.lang.String getName()",
+      "public java.util.List arguments()",
+      "public com.yahoo.searchlib.rankingexpression.RankingExpression getBody()",
+      "public java.util.Map argumentTypes()",
+      "public java.util.Optional returnType()",
+      "public com.yahoo.searchlib.rankingexpression.ExpressionFunction withName(java.lang.String)",
+      "public com.yahoo.searchlib.rankingexpression.ExpressionFunction withBody(com.yahoo.searchlib.rankingexpression.RankingExpression)",
+      "public com.yahoo.searchlib.rankingexpression.ExpressionFunction withReturnType(com.yahoo.tensor.TensorType)",
+      "public com.yahoo.searchlib.rankingexpression.ExpressionFunction withArgument(java.lang.String)",
+      "public com.yahoo.searchlib.rankingexpression.ExpressionFunction withArgument(java.lang.String, com.yahoo.tensor.TensorType)",
+      "public com.yahoo.searchlib.rankingexpression.ExpressionFunction$Instance expand(com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.List, java.util.Deque)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.FeatureList": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.Iterable"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.io.Reader)",
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.io.File)",
+      "public int size()",
+      "public com.yahoo.searchlib.rankingexpression.rule.ReferenceNode get(int)",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public java.lang.String toString()",
+      "public java.util.Iterator iterator()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.RankingExpression": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.io.Serializable"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.io.Reader)",
+      "public void <init>(java.lang.String, java.io.Reader)",
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.io.File)",
+      "public void <init>(java.lang.String, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public com.yahoo.searchlib.rankingexpression.RankingExpression copy()",
+      "public java.lang.String getName()",
+      "public void setName(java.lang.String)",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getRoot()",
+      "public void setRoot(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public java.lang.String toString()",
+      "public java.util.Map getRankProperties(java.util.List)",
+      "public static java.lang.String propertyName(java.lang.String)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public static com.yahoo.searchlib.rankingexpression.RankingExpression from(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.Reference": {
+    "superClass": "com.yahoo.tensor.evaluation.TypeContext$Name",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, com.yahoo.searchlib.rankingexpression.rule.Arguments, java.lang.String)",
+      "public com.yahoo.searchlib.rankingexpression.rule.Arguments arguments()",
+      "public java.lang.String output()",
+      "public static com.yahoo.searchlib.rankingexpression.Reference simple(java.lang.String, java.lang.String)",
+      "public static java.util.Optional simple(java.lang.String)",
+      "public boolean isIdentifier()",
+      "public boolean isSimple()",
+      "public java.util.Optional simpleArgument()",
+      "public com.yahoo.searchlib.rankingexpression.Reference withArguments(com.yahoo.searchlib.rankingexpression.rule.Arguments)",
+      "public com.yahoo.searchlib.rankingexpression.Reference withOutput(java.lang.String)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.evaluation.Context",
+    "interfaces": [
+      "java.lang.Cloneable",
+      "com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "protected void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression)",
+      "protected void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression, boolean)",
+      "protected final java.util.Map nameToIndex()",
+      "protected final double[] doubleValues()",
+      "protected final boolean ignoreUnknownValues()",
+      "public java.util.Set names()",
+      "public final int getIndex(java.lang.String)",
+      "public int size()",
+      "public double getDouble(int)",
+      "public java.lang.String toString()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext",
+    "interfaces": [
+      "java.lang.Cloneable"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression, boolean)",
+      "public final void put(java.lang.String, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public final void put(int, double)",
+      "public final void put(int, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.tensor.TensorType getType(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value get(java.lang.String)",
+      "public final com.yahoo.searchlib.rankingexpression.evaluation.Value get(int)",
+      "public final double getDouble(int)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext clone()",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext clone()",
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.BooleanValue": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.evaluation.DoubleCompatibleValue",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.searchlib.rankingexpression.evaluation.BooleanValue frozen(boolean)",
+      "public void <init>(boolean)",
+      "public boolean asBoolean()",
+      "public double asDouble()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value asMutable()",
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.Context": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.tensor.evaluation.EvaluationContext"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value get(java.lang.String)",
+      "public com.yahoo.tensor.TensorType getType(java.lang.String)",
+      "public com.yahoo.tensor.Tensor getTensor(java.lang.String)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value get(java.lang.String, com.yahoo.searchlib.rankingexpression.rule.Arguments, java.lang.String)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value get(int)",
+      "public double getDouble(int)",
+      "public final void put(java.lang.String, double)",
+      "public void put(java.lang.String, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public java.util.Set names()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract int size()",
+      "public abstract int getIndex(java.lang.String)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value get(int)",
+      "public abstract double getDouble(int)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.DoubleCompatibleValue": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.evaluation.Value",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.tensor.TensorType type()",
+      "public boolean hasDouble()",
+      "public com.yahoo.tensor.Tensor asTensor()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value negate()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value add(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value subtract(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value multiply(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value divide(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value modulo(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value and(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value or(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value not()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value power(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value compare(com.yahoo.searchlib.rankingexpression.rule.TruthOperator, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value function(com.yahoo.searchlib.rankingexpression.rule.Function, com.yahoo.searchlib.rankingexpression.evaluation.Value)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.DoubleOnlyArrayContext": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression, boolean)",
+      "public final void put(java.lang.String, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public final void put(int, double)",
+      "public final void put(int, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.tensor.TensorType getType(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value get(java.lang.String)",
+      "public final com.yahoo.searchlib.rankingexpression.evaluation.Value get(int)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.DoubleOnlyArrayContext clone()",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext clone()",
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.evaluation.DoubleCompatibleValue",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(double)",
+      "public static com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue frozen(double)",
+      "public double asDouble()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue asDoubleValue()",
+      "public boolean asBoolean()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue negate()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value add(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value subtract(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value multiply(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value divide(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value modulo(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value function(com.yahoo.searchlib.rankingexpression.rule.Function, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue asMutable()",
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.Value negate()",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.Value asMutable()"
+    ],
+    "fields": [
+      "public static final com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue zero"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Optimizer getOptimizer(java.lang.Class)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.OptimizationReport optimize(com.yahoo.searchlib.rankingexpression.RankingExpression, com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.OptimizationReport optimize(com.yahoo.searchlib.rankingexpression.RankingExpression, com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.MapContext": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.evaluation.Context",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(java.util.Map)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.MapContext freeze()",
+      "public com.yahoo.tensor.TensorType getType(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value get(java.lang.String)",
+      "public void put(java.lang.String, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public java.util.Map bindings()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.MapContext thawedCopy()",
+      "public java.util.Set names()",
+      "public java.lang.String toString()",
+      "public static com.yahoo.searchlib.rankingexpression.evaluation.MapContext fromString(java.lang.String)",
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.MapTypeContext": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.tensor.evaluation.TypeContext"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void setType(com.yahoo.searchlib.rankingexpression.Reference, com.yahoo.tensor.TensorType)",
+      "public com.yahoo.tensor.TensorType getType(java.lang.String)",
+      "public com.yahoo.tensor.TensorType getType(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public java.util.Map bindings()",
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.OptimizationReport": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void setMetric(java.lang.String, int)",
+      "public int getMetric(java.lang.String)",
+      "public void incMetric(java.lang.String, int)",
+      "public void note(java.lang.String)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.Optimizer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void setEnabled(boolean)",
+      "public boolean isEnabled()",
+      "public abstract void optimize(com.yahoo.searchlib.rankingexpression.RankingExpression, com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex, com.yahoo.searchlib.rankingexpression.evaluation.OptimizationReport)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.StringValue": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.evaluation.Value",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.searchlib.rankingexpression.evaluation.StringValue frozen(java.lang.String)",
+      "public void <init>(java.lang.String)",
+      "public com.yahoo.tensor.TensorType type()",
+      "public double asDouble()",
+      "public com.yahoo.tensor.Tensor asTensor()",
+      "public boolean hasDouble()",
+      "public boolean asBoolean()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value negate()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value add(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value subtract(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value multiply(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value divide(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value modulo(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value and(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value or(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value not()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value power(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value compare(com.yahoo.searchlib.rankingexpression.rule.TruthOperator, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value function(com.yahoo.searchlib.rankingexpression.rule.Function, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value asMutable()",
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String asString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.TensorValue": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.evaluation.Value",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.tensor.Tensor)",
+      "public com.yahoo.tensor.TensorType type()",
+      "public double asDouble()",
+      "public boolean hasDouble()",
+      "public boolean asBoolean()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value negate()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value add(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value subtract(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value multiply(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value divide(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value modulo(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value and(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value or(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value not()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value power(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.tensor.Tensor asTensor()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value compare(com.yahoo.searchlib.rankingexpression.rule.TruthOperator, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value function(com.yahoo.searchlib.rankingexpression.rule.Function, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value asMutable()",
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.evaluation.Value": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public abstract com.yahoo.tensor.TensorType type()",
+      "public abstract double asDouble()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue asDoubleValue()",
+      "public abstract com.yahoo.tensor.Tensor asTensor()",
+      "protected com.yahoo.tensor.Tensor doubleAsTensor(double)",
+      "public abstract boolean hasDouble()",
+      "public abstract boolean asBoolean()",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value negate()",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value add(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value subtract(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value multiply(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value divide(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value modulo(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value and(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value or(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value not()",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value power(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value compare(com.yahoo.searchlib.rankingexpression.rule.TruthOperator, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value function(com.yahoo.searchlib.rankingexpression.rule.Function, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value freeze()",
+      "public final boolean isFrozen()",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value asMutable()",
+      "public abstract java.lang.String toString()",
+      "public abstract boolean equals(java.lang.Object)",
+      "public abstract int hashCode()",
+      "public static com.yahoo.searchlib.rankingexpression.evaluation.Value parse(java.lang.String)",
+      "public static com.yahoo.searchlib.rankingexpression.evaluation.Value of(com.yahoo.tensor.Tensor)",
+      "public static com.yahoo.searchlib.rankingexpression.evaluation.Value of(double)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.parser.AbstractCharStream": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.searchlib.rankingexpression.parser.CharStream"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void setTabSize(int)",
+      "public int getTabSize()",
+      "protected void expandBuff(boolean)",
+      "protected abstract int streamRead(char[], int, int)",
+      "protected abstract void streamClose()",
+      "protected void fillBuff()",
+      "public char beginToken()",
+      "protected void updateLineColumn(char)",
+      "public char readChar()",
+      "public int getBeginColumn()",
+      "public int getBeginLine()",
+      "public int getEndColumn()",
+      "public int getEndLine()",
+      "public void backup(int)",
+      "public void <init>(int, int, int)",
+      "public void reInit(int, int, int)",
+      "public java.lang.String getImage()",
+      "public char[] getSuffix(int)",
+      "public void done()",
+      "public void adjustBeginLineColumn(int, int)",
+      "public void setTrackLineColumn(boolean)",
+      "public boolean isTrackLineColumn()"
+    ],
+    "fields": [
+      "public static final int DEFAULT_BUF_SIZE",
+      "protected int bufpos",
+      "protected int bufsize",
+      "protected int available",
+      "protected int tokenBegin",
+      "protected int[] bufline",
+      "protected int[] bufcolumn",
+      "protected int column",
+      "protected int line",
+      "protected boolean prevCharIsCR",
+      "protected boolean prevCharIsLF",
+      "protected char[] buffer",
+      "protected int maxNextCharInd",
+      "protected int inBuf",
+      "protected char[] nextCharBuf",
+      "protected int nextCharInd"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.parser.CharStream": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract char readChar()",
+      "public abstract int getBeginColumn()",
+      "public abstract int getBeginLine()",
+      "public abstract int getEndColumn()",
+      "public abstract int getEndLine()",
+      "public abstract void backup(int)",
+      "public abstract char beginToken()",
+      "public abstract java.lang.String getImage()",
+      "public abstract char[] getSuffix(int)",
+      "public abstract void done()",
+      "public abstract void setTabSize(int)",
+      "public abstract int getTabSize()",
+      "public abstract void setTrackLineColumn(boolean)",
+      "public abstract boolean isTrackLineColumn()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.parser.ParseException": {
+    "superClass": "java.lang.Exception",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.parser.Token, int[][], java.lang.String[])",
+      "public void <init>()",
+      "public void <init>(java.lang.String)"
+    ],
+    "fields": [
+      "protected static final java.lang.String EOL",
+      "public com.yahoo.searchlib.rankingexpression.parser.Token currentToken",
+      "public int[][] expectedTokenSequences",
+      "public java.lang.String[] tokenImage"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParser": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserConstants"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public final java.util.List featureList()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode rankingExpression()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode expression()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode arithmeticExpression()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator arithmetic()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TruthOperator comparator()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode value()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.IfNode ifExpression()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ReferenceNode feature()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ReferenceNode legacyQueryFeature()",
+      "public final java.lang.String outs()",
+      "public final java.lang.String out()",
+      "public final java.util.List args()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode arg()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode function()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.FunctionNode scalarOrTensorFunction()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorFunction()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorMap()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorReduce()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorReduceComposites()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorJoin()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorRename()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorConcat()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorGenerate()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorRange()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorDiag()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorRandom()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorL1Normalize()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorL2Normalize()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorMatmul()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorSoftmax()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorXwPlusB()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorArgmax()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorArgmin()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.LambdaFunctionNode lambdaFunction()",
+      "public final com.yahoo.tensor.functions.Reduce$Aggregator tensorReduceAggregator()",
+      "public final com.yahoo.tensor.TensorType tensorTypeArgument()",
+      "public final void tensorTypeDimension(com.yahoo.tensor.TensorType$Builder)",
+      "public final java.lang.String tensorFunctionName()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.Function unaryFunctionName()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.Function binaryFunctionName()",
+      "public final java.util.List expressionList()",
+      "public final double doubleNumber()",
+      "public final int integerNumber()",
+      "public final java.lang.String identifier()",
+      "public final java.util.List identifierList()",
+      "public final java.util.List bracedIdentifierList()",
+      "public final java.lang.String tag()",
+      "public final java.util.List tagCommaLeadingList()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ConstantNode constantPrimitive()",
+      "public final com.yahoo.searchlib.rankingexpression.evaluation.Value primitiveValue()",
+      "public void <init>(java.io.InputStream)",
+      "public void <init>(java.io.InputStream, java.lang.String)",
+      "public void ReInit(java.io.InputStream)",
+      "public void ReInit(java.io.InputStream, java.lang.String)",
+      "public void <init>(java.io.Reader)",
+      "public void ReInit(java.io.Reader)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserTokenManager)",
+      "public void ReInit(com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserTokenManager)",
+      "public final com.yahoo.searchlib.rankingexpression.parser.Token getNextToken()",
+      "public final com.yahoo.searchlib.rankingexpression.parser.Token getToken(int)",
+      "public com.yahoo.searchlib.rankingexpression.parser.ParseException generateParseException()",
+      "public final boolean trace_enabled()",
+      "public final void enable_tracing()",
+      "public final void disable_tracing()"
+    ],
+    "fields": [
+      "public com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserTokenManager token_source",
+      "public com.yahoo.searchlib.rankingexpression.parser.Token token",
+      "public com.yahoo.searchlib.rankingexpression.parser.Token jj_nt"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserConstants": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [],
+    "fields": [
+      "public static final int EOF",
+      "public static final int INTEGER",
+      "public static final int DECIMAL",
+      "public static final int HEX",
+      "public static final int OCTAL",
+      "public static final int FLOAT",
+      "public static final int EXPONENT",
+      "public static final int LBRACE",
+      "public static final int RBRACE",
+      "public static final int LSQUARE",
+      "public static final int RSQUARE",
+      "public static final int LCURLY",
+      "public static final int RCURLY",
+      "public static final int ADD",
+      "public static final int SUB",
+      "public static final int DIV",
+      "public static final int MUL",
+      "public static final int DOT",
+      "public static final int MOD",
+      "public static final int POWOP",
+      "public static final int DOLLAR",
+      "public static final int COMMA",
+      "public static final int COLON",
+      "public static final int LE",
+      "public static final int LT",
+      "public static final int EQ",
+      "public static final int NQ",
+      "public static final int AQ",
+      "public static final int GE",
+      "public static final int GT",
+      "public static final int STRING",
+      "public static final int IF",
+      "public static final int IN",
+      "public static final int F",
+      "public static final int NOT",
+      "public static final int AND",
+      "public static final int OR",
+      "public static final int ABS",
+      "public static final int ACOS",
+      "public static final int ASIN",
+      "public static final int ATAN",
+      "public static final int CEIL",
+      "public static final int COS",
+      "public static final int COSH",
+      "public static final int ELU",
+      "public static final int EXP",
+      "public static final int FABS",
+      "public static final int FLOOR",
+      "public static final int ISNAN",
+      "public static final int LOG",
+      "public static final int LOG10",
+      "public static final int RELU",
+      "public static final int ROUND",
+      "public static final int SIGMOID",
+      "public static final int SIGN",
+      "public static final int SIN",
+      "public static final int SINH",
+      "public static final int SQUARE",
+      "public static final int SQRT",
+      "public static final int TAN",
+      "public static final int TANH",
+      "public static final int ATAN2",
+      "public static final int FMOD",
+      "public static final int LDEXP",
+      "public static final int POW",
+      "public static final int MAP",
+      "public static final int REDUCE",
+      "public static final int JOIN",
+      "public static final int RENAME",
+      "public static final int CONCAT",
+      "public static final int TENSOR",
+      "public static final int RANGE",
+      "public static final int DIAG",
+      "public static final int RANDOM",
+      "public static final int L1_NORMALIZE",
+      "public static final int L2_NORMALIZE",
+      "public static final int MATMUL",
+      "public static final int SOFTMAX",
+      "public static final int XW_PLUS_B",
+      "public static final int ARGMAX",
+      "public static final int ARGMIN",
+      "public static final int AVG",
+      "public static final int COUNT",
+      "public static final int PROD",
+      "public static final int SUM",
+      "public static final int MAX",
+      "public static final int MIN",
+      "public static final int IDENTIFIER",
+      "public static final int SINGLE_LINE_COMMENT",
+      "public static final int DEFAULT",
+      "public static final java.lang.String[] tokenImage"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserTokenManager": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserConstants"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "protected com.yahoo.searchlib.rankingexpression.parser.Token jjFillToken()",
+      "public com.yahoo.searchlib.rankingexpression.parser.Token getNextToken()",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.parser.SimpleCharStream)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.parser.SimpleCharStream, int)",
+      "public void ReInit(com.yahoo.searchlib.rankingexpression.parser.SimpleCharStream)",
+      "public void ReInit(com.yahoo.searchlib.rankingexpression.parser.SimpleCharStream, int)",
+      "public void SwitchTo(int)"
+    ],
+    "fields": [
+      "public static final java.lang.String[] jjstrLiteralImages",
+      "public static final java.lang.String[] lexStateNames",
+      "public static final int[] jjnewLexState",
+      "protected com.yahoo.searchlib.rankingexpression.parser.SimpleCharStream input_stream",
+      "protected int curChar"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.parser.SimpleCharStream": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.parser.AbstractCharStream",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "protected int streamRead(char[], int, int)",
+      "protected void streamClose()",
+      "protected void fillBuff()",
+      "public char readChar()",
+      "public void <init>(java.io.Reader, int, int, int)",
+      "public void <init>(java.io.Reader, int, int)",
+      "public void <init>(java.io.Reader)",
+      "public void reInit(java.io.Reader)",
+      "public void reInit(java.io.Reader, int, int)",
+      "public void reInit(java.io.Reader, int, int, int)",
+      "public void <init>(java.io.InputStream, java.lang.String, int, int, int)",
+      "public void <init>(java.io.InputStream, java.lang.String, int, int)",
+      "public void <init>(java.io.InputStream, java.lang.String)",
+      "public void reInit(java.io.InputStream, java.lang.String)",
+      "public void reInit(java.io.InputStream, java.lang.String, int, int)",
+      "public void reInit(java.io.InputStream, java.lang.String, int, int, int)"
+    ],
+    "fields": [
+      "protected java.io.Reader inputStream"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.parser.Token": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.io.Serializable"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(int)",
+      "public void <init>(int, java.lang.String)",
+      "public java.lang.Object getValue()",
+      "public java.lang.String toString()",
+      "public static com.yahoo.searchlib.rankingexpression.parser.Token newToken(int, java.lang.String)",
+      "public static com.yahoo.searchlib.rankingexpression.parser.Token newToken(int)"
+    ],
+    "fields": [
+      "public int kind",
+      "public int beginLine",
+      "public int beginColumn",
+      "public int endLine",
+      "public int endColumn",
+      "public java.lang.String image",
+      "public com.yahoo.searchlib.rankingexpression.parser.Token next",
+      "public com.yahoo.searchlib.rankingexpression.parser.Token specialToken"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.parser.TokenMgrException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "protected static final java.lang.String addEscapes(java.lang.String)",
+      "protected static java.lang.String LexicalErr(boolean, int, int, int, java.lang.String, int)",
+      "public java.lang.String getMessage()",
+      "public void <init>()",
+      "public void <init>(java.lang.String, int)",
+      "public void <init>(boolean, int, int, int, java.lang.String, int, int)"
+    ],
+    "fields": [
+      "public static final int LEXICAL_ERROR",
+      "public static final int STATIC_LEXER_ERROR",
+      "public static final int INVALID_LEXICAL_STATE",
+      "public static final int LOOP_DETECTED"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.Arguments": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.io.Serializable"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public void <init>(java.util.List)",
+      "public java.util.List expressions()",
+      "public int size()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value[] evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(int, com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public boolean isEmpty()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.util.List, java.util.List)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public java.util.List operators()",
+      "public java.util.List children()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public static com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode resolve(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator[] values()",
+      "public static com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator valueOf(java.lang.String)",
+      "public boolean hasPrecedenceOver(com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Value, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public java.lang.String toString()"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator OR",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator AND",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator PLUS",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator MINUS",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator MULTIPLY",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator DIVIDE",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator MODULO",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator POWER",
+      "public static final java.util.List operatorsByPrecedence"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.BooleanNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.ComparisonNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.BooleanNode",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.TruthOperator, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public java.util.List children()",
+      "public com.yahoo.searchlib.rankingexpression.rule.TruthOperator getOperator()",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getLeftCondition()",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getRightCondition()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.searchlib.rankingexpression.rule.ComparisonNode setChildren(java.util.List)",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.CompositeNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.ExpressionNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public abstract java.util.List children()",
+      "public abstract com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.ConstantNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.ExpressionNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.evaluation.Value, java.lang.String)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value getValue()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public java.lang.String sourceString()",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.EmbracedNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getValue()",
+      "public java.util.List children()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.ExpressionNode": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.io.Serializable"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public final java.lang.String toString()",
+      "public abstract java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public java.lang.String toString(com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public abstract com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.Function": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [
+      "java.io.Serializable"
+    ],
+    "attributes": [
+      "public",
+      "abstract",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.searchlib.rankingexpression.rule.Function[] values()",
+      "public static com.yahoo.searchlib.rankingexpression.rule.Function valueOf(java.lang.String)",
+      "public abstract double evaluate(double, double)",
+      "public int arity()"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function abs",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function acos",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function asin",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function atan",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function ceil",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function cos",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function cosh",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function elu",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function exp",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function fabs",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function floor",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function isNan",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function log",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function log10",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function relu",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function round",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function sigmoid",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function sign",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function sin",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function sinh",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function square",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function sqrt",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function tan",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function tanh",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function atan2",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function fmod",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function ldexp",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function max",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function min",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function pow"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.FunctionNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.Function, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.Function, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public com.yahoo.searchlib.rankingexpression.rule.Function getFunction()",
+      "public java.util.List children()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.searchlib.rankingexpression.rule.FunctionNode setChildren(java.util.List)",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(java.util.Collection)",
+      "public void <init>(java.util.Collection, java.util.Map)",
+      "public void <init>(java.util.Map)",
+      "public void <init>(java.util.Map, java.util.Map)",
+      "public com.yahoo.searchlib.rankingexpression.ExpressionFunction getFunction(java.lang.String)",
+      "protected java.util.Map functions()",
+      "public java.lang.String getBinding(java.lang.String)",
+      "public com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withBindings(java.util.Map)"
+    ],
+    "fields": [
+      "public final java.util.Map bindings"
+    ]
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.GeneratorLambdaFunctionNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.tensor.TensorType, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public java.util.List children()",
+      "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.searchlib.rankingexpression.rule.GeneratorLambdaFunctionNode$LongListToDoubleLambda asLongListToDoubleOperator()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.IfNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, java.lang.Double)",
+      "public java.util.List children()",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getCondition()",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getTrueExpression()",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getFalseExpression()",
+      "public java.lang.Double getTrueProbability()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.searchlib.rankingexpression.rule.IfNode setChildren(java.util.List)",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.LambdaFunctionNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.util.List, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public java.util.List children()",
+      "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public java.util.function.DoubleUnaryOperator asDoubleUnaryOperator()",
+      "public java.util.function.DoubleBinaryOperator asDoubleBinaryOperator()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.NameNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.ExpressionNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String getValue()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.NegativeNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getValue()",
+      "public java.util.List children()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.searchlib.rankingexpression.rule.NegativeNode setChildren(java.util.List)",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.NotNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.BooleanNode",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getValue()",
+      "public java.util.List children()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.searchlib.rankingexpression.rule.NotNode setChildren(java.util.List)",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.ReferenceNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.util.List, java.lang.String)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public java.lang.String getName()",
+      "public com.yahoo.searchlib.rankingexpression.rule.Arguments getArguments()",
+      "public com.yahoo.searchlib.rankingexpression.rule.ReferenceNode setArguments(java.util.List)",
+      "public java.lang.String getOutput()",
+      "public com.yahoo.searchlib.rankingexpression.rule.ReferenceNode setOutput(java.lang.String)",
+      "public java.util.List children()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.searchlib.rankingexpression.Reference reference()",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.SerializationContext": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(java.util.Collection)",
+      "public void <init>(java.util.Map)",
+      "public void <init>(java.util.List, java.util.Map)",
+      "public void <init>(java.util.Collection, java.util.Map, java.util.Map)",
+      "public void <init>(com.google.common.collect.ImmutableMap, java.util.Map, java.util.Map)",
+      "public void addFunctionSerialization(java.lang.String, java.lang.String)",
+      "public void addArgumentTypeSerialization(java.lang.String, java.lang.String, com.yahoo.tensor.TensorType)",
+      "public void addFunctionTypeSerialization(java.lang.String, com.yahoo.tensor.TensorType)",
+      "public com.yahoo.searchlib.rankingexpression.rule.SerializationContext withBindings(java.util.Map)",
+      "public java.util.Map serializedFunctions()",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withBindings(java.util.Map)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.SetMembershipNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.BooleanNode",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, java.util.List)",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getTestValue()",
+      "public java.util.List getSetValues()",
+      "public java.util.List children()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.searchlib.rankingexpression.rule.SetMembershipNode setChildren(java.util.List)",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode$TensorFunctionExpressionNode": {
+    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
+      "public java.lang.String toString()",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode": {
+    "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction)",
+      "public com.yahoo.tensor.functions.TensorFunction function()",
+      "public java.util.List children()",
+      "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public static com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode$TensorFunctionExpressionNode wrapArgument(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.TruthOperator": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [
+      "java.io.Serializable"
+    ],
+    "attributes": [
+      "public",
+      "abstract",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.searchlib.rankingexpression.rule.TruthOperator[] values()",
+      "public static com.yahoo.searchlib.rankingexpression.rule.TruthOperator valueOf(java.lang.String)",
+      "public abstract boolean evaluate(double, double)",
+      "public java.lang.String toString()",
+      "public static com.yahoo.searchlib.rankingexpression.rule.TruthOperator fromString(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.TruthOperator SMALLER",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.TruthOperator SMALLEREQUAL",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.TruthOperator EQUAL",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.TruthOperator APPROX_EQUAL",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.TruthOperator LARGER",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.TruthOperator LARGEREQUAL",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.TruthOperator NOTEQUAL"
+    ]
+  }
+}
