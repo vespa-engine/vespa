@@ -27,7 +27,7 @@ public class MockFSChannel extends FS4Channel {
 
     /** The number of active documents this should report in ping reponses */
     private final long activeDocuments;
-    
+
     public MockFSChannel(Backend backend) {
         this(0, backend);
     }
@@ -39,7 +39,7 @@ public class MockFSChannel extends FS4Channel {
 
     private BasicPacket lastReceived = null;
 
-    private QueryPacket lastQueryPacket = null;
+    private static QueryPacket lastQueryPacket = null;
 
     /** Initial value of docstamp */
     private static int docstamp = 1088490666;
@@ -59,6 +59,7 @@ public class MockFSChannel extends FS4Channel {
             lastQueryPacket = (QueryPacket) packet;
 
         lastReceived = packet;
+        notifyMonitor();
         return true;
     }
 
@@ -106,7 +107,7 @@ public class MockFSChannel extends FS4Channel {
                                          1855, 234, 1));
             }
             packets.add(result);
-        } 
+        }
         else if (lastReceived instanceof GetDocSumsPacket) {
             addDocsums(packets, lastQueryPacket);
         }
@@ -121,7 +122,7 @@ public class MockFSChannel extends FS4Channel {
     }
 
     /** Adds the number of docsums requested in queryPacket.getHits() */
-    private void addDocsums(List packets, QueryPacket queryPacket) {
+    private void addDocsums(List<BasicPacket> packets, QueryPacket queryPacket) {
         int numHits = queryPacket.getHits();
 
         if (lastReceived instanceof GetDocSumsPacket) {

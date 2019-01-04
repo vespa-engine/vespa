@@ -19,7 +19,7 @@ public class MockBackend extends Backend {
     public MockBackend() {
         this("", 0L, true);
     }
-    
+
     public MockBackend(String hostname, long activeDocumentsInBackend, boolean working) {
         super();
         this.hostname = hostname;
@@ -46,4 +46,8 @@ public class MockBackend extends Backend {
 
     public void shutdown() {}
 
+    @Override
+    public boolean probeConnection() {
+        return working;
+    }
 }
