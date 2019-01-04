@@ -31,7 +31,6 @@ TEST("Require that waiting is done")
     ASSERT_TRUE(timer.MilliSecsToNow() >= 1000);
     ASSERT_TRUE(timer.MilliSecsToNow() < 60000);
 
-    timer.SetNow();
     holder.handle(ConfigUpdate::UP(new ConfigUpdate(value, true, 0)));
     ASSERT_TRUE(holder.wait(100));
 }
