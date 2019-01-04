@@ -172,6 +172,7 @@ StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, vespalib::Por
                     request.respond_with_error(404, "Not Found");
                 }
             } catch (std::exception &e) {
+                LOG(warning, "Internal Server Error: %s", e.what());
                 request.respond_with_error(500, "Internal Server Error");
             }
         } else {
