@@ -16,13 +16,29 @@
     <packaging>container-plugin</packaging>
     <version>6-SNAPSHOT</version>
     <name>${project.artifactId}</name>
-    <description>Feature flags.</description>
+    <description>Feature flags</description>
 
     <dependencies>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-dev</artifactId>
+            <artifactId>defaults</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>yolean</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
             <scope>provided</scope>
         </dependency>
 
