@@ -28,8 +28,7 @@ namespace framework {
     class HttpUrlPath;
     class Component;
 }
-class StatusWebServer : private config::IFetcherCallback<vespa::config::content::core::StorStatusConfig>,
-                        private framework::Runnable
+class StatusWebServer : private config::IFetcherCallback<vespa::config::content::core::StorStatusConfig>
 {
     class WebServer : public vespalib::Portal::GetHandler {
         StatusWebServer& _status;
@@ -80,7 +79,6 @@ public:
     void handlePage(const framework::HttpUrlPath&, vespalib::Portal::GetRequest request);
 private:
     void configure(std::unique_ptr<vespa::config::content::core::StorStatusConfig> config) override;
-    void run(framework::ThreadHandle&) override {}
 };
 
 }
