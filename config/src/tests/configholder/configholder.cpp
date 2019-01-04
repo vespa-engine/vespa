@@ -33,8 +33,7 @@ TEST("Require that waiting is done")
 
     timer.SetNow();
     holder.handle(ConfigUpdate::UP(new ConfigUpdate(value, true, 0)));
-    holder.wait(100);
-    ASSERT_TRUE(timer.MilliSecsToNow() >= 100);
+    ASSERT_TRUE(holder.wait(100));
 }
 
 TEST("Require that polling for elements work")
