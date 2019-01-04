@@ -160,7 +160,6 @@ public class RequestBuilderTestCase {
         assertLayout("all(group(time.year(a)) each(output(count())))", "[[{ TimeStamp, result = [Count] }]]");
         assertLayout("all(group(xor(a,b)) each(output(count())))", "[[{ Xor, result = [Count] }]]");
         assertLayout("all(group(xorbit(a,1)) each(output(count())))", "[[{ XorBit, result = [Count] }]]");
-        assertLayout("all(group(ymum()) each(output(count())))", "[[{ GetYMUMChecksum, result = [Count] }]]");
     }
 
     @Test
