@@ -146,7 +146,6 @@ TEST_F("testSpecialNodes", Fixture("testSpecialNodes")) {
         f.checkObject(GetDocIdNamespaceSpecificFunctionNode(
                         ResultNode::UP(new Int64ResultNode(7))));
     }
-    f.checkObject(GetYMUMChecksumFunctionNode());
 }
 
 TEST_F("testFunctionNodes", Fixture("testFunctionNodes")) {

@@ -169,7 +169,6 @@ TOKEN :
     <XOR: "xor"> |
     <XORBIT: "xorbit"> |
     <Y: "y"> |
-    <YMUM: "ymum"> |
     <ZCURVE: "zcurve"> |
     <IDENTIFIER: ["A"-"Z","a"-"z"](["A"-"Z","a"-"z","0"-"9","_","@"])*>
 }
@@ -374,7 +373,6 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = ucaFunction(grp)              |
                    exp = xorExpression(grp)            |
                    exp = xorBitFunction(grp)           |
-                   exp = ymumValue()                   |
                    exp = zcurveFunction(grp)           ) |
       (            exp = attributeValue()              ) )
     { return exp; }
@@ -912,12 +910,6 @@ XorBitFunction xorBitFunction(GroupingOperation grp) :
     { return new XorBitFunction(exp, num.intValue()); }
 }
 
-YmumValue ymumValue() : { }
-{
-    ( <YMUM> lbrace() rbrace() )
-    { return new YmumValue(); }
-}
-
 void bucket(GroupingOperation grp, BucketResolver resolver) :
 {
     ConstantValue from, to = null;
@@ -1076,7 +1068,6 @@ String identifier() :
         <XOR> |
         <XORBIT> |
         <Y> |
-        <YMUM> |
         <ZCURVE> ) { ret = token.image; } space() )
     { return ret; }
 }

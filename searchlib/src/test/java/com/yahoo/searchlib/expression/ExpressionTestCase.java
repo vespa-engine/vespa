@@ -401,25 +401,6 @@ public class ExpressionTestCase {
     }
 
     @Test
-    public void testGetYMUMChecksumFunctionNode() {
-        GetYMUMChecksumFunctionNode a = new GetYMUMChecksumFunctionNode();
-        assertTrue(a.getResult() instanceof IntegerResultNode);
-        assertSerialize(a);
-        try {
-            new GetYMUMChecksumFunctionNode().prepare();
-            fail("Should not be able to prepare documentfieldnode");
-        } catch (RuntimeException e) {
-            // expected
-        }
-        try {
-            new GetYMUMChecksumFunctionNode().execute();
-            fail("Should not be able to execute documentfieldnode");
-        } catch (RuntimeException e) {
-            // expected
-        }
-    }
-
-    @Test
     public void testIntegerResultNode() {
         IntegerResultNode a = new IntegerResultNode(7);
         assertEquals(a.getInteger(), 7);
