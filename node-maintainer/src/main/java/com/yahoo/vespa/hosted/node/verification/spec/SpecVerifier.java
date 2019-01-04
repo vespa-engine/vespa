@@ -65,7 +65,7 @@ public class SpecVerifier extends Main.VerifierCommand {
     }
 
     private SpecVerificationReport verifySpec(NodeSpec nodeSpec, CommandExecutor commandExecutor) {
-        VerifierSettings verifierSettings = new VerifierSettings(false);
+        VerifierSettings verifierSettings = new VerifierSettings(true);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
         return makeVerificationReport(actualHardware, nodeSpec, skipLookup, skipReverseLookup);
     }
