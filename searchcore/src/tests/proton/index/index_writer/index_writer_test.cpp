@@ -124,6 +124,14 @@ TEST_F("require that compactLidSpace is forwarded to index manager", Fixture)
     EXPECT_EQUAL(4u, f.mim.compactSerial);
 }
 
+TEST_F("require that old compactLidSpace is not forwarded to index manager", Fixture)
+{
+    f.mim.flushed = 10;
+    f.iw.compactLidSpace(4, 2);
+    EXPECT_EQUAL(0u, f.mim.wantedLidLimit);
+    EXPECT_EQUAL(0u, f.mim.compactSerial);
+}
+
 TEST_MAIN()
 {
     TEST_RUN_ALL();
