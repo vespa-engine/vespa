@@ -203,7 +203,6 @@ public class GroupingParserBenchmarkTest {
                 "all(group(artist) max(2) each(each(output(summary()))))",
                 "all(group(artist) max(2) each(each(output(summary(simple)))))",
                 "all(group(artist) max(5) each(output(count()) each(output(summary()))))",
-                "all(group(ymum()))",
                 "all(group(strlen(attr)))",
                 "all(group(normalizesubject(attr)))",
                 "all(group(strcat(attr, attr2)))",
