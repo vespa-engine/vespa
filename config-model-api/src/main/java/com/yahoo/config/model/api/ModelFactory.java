@@ -13,14 +13,7 @@ public interface ModelFactory {
      *
      * @return the version of a {@link Model} instance that this factory can create.
      */
-    @SuppressWarnings("deprecation")
-    default Version version() { // TODO: Remove this default implementationm after December 2018
-        return getVersion().toVersion();
-    }
-
-    /** @deprecated use and override version(). TODO: Remove this method after December 2018 */
-    @Deprecated
-    default com.yahoo.config.provision.Version getVersion() { return com.yahoo.config.provision.Version.from(version()); }
+    Version version();
 
     /**
      * Creates an instance of a {@link Model}. The resulting instance will be used to serve config. No model
