@@ -9,25 +9,33 @@ public class RoutingEndpoint {
     private final boolean isGlobal;
     private final String endpoint;
     private final String hostname;
+    private final String upstreamName;
 
-    public RoutingEndpoint(String endpoint, String hostname, boolean isGlobal) {
+    public RoutingEndpoint(String endpoint, String hostname, boolean isGlobal, String upstreamName) {
         this.endpoint = endpoint;
         this.hostname = hostname;
         this.isGlobal = isGlobal;
+        this.upstreamName = upstreamName;
     }
 
-    /** @return True if the endpoint is global */
+    /** Whether this is a global endpoint */
     public boolean isGlobal() {
         return isGlobal;
     }
 
-    /* @return The URI for the endpoint */
-    public String getEndpoint() {
+    /** URL for this endpoint */
+    public String endpoint() {
         return endpoint;
     }
 
-    /** @return The hostname for this endpoint */
-    public String getHostname() {
+    /** First hostname for an upstream behind this endpoint */
+    public String hostname() {
         return hostname;
     }
+
+    /** The upstream name of this endpoint */
+    public String upstreamName() {
+        return upstreamName;
+    }
+
 }
