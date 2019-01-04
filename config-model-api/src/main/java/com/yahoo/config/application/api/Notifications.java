@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Configuration of notifications for deployment jobs.
@@ -45,7 +44,8 @@ public class Notifications {
      * @return The Notifications as specified.
      */
     public static Notifications of(Map<When, List<String>> emailAddressesByWhen, Map<When, List<Role>> emailRolesByWhen) {
-        if (emailAddressesByWhen.isEmpty() && emailRolesByWhen.isEmpty())
+        if (   emailAddressesByWhen.values().stream().allMatch(List::isEmpty)
+            && emailRolesByWhen.values().stream().allMatch(List::isEmpty))
             return none;
 
         ImmutableMap.Builder<When, List<String>> emailAddresses = ImmutableMap.builder();

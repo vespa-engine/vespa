@@ -128,7 +128,7 @@ public class DeploymentSpecXmlReader {
         Map<When, List<Role>> emailRoles = new HashMap<>();
         for (When when : When.values()) {
             emailAddresses.put(when, new ArrayList<>());
-            emailRoles.putIfAbsent(when, new ArrayList<>());
+            emailRoles.put(when, new ArrayList<>());
         }
 
         for (Element emailElement : XML.getChildren(notificationsElement, "email")) {
