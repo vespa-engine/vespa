@@ -74,7 +74,8 @@ public class FlagData {
         return toWire().serializeToJsonNode();
     }
 
-    private WireFlagData toWire() {
+    /** Can be used with Jackson. */
+    public WireFlagData toWire() {
         WireFlagData wireFlagData = new WireFlagData();
 
         wireFlagData.id = id.toString();
@@ -100,7 +101,8 @@ public class FlagData {
         return fromWire(WireFlagData.deserialize(string));
     }
 
-    private static FlagData fromWire(WireFlagData wireFlagData) {
+    /** Can be used with Jackson. */
+    public static FlagData fromWire(WireFlagData wireFlagData) {
         if (wireFlagData.id == null) {
             throw new IllegalArgumentException("Flag ID missing");
         }
