@@ -268,10 +268,6 @@
           </compilerArgs>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>abi-check-plugin</artifactId>
-      </plugin>
     </plugins>
     <outputDirectory>${buildOutputDirectory}</outputDirectory>
   </build>
