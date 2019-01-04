@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
+
 /**
  * @author hakonhall
  */
@@ -18,14 +20,14 @@ public class Flags {
             "healthmonitor-monitorinfra", true,
                     "Whether the health monitor in service monitor monitors the health of infrastructure applications.",
                     "Affects all applications activated after the value is changed.",
-            FetchVector.Dimension.HOSTNAME);
+            HOSTNAME);
 
     public static final UnboundBooleanFlag DUPERMODEL_CONTAINS_INFRA = defineFeatureFlag(
             "dupermodel-contains-infra", true,
             "Whether the DuperModel in config server/controller includes active infrastructure applications " +
                     "(except from controller/config apps).",
             "Requires restart of config server/controller to take effect.",
-            FetchVector.Dimension.HOSTNAME);
+            HOSTNAME);
 
     public static final UnboundBooleanFlag DUPERMODEL_USE_CONFIGSERVERCONFIG = defineFeatureFlag(
             "dupermodel-use-configserverconfig", true,
@@ -33,45 +35,47 @@ public class Flags {
                     "is based on the ConfigserverConfig (this flag is true). We want to transition to use the " +
                     "infrastructure application activated by the InfrastructureProvisioner once that supports health.",
             "Requires restart of config server/controller to take effect.",
-            FetchVector.Dimension.HOSTNAME);
+            HOSTNAME);
 
     public static final UnboundBooleanFlag USE_CONFIG_SERVER_CACHE = defineFeatureFlag(
             "use-config-server-cache", true,
             "Whether config server will use cache to answer config requests.",
             "Takes effect immediately when changed.",
-            FetchVector.Dimension.HOSTNAME, FetchVector.Dimension.APPLICATION_ID);
+            HOSTNAME, FetchVector.Dimension.APPLICATION_ID);
 
     public static final UnboundBooleanFlag CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD = defineFeatureFlag(
             "config-server-bootstrap-in-separate-thread", true,
             "Whether to run config server/controller bootstrap in a separate thread.",
             "Takes effect only at bootstrap of config server/controller",
-            FetchVector.Dimension.HOSTNAME);
+            HOSTNAME);
 
     public static final UnboundBooleanFlag PROXYHOST_USES_REAL_ORCHESTRATOR = defineFeatureFlag(
             "proxyhost-uses-real-orchestrator", true,
             "Whether proxy hosts uses the real Orchestrator when suspending/resuming, or a synthetic.",
             "Takes effect immediately when changed.",
-            FetchVector.Dimension.HOSTNAME);
+            HOSTNAME);
 
     public static final UnboundBooleanFlag CONFIGHOST_USES_REAL_ORCHESTRATOR = defineFeatureFlag(
             "confighost-uses-real-orchestrator", false,
             "Whether the config server hosts uses the real Orchestrator when suspending/resuming, or a synthetic.",
             "Takes effect immediately when changed.",
-            FetchVector.Dimension.HOSTNAME);
+            HOSTNAME);
 
     public static final UnboundBooleanFlag ENABLE_DOCKER_1_13 = defineFeatureFlag(
             "enable-docker-1.13", true,
             "Whether to upgrade to Docker version 1.13.",
             "Takes effect on next host admin tick.",
-            FetchVector.Dimension.HOSTNAME);
+            HOSTNAME);
 
     public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
             "enable-crowdstrike", true,
-            "Whether to enable CrowdStrike.", "Takes effect on next host admin tick");
+            "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
+            HOSTNAME);
 
     public static final UnboundBooleanFlag ENABLE_NESSUS = defineFeatureFlag(
             "enable-nessus", true,
-            "Whether to enable Nessus.", "Takes effect on next host admin tick");
+            "Whether to enable Nessus.", "Takes effect on next host admin tick",
+            HOSTNAME);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
@@ -135,7 +139,7 @@ public class Flags {
                                                                 String modificationEffect,
                                                                 FetchVector.Dimension[] dimensions) {
         FlagId id = new FlagId(flagId);
-        FetchVector vector = new FetchVector().with(FetchVector.Dimension.HOSTNAME, Defaults.getDefaults().vespaHostname());
+        FetchVector vector = new FetchVector().with(HOSTNAME, Defaults.getDefaults().vespaHostname());
         U unboundFlag = factory.create(id, defaultValue, vector);
         FlagDefinition definition = new FlagDefinition(unboundFlag, description, modificationEffect, dimensions);
         flags.put(id, definition);

@@ -21,6 +21,12 @@
     <dependencies>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
+            <artifactId>annotations</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
             <artifactId>defaults</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
@@ -39,6 +45,12 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <classifier>no_aop</classifier>
             <scope>provided</scope>
         </dependency>
 
