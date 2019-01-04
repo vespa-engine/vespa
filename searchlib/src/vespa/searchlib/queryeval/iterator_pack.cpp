@@ -6,7 +6,7 @@
 
 namespace search::queryeval {
 
-SearchIteratorPack::~SearchIteratorPack() { }
+SearchIteratorPack::~SearchIteratorPack() = default;
 
 SearchIteratorPack::SearchIteratorPack() : _children(), _childMatch(), _md() {}
 
