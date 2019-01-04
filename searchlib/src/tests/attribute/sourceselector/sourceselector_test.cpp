@@ -49,6 +49,7 @@ private:
     template <typename SelectorType>
     void requireThatSourcesAreCountedCorrectly();
     void requireThatSourcesAreCountedCorrectly();
+    void requireThatDocIdLimitIsCorrect();
 };
 
 int
@@ -64,6 +65,7 @@ Test::Main()
     TEST_DO(requireThatSelectorCanSaveAndLoad());
     TEST_DO(requireThatCompleteSourceRangeIsHandled());
     TEST_DO(requireThatSourcesAreCountedCorrectly());
+    TEST_DO(requireThatDocIdLimitIsCorrect());
 
     TEST_DONE();
 }
@@ -217,6 +219,21 @@ void
 Test::requireThatSourcesAreCountedCorrectly()
 {
     requireThatSourcesAreCountedCorrectly<FixedSourceSelector>();
+}
+
+void
+Test::requireThatDocIdLimitIsCorrect()
+{
+    FixedSourceSelector selector(default_source, base_file_name);
+    EXPECT_EQUAL(0u, selector.getDocIdLimit());
+    selector.setSource(8, 10);
+    EXPECT_EQUAL(9u, selector.getDocIdLimit());
+    selector.compactLidSpace(4);
+    EXPECT_EQUAL(4u, selector.getDocIdLimit());
+    selector.setSource(6, 10);
+    EXPECT_EQUAL(7u, selector.getDocIdLimit());
+    auto selector2 = selector.cloneAndSubtract(base_file_name2, 3);
+    EXPECT_EQUAL(7u, selector2->getDocIdLimit());
 }
 
 }  // namespace
