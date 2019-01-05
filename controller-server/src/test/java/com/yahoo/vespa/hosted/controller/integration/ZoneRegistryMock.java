@@ -132,6 +132,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
+    public URI badgeUrl() {
+        return URI.create("https://badges.tld");
+    }
+
+    @Override
     public boolean hasZone(ZoneId zoneId) {
         return zones.contains(zoneId);
     }

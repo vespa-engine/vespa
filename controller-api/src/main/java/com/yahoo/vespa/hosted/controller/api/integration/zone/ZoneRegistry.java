@@ -75,4 +75,7 @@ public interface ZoneRegistry {
     /** Returns a URL used to request support from the Vespa team. */
     URI supportUrl();
 
+    /** Returns a URL used to generate flashy badges from strings. */
+    URI badgeUrl();
+
 }
