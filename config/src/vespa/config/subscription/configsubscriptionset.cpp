@@ -29,8 +29,9 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
 {
     if (_state == CLOSED) {
         return false;
-    } else if (_state == OPEN)
+    } else if (_state == OPEN) {
         _state = FROZEN;
+    }
 
     FastOS_Time timer;
     timer.SetNow();
@@ -39,7 +40,7 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
     bool inSync = false;
 
     LOG(debug, "Going into nextConfig loop, time left is %d", timeLeft);
-    while (_state != CLOSED && timeLeft >= 0 && !inSync) {
+    while ((_state != CLOSED) && (timeLeft >= 0) && !inSync) {
         size_t numChanged = 0;
         size_t numGenerationChanged = 0;
         bool generationsInSync = true;
@@ -64,18 +65,20 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
             if (isGenerationNewer(subscription->getGeneration(), _currentGeneration)) {
                 numGenerationChanged++;
             }
-            if (generation < 0)
+            if (generation < 0) {
                 generation = subscription->getGeneration();
-            if (subscription->getGeneration() != generation)
+            }
+            if (subscription->getGeneration() != generation) {
                 generationsInSync = false;
+            }
             // Adjust timeout
             timeLeft = timeoutInMillis - static_cast<uint64_t>(timer.MilliSecsToNow());
         }
         inSync = generationsInSync && (_subscriptionList.size() == numGenerationChanged) && (ignoreChange || numChanged > 0);
         lastGeneration = generation;
         timeLeft = timeoutInMillis - static_cast<uint64_t>(timer.MilliSecsToNow());
-        if (!inSync && timeLeft > 0) {
-            std::this_thread::sleep_for(10ms);
+        if (!inSync && (timeLeft > 0)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(std::min(10, timeLeft)));
         } else {
             break;
         }
