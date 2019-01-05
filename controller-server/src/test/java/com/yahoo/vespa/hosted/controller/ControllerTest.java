@@ -157,7 +157,7 @@ public class ControllerTest {
             fail("Expected exception due to illegal deployment spec.");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("No job is known for zone prod.deep-space-9 in default.", e.getMessage());
+            assertEquals("Zone prod.deep-space-9 in deployment spec was not found in this system!", e.getMessage());
         }
 
         // prod zone removal is not allowed
