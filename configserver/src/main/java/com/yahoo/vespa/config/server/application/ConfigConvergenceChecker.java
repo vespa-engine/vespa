@@ -7,8 +7,11 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.slime.Cursor;
+import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.config.server.http.JSONResponse;
+import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
 
@@ -66,6 +69,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         application.getModel().getHosts()
                    .forEach(host -> host.getServices().stream()
                                         .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
+                                        .filter(service -> ! isHostAdminService(application.getId(), service))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
         Map<ServiceInfo, Long> currentGenerations = getServiceGenerations(servicesToCheck, timeoutPerService);
@@ -167,6 +171,13 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     private static StateApi createStateApi(Client client, URI uri) {
         WebTarget target = client.target(uri);
         return WebResourceFactory.newResource(StateApi.class, target);
+    }
+
+    private static boolean isHostAdminService(ApplicationId id, ServiceInfo service) {
+        return    VespaModelUtil.ZONE_APPLICATION_ID.equals(id)
+               && service.getProperty("clustername")
+                         .map(ClusterId.NODE_ADMIN.s()::equals)
+                         .orElse(false);
     }
 
     private static class ServiceListResponse extends JSONResponse {
