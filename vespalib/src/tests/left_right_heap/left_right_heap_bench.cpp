@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/inline.h>
+#include <vespa/fastos/time.h>
 
 using namespace vespalib;
 

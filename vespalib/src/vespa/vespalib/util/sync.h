@@ -2,12 +2,10 @@
 
 #pragma once
 
-#include <vespa/fastos/time.h>
 #include <cassert>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
-
 
 namespace vespalib {
 
@@ -362,13 +360,12 @@ public:
     void unlock() {
         assert(_guard);
         _guard.unlock();
-        _cond = NULL;
+        _cond = nullptr;
     }
     /**
      * @brief Wait for a signal on the underlying Monitor.
      **/
     void wait() {
-        assert(_cond != NULL);
         _cond->wait(_guard);
     }
     /**
@@ -379,7 +376,6 @@ public:
      * @return true if a signal was received, false if the wait timed out.
      **/
     bool wait(int msTimeout) {
-        assert(_cond != NULL);
         return _cond->wait_for(_guard, std::chrono::milliseconds(msTimeout)) == std::cv_status::no_timeout;
     }
     /**
@@ -387,14 +383,12 @@ public:
      * Monitor.
      **/
     void signal() {
-        assert(_cond != NULL);
         _cond->notify_one();
     }
     /**
      * @brief Send a signal to all waiters on the underlying Monitor.
      **/
     void broadcast() {
-        assert(_cond != NULL);
         _cond->notify_all();
     }
     /**
@@ -406,10 +400,9 @@ public:
      * will live long enough to be signaled.
      **/
     void unsafeSignalUnlock() {
-        assert(_cond != NULL);
         _guard.unlock();
         _cond->notify_one();
-        _cond = NULL;
+        _cond = nullptr;
     }
     /**
      * @brief Send a signal to all waiters on the underlying Monitor,
@@ -420,10 +413,9 @@ public:
      * will live long enough to be signaled.
      **/
     void unsafeBroadcastUnlock() {
-        assert(_cond != NULL);
         _guard.unlock();
         _cond->notify_all();
-        _cond = NULL;
+        _cond = nullptr;
     }
     /**
      * @brief Release the lock held by this object if unlock has not
@@ -436,94 +428,7 @@ public:
      * guard ref as input, ensuring that the caller have grabbed a lock.
      */
     bool monitors(const Monitor& m) const {
-        return (_cond != NULL && _cond == &m._cond);
-    }
-};
-
-
-/**
- * Helper class that can be used to wait for a condition when having a
- * constraint on how long you want to wait. The usage is best
- * explained with an example:
- *
- * <pre>
- * bool waitForWantedState(int maxwait) {
- *     MonitorGuard guard(_monitor);
- *     TimedWaiter waiter(guard, maxwait);
- *     while (!wantedState && waiter.hasTime()) {
- *         waiter.wait();
- *     }
- *     return wantedState;
- * }
- * </pre>
- *
- * The example code will limit the total wait time to maxwait
- * milliseconds across all blocking wait operations on the underlying
- * monitor guard.
- **/
-class TimedWaiter
-{
-private:
-    MonitorGuard &_guard;
-    FastOS_Time   _start;
-    int           _maxwait;
-    int           _remain;
-    bool          _timeout;
-
-    TimedWaiter(const TimedWaiter&);
-    TimedWaiter &operator=(const TimedWaiter&);
-public:
-
-    /**
-     * Create a new instance using the given monitor guard and wait
-     * time limit. If the maximum time is less than or equal to 0, the
-     * wait will time out immediately and no low-level wait operations
-     * will be performed.
-     *
-     * @param guard the underlying monitor guard used to perform the actual wait operation.
-     * @param maxwait maximum time to wait in milliseconds.
-     **/
-    TimedWaiter(MonitorGuard &guard, int maxwait)
-        : _guard(guard), _start(), _maxwait(maxwait), _remain(0), _timeout(false)
-    {
-        if (_maxwait > 0) {
-            _start.SetNow();
-        } else {
-            _timeout = true;
-        }
-    }
-
-    /**
-     * Check if this object has any time left until the time limit is
-     * exceeded.
-     *
-     * @return true if there is time left.
-     **/
-    bool hasTime() const {
-        return !_timeout;
-    }
-
-    /**
-     * Perform low-level wait in such a way that we do not exceed the
-     * maximum total wait time. This method also performs the needed
-     * book-keeping to keep track of elapsed time between invocations.
-     *
-     * @return true if we woke up due to a signal, false if we timed out.
-     **/
-    bool wait() {
-        if (!_timeout) {
-            if (_remain > 0) {
-                _remain = (_maxwait - (int)_start.MilliSecsToNow());
-            } else {
-                _remain = _maxwait;
-            }
-            if (_remain > 0) {
-                _timeout = !_guard.wait(_remain);
-            } else {
-                _timeout = true;
-            }
-        }
-        return !_timeout;
+        return (_cond != nullptr && _cond == &m._cond);
     }
 };
 

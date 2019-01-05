@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/fastos/app.h>
+#include <vespa/fastos/time.h>
 #include <deque>
 #include <vector>
 

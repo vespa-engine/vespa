@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("bufferwriter_bm");
-#include <vespa/vespalib/testkit/testapp.h>
-#include <iostream>
 #include "work.h"
 #include <vespa/searchlib/util/drainingbufferwriter.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/fastos/timestamp.h>
+#include <iostream>
+
+#include <vespa/log/log.h>
+LOG_SETUP("bufferwriter_bm");
 
 using search::DrainingBufferWriter;
 

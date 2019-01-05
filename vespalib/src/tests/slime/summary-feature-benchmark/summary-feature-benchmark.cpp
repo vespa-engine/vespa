@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/fastos/time.h>
 
 using namespace vespalib;
 using namespace vespalib::slime::convenience;

@@ -5,6 +5,7 @@
 #include <vespa/config/file/filesource.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/fastos/time.h>
 #include <fstream>
 #include <config-my.h>
 #include <config-foo.h>

@@ -3,6 +3,7 @@
 #include "trans_log_server_explorer.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/fastos/file.h>
+#include <vespa/fastos/timestamp.h>
 
 
 using vespalib::slime::Inserter;

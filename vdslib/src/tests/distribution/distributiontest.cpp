@@ -681,14 +681,11 @@ DistributionTest::testSkew()
 
     ClusterState systemState("storage:50");
 
-    Distribution distr(
-            Distribution::getDefaultDistributionConfig(copies, nodes));
+    Distribution distr(Distribution::getDefaultDistributionConfig(copies, nodes));
 
     std::vector<std::pair<uint64_t, std::vector<uint16_t> > > _distribution(buckets);
     std::vector<int> _nodeCount(nodes, 0);
 
-    FastOS_Time start;
-    start.SetNow();
     for (int i = 0; i < buckets; i++) {
         _distribution[i].first = i * 100;
         _distribution[i].second = distr.getIdealStorageNodes(
@@ -708,9 +705,6 @@ DistributionTest::testSkew()
         fprintf(stderr, "%d ", _nodeCount[i]);
     }
 
-    double elapsed = start.MilliSecsToNow();
-    fprintf(stderr, "%d calcs in %f ms = %f calcs/sec\n",
-                    buckets, elapsed, double(buckets * 1000) / elapsed);
 */
     sort(_nodeCount.begin(), _nodeCount.end());
 
@@ -859,8 +853,6 @@ DistributionTest::testSkewWithDown()
         _distribution[i].second.reserve(copies);
     }
 
-    FastOS_Time start;
-    start.SetNow();
     for (int i = 0; i < buckets; i++) {
         _distribution[i].first = i * 100;
         _distribution[i].second = distr.getIdealStorageNodes(
@@ -875,10 +867,6 @@ DistributionTest::testSkewWithDown()
         }
     }
     /*
-    double elapsed = start.MilliSecsToNow();
-    fprintf(stderr, "%d calcs in %f ms = %f calcs/sec\n",
-                    buckets, elapsed, double(buckets * 1000) / elapsed);
-
     // Check distribution
     for (int i = 0; i < nodes; i++) {
         fprintf(stderr, "%d ", _nodeCount[i]);

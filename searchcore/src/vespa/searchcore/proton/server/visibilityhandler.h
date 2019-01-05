@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/server/igetserialnum.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <vespa/fastos/timestamp.h>
 #include <mutex>
 
 namespace proton {

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "andstress.h"
-#include <vector>
 
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/test/fakedata/fakeword.h>
@@ -13,8 +12,10 @@
 #include <vespa/searchlib/test/fakedata/fakezcbfilterocc.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
 #include <vespa/fastos/thread.h>
+#include <vespa/fastos/time.h>
 #include <mutex>
 #include <condition_variable>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".andstress");
