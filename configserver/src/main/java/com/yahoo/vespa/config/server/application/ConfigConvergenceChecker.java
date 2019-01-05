@@ -9,9 +9,7 @@ import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.slime.Cursor;
-import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.config.server.http.JSONResponse;
-import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
 
@@ -41,6 +39,8 @@ import java.util.stream.Collectors;
  */
 public class ConfigConvergenceChecker extends AbstractComponent {
 
+    private static final ApplicationId routingApplicationId = ApplicationId.from("hosted-vespa", "routing", "default");
+    private static final String nodeAdminName = "node-admin";
     private static final String statePath = "/state/v1/";
     private static final String configSubPath = "config";
     private final static Set<String> serviceTypesToCheck = new HashSet<>(Arrays.asList(
@@ -174,9 +174,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     private static boolean isHostAdminService(ApplicationId id, ServiceInfo service) {
-        return    VespaModelUtil.ZONE_APPLICATION_ID.equals(id)
+        return routingApplicationId.equals(id)
                && service.getProperty("clustername")
-                         .map(ClusterId.NODE_ADMIN.s()::equals)
+                         .map("node-admin"::equals)
                          .orElse(false);
     }
 
