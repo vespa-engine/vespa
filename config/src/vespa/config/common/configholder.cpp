@@ -34,7 +34,7 @@ bool
 ConfigHolder::wait(uint64_t timeoutInMillis)
 {
     vespalib::MonitorGuard guard(_monitor);
-    return guard.wait(timeoutInMillis);
+    return static_cast<bool>(_current) || guard.wait(timeoutInMillis);
 }
 
 bool
