@@ -18,9 +18,13 @@ import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.Connection;
+import com.yahoo.vespa.config.ConnectionPool;
+import com.yahoo.vespa.config.ErrorCode;
+import com.yahoo.vespa.config.ErrorType;
+import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
 import com.yahoo.yolean.Exceptions;
-import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTConfigRequestFactory;
 import com.yahoo.vespa.config.protocol.Trace;
 

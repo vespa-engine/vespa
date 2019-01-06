@@ -10,7 +10,11 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.UnknownConfigIdException;
-import com.yahoo.vespa.config.protocol.*;
+import com.yahoo.vespa.config.protocol.ConfigResponse;
+import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
+import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
+import com.yahoo.vespa.config.protocol.Trace;
+import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -85,7 +89,7 @@ class GetConfigProcessor implements Runnable {
         }
 
         GetConfigContext context = rpcServer.createGetConfigContext(tenant, request, trace);
-        if (context == null || ! context.requestHandler().hasApplication(context.applicationId(), Optional.<Version>empty())) {
+        if (context == null || ! context.requestHandler().hasApplication(context.applicationId(), Optional.empty())) {
             handleError(request, ErrorCode.APPLICATION_NOT_LOADED, "No application exists");
             return;
         }

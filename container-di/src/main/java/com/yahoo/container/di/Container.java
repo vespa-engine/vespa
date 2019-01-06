@@ -19,7 +19,6 @@ import com.yahoo.container.di.config.RestApiContext;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
