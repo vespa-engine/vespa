@@ -5,7 +5,7 @@
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/fastos/time.h>
 
-#define NUMTESTS 5
+#define NUMTESTS 6
 
 int
 StackDumpIteratorTest::Main()
@@ -134,6 +134,10 @@ StackDumpIteratorTest::ShowResult(int testNo,
                                   search::SimpleQueryStack &correct,
                                   unsigned int expected)
 {
+    if (expected == ITERATOR_NOERROR) {
+        vespalib::string query = search::SimpleQueryStack::StackbufToString(actual.getStack());
+        printf("query = %s\n", query.c_str());
+    }
     unsigned int results = 0;
 
     int num = 0;
@@ -279,6 +283,20 @@ StackDumpIteratorTest::RunTest(int testno, bool verify)
         search::SimpleQueryStackDumpIterator si(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
         if (verify)
             return ShowResult(testno, si, stack, ITERATOR_ERROR_WRONG_SIZE);
+        break;
+    }
+
+    case 5: {
+        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foo", "foobar"));
+        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foo1", "foobar1"));
+        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foo2", "foobar2"));
+        stack.Push(new search::ParseItem(search::ParseItem::ITEM_WORD_ALTERNATIVES, 3, "wa"));
+
+        stack.AppendBuffer(&buf);
+        search::SimpleQueryStackDumpIterator si(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
+
+        if (verify)
+            return ShowResult(testno, si, stack, ITERATOR_NOERROR);
         break;
     }
 

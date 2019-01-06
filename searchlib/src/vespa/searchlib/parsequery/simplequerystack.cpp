@@ -14,7 +14,7 @@ namespace search {
 
 SimpleQueryStack::SimpleQueryStack()
     : _numItems(0),
-      _stack(NULL),
+      _stack(nullptr),
       _FP_queryOK(true)
 {
 }
@@ -44,10 +44,10 @@ ParseItem *
 SimpleQueryStack::Pop()
 {
     ParseItem *item = _stack;
-    if (_stack != NULL) {
+    if (_stack != nullptr) {
         _numItems--;
         _stack = _stack->_next;
-        item->_next = NULL;
+        item->_next = nullptr;
     }
     return item;
 }
@@ -55,24 +55,11 @@ SimpleQueryStack::Pop()
 void
 SimpleQueryStack::AppendBuffer(RawBuf *buf) const
 {
-    for (ParseItem *item = _stack; item != NULL; item = item->_next) {
+    for (ParseItem *item = _stack; item != nullptr; item = item->_next) {
         item->AppendBuffer(buf);
     }
 }
 
-size_t
-SimpleQueryStack::GetBufferLen() const
-{
-    size_t result;
-
-    result = 0;
-    for (const ParseItem *item = _stack;
-         item != NULL; item = item->_next) {
-        result += item->GetBufferLen();
-    }
-
-    return result;
-}
 
 uint32_t
 SimpleQueryStack::GetSize()
@@ -114,6 +101,7 @@ public:
         _name[ParseItem::ITEM_WAND] = 'A';
         _name[ParseItem::ITEM_PREDICATE_QUERY] = 'P';
         _name[ParseItem::ITEM_REGEXP] = '^';
+        _name[ParseItem::ITEM_WORD_ALTERNATIVES] = 'a';
     }
     char operator[] (ParseItem::ItemType i) const { return _name[i]; }
     char operator[] (size_t i) const { return _name[i]; }
@@ -194,133 +182,142 @@ SimpleQueryStack::StackbufToString(vespalib::stringref theBuf)
         result.append(metaStr);
 
         switch (type) {
-        case ParseItem::ITEM_OR:
-        case ParseItem::ITEM_AND:
-        case ParseItem::ITEM_EQUIV:
-        case ParseItem::ITEM_NOT:
-        case ParseItem::ITEM_RANK:
-        case ParseItem::ITEM_ANY:
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            arity = tmp;
-            result.append(make_string("%c/%d~", _G_ItemName[type], arity));
-            break;
-        case ParseItem::ITEM_NEAR:
-        case ParseItem::ITEM_ONEAR:
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            arity = tmp;
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            arg1 = tmp;
-            result.append(make_string("%c/%d/%d~", _G_ItemName[type], arity, arg1));
-            break;
-        case ParseItem::ITEM_WEAK_AND:
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            arity = tmp;
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            arg1 = tmp;
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            idxRefLen = tmp;
-            idxRef = p;
-            p += idxRefLen;
-            result.append(make_string("%c/%d/%d/%d:%.*s~", _G_ItemName[type], arity, arg1, idxRefLen, idxRefLen, idxRef));
-            break;
-        case ParseItem::ITEM_SAME_ELEMENT:
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            arity = tmp;
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            idxRefLen = tmp;
-            idxRef = p;
-            p += idxRefLen;
-            result.append(make_string("%c/%d/%d:%.*s~", _G_ItemName[type], arity, idxRefLen, idxRefLen, idxRef));
-            break;
-
-        case ParseItem::ITEM_NUMTERM:
-        case ParseItem::ITEM_TERM:
-        case ParseItem::ITEM_PREFIXTERM:
-        case ParseItem::ITEM_SUBSTRINGTERM:
-        case ParseItem::ITEM_EXACTSTRINGTERM:
-        case ParseItem::ITEM_SUFFIXTERM:
-        case ParseItem::ITEM_REGEXP:
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            idxRefLen = tmp;
-            idxRef = p;
-            p += idxRefLen;
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            termRefLen = tmp;
-            termRef = p;
-            p += termRefLen;
-            result.append(make_string("%c/%d:%.*s/%d:%.*s~", _G_ItemName[type],
-                                      idxRefLen, idxRefLen, idxRef, termRefLen, termRefLen, termRef));
-            break;
-        case ParseItem::ITEM_PURE_WEIGHTED_STRING:
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            termRefLen = tmp;
-            termRef = p;
-            p += termRefLen;
-            result.append(make_string("%c/%d:%.*s~", _G_ItemName[type], termRefLen, termRefLen, termRef));
-            break;
-
-        case ParseItem::ITEM_PURE_WEIGHTED_LONG:
-            tmpI64 = vespalib::nbo::n2h(*reinterpret_cast<const int64_t *>(p));
-            p += sizeof(uint64_t);
-            result.append(make_string("%c/%" PRId64, _G_ItemName[type], tmpI64));
-            break;
-
-        case ParseItem::ITEM_PHRASE:
-        case ParseItem::ITEM_WEIGHTED_SET:
-        case ParseItem::ITEM_DOT_PRODUCT:
-        case ParseItem::ITEM_WAND:
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            arity = tmp;
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            idxRefLen = tmp;
-            idxRef = p;
-            p += idxRefLen;
-            if (type == ParseItem::ITEM_WAND) {
+            case ParseItem::ITEM_OR:
+            case ParseItem::ITEM_AND:
+            case ParseItem::ITEM_EQUIV:
+            case ParseItem::ITEM_NOT:
+            case ParseItem::ITEM_RANK:
+            case ParseItem::ITEM_ANY:
                 p += vespalib::compress::Integer::decompressPositive(tmp, p);
-                uint32_t targetNumHits = tmp;
-                double scoreThreshold = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p)); 
-                p += sizeof(double);
-                double thresholdBoostFactor = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p));
-                p += sizeof(double);
-                result.append(make_string("%c/%d/%d:%.*s(%u,%f,%f)~", _G_ItemName[type], arity, idxRefLen,
-                                          idxRefLen, idxRef, targetNumHits, scoreThreshold, thresholdBoostFactor));
-            } else {
+                arity = tmp;
+                result.append(make_string("%c/%d~", _G_ItemName[type], arity));
+                break;
+            case ParseItem::ITEM_NEAR:
+            case ParseItem::ITEM_ONEAR:
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                arity = tmp;
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                arg1 = tmp;
+                result.append(make_string("%c/%d/%d~", _G_ItemName[type], arity, arg1));
+                break;
+            case ParseItem::ITEM_WEAK_AND:
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                arity = tmp;
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                arg1 = tmp;
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                idxRefLen = tmp;
+                idxRef = p;
+                p += idxRefLen;
+                result.append(
+                        make_string("%c/%d/%d/%d:%.*s~", _G_ItemName[type], arity, arg1, idxRefLen, idxRefLen, idxRef));
+                break;
+            case ParseItem::ITEM_SAME_ELEMENT:
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                arity = tmp;
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                idxRefLen = tmp;
+                idxRef = p;
+                p += idxRefLen;
                 result.append(make_string("%c/%d/%d:%.*s~", _G_ItemName[type], arity, idxRefLen, idxRefLen, idxRef));
-            }
-            break;
+                break;
 
-        case ParseItem::ITEM_PREDICATE_QUERY:
-        {
-            idxRefLen = static_cast<uint32_t>(ReadCompressedPositiveInt(p));
-            idxRef = p;
-            p += idxRefLen;
-            size_t feature_count = ReadCompressedPositiveInt(p);
-            result.append(make_string("%c/%d:%.*s/%zu(", _G_ItemName[type], idxRefLen, idxRefLen, idxRef, feature_count));
-            for (size_t i = 0; i < feature_count; ++i) {
-                vespalib::string key = ReadString(p);
-                vespalib::string value = ReadString(p);
-                uint64_t sub_queries = ReadUint64(p);
-                result.append(make_string("%s:%s:%lx", key.c_str(), value.c_str(), sub_queries));
-                if (i < feature_count - 1) {
-                    result.append(',');
+            case ParseItem::ITEM_NUMTERM:
+            case ParseItem::ITEM_TERM:
+            case ParseItem::ITEM_PREFIXTERM:
+            case ParseItem::ITEM_SUBSTRINGTERM:
+            case ParseItem::ITEM_EXACTSTRINGTERM:
+            case ParseItem::ITEM_SUFFIXTERM:
+            case ParseItem::ITEM_REGEXP:
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                idxRefLen = tmp;
+                idxRef = p;
+                p += idxRefLen;
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                termRefLen = tmp;
+                termRef = p;
+                p += termRefLen;
+                result.append(make_string("%c/%d:%.*s/%d:%.*s~", _G_ItemName[type],
+                                          idxRefLen, idxRefLen, idxRef, termRefLen, termRefLen, termRef));
+                break;
+            case ParseItem::ITEM_PURE_WEIGHTED_STRING:
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                termRefLen = tmp;
+                termRef = p;
+                p += termRefLen;
+                result.append(make_string("%c/%d:%.*s~", _G_ItemName[type], termRefLen, termRefLen, termRef));
+                break;
+
+            case ParseItem::ITEM_PURE_WEIGHTED_LONG:
+                tmpI64 = vespalib::nbo::n2h(*reinterpret_cast<const int64_t *>(p));
+                p += sizeof(uint64_t);
+                result.append(make_string("%c/%" PRId64, _G_ItemName[type], tmpI64));
+                break;
+
+            case ParseItem::ITEM_PHRASE:
+            case ParseItem::ITEM_WEIGHTED_SET:
+            case ParseItem::ITEM_DOT_PRODUCT:
+            case ParseItem::ITEM_WAND:
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                arity = tmp;
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                idxRefLen = tmp;
+                idxRef = p;
+                p += idxRefLen;
+                if (type == ParseItem::ITEM_WAND) {
+                    p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                    uint32_t targetNumHits = tmp;
+                    double scoreThreshold = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p));
+                    p += sizeof(double);
+                    double thresholdBoostFactor = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p));
+                    p += sizeof(double);
+                    result.append(make_string("%c/%d/%d:%.*s(%u,%f,%f)~", _G_ItemName[type], arity, idxRefLen,
+                                              idxRefLen, idxRef, targetNumHits, scoreThreshold, thresholdBoostFactor));
+                } else {
+                    result.append(
+                            make_string("%c/%d/%d:%.*s~", _G_ItemName[type], arity, idxRefLen, idxRefLen, idxRef));
                 }
-            }
+                break;
 
-            size_t range_feature_count = ReadCompressedPositiveInt(p);
-            result.append(make_string(")/%zu(", range_feature_count));
-            for (size_t i = 0; i < range_feature_count; ++i) {
-                vespalib::string key = ReadString(p);
-                uint64_t value = ReadUint64(p);
-                uint64_t sub_queries = ReadUint64(p);
-                result.append(make_string("%s:%zu:%lx", key.c_str(), value, sub_queries));
-                if (i < range_feature_count - 1) {
-                    result.append(',');
+            case ParseItem::ITEM_PREDICATE_QUERY: {
+                idxRefLen = static_cast<uint32_t>(ReadCompressedPositiveInt(p));
+                idxRef = p;
+                p += idxRefLen;
+                size_t feature_count = ReadCompressedPositiveInt(p);
+                result.append(
+                        make_string("%c/%d:%.*s/%zu(", _G_ItemName[type], idxRefLen, idxRefLen, idxRef, feature_count));
+                for (size_t i = 0; i < feature_count; ++i) {
+                    vespalib::string key = ReadString(p);
+                    vespalib::string value = ReadString(p);
+                    uint64_t sub_queries = ReadUint64(p);
+                    result.append(make_string("%s:%s:%lx", key.c_str(), value.c_str(), sub_queries));
+                    if (i < feature_count - 1) {
+                        result.append(',');
+                    }
                 }
-            }
-            result.append(")~");
-            break;
-        }
 
+                size_t range_feature_count = ReadCompressedPositiveInt(p);
+                result.append(make_string(")/%zu(", range_feature_count));
+                for (size_t i = 0; i < range_feature_count; ++i) {
+                    vespalib::string key = ReadString(p);
+                    uint64_t value = ReadUint64(p);
+                    uint64_t sub_queries = ReadUint64(p);
+                    result.append(make_string("%s:%zu:%lx", key.c_str(), value, sub_queries));
+                    if (i < range_feature_count - 1) {
+                        result.append(',');
+                    }
+                }
+                result.append(")~");
+                break;
+            }
+            case ParseItem::ITEM_WORD_ALTERNATIVES: {
+                idxRefLen = static_cast<uint32_t>(ReadCompressedPositiveInt(p));
+                idxRef = p;
+                p += idxRefLen;
+                arity = ReadCompressedPositiveInt(p);
+                result.append(make_string("%c/%d:%.*s/%d(", _G_ItemName[type], idxRefLen, idxRefLen, idxRef, arity));
+                break;
+            }
         default:
             LOG(error, "Unhandled type %d", type);
             LOG_ABORT("should not be reached");

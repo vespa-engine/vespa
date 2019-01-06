@@ -34,7 +34,7 @@ ParseItem::ParseItem(ItemType type, int arity, const char *idx)
     : PARSEITEM_DEFAULT_CONSTRUCTOR_LIST
 {
     assert(type==ITEM_PHRASE || type==ITEM_SAME_ELEMENT || type==ITEM_WEIGHTED_SET
-           || type==ITEM_DOT_PRODUCT || type==ITEM_WAND);
+           || type==ITEM_DOT_PRODUCT || type==ITEM_WAND || type==ITEM_WORD_ALTERNATIVES);
     SetType(type);
     _arity = arity;
     SetIndex(idx);
@@ -120,6 +120,13 @@ ParseItem::AppendBuffer(RawBuf *buf) const
             buf->append(_indexName.c_str(), indexLen);
         }
         break;
+    case ITEM_WORD_ALTERNATIVES:
+        buf->appendCompressedPositiveNumber(indexLen);
+        if (indexLen != 0) {
+            buf->append(_indexName.c_str(), indexLen);
+        }
+        buf->appendCompressedPositiveNumber(_arity);
+        break;
     case ITEM_WEAK_AND:
         buf->appendCompressedPositiveNumber(_arity);
         buf->appendCompressedPositiveNumber(_arg1);
@@ -165,74 +172,6 @@ ParseItem::AppendBuffer(RawBuf *buf) const
     default:
         break;
     }
-}
-
-size_t
-ParseItem::GetBufferLen() const
-{
-    // Calculate the length of the buffer.
-    uint32_t indexLen = _indexName.size();
-    uint32_t termLen = _term.size();
-
-    uint32_t len = sizeof(uint8_t); // type field
-    if (Feature_Weight()) {
-        len += sizeof(uint32_t);
-    }
-    if (feature_UniqueId()) {
-        len += sizeof(uint32_t);
-    }
-    if (feature_Flags()) {
-        len += sizeof(uint8_t);
-    }
-
-    // Put the values into the buffer.
-    switch (Type()) {
-    case ITEM_OR:
-    case ITEM_EQUIV:
-    case ITEM_AND:
-    case ITEM_NOT:
-    case ITEM_RANK:
-    case ITEM_ANY:
-        len += sizeof(uint32_t);
-        break;
-    case ITEM_NEAR:
-    case ITEM_ONEAR:
-        len += sizeof(uint32_t) * 2;
-        break;
-    case ITEM_WEAK_AND:
-        len += sizeof(uint32_t) * 3 + indexLen;
-        break;
-    case ITEM_WEIGHTED_SET:
-    case ITEM_DOT_PRODUCT:
-    case ITEM_PHRASE:
-        len += sizeof(uint32_t) * 2 + indexLen;
-        break;
-    case ITEM_SAME_ELEMENT:
-        len += sizeof(uint32_t) * 2 + indexLen;
-        break;
-    case ITEM_WAND:
-        len += sizeof(uint32_t) * 4 + indexLen;
-        break;
-    case ITEM_TERM:
-    case ITEM_NUMTERM:
-    case ITEM_PREFIXTERM:
-    case ITEM_SUBSTRINGTERM:
-    case ITEM_EXACTSTRINGTERM:
-    case ITEM_SUFFIXTERM:
-    case ITEM_REGEXP:
-        len += sizeof(uint32_t) * 2 + indexLen + termLen;
-        break;
-    case ITEM_PURE_WEIGHTED_STRING:
-        len += sizeof(uint32_t) + termLen;
-        break;
-    case ITEM_PURE_WEIGHTED_LONG:
-        len += sizeof(uint64_t);
-        break;
-    case ITEM_UNDEF:
-    default:
-        break;
-    }
-    return len;
 }
 
 }

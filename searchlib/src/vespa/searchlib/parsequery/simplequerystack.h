@@ -69,7 +69,6 @@ public:
      */
     void AppendBuffer(search::RawBuf *buf) const;
 
-    size_t GetBufferLen() const;
     /**
      * Return the number of items on the stack.
      * @return The number of items on the stack.
