@@ -79,18 +79,18 @@ public enum JobType {
     }
 
     /** Returns the job type for the given zone */
-    public static JobType from(SystemName system, ZoneId zone) {
+    public static Optional<JobType> from(SystemName system, ZoneId zone) {
         for (JobType job : values())
             if (zone.equals(job.zones.get(system)))
-                return job;
-        throw new IllegalArgumentException("No job is known for " + zone + ".");
+                return Optional.of(job);
+        return Optional.empty();
     }
 
     /** Returns the job job type for the given environment and region or null if none */
-    public static JobType from(SystemName system, Environment environment, RegionName region) {
+    public static Optional<JobType> from(SystemName system, Environment environment, RegionName region) {
         switch (environment) {
-            case test: return systemTest;
-            case staging: return stagingTest;
+            case test: return Optional.of(systemTest);
+            case staging: return Optional.of(stagingTest);
         }
         return from(system, ZoneId.from(environment, region));
     }

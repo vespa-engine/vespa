@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -38,8 +39,7 @@ public class DeploymentSteps {
     /** Returns jobs for this, in the order they are declared */
     public List<JobType> jobs() {
         return spec.steps().stream()
-                   .flatMap(step -> step.zones().stream())
-                   .map(this::toJob)
+                   .flatMap(step -> toJobs(step).stream())
                    .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
@@ -66,6 +66,7 @@ public class DeploymentSteps {
     public List<JobType> toJobs(DeploymentSpec.Step step) {
         return step.zones().stream()
                    .map(this::toJob)
+                   .filter(Optional::isPresent).map(Optional::get)
                    .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
@@ -97,7 +98,7 @@ public class DeploymentSteps {
     }
 
     /** Resolve job from deployment zone */
-    private JobType toJob(DeploymentSpec.DeclaredZone zone) {
+    private Optional<JobType> toJob(DeploymentSpec.DeclaredZone zone) {
         return JobType.from(system.get(), zone.environment(), zone.region().orElse(null));
     }
 

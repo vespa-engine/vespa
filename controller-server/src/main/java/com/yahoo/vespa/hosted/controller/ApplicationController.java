@@ -330,7 +330,8 @@ public class ApplicationController {
                         () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
             }
             else {
-                JobType jobType = JobType.from(controller.system(), zone);
+                JobType jobType = JobType.from(controller.system(), zone)
+                                         .orElseThrow(() -> new IllegalArgumentException("No job is known for " + zone + "."));
                 Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
                 if (    ! job.isPresent()
                      || ! job.get().lastTriggered().isPresent()
