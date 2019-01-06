@@ -91,7 +91,7 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
 
             if (checkBackRunner == null) {
                 checkBackRunner = new CheckBackRunner();
-                LogSetup.getTaskRunner().schedule(checkBackRunner, 1000, 9999);
+                LogSetup.getTaskRunner().schedule(checkBackRunner, 1000, 2999);
             }
         } catch (java.io.IOException e) {
             System.err.println("problem opening logcontrol file "
