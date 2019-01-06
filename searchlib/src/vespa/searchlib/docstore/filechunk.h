@@ -7,11 +7,12 @@
 #include "lid_info.h"
 #include "randread.h"
 #include <vespa/searchlib/util/memoryusage.h>
+#include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/fastos/timestamp.h>
 
 class FastOS_FileInterface;
 

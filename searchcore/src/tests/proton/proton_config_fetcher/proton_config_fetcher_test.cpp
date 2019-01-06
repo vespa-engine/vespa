@@ -1,14 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <map>
-#include <vespa/config-attributes.h>
-#include <vespa/config-imported-fields.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
@@ -16,11 +7,21 @@
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/fastos/time.h>
 #include <vespa/config-bucketspaces.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-summary.h>
+#include <vespa/config-summarymap.h>
+#include <map>
 
 using namespace config;
 using namespace proton;
@@ -148,14 +149,14 @@ struct ConfigTestFixture {
     }
 
     BootstrapConfig::SP getBootstrapConfig(int64_t generation, const HwInfo & hwInfo) const {
-        return BootstrapConfig::SP(new BootstrapConfig(generation,
-                                                       std::make_shared<DocumenttypesConfig>(documenttypesBuilder),
-                                                       std::make_shared<DocumentTypeRepo>(documenttypesBuilder),
-                                                       std::make_shared<ProtonConfig>(protonBuilder),
-                                                       std::make_shared<FiledistributorrpcConfig>(),
-                                                       std::make_shared<BucketspacesConfig>(bucketspacesBuilder),
-                                                       std::make_shared<TuneFileDocumentDB>(),
-                                                       hwInfo));
+        return std::make_shared<BootstrapConfig>(generation,
+                                                 std::make_shared<DocumenttypesConfig>(documenttypesBuilder),
+                                                 std::make_shared<DocumentTypeRepo>(documenttypesBuilder),
+                                                 std::make_shared<ProtonConfig>(protonBuilder),
+                                                 std::make_shared<FiledistributorrpcConfig>(),
+                                                 std::make_shared<BucketspacesConfig>(bucketspacesBuilder),
+                                                 std::make_shared<TuneFileDocumentDB>(),
+                                                 hwInfo);
     }
 
     void reload() { context->reload(); }

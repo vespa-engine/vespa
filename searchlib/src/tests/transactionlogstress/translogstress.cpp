@@ -7,6 +7,7 @@
 #include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/fastos/app.h>
+#include <vespa/fastos/time.h>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>

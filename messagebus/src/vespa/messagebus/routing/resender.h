@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "iretrypolicy.h"
 #include <vespa/messagebus/queue.h>
 #include <vespa/messagebus/reply.h>
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/fastos/time.h>
 #include <queue>
 #include <vector>
-#include <vespa/vespalib/util/sync.h>
-#include "iretrypolicy.h"
 
 namespace mbus {
 

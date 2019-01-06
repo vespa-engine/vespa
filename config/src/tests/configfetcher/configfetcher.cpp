@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/fastos/time.h>
 #include <fstream>
 #include "config-my.h"
 #include <atomic>

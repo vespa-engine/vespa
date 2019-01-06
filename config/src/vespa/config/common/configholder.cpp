@@ -10,7 +10,7 @@ ConfigHolder::ConfigHolder()
 {
 }
 
-ConfigHolder::~ConfigHolder() {}
+ConfigHolder::~ConfigHolder() = default;
 
 ConfigUpdate::UP
 ConfigHolder::provide()

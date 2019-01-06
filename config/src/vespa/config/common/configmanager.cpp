@@ -2,6 +2,7 @@
 #include "configmanager.h"
 #include "exceptions.h"
 #include "configholder.h"
+#include <vespa/fastos/time.h>
 #include <thread>
 #include <sstream>
 

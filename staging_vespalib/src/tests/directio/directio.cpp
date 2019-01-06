@@ -5,7 +5,6 @@
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/fastos/file.h>
 
-using namespace fastos;
 using namespace vespalib;
 
 TEST("that DirectIOException propagates the correct information.") {

@@ -2,6 +2,7 @@
 #include <vespa/log/log.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/metrics/dummy_metrics_manager.h>
+#include <vespa/fastos/time.h>
 #include <logd/forward.h>
 #include <logd/metrics.h>
 #include <sstream>

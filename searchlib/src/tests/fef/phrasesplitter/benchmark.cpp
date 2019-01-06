@@ -1,6 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("phrasesplitter_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <iomanip>
@@ -8,9 +6,12 @@ LOG_SETUP("phrasesplitter_test");
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
+#include <vespa/fastos/time.h>
 
-namespace search {
-namespace fef {
+#include <vespa/log/log.h>
+LOG_SETUP("phrasesplitter_test");
+
+namespace search::fef {
 
 class Benchmark : public vespalib::TestApp
 {
@@ -79,7 +80,6 @@ Benchmark::Main()
     TEST_DONE();
 }
 
-}
 }
 
 TEST_APPHOOK(search::fef::Benchmark);

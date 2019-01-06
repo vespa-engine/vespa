@@ -2,6 +2,7 @@
 
 #include "transactionlogmanagerbase.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fastos/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.transactionlogmanagerbase");
