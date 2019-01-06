@@ -99,8 +99,9 @@ public class JRTConfigRequester implements RequestWaiter {
         // Add some time to the timeout, we never want it to time out in JRT during normal operation
         double jrtClientTimeout = getClientTimeout(timeout);
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Requesting config for " + sub + " on connection " + connection + " with RPC timeout " + jrtClientTimeout + ",defcontent=" +
-                    req.getDefContent().asString());
+            log.log(LogLevel.DEBUG, "Requesting config for " + sub + " on connection " + connection
+                    + " with RPC timeout " + jrtClientTimeout +
+                    (log.isLoggable(LogLevel.SPAM) ? (",defcontent=" + req.getDefContent().asString()) : ""));
         }
         connection.invokeAsync(req.getRequest(), jrtClientTimeout, this);
     }
@@ -126,17 +127,17 @@ public class JRTConfigRequester implements RequestWaiter {
     }
 
     private void doHandle(JRTConfigSubscription<ConfigInstance> sub, JRTClientConfigRequest jrtReq, Connection connection) {
-        if (sub.getState() == ConfigSubscription.State.CLOSED) return; // Avoid error messages etc. after closing
         boolean validResponse = jrtReq.validateResponse();
+        if (log.isLoggable(LogLevel.DEBUG)) {
+            log.log(LogLevel.DEBUG, "Request callback " +(validResponse ? "valid" : "invalid") + ". Req: " + jrtReq + "\nSpec: " + connection);
+        }
+        if (sub.getState() == ConfigSubscription.State.CLOSED) return; // Avoid error messages etc. after closing
         Trace trace = jrtReq.getResponseTrace();
         trace.trace(TRACELEVEL, "JRTConfigRequester.doHandle()");
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, trace.toString());
+        if (log.isLoggable(LogLevel.SPAM)) {
+            log.log(LogLevel.SPAM, trace.toString());
         }
         if (validResponse) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Request callback, OK. Req: " + jrtReq + "\nSpec: " + connection);
-            }
             handleOKRequest(jrtReq, sub, connection);
         } else {
             logWhenErrorResponse(jrtReq, connection);
@@ -257,9 +258,7 @@ public class JRTConfigRequester implements RequestWaiter {
             }
         }
         if (sub.getState() != ConfigSubscription.State.OPEN) return;
-        scheduleNextRequest(jrtReq, sub,
-                calculateSuccessDelay(),
-                calculateSuccessTimeout());
+        scheduleNextRequest(jrtReq, sub, calculateSuccessDelay(), calculateSuccessTimeout());
     }
 
     private long calculateSuccessTimeout() {
