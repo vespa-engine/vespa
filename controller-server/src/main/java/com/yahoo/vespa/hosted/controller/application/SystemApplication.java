@@ -68,10 +68,6 @@ public enum SystemApplication {
         if (!hasApplicationPackage()) {
             return true;
         }
-        // TODO: Remove this hack once Docker hosts are removed from zone-application.
-        if (isAws(zone.region())) {
-            return true; // Skip checking config convergence on AWS as Docker hosts do not have cloud config
-        }
         return controller.configServer().serviceConvergence(new DeploymentId(id(), zone))
                          .map(ServiceConvergence::converged)
                          .orElse(false);
@@ -90,10 +86,6 @@ public enum SystemApplication {
     @Override
     public String toString() {
         return String.format("system application %s of type %s", id, nodeTypes);
-    }
-
-    private static boolean isAws(RegionName region) {
-        return region.value().startsWith("cd-aws-") || region.value().startsWith("aws-");
     }
 
 }

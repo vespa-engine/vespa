@@ -96,7 +96,7 @@ public abstract class InfrastructureUpgrader extends Maintainer {
                                .nodeRepository()
                                .list(zone, application.id())
                                .stream()
-                               .filter((node) -> requireUpgradeOf(node, application, zone))
+                               .filter(node -> requireUpgradeOf(node, application, zone))
                                .map(versionField)
                                .min(Comparator.naturalOrder());
         } catch (Exception e) {
