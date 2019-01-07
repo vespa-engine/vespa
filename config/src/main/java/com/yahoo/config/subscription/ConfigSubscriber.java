@@ -242,8 +242,7 @@ public class ConfigSubscriber {
         long started = System.currentTimeMillis();
         long timeLeftMillis = timeoutInMillis;
         boolean anyConfigChanged = false;
-        boolean allGenerationsChanged = true;
-        boolean allGenerationsTheSame = true;
+
         Long currentGen = null;
         for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
             h.setChanged(false); // Reset this flag, if it was set, the user should have acted on it the last time this method returned true.
@@ -251,6 +250,8 @@ public class ConfigSubscriber {
         boolean reconfigDue;
         boolean internalRedeployOnly = true;
         do {
+            boolean allGenerationsChanged = true;
+            boolean allGenerationsTheSame = true;
             // Keep on polling the subscriptions until we have a new generation across the board, or it times out
             for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
                 ConfigSubscription<? extends ConfigInstance> subscription = h.subscription();
@@ -269,7 +270,7 @@ public class ConfigSubscriber {
             }
             reconfigDue = (anyConfigChanged || !requireChange) && allGenerationsChanged && allGenerationsTheSame;
             if (!reconfigDue && timeLeftMillis > 0) {
-                sleep();
+                sleep(timeLeftMillis);
             }
         } while (!reconfigDue && timeLeftMillis > 0);
         if (reconfigDue) {
@@ -284,9 +285,9 @@ public class ConfigSubscriber {
         return reconfigDue;
     }
 
-    private void sleep() {
+    private void sleep(long timeLeftMillis) {
         try {
-            Thread.sleep(10);
+            Thread.sleep(Math.min(10, timeLeftMillis));
         } catch (InterruptedException e) {
             throw new ConfigInterruptedException(e);
         }
@@ -337,14 +338,14 @@ public class ConfigSubscriber {
 
     @Override
     public String toString() {
-        String ret;
+        StringBuilder sb = new StringBuilder();
         synchronized (monitor) {
-            ret = "Subscriber state:" + state;
+            sb.append("Subscriber state:").append(state.toString());
         }
         for (ConfigHandle<?> h : subscriptionHandles) {
-            ret = ret + "\n" + h.toString();
+            sb.append("\n").append(h.toString());
         }
-        return ret;
+        return sb.toString();
     }
 
     /**
@@ -424,9 +425,7 @@ public class ConfigSubscriber {
         if (!nextConfig())
             throw new ConfigurationRuntimeException("Initial config of " + configClass.getName() + " failed.");
         singleSubscriber.configure(handle.getConfig());
-        startConfigThread(new Runnable() {
-            @Override
-            public void run() {
+        startConfigThread(() -> {
                 while (!isClosed()) {
                     try {
                         if (nextConfig()) {
@@ -437,7 +436,7 @@ public class ConfigSubscriber {
                     }
                 }
             }
-        });
+        );
         return handle;
     }
 
@@ -476,8 +475,7 @@ public class ConfigSubscriber {
     protected void finalize() throws Throwable {
         try {
             if (!isClosed()) {
-                log.log(LogLevel.WARNING,
-                        stackTraceAtConstruction,
+                log.log(LogLevel.WARNING, stackTraceAtConstruction,
                         () -> String.format("%s: Closing subscription from finalizer() - close() has not been called (keys=%s)",
                                             super.toString(),
                                             subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).collect(toList())));
