@@ -18,6 +18,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -89,4 +90,21 @@ public interface EnvironmentResource {
 
     @Path("{environmentId}/region/{regionId}/instance/{instanceId}/service")
     ServiceViewResource service();
+
+    @PUT
+    @Path("{environmentId}/region/{regionId}/instance/{instanceId}/global-rotation/override")
+    String setRotationOut(@PathParam("tenantId") TenantId tenantId,
+                          @PathParam("applicationId") ApplicationId applicationId,
+                          @PathParam("environmentId") EnvironmentId environmentId,
+                          @PathParam("regionId") RegionId regionId,
+                          @PathParam("instanceId") InstanceId instanceId);
+
+    @DELETE
+    @Path("{environmentId}/region/{regionId}/instance/{instanceId}/global-rotation/override")
+    String setRotationIn(@PathParam("tenantId") TenantId tenantId,
+                         @PathParam("applicationId") ApplicationId applicationId,
+                         @PathParam("environmentId") EnvironmentId environmentId,
+                         @PathParam("regionId") RegionId regionId,
+                         @PathParam("instanceId") InstanceId instanceId);
+
 }
