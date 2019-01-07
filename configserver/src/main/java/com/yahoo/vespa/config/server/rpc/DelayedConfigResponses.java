@@ -45,7 +45,7 @@ public class DelayedConfigResponses {
     private final Map<ApplicationId, BlockingQueue<DelayedConfigResponse>> delayedResponses =
             new ConcurrentHashMap<>();
             
-    public DelayedConfigResponses(RpcServer rpcServer, int numTimerThreads) {
+    DelayedConfigResponses(RpcServer rpcServer, int numTimerThreads) {
         this(rpcServer, numTimerThreads, true);
     }
 
@@ -70,19 +70,20 @@ public class DelayedConfigResponses {
      * The run method of this class is run by a Timer when the timeout expires.
      * The timer associated with this response must be cancelled first.
      */
-    public class DelayedConfigResponse implements Runnable, TargetWatcher {
+    class DelayedConfigResponse implements Runnable, TargetWatcher {
 
         final JRTServerConfigRequest request;
         private final BlockingQueue<DelayedConfigResponse> delayedResponsesQueue;
         private final ApplicationId app;
         private ScheduledFuture<?> future;
 
-        public DelayedConfigResponse(JRTServerConfigRequest req, BlockingQueue<DelayedConfigResponse> delayedResponsesQueue, ApplicationId app) {
+        DelayedConfigResponse(JRTServerConfigRequest req, BlockingQueue<DelayedConfigResponse> delayedResponsesQueue, ApplicationId app) {
             this.request = req;
             this.delayedResponsesQueue = delayedResponsesQueue;
             this.app = app;
         }
 
+        @Override
         public synchronized void run() {
             removeFromQueue();
             removeWatcher();
@@ -99,18 +100,17 @@ public class DelayedConfigResponses {
             delayedResponsesQueue.remove(this);
         }
 
-        public JRTServerConfigRequest getRequest() {
+        JRTServerConfigRequest getRequest() {
             return request;
         }
 
+        @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("Delayed response for ").append(logPre()).append(request.getShortDescription());
             return sb.toString();
         }
 
-        public ApplicationId getAppId() { return app; }
-        
         String logPre() {
             return TenantRepository.logPre(app);
         }
@@ -128,7 +128,7 @@ public class DelayedConfigResponses {
             return future.cancel(false);
         }
 
-        public synchronized void schedule(long delay) throws InterruptedException {
+        synchronized void schedule(long delay) throws InterruptedException {
             delayedResponsesQueue.put(this);
             future = executorService.schedule(this, delay, TimeUnit.MILLISECONDS);
             addWatcher();
@@ -167,7 +167,7 @@ public class DelayedConfigResponses {
      *
      * @param request a JRTConfigRequest
      */
-    public final void delayResponse(JRTServerConfigRequest request, GetConfigContext context) {
+    final void delayResponse(JRTServerConfigRequest request, GetConfigContext context) {
         if (request.isDelayedResponse()) {
             log.log(LogLevel.DEBUG, context.logPre()+"Request already delayed");
         } else {            
@@ -203,7 +203,7 @@ public class DelayedConfigResponses {
         }
     }
 
-    public void stop() {
+    void stop() {
         executorService.shutdown();
     }
 
@@ -212,7 +212,7 @@ public class DelayedConfigResponses {
      *
      * @return and array of DelayedConfigResponse objects
      */
-    public List<DelayedConfigResponse> drainQueue(ApplicationId app) {
+    List<DelayedConfigResponse> drainQueue(ApplicationId app) {
         ArrayList<DelayedConfigResponse> ret = new ArrayList<>();
         
         if (delayedResponses.containsKey(app)) {
@@ -223,11 +223,12 @@ public class DelayedConfigResponses {
         return ret;
     }
 
+    @Override
     public String toString() {
         return "DelayedConfigResponses. Average Size=" + size();
     }
 
-    public int size() {
+    int size() {
         int totalQueueSize = 0;
         int numQueues = 0;
         for (Map.Entry<ApplicationId, BlockingQueue<DelayedConfigResponse>> e : delayedResponses.entrySet()) {

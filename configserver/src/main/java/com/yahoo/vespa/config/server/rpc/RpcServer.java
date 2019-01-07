@@ -73,9 +73,9 @@ import java.util.stream.Stream;
 // TODO: Split business logic out of this
 public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
-    public static final String getConfigMethodName = "getConfigV3";
+    static final String getConfigMethodName = "getConfigV3";
     
-    static final int TRACELEVEL = 6;
+    private static final int TRACELEVEL = 6;
     static final int TRACELEVEL_DEBUG = 9;
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
     private static final long SHUTDOWN_TIMEOUT = 60;
@@ -87,7 +87,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     private static final Logger log = Logger.getLogger(RpcServer.class.getName());
 
-    final DelayedConfigResponses delayedConfigResponses;
+    private final DelayedConfigResponses delayedConfigResponses;
 
     private final HostRegistry<TenantName> hostRegistry;
     private final Map<TenantName, TenantHandlerProvider> tenantProviders = new ConcurrentHashMap<>();
@@ -114,7 +114,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         this.superModelRequestHandler = superModelRequestHandler;
         metricUpdaterFactory = metrics;
         supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
-        this.metrics = metrics.getOrCreateMetricUpdater(Collections.<String, String>emptyMap());
+        this.metrics = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
         this.hostLivenessTracker = hostLivenessTracker;
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(config.maxgetconfigclients());
         int numberOfRpcThreads = (config.numRpcThreads() == 0) ? Runtime.getRuntime().availableProcessors() : config.numRpcThreads();
@@ -161,7 +161,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      *
      * @param req a Request
      */
-    public final void printStatistics(Request req) {
+    @SuppressWarnings("UnusedDeclaration")
+    public void printStatistics(Request req) {
         req.returnValues().add(new StringValue("Delayed responses queue size: " + delayedConfigResponses.size()));
     }
 
@@ -300,7 +301,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      * Returns the tenant for this request, empty if there is no tenant for this request
      * (which on hosted Vespa means that the requesting host is not currently active for any tenant)
      */
-    public Optional<TenantName> resolveTenant(JRTServerConfigRequest request, Trace trace) {
+    Optional<TenantName> resolveTenant(JRTServerConfigRequest request, Trace trace) {
         if ("*".equals(request.getConfigKey().getConfigId())) return Optional.of(ApplicationId.global().tenant());
         String hostname = request.getClientHostName();
         TenantName tenant = hostRegistry.getKeyForHost(hostname);
@@ -321,12 +322,12 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         return context.requestHandler().resolveConfig(context.applicationId(), request, vespaVersion);
     }
 
-    protected Supervisor getSupervisor() {
+    private Supervisor getSupervisor() {
         return supervisor;
     }
 
-    Boolean addToRequestQueue(JRTServerConfigRequest request) {
-        return addToRequestQueue(request, false, null);
+    private void addToRequestQueue(JRTServerConfigRequest request) {
+        addToRequestQueue(request, false, null);
     }
 
     public Boolean addToRequestQueue(JRTServerConfigRequest request, boolean forceResponse, CompletionService<Boolean> completionService) {
@@ -338,13 +339,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             if (completionService == null) {
                 executorService.submit(task);
             } else {
-                completionService.submit(new Callable<Boolean>() {
-                    @Override
-                    public Boolean call() throws Exception {
-                        task.run();
-                        return true;
-                    }
-                });
+                completionService.submit(() -> { task.run();return true;});
             }
             updateWorkQueueMetrics();
             return true;
@@ -363,7 +358,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     /**
      * Returns the context for this request, or null if the server is not properly set up with handlers
      */
-    public GetConfigContext createGetConfigContext(Optional<TenantName> optionalTenant, JRTServerConfigRequest request, Trace trace) {
+    GetConfigContext createGetConfigContext(Optional<TenantName> optionalTenant, JRTServerConfigRequest request, Trace trace) {
         if ("*".equals(request.getConfigKey().getConfigId())) {
             return GetConfigContext.create(ApplicationId.global(), superModelRequestHandler, trace);
         }
@@ -394,16 +389,14 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         return tenantProviders.get(tenant).getRequestHandler();
     }
 
-    public void delayResponse(JRTServerConfigRequest request, GetConfigContext context) {
+    void delayResponse(JRTServerConfigRequest request, GetConfigContext context) {
         delayedConfigResponses.delayResponse(request, context);
     }
 
     @Override
     public void onTenantDelete(TenantName tenant) {
         log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant)+"Tenant deleted, removing request handler and cleaning host registry");
-        if (tenantProviders.containsKey(tenant)) {
-            tenantProviders.remove(tenant);
-        }
+        tenantProviders.remove(tenant);
         hostRegistry.removeHostsForKey(tenant);
     }
 
