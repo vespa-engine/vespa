@@ -103,7 +103,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private volatile boolean allTenantsLoaded = false;
     private boolean isRunning = false;
 
-    class ApplicationState {
+    static class ApplicationState {
         private final AtomicLong activeGeneration = new AtomicLong(0);
         ApplicationState(long generation) {
             activeGeneration.set(generation);
