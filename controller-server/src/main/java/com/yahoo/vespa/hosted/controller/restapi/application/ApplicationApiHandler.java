@@ -962,7 +962,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse badge(String tenant, String application, String instance, String jobName, String historyLength) {
         URI location = controller.jobController().historicBadge(ApplicationId.from(tenant, application, instance),
                                                                 JobType.fromJobName(jobName),
-                                                                historyLength == null ? 5 : Integer.parseInt(historyLength));
+                                                                historyLength == null ? 5 : Math.min(32, Math.max(2, Integer.parseInt(historyLength))));
         return redirect(location);
     }
 
