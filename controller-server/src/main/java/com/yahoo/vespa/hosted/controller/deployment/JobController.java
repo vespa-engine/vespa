@@ -322,7 +322,7 @@ public class JobController {
         Map<RunId, Run> runs = runs(id, type);
         return badges.historic(id,
                                runs.values().stream()
-                                   .skip(runs.size() - historyLength)
+                                   .skip(Math.max(0, runs.size() - historyLength))
                                    .collect(toList()));
     }
 

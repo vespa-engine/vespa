@@ -460,6 +460,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/badge", GET)
                                       .userIdentity(USER_ID),
                               "", 302);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/badge/system-test?historyLength=2", GET)
+                                      .userIdentity(USER_ID),
+                              "", 302);
 
         ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
