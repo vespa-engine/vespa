@@ -456,20 +456,10 @@ randReadField(FakeWordSet &wordSet,
 
                 // LOG(info, "loop=%d, wordNum=%u", loop, wordNum);
                 fw.validate(sb.get(), tfmda, verbose);
-
-                sb.reset(handle.createIterator(counts, tfmda));
                 fw.validate(sb.get(), tfmda, 19, verbose);
-
-                sb.reset(handle.createIterator(counts, tfmda));
                 fw.validate(sb.get(), tfmda, 99, verbose);
-
-                sb.reset(handle.createIterator(counts, tfmda));
                 fw.validate(sb.get(), tfmda, 799, verbose);
-
-                sb.reset(handle.createIterator(counts, tfmda));
                 fw.validate(sb.get(), tfmda, 6399, verbose);
-
-                sb.reset(handle.createIterator(counts, tfmda));
                 fw.validate(sb.get(), tfmda, 11999, verbose);
                 ++wordNum;
             }
