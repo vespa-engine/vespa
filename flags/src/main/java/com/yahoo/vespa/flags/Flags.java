@@ -61,12 +61,6 @@ public class Flags {
             "Takes effect immediately when changed.",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag ENABLE_DOCKER_1_13 = defineFeatureFlag(
-            "enable-docker-1.13", true,
-            "Whether to upgrade to Docker version 1.13.",
-            "Takes effect on next host admin tick.",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
             "enable-crowdstrike", true,
             "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
