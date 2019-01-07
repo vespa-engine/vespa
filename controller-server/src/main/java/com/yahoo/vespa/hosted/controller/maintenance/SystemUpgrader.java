@@ -31,16 +31,18 @@ public class SystemUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneId zone) {
-        if (!target.isAfter(wantedVersion(zone, application, target))) {
-            return; // Wanted version is already equal or higher than target
+        if (minVersion(zone, application, Node::wantedVersion).map(target::isAfter)
+                                                              .orElse(true)) {
+            log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
+            controller().applications().deploy(application, zone, target);
         }
-        log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
-        controller().applications().deploy(application, zone, target);
     }
 
     @Override
     protected boolean convergedOn(Version target, SystemApplication application, ZoneId zone) {
-        return currentVersion(zone, application, target).equals(target) && application.configConvergedIn(zone, controller());
+        return    minVersion(zone, application, Node::currentVersion).map(target::equals)
+                                                                     .orElse(true)
+               && application.configConvergedIn(zone, controller());
     }
 
     @Override
@@ -53,14 +55,6 @@ public class SystemUpgrader extends InfrastructureUpgrader {
         return controller().versionStatus().controllerVersion()
                            .filter(vespaVersion -> !vespaVersion.isSystemVersion())
                            .map(VespaVersion::versionNumber);
-    }
-
-    private Version wantedVersion(ZoneId zone, SystemApplication application, Version defaultVersion) {
-        return minVersion(zone, application, Node::wantedVersion).orElse(defaultVersion);
-    }
-
-    private Version currentVersion(ZoneId zone, SystemApplication application, Version defaultVersion) {
-        return minVersion(zone, application, Node::currentVersion).orElse(defaultVersion);
     }
 
     /** Returns whether node in application should be upgraded by this */
