@@ -44,18 +44,18 @@ public class BadgesTest {
         Badges badges = new Badges(URI.create("https://badges.tld/api/"));
 
         assertEquals(URI.create("https://badges.tld/api/tenant.application;" + Badges.dark),
-                     badges.historic(id, Collections.emptyList()));
+                     badges.historic(id, Optional.empty(), Collections.emptyList()));
 
         assertEquals(URI.create("https://badges.tld/api/tenant.application;" + Badges.dark +
-                                "/" + systemTest.jobName() + ";" + Badges.purple +
+                                "/" + systemTest.jobName() + ";" + Badges.blue +
                                 "/%20;" + Badges.purple + ";s%7B" + Badges.white + "%7D"),
-                     badges.historic(id, Collections.singletonList(running)));
+                     badges.historic(id, Optional.of(success), Collections.singletonList(running)));
 
         assertEquals(URI.create("https://badges.tld/api/tenant.application;" + Badges.dark +
                                 "/" + systemTest.jobName() + ";" + Badges.blue +
                                 "/%20;" + Badges.blue + ";s%7B" + Badges.white + "%7D" +
                                 "/%20;" + Badges.purple + ";s%7B" + Badges.white + "%7D"),
-                     badges.historic(id, Arrays.asList(success, running)));
+                     badges.historic(id, Optional.of(success), Arrays.asList(success, running)));
 
         assertEquals(URI.create("https://badges.tld/api/tenant.application;" + Badges.dark +
                                 "/" + systemTest.jobName() + ";" + Badges.purple +

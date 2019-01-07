@@ -4,6 +4,7 @@ import com.yahoo.config.provision.ApplicationId;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * URLs for deployment job badges using <a href="https://github.com/yahoo/badge-up">badge-up</a>.
@@ -26,18 +27,12 @@ class Badges {
     }
 
     /** Returns a URI which gives a history badge for the given runs. */
-    URI historic(ApplicationId id, List<Run> runs) {
+    URI historic(ApplicationId id, Optional<Run> lastCompleted, List<Run> runs) {
         StringBuilder path = new StringBuilder(id + ";" + dark);
 
-        if ( ! runs.isEmpty()) {
-            Run lastCompleted = runs.get(runs.size() - 1);
-            if (runs.size() > 1 && !lastCompleted.hasEnded())
-                lastCompleted = runs.get(runs.size() - 2);
-
-            path.append("/").append(lastCompleted.id().type().jobName()).append(";").append(colorOf(lastCompleted));
-            for (Run run : runs)
-                path.append("/%20;").append(colorOf(run)).append(";s%7B").append(white).append("%7D");
-        }
+        lastCompleted.ifPresent(last -> path.append("/").append(last.id().type().jobName()).append(";").append(colorOf(last)));
+        for (Run run : runs)
+            path.append("/%20;").append(colorOf(run)).append(";s%7B").append(white).append("%7D");
 
         return badgeApi.resolve(path.toString());
     }
