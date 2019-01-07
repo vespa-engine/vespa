@@ -53,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorCompletionService;
@@ -61,6 +60,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -91,6 +91,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     private final HostRegistry<TenantName> hostRegistry;
     private final Map<TenantName, TenantHandlerProvider> tenantProviders = new ConcurrentHashMap<>();
+    private final Map<ApplicationId, ApplicationState> applicationStateMap = new ConcurrentHashMap<>();
     private final SuperModelRequestHandler superModelRequestHandler;
     private final MetricUpdater metrics;
     private final MetricUpdaterFactory metricUpdaterFactory;
@@ -102,6 +103,14 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private volatile boolean allTenantsLoaded = false;
     private boolean isRunning = false;
 
+    class ApplicationState {
+        private final AtomicLong activeGeneration = new AtomicLong(0);
+        ApplicationState(long generation) {
+            activeGeneration.set(generation);
+        }
+        long getActiveGeneration() { return activeGeneration.get(); }
+        void setActiveGeneration(long generation) { activeGeneration.set(generation); }
+    }
     /**
      * Creates an RpcServer listening on the specified <code>port</code>.
      *
@@ -215,6 +224,17 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                                      .returnDesc(0, "ret", "0 if success, 1 otherwise"));
     }
 
+    private ApplicationState getState(ApplicationId id) {
+        ApplicationState state = applicationStateMap.get(id);
+        if (state == null) {
+            applicationStateMap.putIfAbsent(id, new ApplicationState(0));
+            state = applicationStateMap.get(id);
+        }
+        return state;
+    }
+    boolean hasNewerGeneration(ApplicationId id, long generation) {
+        return getState(id).getActiveGeneration() > generation;
+    }
     /**
      * Checks all delayed responses for config changes and waits until all has been answered.
      * This method should be called when config is reloaded in the server.
@@ -222,16 +242,20 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @Override
     public void configActivated(ApplicationSet applicationSet) {
         ApplicationId applicationId = applicationSet.getId();
-        configReloaded(delayedConfigResponses.drainQueue(applicationId), TenantRepository.logPre(applicationId));
+        ApplicationState state = getState(applicationId);
+        state.setActiveGeneration(applicationSet.getApplicationGeneration());
+        configReloaded(applicationId);
         reloadSuperModel(applicationSet);
     }
 
     private void reloadSuperModel(ApplicationSet applicationSet) {
         superModelRequestHandler.reloadConfig(applicationSet);
-        configReloaded(delayedConfigResponses.drainQueue(ApplicationId.global()), TenantRepository.logPre(ApplicationId.global()));
+        configReloaded(ApplicationId.global());
     }
 
-    private void configReloaded(List<DelayedConfigResponses.DelayedConfigResponse> responses, String logPre) {
+    void configReloaded(ApplicationId applicationId) {
+        List<DelayedConfigResponses.DelayedConfigResponse> responses = delayedConfigResponses.drainQueue(applicationId);
+        String logPre = TenantRepository.logPre(applicationId);
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, logPre + "Start of configReload: " + responses.size() + " requests on delayed requests queue");
         }
@@ -286,8 +310,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @Override
     public void applicationRemoved(ApplicationId applicationId) {
         superModelRequestHandler.removeApplication(applicationId);
-        configReloaded(delayedConfigResponses.drainQueue(applicationId), TenantRepository.logPre(applicationId));
-        configReloaded(delayedConfigResponses.drainQueue(ApplicationId.global()), TenantRepository.logPre(ApplicationId.global()));
+        configReloaded(applicationId);
+        configReloaded(ApplicationId.global());
     }
 
     public void respond(JRTServerConfigRequest request) {
@@ -533,4 +557,5 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                         new FileReferenceDownload(fileReference, false /* downloadFromOtherSourceIfNotFound */)));
         req.returnValues().add(new Int32Value(0));
     }
+
 }
