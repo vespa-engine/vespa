@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.SentinelConfig;
+import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.component.Version;
 import com.yahoo.jrt.Request;
@@ -66,13 +67,13 @@ class GetConfigProcessor implements Runnable {
     }
 
     // TODO: Increment statistics (Metrics) failed counters when requests fail
-    public void run() {
+    public Pair<GetConfigContext, Long> getConfig(JRTServerConfigRequest request) {
         //Request has already been detached
         if ( ! request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
             log.log(LogLevel.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
             respond(request);
-            return;
+            return null;
         }
         Trace trace = request.getRequestTrace();
         if (logDebug(trace)) {
@@ -85,13 +86,13 @@ class GetConfigProcessor implements Runnable {
         // fabricate an empty request to cause the sentinel to stop all running services
         if (rpcServer.isHostedVespa() && rpcServer.allTenantsLoaded() && !tenant.isPresent() && isSentinelConfigRequest(request)) {
             returnEmpty(request);
-            return;
+            return null;
         }
 
         GetConfigContext context = rpcServer.createGetConfigContext(tenant, request, trace);
         if (context == null || ! context.requestHandler().hasApplication(context.applicationId(), Optional.empty())) {
             handleError(request, ErrorCode.APPLICATION_NOT_LOADED, "No application exists");
-            return;
+            return null;
         }
 
         Optional<Version> vespaVersion = rpcServer.useRequestVersion() ?
@@ -103,7 +104,7 @@ class GetConfigProcessor implements Runnable {
 
         if ( ! context.requestHandler().hasApplication(context.applicationId(), vespaVersion)) {
             handleError(request, ErrorCode.UNKNOWN_VESPA_VERSION, "Unknown Vespa version in request: " + getPrintableVespaVersion(vespaVersion));
-            return;
+            return null;
         }
 
         this.logPre = TenantRepository.logPre(context.applicationId());
@@ -112,14 +113,14 @@ class GetConfigProcessor implements Runnable {
             config = rpcServer.resolveConfig(request, context, vespaVersion);
         } catch (UnknownConfigDefinitionException e) {
             handleError(request, ErrorCode.UNKNOWN_DEFINITION, "Unknown config definition " + request.getConfigKey());
-            return;
+            return null;
         } catch (UnknownConfigIdException e) {
             handleError(request, ErrorCode.ILLEGAL_CONFIGID, "Illegal config id " + request.getConfigKey().getConfigId());
-            return;
+            return null;
         } catch (Throwable e) {
             log.log(Level.SEVERE, "Unexpected error handling config request", e);
             handleError(request, ErrorCode.INTERNAL_ERROR, "Internal error " + e.getMessage());
-            return;
+            return null;
         }
 
         // config == null is not an error, but indicates that the config will be returned later.
@@ -134,7 +135,21 @@ class GetConfigProcessor implements Runnable {
             if (logDebug(trace)) {
                 debugLog(trace, "delaying response " + request.getShortDescription());
             }
-            rpcServer.delayResponse(request, context);
+            return new Pair<>(context, config != null ? config.getGeneration() : 0);
+        }
+        return null;
+    }
+    @Override
+    public void run() {
+        Pair<GetConfigContext, Long> delayed = getConfig(request);
+
+        if (delayed != null) {
+            rpcServer.delayResponse(request, delayed.getFirst());
+            if (rpcServer.hasNewerGeneration(delayed.getFirst().applicationId(), delayed.getSecond())) {
+                // This will ensure that if the reload train left the station while I was boarding, another train will
+                // immediately be scheduled.
+                rpcServer.configReloaded(delayed.getFirst().applicationId());
+            }
         }
     }
 
