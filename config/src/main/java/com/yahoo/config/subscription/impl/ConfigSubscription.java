@@ -2,7 +2,6 @@
 package com.yahoo.config.subscription.impl;
 
 import java.io.File;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
