@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 import static com.google.common.collect.ImmutableList.copyOf;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
+import static java.util.stream.Collectors.toList;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
@@ -66,12 +67,14 @@ public class JobController {
     private final CuratorDb curator;
     private final BufferedLogStore logs;
     private final TesterCloud cloud;
+    private final Badges badges;
 
     public JobController(Controller controller, RunDataStore runDataStore, TesterCloud testerCloud) {
         this.controller = controller;
         this.curator = controller.curator();
         this.logs = new BufferedLogStore(curator, runDataStore);
         this.cloud = testerCloud;
+        this.badges = new Badges(controller.zoneRegistry().badgeUrl());
     }
 
     public TesterCloud cloud() { return cloud; }
@@ -110,7 +113,7 @@ public class JobController {
         locked(id, __ -> {
             List<LogEntry> entries = messages.stream()
                                              .map(message -> new LogEntry(0, controller.clock().millis(), LogEntry.typeOf(level), message))
-                                             .collect(Collectors.toList());
+                                             .collect(toList());
             logs.append(id.application(), id.type(), step, entries);
             return __;
         });
@@ -157,7 +160,7 @@ public class JobController {
 
     /** Returns an immutable map of all known runs for the given application and job type. */
     public Map<RunId, Run> runs(ApplicationId id, JobType type) {
-        Map<RunId, Run> runs = curator.readHistoricRuns(id, type);
+        SortedMap<RunId, Run> runs = curator.readHistoricRuns(id, type);
         last(id, type).ifPresent(run -> runs.putIfAbsent(run.id(), run));
         return ImmutableMap.copyOf(runs);
     }
@@ -312,6 +315,25 @@ public class JobController {
         catch (NoInstanceException ignored) {
             // Already gone -- great!
         }
+    }
+
+    /** Returns a URI which points at a badge showing historic status of given length for the given job type for the given application. */
+    public URI historicBadge(ApplicationId id, JobType type, int historyLength) {
+        Map<RunId, Run> runs = runs(id, type);
+        return badges.historic(id,
+                               runs.values().stream()
+                                   .skip(runs.size() - historyLength)
+                                   .collect(toList()));
+    }
+
+    /** Returns a URI which points at a badge showing current status for all jobs for the given application. */
+    public URI overviewBadge(ApplicationId id) {
+        DeploymentSteps steps = new DeploymentSteps(controller.applications().require(id).deploymentSpec(), controller::system);
+        return badges.overview(id,
+                               steps.jobs().stream()
+                                    .map(type -> last(id, type))
+                                    .filter(Optional::isPresent).map(Optional::get)
+                                    .collect(toList()));
     }
 
     /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */

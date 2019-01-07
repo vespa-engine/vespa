@@ -354,6 +354,7 @@ public class ApplicationController {
 
             // Update application with information from application package
             if ( ! preferOldestVersion && ! application.get().deploymentJobs().deployedInternally())
+                // TODO jvenstad: Store only on submissions (not on deployments to dev!!)
                 application = storeWithUpdatedConfig(application, applicationPackage);
 
             // Assign global rotation
