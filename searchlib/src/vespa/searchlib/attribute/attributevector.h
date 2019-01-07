@@ -256,6 +256,12 @@ protected:
     EnumModifier getEnumModifier();
     ValueModifier getValueModifier() { return ValueModifier(*this); }
 
+    void updateUncommittedDocIdLimit(DocId doc) {
+        if (_uncommittedDocIdLimit <= doc)  {
+            _uncommittedDocIdLimit = doc + 1;
+        }
+    }
+
     void updateCommittedDocIdLimit() {
         if (_uncommittedDocIdLimit != 0) {
             if (_uncommittedDocIdLimit > _committedDocIdLimit) {
@@ -406,11 +412,6 @@ public:
     uint32_t & getCommittedDocIdLimitRef() { return _committedDocIdLimit; }
     void setCommittedDocIdLimit(uint32_t committedDocIdLimit) {
         _committedDocIdLimit = committedDocIdLimit;
-    }
-    void updateUncommittedDocIdLimit(DocId doc) {
-        if (_uncommittedDocIdLimit <= doc)  {
-            _uncommittedDocIdLimit = doc + 1;
-        }
     }
 
     const Status & getStatus() const { return _status; }

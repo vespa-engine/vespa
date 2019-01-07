@@ -89,11 +89,5 @@ IndexManager::IndexManager(const vespalib::string &baseDir,
 
 IndexManager::~IndexManager() = default;
 
-void
-IndexManager::compactLidSpace(uint32_t lidLimit, SerialNum serialNum)
-{
-    _maintainer.compactLidSpace(lidLimit, serialNum);
-}
-
 } // namespace proton
 

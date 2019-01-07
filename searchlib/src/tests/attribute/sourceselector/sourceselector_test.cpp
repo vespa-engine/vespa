@@ -41,7 +41,7 @@ private:
     void requireThatSelectorCanCloneAndSubtract();
     void requireThatSelectorCanCloneAndSubtract();
     template <typename SelectorType>
-    void requireThatSelectorCanSaveAndLoad(bool compactLidSpace);
+    void requireThatSelectorCanSaveAndLoad();
     void requireThatSelectorCanSaveAndLoad();
     template <typename SelectorType>
     void requireThatCompleteSourceRangeIsHandled();
@@ -49,7 +49,6 @@ private:
     template <typename SelectorType>
     void requireThatSourcesAreCountedCorrectly();
     void requireThatSourcesAreCountedCorrectly();
-    void requireThatDocIdLimitIsCorrect();
 };
 
 int
@@ -65,7 +64,6 @@ Test::Main()
     TEST_DO(requireThatSelectorCanSaveAndLoad());
     TEST_DO(requireThatCompleteSourceRangeIsHandled());
     TEST_DO(requireThatSourcesAreCountedCorrectly());
-    TEST_DO(requireThatDocIdLimitIsCorrect());
 
     TEST_DONE();
 }
@@ -142,15 +140,12 @@ Test::requireThatSelectorCanCloneAndSubtract()
 
 template <typename SelectorType>
 void
-Test::requireThatSelectorCanSaveAndLoad(bool compactLidSpace)
+Test::requireThatSelectorCanSaveAndLoad()
 {
     SelectorType selector(default_source, base_file_name2);
     setSources(selector);
     selector.setBaseId(base_id);
     selector.setSource(maxDocId + 1, default_source);
-    if (compactLidSpace) {
-        selector.compactLidSpace(maxDocId - 4);
-    }
 
     FastOS_FileInterface::EmptyAndRemoveDirectory(index_dir.c_str());
     FastOS_FileInterface::MakeDirIfNotPresentOrExit(index_dir.c_str());
@@ -160,13 +155,9 @@ Test::requireThatSelectorCanSaveAndLoad(bool compactLidSpace)
     save_info->save(TuneFileAttributes(), DummyFileHeaderContext());
     typename SelectorType::UP
         selector2(SelectorType::load(base_file_name));
-    testSourceSelector(docs, arraysize(docs) - compactLidSpace, default_source, *selector2);
+    testSourceSelector(docs, arraysize(docs), default_source, *selector2);
     EXPECT_EQUAL(base_id, selector2->getBaseId());
-    if (compactLidSpace) {
-        EXPECT_EQUAL(maxDocId - 4, selector2->getDocIdLimit());
-    } else {
-        EXPECT_EQUAL(maxDocId + 2, selector2->getDocIdLimit());
-    }
+    EXPECT_EQUAL(maxDocId + 2, selector2->getDocIdLimit());
 
     FastOS_FileInterface::EmptyAndRemoveDirectory(index_dir.c_str());
 }
@@ -174,8 +165,7 @@ Test::requireThatSelectorCanSaveAndLoad(bool compactLidSpace)
 void
 Test::requireThatSelectorCanSaveAndLoad()
 {
-    requireThatSelectorCanSaveAndLoad<FixedSourceSelector>(false);
-    requireThatSelectorCanSaveAndLoad<FixedSourceSelector>(true);
+    requireThatSelectorCanSaveAndLoad<FixedSourceSelector>();
 }
 
 template <typename SelectorType>
@@ -219,21 +209,6 @@ void
 Test::requireThatSourcesAreCountedCorrectly()
 {
     requireThatSourcesAreCountedCorrectly<FixedSourceSelector>();
-}
-
-void
-Test::requireThatDocIdLimitIsCorrect()
-{
-    FixedSourceSelector selector(default_source, base_file_name);
-    EXPECT_EQUAL(0u, selector.getDocIdLimit());
-    selector.setSource(8, 10);
-    EXPECT_EQUAL(9u, selector.getDocIdLimit());
-    selector.compactLidSpace(4);
-    EXPECT_EQUAL(4u, selector.getDocIdLimit());
-    selector.setSource(6, 10);
-    EXPECT_EQUAL(7u, selector.getDocIdLimit());
-    auto selector2 = selector.cloneAndSubtract(base_file_name2, 3);
-    EXPECT_EQUAL(7u, selector2->getDocIdLimit());
 }
 
 }  // namespace

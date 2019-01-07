@@ -67,13 +67,4 @@ IndexWriter::heartBeat(search::SerialNum serialNum)
     _mgr->heartBeat(serialNum);
 }
 
-void
-IndexWriter::compactLidSpace(search::SerialNum serialNum, const search::DocumentIdT lid)
-{
-    if (serialNum <= _mgr->getFlushedSerialNum()) {
-        return;
-    }
-    _mgr->compactLidSpace(lid, serialNum);
-}
-
 } // namespace proton
