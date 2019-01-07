@@ -9,6 +9,7 @@ start = element deployment {
    attribute athenz-service { xsd:string }? &
    Upgrade? &
    BlockChange* &
+   Notifications? &
    Test? &
    Staging? &
    BlockUpgrade* &
@@ -31,6 +32,17 @@ BlockUpgrade = element block-upgrade { # Legacy name - remove on Vespa 7
     attribute days { xsd:string } &
     attribute hours { xsd:string } &
     attribute time-zone { xsd:string }?
+}
+
+Notifications = element notifications {
+    attribute when { xsd:string }? &
+    Email*
+}
+
+Email = element email {
+    attribute address { xsd:string }? &
+    attribute role { xsd:string }? &
+    attribute when { xsd:string }?
 }
 
 Test = element test {
