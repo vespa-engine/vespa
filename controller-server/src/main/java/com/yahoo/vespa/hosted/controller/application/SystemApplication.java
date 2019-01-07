@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
@@ -67,17 +68,9 @@ public enum SystemApplication {
         if (!hasApplicationPackage()) {
             return true;
         }
-        // TODO: Docker hosts running host admin cannot be checked. Since a zone can have
-        // Docker hosts running either host admin or node-admin, it's not possible to check
-        // config convergence, so we need to always return true here.
-        // We want to remove the line below and check config convergence for proxy nodes
-        // when all Docker hosts are running host admin
-        return true;
-        /*
         return controller.configServer().serviceConvergence(new DeploymentId(id(), zone))
                          .map(ServiceConvergence::converged)
                          .orElse(false);
-                         */
     }
 
     /** Returns the node types of this that should receive OS upgrades */
