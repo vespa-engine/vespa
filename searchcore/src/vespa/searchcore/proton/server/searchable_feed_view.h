@@ -76,6 +76,7 @@ public:
 
     ~SearchableFeedView() override;
     const IIndexWriter::SP &getIndexWriter() const { return _indexWriter; }
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
     void sync() override;
 };
 

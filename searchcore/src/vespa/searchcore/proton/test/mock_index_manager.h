@@ -28,6 +28,7 @@ struct MockIndexManager : public searchcorespi::IIndexManager
     }
     virtual void setSchema(const Schema &, SerialNum) override {}
     virtual void heartBeat(SerialNum) override {}
+    void compactLidSpace(uint32_t, SerialNum) override {}
     virtual void setMaxFlushed(uint32_t) override { }
 };
 
