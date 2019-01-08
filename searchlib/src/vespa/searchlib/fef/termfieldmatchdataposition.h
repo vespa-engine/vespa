@@ -74,7 +74,7 @@ public:
     {
         if (a < b) return true;
         if (b < a) return false;
-        return a._matchExactness >= b._matchExactness;
+        return a._matchExactness > b._matchExactness;
     }
 
     TermFieldMatchDataPosition(uint32_t elementId,
