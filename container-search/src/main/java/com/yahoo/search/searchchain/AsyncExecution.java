@@ -44,13 +44,28 @@ import java.util.concurrent.*;
  */
 public class AsyncExecution {
 
-    private static final ThreadFactory threadFactory = ThreadFactoryFactory.getThreadFactory("search");
+    /**
+     * Here we have a primary threadpool with fast handover using a non-fair SynchronousQueue with limited capacity to limit number of threads in worst case.
+     * As a fallback we have an executor with fewer threads, but 64k elements Q to take care of the peaks.
+     **/
+    private static final ThreadFactory primaryThreadFactory = ThreadFactoryFactory.getThreadFactory("search");
+    private static final ThreadFactory fallbackThreadFactory = ThreadFactoryFactory.getThreadFactory("search.fallback");
 
-    private static final Executor executorMain = createExecutor();
+    private static final Executor primaryExecutor = createPrimaryExecutor();
+    private static final Executor fallbackExecutor = createFallbackExecutor();
 
-    private static Executor createExecutor() {
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(100, Integer.MAX_VALUE, 1L, TimeUnit.SECONDS,
-                                                            new SynchronousQueue<>(false), threadFactory);
+    private static Executor createPrimaryExecutor() {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(100, 4096, 1L, TimeUnit.SECONDS,
+                                                            new SynchronousQueue<>(false), primaryThreadFactory);
+        // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
+        // get the dreaded thread locals initialized even if they will never run.
+        // That counters what we we want to achieve with the Q that will prefer thread locality.
+        executor.prestartAllCoreThreads();
+        return executor;
+    }
+    private static Executor createFallbackExecutor() {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(10, 100, 1L, TimeUnit.SECONDS,
+                new ArrayBlockingQueue(0x10000), fallbackThreadFactory);
         // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
         // get the dreaded thread locals initialized even if they will never run.
         // That counters what we we want to achieve with the Q that will prefer thread locality.
@@ -129,10 +144,6 @@ public class AsyncExecution {
         }, query);
     }
 
-    private static Executor getExecutor() {
-        return executorMain;
-    }
-
     /**
      * The future of this functions returns the original Result
      *
@@ -148,8 +159,16 @@ public class AsyncExecution {
 
     private static <T> Future<T> getFuture(Callable<T> callable) {
         FutureTask<T> future = new FutureTask<>(callable);
-        getExecutor().execute(future);
+        execute(future);
         return future;
+    }
+
+    private static <T extends Runnable> void execute(T future) {
+        try {
+            primaryExecutor.execute(future);
+        } catch (RejectedExecutionException e) {
+            fallbackExecutor.execute(future);
+        }
     }
 
     private static Future<Void> runTask(Runnable runnable) {
@@ -161,7 +180,7 @@ public class AsyncExecution {
 
     private FutureResult getFutureResult(Callable<Result> callable, Query query) {
         FutureResult future = new FutureResult(callable, execution, query);
-        getExecutor().execute(future);
+        execute(future);
         return future;
     }
 
