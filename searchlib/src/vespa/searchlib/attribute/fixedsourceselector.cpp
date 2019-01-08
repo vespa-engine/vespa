@@ -45,6 +45,7 @@ FixedSourceSelector::cloneAndSubtract(const vespalib::string & attrBaseFileName,
     }
     selector->_source.commit();
     selector->setBaseId(getBaseId() + diff);
+    selector->_source.setCommittedDocIdLimit(_source.getCommittedDocIdLimit());
     return selector;
 }
 
@@ -85,7 +86,16 @@ FixedSourceSelector::setSource(uint32_t docId, queryeval::Source source)
      **/
     reserve(docId+1);
     _source.update(docId, source);
+    _source.updateUncommittedDocIdLimit(docId + 1);
     _source.commit();
+}
+
+void
+FixedSourceSelector::compactLidSpace(uint32_t lidLimit)
+{
+    if (lidLimit < _source.getCommittedDocIdLimit()) {
+        _source.compactLidSpace(lidLimit + 1);
+    }
 }
 
 } // namespace search

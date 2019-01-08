@@ -357,6 +357,7 @@ public:
     void removeDocument(uint32_t lid, SerialNum serialNum) override;
     void commit(SerialNum serialNum, OnWriteDoneType onWriteDone) override;
     void heartBeat(search::SerialNum serialNum) override;
+    void compactLidSpace(uint32_t lidLimit, SerialNum serialNum) override;
 
     SerialNum getCurrentSerialNum() const override {
         return _current_serial_num;
