@@ -10,6 +10,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
@@ -28,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstance
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
@@ -40,7 +43,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -298,7 +300,7 @@ public class ApplicationController {
     public ActivateResult deploy(ApplicationId applicationId, ZoneId zone,
                                  Optional<ApplicationPackage> applicationPackageFromDeployer,
                                  DeployOptions options) {
-        return deploy(applicationId, zone, applicationPackageFromDeployer, Optional.empty(), options);
+        return deploy(applicationId, zone, applicationPackageFromDeployer, Optional.empty(), options, Optional.empty());
     }
 
     /** Deploys an application. If the application does not exist it is created. */
@@ -307,7 +309,8 @@ public class ApplicationController {
     public ActivateResult deploy(ApplicationId applicationId, ZoneId zone,
                                  Optional<ApplicationPackage> applicationPackageFromDeployer,
                                  Optional<ApplicationVersion> applicationVersionFromDeployer,
-                                 DeployOptions options) {
+                                 DeployOptions options,
+                                 Optional<AthenzIdentity> deployingIdentity) {
         if (applicationId.instance().isTester())
             throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
 
@@ -350,7 +353,7 @@ public class ApplicationController {
             }
 
             // TODO: Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
-            verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage);
+            verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage, deployingIdentity);
 
             // Update application with information from application package
             if ( ! preferOldestVersion && ! application.get().deploymentJobs().deployedInternally())
@@ -733,28 +736,49 @@ public class ApplicationController {
         return applications.stream().sorted(Comparator.comparing(Application::id)).collect(Collectors.toList());
     }
 
-    public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage) {
+    /**
+     * Verifies that the application can be deployed to the tenant, following these rules:
+     *
+     * 1. If the principal is given, verify that the principal is tenant admin or admin of the tenant domain
+     * 2. If the principal is not given, verify that the Athenz domain of the tenant equals Athenz domain given in deployment.xml
+     *
+     * @param tenantName Tenant where application should be deployed
+     * @param applicationPackage Application package
+     * @param deployingIdentity Principal initiating the deployment, possibly empty
+     */
+    public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage, Optional<AthenzIdentity> deployingIdentity) {
         applicationPackage.deploymentSpec().athenzDomain()
                           .ifPresent(identityDomain -> {
                               Optional<Tenant> tenant = controller.tenants().tenant(tenantName);
                               if(!tenant.isPresent()) {
                                   throw new IllegalArgumentException("Tenant does not exist");
                               } else {
-                                  AthenzDomain tenantDomain = tenant.filter(t -> t instanceof AthenzTenant)
-                                          .map(t -> (AthenzTenant) t)
-                                          .orElseThrow(() -> new IllegalArgumentException(
-                                                  String.format("Athenz domain defined in deployment.xml, but no Athenz domain for tenant (%s). " +
-                                                                "It is currently not possible to launch Athenz services from personal tenants, use " +
-                                                                "Athenz tenant instead.",
-                                                                tenantName.value())))
-                                          .domain();
+                                  if (isUserDeployment(deployingIdentity)) {
+                                      deployingIdentity
+                                              .filter(user -> zmsClient.hasTenantAdminAccess(user, new AthenzDomain(identityDomain.value())))
+                                              .orElseThrow(() -> new IllegalArgumentException(
+                                                      String.format("User %s is not allowed to launch services in Athenz domain %s. Please reach out to the domain admin.", deployingIdentity.get().getFullName(), identityDomain.value())
+                                              ));
+                                  } else {
+                                      AthenzDomain tenantDomain = tenant.filter(t -> t instanceof AthenzTenant)
+                                              .map(t -> (AthenzTenant) t)
+                                              .orElseThrow(() -> new IllegalArgumentException(
+                                                      String.format("Athenz domain defined in deployment.xml, but no Athenz domain for tenant (%s). " +
+                                                                    tenantName.value())))
+                                              .domain();
 
-                                  if (!Objects.equals(tenantDomain.getName(), identityDomain.value()))
-                                      throw new IllegalArgumentException(String.format("Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
-                                                                                       identityDomain.value(),
-                                                                                       tenantDomain.getName()));
+                                      if (!Objects.equals(tenantDomain.getName(), identityDomain.value()))
+                                          throw new IllegalArgumentException(String.format("Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
+                                                                                           identityDomain.value(),
+                                                                                           tenantDomain.getName()));
+                                  }
                               }
                           });
     }
 
+    private boolean isUserDeployment(Optional<AthenzIdentity> identity) {
+        return identity
+                .filter(id -> id instanceof AthenzUser)
+                .isPresent();
+    }
 }
