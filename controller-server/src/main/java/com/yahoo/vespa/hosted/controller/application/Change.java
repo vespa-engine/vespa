@@ -100,22 +100,27 @@ public final class Change {
     }
 
     @Override
-    public int hashCode() { return Objects.hash(platform, application); }
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Change)) return false;
+        Change change = (Change) o;
+        return pinning == change.pinning &&
+               Objects.equals(platform, change.platform) &&
+               Objects.equals(application, change.application);
+    }
 
     @Override
-    public boolean equals(Object other) {
-        if (other == this) return true;
-        if ( ! (other instanceof Change)) return false;
-        Change o = (Change)other;
-        if ( ! o.platform.equals(this.platform)) return false;
-        if ( ! o.application.equals(this.application)) return false;
-        return true;
+    public int hashCode() {
+        return Objects.hash(platform, application, pinning);
     }
 
     @Override
     public String toString() {
         StringJoiner changes = new StringJoiner(" and ");
-        platform.ifPresent(version -> changes.add("upgrade to " + version.toString()));
+        if (pinning)
+            changes.add("pin to " + platform.map(Version::toString).orElse("current platform"));
+        else
+            platform.ifPresent(version -> changes.add("upgrade to " + version.toString()));
         application.ifPresent(version -> changes.add("application change to " + version.id()));
         changes.setEmptyValue("no change");
         return changes.toString();
