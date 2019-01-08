@@ -256,15 +256,17 @@ public class DeploymentTrigger {
             Change change;
             switch (cancellation) {
                 case ALL: change = Change.empty(); break;
+                case VERSIONS: change = Change.empty().withPin(); break;
                 case PLATFORM: change = application.get().change().withoutPlatform(); break;
                 case APPLICATION: change = application.get().change().withoutApplication(); break;
+                case PIN: change = application.get().change().withoutPin(); break;
                 default: throw new IllegalArgumentException("Unknown cancellation choice '" + cancellation + "'!");
             }
             applications().store(application.withChange(change));
         });
     }
 
-    public enum ChangesToCancel { ALL, PLATFORM, APPLICATION }
+    public enum ChangesToCancel { ALL, PLATFORM, APPLICATION, VERSIONS, PIN }
 
     // ---------- Conveniences ----------
 
