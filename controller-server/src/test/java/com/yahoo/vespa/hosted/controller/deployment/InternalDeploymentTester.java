@@ -107,7 +107,12 @@ public class InternalDeploymentTester {
                                                                                          zone.region().value(),
                                                                                          zone.environment().value()),
                                                                            "host1",
-                                                                           false)));
+                                                                           false,
+                                                                           String.format("cluster1.%s.%s.%s.%s",
+                                                                                         id.application().value(),
+                                                                                         id.tenant().value(),
+                                                                                         zone.region().value(),
+                                                                                         zone.environment().value()))));
     }
 
     /**

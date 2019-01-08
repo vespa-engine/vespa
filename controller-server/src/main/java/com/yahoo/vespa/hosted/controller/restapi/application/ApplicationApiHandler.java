@@ -53,6 +53,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -590,31 +591,26 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse setGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region, boolean inService, HttpRequest request) {
-
-        // Check if request is authorized
-        Optional<Tenant> existingTenant = controller.tenants().tenant(tenantName);
-        if (!existingTenant.isPresent())
-            return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
-
-
-        // Decode payload (reason) and construct parameter to the configserver
+        Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
+        ZoneId zone = ZoneId.from(environment, region);
+        Deployment deployment = application.deployments().get(zone);
+        if (deployment == null) {
+            throw new NotExistsException(application + " has no deployment in " + zone);
+        }
 
         Inspector requestData = toSlime(request.getData()).get();
         String reason = mandatory("reason", requestData).asString();
         String agent = getUserPrincipal(request).getIdentity().getFullName();
         long timestamp = controller.clock().instant().getEpochSecond();
         EndpointStatus.Status status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
-        EndpointStatus endPointStatus = new EndpointStatus(status, reason, agent, timestamp);
-
-        // DeploymentId identifies the zone and application we are dealing with
-        DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                     ZoneId.from(environment, region));
-        try {
-            List<String> rotations = controller.applications().setGlobalRotationStatus(deploymentId, endPointStatus);
-            return new MessageResponse(String.format("Rotations %s successfully set to %s service", rotations.toString(), inService ? "in" : "out of"));
-        } catch (IOException e) {
-            return ErrorResponse.internalServerError("Unable to alter rotation status: " + e.getMessage());
-        }
+        EndpointStatus endpointStatus = new EndpointStatus(status, reason, agent, timestamp);
+        controller.applications().setGlobalRotationStatus(new DeploymentId(application.id(), deployment.zone()),
+                                                          endpointStatus);
+        return new MessageResponse(String.format("Successfully set %s in %s.%s %s service",
+                                                 application.id().toShortString(),
+                                                 deployment.zone().environment().value(),
+                                                 deployment.zone().region().value(),
+                                                 inService ? "in" : "out of"));
     }
 
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
@@ -623,20 +619,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                      ZoneId.from(environment, region));
 
         Slime slime = new Slime();
-        Cursor c1 = slime.setObject().setArray("globalrotationoverride");
-        try {
-            Map<String, EndpointStatus> rotations = controller.applications().getGlobalRotationStatus(deploymentId);
-            for (String rotation : rotations.keySet()) {
-                EndpointStatus currentStatus = rotations.get(rotation);
-                c1.addString(rotation);
-                Cursor c2 = c1.addObject();
-                c2.setString("status", currentStatus.getStatus().name());
-                c2.setString("reason", currentStatus.getReason() == null ? "" : currentStatus.getReason());
-                c2.setString("agent", currentStatus.getAgent()  == null ? "" : currentStatus.getAgent());
-                c2.setLong("timestamp", currentStatus.getEpoch());
-            }
-        } catch (IOException e) {
-            return ErrorResponse.internalServerError("Unable to get rotation status: " + e.getMessage());
+        Cursor array = slime.setObject().setArray("globalrotationoverride");
+        Map<RoutingEndpoint, EndpointStatus> status = controller.applications().globalRotationStatus(deploymentId);
+        for (RoutingEndpoint endpoint : status.keySet()) {
+            EndpointStatus currentStatus = status.get(endpoint);
+            array.addString(endpoint.upstreamName());
+            Cursor statusObject = array.addObject();
+            statusObject.setString("status", currentStatus.getStatus().name());
+            statusObject.setString("reason", currentStatus.getReason() == null ? "" : currentStatus.getReason());
+            statusObject.setString("agent", currentStatus.getAgent() == null ? "" : currentStatus.getAgent());
+            statusObject.setLong("timestamp", currentStatus.getEpoch());
         }
 
         return new SlimeJsonResponse(slime);

@@ -556,6 +556,25 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .submit();
         setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "us-west-1"));
 
+        // Invalid application fails
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/environment/prod/region/us-west-1/instance/default/global-rotation", GET)
+                                      .userIdentity(USER_ID),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"tenant2.application2 not found\"}",
+                              400);
+
+        // Invalid deployment fails
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default/global-rotation", GET)
+                                      .userIdentity(USER_ID),
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1' has no deployment in zone prod.us-east-3 in default\"}",
+                              404);
+
+        // Change status of non-existing deployment fails
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default/global-rotation/override", PUT)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"reason\":\"unit-test\"}"),
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1' has no deployment in zone prod.us-east-3 in default\"}",
+                              404);
+
         // GET global rotation status
         setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "us-west-1"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/global-rotation", GET)
@@ -570,13 +589,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // SET global rotation override status
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/global-rotation/override", PUT)
                                       .userIdentity(USER_ID)
-                                      .data("{\"reason\":\"because i can\"}"),
+                                      .data("{\"reason\":\"unit-test\"}"),
                               new File("global-rotation-put.json"));
 
         // DELETE global rotation override status
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/global-rotation/override", DELETE)
                                       .userIdentity(USER_ID)
-                                      .data("{\"reason\":\"because i can\"}"),
+                                      .data("{\"reason\":\"unit-test\"}"),
                               new File("global-rotation-delete.json"));
     }
 

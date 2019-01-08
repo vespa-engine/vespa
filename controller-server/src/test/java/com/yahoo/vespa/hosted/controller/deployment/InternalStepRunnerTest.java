@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import org.junit.Before;
@@ -32,7 +31,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.debug;
@@ -236,7 +234,7 @@ public class InternalStepRunnerTest {
         RunId id = tester.startSystemTestTests();
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.endTests));
-        assertEquals(URI.create(tester.routing().endpoints(new DeploymentId(testerId.id(), JobType.systemTest.zone(tester.tester().controller().system()))).get(0).getEndpoint()),
+        assertEquals(URI.create(tester.routing().endpoints(new DeploymentId(testerId.id(), JobType.systemTest.zone(tester.tester().controller().system()))).get(0).endpoint()),
                      tester.cloud().testerUrl());
         Inspector configObject = SlimeUtils.jsonToSlime(tester.cloud().config()).get();
         assertEquals(appId.serializedForm(), configObject.field("application").asString());
@@ -245,7 +243,7 @@ public class InternalStepRunnerTest {
         assertEquals(1, configObject.field("endpoints").children());
         assertEquals(1, configObject.field("endpoints").field(JobType.systemTest.zone(tester.tester().controller().system()).value()).entries());
         configObject.field("endpoints").field(JobType.systemTest.zone(tester.tester().controller().system()).value()).traverse((ArrayTraverser) (__, endpoint) ->
-                assertEquals(tester.routing().endpoints(new DeploymentId(appId, JobType.systemTest.zone(tester.tester().controller().system()))).get(0).getEndpoint(), endpoint.asString()));
+                assertEquals(tester.routing().endpoints(new DeploymentId(appId, JobType.systemTest.zone(tester.tester().controller().system()))).get(0).endpoint(), endpoint.asString()));
 
         long lastId = tester.jobs().details(id).get().lastId().getAsLong();
         tester.cloud().add(new LogEntry(0, 123, info, "Ready!"));

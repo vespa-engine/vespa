@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstance
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
@@ -40,7 +41,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -60,16 +60,14 @@ import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -180,83 +178,35 @@ public class ApplicationController {
                       .orElse(controller.systemVersion());
     }
 
-    /**
-     * Set the rotations marked as 'global' either 'in' or 'out of' service.
-     *
-     * @return The canonical endpoint altered if any
-     * @throws IOException if rotation status cannot be updated
-     */
-    public List<String> setGlobalRotationStatus(DeploymentId deploymentId, EndpointStatus status) throws IOException {
-        List<String> rotations = new ArrayList<>();
-        Optional<String> endpoint = getCanonicalGlobalEndpoint(deploymentId);
-
-        if (endpoint.isPresent()) {
-            configServer.setGlobalRotationStatus(deploymentId, endpoint.get(), status);
-            rotations.add(endpoint.get());
-        }
-
-        return rotations;
-    }
-
-    /**
-     * Get the endpoint status for the global endpoint of this application
-     *
-     * @return Map between the endpoint and the rotation status
-     * @throws IOException if global rotation status cannot be determined
-     */
-    public Map<String, EndpointStatus> getGlobalRotationStatus(DeploymentId deploymentId) throws IOException {
-        Map<String, EndpointStatus> result = new HashMap<>();
-        Optional<String> endpoint = getCanonicalGlobalEndpoint(deploymentId);
-
-        if (endpoint.isPresent()) {
-            EndpointStatus status = configServer.getGlobalRotationStatus(deploymentId, endpoint.get());
-            result.put(endpoint.get(), status);
-        }
-
-        return result;
-    }
-
-    /**
-     * Global rotations (plural as we can have aliases) map to exactly one service endpoint.
-     * This method finds that one service endpoint and strips the URI part that
-     * the routingGenerator is wrapping around the endpoint.
-     *
-     * @param deploymentId The deployment to retrieve global service endpoint for
-     * @return Empty if no global endpoint exist, otherwise the service endpoint ([clustername.]app.tenant.region.env)
-     */
-    Optional<String> getCanonicalGlobalEndpoint(DeploymentId deploymentId) throws IOException {
-        Map<String, RoutingEndpoint> hostToGlobalEndpoint = new HashMap<>();
-        Map<String, String> hostToCanonicalEndpoint = new HashMap<>();
-
-        for (RoutingEndpoint endpoint : routingGenerator.endpoints(deploymentId)) {
+    /** Change the global endpoint status for given deployment */
+    public void setGlobalRotationStatus(DeploymentId deployment, EndpointStatus status) {
+        findGlobalEndpoint(deployment).map(endpoint -> {
             try {
-                URI uri = new URI(endpoint.getEndpoint());
-                String serviceEndpoint = uri.getHost();
-                if (serviceEndpoint == null) {
-                    throw new IOException("Unexpected endpoints returned from the Routing Generator");
-                }
-                String canonicalEndpoint = serviceEndpoint
-                        .replaceAll(".vespa.yahooapis.com", "")
-                        .replaceAll(".vespa.oath.cloud", "");
-                String hostname = endpoint.getHostname();
-
-                // Book-keeping
-                if (endpoint.isGlobal()) {
-                    hostToGlobalEndpoint.put(hostname, endpoint);
-                } else {
-                    hostToCanonicalEndpoint.put(hostname, canonicalEndpoint);
-                }
-
-                // Return as soon as we have a map between a global and a canonical endpoint
-                if (hostToGlobalEndpoint.containsKey(hostname) && hostToCanonicalEndpoint.containsKey(hostname)) {
-                    return Optional.of(hostToCanonicalEndpoint.get(hostname));
-                }
-            } catch (URISyntaxException use) {
-                throw new IOException(use);
+                configServer.setGlobalRotationStatus(deployment, endpoint.upstreamName(), status);
+                return endpoint;
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to set rotation status of " + deployment, e);
             }
-        }
+        }).orElseThrow(() -> new IllegalArgumentException("No global endpoint exists for " + deployment));
+    }
 
-        return Optional.empty();
+    /** Get global endpoint status for given deployment */
+    public Map<RoutingEndpoint, EndpointStatus> globalRotationStatus(DeploymentId deployment) {
+        return findGlobalEndpoint(deployment).map(endpoint -> {
+            try {
+                EndpointStatus status = configServer.getGlobalRotationStatus(deployment, endpoint.upstreamName());
+                return Collections.singletonMap(endpoint, status);
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to get rotation status of " + deployment, e);
+            }
+        }).orElseGet(Collections::emptyMap);
+    }
+
+    /** Find the global endpoint of given deployment, if any */
+    public Optional<RoutingEndpoint> findGlobalEndpoint(DeploymentId deployment) {
+        return routingGenerator.endpoints(deployment).stream()
+                               .filter(RoutingEndpoint::isGlobal)
+                               .findFirst();
     }
 
     /**
@@ -553,7 +503,7 @@ public class ApplicationController {
 
         try {
             return Optional.of(ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
-                                                                    .map(RoutingEndpoint::getEndpoint)
+                                                                    .map(RoutingEndpoint::endpoint)
                                                                     .map(URI::create)
                                                                     .iterator()));
         }

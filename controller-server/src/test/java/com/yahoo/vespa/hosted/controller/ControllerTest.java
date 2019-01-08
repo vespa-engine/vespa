@@ -15,15 +15,16 @@ import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -31,16 +32,17 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.time.Duration;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -218,29 +220,51 @@ public class ControllerTest {
     }
 
     @Test
-    public void testGlobalRotations() throws IOException {
-        // Setup tester and app def
+    public void testGlobalRotations() {
+        // Setup
         ControllerTester tester = new ControllerTester();
         ZoneId zone = ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName());
-        ApplicationId appId = ApplicationId.from("tenant", "app1", "default");
-        DeploymentId deployId = new DeploymentId(appId, zone);
+        ApplicationId app = ApplicationId.from("tenant", "app1", "default");
+        DeploymentId deployment = new DeploymentId(app, zone);
+        tester.routingGenerator().putEndpoints(deployment, Arrays.asList(
+                new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream2"),
+                new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
+                new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream3"),
+                new RoutingEndpoint("http://global-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1"),
+                new RoutingEndpoint("http://alias-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1")
+        ));
+
+        Supplier<Map<RoutingEndpoint, EndpointStatus>> rotationStatus = () -> tester.controller().applications().globalRotationStatus(deployment);
+        Function<String, Optional<EndpointStatus>> findStatusByUpstream = (upstreamName) -> {
+            return rotationStatus.get()
+                                 .entrySet().stream()
+                                 .filter(kv -> kv.getKey().upstreamName().equals(upstreamName))
+                                 .findFirst()
+                                 .map(Map.Entry::getValue);
+        };
 
         // Check initial rotation status
-        Map<String, EndpointStatus> rotationStatus = tester.controller().applications().getGlobalRotationStatus(deployId);
-        assertEquals(1, rotationStatus.size());
-
-        assertEquals(rotationStatus.get("qrs-endpoint").getStatus(), EndpointStatus.Status.in);
+        assertEquals(1, rotationStatus.get().size());
+        assertEquals(findStatusByUpstream.apply("upstream1").get().getStatus(), EndpointStatus.Status.in);
 
         // Set the global rotations out of service
         EndpointStatus status = new EndpointStatus(EndpointStatus.Status.out, "unit-test", "Test", tester.clock().instant().getEpochSecond());
-        List<String> overrides = tester.controller().applications().setGlobalRotationStatus(deployId, status);
-        assertEquals(1, overrides.size());
+        tester.controller().applications().setGlobalRotationStatus(deployment, status);
+        assertEquals(1, rotationStatus.get().size());
+        assertEquals(findStatusByUpstream.apply("upstream1").get().getStatus(), EndpointStatus.Status.out);
+        assertEquals("unit-test", findStatusByUpstream.apply("upstream1").get().getReason());
 
-        // Recheck the override rotation status
-        rotationStatus = tester.controller().applications().getGlobalRotationStatus(deployId);
-        assertEquals(1, rotationStatus.size());
-        assertEquals(rotationStatus.get("qrs-endpoint").getStatus(), EndpointStatus.Status.out);
-        assertEquals("unit-test", rotationStatus.get("qrs-endpoint").getReason());
+        // Deployment without a global endpoint
+        tester.routingGenerator().putEndpoints(deployment, Arrays.asList(
+                new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream2"),
+                new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
+                new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream3")
+        ));
+        assertFalse("No global endpoint exists", findStatusByUpstream.apply("upstream1").isPresent());
+        try {
+            tester.controller().applications().setGlobalRotationStatus(deployment, status);
+            fail("Expected exception");
+        } catch (IllegalArgumentException ignored) {}
     }
 
     @Test

@@ -19,27 +19,28 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RoutingGeneratorMock implements RoutingGenerator {
 
-    private final Map<DeploymentId, List<RoutingEndpoint>> allEndpoints = new ConcurrentHashMap<>();
+    private final Map<DeploymentId, List<RoutingEndpoint>> routingTable = new ConcurrentHashMap<>();
+
     private static final List<RoutingEndpoint> defaultEndpoints =
-            Arrays.asList(new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false),
-                          new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false),
-                          new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false),
-                          new RoutingEndpoint("http://global-endpoint.vespa.yahooapis.com:4080", "host1", true),
-                          new RoutingEndpoint("http://alias-endpoint.vespa.yahooapis.com:4080", "host1", true));
+            Arrays.asList(new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream3"),
+                          new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
+                          new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream2"),
+                          new RoutingEndpoint("http://global-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1"),
+                          new RoutingEndpoint("http://alias-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1"));
 
     @Override
     public List<RoutingEndpoint> endpoints(DeploymentId deployment) {
-        return allEndpoints.isEmpty()
+        return routingTable.isEmpty()
                 ? defaultEndpoints
-                : allEndpoints.getOrDefault(deployment, Collections.emptyList());
+                : routingTable.getOrDefault(deployment, Collections.emptyList());
     }
 
     public void putEndpoints(DeploymentId deployment, List<RoutingEndpoint> endpoints) {
-        allEndpoints.put(deployment, endpoints);
+        routingTable.put(deployment, endpoints);
     }
 
     public void removeEndpoints(DeploymentId deployment) {
-        allEndpoints.remove(deployment);
+        routingTable.remove(deployment);
     }
 
 }

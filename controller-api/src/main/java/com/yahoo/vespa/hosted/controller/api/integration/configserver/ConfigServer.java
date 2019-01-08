@@ -51,6 +51,7 @@ public interface ConfigServer {
      * @param status The new status with metadata
      * @throws IOException If trouble contacting the server
      */
+    // TODO: Remove checked exception from signature
     void setGlobalRotationStatus(DeploymentId deployment, String endpoint, EndpointStatus status) throws IOException;
 
     /**
@@ -61,6 +62,7 @@ public interface ConfigServer {
      * @return The endpoint status with metadata
      * @throws IOException If trouble contacting the server
      */
+    // TODO: Remove checked exception from signature
     EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint) throws IOException;
 
     /** The node repository on this config server */
