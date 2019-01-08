@@ -24,9 +24,11 @@ import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.net.URI;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -321,11 +323,13 @@ public class JobController {
     /** Returns a URI which points at a badge showing historic status of given length for the given job type for the given application. */
     public URI historicBadge(ApplicationId id, JobType type, int historyLength) {
         List<Run> runs = new ArrayList<>(runs(id, type).values());
-        Optional<Run> lastCompleted = runs.isEmpty() ? Optional.empty()
-                                    : runs.size() == 1 || runs.get(runs.size() - 1).hasEnded() ? Optional.of(runs.get(runs.size() - 1))
-                                    : Optional.of(runs.get(runs.size() - 2));
+        Run lastCompleted = null;
+        if (runs.size() == 1)
+            lastCompleted = runs.get(0);
+        if (runs.size() > 1 && ! lastCompleted.hasEnded())
+            lastCompleted = runs.get(runs.size() - 2);
 
-        return badges.historic(id, lastCompleted, runs.subList(Math.max(0, runs.size() - historyLength), runs.size()));
+        return badges.historic(id, Optional.ofNullable(lastCompleted), runs.subList(Math.max(0, runs.size() - historyLength), runs.size()));
     }
 
     /** Returns a URI which points at a badge showing current status for all jobs for the given application. */
