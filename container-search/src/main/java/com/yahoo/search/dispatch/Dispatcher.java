@@ -36,7 +36,7 @@ import java.util.Set;
  * @author ollvir
  */
 public class Dispatcher extends AbstractComponent {
-    private static final boolean INTERNAL_BY_DEFAULT = false;
+    private static final boolean INTERNAL_BY_DEFAULT = true;
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
 
     /** If enabled, this internal dispatcher will be preferred over fdispatch whenever possible */
