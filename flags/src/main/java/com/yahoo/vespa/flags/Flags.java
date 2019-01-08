@@ -56,7 +56,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundBooleanFlag CONFIGHOST_USES_REAL_ORCHESTRATOR = defineFeatureFlag(
-            "confighost-uses-real-orchestrator", false,
+            "confighost-uses-real-orchestrator", true,
             "Whether the config server hosts uses the real Orchestrator when suspending/resuming, or a synthetic.",
             "Takes effect immediately when changed.",
             HOSTNAME);
