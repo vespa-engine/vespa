@@ -78,7 +78,6 @@ public class FileDirectory  {
     }
 
     private Long computeHash(File file) throws IOException {
-        if (1==1) return 1L;
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         if (file.isDirectory()) {
             return Files.walk(file.toPath(), 100).map(path -> {
