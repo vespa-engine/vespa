@@ -1,13 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.testutils;
+package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
-import com.yahoo.vespa.hosted.provision.lb.Real;
 
 import java.util.Collections;
 import java.util.HashMap;
