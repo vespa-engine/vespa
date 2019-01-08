@@ -456,9 +456,17 @@ public class DeploymentTrigger {
      * is already deployed in its zone, i.e., no parts of the change are upgrades, and the full current
      * change for the application downgrades the deployment, which is an acknowledgement that the deployed
      * version is broken somehow, such that the job may be locked in failure until a new version is released.
+     *
+     * Additionally, if the application is pinned to a Vespa version, and the given change has a (this) platform,
+     * the deployment for the job must be on the pinned version.
      */
     public boolean isComplete(Change change, Application application, JobType jobType) {
         Optional<Deployment> existingDeployment = deploymentFor(application, jobType);
+        if (     change.isPinning()
+            &&   change.platform().isPresent()
+            && ! existingDeployment.map(Deployment::version).equals(change.platform()))
+            return false;
+
         return       application.deploymentJobs().statusOf(jobType).flatMap(JobStatus::lastSuccess)
                                 .map(job ->    change.platform().map(job.platform()::equals).orElse(true)
                                             && change.application().map(job.application()::equals).orElse(true))

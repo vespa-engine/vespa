@@ -127,6 +127,9 @@ public class Versions {
 
     private static Version targetPlatform(Application application, Change change, Optional<Deployment> deployment,
                                           Version defaultVersion) {
+        if (change.isPinning() && change.platform().isPresent())
+            return change.platform().get();
+
         return max(change.platform(), deployment.map(Deployment::version))
                 .orElse(application.oldestDeployedPlatform()
                                    .orElse(defaultVersion));
