@@ -1,1 +1,1 @@
-{"message":"Changed deployment from 'application change to 1.0.42-commit1' to 'no change' for application 'tenant1.application1'"}
+{"message":"Changed deployment from 'pin to 6.1' to 'upgrade to 6.1' for application 'tenant1.application1'"}
