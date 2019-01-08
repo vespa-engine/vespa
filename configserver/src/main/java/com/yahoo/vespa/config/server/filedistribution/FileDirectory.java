@@ -23,6 +23,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.logging.Logger;
 
 public class FileDirectory  {
+
     private static final Logger log = Logger.getLogger(FileDirectory.class.getName());
     private final File root;
 
@@ -77,6 +78,7 @@ public class FileDirectory  {
     }
 
     private Long computeHash(File file) throws IOException {
+        if (1==1) return 1L;
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         if (file.isDirectory()) {
             return Files.walk(file.toPath(), 100).map(path -> {

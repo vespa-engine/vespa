@@ -80,7 +80,7 @@ public class QueryProfileIntegrationTestCase {
         System.setProperty("config.id", configId);
         Container container = new Container();
         HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper(container, configId);
-        SearchHandler searchHandler = (SearchHandler) configurer.getRequestHandlerRegistry().getComponent(SearchHandler.class.getName());
+        SearchHandler searchHandler = (SearchHandler)configurer.getRequestHandlerRegistry().getComponent(SearchHandler.class.getName());
 
         // Should get "default" query profile containing the "test" search chain containing the "test" searcher
         HttpRequest request = HttpRequest.createTestRequest("search", Method.GET);

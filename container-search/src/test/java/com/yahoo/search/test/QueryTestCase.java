@@ -301,10 +301,10 @@ public class QueryTestCase {
 
     @Test
     public void testTimeoutInRequestOverridesQueryProfile() {
-        QueryProfile profile = new QueryProfile("test");
-        profile.set("timeout", 318, (QueryProfileRegistry)null);
-        Query q = new Query(QueryTestCase.httpEncode("/search?timeout=500"), profile.compile(null));
-        assertEquals(500000L, q.getTimeout());
+        QueryProfile profile = new QueryProfile("myProfile");
+        profile.set("myField", "Profile: %{queryProfile}", null);
+        Query q = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
+        assertEquals("Profile: myProfile", q.properties().get("myField"));
     }
 
     @Test
@@ -329,6 +329,20 @@ public class QueryTestCase {
         Query q = new Query("/?query=beyonc%C3%A9");
         q.getModel().getQueryTree().toString();
         assertEquals("beyonc\u00e9", q.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    public void testQueryProfileInSubstitution() {
+        QueryProfile testProfile = new QueryProfile("test");
+        testProfile.setOverridable("u", false, null);
+        testProfile.set("d","e", null);
+        testProfile.set("u","11", null);
+        testProfile.set("foo.bar", "wiz", null);
+        Query q = new Query(QueryTestCase.httpEncode("?query=a:>5&a=b&traceLevel=5&sources=a,b&u=12&foo.bar2=wiz2&c.d=foo&queryProfile=test"),testProfile.compile(null));
+        String trace = q.getContext(false).getTrace().toString();
+        String[] traceLines = trace.split("\n");
+        for (String line : traceLines)
+            System.out.println(line);
     }
 
     @Test
@@ -385,18 +399,15 @@ public class QueryTestCase {
     }
 
     public class TestClass {
+
         private int testInt = 0;
-        public int getTestInt() {
-            return testInt;
-        }
 
-        public void setTestInt(int testInt) {
-            this.testInt = testInt;
-        }
+        public int getTestInt() { return testInt; }
 
-        public void setTestInt(String testInt) {
-            this.testInt = Integer.parseInt(testInt);
-        }
+        public void setTestInt(int testInt) { this.testInt = testInt; }
+
+        public void setTestInt(String testInt) { this.testInt = Integer.parseInt(testInt); }
+
     }
 
     @Test
@@ -431,7 +442,6 @@ public class QueryTestCase {
         Set<String> traces = new HashSet<>();
         for (String trace : q.getContext(true).getTrace().traceNode().descendants(String.class))
             traces.add(trace);
-        // for (String s : traces) System.out.println(s);
         assertTrue(traces.contains("trace1: [select * from sources * where default contains \"foo\";]"));
         assertTrue(traces.contains("trace2"));
         assertTrue(traces.contains("trace3-1, trace3-2: [select * from sources * where default contains \"foo\";]"));
@@ -444,9 +454,8 @@ public class QueryTestCase {
         assertEquals(2, q.getTraceLevel());
         q.trace(false,2, "trace2 ", null);
         Set<String> traces = new HashSet<>();
-        for (String trace : q.getContext(true).getTrace().traceNode().descendants(String.class)) {
+        for (String trace : q.getContext(true).getTrace().traceNode().descendants(String.class))
             traces.add(trace);
-        }
         assertTrue(traces.contains("trace2 null"));
     }
 
@@ -460,8 +469,6 @@ public class QueryTestCase {
         Query q = new Query(QueryTestCase.httpEncode("?query=a:>5&a=b&traceLevel=5&sources=a,b&u=12&foo.bar2=wiz2&c.d=foo&queryProfile=test"),testProfile.compile(null));
         String trace = q.getContext(false).getTrace().toString();
         String[] traceLines = trace.split("\n");
-        for (String line : traceLines)
-            System.out.println(line);
         assertTrue(contains("query=a:>5 (value from request)", traceLines));
         assertTrue(contains("traceLevel=5 (value from request)", traceLines));
         assertTrue(contains("a=b (value from request)", traceLines));
