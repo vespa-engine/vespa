@@ -77,6 +77,7 @@ public class Transport {
     private Scheduler         scheduler;
     private int               state;
     private Selector          selector;
+    private final TransportMetrics metrics = new TransportMetrics();
 
     private void handleAddConnection(Connection conn) {
         if (conn.isClosed()) {
@@ -196,7 +197,7 @@ public class Transport {
      * @param isServer flag indicating which end of the connection we are
      **/
     CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer) {
-        return cryptoEngine.createCryptoSocket(channel, isServer);
+        return cryptoEngine.createCryptoSocket(metrics, channel, isServer);
     }
 
     /**
@@ -408,5 +409,9 @@ public class Transport {
                 return;
             } catch (InterruptedException e) {}
         }
+    }
+
+    public TransportMetrics metrics() {
+        return metrics;
     }
 }

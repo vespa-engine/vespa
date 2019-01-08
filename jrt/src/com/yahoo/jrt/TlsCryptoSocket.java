@@ -1,9 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import com.yahoo.security.tls.authz.AuthorizationResult;
+import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager;
+
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -11,7 +15,8 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Logger;
 
-import static javax.net.ssl.SSLEngineResult.*;
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import static javax.net.ssl.SSLEngineResult.Status;
 
 /**
  * A {@link CryptoSocket} using TLS ({@link SSLEngine})
@@ -26,6 +31,7 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     private enum HandshakeState { NOT_STARTED, NEED_READ, NEED_WRITE, COMPLETED }
 
+    private final TransportMetrics metrics;
     private final SocketChannel channel;
     private final SSLEngine sslEngine;
     private final Buffer wrapBuffer;
@@ -34,8 +40,10 @@ public class TlsCryptoSocket implements CryptoSocket {
     private int sessionApplicationBufferSize;
     private ByteBuffer handshakeDummyBuffer;
     private HandshakeState handshakeState;
+    private AuthorizationResult authorizationResult;
 
-    public TlsCryptoSocket(SocketChannel channel, SSLEngine sslEngine) {
+    public TlsCryptoSocket(TransportMetrics metrics, SocketChannel channel, SSLEngine sslEngine) {
+        this.metrics = metrics;
         this.channel = channel;
         this.sslEngine = sslEngine;
         SSLSession nullSession = sslEngine.getSession();
@@ -66,48 +74,69 @@ public class TlsCryptoSocket implements CryptoSocket {
     }
 
     private HandshakeState processHandshakeState(HandshakeState state) throws IOException {
-        switch (state) {
-            case NOT_STARTED:
-                log.fine(() -> "Initiating handshake");
-                sslEngine.beginHandshake();
-                break;
-            case NEED_WRITE:
-                channelWrite();
-                break;
-            case NEED_READ:
-                channelRead();
-                break;
-            case COMPLETED:
-                return HandshakeState.COMPLETED;
-            default:
-                throw unhandledStateException(state);
-        }
-
-        while (true) {
-            log.fine(() -> "SSLEngine.getHandshakeStatus(): " + sslEngine.getHandshakeStatus());
-            switch (sslEngine.getHandshakeStatus()) {
-                case NOT_HANDSHAKING:
-                    if (wrapBuffer.bytes() > 0) return HandshakeState.NEED_WRITE;
-                    sslEngine.setEnableSessionCreation(false); // disable renegotiation
-                    handshakeDummyBuffer = null;
-                    SSLSession session = sslEngine.getSession();
-                    sessionApplicationBufferSize = session.getApplicationBufferSize();
-                    sessionPacketBufferSize = session.getPacketBufferSize();
-                    log.fine(() -> String.format("Handshake complete: protocol=%s, cipherSuite=%s", session.getProtocol(), session.getCipherSuite()));
+        try {
+            switch (state) {
+                case NOT_STARTED:
+                    log.fine(() -> "Initiating handshake");
+                    sslEngine.beginHandshake();
+                    break;
+                case NEED_WRITE:
+                    channelWrite();
+                    break;
+                case NEED_READ:
+                    channelRead();
+                    break;
+                case COMPLETED:
                     return HandshakeState.COMPLETED;
-                case NEED_TASK:
-                    sslEngine.getDelegatedTask().run();
-                    break;
-                case NEED_UNWRAP:
-                    if (wrapBuffer.bytes() > 0) return HandshakeState.NEED_WRITE;
-                    if (!handshakeUnwrap()) return HandshakeState.NEED_READ;
-                    break;
-                case NEED_WRAP:
-                    if (!handshakeWrap()) return HandshakeState.NEED_WRITE;
-                    break;
                 default:
-                    throw new IllegalStateException("Unexpected handshake status: " + sslEngine.getHandshakeStatus());
+                    throw unhandledStateException(state);
             }
+            while (true) {
+                log.fine(() -> "SSLEngine.getHandshakeStatus(): " + sslEngine.getHandshakeStatus());
+                switch (sslEngine.getHandshakeStatus()) {
+                    case NOT_HANDSHAKING:
+                        if (wrapBuffer.bytes() > 0) return HandshakeState.NEED_WRITE;
+                        sslEngine.setEnableSessionCreation(false); // disable renegotiation
+                        handshakeDummyBuffer = null;
+                        SSLSession session = sslEngine.getSession();
+                        sessionApplicationBufferSize = session.getApplicationBufferSize();
+                        sessionPacketBufferSize = session.getPacketBufferSize();
+                        log.fine(() -> String.format("Handshake complete: protocol=%s, cipherSuite=%s", session.getProtocol(), session.getCipherSuite()));
+                        if (sslEngine.getUseClientMode()) {
+                            metrics.incrementClientTlsConnectionsEstablished();
+                        } else {
+                            metrics.incrementServerTlsConnectionsEstablished();
+                        }
+                        return HandshakeState.COMPLETED;
+                    case NEED_TASK:
+                        sslEngine.getDelegatedTask().run();
+                        if (authorizationResult != null) {
+                            PeerAuthorizerTrustManager.getAuthorizationResult(sslEngine) // only available during handshake
+                                    .ifPresent(result ->  {
+                                        if (!result.succeeded()) {
+                                            metrics.incrementPeerAuthorizationFailures();
+                                        }
+                                        authorizationResult = result;
+                                    });
+                        }
+                        break;
+                    case NEED_UNWRAP:
+                        if (wrapBuffer.bytes() > 0) return HandshakeState.NEED_WRITE;
+                        if (!handshakeUnwrap()) return HandshakeState.NEED_READ;
+                        break;
+                    case NEED_WRAP:
+                        if (!handshakeWrap()) return HandshakeState.NEED_WRITE;
+                        break;
+                    default:
+                        throw new IllegalStateException("Unexpected handshake status: " + sslEngine.getHandshakeStatus());
+                }
+            }
+        } catch (SSLHandshakeException e) {
+            // sslEngine.getDelegatedTask().run() and handshakeWrap() may throw SSLHandshakeException, potentially handshakeUnwrap() and sslEngine.beginHandshake() as well.
+            if (authorizationResult == null || authorizationResult.succeeded()) { // don't include handshake failures due from PeerAuthorizerTrustManager
+                metrics.incrementTlsCertificateVerificationFailures();
+            }
+            throw e;
         }
     }
 

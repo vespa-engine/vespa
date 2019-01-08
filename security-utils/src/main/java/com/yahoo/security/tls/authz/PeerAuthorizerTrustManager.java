@@ -14,6 +14,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -95,6 +96,14 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     @Override
     public X509Certificate[] getAcceptedIssuers() {
         return defaultTrustManager.getAcceptedIssuers();
+    }
+
+    /**
+     * Note: The authorization result is only available during handshake. The underlying handshake session is removed once handshake is complete.
+     */
+    public static Optional<AuthorizationResult> getAuthorizationResult(SSLEngine sslEngine) {
+        return Optional.ofNullable(sslEngine.getHandshakeSession())
+                .flatMap(session -> Optional.ofNullable((AuthorizationResult) session.getValue(HANDSHAKE_SESSION_AUTHZ_RESULT_PROPERTY)));
     }
 
     private void authorizePeer(X509Certificate certificate, String authType, boolean isVerifyingClient, SSLEngine sslEngine) throws CertificateException {
