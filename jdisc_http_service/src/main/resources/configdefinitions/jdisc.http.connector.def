@@ -41,6 +41,21 @@ tcpKeepAliveEnabled                 bool     default=false
 # Enable/disable TCP_NODELAY (disable/enable Nagle's algorithm).
 tcpNoDelay                          bool     default=true
 
+# Whether to enable connection throttling. New connections will be dropped when a threshold is exceeded.
+throttling.enabled                  bool     default=false
+
+# Max number of connections.
+throttling.maxConnections           int      default=-1
+
+# Max memory utilization as a value between 0 and 1.
+throttling.maxHeapUtilization       double   default=-1.0
+
+# Max connection accept rate per second.
+throttling.maxAcceptRate            int      default=-1
+
+# Idle timeout in seconds applied to endpoints when a threshold is exceeded.
+throttling.idleTimeout              double   default=-1.0
+
 # Whether to enable SSL for this connector.
 ssl.enabled                         bool     default=false
 
