@@ -512,25 +512,31 @@ Test::testEndGuard(bool invert)
 
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
-    Verifier(size_t numBv);
+    Verifier(size_t numBv, bool is_and);
     ~Verifier();
 
     SearchIterator::UP create(bool strict) const override;
 
 private:
+    bool _is_and;
     mutable TermFieldMatchData _tfmd;
     std::vector<BitVector::UP> _bvs;
 };
 
-Verifier::Verifier(size_t numBv)
-    : _bvs()
+Verifier::Verifier(size_t numBv, bool is_and)
+    : _is_and(is_and),
+      _bvs()
 {
     for (size_t i(0); i < numBv; i++) {
         _bvs.push_back(BitVector::create(getDocIdLimit()));
     }
-    for (auto & bv : _bvs) {
-        for (uint32_t docId: getExpectedDocIds()) {
-            bv->setBit(docId);
+    for (uint32_t docId: getExpectedDocIds()) {
+        if (_is_and) {
+            for (auto & bv : _bvs) {
+                bv->setBit(docId);
+            }
+        } else {
+            _bvs[docId%_bvs.size()]->setBit(docId);
         }
     }
 }
@@ -542,14 +548,16 @@ Verifier::create(bool strict) const {
     for (const auto & bv : _bvs) {
         bvs.push_back(BitVectorIterator::create(bv.get(), getDocIdLimit(), _tfmd, strict, false).release());
     }
-    SearchIterator::UP iter(AndSearch::create(bvs, strict));
+    SearchIterator::UP iter(_is_and ? AndSearch::create(bvs, strict) : OrSearch::create(bvs, strict));
     return MultiBitVectorIteratorBase::optimize(std::move(iter));
 }
 
 void Test::testIteratorConformance() {
-    for (size_t i(1); i < 6; i++) {
-        Verifier searchIteratorVerifier(i);
-        searchIteratorVerifier.verify();
+    for (bool is_and : {false, true}) {
+        for (size_t i(1); i < 6; i++) {
+            Verifier searchIteratorVerifier(i, is_and);
+            searchIteratorVerifier.verify();
+        }
     }
 }
 
