@@ -4,6 +4,7 @@
 #include "iprotocol.h"
 #include <vespa/vespalib/util/sync.h>
 #include <map>
+#include <atomic>
 
 namespace mbus {
 
@@ -21,8 +22,8 @@ private:
     vespalib::Lock     _lock; // Only guards the cache,
                               // not the protocols as they are set up during messagebus construction.
     static constexpr size_t MAX_PROTOCOLS = 16;
-    std::pair<string, IProtocol *> _protocols[MAX_PROTOCOLS];
-    size_t                         _numProtocols;
+    std::pair<string, std::atomic<IProtocol *>> _protocols[MAX_PROTOCOLS];
+    std::atomic<size_t>                         _numProtocols;
     ProtocolMap        _activeProtocols;
     RoutingPolicyCache _routingPolicyCache;
 
@@ -36,6 +37,8 @@ public:
      * that has the same name. If this method detects a protocol replacement, it will clear its internal
      * routing policy cache. You must keep the old protocol returned until there can be no usages of the references
      * acquired from getProtocol.
+     *
+     * Must not be called concurrently by multiple threads.
      *
      * @param protocol The protocol to register.
      * @return The previous protocol registered under this name.

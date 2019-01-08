@@ -7,7 +7,7 @@ LOG_SETUP(".protocolrepository");
 namespace mbus {
 
 ProtocolRepository::ProtocolRepository() : _numProtocols(0) {}
-ProtocolRepository::~ProtocolRepository() {}
+ProtocolRepository::~ProtocolRepository() = default;
 
 void
 ProtocolRepository::clearPolicyCache()
@@ -20,22 +20,27 @@ IProtocol::SP
 ProtocolRepository::putProtocol(const IProtocol::SP & protocol)
 {
     const string &name = protocol->getName();
-    size_t protocolIndex = _numProtocols;
-    for (size_t i(0); i < _numProtocols; i++) {
+    const auto numProtocols = _numProtocols.load();
+    size_t protocolIndex = numProtocols;
+    for (size_t i(0); i < numProtocols; i++) {
         if (_protocols[i].first == name) {
             protocolIndex = i;
             break;
         }
     }
-    if (protocolIndex == _numProtocols) {
-        assert(_numProtocols < MAX_PROTOCOLS);
+    if (protocolIndex == numProtocols) {
+        assert(numProtocols < MAX_PROTOCOLS);
         _protocols[protocolIndex].first = name;
         _protocols[protocolIndex].second = nullptr;
-        _numProtocols++;
+        // nullptr may be observed after increment but before protocol pointer
+        // update; this is fine as it has the same behavior as if the protocol
+        // has not yet been added.
+        const auto beforeAdd = _numProtocols.fetch_add(1, std::memory_order_release);
+        assert(beforeAdd == numProtocols); // Sanity check for racing inserters
     } else {
         clearPolicyCache();
     }
-    _protocols[protocolIndex].second = protocol.get();
+    _protocols[protocolIndex].second.store(protocol.get(), std::memory_order_release);
     IProtocol::SP prev = _activeProtocols[name];
     _activeProtocols[name] = protocol;
     return prev;
@@ -44,9 +49,10 @@ ProtocolRepository::putProtocol(const IProtocol::SP & protocol)
 IProtocol *
 ProtocolRepository::getProtocol(const string &name)
 {
-    for (size_t i(0); i < _numProtocols; i++) {
+    const auto numProtocols = _numProtocols.load(std::memory_order_acquire);
+    for (size_t i(0); i < numProtocols; i++) {
         if (_protocols[i].first == name) {
-            return _protocols[i].second;
+            return _protocols[i].second.load(std::memory_order_acquire);
         }
     }
 
