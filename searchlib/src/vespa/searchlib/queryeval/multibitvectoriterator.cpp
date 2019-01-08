@@ -148,6 +148,13 @@ MultiBitVectorIteratorBase::MultiBitVectorIteratorBase(const Children & children
 
 MultiBitVectorIteratorBase::~MultiBitVectorIteratorBase() = default;
 
+void
+MultiBitVectorIteratorBase::initRange(uint32_t beginId, uint32_t endId)
+{
+    MultiSearch::initRange(beginId, endId);
+    _lastMaxDocIdLimit = 0;
+}
+
 SearchIterator::UP
 MultiBitVectorIteratorBase::andWith(UP filter, uint32_t estimate)
 {
