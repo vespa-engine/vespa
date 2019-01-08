@@ -10,10 +10,11 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -48,12 +49,19 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
         if (waitInitially()) return Collections.emptySet();
 
-        return nodesNeedingMaintenance().stream()
-                                        .map(node -> node.allocation().get().owner())
-                                        .filter(this::shouldBeDeployedOnThisServer)
-                                        .filter(this::canDeployNow)
-                                        .sorted(Comparator.comparing(this::getLastDeployTime))
-                                        .collect(Collectors.toCollection(LinkedHashSet::new));
+        // Collect all deployment times before sorting as deployments may happen while we build the set, breaking
+        // the comparable contract. Stale times are fine as the time is rechecked in ApplicationMaintainer#deployWithLock
+        Map<ApplicationId, Instant> deploymentTimes = nodesNeedingMaintenance().stream()
+                                                                               .map(node -> node.allocation().get().owner())
+                                                                               .distinct()
+                                                                               .filter(this::shouldBeDeployedOnThisServer)
+                                                                               .filter(this::canDeployNow)
+                                                                               .collect(Collectors.toMap(Function.identity(), this::getLastDeployTime));
+
+        return deploymentTimes.entrySet().stream()
+                              .sorted(Map.Entry.comparingByValue())
+                              .map(Map.Entry::getKey)
+                              .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     // We only know last deploy time for applications that were deployed on this config server,
