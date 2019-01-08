@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class MetricReceiverWrapper {
     // Application names used
     public static final String APPLICATION_DOCKER = "docker";
+    public static final String APPLICATION_HOST = "vespa.host";
     public static final String APPLICATION_NODE = "vespa.node";
 
     private final Object monitor = new Object();
