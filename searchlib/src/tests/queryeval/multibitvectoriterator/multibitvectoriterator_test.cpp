@@ -1,6 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("multibitvectoriterator_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -11,6 +9,10 @@ LOG_SETUP("multibitvectoriterator_test");
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("multibitvectoriterator_test");
 
 using namespace search::queryeval;
 using namespace search::fef;
@@ -29,6 +31,7 @@ public:
     void testOr();
     void testAndWith(bool invert);
     void testEndGuard(bool invert);
+    void testIteratorConformance();
     template<typename T>
     void testThatOptimizePreservesUnpack();
     template <typename T>
@@ -506,6 +509,49 @@ Test::testEndGuard(bool invert)
     EXPECT_FALSE(m.seek(_bvs[0]->size()+987));
 }
 
+class Verifier : public search::test::SearchIteratorVerifier {
+public:
+    Verifier(size_t numBv);
+    ~Verifier();
+
+    SearchIterator::UP create(bool strict) const override;
+
+private:
+    mutable TermFieldMatchData _tfmd;
+    std::vector<BitVector::UP> _bvs;
+};
+
+Verifier::Verifier(size_t numBv)
+    : _bvs()
+{
+    for (size_t i(0); i < numBv; i++) {
+        _bvs.push_back(BitVector::create(getDocIdLimit()));
+    }
+    for (auto & bv : _bvs) {
+        for (uint32_t docId: getExpectedDocIds()) {
+            bv->setBit(docId);
+        }
+    }
+}
+Verifier::~Verifier() = default;
+
+SearchIterator::UP
+Verifier::create(bool strict) const {
+    MultiSearch::Children bvs;
+    for (const auto & bv : _bvs) {
+        bvs.push_back(BitVectorIterator::create(bv.get(), getDocIdLimit(), _tfmd, strict, false).release());
+    }
+    SearchIterator::UP iter(AndSearch::create(bvs, strict));
+    return MultiBitVectorIteratorBase::optimize(std::move(iter));
+}
+
+void Test::testIteratorConformance() {
+    for (size_t i(1); i < 6; i++) {
+        Verifier searchIteratorVerifier(i);
+        searchIteratorVerifier.verify();
+    }
+}
+
 int
 Test::Main()
 {
@@ -526,6 +572,8 @@ Test::Main()
     TEST_FLUSH();
     testAndWith(false);
     testAndWith(true);
+    TEST_FLUSH();
+    testIteratorConformance();
     TEST_FLUSH();
     TEST_DONE();
 }
