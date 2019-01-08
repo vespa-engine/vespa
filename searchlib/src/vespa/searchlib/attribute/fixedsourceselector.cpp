@@ -93,7 +93,9 @@ FixedSourceSelector::setSource(uint32_t docId, queryeval::Source source)
 void
 FixedSourceSelector::compactLidSpace(uint32_t lidLimit)
 {
-    _source.compactLidSpace(lidLimit + 1);
+    if (lidLimit < _source.getCommittedDocIdLimit()) {
+        _source.compactLidSpace(lidLimit + 1);
+    }
 }
 
 } // namespace search
