@@ -110,7 +110,7 @@ class SlimeRequestData {
         defSchema.serialize(request.setArray(REQUEST_DEF_CONTENT));
         request.setString(REQUEST_CONFIG_MD5, configMd5);
         request.setLong(REQUEST_CURRENT_GENERATION, generation);
-        request.setLong(REQUEST_WANTED_GENERATION, 0L);
+        request.setLong(REQUEST_WANTED_GENERATION, 0L); // TODO: Remove when latest version in use is 6.328.19
         request.setLong(REQUEST_TIMEOUT, timeout);
         request.setString(REQUEST_COMPRESSION_TYPE, compressionType.name());
         vespaVersion.ifPresent(version -> request.setString(REQUEST_VESPA_VERSION, version.toString()));
