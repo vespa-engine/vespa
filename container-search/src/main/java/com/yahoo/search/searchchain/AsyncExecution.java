@@ -49,7 +49,7 @@ public class AsyncExecution {
     private static final Executor executorMain = createExecutor();
 
     private static Executor createExecutor() {
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(100, Integer.MAX_VALUE, 1L, TimeUnit.SECONDS,
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(100, 8192, 1L, TimeUnit.SECONDS,
                                                             new SynchronousQueue<>(false), threadFactory);
         // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
         // get the dreaded thread locals initialized even if they will never run.
