@@ -17,6 +17,7 @@ LOG_SETUP("multibitvectoriterator_test");
 using namespace search::queryeval;
 using namespace search::fef;
 using namespace search;
+using vespalib::Trinary;
 
 //-----------------------------------------------------------------------------
 
@@ -358,7 +359,7 @@ Test::testOptimizeCommon(bool isAnd, bool invert)
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[0]) != nullptr);
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[1]) != nullptr);
-        EXPECT_FALSE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[1])->isStrict());
+        EXPECT_TRUE(Trinary::False == m.getChildren()[1]->is_strict());
     }
     {
         MultiSearch::Children children;
@@ -374,7 +375,7 @@ Test::testOptimizeCommon(bool isAnd, bool invert)
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[0]) != nullptr);
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[1]) != nullptr);
-        EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[1])->isStrict());
+        EXPECT_TRUE(Trinary::True == m.getChildren()[1]->is_strict());
     }
     {
         MultiSearch::Children children;
@@ -421,7 +422,7 @@ Test::testOptimizeAndOr(bool invert)
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         EXPECT_TRUE(s);
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(s.get()) != nullptr);
-        EXPECT_FALSE(dynamic_cast<const MultiBitVectorIteratorBase *>(s.get())->isStrict());
+        EXPECT_TRUE(Trinary::False == s->is_strict());
     }
     {
         MultiSearch::Children children;
@@ -436,7 +437,7 @@ Test::testOptimizeAndOr(bool invert)
         const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0]) != nullptr);
-        EXPECT_FALSE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0])->isStrict());
+        EXPECT_TRUE(Trinary::False == m.getChildren()[0]->is_strict());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[1]) != nullptr);
     }
     {
@@ -452,7 +453,7 @@ Test::testOptimizeAndOr(bool invert)
         const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0]) != nullptr);
-        EXPECT_FALSE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0])->isStrict());
+        EXPECT_TRUE(Trinary::False == m.getChildren()[0]->is_strict());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[1]) != nullptr);
     }
     {
@@ -468,7 +469,7 @@ Test::testOptimizeAndOr(bool invert)
         const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0]) != nullptr);
-        EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0])->isStrict());
+        EXPECT_TRUE(Trinary::True == m.getChildren()[0]->is_strict());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[1]) != nullptr);
     }
     {
@@ -484,7 +485,7 @@ Test::testOptimizeAndOr(bool invert)
         const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0]) != nullptr);
-        EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0])->isStrict());
+        EXPECT_TRUE(Trinary::True == m.getChildren()[0]->is_strict());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[1]) != nullptr);
     }
 }

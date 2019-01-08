@@ -12,7 +12,6 @@ class MultiBitVectorIteratorBase : public MultiSearch, protected BitWord
 {
 public:
     ~MultiBitVectorIteratorBase();
-    virtual bool isStrict() const = 0;
     void initRange(uint32_t beginId, uint32_t endId) override;
     void addUnpackIndex(size_t index) { _unpackInfo.add(index); }
     /**
