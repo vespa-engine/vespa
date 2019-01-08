@@ -9,7 +9,6 @@ import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -21,10 +20,11 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.StaticConfigDefinitionRepo;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.builder.xml.XmlHelper;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.QrConfig;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.jdisc.ConfiguredApplication;
 import com.yahoo.io.IOUtils;
@@ -236,7 +236,7 @@ public class StandaloneContainerApplication implements Application {
         DeployLogger logger = new BaseDeployLogger();
         FilesApplicationPackage rawApplicationPackage = new FilesApplicationPackage.Builder(applicationPath.toFile())
                 .includeSourceFiles(true).preprocessedDir(preprocessedApplicationDir).build();
-        ApplicationPackage applicationPackage = rawApplicationPackage.preprocess(Zone.defaultZone(), logger);
+        ApplicationPackage applicationPackage = rawApplicationPackage.preprocess(getZone(), logger);
         validateApplication(applicationPackage);
         DeployState deployState = createDeployState(applicationPackage, fileRegistry, logger);
 
@@ -258,6 +258,20 @@ public class StandaloneContainerApplication implements Application {
 
         root.freezeModelTopology();
         return new Pair<>(root, container);
+    }
+
+    private static Zone getZone() {
+        if (!isConfigServer()) {
+            return Zone.defaultZone();
+        }
+        CloudConfigInstallVariables cloudConfigVariables = new CloudConfigInstallVariables();
+        if (!cloudConfigVariables.hostedVespa().orElse(false)) {
+            return Zone.defaultZone();
+        }
+        RegionName region = cloudConfigVariables.region().map(RegionName::from).orElseGet(RegionName::defaultName);
+        Environment environment = cloudConfigVariables.environment().map(Environment::from).orElseGet(Environment::defaultEnvironment);
+        SystemName system = cloudConfigVariables.system().map(SystemName::from).orElseGet(SystemName::defaultSystem);
+        return new Zone(system, environment, region);
     }
 
     private static DeployState createDeployState(ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger logger) {
