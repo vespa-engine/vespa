@@ -49,6 +49,7 @@ public class WeightedSetItem extends SimpleTaggableItem {
      * Add weighted token.
      * If token is already in the set, the maximum weight is kept.
      * NOTE: The weight must be 1 or more; negative values (and zero) are not allowed.
+     *
      * @return weight of added token (might be old value, if kept)
      */
     public Integer addToken(String token, int weight) {

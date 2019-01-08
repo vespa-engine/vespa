@@ -300,11 +300,19 @@ public class QueryTestCase {
     }
 
     @Test
-    public void testTimeoutInRequestOverridesQueryProfile() {
+    public void testQueryProfileSubstitution() {
         QueryProfile profile = new QueryProfile("myProfile");
         profile.set("myField", "Profile: %{queryProfile}", null);
         Query q = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
         assertEquals("Profile: myProfile", q.properties().get("myField"));
+    }
+
+    @Test
+    public void testTimeoutInRequestOverridesQueryProfile() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.set("timeout", 318, (QueryProfileRegistry)null);
+        Query q = new Query(QueryTestCase.httpEncode("/search?timeout=500"), profile.compile(null));
+        assertEquals(500000L, q.getTimeout());
     }
 
     @Test
