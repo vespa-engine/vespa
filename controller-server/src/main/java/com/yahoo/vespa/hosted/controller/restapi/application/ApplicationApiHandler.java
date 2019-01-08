@@ -853,7 +853,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  zone,
                                                                  applicationPackage,
                                                                  applicationVersion,
-                                                                 deployOptionsJsonClass);
+                                                                 deployOptionsJsonClass,
+                                                                 Optional.of(getUserPrincipal(request).getIdentity()));
         return new SlimeJsonResponse(toSlime(result));
     }
 
@@ -1305,7 +1306,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
         if ( ! applicationPackage.deploymentSpec().athenzDomain().isPresent())
             throw new IllegalArgumentException("Application must define an Athenz service in deployment.xml!");
-        controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant), applicationPackage);
+        controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant), applicationPackage, Optional.of(getUserPrincipal(request).getIdentity()));
 
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
                                                             tenant,

@@ -1033,11 +1033,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void deployment_fails_for_personal_tenants_when_athenzdomain_specified() {
+    public void deployment_fails_for_personal_tenants_when_athenzdomain_specified_and_user_not_admin() {
         // Setup
         tester.computeVersionStatus();
-        UserId userId = new UserId("new_user");
-        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, userId);
+        UserId tenantAdmin = new UserId("tenant-admin");
+        UserId userId = new UserId("new-user");
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, tenantAdmin);
 
         // Create tenant
         // PUT (create) the authenticated user
@@ -1055,7 +1056,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .build();
 
         // POST (deploy) an application to a dev zone
-        String expectedResult="{\"error-code\":\"BAD_REQUEST\",\"message\":\"Athenz domain defined in deployment.xml, but no Athenz domain for tenant (by-new-user). It is currently not possible to launch Athenz services from personal tenants, use Athenz tenant instead.\"}";
+        String expectedResult="{\"error-code\":\"BAD_REQUEST\",\"message\":\"User user.new-user is not allowed to launch services in Athenz domain domain1. Please reach out to the domain admin.\"}";
         HttpEntity entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
                                       .data(entity)
@@ -1064,6 +1065,38 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               400);
 
     }
+
+    @Test
+    public void deployment_succeeds_for_personal_tenants_when_user_is_tenant_admin() {
+
+        // Setup
+        tester.computeVersionStatus();
+        UserId tenantAdmin = new UserId("new_user");
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, tenantAdmin);
+
+        // Create tenant
+        // PUT (create) the authenticated user
+        byte[] data = new byte[0];
+        tester.assertResponse(request("/application/v4/user?user=new_user&domain=by", PUT)
+                                      .data(data)
+                                      .userIdentity(tenantAdmin), // Normalized to by-new-user by API
+                              new File("create-user-response.json"));
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), com.yahoo.config.provision.AthenzService.from("service"))
+                .environment(Environment.dev)
+                .region("us-west-1")
+                .build();
+
+        // POST (deploy) an application to a dev zone
+        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
+        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
+                                      .data(entity)
+                                      .userIdentity(tenantAdmin),
+                              new File("deploy-result.json"));
+    }
+
 
     @Test
     public void testJobStatusReporting() {
