@@ -43,10 +43,6 @@ public class RequestValidation {
             log.log(LogLevel.INFO, "Illegal generation '" + request.getRequestGeneration() + "'");
             return ErrorCode.ILLEGAL_GENERATION;
         }
-        if (!RequestValidation.verifyGeneration(request.getWantedGeneration())) {
-            log.log(LogLevel.INFO, "Illegal wanted generation '" + request.getWantedGeneration() + "'");
-            return ErrorCode.ILLEGAL_GENERATION;
-        }
         if (!RequestValidation.verifyTimeout(request.getTimeout())) {
             log.log(LogLevel.INFO, "Illegal timeout '" + request.getTimeout() + "'");
             return ErrorCode.ILLEGAL_TIMEOUT;
