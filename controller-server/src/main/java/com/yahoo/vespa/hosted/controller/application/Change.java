@@ -67,6 +67,9 @@ public final class Change {
 
     /** Returns a version of this change which replaces or adds this platform change */
     public Change with(Version platformVersion) {
+        if (pinning)
+            throw new IllegalArgumentException("Not allowed to set a platform version when pinned.");
+
         return new Change(Optional.of(platformVersion), application, pinning);
     }
 

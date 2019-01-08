@@ -63,6 +63,11 @@ public class ApplicationList {
         return listOf(list.stream().filter(application -> isUpgradingTo(version, application)));
     }
 
+    /** Returns the subset of applications which are not pinned to a certain Vespa version. */
+    public ApplicationList notPinned() {
+        return listOf(list.stream().filter(application -> ! application.change().isPinning()));
+    }
+
     /** Returns the subset of applications which are currently not upgrading to the given version */
     public ApplicationList notUpgradingTo(Version version) {
         return listOf(list.stream().filter(application -> ! isUpgradingTo(version, application)));
