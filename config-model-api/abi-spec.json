@@ -289,9 +289,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.Optional, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.List, java.util.List)",
-      "public void <init>(java.util.Optional, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.Optional, java.util.List, java.util.List)",
-      "public void <init>(java.util.Optional, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.Optional, java.util.List, java.util.List, java.lang.String, java.util.Optional, java.util.Optional)",
+      "public void <init>(java.util.Optional, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.Optional, java.util.List, java.util.List, java.lang.String, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications)",
       "public java.util.Optional globalServiceId()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public java.util.Optional majorVersion()",
@@ -300,6 +298,7 @@
       "public java.util.List changeBlocker()",
       "public java.util.List steps()",
       "public java.util.List zones()",
+      "public com.yahoo.config.application.api.Notifications notifications()",
       "public java.lang.String xmlForm()",
       "public boolean includes(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.io.Reader)",
@@ -341,6 +340,57 @@
       "public abstract com.yahoo.config.FileReference addUri(java.lang.String)",
       "public abstract java.lang.String fileSourceHost()",
       "public abstract java.util.List export()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.application.api.Notifications$Role": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.application.api.Notifications$Role[] values()",
+      "public static com.yahoo.config.application.api.Notifications$Role valueOf(java.lang.String)",
+      "public static java.lang.String toValue(com.yahoo.config.application.api.Notifications$Role)",
+      "public static com.yahoo.config.application.api.Notifications$Role fromValue(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.application.api.Notifications$Role author"
+    ]
+  },
+  "com.yahoo.config.application.api.Notifications$When": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.application.api.Notifications$When[] values()",
+      "public static com.yahoo.config.application.api.Notifications$When valueOf(java.lang.String)",
+      "public static java.lang.String toValue(com.yahoo.config.application.api.Notifications$When)",
+      "public static com.yahoo.config.application.api.Notifications$When fromValue(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.application.api.Notifications$When failing",
+      "public static final enum com.yahoo.config.application.api.Notifications$When failingCommit"
+    ]
+  },
+  "com.yahoo.config.application.api.Notifications": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.config.application.api.Notifications none()",
+      "public static com.yahoo.config.application.api.Notifications of(java.util.Map, java.util.Map)",
+      "public java.util.Set emailAddressesFor(com.yahoo.config.application.api.Notifications$When)",
+      "public java.util.Set emailRolesFor(com.yahoo.config.application.api.Notifications$When)"
     ],
     "fields": []
   },
