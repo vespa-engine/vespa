@@ -549,7 +549,9 @@ Verifier::create(bool strict) const {
         bvs.push_back(BitVectorIterator::create(bv.get(), getDocIdLimit(), _tfmd, strict, false).release());
     }
     SearchIterator::UP iter(_is_and ? AndSearch::create(bvs, strict) : OrSearch::create(bvs, strict));
-    return MultiBitVectorIteratorBase::optimize(std::move(iter));
+    auto mbvit = MultiBitVectorIteratorBase::optimize(std::move(iter));
+    EXPECT_TRUE((bvs.size() < 2) || (dynamic_cast<const MultiBitVectorIteratorBase *>(mbvit.get()) != nullptr));
+    return mbvit;
 }
 
 void Test::testIteratorConformance() {
