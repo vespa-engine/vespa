@@ -346,4 +346,40 @@ TEST_MT_FFF("require that portal destruction waits for request completion", 3,
 
 //-----------------------------------------------------------------------------
 
+TEST("require that query parameters can be inspected") {
+    auto portal = Portal::create(null_crypto(), 0);
+    MyGetHandler handler([](Portal::GetRequest request)
+                         {
+                             EXPECT_EQUAL(request.get_uri(), "/test?a=b&x=y");
+                             EXPECT_EQUAL(request.get_path(), "/test");
+                             EXPECT_TRUE(request.has_param("a"));
+                             EXPECT_TRUE(request.has_param("x"));
+                             EXPECT_TRUE(!request.has_param("b"));
+                             EXPECT_EQUAL(request.get_param("a"), "b");
+                             EXPECT_EQUAL(request.get_param("x"), "y");
+                             EXPECT_EQUAL(request.get_param("b"), "");
+                             auto params = request.export_params();
+                             EXPECT_EQUAL(params.size(), 2u);
+                             EXPECT_EQUAL(params["a"], "b");
+                             EXPECT_EQUAL(params["x"], "y");
+                             request.respond_with_content("a", "b");
+                         });
+    auto bound = portal->bind("/test", handler);
+    auto result = fetch(portal->listen_port(), null_crypto(), "/test?a=b&x=y");
+    EXPECT_EQUAL(result, make_expected_response("a", "b"));
+}
+
+TEST("require that request path is dequoted before handler dispatching") {
+    auto portal = Portal::create(null_crypto(), 0);
+    MyGetHandler handler([](Portal::GetRequest request)
+                         {
+                             EXPECT_EQUAL(request.get_uri(), "/%5btest%5D");
+                             EXPECT_EQUAL(request.get_path(), "/[test]");
+                             request.respond_with_content("a", "b");
+                         });
+    auto bound = portal->bind("/[test]", handler);
+    auto result = fetch(portal->listen_port(), null_crypto(), "/%5btest%5D");
+    EXPECT_EQUAL(result, make_expected_response("a", "b"));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
