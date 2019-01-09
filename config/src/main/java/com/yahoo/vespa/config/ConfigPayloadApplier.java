@@ -20,7 +20,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 import java.util.logging.Logger;
 
 /**
@@ -36,15 +40,17 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
     private final ConfigInstance.Builder rootBuilder;
     private final ConfigTransformer.PathAcquirer pathAcquirer;
+    private final UrlDownloader urlDownloader;
     private final Stack<NamedBuilder> stack = new Stack<>();
 
     public ConfigPayloadApplier(T builder) {
-        this(builder, new IdentityPathAcquirer());
+        this(builder, new IdentityPathAcquirer(), null);
     }
 
-    public ConfigPayloadApplier(T builder, ConfigTransformer.PathAcquirer pathAcquirer) {
+    public ConfigPayloadApplier(T builder, ConfigTransformer.PathAcquirer pathAcquirer, UrlDownloader urlDownloader) {
         this.rootBuilder = builder;
         this.pathAcquirer = pathAcquirer;
+        this.urlDownloader = urlDownloader;
         debug("rootBuilder=" + rootBuilder);
     }
 
@@ -207,6 +213,12 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
             if (isPathField(builder, methodName)) {
                 FileReference wrappedPath = resolvePath((String)value);
                 invokeSetter(builder, methodName, key, wrappedPath);
+
+            // Need to convert url into actual file if 'url' type is used
+            } else if (isUrlField(builder, methodName)) {
+                UrlReference url = resolveUrl((String)value);
+                invokeSetter(builder, methodName, key, url);
+
             } else {
                 invokeSetter(builder, methodName, key, value);
             }
@@ -258,7 +270,8 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
             // Need to convert url into actual file if 'url' type is used
             } else if (isUrlField(builder, methodName)) {
-                throw new UnsupportedOperationException("'url' type is not yet implemented");
+                UrlReference url = resolveUrl(Utf8.toString(value.asUtf8()));
+                invokeSetter(builder, methodName, url);
 
             } else {
                 Object object = getValueFromInspector(value);
@@ -274,6 +287,14 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     private FileReference resolvePath(String value) {
         Path path = pathAcquirer.getPath(newFileReference(value));
         return newFileReference(path.toString());
+    }
+
+    private UrlReference resolveUrl(String url) {
+        if (urlDownloader == null || !urlDownloader.isValid()) {
+            throw new RuntimeException("Resolving url field failed due to missing or invalid URL downloader.");
+        }
+        File file = urlDownloader.waitFor(new UrlReference(url), 10 * 60);
+        return new UrlReference(file.getAbsolutePath());
     }
 
     private FileReference newFileReference(String fileReference) {
@@ -515,4 +536,5 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
             return new File(fileReference.value()).toPath();
         }
     }
+
 }

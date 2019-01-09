@@ -11,6 +11,7 @@ import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.osgi.Osgi;
 import com.yahoo.vespa.config.ConfigTransformer;
+import com.yahoo.vespa.config.UrlDownloader;
 
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -31,6 +32,7 @@ public class Container {
     private volatile ComponentRegistry<ServerProvider> serverProviderRegistry;
     private volatile ComponentRegistry<AbstractComponent> componentRegistry;
     private volatile FileAcquirer fileAcquirer;
+    private volatile UrlDownloader urlDownloader;
 
     private volatile BundleLoader bundleLoader;
 
@@ -50,6 +52,8 @@ public class Container {
     public void shutdown() {
         if (fileAcquirer != null)
             fileAcquirer.shutdown();
+        if (urlDownloader != null)
+            urlDownloader.shutdown();
     }
 
     //Used to acquire files originating from the application package.
@@ -145,6 +149,11 @@ public class Container {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public void setupUrlDownloader() {
+        this.urlDownloader = new UrlDownloader();
+        ConfigTransformer.setUrlDownloader(urlDownloader);
     }
 
 }
