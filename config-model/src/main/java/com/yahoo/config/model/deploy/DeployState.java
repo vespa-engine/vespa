@@ -74,7 +74,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final Version wantedNodeVespaVersion;
     private final Instant now;
     private final HostProvisioner provisioner;
-    private final Optional<FlagSource> flagSource;
+    private final FlagSource flagSource;
 
     public static DeployState createTestState() {
         return new Builder().build();
@@ -101,7 +101,7 @@ public class DeployState implements ConfigDefinitionStore {
                         SemanticRules semanticRules,
                         Instant now,
                         Version wantedNodeVespaVersion,
-                        Optional<FlagSource> flagSource) {
+                        FlagSource flagSource) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -240,7 +240,7 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Instant now() { return now; }
 
-    public Optional<FlagSource> flagSource() { return flagSource; }
+    public FlagSource flagSource() { return flagSource; }
 
     public static class Builder {
 
@@ -257,7 +257,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
-        private Optional<FlagSource> flagSource = Optional.empty();
+        private FlagSource flagSource;
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -319,7 +319,7 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public Builder flagSource(Optional<FlagSource> flagSource) {
+        public Builder flagSource(FlagSource flagSource) {
             this.flagSource = flagSource;
             return this;
         }

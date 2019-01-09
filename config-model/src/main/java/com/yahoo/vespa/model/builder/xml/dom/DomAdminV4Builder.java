@@ -102,8 +102,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         if (deployState.getProperties().useDedicatedNodeForLogserver() &&
                 context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT &&
                 deployState.isHosted() &&
-                deployState.flagSource().isPresent() &&
-                Flags.ENABLE_LOGSERVER.bindTo(deployState.flagSource().get()).value())
+                Flags.ENABLE_LOGSERVER.bindTo(deployState.flagSource()).value())
             return NodesSpecification.dedicated(1, context);
         else
             return NodesSpecification.nonDedicated(1, context);

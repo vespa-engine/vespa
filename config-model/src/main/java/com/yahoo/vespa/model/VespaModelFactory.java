@@ -50,7 +50,7 @@ public class VespaModelFactory implements ModelFactory {
     private final Zone zone;
     private final Clock clock;
     private final Version version;
-    private final Optional<FlagSource> flagSource;
+    private final FlagSource flagSource;
 
     /** Creates a factory for vespa models for this version of the source */
     @Inject
@@ -68,7 +68,7 @@ public class VespaModelFactory implements ModelFactory {
         this.modelImporters = modelImporters.allComponents();
         this.zone = zone;
         this.clock = Clock.systemUTC();
-        this.flagSource = Optional.of(flagSource);
+        this.flagSource = flagSource;
     }
     
     public VespaModelFactory(ConfigModelRegistry configModelRegistry) {
@@ -88,7 +88,7 @@ public class VespaModelFactory implements ModelFactory {
         this.modelImporters = Collections.emptyList();
         this.zone = Zone.defaultZone();
         this.clock = clock;
-        this.flagSource = Optional.empty();
+        this.flagSource = null;
     }
 
     /** Returns the version this model is build for */
