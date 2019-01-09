@@ -324,8 +324,8 @@ public class JobController {
     public URI historicBadge(ApplicationId id, JobType type, int historyLength) {
         List<Run> runs = new ArrayList<>(runs(id, type).values());
         Run lastCompleted = null;
-        if (runs.size() == 1)
-            lastCompleted = runs.get(0);
+        if (runs.size() > 0)
+            lastCompleted = runs.get(runs.size() - 1);
         if (runs.size() > 1 && ! lastCompleted.hasEnded())
             lastCompleted = runs.get(runs.size() - 2);
 
