@@ -276,14 +276,14 @@ public class ApplicationSerializer {
     }
 
     private void toSlime(Change deploying, Cursor parentObject, String fieldName) {
-        if ( ! deploying.isPresent() && ! deploying.isPinning()) return;
+        if ( ! deploying.isPresent() && ! deploying.isPinned()) return;
 
         Cursor object = parentObject.setObject(fieldName);
         if (deploying.platform().isPresent())
             object.setString(versionField, deploying.platform().get().toString());
         if (deploying.application().isPresent())
             toSlime(deploying.application().get(), object);
-        if (deploying.isPinning())
+        if (deploying.isPinned())
             object.setBool(pinnedField, true);
     }
 

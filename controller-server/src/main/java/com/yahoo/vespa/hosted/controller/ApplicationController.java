@@ -668,7 +668,7 @@ public class ApplicationController {
     private void validateRun(Application application, ZoneId zone, Version platformVersion, ApplicationVersion applicationVersion) {
         Deployment deployment = application.deployments().get(zone);
         if (   zone.environment().isProduction() && deployment != null
-            && (   platformVersion.compareTo(deployment.version()) < 0 && ! application.change().isPinning()
+            && (   platformVersion.compareTo(deployment.version()) < 0 && ! application.change().isPinned()
                 || applicationVersion.compareTo(deployment.applicationVersion()) < 0))
             throw new IllegalArgumentException(String.format("Rejecting deployment of %s to %s, as the requested versions (platform: %s, application: %s)" +
                                                              " are older than the currently deployed (platform: %s, application: %s).",

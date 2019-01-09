@@ -464,7 +464,7 @@ public class DeploymentTrigger {
      */
     public boolean isComplete(Change change, Application application, JobType jobType) {
         Optional<Deployment> existingDeployment = deploymentFor(application, jobType);
-        if (     change.isPinning()
+        if (     change.isPinned()
             &&   change.platform().isPresent()
             && ! existingDeployment.map(Deployment::version).equals(change.platform()))
             return false;

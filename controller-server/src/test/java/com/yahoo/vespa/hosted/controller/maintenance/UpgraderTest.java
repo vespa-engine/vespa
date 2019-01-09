@@ -1150,7 +1150,7 @@ public class UpgraderTest {
 
         tester.deployCompletely(application, applicationPackage);
         assertFalse(tester.application(application.id()).change().isPresent());
-        assertTrue(tester.application(application.id()).change().isPinning());
+        assertTrue(tester.application(application.id()).change().isPinned());
         assertEquals(2, tester.application(application.id()).deployments().size());
 
         // Application does not upgrade.
@@ -1158,18 +1158,18 @@ public class UpgraderTest {
         tester.upgradeSystem(version1);
         tester.upgrader().maintain();
         assertFalse(tester.application(application.id()).change().isPresent());
-        assertTrue(tester.application(application.id()).change().isPinning());
+        assertTrue(tester.application(application.id()).change().isPinned());
 
         // New application package is deployed.
         tester.deployCompletely(application, applicationPackage, BuildJob.defaultBuildNumber + 1);
         assertFalse(tester.application(application.id()).change().isPresent());
-        assertTrue(tester.application(application.id()).change().isPinning());
+        assertTrue(tester.application(application.id()).change().isPinned());
 
         // Application upgrades to new version when pin is removed.
         tester.deploymentTrigger().cancelChange(application.id(), PIN);
         tester.upgrader().maintain();
         assertTrue(tester.application(application.id()).change().isPresent());
-        assertFalse(tester.application(application.id()).change().isPinning());
+        assertFalse(tester.application(application.id()).change().isPinned());
 
         // Application is pinned to new version, and upgrade is therefore not cancelled, even though confidence is broken.
         tester.deploymentTrigger().forceChange(application.id(), Change.empty().withPin());
