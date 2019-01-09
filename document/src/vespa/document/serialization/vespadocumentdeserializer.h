@@ -21,6 +21,7 @@ class VespaDocumentDeserializer : private FieldValueVisitor {
 
     void visit(AnnotationReferenceFieldValue &value) override { read(value); }
     void visit(ArrayFieldValue &value) override { read(value); }
+    void visit(BoolFieldValue &value) override { read(value); }
     void visit(ByteFieldValue &value) override { read(value); }
     void visit(Document &value) override { read(value); }
     void visit(DoubleFieldValue &value) override { read(value); }
@@ -63,6 +64,7 @@ public:
     void read(AnnotationReferenceFieldValue &value);
     void read(ArrayFieldValue &value);
     void read(MapFieldValue &value);
+    void read(BoolFieldValue &value);
     void read(ByteFieldValue &value);
     void read(DoubleFieldValue &value);
     void read(FloatFieldValue &value);

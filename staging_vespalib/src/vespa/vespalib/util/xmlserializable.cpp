@@ -4,8 +4,7 @@
 #include "xmlstream.h"
 #include <sstream>
 
-namespace vespalib {
-namespace xml {
+namespace vespalib::xml {
 
 std::string
 XmlSerializable::toXml(const std::string& indent) const
@@ -16,5 +15,4 @@ XmlSerializable::toXml(const std::string& indent) const
     return ost.str();
 }
 
-} // xml
-} // vespalib
+}

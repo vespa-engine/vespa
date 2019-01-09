@@ -2,18 +2,19 @@
 
 #pragma once
 
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/fieldvalue/bytefieldvalue.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/fieldvalue/doublefieldvalue.h>
-#include <vespa/document/fieldvalue/floatfieldvalue.h>
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/longfieldvalue.h>
-#include <vespa/document/fieldvalue/mapfieldvalue.h>
-#include <vespa/document/fieldvalue/predicatefieldvalue.h>
-#include <vespa/document/fieldvalue/rawfieldvalue.h>
-#include <vespa/document/fieldvalue/shortfieldvalue.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include "arrayfieldvalue.h"
+#include "boolfieldvalue.h"
+#include "bytefieldvalue.h"
+#include "document.h"
+#include "doublefieldvalue.h"
+#include "floatfieldvalue.h"
+#include "intfieldvalue.h"
+#include "longfieldvalue.h"
+#include "mapfieldvalue.h"
+#include "predicatefieldvalue.h"
+#include "rawfieldvalue.h"
+#include "shortfieldvalue.h"
+#include "stringfieldvalue.h"
+#include "weightedsetfieldvalue.h"
+#include "tensorfieldvalue.h"
 

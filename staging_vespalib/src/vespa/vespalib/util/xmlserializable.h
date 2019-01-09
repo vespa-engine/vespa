@@ -4,8 +4,7 @@
 
 #include <string>
 
-namespace vespalib {
-namespace xml {
+namespace vespalib::xml {
 
 class XmlOutputStream;
 
@@ -26,8 +25,9 @@ public:
     virtual std::string toXml(const std::string& indent = "") const;
 };
 
-} // xml
+}
 
+namespace vespalib {
 // The XmlSerializable and XmlOutputStream is often used in header files
 // and is thus available in the vespalib namespace. To not pollute the
 // vespalib namespace with all the other classes, use

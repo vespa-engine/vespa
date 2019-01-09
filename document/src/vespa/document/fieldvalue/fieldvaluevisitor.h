@@ -5,6 +5,7 @@
 namespace document {
 class AnnotationReferenceFieldValue;
 class ArrayFieldValue;
+class BoolFieldValue;
 class ByteFieldValue;
 class Document;
 class DoubleFieldValue;
@@ -26,6 +27,7 @@ struct FieldValueVisitor {
 
     virtual void visit(AnnotationReferenceFieldValue &value) = 0;
     virtual void visit(ArrayFieldValue &value) = 0;
+    virtual void visit(BoolFieldValue &value) = 0;
     virtual void visit(ByteFieldValue &value) = 0;
     virtual void visit(Document &value) = 0;
     virtual void visit(DoubleFieldValue &value) = 0;
@@ -48,6 +50,7 @@ struct ConstFieldValueVisitor {
 
     virtual void visit(const AnnotationReferenceFieldValue &value) = 0;
     virtual void visit(const ArrayFieldValue &value) = 0;
+    virtual void visit(const BoolFieldValue &value) = 0;
     virtual void visit(const ByteFieldValue &value) = 0;
     virtual void visit(const Document &value) = 0;
     virtual void visit(const DoubleFieldValue &value) = 0;
