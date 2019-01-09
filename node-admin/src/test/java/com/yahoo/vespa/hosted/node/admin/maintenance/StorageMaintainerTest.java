@@ -152,12 +152,8 @@ public class StorageMaintainerTest {
         }
 
         private Path executeAs(NodeType nodeType) {
-            NodeAgentContext context = new NodeAgentContextImpl.Builder("host123-5.test.domain.tld")
-                    .nodeType(nodeType)
-                    .fileSystem(TestFileSystem.create())
-                    .zoneId(new ZoneId(SystemName.dev, Environment.prod, RegionName.from("us-north-1"))).build();
             NodeSpec nodeSpec = new NodeSpec.Builder()
-                    .hostname(context.hostname().value())
+                    .hostname("host123-5.test.domain.tld")
                     .nodeType(nodeType)
                     .state(Node.State.active)
                     .parentHostname("host123.test.domain.tld")
@@ -167,9 +163,12 @@ public class StorageMaintainerTest {
                     .flavor("d-2-8-50")
                     .canonicalFlavor("d-2-8-50")
                     .build();
+            NodeAgentContext context = new NodeAgentContextImpl.Builder(nodeSpec)
+                    .fileSystem(TestFileSystem.create())
+                    .zoneId(new ZoneId(SystemName.dev, Environment.prod, RegionName.from("us-north-1"))).build();
             Path path = context.pathOnHostFromPathInNode("/etc/yamas-agent");
             uncheck(() -> Files.createDirectories(path));
-            storageMaintainer.writeMetricsConfig(context, nodeSpec);
+            storageMaintainer.writeMetricsConfig(context);
             return path;
         }
 

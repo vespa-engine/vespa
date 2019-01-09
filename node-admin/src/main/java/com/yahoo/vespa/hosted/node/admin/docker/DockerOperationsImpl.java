@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 
@@ -55,19 +54,19 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void createContainer(NodeAgentContext context, NodeSpec node, ContainerData containerData) {
+    public void createContainer(NodeAgentContext context, ContainerData containerData) {
         context.log(logger, "Creating container");
 
         // IPv6 - Assume always valid
-        Inet6Address ipV6Address = ipAddresses.getIPv6Address(node.getHostname()).orElseThrow(
-                () -> new RuntimeException("Unable to find a valid IPv6 address for " + node.getHostname() +
+        Inet6Address ipV6Address = ipAddresses.getIPv6Address(context.node().getHostname()).orElseThrow(
+                () -> new RuntimeException("Unable to find a valid IPv6 address for " + context.node().getHostname() +
                         ". Missing an AAAA DNS entry?"));
 
         Docker.CreateContainerCommand command = docker.createContainerCommand(
-                node.getWantedDockerImage().get(),
-                ContainerResources.from(node.getMinCpuCores(), node.getMinMainMemoryAvailableGb()),
+                context.node().getWantedDockerImage().get(),
+                ContainerResources.from(context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb()),
                 context.containerName(),
-                node.getHostname())
+                context.node().getHostname())
                 .withManagedBy(MANAGER_NAME)
                 .withUlimit("nofile", 262_144, 262_144)
                 // The nproc aka RLIMIT_NPROC resource limit works as follows:
@@ -100,20 +99,20 @@ public class DockerOperationsImpl implements DockerOperations {
             command.withIpAddress(ipV6Local);
 
             // IPv4 - Only present for some containers
-            Optional<InetAddress> ipV4Local = ipAddresses.getIPv4Address(node.getHostname())
+            Optional<InetAddress> ipV4Local = ipAddresses.getIPv4Address(context.node().getHostname())
                     .map(ipV4Address -> {
                         InetAddress ipV4Prefix = InetAddresses.forString(IPV4_NPT_PREFIX);
                         return IPAddresses.prefixTranslate(ipV4Address, ipV4Prefix, 2);
                     });
             ipV4Local.ifPresent(command::withIpAddress);
 
-            addEtcHosts(containerData, node.getHostname(), ipV4Local, ipV6Local);
+            addEtcHosts(containerData, context.node().getHostname(), ipV4Local, ipV6Local);
         }
 
         addMounts(context, command);
 
         // TODO: Enforce disk constraints
-        long minMainMemoryAvailableMb = (long) (node.getMinMainMemoryAvailableGb() * 1024);
+        long minMainMemoryAvailableMb = (long) (context.node().getMinMainMemoryAvailableGb() * 1024);
         if (minMainMemoryAvailableMb > 0) {
             // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
             // only has this much physical memory (overrides total memory reported by `free -m`).

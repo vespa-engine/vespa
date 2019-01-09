@@ -176,10 +176,10 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    void resumeNodeIfNeeded(NodeAgentContext context, NodeSpec node) {
+    void resumeNodeIfNeeded(NodeAgentContext context) {
         if (!hasResumedNode) {
             if (!currentFilebeatRestarter.isPresent()) {
-                storageMaintainer.writeMetricsConfig(context, node);
+                storageMaintainer.writeMetricsConfig(context);
                 currentFilebeatRestarter = Optional.of(filebeatRestarter.scheduleWithFixedDelay(
                         () -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS));
             }
@@ -190,24 +190,24 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void updateNodeRepoWithCurrentAttributes(NodeAgentContext context, NodeSpec node) {
+    private void updateNodeRepoWithCurrentAttributes(NodeAgentContext context) {
         final NodeAttributes currentNodeAttributes = new NodeAttributes();
         final NodeAttributes newNodeAttributes = new NodeAttributes();
 
-        if (node.getWantedRestartGeneration().isPresent() &&
-                !Objects.equals(node.getCurrentRestartGeneration(), currentRestartGeneration)) {
-            currentNodeAttributes.withRestartGeneration(node.getCurrentRestartGeneration());
+        if (context.node().getWantedRestartGeneration().isPresent() &&
+                !Objects.equals(context.node().getCurrentRestartGeneration(), currentRestartGeneration)) {
+            currentNodeAttributes.withRestartGeneration(context.node().getCurrentRestartGeneration());
             newNodeAttributes.withRestartGeneration(currentRestartGeneration);
         }
 
-        if (!Objects.equals(node.getCurrentRebootGeneration(), currentRebootGeneration)) {
-            currentNodeAttributes.withRebootGeneration(node.getCurrentRebootGeneration());
+        if (!Objects.equals(context.node().getCurrentRebootGeneration(), currentRebootGeneration)) {
+            currentNodeAttributes.withRebootGeneration(context.node().getCurrentRebootGeneration());
             newNodeAttributes.withRebootGeneration(currentRebootGeneration);
         }
 
-        Optional<DockerImage> actualDockerImage = node.getWantedDockerImage().filter(n -> containerState == UNKNOWN);
-        if (!Objects.equals(node.getCurrentDockerImage(), actualDockerImage)) {
-            currentNodeAttributes.withDockerImage(node.getCurrentDockerImage().orElse(new DockerImage("")));
+        Optional<DockerImage> actualDockerImage = context.node().getWantedDockerImage().filter(n -> containerState == UNKNOWN);
+        if (!Objects.equals(context.node().getCurrentDockerImage(), actualDockerImage)) {
+            currentNodeAttributes.withDockerImage(context.node().getCurrentDockerImage().orElse(new DockerImage("")));
             newNodeAttributes.withDockerImage(actualDockerImage.orElse(new DockerImage("")));
         }
 
@@ -222,9 +222,9 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void startContainer(NodeAgentContext context, NodeSpec node) {
-        ContainerData containerData = createContainerData(context, node);
-        dockerOperations.createContainer(context, node, containerData);
+    private void startContainer(NodeAgentContext context) {
+        ContainerData containerData = createContainerData(context);
+        dockerOperations.createContainer(context, containerData);
         dockerOperations.startContainer(context);
         lastCpuMetric = new CpuUsageReporter();
 
@@ -234,14 +234,14 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private Optional<Container> removeContainerIfNeededUpdateContainerState(
-            NodeAgentContext context, NodeSpec node, Optional<Container> existingContainer) {
+            NodeAgentContext context, Optional<Container> existingContainer) {
         return existingContainer
-                .flatMap(container -> removeContainerIfNeeded(context, node, container))
+                .flatMap(container -> removeContainerIfNeeded(context, container))
                 .map(container -> {
-                        shouldRestartServices(node).ifPresent(restartReason -> {
+                        shouldRestartServices(context.node()).ifPresent(restartReason -> {
                             context.log(logger, "Will restart services: " + restartReason);
-                            restartServices(context, node, container);
-                            currentRestartGeneration = node.getWantedRestartGeneration();
+                            restartServices(context, container);
+                            currentRestartGeneration = context.node().getWantedRestartGeneration();
                         });
                         return container;
                 });
@@ -258,8 +258,8 @@ public class NodeAgentImpl implements NodeAgent {
         return Optional.empty();
     }
 
-    private void restartServices(NodeAgentContext context, NodeSpec node, Container existingContainer) {
-        if (existingContainer.state.isRunning() && node.getState() == Node.State.active) {
+    private void restartServices(NodeAgentContext context, Container existingContainer) {
+        if (existingContainer.state.isRunning() && context.node().getState() == Node.State.active) {
             context.log(logger, "Restarting services");
             // Since we are restarting the services we need to suspend the node.
             orchestratorSuspendNode(context);
@@ -326,18 +326,18 @@ public class NodeAgentImpl implements NodeAgent {
         return Optional.empty();
     }
 
-    private Optional<Container> removeContainerIfNeeded(NodeAgentContext context, NodeSpec node, Container existingContainer) {
-        Optional<String> removeReason = shouldRemoveContainer(node, existingContainer);
+    private Optional<Container> removeContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
+        Optional<String> removeReason = shouldRemoveContainer(context.node(), existingContainer);
         if (removeReason.isPresent()) {
             context.log(logger, "Will remove container: " + removeReason.get());
 
             if (existingContainer.state.isRunning()) {
-                if (node.getState() == Node.State.active) {
+                if (context.node().getState() == Node.State.active) {
                     orchestratorSuspendNode(context);
                 }
 
                 try {
-                    if (node.getState() != Node.State.dirty) {
+                    if (context.node().getState() != Node.State.dirty) {
                         suspend();
                     }
                     stopServices();
@@ -346,9 +346,9 @@ public class NodeAgentImpl implements NodeAgent {
                 }
             }
             stopFilebeatSchedulerIfNeeded();
-            storageMaintainer.handleCoreDumpsForContainer(context, node, Optional.of(existingContainer));
+            storageMaintainer.handleCoreDumpsForContainer(context, Optional.of(existingContainer));
             dockerOperations.removeContainer(context, existingContainer);
-            currentRebootGeneration = node.getWantedRebootGeneration();
+            currentRebootGeneration = context.node().getWantedRebootGeneration();
             containerState = ABSENT;
             context.log(logger, "Container successfully removed, new containerState is " + containerState);
             return Optional.empty();
@@ -404,7 +404,7 @@ public class NodeAgentImpl implements NodeAgent {
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
             if (container.map(c -> c.state.isRunning()).orElse(false)) {
-                storageMaintainer.writeMetricsConfig(context, node);
+                storageMaintainer.writeMetricsConfig(context);
             }
 
             lastNode = node;
@@ -415,11 +415,11 @@ public class NodeAgentImpl implements NodeAgent {
             case reserved:
             case parked:
             case failed:
-                removeContainerIfNeededUpdateContainerState(context, node, container);
-                updateNodeRepoWithCurrentAttributes(context, node);
+                removeContainerIfNeededUpdateContainerState(context, container);
+                updateNodeRepoWithCurrentAttributes(context);
                 break;
             case active:
-                storageMaintainer.handleCoreDumpsForContainer(context, node, container);
+                storageMaintainer.handleCoreDumpsForContainer(context, container);
 
                 storageMaintainer.getDiskUsageFor(context)
                         .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / node.getMinDiskAvailableGb())
@@ -431,17 +431,17 @@ public class NodeAgentImpl implements NodeAgent {
                     context.log(logger, LogLevel.DEBUG, "Waiting for image to download " + imageBeingDownloaded.asString());
                     return;
                 }
-                container = removeContainerIfNeededUpdateContainerState(context, node, container);
+                container = removeContainerIfNeededUpdateContainerState(context, container);
                 athenzCredentialsMaintainer.ifPresent(maintainer -> maintainer.converge(context));
                 if (! container.isPresent()) {
                     containerState = STARTING;
-                    startContainer(context, node);
+                    startContainer(context);
                     containerState = UNKNOWN;
                     aclMaintainer.ifPresent(AclMaintainer::converge);
                 }
 
                 startServicesIfNeeded(context);
-                resumeNodeIfNeeded(context, node);
+                resumeNodeIfNeeded(context);
                 healthChecker.ifPresent(checker -> checker.verifyHealth(context));
 
                 // Because it's more important to stop a bad release from rolling out in prod,
@@ -454,23 +454,23 @@ public class NodeAgentImpl implements NodeAgent {
                 //    has been successfully rolled out.
                 //  - Slobrok and internal orchestrator state is used to determine whether
                 //    to allow upgrade (suspend).
-                updateNodeRepoWithCurrentAttributes(context, node);
+                updateNodeRepoWithCurrentAttributes(context);
                 context.log(logger, "Call resume against Orchestrator");
                 orchestrator.resume(context.hostname().value());
                 break;
             case inactive:
-                removeContainerIfNeededUpdateContainerState(context, node, container);
-                updateNodeRepoWithCurrentAttributes(context, node);
+                removeContainerIfNeededUpdateContainerState(context, container);
+                updateNodeRepoWithCurrentAttributes(context);
                 break;
             case provisioned:
                 nodeRepository.setNodeState(context.hostname().value(), Node.State.dirty);
                 break;
             case dirty:
-                removeContainerIfNeededUpdateContainerState(context, node, container);
+                removeContainerIfNeededUpdateContainerState(context, container);
                 context.log(logger, "State is " + node.getState() + ", will delete application storage and mark node as ready");
                 athenzCredentialsMaintainer.ifPresent(maintainer -> maintainer.clearCredentials(context));
                 storageMaintainer.archiveNodeStorage(context);
-                updateNodeRepoWithCurrentAttributes(context, node);
+                updateNodeRepoWithCurrentAttributes(context);
                 nodeRepository.setNodeState(context.hostname().value(), Node.State.ready);
                 break;
             default:
@@ -478,7 +478,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void logChangesToNodeSpec(NodeAgentContext context, NodeSpec lastNode, NodeSpec node) {
+    private static void logChangesToNodeSpec(NodeAgentContext context, NodeSpec lastNode, NodeSpec node) {
         StringBuilder builder = new StringBuilder();
         appendIfDifferent(builder, "state", lastNode, node, NodeSpec::getState);
         if (builder.length() > 0) {
@@ -490,7 +490,7 @@ public class NodeAgentImpl implements NodeAgent {
         return value == null ? "[absent]" : value.toString();
     }
 
-    private <T> void appendIfDifferent(StringBuilder builder, String name, NodeSpec oldNode, NodeSpec newNode, Function<NodeSpec, T> getter) {
+    private static <T> void appendIfDifferent(StringBuilder builder, String name, NodeSpec oldNode, NodeSpec newNode, Function<NodeSpec, T> getter) {
         T oldValue = oldNode == null ? null : getter.apply(oldNode);
         T newValue = getter.apply(newNode);
         if (!Objects.equals(oldValue, newValue)) {
@@ -667,7 +667,7 @@ public class NodeAgentImpl implements NodeAgent {
         orchestrator.suspend(context.hostname().value());
     }
 
-    protected ContainerData createContainerData(NodeAgentContext context, NodeSpec node) {
+    protected ContainerData createContainerData(NodeAgentContext context) {
         return (pathInContainer, data) -> {
             throw new UnsupportedOperationException("addFile not implemented");
         };
