@@ -175,8 +175,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.getUri().getQuery());
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/badge")) return badge(path.get("tenant"), path.get("application"), path.get("instance"));
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/badge/{job}")) return badge(path.get("tenant"), path.get("application"), path.get("instance"), path.get("job"), request.getProperty("historyLength"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}")) return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path), request.getProperty("after"));
@@ -961,28 +959,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         } catch (IllegalStateException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
-    }
-
-    /** Returns a URI which points to an overview badge for the given application. */
-    private HttpResponse badge(String tenant, String application, String instance) {
-        URI location = controller.jobController().overviewBadge(ApplicationId.from(tenant, application, instance));
-        return redirect(location);
-    }
-
-    /** Returns a URI which points to a history badge for the given application and job type. */
-    private HttpResponse badge(String tenant, String application, String instance, String jobName, String historyLength) {
-        URI location = controller.jobController().historicBadge(ApplicationId.from(tenant, application, instance),
-                                                                JobType.fromJobName(jobName),
-                                                                historyLength == null ? 5 : Math.min(32, Math.max(0, Integer.parseInt(historyLength))));
-        return redirect(location);
-    }
-
-    private static HttpResponse redirect(URI location) {
-        HttpResponse httpResponse = new HttpResponse(Response.Status.FOUND) {
-            @Override public void render(OutputStream outputStream) { }
-        };
-        httpResponse.headers().add("Location", location.toString());
-        return httpResponse;
     }
 
     private static DeploymentJobs.JobReport toJobReport(String tenantName, String applicationName, Inspector report) {

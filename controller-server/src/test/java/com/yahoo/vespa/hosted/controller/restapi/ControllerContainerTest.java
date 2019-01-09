@@ -105,6 +105,9 @@ public class ControllerContainerTest {
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
             "    <binding>http://*/deployment/v1/*</binding>\n" +
             "  </handler>\n" +
+            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.BadgeApiHandler'>\n" +
+            "    <binding>http://*/badge/v1/*</binding>\n" +
+            "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.controller.ControllerApiHandler'>\n" +
             "    <binding>http://*/controller/v1/*</binding>\n" +
             "  </handler>\n" +
