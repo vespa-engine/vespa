@@ -1,0 +1,113 @@
+{
+  "com.yahoo.fsa.FSA$Iterator$Item": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.fsa.FSA, int)",
+      "public void <init>(com.yahoo.fsa.FSA$Iterator$Item)",
+      "public java.lang.String getString()",
+      "public java.nio.ByteBuffer getData()",
+      "public java.lang.String getDataString()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.fsa.FSA$Iterator": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.Iterator"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.fsa.FSA$State)",
+      "public boolean hasNext()",
+      "public com.yahoo.fsa.FSA$Iterator$Item next()",
+      "public void remove()",
+      "public bridge synthetic java.lang.Object next()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.fsa.FSA$State": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void start()",
+      "public void delta(byte)",
+      "public boolean peekDelta(byte)",
+      "public boolean tryDelta(byte)",
+      "public void delta(char)",
+      "public void delta(java.lang.String)",
+      "public boolean tryDelta(java.lang.String)",
+      "public void deltaWord(java.lang.String)",
+      "public boolean tryDeltaWord(java.lang.String)",
+      "public boolean isFinal()",
+      "public boolean isStartState()",
+      "public boolean isValid()",
+      "public java.nio.ByteBuffer data()",
+      "public java.lang.String dataString()",
+      "public int hash()",
+      "public java.nio.ByteBuffer lookup(java.lang.String)",
+      "public boolean hasPerfectHash()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.fsa.FSA": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public com.yahoo.fsa.FSA$State getState()",
+      "public com.yahoo.fsa.FSA$Iterator iterator()",
+      "public com.yahoo.fsa.FSA$Iterator iterator(com.yahoo.fsa.FSA$State)",
+      "public static com.yahoo.fsa.FSA loadFromResource(java.lang.String, java.lang.Class)",
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public void <init>(java.io.FileInputStream)",
+      "public void <init>(java.io.FileInputStream, java.lang.String)",
+      "public boolean isOk()",
+      "public boolean hasPerfectHash()",
+      "public int version()",
+      "public int serial()",
+      "protected int start()",
+      "protected int delta(int, byte)",
+      "protected int hashDelta(int, byte)",
+      "protected boolean isFinal(int)",
+      "protected java.nio.ByteBuffer data(int)",
+      "protected java.lang.String dataString(int)",
+      "public java.lang.String lookup(java.lang.String)",
+      "public static void main(java.lang.String[])"
+    ],
+    "fields": []
+  },
+  "com.yahoo.fsa.MetaData": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public boolean isOk()",
+      "public int user(int)",
+      "public int getIntEntry(int)",
+      "public java.nio.ByteBuffer getDirectRecordEntry(int, int)",
+      "public java.nio.ByteBuffer getIndirectRecordEntry(int, int)",
+      "public java.nio.ByteBuffer getIndirectRecordEntry(int)",
+      "public java.lang.String getStringEntry(int)",
+      "public java.lang.String[] getStringArrayEntry(int, int)",
+      "public static void main(java.lang.String[])"
+    ],
+    "fields": []
+  }
+}

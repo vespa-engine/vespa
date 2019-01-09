@@ -1,0 +1,16 @@
+{
+  "com.yahoo.container.jaxrs.annotation.Component": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.annotation.Annotation"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract",
+      "annotation"
+    ],
+    "methods": [],
+    "fields": []
+  }
+}
