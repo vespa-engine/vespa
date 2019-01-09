@@ -60,8 +60,7 @@ private:
     bool _inplace_unpack(const char *buf, const size_t buflen);
 
 public:
-    GeneralResult(const ResultClass *resClass, uint32_t partition,
-                  uint32_t docid, HitRank metric);
+    GeneralResult(const ResultClass *resClass, uint32_t partition, uint32_t docid, HitRank metric);
     ~GeneralResult();
 
     const ResultClass *GetClass() const { return _resClass; }
@@ -73,7 +72,7 @@ public:
 
     bool inplaceUnpack(const DocsumStoreValue &value) {
         if (value.valid()) {
-	    return _inplace_unpack(value.fieldsPt(), value.fieldsSz());
+            return _inplace_unpack(value.fieldsPt(), value.fieldsSz());
         } else {
             return false;
         }

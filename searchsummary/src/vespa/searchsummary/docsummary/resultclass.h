@@ -18,6 +18,7 @@ namespace search::docsummary {
 enum ResType {
     RES_INT = 0,
     RES_SHORT,
+    RES_BOOL,
     RES_BYTE,
     RES_FLOAT,
     RES_DOUBLE,

@@ -45,6 +45,7 @@ ResultConfig::GetResTypeName(ResType type)
     case RES_INT:         return "integer";
     case RES_SHORT:       return "short";
     case RES_BYTE:        return "byte";
+    case RES_BOOL:        return "bool";
     case RES_FLOAT:       return "float";
     case RES_DOUBLE:      return "double";
     case RES_INT64:       return "int64";
@@ -73,15 +74,14 @@ ResultConfig::Reset()
 ResultClass *
 ResultConfig::AddResultClass(const char *name, uint32_t id)
 {
-    ResultClass *ret = NULL;
+    ResultClass *ret = nullptr;
 
     if (id != NoClassID() && (_classLookup.find(id) == _classLookup.end())) {
         ResultClass::UP rc(new ResultClass(name, id, _fieldEnum));
         ret = rc.get();
         _classLookup[id] = std::move(rc);
         if (_nameLookup.find(name) != _nameLookup.end()) {
-            LOG(warning, "Duplicate result class name: %s "
-                "(now maps to class id %u)", name, id);
+            LOG(warning, "Duplicate result class name: %s (now maps to class id %u)", name, id);
         }
         _nameLookup[name] = id;
     }
@@ -93,7 +93,7 @@ const ResultClass*
 ResultConfig::LookupResultClass(uint32_t id) const
 {
     IdMap::const_iterator it(_classLookup.find(id));
-    return (it != _classLookup.end()) ? it->second.get() : NULL;
+    return (it != _classLookup.end()) ? it->second.get() : nullptr;
 }
 
 uint32_t
@@ -113,8 +113,8 @@ ResultConfig::LookupResultClassId(const vespalib::string &name) const
 void
 ResultConfig::CreateEnumMaps()
 {
-    for (IdMap::iterator it(_classLookup.begin()), mt(_classLookup.end()); it != mt; it++) {
-        it ->second->CreateEnumMap();
+    for (auto & entry : _classLookup) {
+       entry.second->CreateEnumMap();
     }
 }
 
@@ -137,14 +137,12 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
             break;
         }
         ResultClass *resClass = AddResultClass(cfg.classes[i].name.c_str(), classID);
-        if (resClass == NULL) {
-            LOG(error,
-                "%s: unable to add classes[%d] name %s",
-                configId, i, cfg.classes[i].name.c_str());
+        if (resClass == nullptr) {
+            LOG(error,"%s: unable to add classes[%d] name %s", configId, i, cfg.classes[i].name.c_str());
             rc = false;
             break;
         }
-        for (unsigned int j = 0; rc && j < cfg.classes[i].fields.size(); j++) {
+        for (unsigned int j = 0; rc && (j < cfg.classes[i].fields.size()); j++) {
             const char *fieldtype = cfg.classes[i].fields[j].type.c_str();
             const char *fieldname = cfg.classes[i].fields[j].name.c_str();
             LOG(debug, "Reconfiguring class '%s' field '%s' of type '%s'", cfg.classes[i].name.c_str(), fieldname, fieldtype);
@@ -152,6 +150,8 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
                 rc = resClass->AddConfigEntry(fieldname, RES_INT);
             } else if (strcmp(fieldtype, "short") == 0) {
                 rc = resClass->AddConfigEntry(fieldname, RES_SHORT);
+            } else if (strcmp(fieldtype, "bool") == 0) {
+                rc = resClass->AddConfigEntry(fieldname, RES_BOOL);
             } else if (strcmp(fieldtype, "byte") == 0) {
                 rc = resClass->AddConfigEntry(fieldname, RES_BYTE);
             } else if (strcmp(fieldtype, "float") == 0) {
@@ -176,17 +176,13 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
                 rc = resClass->AddConfigEntry(fieldname, RES_TENSOR);
             } else if (strcmp(fieldtype, "featuredata") == 0) {
                 rc = resClass->AddConfigEntry(fieldname, RES_FEATUREDATA);
-            } else {         // FAIL: unknown field type
-                LOG(error,
-                    "%s %s.fields[%d]: unknown type '%s'",
-                    configId, cfg.classes[i].name.c_str(), j, fieldtype);
+            } else {
+                LOG(error, "%s %s.fields[%d]: unknown type '%s'", configId, cfg.classes[i].name.c_str(), j, fieldtype);
                 rc = false;
                 break;
             }
-            if (!rc) {       // FAIL: duplicate field name
-                LOG(error,
-                    "%s %s.fields[%d]: duplicate name '%s'",
-                    configId, cfg.classes[i].name.c_str(), j, fieldname);
+            if (!rc) {
+                LOG(error, "%s %s.fields[%d]: duplicate name '%s'", configId, cfg.classes[i].name.c_str(), j, fieldname);
                 break;
             }
         }
@@ -213,14 +209,11 @@ ResultConfig::GetClassID(const char *buf, uint32_t buflen)
 }
 
 urlresult*
-ResultConfig::Unpack(uint32_t partition,
-                     uint32_t docid,
-                     HitRank metric,
-                     const char *buf,
-                     uint32_t buflen) const
+ResultConfig::Unpack(uint32_t partition, uint32_t docid, HitRank metric,
+                     const char *buf, uint32_t buflen) const
 {
-    urlresult   *ret      = NULL;
-    const ResultClass *resClass = NULL;
+    urlresult         *ret      = nullptr;
+    const ResultClass *resClass = nullptr;
     uint32_t           tmp32;
 
     if (buflen >= sizeof(tmp32)) {
@@ -230,15 +223,15 @@ ResultConfig::Unpack(uint32_t partition,
         resClass = LookupResultClass(tmp32);
     }
 
-    if (resClass != NULL && (buflen > 0)) {
-            ret = new GeneralResult(resClass, partition, docid, metric);
+    if (resClass != nullptr && (buflen > 0)) {
+        ret = new GeneralResult(resClass, partition, docid, metric);
         if (ret->unpack(buf, buflen) != 0) { // FAIL: unpack
             delete ret;
-            ret = NULL;
+            ret = nullptr;
         }
     }
 
-    return (ret != NULL) ? ret : new badurlresult(partition, docid, metric);
+    return (ret != nullptr) ? ret : new badurlresult(partition, docid, metric);
 }
 
 }

@@ -17,7 +17,7 @@ urlresult::urlresult(uint32_t partition, uint32_t docid, HitRank metric)
 { }
 
 
-urlresult::~urlresult() { }
+urlresult::~urlresult() = default;
 
 
 /*===============================================================*/
@@ -33,14 +33,12 @@ badurlresult::badurlresult(uint32_t partition, uint32_t docid, HitRank metric)
 { }
 
 
-badurlresult::~badurlresult() { }
+badurlresult::~badurlresult() = default;
 
 
 int
-badurlresult::unpack(const char *buf, const size_t buflen)
+badurlresult::unpack(const char *, const size_t )
 {
-    (void) buf;
-    (void) buflen;
     LOG(warning, "badurlresult::unpack");
     return 0;
 }
@@ -60,10 +58,10 @@ GeneralResult::AllocEntries(uint32_t buflen, bool inplace)
     if (cnt > 0) {
         _entrycnt = cnt;
         _entries = (ResEntry *) malloc(needMem);
-        assert(_entries != NULL);
+        assert(_entries != nullptr);
         if (inplace) {
-            _buf = NULL;
-            _bufEnd = NULL;
+            _buf = nullptr;
+            _bufEnd = nullptr;
         } else {
             _buf = ((char *)_entries) + cnt * sizeof(ResEntry);
             _bufEnd = _buf + buflen + 1;
@@ -71,9 +69,9 @@ GeneralResult::AllocEntries(uint32_t buflen, bool inplace)
         memset(_entries, 0, cnt * sizeof(ResEntry));
     } else {
         _entrycnt = 0;
-        _entries  = NULL;
-        _buf      = NULL;
-        _bufEnd   = NULL;
+        _entries  = nullptr;
+        _buf      = nullptr;
+        _bufEnd   = nullptr;
     }
 }
 
@@ -83,8 +81,8 @@ GeneralResult::FreeEntries()
 {
     uint32_t cnt = _entrycnt;
 
-    // (_buf == NULL) <=> (_inplace_unpack() || (cnt == 0))
-    if (_buf != NULL) {
+    // (_buf == nullptr) <=> (_inplace_unpack() || (cnt == 0))
+    if (_buf != nullptr) {
         for (uint32_t i = 0; i < cnt; i++) {
             if (ResultConfig::IsVariableSize(_entries[i]._type) &&
                 !InBuf(_entries[i]._stringval))
@@ -96,15 +94,13 @@ GeneralResult::FreeEntries()
 
 
 
-GeneralResult::GeneralResult(const ResultClass *resClass,
-                             uint32_t partition, uint32_t docid,
-                             HitRank metric)
+GeneralResult::GeneralResult(const ResultClass *resClass, uint32_t partition, uint32_t docid, HitRank metric)
     : urlresult(partition, docid, metric),
       _resClass(resClass),
       _entrycnt(0),
-      _entries(NULL),
-      _buf(NULL),
-      _bufEnd(NULL)
+      _entries(nullptr),
+      _buf(nullptr),
+      _bufEnd(nullptr)
 {
 }
 
@@ -118,7 +114,7 @@ GeneralResult::~GeneralResult()
 ResEntry *
 GeneralResult::GetEntry(uint32_t idx)
 {
-    return (idx < _entrycnt) ? &_entries[idx] : NULL;
+    return (idx < _entrycnt) ? &_entries[idx] : nullptr;
 }
 
 
@@ -128,7 +124,7 @@ GeneralResult::GetEntry(const char *name)
     int idx = _resClass->GetIndexFromName(name);
 
     return (idx >= 0 && (uint32_t)idx < _entrycnt) ?
-                   &_entries[idx] : NULL;
+                   &_entries[idx] : nullptr;
 }
 
 
@@ -138,7 +134,7 @@ GeneralResult::GetEntryFromEnumValue(uint32_t value)
     int idx = _resClass->GetIndexFromEnumValue(value);
 
     return (idx >= 0 && (uint32_t)idx < _entrycnt) ?
-                   &_entries[idx] : NULL;
+                   &_entries[idx] : nullptr;
 }
 
 
@@ -149,7 +145,7 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
     const char *ebuf = buf + buflen;      // Ref to first after buffer
     const char *p    = buf;               // current position in buffer
 
-    if (_entries != NULL)
+    if (_entries != nullptr)
         FreeEntries();
 
     AllocEntries(buflen);
@@ -195,6 +191,7 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
             break;
         }
 
+        case RES_BOOL:
         case RES_BYTE: {
 
             uint8_t byteval;
@@ -360,7 +357,7 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
                         if (realLen > 0) {
                             _entries[i]._stringval = new char[realLen + 1];
                         }
-                        if (_entries[i]._stringval != NULL) {
+                        if (_entries[i]._stringval != nullptr) {
                             uLongf rlen = realLen;
                             if ((uncompress((Bytef *)_entries[i]._stringval, &rlen,
                                             (const Bytef *)(p + sizeof(realLen)),
@@ -376,11 +373,11 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
                                 LOG(warning, "Cannot uncompress docsum field %s; decompression error",
                                     entry->_bindname.c_str());
                                 delete [] _entries[i]._stringval;
-                                _entries[i]._stringval = NULL;
+                                _entries[i]._stringval = nullptr;
                             }
                         }
                         // insert empty field if decompress failed
-                        if (_entries[i]._stringval == NULL) {
+                        if (_entries[i]._stringval == nullptr) {
                             _entries[i]._stringval    = _buf + (p - buf);
                             _entries[i]._stringval[0] = '\0';
                             _entries[i]._stringlen    = 0;
@@ -438,7 +435,7 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
                         if (realLen > 0) {
                             _entries[i]._dataval = new char [realLen + 1];
                         }
-                        if (_entries[i]._dataval != NULL) {
+                        if (_entries[i]._dataval != nullptr) {
                             uLongf rlen = realLen;
                             if ((uncompress((Bytef *)_entries[i]._dataval, &rlen,
                                             (const Bytef *)(p + sizeof(realLen)),
@@ -454,12 +451,12 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
                                 LOG(warning, "Cannot uncompress docsum field %s; decompression error",
                                     entry->_bindname.c_str());
                                 delete [] _entries[i]._dataval;
-                                _entries[i]._dataval = NULL;
+                                _entries[i]._dataval = nullptr;
                             }
                         }
 
                         // insert empty field if decompress failed
-                        if (_entries[i]._dataval == NULL) {
+                        if (_entries[i]._dataval == nullptr) {
                             _entries[i]._dataval    = _buf + (p - buf);
                             _entries[i]._dataval[0] = '\0';
                             _entries[i]._datalen    = 0;
@@ -512,9 +509,9 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
     // clean up on failure
     FreeEntries();
     _entrycnt = 0;
-    _entries  = NULL;
-    _buf      = NULL;
-    _bufEnd   = NULL;
+    _entries  = nullptr;
+    _buf      = nullptr;
+    _bufEnd   = nullptr;
 
     return -1;   // FAIL
 }
@@ -527,7 +524,7 @@ GeneralResult::_inplace_unpack(const char *buf, const size_t buflen)
     const char *ebuf = buf + buflen;      // Ref to first after buffer
     const char *p    = buf;               // current position in buffer
 
-    if (_entries != NULL)
+    if (_entries != nullptr)
         FreeEntries();
 
     AllocEntries(buflen, true);
@@ -547,8 +544,7 @@ GeneralResult::_inplace_unpack(const char *buf, const size_t buflen)
 
             } else {
 
-                LOG(debug,
-                    "GeneralResult::_inplace_unpack: p + sizeof(..._intval) > ebuf");
+                LOG(debug, "GeneralResult::_inplace_unpack: p + sizeof(..._intval) > ebuf");
                 LOG(error, "Document summary too short, couldn't unpack");
                 rc = false;
             }
@@ -567,14 +563,13 @@ GeneralResult::_inplace_unpack(const char *buf, const size_t buflen)
 
             } else {
 
-                LOG(debug,
-                    "GeneralResult::_inplace_unpack: p + sizeof(shortval) > ebuf");
+                LOG(debug, "GeneralResult::_inplace_unpack: p + sizeof(shortval) > ebuf");
                 LOG(error, "Document summary too short, couldn't unpack");
                 rc = false;
             }
             break;
         }
-
+        case RES_BOOL:
         case RES_BYTE: {
 
             uint8_t byteval;
@@ -587,8 +582,7 @@ GeneralResult::_inplace_unpack(const char *buf, const size_t buflen)
 
             } else {
 
-                LOG(debug,
-                    "GeneralResult::_inplace_unpack: p + sizeof(byteval) > ebuf");
+                LOG(debug, "GeneralResult::_inplace_unpack: p + sizeof(byteval) > ebuf");
                 LOG(error, "Document summary too short, couldn't unpack");
                 rc = false;
             }
@@ -782,9 +776,7 @@ GeneralResult::_inplace_unpack(const char *buf, const size_t buflen)
         }
 
         default:
-            LOG(warning,
-                "GeneralResult::_inplace_unpack: no such type:%d",
-                entry->_type);
+            LOG(warning, "GeneralResult::_inplace_unpack: no such type:%d", entry->_type);
             LOG(error, "Incorrect type in document summary, couldn't unpack");
             rc = false;
             break;
@@ -803,9 +795,9 @@ GeneralResult::_inplace_unpack(const char *buf, const size_t buflen)
     // clean up on failure
     FreeEntries();
     _entrycnt = 0;
-    _entries  = NULL;
-    _buf      = NULL;
-    _bufEnd   = NULL;
+    _entries  = nullptr;
+    _buf      = nullptr;
+    _bufEnd   = nullptr;
 
     return false;   // FAIL
 }
