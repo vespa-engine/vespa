@@ -88,8 +88,7 @@ public class Select implements Cloneable {
     }
 
     /** Returns the where clause string previously assigned, or an empty string if none */
-    public String getWhereString(){ return where; }
-
+    public String getWhereString() { return where; }
 
     /**
      * Sets the grouping operation of the query.
@@ -119,7 +118,6 @@ public class Select implements Cloneable {
      * operations which will be performed by this query.
      */
     public List<GroupingRequest> getGrouping() { return groupingRequests; }
-
 
     @Override
     public String toString() {

@@ -13,6 +13,7 @@ import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
 import com.yahoo.slime.Inspector;
 import com.yahoo.vespa.config.SlimeUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
@@ -30,7 +31,11 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
-
+/**
+ * Tests submitting the query as JSON.
+ *
+ * @author henrhoi
+ */
 public class JSONSearchHandlerTestCase {
 
     private static final String testDir = "src/test/java/com/yahoo/search/handler/test/config";
@@ -154,7 +159,7 @@ public class JSONSearchHandlerTestCase {
         }
     }
 
-    private void testInvalidQueryParam(final RequestHandlerTestDriver testDriver) throws Exception{
+    private void testInvalidQueryParam(final RequestHandlerTestDriver testDriver) throws Exception {
         JSONObject json = new JSONObject();
         json.put("query", "status_code:0");
         json.put("hits", 20);
@@ -167,9 +172,6 @@ public class JSONSearchHandlerTestCase {
         assertThat(response, containsString("\"code\":" + com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER.code));
     }
 
-
-
-
     @Test
     public void testNormalResultJsonAliasRendering() throws Exception {
         JSONObject json = new JSONObject();
@@ -177,8 +179,6 @@ public class JSONSearchHandlerTestCase {
         json.put("query", "abc");
         assertJsonResult(json, driver);
     }
-
-
 
     @Test
     public void testNullQuery() throws Exception {
@@ -193,8 +193,6 @@ public class JSONSearchHandlerTestCase {
                 "  </hit>\n" +
                 "</result>\n", driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE).readAll());
     }
-
-
 
     @Test
     public void testWebServiceStatus() throws Exception {
@@ -230,7 +228,6 @@ public class JSONSearchHandlerTestCase {
         assertXmlResult(json, driver);
     }
 
-
     @Test
     public void testNormalResultExplicitDefaultRenderingFullRendererName1() throws Exception {
         JSONObject json = new JSONObject();
@@ -263,7 +260,6 @@ public class JSONSearchHandlerTestCase {
         assertPageResult(json, driver);
     }
 
-
     private static final String xmlResult =
             "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                     "<result total-hit-count=\"0\">\n" +
@@ -273,10 +269,9 @@ public class JSONSearchHandlerTestCase {
                     "  </hit>\n" +
                     "</result>\n";
 
-    private void assertXmlResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
+    private void assertXmlResult(JSONObject json, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), xmlResult);
     }
-
 
     private static final String jsonResult = "{\"root\":{"
             + "\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},"
@@ -284,7 +279,7 @@ public class JSONSearchHandlerTestCase {
             + "{\"id\":\"testHit\",\"relevance\":1.0,\"fields\":{\"uri\":\"testHit\"}}"
             + "]}}";
 
-    private void assertJsonResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
+    private void assertJsonResult(JSONObject json, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), jsonResult);
 
     }
@@ -300,7 +295,7 @@ public class JSONSearchHandlerTestCase {
                     "\n" +
                     "</result>\n";
 
-    private void assertTiledResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
+    private void assertTiledResult(JSONObject json, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), tiledResult);
     }
 
@@ -317,7 +312,7 @@ public class JSONSearchHandlerTestCase {
                     "\n" +
                     "</page>\n";
 
-    private void assertPageResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
+    private void assertPageResult(JSONObject json, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), pageResult);
     }
 
@@ -338,9 +333,8 @@ public class JSONSearchHandlerTestCase {
         return new RequestHandlerTestDriver(newSearchHandler);
     }
 
-
     @Test
-    public void testSelectParameter() throws Exception {
+    public void testSelectParameters() throws Exception {
         JSONObject json = new JSONObject();
 
         JSONObject select = new JSONObject();
@@ -356,8 +350,6 @@ public class JSONSearchHandlerTestCase {
 
         json.put("select", select);
 
-
-        // Create mapping
         Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes("utf-8")).get();
         Map<String, String> map = new HashMap<>();
         searchHandler.createRequestMapping(inspector, map, "");
@@ -369,7 +361,34 @@ public class JSONSearchHandlerTestCase {
         assertEquals(grouping.toString(), processedGrouping.toString());
     }
 
+    @Test
+    public void testJsonQueryWithSelectWhere() throws Exception {
+        JSONObject root = new JSONObject();
+        JSONObject select = new JSONObject();
+        JSONObject where = new JSONObject();
+        JSONArray term = new JSONArray();
+        term.put("default");
+        term.put("bad");
+        where.put("contains", term);
+        select.put("where", where);
+        root.put("select", select);
 
+        // Run query
+        String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, root.toString(), JSON_CONTENT_TYPE).readAll();
+        assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where default contains \\\"bad\\\";\"}}]}}",
+                     result);
+    }
+
+    @Test
+    public void testJsonQueryWithYQL() throws Exception {
+        JSONObject root = new JSONObject();
+        root.put("yql", "select * from sources * where default contains 'bad';");
+
+        // Run query
+        String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, root.toString(), JSON_CONTENT_TYPE).readAll();
+        assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where default contains \\\"bad\\\";\"}}]}}",
+                     result);
+    }
 
     @Test
     public void testRequestMapping() throws Exception {
@@ -468,8 +487,6 @@ public class JSONSearchHandlerTestCase {
         json.put("nocachewrite", false);
         json.put("hitcountestimate", true);
 
-
-
         // Create mapping
         Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes("utf-8")).get();
         Map<String, String> map = new HashMap<>();
@@ -484,9 +501,7 @@ public class JSONSearchHandlerTestCase {
                 "&queryProfile=foo&presentation.bolding=true&model.encoding=json&model.queryString=abc&streaming.selection=none&trace.timestamps=false&collapse.size=2&streaming.priority=10&ranking.matchPhase.diversity.attribute=title" +
                 "&ranking.matchPhase.attribute=title&hits=10&streaming.userid=123&pos.bb=1237123W%3B123218N&model.restrict=_doc%2Cjson%2Cxml&ranking.freshness=0.05&user=123";
 
-
-
-        final HttpRequest request = HttpRequest.createTestRequest(url, GET);
+        HttpRequest request = HttpRequest.createTestRequest(url, GET);
 
         // Get mapping
         Map<String, String> propertyMap = request.propertyMap();

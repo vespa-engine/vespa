@@ -107,14 +107,14 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         private final int intValue;
         private final String stringValue;
 
-        Type(int intValue,String stringValue) {
+        Type(int intValue, String stringValue) {
             this.intValue = intValue;
             this.stringValue = stringValue;
         }
 
         /** Converts a type argument value into a query type */
         public static Type getType(String typeString) {
-            for (Type type:Type.values())
+            for (Type type : Type.values())
                 if (type.stringValue.equals(typeString))
                     return type;
             return ALL;
@@ -330,8 +330,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         this.httpRequest = request;
         init(requestMap, queryProfile);
     }
-
-
 
     private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
         startTime = System.currentTimeMillis();
