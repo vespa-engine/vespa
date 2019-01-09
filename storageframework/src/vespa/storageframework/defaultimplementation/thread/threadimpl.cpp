@@ -46,7 +46,7 @@ ThreadImpl::run()
 bool
 ThreadImpl::interrupted() const
 {
-    return _interrupted;
+    return _interrupted.load(std::memory_order_relaxed);
 }
 
 bool
@@ -58,7 +58,7 @@ ThreadImpl::joined() const
 void
 ThreadImpl::interrupt()
 {
-    _interrupted = true;
+    _interrupted.store(true, std::memory_order_relaxed);
     _thread.stop();
 }
 
