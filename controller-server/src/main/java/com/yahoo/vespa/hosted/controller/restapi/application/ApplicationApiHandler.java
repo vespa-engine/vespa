@@ -803,7 +803,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         StringBuilder response = new StringBuilder();
         controller.applications().lockOrThrow(id, application -> {
             Change change = application.get().change();
-            if ( ! change.isPresent()) {
+            if ( ! change.isPresent() && ! change.isPinned()) {
                 response.append("No deployment in progress for " + application + " at this time");
                 return;
             }
