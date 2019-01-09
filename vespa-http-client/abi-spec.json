@@ -94,7 +94,6 @@
       "public void <init>(com.yahoo.vespa.http.client.config.Endpoint)",
       "public com.yahoo.vespa.http.client.config.Endpoint getEndpoint()",
       "public boolean isSuccess()",
-      "public boolean isTransient()",
       "public com.yahoo.vespa.http.client.Result$ResultType getResultType()",
       "public java.lang.Exception getException()",
       "public java.lang.String getTraceMessage()",
@@ -133,7 +132,6 @@
       "public java.lang.CharSequence getDocumentDataAsCharSequence()",
       "public java.lang.Object getContext()",
       "public boolean isSuccess()",
-      "public boolean isTransient()",
       "public java.util.List getDetails()",
       "public boolean hasLocalTrace()",
       "public java.lang.String toString()"
@@ -278,7 +276,6 @@
       "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setUseCompression(boolean)",
       "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setMaxRetries(int)",
       "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setDryRun(boolean)",
-      "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setEnableV3Protocol(boolean)",
       "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setMinTimeBetweenRetries(long, java.util.concurrent.TimeUnit)",
       "public long getMinTimeBetweenRetriesMs()",
       "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setTraceLevel(int)",
@@ -330,7 +327,6 @@
       "public int getMaxRetries()",
       "public long getMinTimeBetweenRetriesMs()",
       "public boolean isDryRun()",
-      "public boolean isEnableV3Protocol()",
       "public int getTraceLevel()",
       "public int getTraceEveryXOperation()",
       "public boolean getPrintTraceToStdErr()"

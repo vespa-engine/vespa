@@ -37,13 +37,14 @@
     ],
     "methods": [
       "public abstract com.yahoo.documentapi.Result put(com.yahoo.document.Document)",
-      "public abstract com.yahoo.documentapi.Result put(com.yahoo.document.Document, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.documentapi.Result put(com.yahoo.document.Document, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public abstract com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId)",
-      "public abstract com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, boolean, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, boolean, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public abstract com.yahoo.documentapi.Result remove(com.yahoo.document.DocumentId)",
-      "public abstract com.yahoo.documentapi.Result remove(com.yahoo.document.DocumentId, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.documentapi.Result remove(com.yahoo.document.DocumentId, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public abstract com.yahoo.documentapi.Result update(com.yahoo.document.DocumentUpdate)",
-      "public abstract com.yahoo.documentapi.Result update(com.yahoo.document.DocumentUpdate, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.documentapi.Result update(com.yahoo.document.DocumentUpdate, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public abstract double getCurrentWindowSize()"
     ],
     "fields": []
@@ -132,15 +133,15 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.DocumentListVisitorResponse": {
+  "com.yahoo.documentapi.DocumentOpVisitorResponse": {
     "superClass": "com.yahoo.documentapi.VisitorResponse",
     "interfaces": [],
     "attributes": [
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.vdslib.DocumentList, com.yahoo.documentapi.AckToken)",
-      "public com.yahoo.vdslib.DocumentList getDocumentList()"
+      "public void <init>(com.yahoo.document.DocumentOperation, com.yahoo.documentapi.AckToken)",
+      "public com.yahoo.document.DocumentOperation getDocumentOperation()"
     ],
     "fields": []
   },
@@ -415,7 +416,6 @@
       "public boolean isSuccess()",
       "public java.lang.Error getError()",
       "public long getRequestId()",
-      "public com.yahoo.documentapi.Result$ResultType getType()",
       "public com.yahoo.documentapi.Result$ResultType type()"
     ],
     "fields": []
@@ -496,7 +496,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>()",
       "public java.util.Optional defaultTimeout()"
     ],
     "fields": []
@@ -513,11 +512,11 @@
     ],
     "methods": [
       "public abstract void put(com.yahoo.document.DocumentPut)",
-      "public abstract void put(com.yahoo.document.DocumentPut, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
-      "public abstract com.yahoo.document.Document get(com.yahoo.document.DocumentId)",
-      "public abstract com.yahoo.document.Document get(com.yahoo.document.DocumentId, java.lang.String, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
-      "public com.yahoo.document.Document get(com.yahoo.document.DocumentId, java.time.Duration)",
-      "public com.yahoo.document.Document get(com.yahoo.document.DocumentId, java.lang.String, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority, java.time.Duration)",
+      "public void put(com.yahoo.document.DocumentPut, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.document.Document get(com.yahoo.document.DocumentId)",
+      "public com.yahoo.document.Document get(com.yahoo.document.DocumentId, java.lang.String, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public abstract com.yahoo.document.Document get(com.yahoo.document.DocumentId, java.time.Duration)",
+      "public abstract com.yahoo.document.Document get(com.yahoo.document.DocumentId, java.lang.String, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority, java.time.Duration)",
       "public abstract boolean remove(com.yahoo.document.DocumentRemove)",
       "public abstract boolean remove(com.yahoo.document.DocumentRemove, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public abstract boolean update(com.yahoo.document.DocumentUpdate)",
@@ -672,7 +671,6 @@
       "public void <init>()",
       "public void reset()",
       "public void onMessage(com.yahoo.messagebus.Message, com.yahoo.documentapi.AckToken)",
-      "public void onDocuments(com.yahoo.vdslib.DocumentList, com.yahoo.documentapi.AckToken)",
       "public com.yahoo.documentapi.VisitorResponse getNext()",
       "public com.yahoo.documentapi.VisitorResponse getNext(int)"
     ],
@@ -931,6 +929,7 @@
       "public com.yahoo.documentapi.Result put(com.yahoo.document.Document, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, boolean, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.documentapi.Result remove(com.yahoo.document.DocumentId)",
       "public com.yahoo.documentapi.Result remove(com.yahoo.document.DocumentId, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.documentapi.Result update(com.yahoo.document.DocumentUpdate)",
@@ -970,8 +969,8 @@
       "public void <init>(com.yahoo.documentapi.local.LocalDocumentAccess)",
       "public void put(com.yahoo.document.DocumentPut)",
       "public void put(com.yahoo.document.DocumentPut, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
-      "public com.yahoo.document.Document get(com.yahoo.document.DocumentId)",
-      "public com.yahoo.document.Document get(com.yahoo.document.DocumentId, java.lang.String, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.document.Document get(com.yahoo.document.DocumentId, java.time.Duration)",
+      "public com.yahoo.document.Document get(com.yahoo.document.DocumentId, java.lang.String, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority, java.time.Duration)",
       "public boolean remove(com.yahoo.document.DocumentRemove)",
       "public boolean remove(com.yahoo.document.DocumentRemove, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public boolean update(com.yahoo.document.DocumentUpdate)",
@@ -996,6 +995,7 @@
       "public com.yahoo.documentapi.Result put(com.yahoo.document.Document, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, boolean, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.documentapi.Result remove(com.yahoo.document.DocumentId)",
       "public com.yahoo.documentapi.Result remove(com.yahoo.document.DocumentId, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.documentapi.Result update(com.yahoo.document.DocumentUpdate)",
@@ -2405,8 +2405,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$CreateVisitorMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$CreateVisitorMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2420,8 +2420,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$CreateVisitorReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$CreateVisitorReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2433,8 +2433,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DestroyVisitorMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DestroyVisitorMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2446,8 +2446,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DestroyVisitorReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DestroyVisitorReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2459,8 +2459,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentIgnoredReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentIgnoredReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2472,8 +2472,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentListMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentListMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2485,8 +2485,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentListReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentListReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2498,7 +2498,7 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory": {
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory": {
     "superClass": "com.yahoo.documentapi.messagebus.protocol.AbstractRoutableFactory",
     "interfaces": [],
     "attributes": [
@@ -2514,7 +2514,7 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory": {
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory": {
     "superClass": "com.yahoo.documentapi.messagebus.protocol.AbstractRoutableFactory",
     "interfaces": [],
     "attributes": [
@@ -2530,8 +2530,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentSummaryMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentSummaryMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2543,8 +2543,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentSummaryReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentSummaryReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2556,8 +2556,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$EmptyBucketsMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$EmptyBucketsMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2569,8 +2569,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$EmptyBucketsReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$EmptyBucketsReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2582,8 +2582,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$GetBucketListMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketListMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2597,8 +2597,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$GetBucketListReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketListReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2610,8 +2610,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$GetBucketStateMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketStateMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2623,8 +2623,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$GetBucketStateReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketStateReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2636,8 +2636,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$GetDocumentMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetDocumentMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2649,8 +2649,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$GetDocumentReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetDocumentReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2662,8 +2662,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$MapVisitorMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$MapVisitorMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2675,8 +2675,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$MapVisitorReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$MapVisitorReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2688,8 +2688,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$PutDocumentMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$PutDocumentMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2702,8 +2702,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$PutDocumentReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$PutDocumentReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2715,8 +2715,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$QueryResultMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$QueryResultMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2728,8 +2728,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$QueryResultReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$QueryResultReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2741,8 +2741,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$RemoveDocumentMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveDocumentMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2755,8 +2755,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$RemoveDocumentReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveDocumentReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2768,8 +2768,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$RemoveLocationMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveLocationMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2781,8 +2781,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$RemoveLocationReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveLocationReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2794,8 +2794,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$SearchResultMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$SearchResultMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2807,8 +2807,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$SearchResultReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$SearchResultReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2820,8 +2820,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$StatBucketMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$StatBucketMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2835,8 +2835,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$StatBucketReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$StatBucketReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2848,8 +2848,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$UpdateDocumentMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$UpdateDocumentMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2862,8 +2862,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$UpdateDocumentReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$UpdateDocumentReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2875,8 +2875,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$VisitorInfoMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentMessageFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$VisitorInfoMessageFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2888,8 +2888,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$VisitorInfoReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$VisitorInfoReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2901,8 +2901,8 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$WrongDistributionReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$DocumentReplyFactory",
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$WrongDistributionReplyFactory": {
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
     "interfaces": [],
     "attributes": [
       "public"
@@ -2914,62 +2914,12 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52": {
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60": {
     "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
       "public",
       "abstract"
-    ],
-    "methods": [
-      "public void <init>()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$CreateVisitorMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$CreateVisitorMessageFactory",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "protected java.lang.String decodeBucketSpace(com.yahoo.vespa.objects.Deserializer)",
-      "protected boolean encodeBucketSpace(java.lang.String, com.yahoo.document.serialization.DocumentSerializer)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketListMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$GetBucketListMessageFactory",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "protected java.lang.String decodeBucketSpace(com.yahoo.vespa.objects.Deserializer)",
-      "protected boolean encodeBucketSpace(java.lang.String, com.yahoo.document.serialization.DocumentSerializer)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$StatBucketMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52$StatBucketMessageFactory",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "protected java.lang.String decodeBucketSpace(com.yahoo.vespa.objects.Deserializer)",
-      "protected boolean encodeBucketSpace(java.lang.String, com.yahoo.document.serialization.DocumentSerializer)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories52",
-    "interfaces": [],
-    "attributes": [
-      "public"
     ],
     "methods": [
       "public void <init>()"

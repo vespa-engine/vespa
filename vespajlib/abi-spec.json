@@ -324,6 +324,7 @@
       "public java.lang.String getName()",
       "public java.io.Reader getReader()",
       "public java.lang.String toString()",
+      "public static java.io.Reader nullReader()",
       "public int read(java.nio.CharBuffer)",
       "public int read()",
       "public int read(char[])",
@@ -334,6 +335,7 @@
       "public void mark(int)",
       "public void reset()",
       "public void close()",
+      "public long transferTo(java.io.Writer)",
       "public static void closeAll(java.util.List)"
     ],
     "fields": []
@@ -2458,35 +2460,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.text.DoubleFormatter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public static java.lang.StringBuilder fmt(java.lang.StringBuilder, double)",
-      "public static java.lang.String stringValue(double)",
-      "public static void append(java.lang.StringBuilder, double)",
-      "public static void append(java.lang.StringBuilder, int)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.text.DoubleParser": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public static double parse(java.lang.String)"
-    ],
-    "fields": []
-  },
   "com.yahoo.text.ForwardWriter": {
     "superClass": "com.yahoo.text.GenericWriter",
     "interfaces": [],
@@ -2609,19 +2582,6 @@
       "public void flush()",
       "public void close()",
       "public final java.io.Writer getWriter()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.text.LanguageHacks": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public static boolean isCJK(java.lang.String)",
-      "public static boolean yellDesegments(java.lang.String)"
     ],
     "fields": []
   },

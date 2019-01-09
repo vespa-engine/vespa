@@ -33,7 +33,6 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder responseHeaderSize(int)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder acceptQueueSize(int)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder reuseAddress(boolean)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Builder soLingerTime(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder idleTimeout(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder stopTimeout(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder tcpKeepAliveEnabled(boolean)",
@@ -82,33 +81,9 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder certificateFile(java.lang.String)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder caCertificateFile(java.lang.String)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder clientAuth(com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder keyDbKey(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder excludeProtocol(com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeProtocol$Builder)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder excludeProtocol(java.util.List)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder includeProtocol(com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeProtocol$Builder)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder includeProtocol(java.util.List)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder excludeCipherSuite(com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeCipherSuite$Builder)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder excludeCipherSuite(java.util.List)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder includeCipherSuite(com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeCipherSuite$Builder)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder includeCipherSuite(java.util.List)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder keyStoreType(com.yahoo.jdisc.http.ConnectorConfig$Ssl$KeyStoreType$Enum)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder keyStorePath(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder pemKeyStore(com.yahoo.jdisc.http.ConnectorConfig$Ssl$PemKeyStore$Builder)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder trustStoreType(com.yahoo.jdisc.http.ConnectorConfig$Ssl$TrustStoreType$Enum)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder trustStorePath(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder useTrustStorePassword(boolean)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder sslKeyManagerFactoryAlgorithm(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder protocol(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder prng(java.lang.String)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl build()"
     ],
-    "fields": [
-      "public java.util.List excludeProtocol",
-      "public java.util.List includeProtocol",
-      "public java.util.List excludeCipherSuite",
-      "public java.util.List includeCipherSuite",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$PemKeyStore$Builder pemKeyStore"
-    ]
+    "fields": []
   },
   "com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum": {
     "superClass": "java.lang.Enum",
@@ -145,217 +120,6 @@
       "public static final com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum NEED_AUTH"
     ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeCipherSuite$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeCipherSuite)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeCipherSuite$Builder name(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeCipherSuite build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeCipherSuite": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeCipherSuite$Builder)",
-      "public java.lang.String name()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeProtocol$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeProtocol)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeProtocol$Builder name(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeProtocol build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeProtocol": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeProtocol$Builder)",
-      "public java.lang.String name()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeCipherSuite$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeCipherSuite)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeCipherSuite$Builder name(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeCipherSuite build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeCipherSuite": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeCipherSuite$Builder)",
-      "public java.lang.String name()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeProtocol$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeProtocol)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeProtocol$Builder name(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeProtocol build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeProtocol": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeProtocol$Builder)",
-      "public java.lang.String name()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$KeyStoreType$Enum": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final",
-      "enum"
-    ],
-    "methods": [
-      "public static com.yahoo.jdisc.http.ConnectorConfig$Ssl$KeyStoreType$Enum[] values()",
-      "public static com.yahoo.jdisc.http.ConnectorConfig$Ssl$KeyStoreType$Enum valueOf(java.lang.String)"
-    ],
-    "fields": [
-      "public static final enum com.yahoo.jdisc.http.ConnectorConfig$Ssl$KeyStoreType$Enum JKS",
-      "public static final enum com.yahoo.jdisc.http.ConnectorConfig$Ssl$KeyStoreType$Enum PEM"
-    ]
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$KeyStoreType": {
-    "superClass": "com.yahoo.config.EnumNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$KeyStoreType$Enum)"
-    ],
-    "fields": [
-      "public static final com.yahoo.jdisc.http.ConnectorConfig$Ssl$KeyStoreType$Enum JKS",
-      "public static final com.yahoo.jdisc.http.ConnectorConfig$Ssl$KeyStoreType$Enum PEM"
-    ]
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$PemKeyStore$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$PemKeyStore)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$PemKeyStore$Builder keyPath(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$PemKeyStore$Builder certificatePath(java.lang.String)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$PemKeyStore build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$PemKeyStore": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$PemKeyStore$Builder)",
-      "public java.lang.String keyPath()",
-      "public java.lang.String certificatePath()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$TrustStoreType$Enum": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final",
-      "enum"
-    ],
-    "methods": [
-      "public static com.yahoo.jdisc.http.ConnectorConfig$Ssl$TrustStoreType$Enum[] values()",
-      "public static com.yahoo.jdisc.http.ConnectorConfig$Ssl$TrustStoreType$Enum valueOf(java.lang.String)"
-    ],
-    "fields": [
-      "public static final enum com.yahoo.jdisc.http.ConnectorConfig$Ssl$TrustStoreType$Enum JKS"
-    ]
-  },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$TrustStoreType": {
-    "superClass": "com.yahoo.config.EnumNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$TrustStoreType$Enum)"
-    ],
-    "fields": [
-      "public static final com.yahoo.jdisc.http.ConnectorConfig$Ssl$TrustStoreType$Enum JKS"
-    ]
-  },
   "com.yahoo.jdisc.http.ConnectorConfig$Ssl": {
     "superClass": "com.yahoo.config.InnerNode",
     "interfaces": [],
@@ -369,25 +133,7 @@
       "public java.lang.String privateKeyFile()",
       "public java.lang.String certificateFile()",
       "public java.lang.String caCertificateFile()",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum clientAuth()",
-      "public java.lang.String keyDbKey()",
-      "public java.util.List excludeProtocol()",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeProtocol excludeProtocol(int)",
-      "public java.util.List includeProtocol()",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeProtocol includeProtocol(int)",
-      "public java.util.List excludeCipherSuite()",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$ExcludeCipherSuite excludeCipherSuite(int)",
-      "public java.util.List includeCipherSuite()",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$IncludeCipherSuite includeCipherSuite(int)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$KeyStoreType$Enum keyStoreType()",
-      "public java.lang.String keyStorePath()",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$PemKeyStore pemKeyStore()",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$TrustStoreType$Enum trustStoreType()",
-      "public java.lang.String trustStorePath()",
-      "public boolean useTrustStorePassword()",
-      "public java.lang.String sslKeyManagerFactoryAlgorithm()",
-      "public java.lang.String protocol()",
-      "public java.lang.String prng()"
+      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum clientAuth()"
     ],
     "fields": []
   },
@@ -449,7 +195,6 @@
       "public int responseHeaderSize()",
       "public int acceptQueueSize()",
       "public boolean reuseAddress()",
-      "public double soLingerTime()",
       "public double idleTimeout()",
       "public double stopTimeout()",
       "public boolean tcpKeepAliveEnabled()",
@@ -483,31 +228,20 @@
       "public com.yahoo.jdisc.http.Cookie setDomain(java.lang.String)",
       "public java.lang.String getPath()",
       "public com.yahoo.jdisc.http.Cookie setPath(java.lang.String)",
-      "public java.lang.String getComment()",
-      "public com.yahoo.jdisc.http.Cookie setComment(java.lang.String)",
-      "public java.lang.String getCommentURL()",
-      "public com.yahoo.jdisc.http.Cookie setCommentURL(java.lang.String)",
-      "public java.lang.String getCommentUrl()",
-      "public com.yahoo.jdisc.http.Cookie setCommentUrl(java.lang.String)",
       "public int getMaxAge(java.util.concurrent.TimeUnit)",
       "public com.yahoo.jdisc.http.Cookie setMaxAge(int, java.util.concurrent.TimeUnit)",
-      "public int getVersion()",
-      "public com.yahoo.jdisc.http.Cookie setVersion(int)",
       "public boolean isSecure()",
       "public com.yahoo.jdisc.http.Cookie setSecure(boolean)",
       "public boolean isHttpOnly()",
       "public com.yahoo.jdisc.http.Cookie setHttpOnly(boolean)",
-      "public boolean isDiscard()",
-      "public com.yahoo.jdisc.http.Cookie setDiscard(boolean)",
-      "public java.util.Set ports()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()",
       "public static java.lang.String toCookieHeader(java.lang.Iterable)",
       "public static java.util.List fromCookieHeader(java.lang.String)",
-      "public static java.lang.String toSetCookieHeader(java.lang.Iterable)",
+      "public static java.util.List toSetCookieHeaders(java.lang.Iterable)",
       "public static java.util.List toSetCookieHeaderAll(java.lang.Iterable)",
-      "public static java.util.List fromSetCookieHeader(java.lang.String)"
+      "public static com.yahoo.jdisc.http.Cookie fromSetCookieHeader(java.lang.String)"
     ],
     "fields": []
   },
@@ -1168,21 +902,17 @@
     "methods": [
       "protected void <init>(com.yahoo.jdisc.http.Cookie)",
       "public static com.yahoo.jdisc.http.filter.JDiscCookieWrapper wrap(com.yahoo.jdisc.http.Cookie)",
-      "public java.lang.String getComment()",
       "public java.lang.String getDomain()",
       "public int getMaxAge()",
       "public java.lang.String getName()",
       "public java.lang.String getPath()",
       "public boolean getSecure()",
       "public java.lang.String getValue()",
-      "public int getVersion()",
-      "public void setComment(java.lang.String)",
       "public void setDomain(java.lang.String)",
       "public void setMaxAge(int)",
       "public void setPath(java.lang.String)",
       "public void setSecure(boolean)",
       "public void setValue(java.lang.String)",
-      "public void setVersion(int)",
       "public com.yahoo.jdisc.http.Cookie getCookie()"
     ],
     "fields": []
@@ -1396,6 +1126,20 @@
     ],
     "methods": [
       "public abstract org.eclipse.jetty.util.ssl.SslContextFactory getInstance(java.lang.String, int)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.http.ssl.ThrowingSslContextFactoryProvider": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.http.ssl.SslContextFactoryProvider"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public org.eclipse.jetty.util.ssl.SslContextFactory getInstance(java.lang.String, int)"
     ],
     "fields": []
   }

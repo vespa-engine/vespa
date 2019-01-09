@@ -595,7 +595,6 @@
     ],
     "fields": [
       "public static final java.lang.String CONTENT_TYPE",
-      "public static final java.lang.String DATE",
       "protected final java.util.logging.Logger log"
     ]
   },
@@ -671,21 +670,6 @@
       "public final int code"
     ]
   },
-  "com.yahoo.container.protect.FreezeDetector": {
-    "superClass": "com.yahoo.component.AbstractComponent",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.container.core.DiagnosticsConfig)",
-      "public void register(com.yahoo.concurrent.ThreadLocalDirectory)",
-      "public boolean isBreakdown()",
-      "public void unRegister(com.yahoo.concurrent.ThreadLocalDirectory)",
-      "public void deconstruct()"
-    ],
-    "fields": []
-  },
   "com.yahoo.container.protect.ProcessTerminator": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -696,40 +680,6 @@
       "public void <init>()",
       "public void logAndDie(java.lang.String)",
       "public void logAndDie(java.lang.String, boolean)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.container.protect.TimeoutCollector": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.concurrent.ThreadLocalDirectory$Updater"
-    ],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public com.yahoo.container.protect.TimeoutRate createGenerationInstance(com.yahoo.container.protect.TimeoutRate)",
-      "public com.yahoo.container.protect.TimeoutRate update(com.yahoo.container.protect.TimeoutRate, java.lang.Boolean)",
-      "public bridge synthetic java.lang.Object update(java.lang.Object, java.lang.Object)",
-      "public bridge synthetic java.lang.Object createGenerationInstance(java.lang.Object)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.container.protect.TimeoutRate": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void addQuery(java.lang.Boolean)",
-      "public void merge(com.yahoo.container.protect.TimeoutRate)",
-      "public double timeoutFraction()",
-      "public int getTotal()"
     ],
     "fields": []
   },

@@ -627,32 +627,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.config.provision.Version": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "java.lang.Comparable"
-    ],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public com.yahoo.component.Version toVersion()",
-      "public java.lang.String toSerializedForm()",
-      "public static com.yahoo.config.provision.Version fromIntValues(int, int, int)",
-      "public static com.yahoo.config.provision.Version fromString(java.lang.String)",
-      "public static com.yahoo.config.provision.Version from(com.yahoo.component.Version)",
-      "public java.lang.String toString()",
-      "public int getMajor()",
-      "public int getMinor()",
-      "public int getMicro()",
-      "public int hashCode()",
-      "public boolean equals(java.lang.Object)",
-      "public int compareTo(com.yahoo.config.provision.Version)",
-      "public bridge synthetic int compareTo(java.lang.Object)"
-    ],
-    "fields": []
-  },
   "com.yahoo.config.provision.Zone": {
     "superClass": "java.lang.Object",
     "interfaces": [],
