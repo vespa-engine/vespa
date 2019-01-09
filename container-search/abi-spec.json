@@ -1653,347 +1653,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.prelude.templates.Context": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "abstract"
-    ],
-    "methods": [
-      "public void setXmlEscape(boolean)",
-      "public boolean getXmlEscape()",
-      "public abstract java.lang.Object put(java.lang.String, java.lang.Object)",
-      "public abstract java.lang.Object get(java.lang.String)",
-      "public abstract java.lang.Object remove(java.lang.Object)",
-      "public void setBoldOpenTag(java.lang.String)",
-      "public void setBoldCloseTag(java.lang.String)",
-      "public void setSeparatorTag(java.lang.String)",
-      "protected java.lang.Object normalizeValue(java.lang.Object)",
-      "public java.lang.String getBoldOpenTag()",
-      "public java.lang.String getBoldCloseTag()",
-      "public java.lang.String getSeparatorTag()",
-      "public abstract java.util.Collection getKeys()",
-      "public boolean isUtf8Output()",
-      "public void setUtf8Output(boolean)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.prelude.templates.DefaultTemplateSet": {
-    "superClass": "com.yahoo.prelude.templates.UserTemplate",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "protected void <init>(java.lang.String)",
-      "public void <init>()",
-      "public com.yahoo.text.XMLWriter wrapWriter(java.io.Writer)",
-      "public void header(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "public void footer(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "public void hit(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "public void hitFooter(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "public void error(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "public void noHits(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "protected static void renderCoverageAttributes(com.yahoo.search.result.Coverage, com.yahoo.text.XMLWriter)",
-      "protected void renderHitAttributes(com.yahoo.search.result.Hit, com.yahoo.text.XMLWriter)",
-      "protected void renderHitGroup(com.yahoo.search.result.HitGroup, com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "protected void renderGroup(com.yahoo.search.result.HitGroup, com.yahoo.text.XMLWriter)",
-      "protected void renderHitGroupOfTypeGroupHit(com.yahoo.prelude.templates.Context, com.yahoo.search.result.HitGroup, com.yahoo.text.XMLWriter)",
-      "protected void renderId(com.yahoo.net.URI, com.yahoo.text.XMLWriter)",
-      "protected void renderHitFields(com.yahoo.prelude.templates.Context, com.yahoo.search.result.Hit, com.yahoo.text.XMLWriter)",
-      "protected void renderField(com.yahoo.prelude.templates.Context, com.yahoo.search.result.Hit, java.util.Map$Entry, com.yahoo.text.XMLWriter)",
-      "protected void renderFieldContent(com.yahoo.prelude.templates.Context, com.yahoo.search.result.Hit, java.lang.String, com.yahoo.text.XMLWriter)",
-      "protected boolean shouldRenderField(com.yahoo.search.result.Hit, java.lang.String)",
-      "public bridge synthetic void noHits(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic void error(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic void hitFooter(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic void hit(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic void footer(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic void header(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic java.io.Writer wrapWriter(java.io.Writer)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.prelude.templates.FormattingOptions": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void formatFieldAsAttribute(java.lang.String, java.lang.String)",
-      "public java.util.Set fieldsAsAttributes()",
-      "public java.lang.String getAttributeName(java.lang.String)",
-      "public void formatFieldWithSubtype(java.lang.String, java.lang.String, java.lang.String, java.lang.String)",
-      "public com.yahoo.prelude.templates.FormattingOptions$SubtypeField getSubtype(java.lang.String)",
-      "public void formatFieldWithSubtype(java.lang.String, java.lang.String, java.lang.String)",
-      "public com.yahoo.prelude.templates.FormattingOptions$SubtypeFieldWithPrefix getSubtypeWithPrefix(java.lang.String)",
-      "public boolean shouldRenderField(java.lang.String)",
-      "public void setFieldToRender(java.lang.String)",
-      "public void setFieldNotToRender(java.lang.String)"
-    ],
-    "fields": [
-      "public static final java.lang.String DEFAULT_TYPE_ATTRIBUTE_NAME"
-    ]
-  },
-  "com.yahoo.prelude.templates.GenericTemplateSet": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
-      "public java.lang.String getName()",
-      "public java.lang.String getMimeType()",
-      "public java.lang.String getEncoding()",
-      "public final java.lang.String getRequestedEncoding(com.yahoo.search.Query)",
-      "public com.yahoo.prelude.templates.Template getTemplate(java.lang.String)",
-      "public void setTemplate(java.lang.String, com.yahoo.prelude.templates.Template)",
-      "public void setTemplateNotNull(java.lang.String, com.yahoo.prelude.templates.Template)",
-      "public void setHighlightTags(java.lang.String, java.lang.String, java.lang.String)",
-      "public java.lang.String getBoldOpenTag()",
-      "public java.lang.String getBoldCloseTag()",
-      "public java.lang.String getSeparatorTag()",
-      "public void setSummaryClass(java.lang.String)",
-      "public java.lang.String getSummaryClass()"
-    ],
-    "fields": [
-      "public static final java.lang.String DEFAULT_MIMETYPE",
-      "public static final java.lang.String DEFAULT_ENCODING"
-    ]
-  },
-  "com.yahoo.prelude.templates.HitContext": {
-    "superClass": "com.yahoo.prelude.templates.Context",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.search.result.Hit, com.yahoo.prelude.templates.Context)",
-      "public java.lang.Object put(java.lang.String, java.lang.Object)",
-      "public java.lang.Object get(java.lang.String)",
-      "public java.lang.Object remove(java.lang.Object)",
-      "public java.util.Collection getKeys()",
-      "public void setBoldOpenTag(java.lang.String)",
-      "public void setBoldCloseTag(java.lang.String)",
-      "public void setSeparatorTag(java.lang.String)",
-      "public java.lang.String getBoldOpenTag()",
-      "public java.lang.String getBoldCloseTag()",
-      "public java.lang.String getSeparatorTag()",
-      "public boolean isUtf8Output()",
-      "public void setUtf8Output(boolean)",
-      "public void setXmlEscape(boolean)",
-      "public boolean getXmlEscape()",
-      "protected java.lang.Object normalizeValue(java.lang.Object)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.prelude.templates.LogExceptionUserTemplateDelegator": {
-    "superClass": "com.yahoo.prelude.templates.UserTemplate",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.prelude.templates.UserTemplate)",
-      "public com.yahoo.prelude.templates.Context createContext()",
-      "public java.io.Writer wrapWriter(java.io.Writer)",
-      "public boolean isDefaultTemplateSet()",
-      "public java.lang.String getSummaryClass()",
-      "public java.lang.String getBoldOpenTag()",
-      "public java.lang.String getBoldCloseTag()",
-      "public java.lang.String getSeparatorTag()",
-      "public void setSummaryClass(java.lang.String)",
-      "public void setHighlightTags(java.lang.String, java.lang.String, java.lang.String)",
-      "public java.lang.String getName()",
-      "public java.lang.String getMimeType()",
-      "public java.lang.String getEncoding()",
-      "public com.yahoo.prelude.templates.Template getTemplate(java.lang.String)",
-      "public void setTemplate(java.lang.String, com.yahoo.prelude.templates.Template)",
-      "public void setTemplateNotNull(java.lang.String, com.yahoo.prelude.templates.Template)",
-      "public void header(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void footer(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void hit(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void hitFooter(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void error(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void noHits(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void queryContext(com.yahoo.prelude.templates.Context, java.io.Writer)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.prelude.templates.MapContext": {
-    "superClass": "com.yahoo.prelude.templates.Context",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public java.lang.Object get(java.lang.String)",
-      "public java.lang.Object put(java.lang.String, java.lang.Object)",
-      "public java.lang.Object remove(java.lang.Object)",
-      "public java.util.Collection getKeys()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.prelude.templates.PageTemplateSet": {
-    "superClass": "com.yahoo.prelude.templates.TiledTemplateSet",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public com.yahoo.text.XMLWriter wrapWriter(java.io.Writer)",
-      "public void header(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "public void footer(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "protected void renderSection(com.yahoo.search.result.HitGroup, com.yahoo.text.XMLWriter)",
-      "public void hit(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "public void hitFooter(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "public java.lang.String toString()",
-      "public bridge synthetic void hitFooter(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic void hit(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic void footer(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic void header(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic java.io.Writer wrapWriter(java.io.Writer)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.prelude.templates.SearchRendererAdaptor": {
-    "superClass": "com.yahoo.search.rendering.Renderer",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.prelude.templates.UserTemplate)",
-      "public void init()",
-      "public static void callRender(java.io.OutputStream, com.yahoo.search.Result)",
-      "public java.lang.String getEncoding()",
-      "public java.lang.String getMimeType()",
-      "public java.lang.String getDefaultSummaryClass()",
-      "public void render(java.io.Writer, com.yahoo.search.Result)",
-      "public java.io.Writer wrapWriter(java.io.Writer)",
-      "public void beginResult(java.io.Writer, com.yahoo.search.Result)",
-      "public void endResult(java.io.Writer, com.yahoo.search.Result)",
-      "public void error(java.io.Writer, java.util.Collection)",
-      "public void emptyResult(java.io.Writer, com.yahoo.search.Result)",
-      "public void queryContext(java.io.Writer, com.yahoo.search.query.context.QueryContext)",
-      "public void renderHit(java.io.Writer, com.yahoo.search.result.Hit, int)",
-      "public static boolean simpleRenderDefaultErrorHit(java.io.Writer, com.yahoo.search.result.ErrorHit)",
-      "public static void renderMessageDefaultErrorHit(com.yahoo.text.XMLWriter, com.yahoo.processing.request.ErrorMessage)",
-      "public boolean simpleRenderErrorHit(java.io.Writer, com.yahoo.search.result.ErrorHit)",
-      "public static void rendererErrorHitMessageMessage(com.yahoo.text.XMLWriter, com.yahoo.search.result.ErrorHit, com.yahoo.processing.request.ErrorMessage)",
-      "public com.yahoo.prelude.templates.UserTemplate getAdaptee()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.prelude.templates.Template": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "abstract"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public abstract void render(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public abstract java.lang.String getName()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.prelude.templates.TemplateSet": {
-    "superClass": "com.yahoo.prelude.templates.UserTemplate",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
-      "public static com.yahoo.prelude.templates.UserTemplate getDefault()",
-      "public com.yahoo.prelude.templates.Template getHeader(com.yahoo.search.Result)",
-      "public void setHeader(com.yahoo.prelude.templates.Template)",
-      "public com.yahoo.prelude.templates.Template getFooter(com.yahoo.search.Result)",
-      "public void setFooter(com.yahoo.prelude.templates.Template)",
-      "public com.yahoo.prelude.templates.Template getNohits(com.yahoo.search.Result)",
-      "public com.yahoo.prelude.templates.Template getQueryContext(com.yahoo.search.Result)",
-      "public void setQueryContext(com.yahoo.prelude.templates.Template)",
-      "public void setNohits(com.yahoo.prelude.templates.Template)",
-      "public com.yahoo.prelude.templates.Template getError(com.yahoo.search.Result)",
-      "public void setError(com.yahoo.prelude.templates.Template)",
-      "public com.yahoo.prelude.templates.Template getHit(com.yahoo.search.result.Hit)",
-      "public void setHit(com.yahoo.prelude.templates.Template)",
-      "public com.yahoo.prelude.templates.Template getHitFooter(com.yahoo.search.result.Hit)",
-      "public java.lang.String toString()",
-      "public void header(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void footer(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void hit(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void error(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void hitFooter(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void noHits(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void queryContext(com.yahoo.prelude.templates.Context, java.io.Writer)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.prelude.templates.TiledTemplateSet": {
-    "superClass": "com.yahoo.prelude.templates.DefaultTemplateSet",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(java.lang.String)",
-      "public com.yahoo.text.XMLWriter wrapWriter(java.io.Writer)",
-      "public void header(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "protected void renderHitAttributes(com.yahoo.search.result.Hit, com.yahoo.text.XMLWriter)",
-      "protected void renderField(com.yahoo.prelude.templates.Context, com.yahoo.search.result.Hit, java.util.Map$Entry, com.yahoo.text.XMLWriter)",
-      "protected void renderHitFields(com.yahoo.prelude.templates.Context, com.yahoo.search.result.Hit, com.yahoo.text.XMLWriter)",
-      "protected boolean shouldRenderField(com.yahoo.search.result.Hit, java.lang.String)",
-      "public void hit(com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "protected void renderHitGroup(com.yahoo.search.result.HitGroup, com.yahoo.prelude.templates.Context, com.yahoo.text.XMLWriter)",
-      "protected void renderSection(com.yahoo.search.result.HitGroup, com.yahoo.text.XMLWriter)",
-      "protected void renderSectionContent(com.yahoo.search.result.HitGroup, com.yahoo.text.XMLWriter)",
-      "protected void renderProvider(com.yahoo.prelude.templates.Context, com.yahoo.search.result.Hit, com.yahoo.text.XMLWriter)",
-      "protected void renderProviderHitAttributes(com.yahoo.search.result.Hit, com.yahoo.text.XMLWriter)",
-      "protected void renderProviderHitFields(com.yahoo.prelude.templates.Context, com.yahoo.search.result.Hit, com.yahoo.text.XMLWriter)",
-      "protected void renderProviderField(com.yahoo.prelude.templates.Context, com.yahoo.search.result.Hit, java.util.Map$Entry, com.yahoo.text.XMLWriter)",
-      "public java.lang.String toString()",
-      "public bridge synthetic void hit(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic void header(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public bridge synthetic java.io.Writer wrapWriter(java.io.Writer)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.prelude.templates.UserTemplate": {
-    "superClass": "com.yahoo.prelude.templates.GenericTemplateSet",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "abstract"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
-      "public void <init>(java.lang.String)",
-      "public java.io.Writer wrapWriter(java.io.Writer)",
-      "public com.yahoo.prelude.templates.Context createContext()",
-      "public boolean isDefaultTemplateSet()",
-      "public abstract void header(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public abstract void footer(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public abstract void hit(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public abstract void hitFooter(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public abstract void error(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public abstract void noHits(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public void queryContext(com.yahoo.prelude.templates.Context, java.io.Writer)",
-      "public static void dumpAndXMLQuoteUTF8(com.yahoo.io.ByteWriter, byte[])",
-      "public static boolean dumpBytes(com.yahoo.io.ByteWriter, com.yahoo.prelude.fastsearch.FastHit, java.lang.String)"
-    ],
-    "fields": []
-  },
   "com.yahoo.search.Query$Type": {
     "superClass": "java.lang.Enum",
     "interfaces": [],
@@ -2044,7 +1703,6 @@
       "public long getStartTime()",
       "public long getDurationTime()",
       "public long getTimeLeft()",
-      "public boolean requestHasProperty(java.lang.String)",
       "public long getTimeout()",
       "public void setTimeout(long)",
       "public void setTimeout(java.lang.String)",
@@ -2061,8 +1719,6 @@
       "public void setHits(int)",
       "public void setOffset(int)",
       "public void setWindow(int, int)",
-      "public void setCompress(boolean)",
-      "public boolean getCompress()",
       "public java.lang.String toString()",
       "public java.lang.String toDetailString()",
       "public int encode(java.nio.ByteBuffer)",
@@ -2081,7 +1737,6 @@
       "public com.yahoo.search.query.Ranking getRanking()",
       "public com.yahoo.search.query.Model getModel()",
       "public com.yahoo.container.jdisc.HttpRequest getHttpRequest()",
-      "public com.yahoo.search.query.SessionId getSessionId(boolean)",
       "public com.yahoo.search.query.SessionId getSessionId()",
       "public com.yahoo.search.query.SessionId getSessionId(java.lang.String)",
       "public boolean hasEncodableProperties()",
@@ -2146,7 +1801,6 @@
       "public void setCoverage(com.yahoo.search.result.Coverage)",
       "public com.yahoo.search.result.Coverage getCoverage(boolean)",
       "public com.yahoo.collections.ListMap getHeaders(boolean)",
-      "public com.yahoo.search.result.Templating getTemplating()",
       "public bridge synthetic com.yahoo.component.provider.ListenableFreezableClass clone()",
       "public bridge synthetic com.yahoo.component.provider.FreezableClass clone()",
       "public bridge synthetic java.lang.Object clone()"
@@ -2209,7 +1863,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.cluster.NodeManager, java.lang.String)",
       "public void <init>(com.yahoo.search.cluster.NodeManager)",
       "public com.yahoo.search.cluster.MonitorConfiguration getConfiguration()",
       "public void add(java.lang.Object, boolean)",
@@ -2445,10 +2098,8 @@
       "public java.util.TimeZone getTimeZone()",
       "public com.yahoo.search.grouping.GroupingRequest setTimeZone(java.util.TimeZone)",
       "public com.yahoo.search.grouping.result.RootGroup getResultGroup(com.yahoo.search.Result)",
-      "public com.yahoo.search.grouping.GroupingRequest setResultGroup(com.yahoo.search.grouping.result.RootGroup)",
       "public java.util.List continuations()",
       "public static com.yahoo.search.grouping.GroupingRequest newInstance(com.yahoo.search.Query)",
-      "public static java.util.List getRequests(com.yahoo.search.Query)",
       "public java.lang.String toString()"
     ],
     "fields": []
@@ -4138,19 +3789,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.search.grouping.request.YmumValue": {
-    "superClass": "com.yahoo.search.grouping.request.DocumentValue",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public com.yahoo.search.grouping.request.YmumValue copy()",
-      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
-    ],
-    "fields": []
-  },
   "com.yahoo.search.grouping.request.ZCurveXFunction": {
     "superClass": "com.yahoo.search.grouping.request.FunctionNode",
     "interfaces": [],
@@ -4438,8 +4076,6 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.statistics.Statistics, com.yahoo.language.Linguistics, com.yahoo.jdisc.Metric, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.config.QueryProfilesConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.container.core.ContainerHttpConfig)",
-      "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.statistics.Statistics, com.yahoo.language.Linguistics, com.yahoo.jdisc.Metric, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.config.QueryProfilesConfig, com.yahoo.component.provider.ComponentRegistry)",
-      "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.container.core.QrTemplatesConfig, com.yahoo.container.protect.FreezeDetector, com.yahoo.statistics.Statistics, com.yahoo.language.Linguistics, com.yahoo.jdisc.Metric, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.config.QueryProfilesConfig, com.yahoo.component.provider.ComponentRegistry)",
       "protected void destroy()",
       "public final com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest)",
       "public com.yahoo.search.Result searchAndFill(com.yahoo.search.Query, com.yahoo.component.chain.Chain, com.yahoo.search.searchchain.SearchChainRegistry)",
@@ -5238,7 +4874,6 @@
     "methods": [
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
       "public void <init>(com.yahoo.search.Query)",
-      "public void traceLanguage()",
       "public com.yahoo.language.Language getParsingLanguage()",
       "public com.yahoo.language.Language getParsingLanguage(java.lang.String)",
       "public com.yahoo.language.Language getLanguage()",
@@ -5278,9 +4913,7 @@
       "public com.yahoo.search.searchchain.Execution getExecution()",
       "public static com.yahoo.search.query.Model getFrom(com.yahoo.search.Query)",
       "public java.lang.String toString()",
-      "public void prepare(com.yahoo.search.query.Ranking)",
-      "public void setYTraceHeaderToNext(java.lang.String)",
-      "public java.lang.String getYTraceHeaderToNext()"
+      "public void prepare(com.yahoo.search.query.Ranking)"
     ],
     "fields": [
       "public static final java.lang.String MODEL",
@@ -5326,8 +4959,6 @@
       "public void setSummary(java.lang.String)",
       "public boolean getBolding()",
       "public void setBolding(boolean)",
-      "public boolean getReportCoverage()",
-      "public void setReportCoverage(boolean)",
       "public com.yahoo.component.ComponentSpecification getRenderer()",
       "public void setRenderer(com.yahoo.component.ComponentSpecification)",
       "public java.lang.String getFormat()",
@@ -5346,7 +4977,6 @@
       "public static final java.lang.String BOLDING",
       "public static final java.lang.String TIMING",
       "public static final java.lang.String SUMMARY",
-      "public static final java.lang.String REPORT_COVERAGE",
       "public static final java.lang.String SUMMARY_FIELDS",
       "public static final java.lang.String FORMAT"
     ]
@@ -5683,7 +5313,6 @@
     ],
     "methods": [
       "public java.lang.String toString()",
-      "public static com.yahoo.search.query.UniqueRequestId next()",
       "public static com.yahoo.search.query.UniqueRequestId next(java.lang.String)"
     ],
     "fields": []
@@ -6576,9 +6205,7 @@
       "public java.util.Map listProperties(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public final com.yahoo.search.Query getParentQuery()"
     ],
-    "fields": [
-      "public static final com.yahoo.processing.request.CompoundName[] PER_SOURCE_QUERY_PROPERTIES"
-    ]
+    "fields": []
   },
   "com.yahoo.search.query.properties.QueryPropertyAliases": {
     "superClass": "com.yahoo.search.query.properties.PropertyAliases",
@@ -6819,7 +6446,7 @@
       "public static final java.lang.String ENABLE",
       "public static final java.lang.String FACTOR",
       "public static final java.lang.String TAILCOST",
-      "public java.lang.Boolean enable"
+      "public static final com.yahoo.processing.request.CompoundName enableProperty"
     ]
   },
   "com.yahoo.search.query.rewrite.QueryRewriteSearcher": {
@@ -7099,50 +6726,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.search.rendering.DefaultRenderer$RenderingVisitor": {
-    "superClass": "com.yahoo.yolean.trace.TraceVisitor",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.text.XMLWriter, long)",
-      "public void entering(com.yahoo.yolean.trace.TraceNode)",
-      "public void leaving(com.yahoo.yolean.trace.TraceNode)",
-      "public void visit(com.yahoo.yolean.trace.TraceNode)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.rendering.DefaultRenderer": {
-    "superClass": "com.yahoo.processing.rendering.AsynchronousSectionedRenderer",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(java.util.concurrent.Executor)",
-      "public void init()",
-      "public java.lang.String getEncoding()",
-      "public java.lang.String getMimeType()",
-      "public void error(com.yahoo.text.XMLWriter, com.yahoo.search.Result)",
-      "public void queryContext(com.yahoo.text.XMLWriter, com.yahoo.search.query.context.QueryContext, com.yahoo.search.Query)",
-      "public static boolean simpleRenderDefaultErrorHit(com.yahoo.text.XMLWriter, com.yahoo.search.result.ErrorHit)",
-      "public static void renderMessageDefaultErrorHit(com.yahoo.text.XMLWriter, com.yahoo.search.result.ErrorMessage)",
-      "public void beginResponse(java.io.OutputStream)",
-      "public final java.lang.String getRequestedEncoding(com.yahoo.search.Query)",
-      "public void beginList(com.yahoo.processing.response.DataList)",
-      "public void data(com.yahoo.processing.response.Data)",
-      "public void endList(com.yahoo.processing.response.DataList)",
-      "public void endResponse()"
-    ],
-    "fields": [
-      "public static final java.lang.String DEFAULT_MIMETYPE",
-      "public static final java.lang.String DEFAULT_ENCODING"
-    ]
-  },
   "com.yahoo.search.rendering.JsonRenderer": {
     "superClass": "com.yahoo.processing.rendering.AsynchronousSectionedRenderer",
     "interfaces": [],
@@ -7205,6 +6788,7 @@
     ],
     "fields": [
       "public static final com.yahoo.component.ComponentId xmlRendererId",
+      "public static final com.yahoo.component.ComponentId pageRendererId",
       "public static final com.yahoo.component.ComponentId jsonRendererId",
       "public static final com.yahoo.component.ComponentId defaultRendererId"
     ]
@@ -7350,8 +6934,6 @@
       "public void <init>(long, long)",
       "public void <init>(long, long, int)",
       "public void <init>(long, long, int, int)",
-      "public void <init>(long, int, boolean)",
-      "public void <init>(long, int, boolean, int)",
       "public com.yahoo.search.result.Coverage setSoonActive(long)",
       "public com.yahoo.search.result.Coverage setDegradedReason(int)",
       "public com.yahoo.search.result.Coverage setNodesTried(int)",
@@ -7389,7 +6971,6 @@
       "public void <init>(java.lang.String, com.yahoo.search.result.ErrorMessage)",
       "public void <init>(java.lang.String, java.util.List)",
       "public void setSource(java.lang.String)",
-      "public com.yahoo.search.result.ErrorMessage getMainError()",
       "public void addError(com.yahoo.search.result.ErrorMessage)",
       "public void addErrors(com.yahoo.search.result.ErrorHit)",
       "public java.util.Iterator errorIterator()",
@@ -7417,7 +6998,6 @@
     ],
     "methods": [
       "public abstract void setSource(java.lang.String)",
-      "public abstract com.yahoo.search.result.ErrorMessage getMainError()",
       "public abstract void addError(com.yahoo.search.result.ErrorMessage)",
       "public abstract void addErrors(com.yahoo.search.result.ErrorHit)",
       "public abstract java.util.Iterator errorIterator()",
@@ -7576,30 +7156,17 @@
       "public java.lang.Object removeField(java.lang.String)",
       "protected boolean hasField(java.lang.String)",
       "protected boolean hasFields()",
-      "public void changeFieldKey(java.lang.String, java.lang.String)",
-      "public com.yahoo.prelude.hitfield.HitField buildHitField(java.lang.String)",
       "public com.yahoo.prelude.hitfield.HitField buildHitField(java.lang.String, boolean)",
-      "public com.yahoo.prelude.hitfield.HitField buildHitField(java.lang.String, boolean, boolean)",
       "public java.util.Set types()",
-      "public java.lang.String getTypeString()",
-      "public int getAddNumber()",
-      "public void setAddNumber(int)",
       "public boolean isMeta()",
       "public void setMeta(boolean)",
       "public boolean isAuxiliary()",
       "public void setAuxiliary(boolean)",
-      "public int getSourceNumber()",
-      "public void setSourceNumber(int)",
       "public com.yahoo.search.Query getQuery()",
       "public com.yahoo.processing.Request request()",
       "public final void setQuery(com.yahoo.search.Query)",
-      "public java.lang.String getFieldXML(java.lang.String)",
-      "public java.lang.String getUnboldedField(java.lang.String, boolean)",
       "public void setSearcherSpecificMetaData(com.yahoo.search.Searcher, java.lang.Object)",
       "public java.lang.Object getSearcherSpecificMetaData(com.yahoo.search.Searcher)",
-      "protected final void setFilledInternal(java.util.Set)",
-      "protected final java.util.Set getFilledInternal()",
-      "public static java.lang.String stripCharacter(char, java.lang.String)",
       "protected void close()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -7651,7 +7218,6 @@
       "public com.yahoo.search.result.Hit remove(java.lang.String)",
       "public com.yahoo.search.result.Hit remove(com.yahoo.net.URI)",
       "public com.yahoo.search.result.Hit remove(int)",
-      "public void setError(com.yahoo.search.result.ErrorMessage)",
       "public void addError(com.yahoo.search.result.ErrorMessage)",
       "public com.yahoo.search.result.ErrorHit getErrorHit()",
       "public com.yahoo.search.result.DefaultErrorHit removeErrorHit()",
@@ -7839,31 +7405,6 @@
       "public java.lang.StringBuilder writeXML(java.lang.StringBuilder)",
       "public java.lang.String toJson()",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.result.Templating": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.search.Result)",
-      "public int getFirstHitNo()",
-      "public long getNextFirstHitNo()",
-      "public long getNextLastHitNo()",
-      "public int getLastHitNo()",
-      "public int getPrevFirstHitNo()",
-      "public int getPrevLastHitNo()",
-      "public java.lang.String getNextResultURL()",
-      "public java.lang.String getPreviousResultURL()",
-      "public java.lang.String getCurrentResultURL()",
-      "public com.yahoo.prelude.templates.UserTemplate getTemplates()",
-      "public void setTemplates(com.yahoo.prelude.templates.UserTemplate)",
-      "public com.yahoo.processing.rendering.Renderer getRenderer()",
-      "public void setRenderer(com.yahoo.processing.rendering.Renderer)",
-      "public boolean usesDefaultTemplate()"
     ],
     "fields": []
   },
