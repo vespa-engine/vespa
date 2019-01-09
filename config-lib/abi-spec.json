@@ -213,8 +213,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.List)",
-      "public void <init>(java.util.List, com.yahoo.config.InnerNode)"
+      "public void <init>(java.util.List)"
     ],
     "fields": []
   },
