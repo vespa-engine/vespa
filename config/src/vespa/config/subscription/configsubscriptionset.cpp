@@ -42,7 +42,7 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
     bool inSync = false;
 
     LOG(debug, "Going into nextConfig loop, time left is %d", timeLeft);
-    while ((_state != CLOSED) && (timeLeft >= 0) && !inSync) {
+    while (!isClosed() && (timeLeft >= 0) && !inSync) {
         size_t numChanged = 0;
         size_t numGenerationChanged = 0;
         bool generationsInSync = true;
@@ -117,7 +117,7 @@ ConfigSubscriptionSet::close()
 bool
 ConfigSubscriptionSet::isClosed() const
 {
-    return (_state == CLOSED);
+    return (_state.load(std::memory_order_relaxed) == CLOSED);
 }
 
 ConfigSubscription::SP
