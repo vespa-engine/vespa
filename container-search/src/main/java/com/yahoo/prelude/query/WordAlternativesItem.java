@@ -15,7 +15,7 @@ import com.yahoo.compress.IntegerCompressor;
  * A set words with differing exactness scores to be used for literal boost
  * ranking.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class WordAlternativesItem extends TermItem {
 
@@ -23,6 +23,7 @@ public class WordAlternativesItem extends TermItem {
     private int maxIndex;
 
     public static final class Alternative {
+
         public final String word;
         public final double exactness;
 
@@ -38,6 +39,7 @@ public class WordAlternativesItem extends TermItem {
             builder.append("Alternative [word=").append(word).append(", exactness=").append(exactness).append("]");
             return builder.toString();
         }
+
     }
 
     public WordAlternativesItem(String indexName, boolean isFromQuery, Substring origin, Collection<Alternative> terms) {
@@ -51,7 +53,7 @@ public class WordAlternativesItem extends TermItem {
     }
 
     private static ImmutableList<Alternative> uniqueAlternatives(Collection<Alternative> terms) {
-        List<Alternative> uniqueTerms = new ArrayList<Alternative>(terms.size());
+        List<Alternative> uniqueTerms = new ArrayList<>(terms.size());
         for (Alternative term : terms) {
             int i = Collections.binarySearch(uniqueTerms, term, (t0, t1) -> t0.word.compareTo(t1.word));
             if (i >= 0) {
@@ -104,7 +106,7 @@ public class WordAlternativesItem extends TermItem {
 
     @Override
     public void setValue(String value) {
-        throw new UnsupportedOperationException("semantics for setting to a string would be brittle, use setAlternatives()");
+        throw new UnsupportedOperationException("Semantics for setting to a string would be brittle, use setAlternatives()");
     }
 
     @Override
@@ -180,4 +182,5 @@ public class WordAlternativesItem extends TermItem {
         newTerms.add(new Alternative(term, exactness));
         setAlternatives(newTerms);
     }
+
 }

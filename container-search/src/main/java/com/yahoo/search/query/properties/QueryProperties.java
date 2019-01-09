@@ -3,9 +3,12 @@ package com.yahoo.search.query.properties;
 
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
-import com.yahoo.search.grouping.GroupingRequest;
-import com.yahoo.search.grouping.vespa.GroupingExecutor;
-import com.yahoo.search.query.*;
+
+import com.yahoo.search.query.Model;
+import com.yahoo.search.query.Presentation;
+import com.yahoo.search.query.Properties;
+import com.yahoo.search.query.Ranking;
+import com.yahoo.search.query.Select;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
@@ -15,10 +18,7 @@ import com.yahoo.search.query.ranking.Matching;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.tensor.Tensor;
 
-import java.util.List;
 import java.util.Map;
-
-
 
 /**
  * Maps between the query model and text properties.

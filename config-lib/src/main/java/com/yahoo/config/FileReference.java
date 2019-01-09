@@ -44,7 +44,7 @@ public final class FileReference {
     }
 
     public static List<String> toValues(Collection<FileReference> references) {
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
         for (FileReference r: references) {
             ret.add(r.value());
         }
