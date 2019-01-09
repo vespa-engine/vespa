@@ -11,7 +11,7 @@
       "public abstract java.util.Map documentTypes()",
       "public abstract java.util.Map structTypes()",
       "public abstract java.util.Map annotationTypes()",
-      "public com.yahoo.document.Document getDocumentCopy(java.lang.String, com.yahoo.document.datatypes.StructuredFieldValue, com.yahoo.document.DocumentId)"
+      "public abstract com.yahoo.document.Document getDocumentCopy(java.lang.String, com.yahoo.document.datatypes.StructuredFieldValue, com.yahoo.document.DocumentId)"
     ],
     "fields": []
   },
@@ -269,7 +269,6 @@
     "methods": [
       "public void <init>()",
       "public static com.yahoo.docproc.Processing of(com.yahoo.document.DocumentOperation)",
-      "public static com.yahoo.docproc.Processing fromDocumentOperation(com.yahoo.document.DocumentOperation)",
       "public void <init>(java.lang.String, com.yahoo.document.DocumentOperation, com.yahoo.docproc.CallStack)",
       "public static com.yahoo.docproc.Processing createProcessingFromDocumentOperations(java.lang.String, java.util.List, com.yahoo.docproc.CallStack)",
       "public com.yahoo.component.provider.ComponentRegistry getDocprocServiceRegistry()",
@@ -312,7 +311,6 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void process(com.yahoo.document.Document)",
       "public void process(com.yahoo.document.DocumentPut)",
       "public void process(com.yahoo.document.DocumentUpdate)",
       "public void process(com.yahoo.document.DocumentRemove)",

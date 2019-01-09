@@ -1294,7 +1294,6 @@
       "public final boolean equals(java.lang.Object)",
       "public final java.lang.String toString()",
       "public abstract java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
-      "public java.lang.String toString(com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
       "public abstract com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)"
     ],

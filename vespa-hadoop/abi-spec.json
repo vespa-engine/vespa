@@ -36,8 +36,8 @@
       "public"
     ],
     "methods": [
-      "protected void <init>(com.yahoo.component.ComponentId)",
       "protected void <init>()",
+      "protected void <init>(com.yahoo.component.ComponentId)",
       "public final void initId(com.yahoo.component.ComponentId)",
       "public final com.yahoo.component.ComponentId getId()",
       "public final boolean hasInitializedId()",
@@ -228,35 +228,6 @@
       "public static final java.lang.String V_TAG_ARCH",
       "public static final com.yahoo.component.Version currentVersion"
     ]
-  },
-  "com.yahoo.component.provider.ComponentClass$ComponentConstructor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.reflect.Constructor)",
-      "public java.lang.reflect.Constructor getConstructor()",
-      "public boolean preferredTo(com.yahoo.component.provider.ComponentClass$ComponentConstructor)"
-    ],
-    "fields": [
-      "public final boolean isLegal",
-      "public final boolean hasComponentId"
-    ]
-  },
-  "com.yahoo.component.provider.ComponentClass": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.Class)",
-      "public com.yahoo.component.AbstractComponent createComponent(com.yahoo.component.ComponentId, java.util.Map, java.lang.String)",
-      "public com.yahoo.component.provider.ComponentClass$ComponentConstructor getPreferredConstructor()"
-    ],
-    "fields": []
   },
   "com.yahoo.component.provider.ComponentRegistry": {
     "superClass": "java.lang.Object",
@@ -711,6 +682,7 @@
       "public java.lang.String getName()",
       "public java.io.Reader getReader()",
       "public java.lang.String toString()",
+      "public static java.io.Reader nullReader()",
       "public int read(java.nio.CharBuffer)",
       "public int read()",
       "public int read(char[])",
@@ -721,6 +693,7 @@
       "public void mark(int)",
       "public void reset()",
       "public void close()",
+      "public long transferTo(java.io.Writer)",
       "public static void closeAll(java.util.List)"
     ],
     "fields": []
@@ -2880,35 +2853,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.text.DoubleFormatter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public static java.lang.StringBuilder fmt(java.lang.StringBuilder, double)",
-      "public static java.lang.String stringValue(double)",
-      "public static void append(java.lang.StringBuilder, double)",
-      "public static void append(java.lang.StringBuilder, int)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.text.DoubleParser": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public static double parse(java.lang.String)"
-    ],
-    "fields": []
-  },
   "com.yahoo.text.ForwardWriter": {
     "superClass": "com.yahoo.text.GenericWriter",
     "interfaces": [],
@@ -3031,19 +2975,6 @@
       "public void flush()",
       "public void close()",
       "public final java.io.Writer getWriter()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.text.LanguageHacks": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public static boolean isCJK(java.lang.String)",
-      "public static boolean yellDesegments(java.lang.String)"
     ],
     "fields": []
   },
@@ -3589,7 +3520,6 @@
       "public void <init>(com.yahoo.vespa.http.client.config.Endpoint)",
       "public com.yahoo.vespa.http.client.config.Endpoint getEndpoint()",
       "public boolean isSuccess()",
-      "public boolean isTransient()",
       "public com.yahoo.vespa.http.client.Result$ResultType getResultType()",
       "public java.lang.Exception getException()",
       "public java.lang.String getTraceMessage()",
@@ -3628,7 +3558,6 @@
       "public java.lang.CharSequence getDocumentDataAsCharSequence()",
       "public java.lang.Object getContext()",
       "public boolean isSuccess()",
-      "public boolean isTransient()",
       "public java.util.List getDetails()",
       "public boolean hasLocalTrace()",
       "public java.lang.String toString()"
@@ -3773,7 +3702,6 @@
       "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setUseCompression(boolean)",
       "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setMaxRetries(int)",
       "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setDryRun(boolean)",
-      "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setEnableV3Protocol(boolean)",
       "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setMinTimeBetweenRetries(long, java.util.concurrent.TimeUnit)",
       "public long getMinTimeBetweenRetriesMs()",
       "public com.yahoo.vespa.http.client.config.ConnectionParams$Builder setTraceLevel(int)",
@@ -3825,7 +3753,6 @@
       "public int getMaxRetries()",
       "public long getMinTimeBetweenRetriesMs()",
       "public boolean isDryRun()",
-      "public boolean isEnableV3Protocol()",
       "public int getTraceLevel()",
       "public int getTraceEveryXOperation()",
       "public boolean getPrintTraceToStdErr()"
