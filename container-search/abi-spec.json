@@ -2095,6 +2095,7 @@
     "fields": [
       "public static final com.yahoo.processing.request.CompoundName OFFSET",
       "public static final com.yahoo.processing.request.CompoundName HITS",
+      "public static final com.yahoo.processing.request.CompoundName QUERY_PROFILE",
       "public static final com.yahoo.processing.request.CompoundName SEARCH_CHAIN",
       "public static final com.yahoo.processing.request.CompoundName TRACE_LEVEL",
       "public static final com.yahoo.processing.request.CompoundName NO_CACHE",
