@@ -10,8 +10,10 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Before;
@@ -29,6 +31,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PIN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -1130,6 +1133,69 @@ public class UpgraderTest {
         tester.deployAndNotify(app, applicationPackage, true, productionUsCentral1);
         tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
         assertFalse(tester.application(app.id()).change().isPresent());
+    }
+
+    @Test
+    public void testPinning() {
+        Version version0 = Version.fromString("6.2");
+        tester.upgradeSystem(version0);
+
+        // Create an application with pinned platform version.
+        Application application = tester.createApplication("application", "tenant", 2, 3);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder().environment(Environment.prod)
+                                                                               .region("us-east-3")
+                                                                               .region("us-west-1")
+                                                                               .build();
+        tester.deploymentTrigger().forceChange(application.id(), Change.empty().withPin());
+
+        tester.deployCompletely(application, applicationPackage);
+        assertFalse(tester.application(application.id()).change().isPresent());
+        assertTrue(tester.application(application.id()).change().isPinned());
+        assertEquals(2, tester.application(application.id()).deployments().size());
+
+        // Application does not upgrade.
+        Version version1 = Version.fromString("6.3");
+        tester.upgradeSystem(version1);
+        tester.upgrader().maintain();
+        assertFalse(tester.application(application.id()).change().isPresent());
+        assertTrue(tester.application(application.id()).change().isPinned());
+
+        // New application package is deployed.
+        tester.deployCompletely(application, applicationPackage, BuildJob.defaultBuildNumber + 1);
+        assertFalse(tester.application(application.id()).change().isPresent());
+        assertTrue(tester.application(application.id()).change().isPinned());
+
+        // Application upgrades to new version when pin is removed.
+        tester.deploymentTrigger().cancelChange(application.id(), PIN);
+        tester.upgrader().maintain();
+        assertTrue(tester.application(application.id()).change().isPresent());
+        assertFalse(tester.application(application.id()).change().isPinned());
+
+        // Application is pinned to new version, and upgrade is therefore not cancelled, even though confidence is broken.
+        tester.deploymentTrigger().forceChange(application.id(), Change.empty().withPin());
+        tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
+        assertEquals(version1, tester.application(application.id()).change().platform().get());
+
+        // Application fails upgrade after one zone is complete, and is pinned again to the old version.
+        tester.deployAndNotify(application, true, systemTest);
+        tester.deployAndNotify(application, true, stagingTest);
+        tester.deployAndNotify(application, true, productionUsEast3);
+        tester.deploy(productionUsWest1, application, Optional.empty(), false);
+        tester.deployAndNotify(application, false, productionUsWest1);
+        tester.deploymentTrigger().cancelChange(application.id(), ALL);
+        tester.deploymentTrigger().forceChange(application.id(), Change.of(version0).withPin());
+        tester.buildService().clear();
+        assertEquals(version0, tester.application(application.id()).change().platform().get());
+
+        // Application downgrades to pinned version.
+        tester.readyJobTrigger().maintain();
+        tester.deployAndNotify(application, true, systemTest);
+        tester.deployAndNotify(application, true, stagingTest);
+        tester.deployAndNotify(application, true, productionUsEast3);
+        assertTrue(tester.application(application.id()).change().isPresent());
+        tester.deployAndNotify(application, true, productionUsWest1);
+        assertFalse(tester.application(application.id()).change().isPresent());
     }
 
 }

@@ -60,6 +60,7 @@ public class ApplicationSerializer {
     private final String deploymentsField = "deployments";
     private final String deploymentJobsField = "deploymentJobs";
     private final String deployingField = "deployingField";
+    private final String pinnedField = "pinned";
     private final String outstandingChangeField = "outstandingChangeField";
     private final String ownershipIssueIdField = "ownershipIssueId";
     private final String ownerField = "confirmedOwner";
@@ -275,13 +276,15 @@ public class ApplicationSerializer {
     }
 
     private void toSlime(Change deploying, Cursor parentObject, String fieldName) {
-        if ( ! deploying.isPresent()) return;
+        if ( ! deploying.isPresent() && ! deploying.isPinned()) return;
 
         Cursor object = parentObject.setObject(fieldName);
         if (deploying.platform().isPresent())
             object.setString(versionField, deploying.platform().get().toString());
         if (deploying.application().isPresent())
             toSlime(deploying.application().get(), object);
+        if (deploying.isPinned())
+            object.setBool(pinnedField, true);
     }
 
     private void toSlime(Map<HostName, RotationStatus> rotationStatus, Cursor array) {
@@ -435,8 +438,8 @@ public class ApplicationSerializer {
             change = Change.of(Version.fromString(versionFieldValue.asString()));
         if (object.field(applicationBuildNumberField).valid())
             change = change.with(applicationVersionFromSlime(object));
-        if ( ! change.isPresent()) // A deploy object with no fields -> unknown application change
-            change = Change.empty();
+        if (object.field(pinnedField).asBool())
+            change = change.withPin();
         return change;
     }
 

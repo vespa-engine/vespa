@@ -104,7 +104,7 @@ public class ApplicationSerializerTest {
                                                deploymentSpec,
                                                validationOverrides,
                                                deployments, deploymentJobs,
-                                               Change.of(Version.fromString("6.7")),
+                                               Change.of(Version.fromString("6.7")).withPin(),
                                                Change.of(ApplicationVersion.from(new SourceRevision("repo", "master", "deadcafe"), 42)),
                                                Optional.of(IssueId.from("1234")),
                                                Optional.of(User.from("by-username")),

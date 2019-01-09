@@ -92,8 +92,10 @@ public class Upgrader extends Maintainer {
         return reversed;
     }
 
-    /** Returns a list of all applications */
-    private ApplicationList applications() { return ApplicationList.from(controller().applications().asList()); }
+    /** Returns a list of all applications, except those which are pinned — these should not be manipulated by the Upgrader */
+    private ApplicationList applications() {
+        return ApplicationList.from(controller().applications().asList()).notPinned();
+    }
 
     private void upgrade(ApplicationList applications, Version version) {
         applications = applications.hasProductionDeployment();

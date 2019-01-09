@@ -20,7 +20,7 @@ import java.util.StringJoiner;
  */
 public final class Change {
 
-    private static final Change empty = new Change(Optional.empty(), Optional.empty());
+    private static final Change empty = new Change(Optional.empty(), Optional.empty(), false);
 
     /** The platform version we are upgrading to, or empty if none */
     private final Optional<Version> platform;
@@ -28,7 +28,9 @@ public final class Change {
     /** The application version we are changing to, or empty if none */
     private final Optional<ApplicationVersion> application;
 
-    private Change(Optional<Version> platform, Optional<ApplicationVersion> application) {
+    private final boolean pinned;
+
+    private Change(Optional<Version> platform, Optional<ApplicationVersion> application, boolean pinned) {
         Objects.requireNonNull(platform, "platform cannot be null");
         Objects.requireNonNull(application, "application cannot be null");
         if (application.isPresent() && application.get().isUnknown()) {
@@ -36,14 +38,15 @@ public final class Change {
         }
         this.platform = platform;
         this.application = application;
+        this.pinned = pinned;
     }
 
     public Change withoutPlatform() {
-        return new Change(Optional.empty(), application);
+        return new Change(Optional.empty(), application, pinned);
     }
 
     public Change withoutApplication() {
-        return new Change(platform, Optional.empty());
+        return new Change(platform, Optional.empty(), pinned);
     }
 
     /** Returns whether a change should currently be deployed */
@@ -57,17 +60,32 @@ public final class Change {
     /** Returns the application version carried by this. */
     public Optional<ApplicationVersion> application() { return application; }
 
+    public boolean isPinned() { return pinned; }
+
     /** Returns an instance representing no change */
     public static Change empty() { return empty; }
 
     /** Returns a version of this change which replaces or adds this platform change */
     public Change with(Version platformVersion) {
-        return new Change(Optional.of(platformVersion), application);
+        if (pinned)
+            throw new IllegalArgumentException("Not allowed to set a platform version when pinned.");
+
+        return new Change(Optional.of(platformVersion), application, pinned);
     }
 
     /** Returns a version of this change which replaces or adds this application change */
     public Change with(ApplicationVersion applicationVersion) {
-        return new Change(platform, Optional.of(applicationVersion));
+        return new Change(platform, Optional.of(applicationVersion), pinned);
+    }
+
+    /** Returns a change with the versions of this, and with the platform version pinned. */
+    public Change withPin() {
+        return new Change(platform, application, true);
+    }
+
+    /** Returns a change with the versions of this, and with the platform version unpinned. */
+    public Change withoutPin() {
+        return new Change(platform, application, false);
     }
 
     /** Returns the change obtained when overwriting elements of the given change with any present in this */
@@ -76,37 +94,44 @@ public final class Change {
             other = other.with(platform.get());
         if (application.isPresent())
             other = other.with(application.get());
+        if (pinned)
+            other = other.withPin();
         return other;
     }
 
     @Override
-    public int hashCode() { return Objects.hash(platform, application); }
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Change)) return false;
+        Change change = (Change) o;
+        return pinned == change.pinned &&
+               Objects.equals(platform, change.platform) &&
+               Objects.equals(application, change.application);
+    }
 
     @Override
-    public boolean equals(Object other) {
-        if (other == this) return true;
-        if ( ! (other instanceof Change)) return false;
-        Change o = (Change)other;
-        if ( ! o.platform.equals(this.platform)) return false;
-        if ( ! o.application.equals(this.application)) return false;
-        return true;
+    public int hashCode() {
+        return Objects.hash(platform, application, pinned);
     }
 
     @Override
     public String toString() {
         StringJoiner changes = new StringJoiner(" and ");
-        platform.ifPresent(version -> changes.add("upgrade to " + version.toString()));
+        if (pinned)
+            changes.add("pin to " + platform.map(Version::toString).orElse("current platform"));
+        else
+            platform.ifPresent(version -> changes.add("upgrade to " + version.toString()));
         application.ifPresent(version -> changes.add("application change to " + version.id()));
         changes.setEmptyValue("no change");
         return changes.toString();
     }
 
     public static Change of(ApplicationVersion applicationVersion) {
-        return new Change(Optional.empty(), Optional.of(applicationVersion));
+        return new Change(Optional.empty(), Optional.of(applicationVersion), false);
     }
 
     public static Change of(Version platformChange) {
-        return new Change(Optional.of(platformChange), Optional.empty());
+        return new Change(Optional.of(platformChange), Optional.empty(), false);
     }
 
     /** Returns whether this change carries an application downgrade relative to the given version. */

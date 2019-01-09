@@ -68,6 +68,7 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
@@ -100,7 +101,6 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.logging.Level;
 
-import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -203,7 +203,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploy(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), readToString(request.getData()), false);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), readToString(request.getData()), true);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return trigger(appIdFromPath(path), jobTypeFromPath(path), request);
@@ -219,7 +221,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "all");
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("choice"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return JobControllerApiHandlerHelper.unregisterResponse(controller.jobController(), path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.abortJobResponse(controller.jobController(), appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -755,48 +758,63 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     /**
      *  Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9",
-     *  or the latest known commit of the application if "commit" is given,
-     *  or an upgrade to the system version if no data is provided.
+     *  optionally pinning to that version if.
      */
-    private HttpResponse deploy(String tenantName, String applicationName, HttpRequest request) {
+    private HttpResponse deployPlatform(String tenantName, String applicationName, String versionString, boolean pin) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        String requestVersion = readToString(request.getData());
         StringBuilder response = new StringBuilder();
         controller.applications().lockOrThrow(id, application -> {
-            Change change;
-            if ("commit".equals(requestVersion))
-                change = Change.of(application.get().deploymentJobs().statusOf(JobType.component)
-                                              .get().lastSuccess().get().application());
-            else {
-                Version version = requestVersion == null ? controller.systemVersion() : new Version(requestVersion);
-                if ( ! systemHasVersion(version))
-                    throw new IllegalArgumentException("Cannot trigger deployment of version '" + version + "': " +
-                                                               "Version is not active in this system. " +
-                                                               "Active versions: " + controller.versionStatus().versions()
-                                                                                               .stream()
-                                                                                               .map(VespaVersion::versionNumber)
-                                                                                               .map(Version::toString)
-                                                                                               .collect(joining(", ")));
-                change = Change.of(version);
-            }
+            Version version = Version.fromString(versionString);
+            if (version.equals(Version.emptyVersion))
+                version = controller.systemVersion();
+            if ( ! systemHasVersion(version))
+                throw new IllegalArgumentException("Cannot trigger deployment of version '" + version + "': " +
+                                                       "Version is not active in this system. " +
+                                                       "Active versions: " + controller.versionStatus().versions()
+                                                                                       .stream()
+                                                                                       .map(VespaVersion::versionNumber)
+                                                                                       .map(Version::toString)
+                                                                                       .collect(joining(", ")));
+            Change change = Change.of(version);
+            if (pin)
+                change = change.withPin();
+
             controller.applications().deploymentTrigger().forceChange(id, change);
             response.append("Triggered " + change + " for " + id);
         });
         return new MessageResponse(response.toString());
     }
 
-    /** Cancel any ongoing change for given application */
-    private HttpResponse cancelDeploy(String tenantName, String applicationName) {
+    /** Trigger deployment to the last known application package for the given application. */
+    private HttpResponse deployApplication(String tenantName, String applicationName) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        Application application = controller.applications().require(id);
-        Change change = application.change();
-        if ( ! change.isPresent())
-            return new MessageResponse("No deployment in progress for " + application + " at this time");
+        StringBuilder response = new StringBuilder();
+        controller.applications().lockOrThrow(id, application -> {
+            Change change = Change.of(application.get().deploymentJobs().statusOf(JobType.component).get().lastSuccess().get().application());
+            controller.applications().deploymentTrigger().forceChange(id, change);
+            response.append("Triggered " + change + " for " + id);
+        });
+        return new MessageResponse(response.toString());
+    }
 
-        controller.applications().lockOrThrow(id, lockedApplication ->
-                controller.applications().deploymentTrigger().cancelChange(id, ALL));
+    /** Cancel ongoing change for given application, e.g., everything with {"cancel":"all"} */
+    private HttpResponse cancelDeploy(String tenantName, String applicationName, String choice) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
+        StringBuilder response = new StringBuilder();
+        controller.applications().lockOrThrow(id, application -> {
+            Change change = application.get().change();
+            if ( ! change.isPresent()) {
+                response.append("No deployment in progress for " + application + " at this time");
+                return;
+            }
 
-        return new MessageResponse("Cancelled " + change + " for " + application);
+            ChangesToCancel cancel = ChangesToCancel.valueOf(choice.toUpperCase());
+            controller.applications().deploymentTrigger().cancelChange(id, cancel);
+            response.append("Changed deployment from '" + change + "' to '" +
+                            controller.applications().require(id).change() + "' for " + application);
+        });
+
+        return new MessageResponse(response.toString());
     }
 
     /** Schedule restart of deployment, or specific host in a deployment */
