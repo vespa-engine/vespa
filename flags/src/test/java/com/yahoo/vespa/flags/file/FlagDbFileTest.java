@@ -12,6 +12,7 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,27 +23,12 @@ import static org.hamcrest.Matchers.equalTo;
 /**
  * @author hakonhall
  */
-public class FlagDirectoryTest {
+public class FlagDbFileTest {
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final FlagDirectory flagDirectory = new FlagDirectory(fileSystem);
+    private final FlagDbFile flagDb = new FlagDbFile(fileSystem);
 
     @Test
-    public void testReadingOnly() {
-        Map<FlagId, FlagData> data = flagDirectory.read();
-        assertThat(data, IsMapWithSize.anEmptyMap());
-
-        FlagId id1 = new FlagId("id1");
-        String json1 = "{\"id\":\"id1\"}";
-        writeUtf8FlagFile(id1.toString(), json1);
-        data = flagDirectory.read();
-        assertThat(data, IsMapWithSize.aMapWithSize(1));
-        assertThat(data, IsMapContaining.hasKey(id1));
-        assertThat(data.get(id1).id(), equalTo(id1));
-        assertThat(data.get(id1).serializeToJson(), equalTo(json1));
-    }
-
-    @Test
-    public void testSync() {
+    public void test() {
         Map<FlagId, FlagData> dataMap = new HashMap<>();
         FlagId id1 = new FlagId("id1");
         FlagData data1 = new FlagData(id1, new FetchVector());
@@ -52,17 +38,19 @@ public class FlagDirectoryTest {
         dataMap.put(id2, data2);
 
         // Non-existing directory => empty map
-        assertThat(flagDirectory.read(), IsMapWithSize.anEmptyMap());
+        assertThat(flagDb.read(), IsMapWithSize.anEmptyMap());
 
         // sync() will create directory with map content
-        assertThat(flagDirectory.sync(dataMap), equalTo(true));
-        Map<FlagId, FlagData> readDataMap = flagDirectory.read();
+        assertThat(flagDb.sync(dataMap), equalTo(true));
+        Map<FlagId, FlagData> readDataMap = flagDb.read();
         assertThat(readDataMap, IsMapWithSize.aMapWithSize(2));
         assertThat(readDataMap, IsMapContaining.hasKey(id1));
         assertThat(readDataMap, IsMapContaining.hasKey(id2));
 
+        assertThat(getDbContent(), equalTo("{\"flags\":[{\"id\":\"id1\"},{\"id\":\"id2\"}]}"));
+
         // another sync with the same data is a no-op
-        assertThat(flagDirectory.sync(dataMap), equalTo(false));
+        assertThat(flagDb.sync(dataMap), equalTo(false));
 
         // Changing value of id1, removing id2, adding id3
         dataMap.remove(id2);
@@ -71,16 +59,18 @@ public class FlagDirectoryTest {
         FlagId id3 = new FlagId("id3");
         FlagData data3 = new FlagData(id3, new FetchVector());
         dataMap.put(id3, data3);
-        assertThat(flagDirectory.sync(dataMap), equalTo(true));
-        Map<FlagId, FlagData> anotherReadDataMap = flagDirectory.read();
+        assertThat(flagDb.sync(dataMap), equalTo(true));
+        Map<FlagId, FlagData> anotherReadDataMap = flagDb.read();
         assertThat(anotherReadDataMap, IsMapWithSize.aMapWithSize(2));
         assertThat(anotherReadDataMap, IsMapContaining.hasKey(id1));
         assertThat(anotherReadDataMap, IsMapContaining.hasKey(id3));
         assertThat(anotherReadDataMap.get(id1).serializeToJson(), equalTo("{\"id\":\"id1\",\"attributes\":{\"hostname\":\"h1\"}}"));
+
+        assertThat(flagDb.sync(Collections.emptyMap()), equalTo(true));
+        assertThat(getDbContent(), equalTo("{\"flags\":[]}"));
     }
 
-    private void writeUtf8FlagFile(String flagIdAkaFilename, String content) {
-        uncheck(() -> Files.createDirectories(flagDirectory.getPath()));
-        uncheck(() -> Files.write(flagDirectory.getPath().resolve(flagIdAkaFilename), content.getBytes(StandardCharsets.UTF_8)));
+    public String getDbContent() {
+        return uncheck(() -> new String(Files.readAllBytes(flagDb.getPath()), StandardCharsets.UTF_8));
     }
 }

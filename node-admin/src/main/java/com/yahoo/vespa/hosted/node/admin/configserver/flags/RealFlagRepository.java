@@ -23,6 +23,6 @@ public class RealFlagRepository implements FlagRepository {
     @Override
     public Map<FlagId, FlagData> getAllFlagData() {
         WireFlagDataList list = configServerApi.get("/flags/v1/data?recursive=true", WireFlagDataList.class);
-        return list.flags.stream().map(FlagData::fromWire).collect(Collectors.toMap(FlagData::id, Function.identity()));
+        return FlagData.listFromWire(list).stream().collect(Collectors.toMap(FlagData::id, Function.identity()));
     }
 }

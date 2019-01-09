@@ -26,4 +26,12 @@ public class WireFlagDataList {
     public void serializeToOutputStream(OutputStream outputStream) {
         uncheck(() -> mapper.writeValue(outputStream, this));
     }
+
+    public byte[] serializeToBytes() {
+        return uncheck(() -> mapper.writeValueAsBytes(this));
+    }
+
+    public static WireFlagDataList deserializeFrom(byte[] bytes) {
+        return uncheck(() -> mapper.readValue(bytes, WireFlagDataList.class));
+    }
 }
