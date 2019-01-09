@@ -80,10 +80,11 @@ private:
     FakePosting::SP _fp;
 };
 
-    Verifier::Verifier(FakePosting::SP fp) :
-    _fp(std::move(fp))
-            { }
-    Verifier::~Verifier() {}
+Verifier::Verifier(FakePosting::SP fp)
+    : _fp(std::move(fp))
+{ }
+
+Verifier::~Verifier() = default;
 
 void
 Test::requireThatSearchIteratorsConforms()

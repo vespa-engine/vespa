@@ -5,8 +5,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vector>
 
-namespace search {
-namespace test {
+namespace search::test {
 
 class InitRangeVerifier {
 public:
@@ -36,5 +35,4 @@ private:
     DocIds _docIds;
 };
 
-}
 }

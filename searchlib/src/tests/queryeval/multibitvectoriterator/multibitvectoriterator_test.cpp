@@ -1,6 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("multibitvectoriterator_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -11,10 +9,15 @@ LOG_SETUP("multibitvectoriterator_test");
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("multibitvectoriterator_test");
 
 using namespace search::queryeval;
 using namespace search::fef;
 using namespace search;
+using vespalib::Trinary;
 
 //-----------------------------------------------------------------------------
 
@@ -29,6 +32,7 @@ public:
     void testOr();
     void testAndWith(bool invert);
     void testEndGuard(bool invert);
+    void testIteratorConformance();
     template<typename T>
     void testThatOptimizePreservesUnpack();
     template <typename T>
@@ -355,7 +359,7 @@ Test::testOptimizeCommon(bool isAnd, bool invert)
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[0]) != nullptr);
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[1]) != nullptr);
-        EXPECT_FALSE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[1])->isStrict());
+        EXPECT_TRUE(Trinary::False == m.getChildren()[1]->is_strict());
     }
     {
         MultiSearch::Children children;
@@ -371,7 +375,7 @@ Test::testOptimizeCommon(bool isAnd, bool invert)
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[0]) != nullptr);
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[1]) != nullptr);
-        EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[1])->isStrict());
+        EXPECT_TRUE(Trinary::True == m.getChildren()[1]->is_strict());
     }
     {
         MultiSearch::Children children;
@@ -418,7 +422,7 @@ Test::testOptimizeAndOr(bool invert)
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         EXPECT_TRUE(s);
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(s.get()) != nullptr);
-        EXPECT_FALSE(dynamic_cast<const MultiBitVectorIteratorBase *>(s.get())->isStrict());
+        EXPECT_TRUE(Trinary::False == s->is_strict());
     }
     {
         MultiSearch::Children children;
@@ -433,7 +437,7 @@ Test::testOptimizeAndOr(bool invert)
         const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0]) != nullptr);
-        EXPECT_FALSE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0])->isStrict());
+        EXPECT_TRUE(Trinary::False == m.getChildren()[0]->is_strict());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[1]) != nullptr);
     }
     {
@@ -449,7 +453,7 @@ Test::testOptimizeAndOr(bool invert)
         const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0]) != nullptr);
-        EXPECT_FALSE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0])->isStrict());
+        EXPECT_TRUE(Trinary::False == m.getChildren()[0]->is_strict());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[1]) != nullptr);
     }
     {
@@ -465,7 +469,7 @@ Test::testOptimizeAndOr(bool invert)
         const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0]) != nullptr);
-        EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0])->isStrict());
+        EXPECT_TRUE(Trinary::True == m.getChildren()[0]->is_strict());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[1]) != nullptr);
     }
     {
@@ -481,7 +485,7 @@ Test::testOptimizeAndOr(bool invert)
         const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0]) != nullptr);
-        EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0])->isStrict());
+        EXPECT_TRUE(Trinary::True == m.getChildren()[0]->is_strict());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[1]) != nullptr);
     }
 }
@@ -506,6 +510,60 @@ Test::testEndGuard(bool invert)
     EXPECT_FALSE(m.seek(_bvs[0]->size()+987));
 }
 
+class Verifier : public search::test::SearchIteratorVerifier {
+public:
+    Verifier(size_t numBv, bool is_and);
+    ~Verifier();
+
+    SearchIterator::UP create(bool strict) const override;
+
+private:
+    bool _is_and;
+    mutable TermFieldMatchData _tfmd;
+    std::vector<BitVector::UP> _bvs;
+};
+
+Verifier::Verifier(size_t numBv, bool is_and)
+    : _is_and(is_and),
+      _bvs()
+{
+    for (size_t i(0); i < numBv; i++) {
+        _bvs.push_back(BitVector::create(getDocIdLimit()));
+    }
+    for (uint32_t docId: getExpectedDocIds()) {
+        if (_is_and) {
+            for (auto & bv : _bvs) {
+                bv->setBit(docId);
+            }
+        } else {
+            _bvs[docId%_bvs.size()]->setBit(docId);
+        }
+    }
+}
+Verifier::~Verifier() = default;
+
+SearchIterator::UP
+Verifier::create(bool strict) const {
+    MultiSearch::Children bvs;
+    for (const auto & bv : _bvs) {
+        bvs.push_back(BitVectorIterator::create(bv.get(), getDocIdLimit(), _tfmd, strict, false).release());
+    }
+    SearchIterator::UP iter(_is_and ? AndSearch::create(bvs, strict) : OrSearch::create(bvs, strict));
+    auto mbvit = MultiBitVectorIteratorBase::optimize(std::move(iter));
+    EXPECT_TRUE((bvs.size() < 2) || (dynamic_cast<const MultiBitVectorIteratorBase *>(mbvit.get()) != nullptr));
+    EXPECT_EQUAL(strict, Trinary::True == mbvit->is_strict());
+    return mbvit;
+}
+
+void Test::testIteratorConformance() {
+    for (bool is_and : {false, true}) {
+        for (size_t i(1); i < 6; i++) {
+            Verifier searchIteratorVerifier(i, is_and);
+            searchIteratorVerifier.verify();
+        }
+    }
+}
+
 int
 Test::Main()
 {
@@ -526,6 +584,8 @@ Test::Main()
     TEST_FLUSH();
     testAndWith(false);
     testAndWith(true);
+    TEST_FLUSH();
+    testIteratorConformance();
     TEST_FLUSH();
     TEST_DONE();
 }

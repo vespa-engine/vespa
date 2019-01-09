@@ -28,7 +28,6 @@ public:
     const void *getBitValues() const { return _bv.getStart(); }
 
     Trinary is_strict() const override { return Trinary::False; }
-    virtual bool isStrict() const { return (is_strict() == Trinary::True); }
     uint32_t getDocIdLimit() const { return _docIdLimit; }
     static UP create(const BitVector *const other, fef::TermFieldMatchData &matchData, bool strict, bool inverted = false);
     static UP create(const BitVector *const other, uint32_t docIdLimit,

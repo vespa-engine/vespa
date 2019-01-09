@@ -13,6 +13,8 @@
 
 namespace search::queryeval {
 
+using vespalib::Trinary;
+
 namespace {
 
 template<typename Update>
@@ -25,7 +27,7 @@ protected:
     void strictSeek(uint32_t docId);
 private:
     void doSeek(uint32_t docId) override;
-    bool isStrict() const override { return false; }
+    Trinary is_strict() const override { return Trinary::False; }
     bool acceptExtraFilter() const override { return Update::isAnd(); }
     Update                  _update;
 };
@@ -37,7 +39,7 @@ public:
     MultiBitVectorIteratorStrict(const MultiSearch::Children & children) : MultiBitVectorIterator<Update>(children) { }
 private:
     void doSeek(uint32_t docId) override { this->strictSeek(docId); }
-    bool isStrict() const override { return true; }
+    Trinary is_strict() const override { return Trinary::True; }
 };
 
 template<typename Update>
@@ -211,7 +213,7 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
                     _unpackIndex.push_back(stolen.size());
                 }
                 SearchIterator::UP bit = parent.remove(it);
-                if ( ! strict && static_cast<const BitVectorIterator &>(*bit).isStrict()) {
+                if ( ! strict && (bit->is_strict() == Trinary::True)) {
                     strict = true;
                 }
                 stolen.push_back(bit.release());

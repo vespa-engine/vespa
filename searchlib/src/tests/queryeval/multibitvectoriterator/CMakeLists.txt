@@ -4,6 +4,7 @@ vespa_add_executable(searchlib_multibitvectoriterator_test_app TEST
     multibitvectoriterator_test.cpp
     DEPENDS
     searchlib
+    searchlib_test
 )
 vespa_add_test(NAME searchlib_multibitvectoriterator_test_app COMMAND searchlib_multibitvectoriterator_test_app)
 vespa_add_executable(searchlib_multibitvectoriterator_bench_app
