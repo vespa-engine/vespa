@@ -88,7 +88,7 @@ public class VespaModelFactory implements ModelFactory {
         this.modelImporters = Collections.emptyList();
         this.zone = Zone.defaultZone();
         this.clock = clock;
-        this.flagSource = null;
+        this.flagSource = (id, vector) -> Optional.empty();
     }
 
     /** Returns the version this model is build for */
