@@ -43,10 +43,10 @@ public class ZKMetricUpdater extends TimerTask {
     private final Timer timer = new Timer();
     private final int zkPort;
 
-    public ZKMetricUpdater(ZookeeperServerConfig zkServerConfig, long delay, long interval) {
+    public ZKMetricUpdater(ZookeeperServerConfig zkServerConfig, long delayMS, long intervalMS) {
         this.zkPort = zkServerConfig.clientPort();
-        if (interval > 0) {
-            timer.scheduleAtFixedRate(this, delay, interval);
+        if (intervalMS > 0) {
+            timer.scheduleAtFixedRate(this, delayMS, intervalMS);
         }
     }
 
