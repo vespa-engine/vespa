@@ -551,6 +551,7 @@ Verifier::create(bool strict) const {
     SearchIterator::UP iter(_is_and ? AndSearch::create(bvs, strict) : OrSearch::create(bvs, strict));
     auto mbvit = MultiBitVectorIteratorBase::optimize(std::move(iter));
     EXPECT_TRUE((bvs.size() < 2) || (dynamic_cast<const MultiBitVectorIteratorBase *>(mbvit.get()) != nullptr));
+    EXPECT_EQUAL(strict, Trinary::True == mbvit->is_strict());
     return mbvit;
 }
 
