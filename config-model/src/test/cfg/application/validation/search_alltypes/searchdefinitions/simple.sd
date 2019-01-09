@@ -10,6 +10,7 @@ search simple {
         field my_double type double       { indexing: summary }
         field my_uri type uri             { indexing: summary }
         field my_byte type byte           { indexing: summary }
+        field my_bool type bool           { indexing: summary }
         field my_predicate type predicate { indexing: summary }
         field my_tensor type tensor(x{})  { indexing: summary }
         field my_reference type reference<parent> { indexing: summary | attribute }

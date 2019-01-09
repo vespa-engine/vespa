@@ -2,7 +2,15 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.document.*;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.CollectionDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.ReferenceDataType;
+import com.yahoo.document.StructDataType;
+import com.yahoo.document.TensorDataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.model.VespaModel;
@@ -71,6 +79,7 @@ public class SearchDataTypeValidator extends Validator {
                    dataType.equals(DataType.DOUBLE) ||
                    dataType.equals(DataType.URI) ||
                    dataType.equals(DataType.BYTE) ||
+                   dataType.equals(DataType.BOOL) ||
                    dataType.equals(DataType.PREDICATE);
         }
     }
