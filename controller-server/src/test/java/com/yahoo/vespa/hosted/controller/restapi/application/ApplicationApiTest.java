@@ -435,13 +435,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "Deactivated tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default");
 
         // POST an application package and a test jar, submitting a new application for internal pipeline deployment.
-        // First attempt does not have an Athenz service definition in deployment spec, and fails.
+        // First attempt does not have an Athenz service definition in deployment spec, and is accepted.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(applicationPackage)),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Application must define an Athenz service in deployment.xml!\"}", 400);
+                              "{\"version\":\"1.0.43-d00d\"}");
 
-        // Second attempt has a service under a different domain than the tenant of the application, and fails as well.
+        // Second attempt has a service under a different domain than the tenant of the application, and fails.
         ApplicationPackage packageWithServiceForWrongDomain = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN_2.getName()), AthenzService.from("service"))
@@ -461,7 +461,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(packageWithService)),
-                              "{\"version\":\"1.0.43-d00d\"}");
+                              "{\"version\":\"1.0.44-d00d\"}");
 
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/badge", GET)
                                       .userIdentity(USER_ID),

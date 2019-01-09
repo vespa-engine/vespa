@@ -1321,10 +1321,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         String authorEmail = submitOptions.field("authorEmail").asString();
         long projectId = Math.max(1, submitOptions.field("projectId").asLong());
 
-        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
-        if ( ! applicationPackage.deploymentSpec().athenzDomain().isPresent())
-            throw new IllegalArgumentException("Application must define an Athenz service in deployment.xml!");
-        controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant), applicationPackage, Optional.of(getUserPrincipal(request).getIdentity()));
+        byte[] applicationZip = dataParts.get(EnvironmentResource.APPLICATION_ZIP);
+        controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
+                                                                         new ApplicationPackage(applicationZip),
+                                                                         Optional.of(getUserPrincipal(request).getIdentity()));
 
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
                                                             tenant,
@@ -1332,7 +1332,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                             sourceRevision,
                                                             authorEmail,
                                                             projectId,
-                                                            applicationPackage.zippedContent(),
+                                                            applicationZip,
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
     }
 

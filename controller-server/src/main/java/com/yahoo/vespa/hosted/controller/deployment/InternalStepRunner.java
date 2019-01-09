@@ -504,7 +504,7 @@ public class InternalStepRunner implements StepRunner {
 
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
         ZoneId zone = id.type().zone(controller.system());
-        byte[] deploymentXml = deploymentXml(spec.athenzDomain().get(), spec.athenzService(zone.environment(), zone.region()).get());
+        byte[] deploymentXml = deploymentXml(spec.athenzDomain(), spec.athenzService(zone.environment(), zone.region()));
 
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
             zipBuilder.add(testPackage);
@@ -591,11 +591,14 @@ public class InternalStepRunner implements StepRunner {
         return servicesXml.getBytes();
     }
 
-    /** Returns a dummy deployment xml which sets up the service identity for the tester. */
-    static byte[] deploymentXml(AthenzDomain domain, AthenzService service) {
+    /** Returns a dummy deployment xml which sets up the service identity for the tester, if present. */
+    private static byte[] deploymentXml(Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
         String deploymentSpec =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
-                "<deployment version=\"1.0\" athenz-domain=\"" + domain.value() + "\" athenz-service=\"" + service.value() + "\" />";
+                "<deployment version=\"1.0\" " +
+                athenzDomain.map(domain -> "athenz-domain=\"" + domain.value() + "\" ").orElse("") +
+                athenzService.map(service -> "athenz-service=\"" + service.value() + "\" ").orElse("")
+                + "/>";
         return deploymentSpec.getBytes(StandardCharsets.UTF_8);
     }
 
