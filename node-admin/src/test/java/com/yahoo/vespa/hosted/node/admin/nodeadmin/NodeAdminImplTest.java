@@ -156,7 +156,7 @@ public class NodeAdminImplTest {
     private void mockNodeAgentSetFrozenResponse(List<NodeAgentWithScheduler> nodeAgents, boolean... responses) {
         for (int i = 0; i < nodeAgents.size(); i++) {
             NodeAgentWithScheduler nodeAgent = nodeAgents.get(i);
-            when(nodeAgent.setFrozen(anyBoolean())).thenReturn(responses[i]);
+            when(nodeAgent.setFrozen(anyBoolean(), any())).thenReturn(responses[i]);
         }
     }
 

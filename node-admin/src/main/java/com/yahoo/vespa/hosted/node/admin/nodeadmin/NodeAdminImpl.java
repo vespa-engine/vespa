@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
  */
 public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
+    private static final Duration NODE_AGENT_FREEZE_TIMEOUT = Duration.ofSeconds(5);
+
     private final ScheduledExecutorService aclScheduler =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("aclscheduler"));
     private final ScheduledExecutorService metricsScheduler =
@@ -61,7 +63,7 @@ public class NodeAdminImpl implements NodeAdmin {
                          Optional<AclMaintainer> aclMaintainer,
                          MetricReceiverWrapper metricReceiver,
                          Clock clock) {
-        this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(nodeAgentFactory, nodeAgentContext),
+        this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
                 nodeAgentContextFactory, aclMaintainer, metricReceiver, clock);
     }
 
@@ -132,8 +134,8 @@ public class NodeAdminImpl implements NodeAdmin {
         }
 
         // Use filter with count instead of allMatch() because allMatch() will short circuit on first non-match
-        boolean allNodeAgentsConverged = nodeAgentWithSchedulerByHostname.values().stream()
-                .filter(nodeAgentScheduler -> !nodeAgentScheduler.setFrozen(wantFrozen))
+        boolean allNodeAgentsConverged = nodeAgentWithSchedulerByHostname.values().parallelStream()
+                .filter(nodeAgentScheduler -> !nodeAgentScheduler.setFrozen(wantFrozen, NODE_AGENT_FREEZE_TIMEOUT))
                 .count() == 0;
 
         if (wantFrozen) {
@@ -231,7 +233,7 @@ public class NodeAdminImpl implements NodeAdmin {
         @Override public int getAndResetNumberOfUnhandledExceptions() { return nodeAgent.getAndResetNumberOfUnhandledExceptions(); }
 
         @Override public void scheduleTickWith(NodeAgentContext context) { nodeAgentScheduler.scheduleTickWith(context); }
-        @Override public boolean setFrozen(boolean frozen) { return nodeAgentScheduler.setFrozen(frozen); }
+        @Override public boolean setFrozen(boolean frozen, Duration timeout) { return nodeAgentScheduler.setFrozen(frozen, timeout); }
     }
 
     @FunctionalInterface
@@ -239,8 +241,8 @@ public class NodeAdminImpl implements NodeAdmin {
         NodeAgentWithScheduler create(NodeAgentContext context);
     }
 
-    private static NodeAgentWithScheduler create(NodeAgentFactory nodeAgentFactory, NodeAgentContext context) {
-        NodeAgentContextManager contextManager = new NodeAgentContextManager(context);
+    private static NodeAgentWithScheduler create(Clock clock, NodeAgentFactory nodeAgentFactory, NodeAgentContext context) {
+        NodeAgentContextManager contextManager = new NodeAgentContextManager(clock, context);
         NodeAgent nodeAgent = nodeAgentFactory.create(contextManager);
         return new NodeAgentWithScheduler(nodeAgent, contextManager);
     }
