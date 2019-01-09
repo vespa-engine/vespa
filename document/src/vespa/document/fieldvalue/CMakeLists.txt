@@ -3,6 +3,7 @@ vespa_add_library(document_fieldvalues OBJECT
     SOURCES
     annotationreferencefieldvalue.cpp
     arrayfieldvalue.cpp
+    boolfieldvalue.cpp
     bytefieldvalue.cpp
     collectionfieldvalue.cpp
     document.cpp

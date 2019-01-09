@@ -5,6 +5,7 @@
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/boolfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/doublefieldvalue.h>
@@ -190,12 +191,12 @@ void VespaDocumentDeserializer::read(MapFieldValue &value) {
 }
 
 namespace {
-template <typename T> struct ValueType { typedef typename T::Number Type; };
-template <> struct ValueType<ShortFieldValue> { typedef uint16_t Type; };
-template <> struct ValueType<IntFieldValue> { typedef uint32_t Type; };
-template <> struct ValueType<LongFieldValue> { typedef uint64_t Type; };
-template <>
-struct ValueType<RawFieldValue> { typedef vespalib::string Type; };
+template <typename T> struct ValueType { using Type = typename T::Number; };
+template <> struct ValueType<BoolFieldValue> { using Type = bool; };
+template <> struct ValueType<ShortFieldValue> { using Type = uint16_t; };
+template <> struct ValueType<IntFieldValue> { using Type = uint32_t; };
+template <> struct ValueType<LongFieldValue> { using Type = uint64_t; };
+template <> struct ValueType<RawFieldValue> { using Type = vespalib::string; };
 
 template <typename T>
 void readFieldValue(nbostream &input, T &value) {
@@ -213,6 +214,10 @@ stringref readAttributeString(Input &input) {
     return s;
 }
 }  // namespace
+
+void VespaDocumentDeserializer::read(BoolFieldValue &value) {
+    readFieldValue(_stream, value);
+}
 
 void VespaDocumentDeserializer::read(ByteFieldValue &value) {
     readFieldValue(_stream, value);

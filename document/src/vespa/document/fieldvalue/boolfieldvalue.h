@@ -4,22 +4,15 @@
 
 #include "fieldvalue.h"
 
-namespace vespalib {
-    class Slime;
-}
 namespace document {
 
-class PredicateFieldValue : public FieldValue {
-    std::unique_ptr<vespalib::Slime> _slime;
+class BoolFieldValue : public FieldValue {
+    bool _value;
     bool _altered;
 
 public:
-    PredicateFieldValue();
-    PredicateFieldValue(std::unique_ptr<vespalib::Slime> s);
-    PredicateFieldValue(const PredicateFieldValue &rhs);
-    ~PredicateFieldValue();
-
-    PredicateFieldValue &operator=(const PredicateFieldValue &rhs);
+    BoolFieldValue(bool value=false);
+    ~BoolFieldValue() override;
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
@@ -33,11 +26,12 @@ public:
     const DataType *getDataType() const override;
     bool hasChanged() const override;
 
-    const vespalib::Slime &getSlime() const { return *_slime; }
+    bool getValue() const { return _value; }
+    void setValue(bool v) { _value = v; }
 
     FieldValue &assign(const FieldValue &rhs) override;
 
-    DECLARE_IDENTIFIABLE(PredicateFieldValue);
+    DECLARE_IDENTIFIABLE(BoolFieldValue);
 };
 
 }

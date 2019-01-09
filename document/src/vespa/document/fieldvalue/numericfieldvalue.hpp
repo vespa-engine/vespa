@@ -27,8 +27,7 @@ NumericFieldValue<Number>::assign(const FieldValue& value)
         _value = static_cast<Number>(value.getAsLong());
     } else if (value.getClass().id() == IDENTIFIABLE_CLASSID(FloatFieldValue)) {
         _value = static_cast<Number>(value.getAsFloat());
-    } else if (value.getClass().id() == IDENTIFIABLE_CLASSID(DoubleFieldValue))
-    {
+    } else if (value.getClass().id() == IDENTIFIABLE_CLASSID(DoubleFieldValue)) {
         _value = static_cast<Number>(value.getAsDouble());
     } else {
         return FieldValue::assign(value);
