@@ -22,4 +22,9 @@ public class PhraseMatchTestCase extends RuleBaseAbstractTestCase {
         assertSemantics("AND retailer:digital retailer:camera","keyword:digital keyword:camera");
     }
 
+    @Test
+    public void testMatchingPhrase() {
+        assertSemantics("OR (AND iphone 7) i7", "iphone 7");
+    }
+
 }
