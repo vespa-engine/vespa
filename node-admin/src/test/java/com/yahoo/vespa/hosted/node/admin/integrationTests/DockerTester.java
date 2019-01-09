@@ -15,8 +15,9 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -30,7 +31,6 @@ import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.logging.Logger;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -87,19 +87,20 @@ public class DockerTester implements AutoCloseable {
                 .build();
         nodeRepository.updateNodeRepositoryNode(hostSpec);
 
-        Clock clock = Clock.systemUTC();
         FileSystem fileSystem = TestFileSystem.create();
         DockerOperations dockerOperations = new DockerOperationsImpl(docker, processExecuter, ipAddresses);
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
-                new NodeAgentContextImpl.Builder(hostName).fileSystem(fileSystem).build(), nodeRepository,
-                orchestrator, dockerOperations, storageMaintainer, clock, INTERVAL, Optional.empty(), Optional.empty(), Optional.empty());
-        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, Optional.empty(), mr, Clock.systemUTC());
+        NodeAgentFactory nodeAgentFactory = contextSupplier -> new NodeAgentImpl(
+                contextSupplier, nodeRepository,
+                orchestrator, dockerOperations, storageMaintainer, Optional.empty(), Optional.empty(), Optional.empty());
+        NodeAgentContextFactory nodeAgentContextFactory = nodeSpec ->
+                new NodeAgentContextImpl.Builder(nodeSpec).fileSystem(fileSystem).build();
+        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, nodeAgentContextFactory, Optional.empty(), mr, Clock.systemUTC());
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, orchestrator,
                 nodeAdmin, HOST_HOSTNAME);
 
-        this.loopThread = new Thread(() -> {
+        loopThread = new Thread(() -> {
             nodeAdminStateUpdater.start();
 
             while (! terminated) {
@@ -135,8 +136,10 @@ public class DockerTester implements AutoCloseable {
 
     @Override
     public void close() {
-        terminated = true;
+        // First, stop NodeAdmin and all the NodeAgents
+        nodeAdmin.stop();
 
+        terminated = true;
         do {
             try {
                 loopThread.join();
@@ -144,8 +147,5 @@ public class DockerTester implements AutoCloseable {
                 e.printStackTrace();
             }
         } while (loopThread.isAlive());
-
-        // Finally, stop NodeAdmin and all the NodeAgents
-        nodeAdmin.stop();
     }
 }
