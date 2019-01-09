@@ -89,6 +89,10 @@ public class FlagsHandlerTest {
         verifySuccessfulRequest(Method.GET, "/data/",
                 "", "{\"flags\":[{\"id\":\"id1\",\"url\":\"https://foo.com:4443/flags/v1/data/id1\"}]}");
 
+        // Verify absent port => absent in response
+        assertThat(handleWithPort(Method.GET, -1, "/data", "", 200),
+                is("{\"flags\":[{\"id\":\"id1\",\"url\":\"https://foo.com/flags/v1/data/id1\"}]}"));
+
         // PUT id2
         verifySuccessfulRequest(Method.PUT, "/data/" + FLAG2.id(),
                 "{\n" +
@@ -175,7 +179,11 @@ public class FlagsHandlerTest {
     }
 
     private String handle(Method method, String pathSuffix, String requestBody, int expectedStatus) {
-        String uri = FLAGS_V1_URL + pathSuffix;
+        return handleWithPort(method, 4443, pathSuffix, requestBody, expectedStatus);
+    }
+
+    private String handleWithPort(Method method, int port, String pathSuffix, String requestBody, int expectedStatus) {
+        String uri = "https://foo.com" + (port < 0 ? "" : ":" + port) + "/flags/v1" + pathSuffix;
         HttpRequest request = HttpRequest.createTestRequest(uri, method, makeInputStream(requestBody));
         HttpResponse response = handler.handle(request);
         assertEquals(expectedStatus, response.getStatus());

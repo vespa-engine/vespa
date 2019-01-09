@@ -64,7 +64,8 @@ public class FlagsHandler extends HttpHandler {
 
     private String flagsV1Uri(HttpRequest request) {
         URI uri = request.getUri();
-        return uri.getScheme() + "://" + uri.getHost() + ":" + uri.getPort() + "/flags/v1";
+        String port = uri.getPort() < 0 ? "" : ":" + uri.getPort();
+        return uri.getScheme() + "://" + uri.getHost() + port + "/flags/v1";
     }
 
     private HttpResponse getFlagDataList(HttpRequest request) {

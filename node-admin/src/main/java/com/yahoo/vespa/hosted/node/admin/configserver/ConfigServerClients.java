@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
+import com.yahoo.vespa.hosted.node.admin.configserver.flags.FlagRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.state.State;
@@ -18,7 +19,10 @@ public interface ConfigServerClients {
     Orchestrator orchestrator();
 
     /** Get handle to the /state/v1 REST API */
-    default State state() { throw new UnsupportedOperationException(); }
+    State state();
+
+    /** Get handle to the /flags/v1 REST API */
+    FlagRepository flagRepository();
 
     void stop();
 }
