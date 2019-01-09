@@ -286,4 +286,32 @@ TEST("require that MatchData soft_reset retains appropriate state") {
     EXPECT_EQUAL(new_term->getDocId(), TermFieldMatchData::invalidId());
 }
 
+TEST("require that compareWithExactness implements a strict weak ordering") {
+   TermFieldMatchDataPosition a(0, 1, 100, 1);
+   TermFieldMatchDataPosition b(0, 2, 100, 1);
+   TermFieldMatchDataPosition c(0, 2, 100, 1);
+   TermFieldMatchDataPosition d(0, 3, 100, 3);
+   TermFieldMatchDataPosition e(0, 3, 100, 3);
+   TermFieldMatchDataPosition f(0, 4, 100, 1);
+
+   d.setMatchExactness(0.75);
+   e.setMatchExactness(0.5);
+
+   bool (*cmp)(const TermFieldMatchDataPosition &a,
+               const TermFieldMatchDataPosition &b) = TermFieldMatchDataPosition::compareWithExactness;
+
+   EXPECT_EQUAL(true, cmp(a, b));
+   EXPECT_EQUAL(false, cmp(b, c));
+   EXPECT_EQUAL(true, cmp(c, d));
+   EXPECT_EQUAL(true, cmp(d, e));
+   EXPECT_EQUAL(true, cmp(e, f));
+
+   EXPECT_EQUAL(false, cmp(b, a));
+   EXPECT_EQUAL(false, cmp(c, b));
+   EXPECT_EQUAL(false, cmp(d, c));
+   EXPECT_EQUAL(false, cmp(e, d));
+   EXPECT_EQUAL(false, cmp(f, e));
+}
+
+
 TEST_MAIN() { TEST_RUN_ALL(); }
