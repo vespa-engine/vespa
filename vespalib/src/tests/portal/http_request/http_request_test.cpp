@@ -160,4 +160,16 @@ TEST("require that percent character becomes plain if not followed by exactly 2 
     EXPECT_TRUE(req.has_param("%"));
 }
 
+TEST("require that last character of uri segments (path, key, value) can be quoted") {
+    auto req = make_request("GET /%41?%42=%43 HTTP/1.1\r\n\r\n");
+    EXPECT_EQUAL(req.get_path(), "/A");
+    EXPECT_EQUAL(req.get_param("B"), "C");
+}
+
+TEST("require that additional query and key/value separators are not special") {
+    auto req = make_request("GET /?" "?== HTTP/1.1\r\n\r\n");
+    EXPECT_EQUAL(req.get_path(), "/");
+    EXPECT_EQUAL(req.get_param("?"), "=");
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
