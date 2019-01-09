@@ -8,8 +8,8 @@
       "public"
     ],
     "methods": [
-      "protected void <init>(com.yahoo.component.ComponentId)",
       "protected void <init>()",
+      "protected void <init>(com.yahoo.component.ComponentId)",
       "public final void initId(com.yahoo.component.ComponentId)",
       "public final com.yahoo.component.ComponentId getId()",
       "public final boolean hasInitializedId()",
@@ -200,35 +200,6 @@
       "public static final java.lang.String V_TAG_ARCH",
       "public static final com.yahoo.component.Version currentVersion"
     ]
-  },
-  "com.yahoo.component.provider.ComponentClass$ComponentConstructor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.reflect.Constructor)",
-      "public java.lang.reflect.Constructor getConstructor()",
-      "public boolean preferredTo(com.yahoo.component.provider.ComponentClass$ComponentConstructor)"
-    ],
-    "fields": [
-      "public final boolean isLegal",
-      "public final boolean hasComponentId"
-    ]
-  },
-  "com.yahoo.component.provider.ComponentClass": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.Class)",
-      "public com.yahoo.component.AbstractComponent createComponent(com.yahoo.component.ComponentId, java.util.Map, java.lang.String)",
-      "public com.yahoo.component.provider.ComponentClass$ComponentConstructor getPreferredConstructor()"
-    ],
-    "fields": []
   },
   "com.yahoo.component.provider.ComponentRegistry": {
     "superClass": "java.lang.Object",
