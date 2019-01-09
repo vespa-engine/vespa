@@ -429,7 +429,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties) {
         for (Map.Entry<String, String> entry : requestMap.entrySet()) {
             try {
-                //if (entry.getKey().equals("queryProfile")) continue;
                 properties.set(entry.getKey(), entry.getValue(), requestMap);
             }
             catch (IllegalArgumentException e) {
