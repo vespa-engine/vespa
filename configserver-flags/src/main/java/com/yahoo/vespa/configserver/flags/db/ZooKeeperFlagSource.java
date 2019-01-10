@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.configserver.flags.db;
 
+import com.yahoo.vespa.configserver.flags.FlagsDb;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.FlagSource;
@@ -12,9 +13,9 @@ import java.util.Optional;
  * @author hakonhall
  */
 public class ZooKeeperFlagSource implements FlagSource {
-    private final FlagsDbImpl flagsDb;
+    private final FlagsDb flagsDb;
 
-    public ZooKeeperFlagSource(FlagsDbImpl flagsDb) {
+    public ZooKeeperFlagSource(FlagsDb flagsDb) {
         this.flagsDb = flagsDb;
     }
 
