@@ -293,7 +293,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         if (urlDownloader == null || !urlDownloader.isValid()) {
             throw new RuntimeException("Resolving url field failed due to missing or invalid URL downloader.");
         }
-        File file = urlDownloader.waitFor(new UrlReference(url), 10 * 60);
+        File file = urlDownloader.waitFor(new UrlReference(url), 60 * 60);
         return new UrlReference(file.getAbsolutePath());
     }
 

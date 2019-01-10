@@ -71,7 +71,7 @@ public class UrlDownloader {
             Request request = new Request("url.waitFor");
             request.parameters().add(new StringValue(urlReference.value()));
 
-            double rpcTimeout = Math.min(timeLeft, 5 * 60.0);
+            double rpcTimeout = Math.min(timeLeft, 60 * 60.0);
             log.log(LogLevel.DEBUG, "InvokeSync waitFor " + urlReference + " with " + rpcTimeout + " seconds timeout");
             target.invokeSync(request, rpcTimeout);
 
