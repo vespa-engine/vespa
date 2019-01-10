@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -6,6 +6,9 @@
 
 namespace document {
 
+/**
+ * Represent the value in a filed of type 'bool' which can be either true or false.
+ **/
 class BoolFieldValue : public FieldValue {
     bool _value;
     bool _altered;
