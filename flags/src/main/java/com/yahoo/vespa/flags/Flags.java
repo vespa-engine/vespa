@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 
 /**
@@ -70,6 +71,18 @@ public class Flags {
             "enable-nessus", true,
             "Whether to enable Nessus.", "Takes effect on next host admin tick",
             HOSTNAME);
+
+    public static final UnboundBooleanFlag ENABLE_TLS_CLIENTS = defineFeatureFlag(
+            "enable-tls-clients", false,
+            "Whether to enable TLS on backend clients.",
+            "Takes effect on restart of Docker container",
+            APPLICATION_ID, HOSTNAME);
+
+    public static final UnboundStringFlag ENFORCE_TLS_AUTHORIZATION = defineStringFlag(
+            "enforce-tls-authorization", "log_only",
+            "Whether to enable TLS on backend clients.",
+            "Takes effect on restart of Docker container",
+            APPLICATION_ID, HOSTNAME);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
