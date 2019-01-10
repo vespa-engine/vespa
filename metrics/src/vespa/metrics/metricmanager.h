@@ -111,7 +111,7 @@ private:
     std::vector<MetricSnapshotSet::SP> _snapshots;
     MetricSnapshot::SP _totalMetrics;
     std::unique_ptr<Timer> _timer;
-    time_t _lastProcessedTime;
+    std::atomic<time_t> _lastProcessedTime;
     bool _forceEventLogging;
     // Should be added to config, but wont now due to problems with
     // upgrading
@@ -262,7 +262,7 @@ public:
     void checkMetricsAltered(const MetricLockGuard &);
 
     /** Used by unit tests to verify that we have processed for a given time. */
-    time_t getLastProcessedTime() const { return _lastProcessedTime; }
+    time_t getLastProcessedTime() const { return _lastProcessedTime.load(std::memory_order_relaxed); }
 
     /** Used by unit tests to wake waiters after altering time. */
     void timeChangedNotification() const;
