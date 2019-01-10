@@ -36,7 +36,7 @@ public class CuratorDatabase {
     private final CuratorCounter changeGenerationCounter;
 
     /** A partial cache of the Curator database, which is only valid if generations match */
-    private final AtomicReference<CuratorDatabaseCache> cache = new AtomicReference<>();
+    private final AtomicReference<Cache> cache = new AtomicReference<>();
 
     /** Whether we should return data from the cache or always read fro ZooKeeper */
     private final boolean useCache;
@@ -120,12 +120,12 @@ public class CuratorDatabase {
     // the data to read is protected by a lock which is held now, and during any writes of the data.
 
     /** Returns the immediate, local names of the children under this node in any order */
-    List<String> getChildren(Path path) { return getCache().getChildren(path); }
+    List<String> getChildren(Path path) { return getSession().getChildren(path); }
 
-    Optional<byte[]> getData(Path path) { return getCache().getData(path); }
+    Optional<byte[]> getData(Path path) { return getSession().getData(path); }
 
     /** Invalidates the current cache if outdated. */
-    private CuratorDatabaseCache getCache() {
+    Session getSession() {
         if (changeGenerationCounter.get() != cache.get().generation)
             synchronized (cacheCreationLock) {
                 while (changeGenerationCounter.get() != cache.get().generation)
@@ -136,8 +136,8 @@ public class CuratorDatabase {
     }
 
     /** Caches must only be instantiated using this method */
-    private CuratorDatabaseCache newCache(long generation) {
-        return useCache ? new CuratorDatabaseCache(generation, curator) : new DeactivatedCache(generation, curator);
+    private Cache newCache(long generation) {
+        return useCache ? new Cache(generation, curator) : new NoCache(generation, curator);
     }
 
     /**
@@ -145,10 +145,10 @@ public class CuratorDatabase {
      * This is merely a recording of what Curator returned at various points in time when 
      * it had the counter at this generation.
      */
-    private static class CuratorDatabaseCache {
+    private static class Cache implements Session {
 
         private final long generation;
-        
+
         /** The curator instance used to fetch missing data */
         protected final Curator curator;
 
@@ -159,23 +159,17 @@ public class CuratorDatabase {
         private final Map<Path, Optional<byte[]>> data = new ConcurrentHashMap<>();
 
         /** Create an empty snapshot at a given generation (as an empty snapshot is a valid partial snapshot) */
-        private CuratorDatabaseCache(long generation, Curator curator) {
+        private Cache(long generation, Curator curator) {
             this.generation = generation;
             this.curator = curator;
         }
 
-        public long generation() { return generation; }
-
-        /**
-         * Returns the children of this path, which may be empty.
-         */
+        @Override
         public List<String> getChildren(Path path) { 
             return children.computeIfAbsent(path, key -> ImmutableList.copyOf(curator.getChildren(path)));
         }
 
-        /**
-         * Returns the a copy of the content of this child - which may be empty.
-         */
+        @Override
         public Optional<byte[]> getData(Path path) {
             return data.computeIfAbsent(path, key -> curator.getData(path)).map(data -> Arrays.copyOf(data, data.length));
         }
@@ -183,9 +177,9 @@ public class CuratorDatabase {
     }
 
     /** An implementation of the curator database cache which does no caching */
-    private static class DeactivatedCache extends CuratorDatabaseCache {
-        
-        private DeactivatedCache(long generation, Curator curator) { super(generation, curator); }
+    private static class NoCache extends Cache {
+
+        private NoCache(long generation, Curator curator) { super(generation, curator); }
 
         @Override
         public List<String> getChildren(Path path) { return curator.getChildren(path); }
@@ -195,4 +189,17 @@ public class CuratorDatabase {
 
     }
 
+    interface Session {
+
+        /**
+         * Returns the children of this path, which may be empty.
+         */
+        List<String> getChildren(Path path);
+
+        /**
+         * Returns the a copy of the content of this child - which may be empty.
+         */
+        Optional<byte[]> getData(Path path);
+
+    }
 }
