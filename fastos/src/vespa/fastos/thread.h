@@ -12,6 +12,7 @@
 
 
 #include "types.h"
+#include <atomic>
 #include <mutex>
 #include <condition_variable>
 
@@ -294,7 +295,7 @@ protected:
     /**
      * Break flag. If true, the thread should exit.
      */
-    bool _breakFlag;
+    std::atomic<bool> _breakFlag;
 
     /**
      * Is this thread active or free in the threadpool?
@@ -385,7 +386,7 @@ public:
      */
     bool GetBreakFlag () const
     {
-        return _breakFlag;
+        return _breakFlag.load(std::memory_order_relaxed);
     }
 
     /**
