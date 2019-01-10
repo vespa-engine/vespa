@@ -60,6 +60,7 @@ public class BoolFieldValue extends FieldValue {
     public boolean getBoolean() {
         return value;
     }
+    public void setBoolean(boolean value) { this.value = value; }
 
     @Override
     public Object getWrappedValue() {

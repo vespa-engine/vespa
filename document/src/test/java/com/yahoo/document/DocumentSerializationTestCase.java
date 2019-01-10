@@ -4,6 +4,7 @@ package com.yahoo.document;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.document.annotation.AbstractTypesTest;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
 import com.yahoo.document.datatypes.FloatFieldValue;
@@ -72,6 +73,7 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
         docType.addField(new Field("rawfield", DataType.RAW, false));
         docType.addField(new Field("doublefield", DataType.DOUBLE, false));
         docType.addField(new Field("bytefield", DataType.BYTE, false));
+        docType.addField(new Field("boolfield", DataType.BOOL, false));
         DataType arrayOfFloatDataType = new ArrayDataType(DataType.FLOAT);
         docType.addField(new Field("arrayoffloatfield", arrayOfFloatDataType, false));
         DataType arrayOfArrayOfFloatDataType = new ArrayDataType(arrayOfFloatDataType);
@@ -94,6 +96,7 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             doc.setFieldValue("longfield", new LongFieldValue(398420092938472983l));
             doc.setFieldValue("doublefield", new DoubleFieldValue(98374532.398820));
             doc.setFieldValue("bytefield", new ByteFieldValue(254));
+            doc.setFieldValue("boolfield", new BoolFieldValue(true));
             byte[] rawData = "RAW DATA".getBytes();
             assertEquals(8, rawData.length);
             doc.setFieldValue(docType.getField("rawfield"),new Raw(ByteBuffer.wrap("RAW DATA".getBytes())));
@@ -176,12 +179,12 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             assertEquals(new StringFieldValue("This is a string."), doc.getFieldValue("stringfield"));
             assertEquals(new LongFieldValue(398420092938472983l), doc.getFieldValue("longfield"));
             assertEquals(98374532.398820, ((DoubleFieldValue)doc.getFieldValue("doublefield")).getDouble(), 1E-6);
-            assertEquals(new ByteFieldValue((byte)254),
-                         doc.getFieldValue("bytefield"));
+            assertEquals(new ByteFieldValue((byte)254), doc.getFieldValue("bytefield"));
+            // Todo add cpp serialization
+            // assertEquals(new BoolFieldValue(true), doc.getFieldValue("boolfield"));
             ByteBuffer bbuffer = ((Raw)doc.getFieldValue("rawfield")).getByteBuffer();
             if (!Arrays.equals("RAW DATA".getBytes(), bbuffer.array())) {
-                System.err.println("Expected 'RAW DATA' but got '"
-                                   + new String(bbuffer.array()) + "'.");
+                System.err.println("Expected 'RAW DATA' but got '" + new String(bbuffer.array()) + "'.");
                 assertTrue(false);
             }
             if (test.version > 6) {

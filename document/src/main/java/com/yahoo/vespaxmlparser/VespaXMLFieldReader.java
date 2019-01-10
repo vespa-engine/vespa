@@ -298,6 +298,19 @@ public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
         }
     }
 
+    public void read(FieldBase field, BoolFieldValue value) {
+        try {
+            String dataParsed = reader.getElementText();
+            try {
+                value.assign(dataParsed);
+            } catch (Exception e) {
+                throw newDeserializeException(field, e.getMessage());
+            }
+        } catch (XMLStreamException e) {
+            throw newException(field, e);
+        }
+    }
+
     public void read(FieldBase field, DoubleFieldValue value) {
         try {
             String dataParsed = reader.getElementText();
