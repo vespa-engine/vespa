@@ -2,7 +2,6 @@
 package com.yahoo.vespa.configserver.flags;
 
 import com.google.inject.Inject;
-import com.yahoo.vespa.configserver.flags.db.FlagsDbImpl;
 import com.yahoo.vespa.configserver.flags.db.ZooKeeperFlagSource;
 import com.yahoo.vespa.flags.FileFlagSource;
 import com.yahoo.vespa.flags.OrderedFlagSource;
@@ -12,7 +11,7 @@ import com.yahoo.vespa.flags.OrderedFlagSource;
  */
 public class ConfigServerFlagSource extends OrderedFlagSource {
     @Inject
-    public ConfigServerFlagSource(FlagsDbImpl flagsDb) {
+    public ConfigServerFlagSource(FlagsDb flagsDb) {
         super(new FileFlagSource(), new ZooKeeperFlagSource(flagsDb));
     }
 }
