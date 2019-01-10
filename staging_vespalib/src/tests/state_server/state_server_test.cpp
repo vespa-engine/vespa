@@ -124,15 +124,19 @@ TEST_FF("require that host is passed correctly", EchoHost(), HttpServer(0)) {
 }
 
 struct SamplingHandler : JsonGetHandler {
+    mutable std::mutex my_lock;
     mutable vespalib::string my_host;
     mutable vespalib::string my_path;
     mutable std::map<vespalib::string,vespalib::string> my_params;
     vespalib::string get(const vespalib::string &host, const vespalib::string &path,
                          const std::map<vespalib::string,vespalib::string> &params) const override
     {
-        my_host = host;
-        my_path = path;
-        my_params = params;
+        {
+            auto guard = std::lock_guard(my_lock);
+            my_host = host;
+            my_path = path;
+            my_params = params;
+        }
         return "[]";
     }
 };
@@ -141,20 +145,26 @@ TEST_FF("require that request parameters can be inspected", SamplingHandler(), H
 {
     auto token = f2.repo().bind("/foo", f1);
     EXPECT_EQUAL("[]", getPage(f2.port(), "/foo?a=b&x=y&z"));
-    EXPECT_EQUAL(f1.my_path, "/foo");
-    EXPECT_EQUAL(f1.my_params.size(), 3u);
-    EXPECT_EQUAL(f1.my_params["a"], "b");
-    EXPECT_EQUAL(f1.my_params["x"], "y");
-    EXPECT_EQUAL(f1.my_params["z"], "");
-    EXPECT_EQUAL(f1.my_params.size(), 3u); // "z" was present
+    {
+        auto guard = std::lock_guard(f1.my_lock);
+        EXPECT_EQUAL(f1.my_path, "/foo");
+        EXPECT_EQUAL(f1.my_params.size(), 3u);
+        EXPECT_EQUAL(f1.my_params["a"], "b");
+        EXPECT_EQUAL(f1.my_params["x"], "y");
+        EXPECT_EQUAL(f1.my_params["z"], "");
+        EXPECT_EQUAL(f1.my_params.size(), 3u); // "z" was present
+    }
 }
 
 TEST_FF("require that request path is dequoted", SamplingHandler(), HttpServer(0))
 {
     auto token = f2.repo().bind("/[foo]", f1);
     EXPECT_EQUAL("[]", getPage(f2.port(), "/%5bfoo%5D"));
-    EXPECT_EQUAL(f1.my_path, "/[foo]");
-    EXPECT_EQUAL(f1.my_params.size(), 0u);
+    {
+        auto guard = std::lock_guard(f1.my_lock);
+        EXPECT_EQUAL(f1.my_path, "/[foo]");
+        EXPECT_EQUAL(f1.my_params.size(), 0u);
+    }
 }
 
 //-----------------------------------------------------------------------------
