@@ -71,6 +71,12 @@ public class Flags {
             "Whether to enable Nessus.", "Takes effect on next host admin tick",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag ENABLE_CPU_TEMPERATURE_TASK = defineFeatureFlag(
+            "enable-cputemptask", true,
+            "Whether to enable CPU temperature task", "Takes effect on next host admin tick",
+            HOSTNAME
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
