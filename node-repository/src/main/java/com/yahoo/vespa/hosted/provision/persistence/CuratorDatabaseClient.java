@@ -258,7 +258,7 @@ public class CuratorDatabaseClient {
         List<Node> nodes = new ArrayList<>();
         if (states.length == 0)
             states = Node.State.values();
-        CuratorCache session = curatorDatabase.getSession();
+        CuratorDatabase.Session session = curatorDatabase.getSession();
         for (Node.State state : states) {
             for (String hostname : session.getChildren(toPath(state))) {
                 Optional<Node> node = getNode(session, hostname, state);
@@ -282,7 +282,7 @@ public class CuratorDatabaseClient {
      * Returns a particular node, or empty if this noe is not in any of the given states.
      * If no states are given this returns the node if it is present in any state.
      */
-    public Optional<Node> getNode(CuratorCache session, String hostname, Node.State ... states) {
+    public Optional<Node> getNode(CuratorDatabase.Session session, String hostname, Node.State ... states) {
         if (states.length == 0)
             states = Node.State.values();
         for (Node.State state : states) {
