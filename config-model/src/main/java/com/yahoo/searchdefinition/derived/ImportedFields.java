@@ -51,7 +51,7 @@ public class ImportedFields extends Derived implements ImportedFieldsConfig.Prod
                 builder.attribute.add(createAttributeBuilder(field));
             }
         } else {
-            Attribute attribute = targetField.getAttributes().get(targetFieldName);
+            Attribute attribute = targetField.getAttribute();
             if (attribute != null) {
                 builder.attribute.add(createAttributeBuilder(field));
             }

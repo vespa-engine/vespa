@@ -101,6 +101,9 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     }
 
     @Override
+    public Attribute getAttribute() { return importedField.targetField().getAttribute(); }
+
+    @Override
     public Map<String, String> getAliasToName() {
         return Collections.emptyMap();
     }

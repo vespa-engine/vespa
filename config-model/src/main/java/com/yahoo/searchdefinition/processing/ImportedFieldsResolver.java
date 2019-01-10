@@ -110,16 +110,9 @@ public class ImportedFieldsResolver extends Processor {
         return importedField.fieldName() + targetNestedField.getName().substring(importedField.targetFieldName().length());
     }
 
-    private static Attribute getAttribute(ImmutableSDField field) {
-        while (field.isImportedField()) {
-            field = field.getBackingField();
-        }
-        return field.getAttributes().get(field.getName());
-    }
-
     private boolean resolveImportedNestedField(TemporaryImportedField importedField, DocumentReference reference,
                                                ImportedComplexField owner, ImmutableSDField targetNestedField, boolean requireAttribute) {
-        Attribute attribute = getAttribute(targetNestedField);
+        Attribute attribute = targetNestedField.getAttribute();
         String importedNestedFieldName = makeImportedNestedFieldName(importedField, targetNestedField);
         if (attribute != null) {
             makeImportedNormalField(importedField, owner, importedNestedFieldName, reference, targetNestedField);

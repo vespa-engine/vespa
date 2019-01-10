@@ -111,10 +111,7 @@ public class AdjustPositionSummaryFields extends Processor {
         if (attribute == null) {
             ImmutableSDField field = search.getField(name);
             if (field != null && field.isImportedField()) {
-                while (field.isImportedField()) {
-                    field = field.getBackingField();
-                }
-                attribute = field.getAttributes().get(field.getName());
+                attribute = field.getAttribute();
             }
         }
         return attribute != null && attribute.isPosition();

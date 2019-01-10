@@ -7,6 +7,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
+import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.expressiontransforms.ExpressionTransforms;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
@@ -773,9 +774,10 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     private void addAttributeFeatureTypes(ImmutableSDField field, MapEvaluationTypeContext context) {
+        Attribute attribute = field.getAttribute();
         field.getAttributes().forEach((k, a) -> {
             String name = k;
-            if (k.equals(field.getBackingField().getName())) // this attribute should take the fields name
+            if (attribute == a)                              // this attribute should take the fields name
                 name = field.getName();                      // switch to that - it is separate for imported fields
             context.setType(FeatureNames.asAttributeFeature(name),
                             a.tensorType().orElse(TensorType.empty));
