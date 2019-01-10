@@ -6,6 +6,7 @@
 #include "cfg.h"
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/fnet/frt/invokable.h>
+#include <atomic>
 
 class FRT_Target;
 
@@ -53,7 +54,7 @@ public:
      *
      * @return true if there are outstanding registration requests
      **/
-    bool busy() const { return _busy; }
+    bool busy() const { return _busy.load(std::memory_order_relaxed); }
 
 private:
     class RPCHooks: public FRT_Invokable
@@ -86,7 +87,7 @@ private:
     RPCHooks                 _hooks;
     std::mutex               _lock;
     bool                     _reqDone;
-    bool                     _busy;
+    std::atomic<bool>        _busy;
     SlobrokList              _slobrokSpecs;
     Configurator::UP         _configurator;
     vespalib::string         _currSlobrok;
