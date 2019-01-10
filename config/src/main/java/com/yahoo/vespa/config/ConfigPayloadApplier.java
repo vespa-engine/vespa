@@ -364,18 +364,19 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
      * Checks whether or not this field is of type 'path', in which
      * case some special handling might be needed. Caches the result.
      */
+    private Set<String> pathFieldSet = new HashSet<>();
     private boolean isPathField(Object builder, String methodName) {
         // Paths are stored as FileReference in Builder.
-        return isFieldType(builder, methodName, FileReference.class);
+        return isFieldType(pathFieldSet, builder, methodName, FileReference.class);
     }
 
+    private Set<String> urlFieldSet = new HashSet<>();
     private boolean isUrlField(Object builder, String methodName) {
         // Urls are stored as UrlReference in Builder.
-        return isFieldType(builder, methodName, UrlReference.class);
+        return isFieldType(urlFieldSet, builder, methodName, UrlReference.class);
     }
 
-    private Set<String> fieldSet = new HashSet<>();
-    private boolean isFieldType(Object builder, String methodName, java.lang.reflect.Type type) {
+    private boolean isFieldType(Set<String> fieldSet, Object builder, String methodName, java.lang.reflect.Type type) {
         String key = fieldKey(builder, methodName);
         if (fieldSet.contains(key)) {
             return true;
