@@ -53,9 +53,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         if (unsupportedFieldType(field)) {
             return; // Ignore complex struct and map fields for indexed search (only supported for streaming search)
         }
-        if (field.isImportedField()) {
-            deriveImportedAttributes(field);
-        } else if (isArrayOfSimpleStruct(field)) {
+        if (isArrayOfSimpleStruct(field)) {
             deriveArrayOfSimpleStruct(field);
         } else if (isMapOfSimpleStruct(field)) {
             deriveMapOfSimpleStruct(field);
@@ -84,6 +82,10 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
 
     /** Derives one attribute. TODO: Support non-default named attributes */
     private void deriveAttributes(ImmutableSDField field) {
+        if (field.isImportedField()) {
+            deriveImportedAttributes(field);
+            return;
+        }
         for (Attribute fieldAttribute : field.getAttributes().values()) {
             deriveAttribute(field, fieldAttribute);
         }
@@ -125,6 +127,10 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     }
 
     private void deriveAttributeAsArrayType(ImmutableSDField field) {
+        if (field.isImportedField()) {
+            deriveImportedAttributes(field);
+            return;
+        }
         Attribute attribute = field.getAttributes().get(field.getName());
         if (attribute != null) {
             attributes.put(attribute.getName(), attribute.convertToArray());

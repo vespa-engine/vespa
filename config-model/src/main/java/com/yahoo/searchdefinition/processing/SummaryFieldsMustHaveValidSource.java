@@ -51,7 +51,6 @@ public class SummaryFieldsMustHaveValidSource extends Processor {
         return  isDocumentField(source) ||
                 (isNotInThisSummaryClass(summary, source) && isSummaryField(source)) ||
                 (isInThisSummaryClass(summary, source) && !source.equals(summaryField.getName())) ||
-                (search.importedFields().map(fields -> fields.complexFields().get(source) != null).orElse(false)) ||
                 (SummaryClass.DOCUMENT_ID_FIELD.equals(source));
     }
 

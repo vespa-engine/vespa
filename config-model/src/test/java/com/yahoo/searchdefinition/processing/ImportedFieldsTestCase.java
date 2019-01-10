@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.document.ImportedComplexField;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Rule;
@@ -91,7 +92,7 @@ public class ImportedFieldsTestCase {
                 "  import field parent_ref.elem_map as my_elem_map {}",
                 "  import field parent_ref.str_int_map as my_str_int_map {}",
                 "}"));
-        assertEquals(parentBuilder.countAttrs(), search.importedFields().get().fields().size());
+        assertEquals(3, search.importedFields().get().fields().size());
         checkImportedField("my_elem_array.name", "parent_ref", "parent", "elem_array.name", search, parentBuilder.elem_array_name_attr);
         checkImportedField("my_elem_array.weight", "parent_ref", "parent", "elem_array.weight", search, parentBuilder.elem_array_weight_attr);
         checkImportedField("my_elem_map.key", "parent_ref", "parent", "elem_map.key", search, parentBuilder.elem_map_key_attr);
@@ -99,6 +100,9 @@ public class ImportedFieldsTestCase {
         checkImportedField("my_elem_map.value.weight", "parent_ref", "parent", "elem_map.value.weight", search, parentBuilder.elem_map_value_weight_attr);
         checkImportedField("my_str_int_map.key", "parent_ref", "parent", "str_int_map.key", search, parentBuilder.str_int_map_key_attr);
         checkImportedField("my_str_int_map.value", "parent_ref", "parent", "str_int_map.value", search, parentBuilder.str_int_map_value_attr);
+        checkImportedField("my_elem_array", "parent_ref", "parent", "elem_array", search, true);
+        checkImportedField("my_elem_map", "parent_ref", "parent", "elem_map", search, true);
+        checkImportedField("my_str_int_map", "parent_ref", "parent", "str_int_map", search, true);
     }
 
     @Test
@@ -275,8 +279,9 @@ public class ImportedFieldsTestCase {
 
     private static void checkPosImport(ParentPosSdBuilder parentBuilder, ChildPosSdBuilder childBuilder) throws ParseException {
         Search search = buildChildSearch(parentBuilder.build(), childBuilder.build());
-        assertEquals(1, search.importedFields().get().fields().size());
+        assertEquals(2, search.importedFields().get().fields().size());
         assertSearchContainsImportedField("my_pos_zcurve", "parent_ref", "parent", "pos_zcurve", search);
+        assertSearchContainsImportedField("my_pos", "parent_ref", "parent", "pos", search);
     }
 
     @Test
@@ -291,8 +296,22 @@ public class ImportedFieldsTestCase {
         checkPosImport(new ParentPosSdBuilder(), new ChildPosSdBuilder().import_pos_zcurve_before(true));
     }
 
+    private static ImportedField getImportedField(String name, Search search) {
+        if (name.contains(".")) {
+            assertNull(search.importedFields().get().fields().get(name));
+            String superFieldName = name.substring(0,name.indexOf("."));
+            String subFieldName = name.substring(name.indexOf(".")+1);
+            ImportedField superField = search.importedFields().get().fields().get(superFieldName);
+            if (superField != null && superField instanceof ImportedComplexField) {
+                return ((ImportedComplexField)superField).getNestedField(subFieldName);
+            }
+            return null;
+        }
+        return search.importedFields().get().fields().get(name);
+    }
+
     private static void assertSearchNotContainsImportedField(String fieldName, Search search) {
-        ImportedField importedField = search.importedFields().get().fields().get(fieldName);
+        ImportedField importedField = getImportedField(fieldName, search);
         assertNull(importedField);
     }
 
@@ -301,7 +320,7 @@ public class ImportedFieldsTestCase {
                                                           String referenceDocType,
                                                           String targetFieldName,
                                                           Search search) {
-        ImportedField importedField = search.importedFields().get().fields().get(fieldName);
+        ImportedField importedField = getImportedField(fieldName, search);
         assertNotNull(importedField);
         assertEquals(fieldName, importedField.fieldName());
         assertEquals(referenceFieldName, importedField.reference().referenceField().getName());

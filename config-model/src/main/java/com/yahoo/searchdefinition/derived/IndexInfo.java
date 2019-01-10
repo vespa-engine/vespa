@@ -74,9 +74,6 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                 addIndexCommand(summaryField.getName(), CMD_HIGHLIGHT);
             }
         }
-        search.importedFields().map(fields -> fields.complexFields().values().stream()).
-                orElse(Stream.empty()).
-                forEach(field -> deriveImportedComplexField(field));
     }
 
     @Override
@@ -84,19 +81,6 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         if (index.getMatchGroup().size() > 0) {
             addIndexCommand(index.getName(), CMD_MATCH_GROUP + toSpaceSeparated(index.getMatchGroup()));
         }
-    }
-
-    private void deriveImportedComplexField(ImportedField field) {
-        String fieldName = field.fieldName();
-        if (isPositionField(field.targetField())) {
-            addIndexCommand(fieldName, CMD_DEFAULT_POSITION);
-            if (isPositionArrayField(field.targetField())) {
-                addIndexCommand(fieldName, CMD_MULTIVALUE);
-            }
-        } else {
-            addIndexCommand(fieldName, CMD_MULTIVALUE);
-        }
-        addIndexCommand(fieldName, CMD_INDEX);
     }
 
     private String toSpaceSeparated(Collection c) {
