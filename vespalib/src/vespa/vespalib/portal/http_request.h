@@ -14,6 +14,8 @@ private:
     // http stuff
     vespalib::string _method;
     vespalib::string _uri;
+    vespalib::string _path;
+    std::map<vespalib::string, vespalib::string> _params;
     vespalib::string _version;
     std::map<vespalib::string, vespalib::string> _headers;
     vespalib::string _host;
@@ -43,6 +45,10 @@ public:
     const vespalib::string &get_header(const vespalib::string &name) const;
     const vespalib::string &get_host() const { return _host; }
     const vespalib::string &get_uri() const { return _uri; }
+    const vespalib::string &get_path() const { return _path; }
+    bool has_param(const vespalib::string &name) const;
+    const vespalib::string &get_param(const vespalib::string &name) const;
+    std::map<vespalib::string, vespalib::string> export_params() const { return _params; }
 };
 
 } // namespace vespalib::portal

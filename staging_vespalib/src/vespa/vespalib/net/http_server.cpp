@@ -8,7 +8,7 @@ namespace vespalib {
 void
 HttpServer::get(Portal::GetRequest req)
 {
-    vespalib::string json_result = _handler_repo.get(req.get_host(), req.get_uri(), {});
+    vespalib::string json_result = _handler_repo.get(req.get_host(), req.get_path(), req.export_params());
     if (json_result.empty()) {
         req.respond_with_error(404, "Not Found");
     } else {
