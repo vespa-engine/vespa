@@ -8,7 +8,7 @@ import com.yahoo.searchdefinition.DocumentReference;
  *
  * @author geirst
  */
-public class ImportedField {
+public abstract class ImportedField {
 
     private final String fieldName;
     private final DocumentReference reference;
@@ -34,4 +34,5 @@ public class ImportedField {
         return targetField;
     }
 
+    public abstract ImmutableSDField asImmutableSDField();
 }

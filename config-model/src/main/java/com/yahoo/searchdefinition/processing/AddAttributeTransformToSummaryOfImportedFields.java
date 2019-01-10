@@ -34,7 +34,7 @@ public class AddAttributeTransformToSummaryOfImportedFields extends Processor {
                 .forEach(AddAttributeTransformToSummaryOfImportedFields::setAttributeTransform);
         search.importedFields().map(fields -> fields.complexFields().values().stream()).
                 orElse(Stream.empty()).
-                map(ImmutableImportedSDField::new).
+                map(field -> field.asImmutableSDField()).
                 flatMap(this::getSummaryFieldsForImportedField).
                 forEach(AddAttributeTransformToSummaryOfImportedFields::setAttributeCombinerTransform);
     }
