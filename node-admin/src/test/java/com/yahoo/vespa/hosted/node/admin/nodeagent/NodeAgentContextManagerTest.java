@@ -17,11 +17,13 @@ import static org.junit.Assert.assertTrue;
  */
 public class NodeAgentContextManagerTest {
 
+    private static final int TIMEOUT = 10_000;
+
     private final Clock clock = Clock.systemUTC();
     private final NodeAgentContext initialContext = generateContext();
     private final NodeAgentContextManager manager = new NodeAgentContextManager(clock, initialContext);
 
-    @Test(timeout = 1000)
+    @Test(timeout = TIMEOUT)
     public void returns_immediately_if_next_context_is_ready() throws InterruptedException {
         NodeAgentContext context1 = generateContext();
         manager.scheduleTickWith(context1);
@@ -31,7 +33,7 @@ public class NodeAgentContextManagerTest {
         assertSame(context1, manager.currentContext());
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = TIMEOUT)
     public void blocks_in_nextContext_until_one_is_scheduled() throws InterruptedException {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
         assertFalse(async.response.isPresent());
@@ -46,7 +48,7 @@ public class NodeAgentContextManagerTest {
         assertFalse(async.exception.isPresent());
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = TIMEOUT)
     public void blocks_in_nextContext_until_interrupt() throws InterruptedException {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
         assertFalse(async.response.isPresent());
@@ -60,7 +62,7 @@ public class NodeAgentContextManagerTest {
         assertFalse(async.response.isPresent());
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = TIMEOUT)
     public void setFrozen_does_not_block_with_no_timeout() throws InterruptedException {
         assertFalse(manager.setFrozen(false, Duration.ZERO));
 
@@ -72,7 +74,7 @@ public class NodeAgentContextManagerTest {
         assertTrue(manager.setFrozen(false, Duration.ZERO));
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = TIMEOUT)
     public void setFrozen_blocks_at_least_for_duration_of_timeout() {
         long wantedDurationMillis = 100;
         long start = clock.millis();
@@ -82,7 +84,7 @@ public class NodeAgentContextManagerTest {
         assertTrue(actualDurationMillis >= wantedDurationMillis);
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = TIMEOUT)
     public void setFrozen_is_successful_if_converged_in_time() throws InterruptedException {
         AsyncExecutor<Boolean> async = new AsyncExecutor<>(() -> manager.setFrozen(false, Duration.ofMillis(500)));
 
