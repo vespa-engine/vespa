@@ -87,7 +87,7 @@ public class UrlDownloader {
                     throw new RuntimeException("Interrupted sleep between retries of waitFor", e);
                 }
             } else {
-                 throw new RuntimeException("Wait for " + urlReference + " failed:" + request.errorMessage() + " (" + request.errorCode() + ")");
+                 throw new RuntimeException("Wait for " + urlReference + " failed: " + request.errorMessage() + " (" + request.errorCode() + ")");
             }
             timeLeft = start + timeout - System.currentTimeMillis() / 1000;
         } while (timeLeft > 0);

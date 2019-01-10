@@ -84,8 +84,8 @@ public class UrlDownloadRpcServer {
             }
 
         } catch (Throwable e) {
-            log.log(LogLevel.WARNING, "Download of URL '" + url + "' got exception: " + e.getMessage());
-            req.setError(INTERNAL_ERROR, "Download of URL '" + url + "' internal error");
+            log.log(LogLevel.ERROR, "Download of URL '" + url + "' got exception: " + e.getMessage());
+            req.setError(INTERNAL_ERROR, "Download of URL '" + url + "' internal error: " + e.getMessage());
         }
         req.returnRequest();
     }
@@ -104,7 +104,7 @@ public class UrlDownloadRpcServer {
                     req.returnValues().add(new StringValue(contentsPath.getAbsolutePath()));
                     log.log(LogLevel.DEBUG, () -> "URL '" + url + "' available at " + contentsPath);
                 } else {
-                    log.log(LogLevel.INFO, "Downloaded URL '" + url + "' not found, returning error");
+                    log.log(LogLevel.ERROR, "Downloaded URL '" + url + "' not found, returning error");
                     req.setError(DOES_NOT_EXIST, "Downloaded '" + url + "' not found");
                 }
             }
