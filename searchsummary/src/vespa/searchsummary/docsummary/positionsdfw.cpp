@@ -157,10 +157,14 @@ insertFromAttr(const attribute::IAttributeVector &attribute, uint32_t docid, ves
     uint32_t numValues = pos.size();
     LOG(debug, "docid=%d, numValues=%d", docid, numValues);
     if (numValues > 0) {
-        vespalib::slime::Cursor &arr = target.insertArray();
-        for (uint32_t i = 0; i < numValues; i++) {
-            vespalib::slime::ArrayInserter ai(arr);
-            insertPos(pos[i], ai);
+        if (attribute.getCollectionType() == attribute::CollectionType::SINGLE) {
+            insertPos(pos[0], target);
+        } else {
+            vespalib::slime::Cursor &arr = target.insertArray();
+            for (uint32_t i = 0; i < numValues; i++) {
+                vespalib::slime::ArrayInserter ai(arr);
+                insertPos(pos[i], ai);
+            }
         }
     }
 }
