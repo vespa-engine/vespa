@@ -18,6 +18,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
@@ -111,6 +112,8 @@ public class MockNodeRepository extends NodeRepository {
         dirtyRecursively("host55.yahoo.com", Agent.system, getClass().getSimpleName());
 
         ApplicationId zoneApp = ApplicationId.from(TenantName.from("zoneapp"), ApplicationName.from("zoneapp"), InstanceName.from("zoneapp"));
+        // TODO: Remove this once feature flag is removed
+        this.flags().setEnabled(FlagId.exclusiveLoadBalancer, zoneApp, true);
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container,
                                                       ClusterSpec.Id.from("node-admin"),
                                                       Version.fromString("6.42"),
