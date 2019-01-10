@@ -101,7 +101,7 @@ public class ProvisioningTester {
         }
     }
 
-    static FlavorsConfig createConfig() {
+    public static FlavorsConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("default", 2., 4., 100, Flavor.Type.BARE_METAL).cost(3);
         b.addFlavor("small", 1., 2., 50, Flavor.Type.BARE_METAL).cost(2);
@@ -170,11 +170,11 @@ public class ProvisioningTester {
         deactivateTransaction.commit();
     }
 
-    Collection<String> toHostNames(Collection<HostSpec> hosts) {
+    public Collection<String> toHostNames(Collection<HostSpec> hosts) {
         return hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
     }
 
-    Set<String> toHostNames(List<Node> nodes) {
+    public Set<String> toHostNames(List<Node> nodes) {
         return nodes.stream().map(Node::hostname).collect(Collectors.toSet());
     }
 
@@ -182,7 +182,7 @@ public class ProvisioningTester {
      * Asserts that each active node in this application has a restart count equaling the
      * number of matches to the given filters
      */
-    void assertRestartCount(ApplicationId application, HostFilter... filters) {
+    public void assertRestartCount(ApplicationId application, HostFilter... filters) {
         for (Node node : nodeRepository.getNodes(application, Node.State.active)) {
             int expectedRestarts = 0;
             for (HostFilter filter : filters)
@@ -199,7 +199,7 @@ public class ProvisioningTester {
         assertEquals(beforeFailCount + 1, failedNode.status().failCount());
     }
 
-    void assertMembersOf(ClusterSpec requestedCluster, Collection<HostSpec> hosts) {
+    public void assertMembersOf(ClusterSpec requestedCluster, Collection<HostSpec> hosts) {
         Set<Integer> indices = new HashSet<>();
         for (HostSpec host : hosts) {
             ClusterSpec nodeCluster = host.membership().get().cluster();
@@ -214,14 +214,14 @@ public class ProvisioningTester {
         assertEquals("Indexes in " + requestedCluster + " are disjunct", hosts.size(), indices.size());
     }
 
-    HostSpec removeOne(Set<HostSpec> hosts) {
+    public HostSpec removeOne(Set<HostSpec> hosts) {
         Iterator<HostSpec> i = hosts.iterator();
         HostSpec removed = i.next();
         i.remove();
         return removed;
     }
 
-    ApplicationId makeApplicationId() {
+    public ApplicationId makeApplicationId() {
         return ApplicationId.from(
                 TenantName.from(UUID.randomUUID().toString()),
                 ApplicationName.from(UUID.randomUUID().toString()),
@@ -232,15 +232,15 @@ public class ProvisioningTester {
         return makeReadyNodes(n, flavor, NodeType.tenant);
     }
 
-    List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
+    public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
         return makeReadyNodes(n, flavor, type, 0);
     }
 
-    List<Node> makeProvisionedNodes(int count, String flavor, NodeType type, int ipAddressPoolSize) {
+    public List<Node> makeProvisionedNodes(int count, String flavor, NodeType type, int ipAddressPoolSize) {
         return makeProvisionedNodes(count, flavor, type, ipAddressPoolSize, false);
     }
 
-    List<Node> makeProvisionedNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+    public List<Node> makeProvisionedNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         List<Node> nodes = new ArrayList<>(n);
 
         for (int i = 0; i < n; i++) {
@@ -290,7 +290,7 @@ public class ProvisioningTester {
         return nodes;
     }
 
-    List<Node> makeConfigServers(int n, String flavor, Version configServersVersion) {
+    public List<Node> makeConfigServers(int n, String flavor, Version configServersVersion) {
         List<Node> nodes = new ArrayList<>(n);
         MockNameResolver nameResolver = (MockNameResolver)nodeRepository().nameResolver();
 
@@ -322,33 +322,33 @@ public class ProvisioningTester {
         return nodeRepository.getNodes(application.getApplicationId(), Node.State.active);
     }
 
-    List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize) {
+    public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize) {
         return makeReadyNodes(n, flavor, type, ipAddressPoolSize, false);
     }
 
-    List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+    public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         List<Node> nodes = makeProvisionedNodes(n, flavor, type, ipAddressPoolSize, dualStack);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     /** Creates a set of virtual docker nodes on a single docker host */
-    List<Node> makeReadyDockerNodes(int n, String flavor, String dockerHostId) {
+    public List<Node> makeReadyDockerNodes(int n, String flavor, String dockerHostId) {
         return makeReadyVirtualNodes(n, flavor, Optional.of(dockerHostId));
     }
 
     /** Creates a set of virtual nodes on a single parent host */
-    List<Node> makeReadyVirtualNodes(int n, String flavor, Optional<String> parentHostId) {
+    public List<Node> makeReadyVirtualNodes(int n, String flavor, Optional<String> parentHostId) {
         return makeReadyVirtualNodes(n, 0, flavor, parentHostId, index -> UUID.randomUUID().toString());
     }
 
     /** Creates a set of virtual nodes on a single parent host */
-    List<Node> makeReadyVirtualNode(int index, String flavor, String parentHostId) {
+    public List<Node> makeReadyVirtualNode(int index, String flavor, String parentHostId) {
         return makeReadyVirtualNodes(1, index, flavor, Optional.of(parentHostId), i -> String.format("node%03d", i));
     }
 
     /** Creates a set of virtual nodes on a single parent host */
-    List<Node> makeReadyVirtualNodes(int count, int startIndex, String flavor, Optional<String> parentHostId,
+    public List<Node> makeReadyVirtualNodes(int count, int startIndex, String flavor, Optional<String> parentHostId,
                                      Function<Integer, String> nodeNamer) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
@@ -362,16 +362,16 @@ public class ProvisioningTester {
         return nodes;
     }
 
-    List<Node> makeReadyVirtualNodes(int n, String flavor, String parentHostId) {
+    public List<Node> makeReadyVirtualNodes(int n, String flavor, String parentHostId) {
         return makeReadyVirtualNodes(n, flavor, Optional.of(parentHostId));
     }
 
     /** Returns the hosts from the input list which are not retired */
-    List<HostSpec> nonRetired(Collection<HostSpec> hosts) {
+    public List<HostSpec> nonRetired(Collection<HostSpec> hosts) {
         return hosts.stream().filter(host -> ! host.membership().get().retired()).collect(Collectors.toList());
     }
 
-    void assertNumberOfNodesWithFlavor(List<HostSpec> hostSpecs, String flavor, int expectedCount) {
+    public void assertNumberOfNodesWithFlavor(List<HostSpec> hostSpecs, String flavor, int expectedCount) {
         long actualNodesWithFlavor = hostSpecs.stream()
                 .map(HostSpec::hostname)
                 .map(this::getNodeFlavor)

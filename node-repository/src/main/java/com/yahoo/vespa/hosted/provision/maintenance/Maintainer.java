@@ -56,8 +56,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         try {
             if (jobControl.isActive(name()))
                 maintain();
-        }
-        catch (RuntimeException e) {
+        } catch (Throwable e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
         }
     }
