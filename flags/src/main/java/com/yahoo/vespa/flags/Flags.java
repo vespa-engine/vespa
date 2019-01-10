@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
 
-import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 
 /**
@@ -75,12 +74,8 @@ public class Flags {
     public static final UnboundBooleanFlag ENABLE_CPU_TEMPERATURE_TASK = defineFeatureFlag(
             "enable-cputemptask", true,
             "Whether to enable CPU temperature task", "Takes effect on next host admin tick",
-            HOSTNAME);
-    
-    public static final UnboundBooleanFlag ENABLE_LOGSERVER = defineFeatureFlag(
-            "enable-logserver", false,
-            "Whether to enable logserver.", "Takes effect at redeployment",
-            APPLICATION_ID);
+            HOSTNAME
+    );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

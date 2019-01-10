@@ -23,7 +23,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.VespaVersion;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.model.application.validation.Validation;
 
 import org.xml.sax.SAXException;
@@ -34,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -50,13 +48,12 @@ public class VespaModelFactory implements ModelFactory {
     private final Zone zone;
     private final Clock clock;
     private final Version version;
-    private final FlagSource flagSource;
 
     /** Creates a factory for vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<MlModelImporter> modelImporters,
-                             Zone zone, FlagSource flagSource) {
+                             Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder> modelBuilders = new ArrayList<>();
         for (ConfigModelPlugin plugin : pluginRegistry.allComponents()) {
@@ -68,7 +65,6 @@ public class VespaModelFactory implements ModelFactory {
         this.modelImporters = modelImporters.allComponents();
         this.zone = zone;
         this.clock = Clock.systemUTC();
-        this.flagSource = flagSource;
     }
     
     public VespaModelFactory(ConfigModelRegistry configModelRegistry) {
@@ -88,7 +84,6 @@ public class VespaModelFactory implements ModelFactory {
         this.modelImporters = Collections.emptyList();
         this.zone = Zone.defaultZone();
         this.clock = clock;
-        this.flagSource = (id, vector) -> Optional.empty();
     }
 
     /** Returns the version this model is build for */
@@ -148,7 +143,6 @@ public class VespaModelFactory implements ModelFactory {
             .modelImporters(modelImporters)
             .zone(zone)
             .now(clock.instant())
-            .flagSource(flagSource)
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion());
         modelContext.previousModel().ifPresent(builder::previousModel);
         return builder.build(validationParameters);
