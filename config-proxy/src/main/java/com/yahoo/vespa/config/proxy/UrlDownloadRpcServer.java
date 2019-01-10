@@ -91,6 +91,7 @@ public class UrlDownloadRpcServer {
     }
 
     private static void downloadFile(Request req, HttpURLConnection connection, File downloadDir) throws IOException {
+        long start = System.currentTimeMillis();
         String url = connection.getURL().toString();
         Files.createDirectories(downloadDir.toPath());
         File contentsPath = new File(downloadDir, CONTENTS_FILE_NAME);
@@ -108,6 +109,8 @@ public class UrlDownloadRpcServer {
                 }
             }
         }
+        long end = System.currentTimeMillis();
+        log.log(LogLevel.INFO, String.format("Download of URL '%s' done in %.3f seconds", url,  (end-start) / 1000.0));
     }
 
     private static String urlToDirName(String uri) {
