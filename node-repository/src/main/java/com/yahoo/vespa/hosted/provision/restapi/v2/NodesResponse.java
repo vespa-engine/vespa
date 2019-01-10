@@ -6,10 +6,10 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -81,16 +81,12 @@ class NodesResponse extends HttpResponse {
 
     @Override
     public void render(OutputStream stream) throws IOException {
-        stream.write(toJson());
+        new JsonFormat(true).encode(stream, slime);
     }
 
     @Override
     public String getContentType() {
         return "application/json";
-    }
-
-    private byte[] toJson() throws IOException {
-        return SlimeUtils.toJsonBytes(slime);
     }
 
     private void statesToSlime(Cursor root) {
