@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
 import com.yahoo.document.datatypes.FieldPathIteratorHandler;
@@ -89,6 +90,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
             "  </item>\n" +
             " </mapfield>\n" +
             SERTEST_DOC_AS_XML_SUNNYVALE +
+            " <myboolfield>true</myboolfield>\n" +
             "</document>\n";
 
     static DocumentTypeManager setUpCppDocType() {
@@ -124,6 +126,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         sertestDocType.addField(new Field("docindoc", 882, docInDocType, false));
         sertestDocType.addField(new Field("mapfield", 883, new MapDataType(DataType.STRING, DataType.STRING), false));
         sertestDocType.addField(new Field("myposfield", 884, PositionDataType.INSTANCE, false));
+        sertestDocType.addField(new Field("myboolfield", 885, DataType.BOOL, false));
 
         docMan.registerDocumentType(sertestDocType);
     }
@@ -165,6 +168,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         map.put(new StringFieldValue("foo1"), new StringFieldValue("bar1"));
         map.put(new StringFieldValue("foo2"), new StringFieldValue("bar2"));
         doc.setFieldValue("mapfield", map);
+        doc.setFieldValue("myboolfield", new BoolFieldValue(true));
 
         return doc;
     }
@@ -776,12 +780,12 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         doc.setFieldValue("wsfield", wset);
 
         MapFieldValue<StringFieldValue, StringFieldValue> map =
-                new MapFieldValue<>(
-                        (MapDataType)doc.getDataType().getField("mapfield").getDataType());
+                new MapFieldValue<>((MapDataType)doc.getDataType().getField("mapfield").getDataType());
         map.put(new StringFieldValue("foo1"), new StringFieldValue("bar1"));
         map.put(new StringFieldValue("foo2"), new StringFieldValue("bar2"));
         doc.setFieldValue("mapfield", map);
 
+        doc.setFieldValue("boolfield", new BoolFieldValue(true));
         doc.setFieldValue("bytefield", new ByteFieldValue((byte)254));
         doc.setFieldValue("rawfield", new Raw(ByteBuffer.wrap("RAW DATA".getBytes())));
         doc.setFieldValue("intfield", new IntegerFieldValue(5));
@@ -841,6 +845,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         Document doc2 = docMan.createDocument(data);
 
+        assertEquals(doc.getFieldValue("myboolfield"), doc2.getFieldValue("myboolfield"));
         assertEquals(doc.getFieldValue("mailid"), doc2.getFieldValue("mailid"));
         assertEquals(doc.getFieldValue("date"), doc2.getFieldValue("date"));
         assertEquals(doc.getFieldValue("from"), doc2.getFieldValue("from"));
@@ -1229,7 +1234,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
             assertEquals(fields.get("date"), -2013512400);
             assertThat(fields.get("docindoc"), instanceOf(Map.class));
             assertThat(fields.keySet(),
-                    containsInAnyOrder("mailid", "date", "attachmentcount", "rawfield", "weightedfield", "docindoc", "mapfield"));
+                    containsInAnyOrder("mailid", "date", "attachmentcount", "rawfield", "weightedfield", "docindoc", "mapfield", "myboolfield"));
         }
     }
 

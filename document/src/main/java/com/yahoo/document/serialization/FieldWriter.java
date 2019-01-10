@@ -4,6 +4,7 @@ package com.yahoo.document.serialization;
 import com.yahoo.document.Document;
 import com.yahoo.document.annotation.AnnotationReference;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
@@ -76,6 +77,16 @@ public interface FieldWriter extends Serializer {
      *            field value
      */
     void write(FieldBase field, ByteFieldValue value);
+
+    /**
+     * Write out the value of byte field
+     *
+     * @param field
+     *            field description (name and data type)
+     * @param value
+     *            field value
+     */
+    void write(FieldBase field, BoolFieldValue value);
 
     /**
      * Write out the value of collection field
