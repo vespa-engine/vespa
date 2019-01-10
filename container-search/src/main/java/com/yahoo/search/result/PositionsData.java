@@ -17,8 +17,8 @@ public class PositionsData implements Inspectable, JsonProducer, XmlProducer {
 
     public PositionsData(Inspector value) {
         this.value = value;
-        if (value.type() != Type.ARRAY) {
-            throw new IllegalArgumentException("PositionsData expects an array of positions, got: "+value);
+        if (value.type() != Type.OBJECT && value.type() != Type.ARRAY) {
+            throw new IllegalArgumentException("PositionsData expects a position or an array of positions, got: "+value);
         }
     }
 
@@ -38,27 +38,35 @@ public class PositionsData implements Inspectable, JsonProducer, XmlProducer {
 
     @Override
     public StringBuilder writeXML(StringBuilder target) {
-        for (int i = 0; i < value.entryCount(); i++) {
-            Inspector pos = value.entry(i);
-            target.append("<position ");
-            for (java.util.Map.Entry<String, Inspector> entry : pos.fields()) {
-                Inspector v = entry.getValue();
-                if (v.type() == Type.STRING) {
-                    target.append(entry.getKey());
-                    target.append("=\"");
-                    target.append(entry.getValue().asString());
-                    target.append("\" ");
-                }
-                if (v.type() == Type.LONG) {
-                    target.append(entry.getKey());
-                    target.append("=\"");
-                    target.append(entry.getValue().asLong());
-                    target.append("\" ");
-                }
+        if (value.type() == Type.OBJECT) {
+            writeXML(value.inspect(), target);
+        } else {
+            for (int i = 0; i < value.entryCount(); i++) {
+                Inspector pos = value.entry(i);
+                writeXML(pos, target);
             }
-            target.append("/>");
         }
         return target;
+    }
+
+    private static void writeXML(Inspector pos, StringBuilder target) {
+        target.append("<position ");
+        for (java.util.Map.Entry<String, Inspector> entry : pos.fields()) {
+            Inspector v = entry.getValue();
+            if (v.type() == Type.STRING) {
+                target.append(entry.getKey());
+                target.append("=\"");
+                target.append(entry.getValue().asString());
+                target.append("\" ");
+            }
+            if (v.type() == Type.LONG) {
+                target.append(entry.getKey());
+                target.append("=\"");
+                target.append(entry.getValue().asLong());
+                target.append("\" ");
+            }
+        }
+        target.append("/>");
     }
 
 }
