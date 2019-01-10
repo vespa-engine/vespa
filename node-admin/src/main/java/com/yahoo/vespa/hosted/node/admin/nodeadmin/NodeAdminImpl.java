@@ -9,6 +9,11 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextManager;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentFactory;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentScheduler;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.time.Clock;
@@ -23,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -33,12 +37,15 @@ import java.util.stream.Collectors;
  */
 public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
+    private static final Duration NODE_AGENT_FREEZE_TIMEOUT = Duration.ofSeconds(5);
+
     private final ScheduledExecutorService aclScheduler =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("aclscheduler"));
     private final ScheduledExecutorService metricsScheduler =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("metricsscheduler"));
 
-    private final Function<String, NodeAgent> nodeAgentFactory;
+    private final NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory;
+    private final NodeAgentContextFactory nodeAgentContextFactory;
     private final Optional<AclMaintainer> aclMaintainer;
 
     private final Clock clock;
@@ -46,16 +53,27 @@ public class NodeAdminImpl implements NodeAdmin {
     private boolean isFrozen;
     private Instant startOfFreezeConvergence;
 
-    private final Map<String, NodeAgent> nodeAgentsByHostname = new ConcurrentHashMap<>();
+    private final Map<String, NodeAgentWithScheduler> nodeAgentWithSchedulerByHostname = new ConcurrentHashMap<>();
 
     private final GaugeWrapper numberOfContainersInLoadImageState;
     private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
-    public NodeAdminImpl(Function<String, NodeAgent> nodeAgentFactory,
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory,
+                         NodeAgentContextFactory nodeAgentContextFactory,
                          Optional<AclMaintainer> aclMaintainer,
                          MetricReceiverWrapper metricReceiver,
                          Clock clock) {
-        this.nodeAgentFactory = nodeAgentFactory;
+        this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
+                nodeAgentContextFactory, aclMaintainer, metricReceiver, clock);
+    }
+
+    NodeAdminImpl(NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory,
+                  NodeAgentContextFactory nodeAgentContextFactory,
+                  Optional<AclMaintainer> aclMaintainer,
+                  MetricReceiverWrapper metricReceiver,
+                  Clock clock) {
+        this.nodeAgentWithSchedulerFactory = nodeAgentWithSchedulerFactory;
+        this.nodeAgentContextFactory = nodeAgentContextFactory;
         this.aclMaintainer = aclMaintainer;
 
         this.clock = clock;
@@ -70,22 +88,33 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void refreshContainersToRun(List<NodeSpec> containersToRun) {
-        final Set<String> hostnamesOfContainersToRun = containersToRun.stream()
-                .map(NodeSpec::getHostname)
-                .collect(Collectors.toSet());
+        final Map<String, NodeAgentContext> nodeAgentContextsByHostname = containersToRun.stream()
+                .collect(Collectors.toMap(NodeSpec::getHostname, nodeAgentContextFactory::create));
 
-        synchronizeNodesToNodeAgents(hostnamesOfContainersToRun);
+        // Stop and remove NodeAgents that should no longer be running
+        diff(nodeAgentWithSchedulerByHostname.keySet(), nodeAgentContextsByHostname.keySet())
+                .forEach(hostname -> nodeAgentWithSchedulerByHostname.remove(hostname).stop());
 
-        updateNodeAgentMetrics();
+        // Start NodeAgent for hostnames that should be running, but aren't yet
+        diff(nodeAgentContextsByHostname.keySet(), nodeAgentWithSchedulerByHostname.keySet()).forEach(hostname ->  {
+            NodeAgentWithScheduler naws = nodeAgentWithSchedulerFactory.create(nodeAgentContextsByHostname.get(hostname));
+            naws.start();
+            nodeAgentWithSchedulerByHostname.put(hostname, naws);
+        });
+
+        // At this point, nodeAgentContextsByHostname and nodeAgentWithSchedulerByHostname should have the same keys
+        nodeAgentContextsByHostname.forEach((hostname, context) ->
+            nodeAgentWithSchedulerByHostname.get(hostname).scheduleTickWith(context)
+        );
     }
 
     private void updateNodeAgentMetrics() {
         int numberContainersWaitingImage = 0;
         int numberOfNewUnhandledExceptions = 0;
 
-        for (NodeAgent nodeAgent : nodeAgentsByHostname.values()) {
-            if (nodeAgent.isDownloadingImage()) numberContainersWaitingImage++;
-            numberOfNewUnhandledExceptions += nodeAgent.getAndResetNumberOfUnhandledExceptions();
+        for (NodeAgentWithScheduler nodeAgentWithScheduler : nodeAgentWithSchedulerByHostname.values()) {
+            if (nodeAgentWithScheduler.isDownloadingImage()) numberContainersWaitingImage++;
+            numberOfNewUnhandledExceptions += nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions();
         }
 
         numberOfContainersInLoadImageState.sample(numberContainersWaitingImage);
@@ -105,8 +134,8 @@ public class NodeAdminImpl implements NodeAdmin {
         }
 
         // Use filter with count instead of allMatch() because allMatch() will short circuit on first non-match
-        boolean allNodeAgentsConverged = nodeAgentsByHostname.values().stream()
-                .filter(nodeAgent -> !nodeAgent.setFrozen(wantFrozen))
+        boolean allNodeAgentsConverged = nodeAgentWithSchedulerByHostname.values().parallelStream()
+                .filter(nodeAgentScheduler -> !nodeAgentScheduler.setFrozen(wantFrozen, NODE_AGENT_FREEZE_TIMEOUT))
                 .count() == 0;
 
         if (wantFrozen) {
@@ -134,8 +163,8 @@ public class NodeAdminImpl implements NodeAdmin {
     public void stopNodeAgentServices(List<String> hostnames) {
         // Each container may spend 1-1:30 minutes stopping
         hostnames.parallelStream()
-                .filter(nodeAgentsByHostname::containsKey)
-                .map(nodeAgentsByHostname::get)
+                .filter(nodeAgentWithSchedulerByHostname::containsKey)
+                .map(nodeAgentWithSchedulerByHostname::get)
                 .forEach(nodeAgent -> {
                     nodeAgent.suspend();
                     nodeAgent.stopServices();
@@ -146,7 +175,8 @@ public class NodeAdminImpl implements NodeAdmin {
     public void start() {
         metricsScheduler.scheduleAtFixedRate(() -> {
             try {
-                nodeAgentsByHostname.values().forEach(NodeAgent::updateContainerNodeMetrics);
+                updateNodeAgentMetrics();
+                nodeAgentWithSchedulerByHostname.values().forEach(NodeAgent::updateContainerNodeMetrics);
             } catch (Throwable e) {
                 logger.warning("Metric fetcher scheduler failed", e);
             }
@@ -166,7 +196,7 @@ public class NodeAdminImpl implements NodeAdmin {
         aclScheduler.shutdown();
 
         // Stop all node-agents in parallel, will block until the last NodeAgent is stopped
-        nodeAgentsByHostname.values().parallelStream().forEach(NodeAgent::stop);
+        nodeAgentWithSchedulerByHostname.values().parallelStream().forEach(NodeAgent::stop);
 
         do {
             try {
@@ -185,23 +215,35 @@ public class NodeAdminImpl implements NodeAdmin {
         return result;
     }
 
-    void synchronizeNodesToNodeAgents(Set<String> hostnamesToRun) {
-        // Stop and remove NodeAgents that should no longer be running
-        diff(nodeAgentsByHostname.keySet(), hostnamesToRun)
-                .forEach(hostname -> nodeAgentsByHostname.remove(hostname).stop());
+    static class NodeAgentWithScheduler implements NodeAgent, NodeAgentScheduler {
+        private final NodeAgent nodeAgent;
+        private final NodeAgentScheduler nodeAgentScheduler;
 
-        // Start NodeAgent for hostnames that should be running, but aren't yet
-        diff(hostnamesToRun, nodeAgentsByHostname.keySet())
-                .forEach(this::startNodeAgent);
+        private NodeAgentWithScheduler(NodeAgent nodeAgent, NodeAgentScheduler nodeAgentScheduler) {
+            this.nodeAgent = nodeAgent;
+            this.nodeAgentScheduler = nodeAgentScheduler;
+        }
+
+        @Override public void stopServices() { nodeAgent.stopServices(); }
+        @Override public void suspend() { nodeAgent.suspend(); }
+        @Override public void start() { nodeAgent.start(); }
+        @Override public void stop() { nodeAgent.stop(); }
+        @Override public void updateContainerNodeMetrics() { nodeAgent.updateContainerNodeMetrics(); }
+        @Override public boolean isDownloadingImage() { return nodeAgent.isDownloadingImage(); }
+        @Override public int getAndResetNumberOfUnhandledExceptions() { return nodeAgent.getAndResetNumberOfUnhandledExceptions(); }
+
+        @Override public void scheduleTickWith(NodeAgentContext context) { nodeAgentScheduler.scheduleTickWith(context); }
+        @Override public boolean setFrozen(boolean frozen, Duration timeout) { return nodeAgentScheduler.setFrozen(frozen, timeout); }
     }
 
-    private void startNodeAgent(String hostname) {
-        if (nodeAgentsByHostname.containsKey(hostname))
-            throw new IllegalArgumentException("Attempted to start NodeAgent for hostname " + hostname +
-                    ", but one is already running!");
+    @FunctionalInterface
+    interface NodeAgentWithSchedulerFactory {
+        NodeAgentWithScheduler create(NodeAgentContext context);
+    }
 
-        NodeAgent agent = nodeAgentFactory.apply(hostname);
-        agent.start();
-        nodeAgentsByHostname.put(hostname, agent);
+    private static NodeAgentWithScheduler create(Clock clock, NodeAgentFactory nodeAgentFactory, NodeAgentContext context) {
+        NodeAgentContextManager contextManager = new NodeAgentContextManager(clock, context);
+        NodeAgent nodeAgent = nodeAgentFactory.create(contextManager);
+        return new NodeAgentWithScheduler(nodeAgent, contextManager);
     }
 }

@@ -1,14 +1,15 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.ZoneId;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -25,9 +26,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private static final Path ROOT = Paths.get("/");
 
     private final String logPrefix;
+    private final NodeSpec node;
     private final ContainerName containerName;
-    private final HostName hostName;
-    private final NodeType nodeType;
     private final AthenzService identity;
     private final DockerNetworking dockerNetworking;
     private final ZoneId zoneId;
@@ -36,13 +36,12 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final String vespaUser;
     private final String vespaUserOnHost;
 
-    public NodeAgentContextImpl(String hostname, NodeType nodeType, AthenzService identity,
+    public NodeAgentContextImpl(NodeSpec node, AthenzService identity,
                                 DockerNetworking dockerNetworking, ZoneId zoneId,
                                 Path pathToContainerStorage, Path pathToVespaHome,
                                 String vespaUser, String vespaUserOnHost) {
-        this.hostName = HostName.from(Objects.requireNonNull(hostname));
-        this.containerName = ContainerName.fromHostname(hostname);
-        this.nodeType = Objects.requireNonNull(nodeType);
+        this.node = Objects.requireNonNull(node);
+        this.containerName = ContainerName.fromHostname(node.getHostname());
         this.identity = Objects.requireNonNull(identity);
         this.dockerNetworking = Objects.requireNonNull(dockerNetworking);
         this.zoneId = Objects.requireNonNull(zoneId);
@@ -54,18 +53,13 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
+    public NodeSpec node() {
+        return node;
+    }
+
+    @Override
     public ContainerName containerName() {
         return containerName;
-    }
-
-    @Override
-    public HostName hostname() {
-        return hostName;
-    }
-
-    @Override
-    public NodeType nodeType() {
-        return nodeType;
     }
 
     @Override
@@ -134,12 +128,25 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     public void log(Logger logger, Level level, String message, Throwable throwable) {
         logger.log(level, logPrefix + message, throwable);
     }
-    
+
+    @Override
+    public String toString() {
+        return "NodeAgentContextImpl{" +
+                "node=" + node +
+                ", containerName=" + containerName +
+                ", identity=" + identity +
+                ", dockerNetworking=" + dockerNetworking +
+                ", zoneId=" + zoneId +
+                ", pathToNodeRootOnHost=" + pathToNodeRootOnHost +
+                ", pathToVespaHome=" + pathToVespaHome +
+                ", vespaUser='" + vespaUser + '\'' +
+                ", vespaUserOnHost='" + vespaUserOnHost + '\'' +
+                '}';
+    }
 
     /** For testing only! */
     public static class Builder {
-        private final String hostname;
-        private NodeType nodeType;
+        private NodeSpec.Builder nodeSpecBuilder = new NodeSpec.Builder();
         private AthenzService identity;
         private DockerNetworking dockerNetworking;
         private ZoneId zoneId;
@@ -148,12 +155,25 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private String vespaUser;
         private String vespaUserOnHost;
 
+        public Builder(NodeSpec node) {
+            this.nodeSpecBuilder = new NodeSpec.Builder(node);
+        }
+
+        /**
+         * Creates a NodeAgentContext.Builder with a NodeSpec that has the given hostname and some
+         * reasonable values for the remaining required NodeSpec fields. Use {@link #Builder(NodeSpec)}
+         * if you want to control the entire NodeSpec.
+         */
         public Builder(String hostname) {
-            this.hostname = hostname;
+            this.nodeSpecBuilder
+                    .hostname(hostname)
+                    .state(Node.State.active)
+                    .nodeType(NodeType.tenant)
+                    .flavor("d-2-8-50");
         }
 
         public Builder nodeType(NodeType nodeType) {
-            this.nodeType = nodeType;
+            this.nodeSpecBuilder.nodeType(nodeType);
             return this;
         }
 
@@ -198,8 +218,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
 
         public NodeAgentContextImpl build() {
             return new NodeAgentContextImpl(
-                    hostname,
-                    Optional.ofNullable(nodeType).orElse(NodeType.tenant),
+                    nodeSpecBuilder.build(),
                     Optional.ofNullable(identity).orElseGet(() -> new AthenzService("domain", "service")),
                     Optional.ofNullable(dockerNetworking).orElse(DockerNetworking.HOST_NETWORK),
                     Optional.ofNullable(zoneId).orElseGet(() -> new ZoneId(SystemName.dev, Environment.dev, RegionName.defaultName())),

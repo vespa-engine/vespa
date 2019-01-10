@@ -9,12 +9,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
  * @author bakksjo
  */
 public interface NodeAgent {
-    /**
-     * Will eventually freeze/unfreeze the node agent
-     * @param frozen whether node agent should be frozen
-     * @return True if node agent has converged to the desired state
-     */
-    boolean setFrozen(boolean frozen);
 
     /**
      * Stop services running on node. Depending on the state of the node, {@link #suspend()} might need to be
