@@ -1,46 +1,49 @@
 {
-  "jobs":[
+  "jobs": [
     {
-      "name":"PeriodicApplicationMaintainer"
+      "name": "DirtyExpirer"
     },
     {
-      "name":"FailedExpirer"
+      "name": "FailedExpirer"
     },
     {
-      "name":"ReservationExpirer"
+      "name": "InactiveExpirer"
     },
     {
-      "name":"RetiredExpirer"
+      "name": "InfrastructureProvisioner"
     },
     {
-      "name":"NodeRebooter"
+      "name": "LoadBalancerExpirer"
     },
     {
-      "name":"InactiveExpirer"
+      "name": "MetricsReporter"
     },
     {
-      "name":"DirtyExpirer"
+      "name": "NodeFailer"
     },
     {
-      "name":"NodeRetirer"
+      "name": "NodeRebooter"
     },
     {
-      "name":"OperatorChangeApplicationMaintainer"
+      "name": "NodeRetirer"
     },
     {
-      "name":"ProvisionedExpirer"
+      "name": "OperatorChangeApplicationMaintainer"
     },
     {
-      "name":"MetricsReporter"
+      "name": "PeriodicApplicationMaintainer"
     },
     {
-      "name":"InfrastructureProvisioner"
+      "name": "ProvisionedExpirer"
     },
     {
-      "name":"NodeFailer"
+      "name": "ReservationExpirer"
+    },
+    {
+      "name": "RetiredExpirer"
     }
   ],
-  "inactive":[
+  "inactive": [
     "NodeFailer"
   ]
 }
