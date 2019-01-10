@@ -120,12 +120,12 @@ public class CuratorDatabase {
     // the data to read is protected by a lock which is held now, and during any writes of the data.
 
     /** Returns the immediate, local names of the children under this node in any order */
-    List<String> getChildren(Path path) { return getCache().getChildren(path); }
+    List<String> getChildren(Path path) { return getSession().getChildren(path); }
 
-    Optional<byte[]> getData(Path path) { return getCache().getData(path); }
+    Optional<byte[]> getData(Path path) { return getSession().getData(path); }
 
     /** Invalidates the current cache if outdated. */
-    private CuratorDatabaseCache getCache() {
+    CuratorCache getSession() {
         if (changeGenerationCounter.get() != cache.get().generation)
             synchronized (cacheCreationLock) {
                 while (changeGenerationCounter.get() != cache.get().generation)
@@ -145,7 +145,7 @@ public class CuratorDatabase {
      * This is merely a recording of what Curator returned at various points in time when 
      * it had the counter at this generation.
      */
-    private static class CuratorDatabaseCache {
+    private static class CuratorDatabaseCache extends CuratorCache {
 
         private final long generation;
         
