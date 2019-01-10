@@ -23,7 +23,7 @@ struct ExplicitItemData
     uint32_t _weight;
 
     ExplicitItemData()
-        : _index(NULL), _indexlen(0), _term(NULL), _termlen(0), _weight(0)
+        : _index(nullptr), _indexlen(0), _term(nullptr), _termlen(0), _weight(0)
         {}
 
     ExplicitItemData(const char *index, uint32_t indexlen, const char* term,
@@ -43,19 +43,16 @@ struct QueryItem
 {
     search::SimpleQueryStackDumpIterator *_si;
     const ExplicitItemData *_data;
-    QueryItem() : _si(NULL), _data(NULL) {}
-    QueryItem(search::SimpleQueryStackDumpIterator *si) : _si(si), _data(NULL) {}
-    QueryItem(ExplicitItemData *data) : _si(NULL), _data(data) {}
+    QueryItem() : _si(nullptr), _data(nullptr) {}
+    QueryItem(search::SimpleQueryStackDumpIterator *si) : _si(si), _data(nullptr) {}
+    QueryItem(ExplicitItemData *data) : _si(nullptr), _data(data) {}
 private:
     QueryItem(const QueryItem&);
     QueryItem& operator= (const QueryItem&);
 };
-};
+}
 
-namespace search {
-class Property;
-
-namespace fef {
+namespace search::fef {
 class TermVisitor : public IPropertiesVisitor
 {
 public:
@@ -104,24 +101,22 @@ TermVisitor::visitProperty(const Property::Value &key, const Property &values)
 
 }
 
-namespace docsummary {
+namespace search::docsummary {
 
 class JuniperQueryAdapter : public juniper::IQuery
 {
 private:
-    JuniperQueryAdapter(const JuniperQueryAdapter&);
-    JuniperQueryAdapter operator= (const JuniperQueryAdapter&);
-
     KeywordExtractor *_kwExtractor;
     const vespalib::stringref _buf;
     const search::fef::Properties *_highlightTerms;
     juniper::IQueryVisitor *_visitor;
 
 public:
-    JuniperQueryAdapter(KeywordExtractor *kwExtractor,
-                        vespalib::stringref buf,
-                        const search::fef::Properties *highlightTerms = NULL)
-        : _kwExtractor(kwExtractor), _buf(buf), _highlightTerms(highlightTerms), _visitor(NULL) {}
+    JuniperQueryAdapter(const JuniperQueryAdapter&) = delete;
+    JuniperQueryAdapter operator= (const JuniperQueryAdapter&) = delete;
+    JuniperQueryAdapter(KeywordExtractor *kwExtractor, vespalib::stringref buf,
+                        const search::fef::Properties *highlightTerms = nullptr)
+        : _kwExtractor(kwExtractor), _buf(buf), _highlightTerms(highlightTerms), _visitor(nullptr) {}
 
     // TODO: put this functionality into the stack dump iterator
     bool SkipItem(search::SimpleQueryStackDumpIterator *iterator) const
@@ -136,28 +131,28 @@ public:
         return true;
     }
 
-    virtual bool Traverse(juniper::IQueryVisitor *v) const override;
+    bool Traverse(juniper::IQueryVisitor *v) const override;
 
-    virtual int Weight(const juniper::QueryItem* item) const override
+    int Weight(const juniper::QueryItem* item) const override
     {
-        if (item->_si != NULL) {
+        if (item->_si != nullptr) {
             return item->_si->GetWeight().percent();
         } else {
             return item->_data->_weight;
         }
     }
-    virtual juniper::ItemCreator Creator(const juniper::QueryItem* item) const override
+    juniper::ItemCreator Creator(const juniper::QueryItem* item) const override
     {
         // cast master: Knut Omang
-        if (item->_si != NULL) {
+        if (item->_si != nullptr) {
             return (juniper::ItemCreator) item->_si->getCreator();
         } else {
             return juniper::CREA_ORIG;
         }
     }
-    virtual const char *Index(const juniper::QueryItem* item, size_t *len) const override
+    const char *Index(const juniper::QueryItem* item, size_t *len) const override
     {
-        if (item->_si != NULL) {
+        if (item->_si != nullptr) {
             *len = item->_si->getIndexName().size();
             return item->_si->getIndexName().data();
         } else {
@@ -166,14 +161,14 @@ public:
         }
 
     }
-    virtual bool UsefulIndex(const juniper::QueryItem* item) const override
+    bool UsefulIndex(const juniper::QueryItem* item) const override
     {
         vespalib::stringref index;
 
-        if (_kwExtractor == NULL)
+        if (_kwExtractor == nullptr)
             return true;
 
-        if (item->_si != NULL) {
+        if (item->_si != nullptr) {
             index = item->_si->getIndexName();
         } else {
             index = vespalib::stringref(item->_data->_index, item->_data->_indexlen);
@@ -181,8 +176,6 @@ public:
         return _kwExtractor->IsLegalIndex(index);
     }
 };
-
-
 
 bool
 JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
@@ -308,7 +301,7 @@ JuniperDFW::JuniperDFW(juniper::Juniper * juniper)
 }
 
 
-JuniperDFW::~JuniperDFW() { }
+JuniperDFW::~JuniperDFW() = default;
 
 bool
 JuniperDFW::Init(
@@ -319,10 +312,10 @@ JuniperDFW::Init(
 {
     bool rc = true;
     const util::StringEnum & enums(config.GetFieldNameEnum());
-    if (langFieldName != NULL)
+    if (langFieldName != nullptr)
         _langFieldEnumValue = enums.Lookup(langFieldName);
     _juniperConfig = _juniper->CreateConfig(fieldName);
-    if (_juniperConfig.get() == NULL) {
+    if (_juniperConfig.get() == nullptr) {
         LOG(warning, "could not create juniper config for field '%s'", fieldName);
         rc = false;
     }
@@ -350,7 +343,7 @@ JuniperTeaserDFW::Init(
         const ResConfigEntry *entry =
             it->GetEntry(it->GetIndexFromEnumValue(_inputFieldEnumValue));
 
-        if (entry != NULL &&
+        if (entry != nullptr &&
             !IsRuntimeCompatible(entry->_type, RES_STRING) &&
             !IsRuntimeCompatible(entry->_type, RES_DATA))
         {
@@ -363,15 +356,13 @@ JuniperTeaserDFW::Init(
 }
 
 vespalib::string
-DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid,
-                                    GeneralResult *gres,
-                                    GetDocsumsState *state)
+DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, GeneralResult *gres, GetDocsumsState *state)
 {
-    if (state->_dynteaser._query == NULL) {
+    if (state->_dynteaser._query == nullptr) {
         JuniperQueryAdapter iq(state->_kwExtractor,
                                state->_args.getStackDump(),
                                &state->_args.highlightTerms());
-        state->_dynteaser._query = _juniper->CreateQueryHandle(iq, NULL);
+        state->_dynteaser._query = _juniper->CreateQueryHandle(iq, nullptr);
     }
 
     if (docid != state->_dynteaser._docid ||
@@ -384,34 +375,31 @@ DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid,
                 _langFieldEnumValue, state->_dynteaser._lang,
                 (juniper::AnalyseCompatible(_juniperConfig.get(), state->_dynteaser._config) ? "no" : "yes"));
 
-        if (state->_dynteaser._result != NULL)
+        if (state->_dynteaser._result != nullptr)
             juniper::ReleaseResult(state->_dynteaser._result);
 
         state->_dynteaser._docid  = docid;
         state->_dynteaser._input  = _inputFieldEnumValue;
         state->_dynteaser._lang   = _langFieldEnumValue;
         state->_dynteaser._config = _juniperConfig.get();
-        state->_dynteaser._result = NULL;
+        state->_dynteaser._result = nullptr;
 
         int idx = gres->GetClass()->GetIndexFromEnumValue(_inputFieldEnumValue);
         ResEntry *entry = gres->GetEntry(idx);
 
-        if (entry != NULL &&
-            state->_dynteaser._query != NULL) {
+        if (entry != nullptr && state->_dynteaser._query != nullptr) {
 
             // obtain Juniper input
             const char *buf;
             uint32_t    buflen;
 
-            entry->_resolve_field(&buf, &buflen,
-                                  &state->_docSumFieldSpace);
+            entry->_resolve_field(&buf, &buflen, &state->_docSumFieldSpace);
 
             if (LOG_WOULD_LOG(spam)) {
                 std::ostringstream hexDump;
                 hexDump << vespalib::HexDump(buf, buflen);
                 LOG(spam, "makeDynamicTeaser: docid=%d, input='%s', hexdump:\n%s",
-                        docid, std::string(buf, buflen).c_str(),
-                        hexDump.str().c_str());
+                        docid, std::string(buf, buflen).c_str(), hexDump.str().c_str());
             }
 
             uint32_t langid = static_cast<uint32_t>(-1);
@@ -422,33 +410,29 @@ DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid,
         }
     }
 
-    juniper::Summary *teaser = (state->_dynteaser._result != NULL)
+    juniper::Summary *teaser = (state->_dynteaser._result != nullptr)
                                ? juniper::GetTeaser(state->_dynteaser._result, _juniperConfig.get())
-                               : NULL;
+                               : nullptr;
 
     if (LOG_WOULD_LOG(debug)) {
         std::ostringstream hexDump;
-        if (teaser != NULL) {
+        if (teaser != nullptr) {
             hexDump << vespalib::HexDump(teaser->Text(), teaser->Length());
         }
         LOG(debug, "makeDynamicTeaser: docid=%d, teaser='%s', hexdump:\n%s",
-            docid, (teaser != NULL ? std::string(teaser->Text(), teaser->Length()).c_str() : "NULL"),
+            docid, (teaser != nullptr ? std::string(teaser->Text(), teaser->Length()).c_str() : "nullptr"),
             hexDump.str().c_str());
     }
 
-    if (teaser != NULL) {
-        return vespalib::string(teaser->Text(),
-                                teaser->Length());
+    if (teaser != nullptr) {
+        return vespalib::string(teaser->Text(), teaser->Length());
     } else {
         return vespalib::string();
     }
 }
 
 void
-DynamicTeaserDFW::insertField(uint32_t docid,
-                              GeneralResult *gres,
-                              GetDocsumsState *state,
-                              ResType,
+DynamicTeaserDFW::insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state, ResType,
                               vespalib::slime::Inserter &target)
 {
     vespalib::string teaser = makeDynamicTeaser(docid, gres, state);
@@ -456,6 +440,4 @@ DynamicTeaserDFW::insertField(uint32_t docid,
     target.insertString(value);
 }
 
-} // namespace docsummary
-} // namespace search
-
+}

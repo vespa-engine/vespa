@@ -208,30 +208,5 @@ ResultConfig::GetClassID(const char *buf, uint32_t buflen)
     return ret;
 }
 
-urlresult*
-ResultConfig::Unpack(uint32_t partition, uint32_t docid, HitRank metric,
-                     const char *buf, uint32_t buflen) const
-{
-    urlresult         *ret      = nullptr;
-    const ResultClass *resClass = nullptr;
-    uint32_t           tmp32;
-
-    if (buflen >= sizeof(tmp32)) {
-        memcpy(&tmp32, buf, sizeof(tmp32));
-        buf    += sizeof(tmp32);
-        buflen -= sizeof(tmp32);
-        resClass = LookupResultClass(tmp32);
-    }
-
-    if (resClass != nullptr && (buflen > 0)) {
-        ret = new GeneralResult(resClass, partition, docid, metric);
-        if (ret->unpack(buf, buflen) != 0) { // FAIL: unpack
-            delete ret;
-            ret = nullptr;
-        }
-    }
-
-    return (ret != nullptr) ? ret : new badurlresult(partition, docid, metric);
-}
 
 }

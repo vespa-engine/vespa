@@ -12,13 +12,11 @@ namespace search::docsummary {
 
 
 SummaryFeaturesDFW::SummaryFeaturesDFW() :
-    _env(NULL)
+    _env(nullptr)
 {
 }
 
-SummaryFeaturesDFW::~SummaryFeaturesDFW()
-{
-}
+SummaryFeaturesDFW::~SummaryFeaturesDFW() = default;
 
 void
 SummaryFeaturesDFW::init(IDocsumEnvironment * env)
@@ -30,8 +28,7 @@ static vespalib::string _G_cached("vespa.summaryFeatures.cached");
 static vespalib::Memory _M_cached("vespa.summaryFeatures.cached");
 
 void
-SummaryFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *state,
-                                ResType type, vespalib::slime::Inserter &target)
+SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target)
 {
     if ( ! state->_summaryFeatures) {
         state->_callback.FillSummaryFeatures(state, _env);
@@ -41,7 +38,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState
     }
     const FeatureSet::StringVector &names = state->_summaryFeatures->getNames();
     const feature_t *values = state->_summaryFeatures->getFeaturesByDocId(docid);
-    if (type == RES_FEATUREDATA && values != NULL) {
+    if (type == RES_FEATUREDATA && values != nullptr) {
         vespalib::slime::Cursor& obj = target.insertObject();
         for (uint32_t i = 0; i < names.size(); ++i) {
             vespalib::Memory name(names[i].c_str(), names[i].size());
@@ -55,7 +52,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState
         return;
     }
     vespalib::JSONStringer & json(state->_jsonStringer);
-    if (values != NULL) {
+    if (values != nullptr) {
         json.clear();
         json.beginObject();
         for (uint32_t i = 0; i < names.size(); ++i) {

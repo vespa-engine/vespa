@@ -31,20 +31,14 @@ IDocsumFieldWriter::setFieldWriterStateIndex(uint32_t)
 
 EmptyDFW::EmptyDFW() = default;
 
-
 EmptyDFW::~EmptyDFW() = default;
 
 void
-EmptyDFW::insertField(uint32_t /*docid*/,
-                      GeneralResult *,
-                      GetDocsumsState *,
-                      ResType,
-                      vespalib::slime::Inserter &target)
+EmptyDFW::insertField(uint32_t, GetDocsumsState *, ResType, vespalib::slime::Inserter &target)
 {
     // insert explicitly-empty field?
     // target.insertNix();
     (void)target;
-    return;
 }
 
 //--------------------------------------------------------------------------
@@ -54,9 +48,7 @@ CopyDFW::CopyDFW()
 {
 }
 
-
 CopyDFW::~CopyDFW() = default;
-
 
 bool
 CopyDFW::Init(const ResultConfig & config, const char *inputField)
@@ -84,7 +76,6 @@ CopyDFW::Init(const ResultConfig & config, const char *inputField)
     }
     return true;
 }
-
 
 void
 CopyDFW::insertField(uint32_t /*docid*/, GeneralResult *gres, GetDocsumsState *state, ResType type,

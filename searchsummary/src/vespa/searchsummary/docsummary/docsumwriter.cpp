@@ -149,7 +149,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         // look up docsum entry
         DocsumStoreValue value = docinfos->getMappedDocsum(docid);
         // re-pack docsum blob
-        GeneralResult gres(rci.inputClass, 0, docid, 0);
+        GeneralResult gres(rci.inputClass);
         if (! gres.inplaceUnpack(value)) {
             LOG(debug, "Unpack failed: illegal docsum entry for document %d. This is expected during lidspace compaction.", docid);
             topInserter.insertNix();
