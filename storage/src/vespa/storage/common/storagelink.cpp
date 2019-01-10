@@ -18,9 +18,9 @@ StorageLink::~StorageLink() = default;
 
 void StorageLink::push_back(StorageLink::UP link)
 {
-    if (_state != CREATED) {
+    if (getState() != CREATED) {
         LOG(error, "Attempted to alter chain by adding link %s after link %s while state is %s",
-            link->toString().c_str(), toString().c_str(), stateToString(_state));
+            link->toString().c_str(), toString().c_str(), stateToString(getState()));
         assert(false);
     }
     assert(link);
@@ -39,9 +39,9 @@ void StorageLink::open()
     // up, the link receiving them should have their state as opened.
     StorageLink* link = this;
     while (true) {
-        if (link->_state != CREATED) {
+        if (link->getState() != CREATED) {
             LOG(error, "During open(), link %s should be in CREATED state, not in state %s.",
-                toString().c_str(), stateToString(link->_state));
+                toString().c_str(), stateToString(link->getState()));
             assert(false);
         }
         link->_state = OPENED;
@@ -83,9 +83,9 @@ void StorageLink::closeNextLink() {
 
 void StorageLink::flush()
 {
-    if (_state != CLOSING) {
+    if (getState() != CLOSING) {
         LOG(error, "During flush(), link %s should be in CLOSING state, not in state %s.",
-            toString().c_str(), stateToString(_state));
+            toString().c_str(), stateToString(getState()));
         assert(false);
     }
     // First flush down to get all requests out of the system.
@@ -114,14 +114,14 @@ void StorageLink::flush()
 void StorageLink::sendDown(const StorageMessage::SP& msg)
 {
         // Verify acceptable state to send messages down
-    switch(_state) {
+    switch(getState()) {
         case OPENED:
         case CLOSING:
         case FLUSHINGDOWN:
             break;
         default:
             LOG(error, "Link %s trying to send %s down while in state %s",
-                toString().c_str(), msg->toString().c_str(), stateToString(_state));
+                toString().c_str(), msg->toString().c_str(), stateToString(getState()));
             assert(false);
     }
     assert(msg.get());
@@ -155,7 +155,7 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
 void StorageLink::sendUp(const shared_ptr<StorageMessage> & msg)
 {
     // Verify acceptable state to send messages up
-    switch(_state) {
+    switch(getState()) {
         case OPENED:
         case CLOSING:
         case FLUSHINGDOWN:
@@ -163,7 +163,7 @@ void StorageLink::sendUp(const shared_ptr<StorageMessage> & msg)
             break;
         default:
             LOG(error, "Link %s trying to send %s up while in state %s",
-                toString().c_str(), msg->toString(true).c_str(), stateToString(_state));
+                toString().c_str(), msg->toString(true).c_str(), stateToString(getState()));
             assert(false);
     }
     assert(msg.get());

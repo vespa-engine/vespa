@@ -202,7 +202,7 @@ VisitorThread::run(framework::ThreadHandle& thread)
             tick();
             vespalib::MonitorGuard guard(_queueMonitor);
             if (_queue.empty()) {
-                guard.wait(_timeBetweenTicks);
+                guard.wait(_timeBetweenTicks.load(std::memory_order_relaxed));
                 thread.registerTick(framework::WAIT_CYCLE);
             }
             continue;

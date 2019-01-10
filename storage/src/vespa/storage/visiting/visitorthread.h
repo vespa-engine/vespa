@@ -23,6 +23,7 @@
 #include <vespa/metrics/metrictimer.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/sync.h>
+#include <atomic>
 #include <deque>
 
 namespace storage {
@@ -85,7 +86,7 @@ class VisitorThread : public framework::Runnable,
     uint32_t _visitorMemoryUsageLimit;
     framework::MilliSecTime _defaultDocBlockTimeout;
     framework::MilliSecTime _defaultVisitorInfoTimeout;
-    uint32_t _timeBetweenTicks;
+    std::atomic<uint32_t> _timeBetweenTicks;
     StorageComponent _component;
     framework::Thread::UP _thread;
     VisitorMessageSessionFactory& _messageSessionFactory;
@@ -102,7 +103,7 @@ public:
 
     void processMessage(api::VisitorId visitorId, const std::shared_ptr<api::StorageMessage>& msg);
     void shutdown();
-    void setTimeBetweenTicks(uint32_t time) { _timeBetweenTicks = time; }
+    void setTimeBetweenTicks(uint32_t time) { _timeBetweenTicks.store(time, std::memory_order_relaxed); }
     void handleMessageBusReply(std::unique_ptr<mbus::Reply> reply, Visitor& visitor);
 
     /** For unit tests needing to pause thread. */
