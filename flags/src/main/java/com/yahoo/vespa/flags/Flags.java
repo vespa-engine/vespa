@@ -23,14 +23,14 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundBooleanFlag DUPERMODEL_CONTAINS_INFRA = defineFeatureFlag(
-            "dupermodel-contains-infra", false,
+            "dupermodel-contains-infra", true,
             "Whether the DuperModel in config server/controller includes active infrastructure applications " +
                     "(except from controller/config apps).",
             "Requires restart of config server/controller to take effect.",
             HOSTNAME);
 
     public static final UnboundBooleanFlag DUPERMODEL_USE_CONFIGSERVERCONFIG = defineFeatureFlag(
-            "dupermodel-use-configserverconfig", true,
+            "dupermodel-use-configserverconfig", false,
             "For historical reasons, the ApplicationInfo in the DuperModel for controllers and config servers " +
                     "is based on the ConfigserverConfig (this flag is true). We want to transition to use the " +
                     "infrastructure application activated by the InfrastructureProvisioner once that supports health.",
