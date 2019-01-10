@@ -53,7 +53,7 @@ public class StorageMaintainerTest {
         public void tenant() {
             Path path = executeAs(NodeType.tenant);
 
-            assertChecks(path, "athenz-certificate-expiry", "host-life", "ntp",
+            assertChecks(path, "athenz-certificate-expiry", "host-life",
                     "system-coredumps-processing", "vespa", "vespa-health");
 
             // All dimensions for vespa metrics should be set by metricsproxy
@@ -62,7 +62,7 @@ public class StorageMaintainerTest {
                     "    - all\n");
 
             // For non vespa metrics, we need to set all the dimensions ourselves
-            assertCheckEnds(path.resolve("ntp.yaml"),
+            assertCheckEnds(path.resolve("host-life.yaml"),
                     "tags:\n" +
                     "    namespace: Vespa\n" +
                     "    role: tenants\n" +
@@ -85,7 +85,7 @@ public class StorageMaintainerTest {
         public void proxy() {
             Path path = executeAs(NodeType.proxy);
 
-            assertChecks(path, "athenz-certificate-expiry", "host-life", "ntp", "routing-configage",
+            assertChecks(path, "athenz-certificate-expiry", "host-life", "routing-configage",
                     "ssl-status", "system-coredumps-processing", "vespa", "vespa-health");
 
             // All dimensions for vespa metrics should be set by the source
@@ -94,7 +94,7 @@ public class StorageMaintainerTest {
                     "    - all\n");
 
             // For non vespa metrics, we need to set all the dimensions ourselves
-            assertCheckEnds(path.resolve("ntp.yaml"),
+            assertCheckEnds(path.resolve("host-life.yaml"),
                     "tags:\n" +
                     "    namespace: Vespa\n" +
                     "    role: routing\n" +
@@ -118,7 +118,7 @@ public class StorageMaintainerTest {
             Path path = executeAs(NodeType.config);
 
             assertChecks(path, "athenz-certificate-expiry", "configserver", "host-life",
-                         "ntp", "system-coredumps-processing", "zkbackupage");
+                         "system-coredumps-processing", "zkbackupage");
 
             assertCheckEnds(path.resolve("configserver.yaml"),
                     "  tags:\n" +
@@ -132,7 +132,7 @@ public class StorageMaintainerTest {
         public void controller() {
             Path path = executeAs(NodeType.controller);
 
-            assertChecks(path, "athenz-certificate-expiry", "controller", "host-life", "ntp",
+            assertChecks(path, "athenz-certificate-expiry", "controller", "host-life",
                          "system-coredumps-processing", "vespa", "vespa-health", "zkbackupage");
 
 

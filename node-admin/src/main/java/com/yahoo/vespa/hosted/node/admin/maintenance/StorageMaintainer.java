@@ -72,10 +72,6 @@ public class StorageMaintainer {
         Path hostLifeCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_host_life");
         configs.add(new SecretAgentCheckConfig("host-life", 60, hostLifeCheckPath).withTags(tags));
 
-        // ntp
-        Path ntpCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ntp");
-        configs.add(new SecretAgentCheckConfig("ntp", 60, ntpCheckPath).withTags(tags));
-
         // coredumps (except for the done coredumps which is handled by the host)
         Path coredumpCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_coredumps");
         configs.add(new SecretAgentCheckConfig("system-coredumps-processing", 300, coredumpCheckPath,
