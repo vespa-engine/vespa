@@ -42,7 +42,7 @@ public class NodeAdminStateUpdaterTest {
     private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
     private final HostName hostHostname = HostName.from("basehost1.test.yahoo.com");
 
-    private final NodeAdminStateUpdater refresher = spy(new NodeAdminStateUpdater(
+    private final NodeAdminStateUpdater updater = spy(new NodeAdminStateUpdater(
             nodeRepository, orchestrator, nodeAdmin, hostHostname));
 
 
@@ -58,19 +58,19 @@ public class NodeAdminStateUpdaterTest {
 
         {
             // Initially everything is frozen to force convergence
-            assertResumeStateError(RESUMED, "NodeAdmin is not yet unfrozen");
+            assertConvergeError(RESUMED, "NodeAdmin is not yet unfrozen");
             when(nodeAdmin.setFrozen(eq(false))).thenReturn(true);
-            refresher.converge(RESUMED);
+            updater.converge(RESUMED);
             verify(orchestrator, times(1)).resume(hostHostname.value());
 
             // We are already resumed, so this should return without resuming again
-            refresher.converge(RESUMED);
+            updater.converge(RESUMED);
             verify(orchestrator, times(1)).resume(hostHostname.value());
             verify(nodeAdmin, times(2)).setFrozen(eq(false));
 
             // Lets try to suspend node admin only
             when(nodeAdmin.setFrozen(eq(true))).thenReturn(false);
-            assertResumeStateError(SUSPENDED_NODE_ADMIN, "NodeAdmin is not yet frozen");
+            assertConvergeError(SUSPENDED_NODE_ADMIN, "NodeAdmin is not yet frozen");
             verify(nodeAdmin, times(2)).setFrozen(eq(false));
         }
 
@@ -81,10 +81,10 @@ public class NodeAdminStateUpdaterTest {
             when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
             doThrow(new RuntimeException(exceptionMessage)).doNothing()
                     .when(orchestrator).suspend(eq(hostHostname.value()));
-            assertResumeStateError(SUSPENDED_NODE_ADMIN, exceptionMessage);
+            assertConvergeError(SUSPENDED_NODE_ADMIN, exceptionMessage);
             verify(nodeAdmin, times(2)).setFrozen(eq(false));
 
-            refresher.converge(SUSPENDED_NODE_ADMIN);
+            updater.converge(SUSPENDED_NODE_ADMIN);
             verify(nodeAdmin, times(2)).setFrozen(eq(false));
         }
 
@@ -93,13 +93,13 @@ public class NodeAdminStateUpdaterTest {
             final String exceptionMessage = "Failed to stop services";
             verify(orchestrator, times(0)).suspend(eq(hostHostname.value()), eq(suspendHostnames));
             doThrow(new RuntimeException(exceptionMessage)).doNothing().when(nodeAdmin).stopNodeAgentServices(eq(activeHostnames));
-            assertResumeStateError(SUSPENDED, exceptionMessage);
+            assertConvergeError(SUSPENDED, exceptionMessage);
             verify(orchestrator, times(1)).suspend(eq(hostHostname.value()), eq(suspendHostnames));
             // Make sure we dont roll back if we fail to stop services - we will try to stop again next tick
             verify(nodeAdmin, times(2)).setFrozen(eq(false));
 
             // Finally we are successful in transitioning to frozen
-            refresher.converge(SUSPENDED);
+            updater.converge(SUSPENDED);
         }
     }
 
@@ -110,31 +110,38 @@ public class NodeAdminStateUpdaterTest {
 
         // Initially everything is frozen to force convergence
         when(nodeAdmin.setFrozen(eq(false))).thenReturn(true);
-        refresher.converge(RESUMED);
+        updater.converge(RESUMED);
         verify(nodeAdmin, times(1)).setFrozen(eq(false));
+        verify(nodeAdmin, times(1)).refreshContainersToRun(any());
 
         // Let's start suspending, we are able to freeze the nodes, but orchestrator denies suspension
         when(nodeAdmin.subsystemFreezeDuration()).thenReturn(Duration.ofSeconds(1));
         when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
         doThrow(new RuntimeException(exceptionMsg)).when(orchestrator).suspend(eq(hostHostname.value()));
 
-        assertResumeStateError(SUSPENDED_NODE_ADMIN, exceptionMsg);
+        assertConvergeError(SUSPENDED_NODE_ADMIN, exceptionMsg);
         verify(nodeAdmin, times(1)).setFrozen(eq(true));
-        assertResumeStateError(SUSPENDED_NODE_ADMIN, exceptionMsg);
+        verify(orchestrator, times(1)).suspend(eq(hostHostname.value()));
+        assertConvergeError(SUSPENDED_NODE_ADMIN, exceptionMsg);
         verify(nodeAdmin, times(2)).setFrozen(eq(true));
-        assertResumeStateError(SUSPENDED_NODE_ADMIN, exceptionMsg);
+        verify(orchestrator, times(2)).suspend(eq(hostHostname.value()));
+        assertConvergeError(SUSPENDED_NODE_ADMIN, exceptionMsg);
         verify(nodeAdmin, times(3)).setFrozen(eq(true));
-        verify(nodeAdmin, times(1)).setFrozen(eq(false)); // No new unfreezes during last 2 ticks
+        verify(orchestrator, times(3)).suspend(eq(hostHostname.value()));
+
+        // No new unfreezes nor refresh while trying to freeze
+        verify(nodeAdmin, times(1)).setFrozen(eq(false));
         verify(nodeAdmin, times(1)).refreshContainersToRun(any());
 
         // Only resume and fetch containers when subsystem freeze duration expires
         when(nodeAdmin.subsystemFreezeDuration()).thenReturn(Duration.ofHours(1));
-        assertResumeStateError(SUSPENDED_NODE_ADMIN, exceptionMsg);
+        assertConvergeError(SUSPENDED_NODE_ADMIN, "Timed out trying to freeze all nodes: will force an unfrozen tick");
         verify(nodeAdmin, times(2)).setFrozen(eq(false));
+        verify(orchestrator, times(3)).suspend(eq(hostHostname.value())); // no new suspend calls
         verify(nodeAdmin, times(2)).refreshContainersToRun(any());
 
         // We change our mind, want to remain resumed
-        refresher.converge(RESUMED);
+        updater.converge(RESUMED);
         verify(nodeAdmin, times(3)).setFrozen(eq(false)); // Make sure that we unfreeze!
     }
 
@@ -146,24 +153,24 @@ public class NodeAdminStateUpdaterTest {
 
         // Resume and suspend only require that node-agents are frozen and permission from
         // orchestrator to resume/suspend host. Therefore, if host is not active, we only need to freeze.
-        refresher.converge(RESUMED);
+        updater.converge(RESUMED);
         verify(orchestrator, never()).resume(eq(hostHostname.value()));
 
-        refresher.converge(SUSPENDED_NODE_ADMIN);
+        updater.converge(SUSPENDED_NODE_ADMIN);
         verify(orchestrator, never()).suspend(eq(hostHostname.value()));
 
         // When doing batch suspend, only suspend the containers if the host is not active
         List<String> activeHostnames = nodeRepository.getNodes(hostHostname.value()).stream()
                 .map(NodeSpec::getHostname)
                 .collect(Collectors.toList());
-        refresher.converge(SUSPENDED);
+        updater.converge(SUSPENDED);
         verify(orchestrator, times(1)).suspend(eq(hostHostname.value()), eq(activeHostnames));
     }
 
-    private void assertResumeStateError(NodeAdminStateUpdater.State targetState, String reason) {
+    private void assertConvergeError(NodeAdminStateUpdater.State targetState, String reason) {
         try {
-            refresher.converge(targetState);
-            fail("Expected set resume state to fail with \"" + reason + "\", but it succeeded without error");
+            updater.converge(targetState);
+            fail("Expected converging to " + targetState + " to fail with \"" + reason + "\", but it succeeded without error");
         } catch (RuntimeException e) {
             assertEquals(reason, e.getMessage());
         }
