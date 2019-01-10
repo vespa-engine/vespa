@@ -13,18 +13,18 @@ public class Test {
      * testing.
      **/
     public static class Orb extends Supervisor {
-        public int  initCount         = 0;
-        public int  liveCount         = 0;
-        public int  readRequestCount  = 0;
-        public int  readReplyCount    = 0;
-        public int  readErrorCount    = 0;
-        public long readBytes         = 0;
-        public int  writeRequestCount = 0;
-        public int  writeReplyCount   = 0;
-        public int  writeErrorCount   = 0;
-        public long writeBytes        = 0;
-        public int  downCount         = 0;
-        public int  finiCount         = 0;
+        public volatile int  initCount         = 0;
+        public volatile int  liveCount         = 0;
+        public volatile int  readRequestCount  = 0;
+        public volatile int  readReplyCount    = 0;
+        public volatile int  readErrorCount    = 0;
+        public volatile long readBytes         = 0;
+        public volatile int  writeRequestCount = 0;
+        public volatile int  writeReplyCount   = 0;
+        public volatile int  writeErrorCount   = 0;
+        public volatile long writeBytes        = 0;
+        public volatile int  downCount         = 0;
+        public volatile int  finiCount         = 0;
 
         public Orb(Transport t) {
             super(t);
