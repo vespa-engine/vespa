@@ -29,6 +29,7 @@ import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRuleBuilder;
@@ -73,6 +74,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final Version wantedNodeVespaVersion;
     private final Instant now;
     private final HostProvisioner provisioner;
+    private final FlagSource flagSource;
 
     public static DeployState createTestState() {
         return new Builder().build();
@@ -98,7 +100,8 @@ public class DeployState implements ConfigDefinitionStore {
                         QueryProfiles queryProfiles,
                         SemanticRules semanticRules,
                         Instant now,
-                        Version wantedNodeVespaVersion) {
+                        Version wantedNodeVespaVersion,
+                        FlagSource flagSource) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -120,6 +123,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;
+        this.flagSource = flagSource;
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -236,6 +240,8 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Instant now() { return now; }
 
+    public FlagSource flagSource() { return flagSource; }
+
     public static class Builder {
 
         private ApplicationPackage applicationPackage = MockApplicationPackage.createEmpty();
@@ -251,6 +257,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
+        private FlagSource flagSource;
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -312,6 +319,11 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
+        public Builder flagSource(FlagSource flagSource) {
+            this.flagSource = flagSource;
+            return this;
+        }
+
         public Builder wantedNodeVespaVersion(Version version) {
             this.wantedNodeVespaVersion = version;
             return this;
@@ -342,7 +354,8 @@ public class DeployState implements ConfigDefinitionStore {
                                    queryProfiles,
                                    semanticRules,
                                    now,
-                                   wantedNodeVespaVersion);
+                                   wantedNodeVespaVersion,
+                                   flagSource);
         }
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
