@@ -51,30 +51,21 @@ public class NodeAdminStateUpdater {
         nodeAdmin.start();
     }
 
-    public void converge(State wantedState) {
-        try {
-            convergeState(wantedState);
-        } finally {
-            if (wantedState != RESUMED && currentState == TRANSITIONING) {
-                Duration subsystemFreezeDuration = nodeAdmin.subsystemFreezeDuration();
-                if (subsystemFreezeDuration.compareTo(FREEZE_CONVERGENCE_TIMEOUT) > 0) {
-                    // We have spent too much time trying to freeze and node admin is still not frozen.
-                    // To avoid node agents stalling for too long, we'll force unfrozen ticks now.
-                    log.info("Timed out trying to freeze, will force unfreezed ticks");
-                    fetchContainersToRunFromNodeRepository();
-                    nodeAdmin.setFrozen(false);
-                }
-            } else if (currentState == RESUMED) {
-                fetchContainersToRunFromNodeRepository();
-            }
-        }
-    }
-
     /**
      * This method attempts to converge node-admin w/agents to a {@link State}
      * with respect to: freeze, Orchestrator, and services running.
      */
-    private void convergeState(State wantedState) {
+    public void converge(State wantedState) {
+        if (wantedState == RESUMED) {
+            adjustNodeAgentsToRunFromNodeRepository();
+        } else if (currentState == TRANSITIONING && nodeAdmin.subsystemFreezeDuration().compareTo(FREEZE_CONVERGENCE_TIMEOUT) > 0) {
+            // We have spent too much time trying to freeze and node admin is still not frozen.
+            // To avoid node agents stalling for too long, we'll force unfrozen ticks now.
+            adjustNodeAgentsToRunFromNodeRepository();
+            nodeAdmin.setFrozen(false);
+            throw new ConvergenceException("Timed out trying to freeze all nodes: will force an unfrozen tick");
+        }
+
         if (currentState == wantedState) return;
         currentState = TRANSITIONING;
 
@@ -119,7 +110,7 @@ public class NodeAdminStateUpdater {
         currentState = wantedState;
     }
 
-    private void fetchContainersToRunFromNodeRepository() {
+    private void adjustNodeAgentsToRunFromNodeRepository() {
         try {
             final List<NodeSpec> containersToRun = nodeRepository.getNodes(hostHostname);
             nodeAdmin.refreshContainersToRun(containersToRun);
