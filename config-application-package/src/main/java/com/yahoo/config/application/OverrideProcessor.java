@@ -136,11 +136,11 @@ class OverrideProcessor implements PreProcessor {
         }
 
         if ( ! elementRegions.isEmpty()) { // match region
-            // match region in prod only
-            if ( environment.equals(Environment.prod) && ! elementRegions.contains(region)) return false;
+            // match region in multi-region environments only
+            if ( environment.isMultiRegion()  && ! elementRegions.contains(region)) return false;
 
-            // explicit region implies prod
-            if ( ! environment.equals(Environment.prod) && elementEnvironments.isEmpty() ) return false;
+            // explicit region implies multi-region environment
+            if ( ! environment.isMultiRegion() && elementEnvironments.isEmpty() ) return false;
         }
 
         return true;

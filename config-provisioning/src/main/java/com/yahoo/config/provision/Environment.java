@@ -33,6 +33,9 @@ public enum Environment {
     /** Returns whether this environment is production (prod) */
     public boolean isProduction() { return this == prod; }
 
+    /** Returns whether this environment can exist in multiple regions */
+    public boolean isMultiRegion() { return this == prod || this == dev; }
+
     /** Returns the prod environment. This is useful for non-hosted properties where we just need any consistent value */
     public static Environment defaultEnvironment() { return prod; }
 

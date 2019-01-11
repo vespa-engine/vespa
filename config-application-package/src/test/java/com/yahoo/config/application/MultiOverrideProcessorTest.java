@@ -89,7 +89,7 @@ public class MultiOverrideProcessorTest {
                 "        </component>\n" +
                 "    </container>\n" +
                 "</services>";
-        assertOverride(Environment.dev, RegionName.defaultName(), expected);
+        assertOverride(Environment.dev, RegionName.from("us-east-3"), expected);
     }
 
     @Test
@@ -118,7 +118,7 @@ public class MultiOverrideProcessorTest {
                 "        </component>\n" +
                 "    </container>\n" +
                 "</services>";
-        assertOverrideWithIds(Environment.dev, RegionName.defaultName(), expected);
+        assertOverrideWithIds(Environment.dev, RegionName.from("us-east-3"), expected);
     }
 
     private void assertOverride(Environment environment, RegionName region, String expected) throws TransformerException {
