@@ -455,7 +455,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(applicationPackage)),
-                              "{\"version\":\"1.0.43-d00d\"}");
+                              "{\"message\":\"Application package version: 1.0.43-d00d, source revision of repository 'repo', branch 'master' with commit 'd00d', by a@b\"}");
 
         // Second attempt has a service under a different domain than the tenant of the application, and fails.
         ApplicationPackage packageWithServiceForWrongDomain = new ApplicationPackageBuilder()
@@ -477,7 +477,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(packageWithService)),
-                              "{\"version\":\"1.0.44-d00d\"}");
+                              "{\"message\":\"Application package version: 1.0.44-d00d, source revision of repository 'repo', branch 'master' with commit 'd00d', by a@b\"}");
 
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/badge", GET)
                                       .userIdentity(USER_ID),

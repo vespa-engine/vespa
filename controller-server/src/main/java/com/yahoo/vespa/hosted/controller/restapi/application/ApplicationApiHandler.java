@@ -1321,9 +1321,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         String authorEmail = submitOptions.field("authorEmail").asString();
         long projectId = Math.max(1, submitOptions.field("projectId").asLong());
 
-        byte[] applicationZip = dataParts.get(EnvironmentResource.APPLICATION_ZIP);
+        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
-                                                                         new ApplicationPackage(applicationZip),
+                                                                         applicationPackage,
                                                                          Optional.of(getUserPrincipal(request).getIdentity()));
 
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
@@ -1332,7 +1332,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                             sourceRevision,
                                                             authorEmail,
                                                             projectId,
-                                                            applicationZip,
+                                                            applicationPackage,
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
     }
 

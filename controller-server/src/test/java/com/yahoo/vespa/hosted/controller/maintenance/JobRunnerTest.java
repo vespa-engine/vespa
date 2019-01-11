@@ -7,6 +7,7 @@ import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -64,6 +65,7 @@ import static org.junit.Assert.fail;
  */
 public class JobRunnerTest {
 
+    private static final ApplicationPackage applicationPackage = new ApplicationPackage(new byte[0]);
     private static final Versions versions = new Versions(Version.fromString("1.2.3"),
                                                           ApplicationVersion.from(new SourceRevision("repo",
                                                                                                      "branch",
@@ -82,7 +84,7 @@ public class JobRunnerTest {
                                          phasedExecutor(phaser), stepRunner);
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         jobs.start(id, systemTest, versions);
         try {
@@ -113,7 +115,7 @@ public class JobRunnerTest {
                                          inThreadExecutor(), mappedRunner(outcomes));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
         Supplier<Run> run = () -> jobs.last(id, systemTest).get();
 
         jobs.start(id, systemTest, versions);
@@ -197,7 +199,7 @@ public class JobRunnerTest {
                                          Executors.newFixedThreadPool(32), waitingRunner(barrier));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         RunId runId = new RunId(id, systemTest, 1);
         jobs.start(id, systemTest, versions);
@@ -233,7 +235,7 @@ public class JobRunnerTest {
                                          inThreadExecutor(), (id, step) -> Optional.of(running));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         for (int i = 0; i < jobs.historyLength(); i++) {
             jobs.start(id, systemTest, versions);
@@ -261,7 +263,7 @@ public class JobRunnerTest {
                                          inThreadExecutor(), mappedRunner(outcomes));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         jobs.start(id, systemTest, versions);
         tester.clock().advance(JobRunner.jobTimeout.plus(Duration.ofSeconds(1)));

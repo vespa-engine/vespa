@@ -10,25 +10,23 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.net.URI;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -41,7 +39,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -229,7 +226,7 @@ public class JobController {
      * Accepts and stores a new application package and test jar pair under a generated application version key.
      */
     public ApplicationVersion submit(ApplicationId id, SourceRevision revision, String authorEmail, long projectId,
-                                     byte[] packageBytes, byte[] testPackageBytes) {
+                                     ApplicationPackage applicationPackage, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
             if ( ! application.get().deploymentJobs().deployedInternally()) {
@@ -245,17 +242,22 @@ public class JobController {
             }
 
             long run = nextBuild(id);
-            version.set(ApplicationVersion.from(revision, run, authorEmail));
+            if (applicationPackage.compileVersion().isPresent() && applicationPackage.buildTime().isPresent())
+                version.set(ApplicationVersion.from(revision, run, authorEmail,
+                                                    applicationPackage.compileVersion().get(),
+                                                    applicationPackage.buildTime().get()));
+            else
+                version.set(ApplicationVersion.from(revision, run, authorEmail));
 
             controller.applications().applicationStore().put(id,
                                                              version.get(),
-                                                             packageBytes);
+                                                             applicationPackage.zippedContent());
             controller.applications().applicationStore().put(TesterId.of(id),
                                                              version.get(),
                                                              testPackageBytes);
 
             prunePackages(id);
-            controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
+            controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), applicationPackage);
 
             controller.applications().deploymentTrigger().notifyOfCompletion(DeploymentJobs.JobReport.ofSubmission(id, projectId, version.get()));
         });
