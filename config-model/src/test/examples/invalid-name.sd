@@ -1,0 +1,12 @@
+# Dashes in names are not allowed
+search invalid-name {
+
+  document invalid-name {
+
+      field title type string {
+
+      }
+
+  }
+
+}
