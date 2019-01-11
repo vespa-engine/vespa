@@ -34,6 +34,13 @@ public:
 
     FieldValue &assign(const FieldValue &rhs) override;
 
+    char getAsByte() const override;
+    int32_t getAsInt() const override;
+    int64_t getAsLong() const override;
+    float getAsFloat() const override;
+    double getAsDouble() const override;
+    vespalib::string getAsString() const override;
+
     DECLARE_IDENTIFIABLE(BoolFieldValue);
 };
 
