@@ -380,16 +380,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Changed deployment from 'pin to 6.1' to 'upgrade to 6.1' for application 'tenant1.application1'\"}");
 
-        // POST pinning to a different version to an application
+        // POST pinning again
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/pin", POST)
                                       .userIdentity(USER_ID)
-                                      .data("6.240.0"),
-                              "{\"message\":\"Triggered pin to 6.240 for tenant1.application1\"}");
+                                      .data("6.1"),
+                              "{\"message\":\"Triggered pin to 6.1 for tenant1.application1\"}");
 
         // DELETE only the version, but leave the pin
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/platform", DELETE)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Changed deployment from 'pin to 6.240' to 'pin to current platform' for application 'tenant1.application1'\"}");
+                              "{\"message\":\"Changed deployment from 'pin to 6.1' to 'pin to current platform' for application 'tenant1.application1'\"}");
 
         // DELETE also the pin to a given version
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/pin", DELETE)
