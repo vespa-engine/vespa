@@ -11,5 +11,10 @@
     <binding>https://*/nodes/v2/*</binding>
 </handler>
 
+<handler id="com.yahoo.vespa.hosted.provision.restapi.v2.LoadBalancersApiHandler" bundle="node-repository">
+    <binding>http://*/loadbalancers/v1/*</binding>
+    <binding>https://*/loadbalancers/v1/*</binding>
+</handler>
+
 <preprocess:include file="node-flavors.xml" required="false" />
 <preprocess:include file="node-repository-config.xml" required="false" />

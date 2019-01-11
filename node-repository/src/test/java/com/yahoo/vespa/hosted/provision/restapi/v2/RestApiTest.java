@@ -706,6 +706,13 @@ public class RestApiTest {
         }
     }
 
+    @Test
+    public void test_load_balancers() throws Exception {
+        assertFile(new Request("http://localhost:8080/loadbalancers/v1/"), "load-balancers.json");
+        assertFile(new Request("http://localhost:8080/loadbalancers/v1/?application=zoneapp.zoneapp.zoneapp"), "load-balancers.json");
+        assertResponse(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant.nonexistent.default"), "{\"loadBalancers\":[]}");
+    }
+
     private String asDockerNodeJson(String hostname, String parentHostname, int additionalIpCount, String... ipAddress) {
         return "{\"hostname\":\"" + hostname + "\", \"parentHostname\":\"" + parentHostname + "\"," +
                 createIpAddresses(ipAddress) +
