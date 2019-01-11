@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.io.IOException;
@@ -141,7 +142,7 @@ public class NodeSerializer {
     }
 
     private void toSlime(Set<String> ipAddresses, Cursor array) {
-        ipAddresses.forEach(array::addString);
+        ipAddresses.stream().sorted(IP.naturalOrder).forEach(array::addString);
     }
 
     // ---------------- Deserialization --------------------------------------------------
