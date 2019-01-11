@@ -170,6 +170,10 @@ public class ApplicationPackageBuilder {
         return searchDefinition.getBytes(StandardCharsets.UTF_8);
     }
 
+    private byte[] buildMeta() {
+        return "{\"compileVersion\":\"6.1\",\"buildTime\":1000}".getBytes(StandardCharsets.UTF_8);
+    }
+
     public ApplicationPackage build() {
         ByteArrayOutputStream zip = new ByteArrayOutputStream();
         try (ZipOutputStream out = new ZipOutputStream(zip)) {
@@ -181,6 +185,9 @@ public class ApplicationPackageBuilder {
             out.closeEntry();
             out.putNextEntry(new ZipEntry("search-definitions/test.sd"));
             out.write(searchDefinition());
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("build-meta.json"));
+            out.write(buildMeta());
             out.closeEntry();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

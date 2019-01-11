@@ -11,9 +11,11 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock.MapContext;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -202,6 +204,18 @@ public class MetricsReporterTest {
         assertFalse("Upgrade deployed", tester.controller().applications().require(app.id()).change().isPresent());
         reporter.maintain();
         assertEquals(0, getDeploymentsFailingUpgrade(app));
+    }
+
+    @Test
+    public void testBuildTimeReporting() {
+        InternalDeploymentTester tester = new InternalDeploymentTester();
+        ApplicationVersion version = tester.deployNewSubmission();
+        assertEquals(1000, version.buildTime().get().toEpochMilli());
+
+        MetricsReporter reporter = createReporter(tester.tester().controller(), metrics, SystemName.main);
+        reporter.maintain();
+        assertEquals(tester.clock().instant().getEpochSecond() - 1,
+                     getMetric(MetricsReporter.deploymentBuildAgeSeconds, tester.app()));
     }
 
     private Duration getAverageDeploymentDuration(Application application) {
