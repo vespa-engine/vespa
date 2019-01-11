@@ -715,7 +715,7 @@ public class NodeAgentImplTest {
                     Optional.of(new Container(
                             hostName,
                             dockerImage,
-                            ContainerResources.from(MIN_CPU_CORES, MIN_MAIN_MEMORY_AVAILABLE_GB),
+                            ContainerResources.from(0, MIN_CPU_CORES, MIN_MAIN_MEMORY_AVAILABLE_GB),
                             ContainerName.fromHostname(hostName),
                             isRunning ? Container.State.RUNNING : Container.State.EXITED,
                             isRunning ? 1 : 0)) :

@@ -29,17 +29,8 @@ public class DockerMock implements Docker {
     private static final Object monitor = new Object();
 
     @Override
-    public CreateContainerCommand createContainerCommand(
-            DockerImage dockerImage,
-            ContainerResources containerResources,
-            ContainerName containerName,
-            String hostName) {
-        synchronized (monitor) {
-            containersByContainerName.put(
-                    containerName, new Container(hostName, dockerImage, containerResources, containerName, Container.State.RUNNING, 2));
-        }
-
-        return new StartContainerCommandMock();
+    public CreateContainerCommand createContainerCommand(DockerImage dockerImage, ContainerName containerName) {
+        return new StartContainerCommandMock(dockerImage, containerName);
     }
 
     @Override
@@ -100,7 +91,30 @@ public class DockerMock implements Docker {
     }
 
 
-    public static class StartContainerCommandMock implements CreateContainerCommand {
+    public class StartContainerCommandMock implements CreateContainerCommand {
+
+        private final DockerImage dockerImage;
+        private final ContainerName containerName;
+        private String hostName;
+        private ContainerResources containerResources;
+
+        public StartContainerCommandMock(DockerImage dockerImage, ContainerName containerName) {
+            this.dockerImage = dockerImage;
+            this.containerName = containerName;
+        }
+
+        @Override
+        public CreateContainerCommand withHostName(String hostname) {
+            this.hostName = hostname;
+            return this;
+        }
+
+        @Override
+        public CreateContainerCommand withResources(ContainerResources containerResources) {
+            this.containerResources = containerResources;
+            return this;
+        }
+
         @Override
         public CreateContainerCommand withLabel(String name, String value) {
             return this;
@@ -163,7 +177,10 @@ public class DockerMock implements Docker {
 
         @Override
         public void create() {
-
+            synchronized (monitor) {
+                containersByContainerName.put(
+                        containerName, new Container(hostName, dockerImage, containerResources, containerName, Container.State.RUNNING, 2));
+            }
         }
     }
 }

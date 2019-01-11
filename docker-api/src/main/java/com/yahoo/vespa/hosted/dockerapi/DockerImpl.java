@@ -6,9 +6,11 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.InspectImageResponse;
+import com.github.dockerjava.api.command.UpdateContainerCmd;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
+import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Statistics;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -46,6 +48,7 @@ public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 
     static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
+    static final int CPU_PERIOD = 100_000; // 100 µs
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
     private static final Duration WAIT_BEFORE_KILLING = Duration.ofSeconds(10);
 
@@ -114,9 +117,8 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public CreateContainerCommand createContainerCommand(DockerImage image, ContainerResources containerResources,
-                                                         ContainerName name, String hostName) {
-        return new CreateContainerCommandImpl(dockerClient, image, containerResources, name, hostName);
+    public CreateContainerCommand createContainerCommand(DockerImage image, ContainerName containerName) {
+        return new CreateContainerCommandImpl(dockerClient, image, containerName);
     }
 
 
@@ -251,14 +253,19 @@ public class DockerImpl implements Docker {
                         new Container(
                                 response.getConfig().getHostName(),
                                 new DockerImage(response.getConfig().getImage()),
-                                new ContainerResources(response.getHostConfig().getCpuShares(),
-                                        response.getHostConfig().getMemory()),
+                                containerResourcesFromHostConfig(response.getHostConfig()),
                                 new ContainerName(decode(response.getName())),
                                 Container.State.valueOf(response.getState().getStatus().toUpperCase()),
                                 response.getState().getPid()
                         ))
                 .map(Stream::of)
                 .orElse(Stream.empty());
+    }
+
+    private static ContainerResources containerResourcesFromHostConfig(HostConfig hostConfig) {
+        final double cpus = hostConfig.getCpuPeriod() > 0 ?
+                (double) hostConfig.getCpuQuota() / hostConfig.getCpuPeriod() : 0;
+        return new ContainerResources(cpus, hostConfig.getCpuShares(), hostConfig.getMemory());
     }
 
     private boolean isManagedBy(com.github.dockerjava.api.model.Container container, String manager) {

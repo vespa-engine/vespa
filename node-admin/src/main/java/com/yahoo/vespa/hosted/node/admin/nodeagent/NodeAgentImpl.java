@@ -311,7 +311,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         ContainerResources wantedContainerResources = ContainerResources.from(
-                node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
+                0, node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
         if (!wantedContainerResources.equals(existingContainer.resources)) {
             return Optional.of("Container should be running with different resource allocation, wanted: " +
                     wantedContainerResources + ", actual: " + existingContainer.resources);
