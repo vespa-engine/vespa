@@ -4,7 +4,6 @@ package com.yahoo.vespa.jaxrs.client;
 import com.yahoo.vespa.applicationmodel.HostName;
 
 import javax.ws.rs.ProcessingException;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
@@ -74,7 +73,7 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
 
     @Override
     public <R> R apply(final Function<T, R> function, JaxRsTimeouts timeouts) throws IOException {
-        RuntimeException sampleException = null;
+        ProcessingException sampleException = null;
 
         for (int i = 0; i < maxIterations; ++i) {
             for (final HostName hostName : hostNames) {
@@ -85,9 +84,8 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
                 final T jaxRsClient = jaxRsClientFactory.createClient(params);
                 try {
                     return function.apply(jaxRsClient);
-                } catch (ProcessingException | WebApplicationException e) {
-                    // E.g. java.net.SocketTimeoutException thrown on read timeout is wrapped as a ProcessingException,
-                    // while ServiceUnavailableException is a WebApplicationException
+                } catch (ProcessingException e) {
+                    // E.g. java.net.SocketTimeoutException thrown on read timeout is wrapped as a ProcessingException
                     sampleException = e;
                     logger.log(Level.INFO, "Failed REST API call to "
                             + hostName + ":" + port + pathPrefix + " (in retry loop): "
