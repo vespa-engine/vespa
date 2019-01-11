@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
-import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -59,7 +59,7 @@ public class IP {
 
         public AddressPool(Node owner, Set<String> addresses) {
             this.owner = Objects.requireNonNull(owner, "owner must be non-null");
-            this.addresses = ImmutableSortedSet.copyOf(naturalOrder, requireAddresses(addresses));
+            this.addresses = ImmutableSet.copyOf(requireAddresses(addresses));
         }
 
         /**
@@ -200,9 +200,9 @@ public class IP {
 
         /** All IP addresses in this */
         public Set<String> addresses() {
-            ImmutableSortedSet.Builder<String> builder = ImmutableSortedSet.orderedBy(naturalOrder);
-            builder.add(ipv6Address);
+            ImmutableSet.Builder<String> builder = ImmutableSet.builder();
             ipv4Address.ifPresent(builder::add);
+            builder.add(ipv6Address);
             return builder.build();
         }
 
