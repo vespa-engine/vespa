@@ -335,9 +335,7 @@ public class NodeAgentImpl implements NodeAgent {
             context.log(logger, "Will remove container: " + removeReason.get());
 
             if (existingContainer.state.isRunning()) {
-                if (context.node().getState() == Node.State.active) {
-                    orchestratorSuspendNode(context);
-                }
+                orchestratorSuspendNode(context);
 
                 try {
                     if (context.node().getState() != Node.State.dirty) {
@@ -373,9 +371,7 @@ public class NodeAgentImpl implements NodeAgent {
         context.log(logger, "Container should be running with different resource allocation, wanted: %s, current: %s",
                 wantedContainerResources, existingContainer.resources);
 
-        if (context.node().getState() == Node.State.active) {
-            orchestratorSuspendNode(context);
-        }
+        orchestratorSuspendNode(context);
 
         dockerOperations.updateContainer(context, wantedContainerResources);
     }
@@ -689,6 +685,8 @@ public class NodeAgentImpl implements NodeAgent {
     // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
     // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
     private void orchestratorSuspendNode(NodeAgentContext context) {
+        if (context.node().getState() != Node.State.active) return;
+
         context.log(logger, "Ask Orchestrator for permission to suspend node");
         orchestrator.suspend(context.hostname().value());
     }
