@@ -4921,7 +4921,8 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.document.DocumentTypeManager, com.yahoo.io.GrowableByteBuffer)",
-      "public void read(com.yahoo.document.DocumentUpdate)"
+      "public void read(com.yahoo.document.DocumentUpdate)",
+      "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.BoolFieldValue)"
     ],
     "fields": []
   },
@@ -4987,7 +4988,8 @@
       "public void write(com.yahoo.document.DocumentUpdate)",
       "public void write(com.yahoo.document.fieldpathupdate.FieldPathUpdate)",
       "public void write(com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate)",
-      "public void write(com.yahoo.document.fieldpathupdate.AddFieldPathUpdate)"
+      "public void write(com.yahoo.document.fieldpathupdate.AddFieldPathUpdate)",
+      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.ByteFieldValue)"
     ],
     "fields": []
   },
