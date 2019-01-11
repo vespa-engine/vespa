@@ -4,7 +4,7 @@ package com.yahoo.vespa.jaxrs.client;
 import com.yahoo.vespa.applicationmodel.HostName;
 
 import javax.ws.rs.ProcessingException;
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.ServiceUnavailableException;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
@@ -85,7 +85,7 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
                 final T jaxRsClient = jaxRsClientFactory.createClient(params);
                 try {
                     return function.apply(jaxRsClient);
-                } catch (ProcessingException | WebApplicationException e) {
+                } catch (ProcessingException | ServiceUnavailableException e) {
                     // E.g. java.net.SocketTimeoutException thrown on read timeout is wrapped as a ProcessingException,
                     // while ServiceUnavailableException is a WebApplicationException
                     sampleException = e;
