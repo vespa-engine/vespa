@@ -6,6 +6,8 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.system.ProcessExecuter;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -58,6 +60,7 @@ public class DockerTester implements AutoCloseable {
     final Orchestrator orchestrator = mock(Orchestrator.class);
     final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
     final InOrder inOrder = Mockito.inOrder(docker, nodeRepository, orchestrator, storageMaintainer);
+    final InMemoryFlagSource flagSource = new InMemoryFlagSource().withFlag(Flags.CONTAINER_CPU_CAP.id());
 
     final NodeAdminStateUpdater nodeAdminStateUpdater;
     final NodeAdminImpl nodeAdmin;
@@ -92,8 +95,8 @@ public class DockerTester implements AutoCloseable {
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         NodeAgentFactory nodeAgentFactory = contextSupplier -> new NodeAgentImpl(
-                contextSupplier, nodeRepository,
-                orchestrator, dockerOperations, storageMaintainer, Optional.empty(), Optional.empty(), Optional.empty());
+                contextSupplier, nodeRepository, orchestrator, dockerOperations, storageMaintainer, flagSource,
+                Optional.empty(), Optional.empty(), Optional.empty());
         NodeAgentContextFactory nodeAgentContextFactory = nodeSpec ->
                 new NodeAgentContextImpl.Builder(nodeSpec).fileSystem(fileSystem).build();
         nodeAdmin = new NodeAdminImpl(nodeAgentFactory, nodeAgentContextFactory, Optional.empty(), mr, Clock.systemUTC());

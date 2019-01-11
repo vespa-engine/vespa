@@ -4,6 +4,11 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.JsonNodeRawFlag;
+import com.yahoo.vespa.flags.json.Rule;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
@@ -80,6 +85,8 @@ public class NodeAgentImplTest {
     private final ContainerStats emptyContainerStats = new ContainerStats(Collections.emptyMap(),
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
     private final AthenzCredentialsMaintainer athenzCredentialsMaintainer = mock(AthenzCredentialsMaintainer.class);
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
+            .withFlag(Flags.CONTAINER_CPU_CAP.id());
 
 
     @Test
@@ -252,14 +259,33 @@ public class NodeAgentImplTest {
         nodeAgent.doConverge(secondContext);
         NodeAgentContext thirdContext = createContext(specBuilder.minCpuCores(4).build());
         nodeAgent.doConverge(thirdContext);
+        ContainerResources resourcesAfterThird = ContainerResources.from(0, 4, 16);
+        mockGetContainer(dockerImage, resourcesAfterThird, true);
 
         InOrder inOrder = inOrder(orchestrator, dockerOperations);
         inOrder.verify(orchestrator).resume(any(String.class));
         inOrder.verify(orchestrator).resume(any(String.class));
         inOrder.verify(orchestrator).suspend(any(String.class));
-        inOrder.verify(dockerOperations).updateContainer(eq(thirdContext), any());
+        inOrder.verify(dockerOperations).updateContainer(eq(thirdContext), eq(resourcesAfterThird));
         inOrder.verify(dockerOperations, never()).removeContainer(any(), any());
         inOrder.verify(dockerOperations, never()).startContainer(any());
+        inOrder.verify(orchestrator).resume(any(String.class));
+
+        // No changes
+        nodeAgent.converge(thirdContext);
+        inOrder.verify(orchestrator, never()).suspend(any(String.class));
+        inOrder.verify(dockerOperations, never()).updateContainer(eq(thirdContext), any());
+        inOrder.verify(dockerOperations, never()).removeContainer(any(), any());
+        inOrder.verify(orchestrator).resume(any(String.class));
+
+        // Set the feature flag
+        flagSource.withFlag(
+                Flags.CONTAINER_CPU_CAP.id(),
+                new FetchVector(),
+                new Rule(Optional.of(JsonNodeRawFlag.fromJson("2.3"))));
+
+        nodeAgent.converge(thirdContext);
+        inOrder.verify(dockerOperations).updateContainer(eq(thirdContext), eq(ContainerResources.from(2.3, 4, 16)));
         inOrder.verify(orchestrator).resume(any(String.class));
     }
 
@@ -702,11 +728,15 @@ public class NodeAgentImplTest {
         doNothing().when(storageMaintainer).writeMetricsConfig(any());
 
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, dockerOperations,
-                storageMaintainer, Optional.of(athenzCredentialsMaintainer), Optional.of(aclMaintainer),
+                storageMaintainer, flagSource, Optional.of(athenzCredentialsMaintainer), Optional.of(aclMaintainer),
                 Optional.of(healthChecker));
     }
 
     private void mockGetContainer(DockerImage dockerImage, boolean isRunning) {
+        mockGetContainer(dockerImage, ContainerResources.from(0, MIN_CPU_CORES, MIN_MAIN_MEMORY_AVAILABLE_GB), isRunning);
+    }
+
+    private void mockGetContainer(DockerImage dockerImage, ContainerResources containerResources, boolean isRunning) {
         doAnswer(invoc -> {
             NodeAgentContext context = invoc.getArgument(0);
             if (!hostName.equals(context.hostname().value()))
@@ -715,7 +745,7 @@ public class NodeAgentImplTest {
                     Optional.of(new Container(
                             hostName,
                             dockerImage,
-                            ContainerResources.from(0, MIN_CPU_CORES, MIN_MAIN_MEMORY_AVAILABLE_GB),
+                            containerResources,
                             ContainerName.fromHostname(hostName),
                             isRunning ? Container.State.RUNNING : Container.State.EXITED,
                             isRunning ? 1 : 0)) :

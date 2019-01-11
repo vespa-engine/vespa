@@ -4,6 +4,10 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.flags.DoubleFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
@@ -69,6 +73,8 @@ public class NodeAgentImpl implements NodeAgent {
     private final Optional<AclMaintainer> aclMaintainer;
     private final Optional<HealthChecker> healthChecker;
 
+    private final DoubleFlag containerCpuCap;
+
     private int numberOfUnhandledException = 0;
     private DockerImage imageBeingDownloaded = null;
 
@@ -108,6 +114,7 @@ public class NodeAgentImpl implements NodeAgent {
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
             final StorageMaintainer storageMaintainer,
+            final FlagSource flagSource,
             final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer,
             final Optional<AclMaintainer> aclMaintainer,
             final Optional<HealthChecker> healthChecker) {
@@ -119,6 +126,9 @@ public class NodeAgentImpl implements NodeAgent {
         this.athenzCredentialsMaintainer = athenzCredentialsMaintainer;
         this.aclMaintainer = aclMaintainer;
         this.healthChecker = healthChecker;
+
+        this.containerCpuCap = Flags.CONTAINER_CPU_CAP.bindTo(flagSource)
+                .with(FetchVector.Dimension.HOSTNAME, contextSupplier.currentContext().node().getHostname());
 
         this.loopThread = new Thread(() -> {
             while (!terminated.get()) {
@@ -350,8 +360,14 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void updateContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
+        double cpuCap = context.node().getOwner()
+                .map(NodeSpec.Owner::asApplicationId)
+                .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
+                .orElse(containerCpuCap)
+                .value();
+
         ContainerResources wantedContainerResources = ContainerResources.from(
-                0, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb());
+                cpuCap, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb());
 
         if (wantedContainerResources.equals(existingContainer.resources)) return;
         context.log(logger, "Container should be running with different resource allocation, wanted: %s, current: %s",
