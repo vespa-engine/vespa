@@ -10,8 +10,17 @@ public class ContainerResources {
     public static final ContainerResources UNLIMITED = ContainerResources.from(0, 0, 0);
     private static final int CPU_PERIOD = 100_000; // 100 µs
 
+    /** Hard limit on container's CPU usage: Implemented using Completely Fair Scheduler (CFS) by allocating a given
+     * time within a given period, Container's processes are not bound to any specific CPU, which may create significant
+     * performance degradation as processes are scheduled on another CPU after exhausting the quota. */
     private final double cpus;
+
+    /** Soft limit on container's CPU usage:  When plenty of CPU cycles are available, all containers use as much
+     * CPU as they need. It prioritizes container CPU resources for the available CPU cycles.
+     * It does not guarantee or reserve any specific CPU access. */
     private final int cpuShares;
+
+    /** The maximum amount, in bytes, of memory the container can use. */
     private final long memoryBytes;
 
     ContainerResources(double cpus, int cpuShares, long memoryBytes) {

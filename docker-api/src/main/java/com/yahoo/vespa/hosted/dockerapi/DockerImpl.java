@@ -245,6 +245,7 @@ public class DockerImpl implements Docker {
                     // See: https://docs.docker.com/config/containers/resource_constraints/#configure-the-default-cfs-scheduler
                     // --cpus requires API 1.25+ on create and 1.29+ on update
                     // NanoCPUs is supported in docker-java as of 3.1.0 on create and not at all on update
+                    // TODO: Simplify this to .withNanoCPUs(resources.cpu()) when docker-java supports it
                     .withCpuPeriod(resources.cpuQuota() > 0 ? resources.cpuPeriod() : null)
                     .withCpuQuota(resources.cpuQuota() > 0 ? resources.cpuQuota() : null);
 
