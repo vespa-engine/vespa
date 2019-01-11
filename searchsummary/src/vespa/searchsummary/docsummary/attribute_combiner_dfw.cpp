@@ -90,7 +90,7 @@ StructFields::~StructFields() = default;
 }
 
 AttributeCombinerDFW::AttributeCombinerDFW(const vespalib::string &fieldName)
-    : IDocsumFieldWriter(),
+    : IDocsumFW(),
       _stateIndex(0),
       _fieldName(fieldName)
 {
@@ -124,11 +124,7 @@ AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeManage
 }
 
 void
-AttributeCombinerDFW::insertField(uint32_t docid,
-                                  GeneralResult *,
-                                  GetDocsumsState *state,
-                                  ResType,
-                                  vespalib::slime::Inserter &target)
+AttributeCombinerDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, vespalib::slime::Inserter &target)
 {
     auto &fieldWriterState = state->_fieldWriterStates[_stateIndex];
     if (!fieldWriterState) {

@@ -40,8 +40,7 @@ void fmtZcurve(int64_t zval, vespalib::slime::Inserter &target)
 }
 
 void
-GeoPositionDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState * dsState,
-                            ResType, vespalib::slime::Inserter &target)
+GeoPositionDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType, vespalib::slime::Inserter &target)
 {
     using vespalib::slime::Cursor;
     using vespalib::slime::ObjectSymbolInserter;

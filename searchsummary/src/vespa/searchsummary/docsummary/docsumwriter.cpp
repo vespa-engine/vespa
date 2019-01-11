@@ -78,22 +78,22 @@ DynamicDocsumWriter::resolveInputClass(ResolveClassInfo &rci, uint32_t id) const
     }
 }
 
-static void convertEntry(GetDocsumsState *state,
-                         const ResConfigEntry *resCfg,
-                         const ResEntry *entry,
-                         Inserter &inserter,
-                         Slime &slime)
+static void convertEntry(GetDocsumsState *state, const ResConfigEntry *resCfg, const ResEntry *entry,
+                         Inserter &inserter, Slime &slime)
 {
     using vespalib::slime::BinaryFormat;
     const char *ptr;
     uint32_t len;
 
-    LOG_ASSERT(resCfg != 0 && entry != 0);
+    LOG_ASSERT(resCfg != nullptr && entry != nullptr);
     switch (resCfg->_type) {
     case RES_INT:
     case RES_SHORT:
     case RES_BYTE:
         inserter.insertLong(entry->_intval);
+        break;
+    case RES_BOOL:
+        inserter.insertBool(entry->_intval != 0);
         break;
     case RES_FLOAT:
     case RES_DOUBLE:
@@ -130,12 +130,8 @@ static void convertEntry(GetDocsumsState *state,
 
 
 void
-DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci,
-                                  uint32_t docid,
-                                  GetDocsumsState *state,
-                                  IDocsumStore *docinfos,
-                                  vespalib::Slime & slime,
-                                  vespalib::slime::Inserter & topInserter)
+DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
+                                  IDocsumStore *docinfos, vespalib::Slime & slime, vespalib::slime::Inserter & topInserter)
 {
     if (rci.allGenerated) {
         // generate docsum entry on-the-fly
@@ -144,8 +140,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci,
             const ResConfigEntry *resCfg = rci.outputClass->GetEntry(i);
             IDocsumFieldWriter *writer = _overrideTable[resCfg->_enumValue];
             if (! writer->isDefaultValue(docid, state)) {
-                const Memory field_name(resCfg->_bindname.data(),
-                                        resCfg->_bindname.size());
+                const Memory field_name(resCfg->_bindname.data(), resCfg->_bindname.size());
                 ObjectInserter inserter(docsum, field_name);
                 writer->insertField(docid, nullptr, state, resCfg->_type, inserter);
             }
@@ -154,7 +149,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci,
         // look up docsum entry
         DocsumStoreValue value = docinfos->getMappedDocsum(docid);
         // re-pack docsum blob
-        GeneralResult gres(rci.inputClass, 0, docid, 0);
+        GeneralResult gres(rci.inputClass);
         if (! gres.inplaceUnpack(value)) {
             LOG(debug, "Unpack failed: illegal docsum entry for document %d. This is expected during lidspace compaction.", docid);
             topInserter.insertNix();
@@ -272,10 +267,10 @@ DynamicDocsumWriter::Override(const char *fieldName, IDocsumFieldWriter *writer)
         ++_numFieldWriterStates;
     }
 
-    for (ResultConfig::iterator it(_resultConfig->begin()), mt(_resultConfig->end()); it != mt; it++) {
+    for (auto & entry : *_resultConfig) {
 
-        if (it->GetIndexFromEnumValue(fieldEnumValue) >= 0) {
-            ResultClass::DynamicInfo *info = it->getDynamicInfo();
+        if (entry.GetIndexFromEnumValue(fieldEnumValue) >= 0) {
+            ResultClass::DynamicInfo *info = entry.getDynamicInfo();
             info->_overrideCnt++;
             if (writer->IsGenerated())
                 info->_generateCnt++;
@@ -306,15 +301,11 @@ DynamicDocsumWriter::InitState(IAttributeManager & attrMan, GetDocsumsState *sta
 
 
 uint32_t
-DynamicDocsumWriter::WriteDocsum(uint32_t docid,
-                                 GetDocsumsState *state,
-                                 IDocsumStore *docinfos,
-                                 search::RawBuf *target)
+DynamicDocsumWriter::WriteDocsum(uint32_t docid, GetDocsumsState *state, IDocsumStore *docinfos, search::RawBuf *target)
 {
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
-    ResolveClassInfo rci = resolveClassInfo(state->_args.getResultClassName(),
-                                            docinfos->getSummaryClassId());
+    ResolveClassInfo rci = resolveClassInfo(state->_args.getResultClassName(), docinfos->getSummaryClassId());
     insertDocsum(rci, docid, state, docinfos, slime, inserter);
     return slime2RawBuf(slime, *target);
 }

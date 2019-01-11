@@ -19,8 +19,7 @@ public:
     ~RankFeaturesDFW();
     void init(IDocsumEnvironment * env);
     bool IsGenerated() const override { return true; }
-    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
-                     ResType type, vespalib::slime::Inserter &target) override;
+    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) override;
 };
 
 }

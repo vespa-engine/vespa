@@ -16,7 +16,7 @@ class GetDocsumsState;
 class IDocsumFieldWriter
 {
 public:
-    typedef std::unique_ptr<IDocsumFieldWriter> UP;
+    using UP = std::unique_ptr<IDocsumFieldWriter>;
     IDocsumFieldWriter() : _index(0) { }
     virtual ~IDocsumFieldWriter() {}
 
@@ -27,10 +27,7 @@ public:
     { return ResultConfig::IsRuntimeCompatible(a, b); }
 
     virtual bool IsGenerated() const = 0;
-    virtual void insertField(uint32_t docid,
-                             GeneralResult *gres,
-                             GetDocsumsState *state,
-                             ResType type,
+    virtual void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state, ResType type,
                              vespalib::slime::Inserter &target) = 0;
     virtual const vespalib::string & getAttributeName() const { return _empty; }
     virtual bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const {
@@ -46,20 +43,27 @@ private:
     static const vespalib::string _empty;
 };
 
+class IDocsumFW : public IDocsumFieldWriter
+{
+public:
+    virtual void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) = 0;
+    void insertField(uint32_t docid, GeneralResult *, GetDocsumsState *state, ResType type,
+                     vespalib::slime::Inserter &target) override
+    {
+        insertField(docid, state, type, target);
+    }
+};
+
 //--------------------------------------------------------------------------
 
-class EmptyDFW : public IDocsumFieldWriter
+class EmptyDFW : public IDocsumFW
 {
 public:
     EmptyDFW();
-    virtual ~EmptyDFW();
+    ~EmptyDFW() override;
 
-    virtual bool IsGenerated() const override { return true; }
-    virtual void insertField(uint32_t docid,
-                             GeneralResult *gres,
-                             GetDocsumsState *state,
-                             ResType type,
-                             vespalib::slime::Inserter &target) override;
+    bool IsGenerated() const override { return true; }
+    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) override;
 };
 
 //--------------------------------------------------------------------------
@@ -71,16 +75,13 @@ private:
 
 public:
     CopyDFW();
-    virtual ~CopyDFW();
+    ~CopyDFW() override;
 
     bool Init(const ResultConfig & config, const char *inputField);
 
-    virtual bool IsGenerated() const override { return false; }
-    virtual void insertField(uint32_t docid,
-                             GeneralResult *gres,
-                             GetDocsumsState *state,
-                             ResType type,
-                             vespalib::slime::Inserter &target) override;
+    bool IsGenerated() const override { return false; }
+    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state, ResType type,
+                     vespalib::slime::Inserter &target) override;
 };
 
 //--------------------------------------------------------------------------

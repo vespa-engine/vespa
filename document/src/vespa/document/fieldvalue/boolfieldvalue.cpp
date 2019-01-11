@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "boolfieldvalue.h"
 #include <vespa/document/datatype/datatype.h>
@@ -55,6 +55,31 @@ BoolFieldValue::hasChanged() const {
 FieldValue *
 BoolFieldValue::clone() const {
     return new BoolFieldValue(*this);
+}
+
+char
+BoolFieldValue::getAsByte() const {
+    return _value ? 1 : 0;
+}
+int32_t
+BoolFieldValue::getAsInt() const {
+    return _value ? 1 : 0;
+}
+int64_t
+BoolFieldValue::getAsLong() const {
+    return _value ? 1 : 0;
+}
+float
+BoolFieldValue::getAsFloat() const {
+    return _value ? 1 : 0;
+}
+double
+BoolFieldValue::getAsDouble() const {
+    return _value ? 1 : 0;
+}
+vespalib::string
+BoolFieldValue::getAsString() const {
+    return _value ? "true" : "false";
 }
 
 }  // namespace document

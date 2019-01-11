@@ -20,7 +20,7 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         (overrideName == "absdist") ||
         (overrideName == "subproject"))
     {
-        fieldWriter.reset(new EmptyDFW());
+        fieldWriter = std::make_unique<EmptyDFW>();
         rc = true;
     } else if ((overrideName == "attribute") ||
             (overrideName == "attributecombiner") ||

@@ -51,7 +51,7 @@ public:
                                      SerialNum flushedSerialNum, Time lastFlushTime,
                                      searchcorespi::index::IThreadService & summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
-    ~ShrinkSummaryLidSpaceFlushTarget();
+    ~ShrinkSummaryLidSpaceFlushTarget() override;
     Task::UP initFlush(SerialNum currentSerial) override;
 };
 
@@ -65,7 +65,7 @@ ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Compon
 {
 }
 
-ShrinkSummaryLidSpaceFlushTarget::~ShrinkSummaryLidSpaceFlushTarget() {}
+ShrinkSummaryLidSpaceFlushTarget::~ShrinkSummaryLidSpaceFlushTarget() = default;
 
 IFlushTarget::Task::UP
 ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum currentSerial)
@@ -93,7 +93,7 @@ SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, 
       _repo(repo),
       _markupFields()
 {
-    std::unique_ptr<ResultConfig> resultConfig(new ResultConfig());
+    auto resultConfig = std::make_unique<ResultConfig>();
     if (!resultConfig->ReadConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str())) {
         std::ostringstream oss;
         config::OstreamConfigWriter writer(oss);
@@ -103,12 +103,11 @@ SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, 
                          baseDir.c_str(), oss.str().c_str()));
     }
 
-    _juniperConfig.reset(new juniper::Juniper(&_juniperProps, &_wordFolder));
-    _docsumWriter.reset(new DynamicDocsumWriter(resultConfig.release(), NULL));
+    _juniperConfig = std::make_unique<juniper::Juniper>(&_juniperProps, &_wordFolder);
+    _docsumWriter = std::make_unique<DynamicDocsumWriter>(resultConfig.release(), nullptr);
     DynamicDocsumConfig dynCfg(this, _docsumWriter.get());
     dynCfg.configure(summarymapCfg);
-    for (size_t i = 0; i < summarymapCfg.override.size(); ++i) {
-        const SummarymapConfig::Override & o = summarymapCfg.override[i];
+    for (const auto & o : summarymapCfg.override) {
         if (o.command == "dynamicteaser" || o.command == "textextractor") {
             vespalib::string markupField = o.arguments;
             if (markupField.empty())
@@ -118,11 +117,11 @@ SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, 
         }
     }
     const DocumentType *docType = repo->getDocumentType(docTypeName.getName());
-    if (docType != NULL) {
-        _fieldCacheRepo.reset(new FieldCacheRepo(getResultConfig(), *docType));
+    if (docType != nullptr) {
+        _fieldCacheRepo = std::make_unique<FieldCacheRepo>(getResultConfig(), *docType);
     } else if (getResultConfig().GetNumResultClasses() == 0) {
         LOG(debug, "Create empty field cache repo for document type '%s'", docTypeName.toString().c_str());
-        _fieldCacheRepo.reset(new FieldCacheRepo());
+        _fieldCacheRepo = std::make_unique<FieldCacheRepo>();
     } else {
         throw IllegalArgumentException(make_string("Did not find document type '%s' in current document type repo."
                                                    " Cannot setup field cache repo for the summary setup",
@@ -212,7 +211,7 @@ IFlushTarget::List SummaryManager::getFlushTargets(searchcorespi::index::IThread
 }
 
 void SummaryManager::reconfigure(const LogDocumentStore::Config & config) {
-    LogDocumentStore & docStore = dynamic_cast<LogDocumentStore &> (*_docStore);
+    auto & docStore = dynamic_cast<LogDocumentStore &> (*_docStore);
     docStore.reconfigure(config);
 }
 

@@ -115,6 +115,9 @@ public:
             return true;
         }
         switch (a) {
+        case RES_BYTE:
+        case RES_BOOL:
+            return (b == RES_BYTE || b == RES_BOOL);
         case RES_STRING:
         case RES_DATA:
             return (b == RES_STRING || b == RES_DATA);
@@ -147,7 +150,8 @@ public:
         case RES_INT:
         case RES_SHORT:
         case RES_BYTE:
-            return (b == RES_INT || b == RES_SHORT || b == RES_BYTE);
+        case RES_BOOL:
+            return (b == RES_INT || b == RES_SHORT || b == RES_BYTE || b == RES_BOOL);
         case RES_FLOAT:
         case RES_DOUBLE:
             return (b == RES_FLOAT || b == RES_DOUBLE);
@@ -269,29 +273,6 @@ public:
      * @param buflen length of docsum blob.
      **/
     uint32_t GetClassID(const char *buf, uint32_t buflen);
-
-    /**
-     * Unpack docsum blob. The first n (0/8/16/32) bits are read from
-     * the data given and used to look up the appropriate result
-     * class. A GeneralResult object is created based on that
-     * class and told to unpack the rest of the docsum blob. If this
-     * operation succeeds, the GeneralResult object is
-     * returned. It if fails, a badurlresult object is returned
-     * instead.
-     *
-     * @return object representing the unpacked result.
-     * @param partition partition path for current hit.
-     * @param docid docid for current hit.
-     * @param metric relevance estimate for current hit.
-     * @param buf docsum blob.
-     * @param buflen length of docsum blob.
-     **/
-     urlresult *
-     Unpack(uint32_t partition,
-            uint32_t docid,
-            HitRank metric,
-            const char *buf,
-            uint32_t buflen) const;
 };
 
 }

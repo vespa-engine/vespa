@@ -29,22 +29,16 @@ IDocsumFieldWriter::setFieldWriterStateIndex(uint32_t)
 
 //--------------------------------------------------------------------------
 
-EmptyDFW::EmptyDFW() { }
+EmptyDFW::EmptyDFW() = default;
 
-
-EmptyDFW::~EmptyDFW() { }
+EmptyDFW::~EmptyDFW() = default;
 
 void
-EmptyDFW::insertField(uint32_t /*docid*/,
-                      GeneralResult *,
-                      GetDocsumsState *,
-                      ResType,
-                      vespalib::slime::Inserter &target)
+EmptyDFW::insertField(uint32_t, GetDocsumsState *, ResType, vespalib::slime::Inserter &target)
 {
     // insert explicitly-empty field?
     // target.insertNix();
     (void)target;
-    return;
 }
 
 //--------------------------------------------------------------------------
@@ -54,11 +48,7 @@ CopyDFW::CopyDFW()
 {
 }
 
-
-CopyDFW::~CopyDFW()
-{
-}
-
+CopyDFW::~CopyDFW() = default;
 
 bool
 CopyDFW::Init(const ResultConfig & config, const char *inputField)
@@ -69,11 +59,10 @@ CopyDFW::Init(const ResultConfig & config, const char *inputField)
         LOG(warning, "no docsum format contains field '%s'; copied fields will be empty", inputField);
     }
 
-    for (ResultConfig::const_iterator it(config.begin()), mt(config.end()); it != mt; it++) {
-        const ResConfigEntry *entry =
-            it->GetEntry(it->GetIndexFromEnumValue(_inputFieldEnumValue));
+    for (const auto & field : config) {
+        const ResConfigEntry *entry = field.GetEntry(field.GetIndexFromEnumValue(_inputFieldEnumValue));
 
-        if (entry != NULL &&
+        if (entry != nullptr &&
             !IsRuntimeCompatible(entry->_type, RES_INT) &&
             !IsRuntimeCompatible(entry->_type, RES_DOUBLE) &&
             !IsRuntimeCompatible(entry->_type, RES_INT64) &&
@@ -81,25 +70,21 @@ CopyDFW::Init(const ResultConfig & config, const char *inputField)
             !IsRuntimeCompatible(entry->_type, RES_DATA)) {
 
             LOG(warning, "cannot use docsum field '%s' as input to copy; type conflict with result class %d (%s)",
-                inputField, it->GetClassID(), it->GetClassName());
+                inputField, field.GetClassID(), field.GetClassName());
             return false;
         }
     }
     return true;
 }
 
-
 void
-CopyDFW::insertField(uint32_t /*docid*/,
-            GeneralResult *gres,
-            GetDocsumsState *state,
-            ResType type,
-            vespalib::slime::Inserter &target)
+CopyDFW::insertField(uint32_t /*docid*/, GeneralResult *gres, GetDocsumsState *state, ResType type,
+                     vespalib::slime::Inserter &target)
 {
     int idx = gres->GetClass()->GetIndexFromEnumValue(_inputFieldEnumValue);
     ResEntry *entry = gres->GetEntry(idx);
 
-    if (entry != NULL &&
+    if (entry != nullptr &&
         IsRuntimeCompatible(entry->_type, type))
     {
         switch (type) {
@@ -116,6 +101,9 @@ CopyDFW::insertField(uint32_t /*docid*/,
         case RES_BYTE: {
             uint8_t val8 = entry->_intval;
             target.insertLong(val8);
+            break; }
+        case RES_BOOL: {
+            target.insertBool(entry->_intval != 0);
             break; }
 
         case RES_FLOAT: {
