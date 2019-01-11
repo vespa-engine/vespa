@@ -634,6 +634,10 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     @Override
     public Map<String, Attribute> getAttributes() { return attributes; }
 
+    public Attribute getAttribute() {
+        return attributes.get(getName());
+    }
+
     public void addAttribute(Attribute attribute) {
         String name = attribute.getName();
         if (name == null || "".equals(name)) {

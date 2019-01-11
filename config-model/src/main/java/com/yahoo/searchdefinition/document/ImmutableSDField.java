@@ -55,6 +55,8 @@ public interface ImmutableSDField {
 
     Map<String, Attribute> getAttributes();
 
+    Attribute getAttribute();
+
     Map<String, String> getAliasToName();
 
     ScriptExpression getIndexingScript();
