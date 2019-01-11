@@ -139,6 +139,30 @@ public class AuthorizerTest {
     }
 
     @Test
+    public void flags_authorization() {
+        // Tenant nodes cannot access flags resources
+        assertFalse(authorizedTenantNode("node1", "/flags/v1/data"));
+        assertFalse(authorizedTenantNode("node1", "/flags/v1/data/flagid"));
+        assertFalse(authorizedTenantNode("node1", "/flags/v1/foo"));
+
+        // Host node can access data
+        assertTrue(authorizedTenantHostNode("host1", "/flags/v1/data"));
+        assertFalse(authorizedTenantHostNode("host1", "/flags/v1/data/flagid"));
+        assertFalse(authorizedTenantHostNode("host1", "/flags/v1/foo"));
+        assertTrue(authorizedTenantHostNode("proxy1-host", "/flags/v1/data"));
+        assertFalse(authorizedTenantHostNode("proxy1-host", "/flags/v1/data/flagid"));
+        assertFalse(authorizedTenantHostNode("proxy1-host", "/flags/v1/foo"));
+        assertTrue(authorizedController("vespa.vespa.configserver", "/flags/v1/data"));
+        assertFalse(authorizedController("vespa.vespa.configserver", "/flags/v1/data/flagid"));
+        assertFalse(authorizedController("vespa.vespa.configserver", "/flags/v1/foo"));
+
+        // Controller can access everything
+        assertTrue(authorizedController("vespa.vespa.hosting", "/flags/v1/data"));
+        assertTrue(authorizedController("vespa.vespa.hosting", "/flags/v1/data/flagid"));
+        assertTrue(authorizedController("vespa.vespa.hosting", "/flags/v1/foo"));
+    }
+
+    @Test
     public void routing_authorization() {
         // Node of proxy or proxyhost type can access routing resource
         assertFalse(authorizedTenantNode("node1", "/routing/v1/status"));
