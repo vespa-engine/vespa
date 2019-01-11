@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.flags.json.Rule;
 
@@ -21,8 +23,13 @@ public class InMemoryFlagSource implements FlagSource {
         return this;
     }
 
-    public InMemoryFlagSource withFlag(FlagId flagId, FetchVector defaultFetchVector, Rule... rules) {
-        flagDataById.put(flagId, new FlagData(flagId, defaultFetchVector, rules));
+    public InMemoryFlagSource withDoubleFlag(FlagId flagId, double value) {
+        return withRawFlag(flagId, new DoubleNode(value));
+    }
+
+    private InMemoryFlagSource withRawFlag(FlagId flagId, JsonNode rawFlag) {
+        Rule rule = new Rule(Optional.of(JsonNodeRawFlag.fromJsonNode(rawFlag)));
+        flagDataById.put(flagId, new FlagData(flagId, new FetchVector(), rule));
         return this;
     }
 

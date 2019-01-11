@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 
 /**
@@ -41,7 +42,7 @@ public class Flags {
             "use-config-server-cache", true,
             "Whether config server will use cache to answer config requests.",
             "Takes effect immediately when changed.",
-            HOSTNAME, FetchVector.Dimension.APPLICATION_ID);
+            HOSTNAME, APPLICATION_ID);
 
     public static final UnboundBooleanFlag CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD = defineFeatureFlag(
             "config-server-bootstrap-in-separate-thread", true,

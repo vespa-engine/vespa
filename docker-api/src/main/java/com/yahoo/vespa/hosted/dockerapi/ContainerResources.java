@@ -8,6 +8,7 @@ import java.util.Objects;
  */
 public class ContainerResources {
     public static final ContainerResources UNLIMITED = ContainerResources.from(0, 0, 0);
+    private static final int CPU_PERIOD = 100_000; // 100 µs
 
     private final double cpus;
     private final int cpuShares;
@@ -37,6 +38,14 @@ public class ContainerResources {
         return cpus;
     }
 
+    public int cpuQuota() {
+        return (int) cpus * CPU_PERIOD;
+    }
+
+    public int cpuPeriod() {
+        return CPU_PERIOD;
+    }
+
     public int cpuShares() {
         return cpuShares;
     }
@@ -50,7 +59,7 @@ public class ContainerResources {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ContainerResources that = (ContainerResources) o;
-        return Double.compare(that.cpus, cpus) == 0 &&
+        return Math.abs(that.cpus - cpus) < 0.0001 &&
                 cpuShares == that.cpuShares &&
                 memoryBytes == that.memoryBytes;
     }

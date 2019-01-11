@@ -4,11 +4,8 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.flags.JsonNodeRawFlag;
-import com.yahoo.vespa.flags.json.Rule;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
@@ -279,10 +276,7 @@ public class NodeAgentImplTest {
         inOrder.verify(orchestrator).resume(any(String.class));
 
         // Set the feature flag
-        flagSource.withFlag(
-                Flags.CONTAINER_CPU_CAP.id(),
-                new FetchVector(),
-                new Rule(Optional.of(JsonNodeRawFlag.fromJson("2.3"))));
+        flagSource.withDoubleFlag(Flags.CONTAINER_CPU_CAP.id(), 2.3);
 
         nodeAgent.converge(thirdContext);
         inOrder.verify(dockerOperations).updateContainer(eq(thirdContext), eq(ContainerResources.from(2.3, 4, 16)));

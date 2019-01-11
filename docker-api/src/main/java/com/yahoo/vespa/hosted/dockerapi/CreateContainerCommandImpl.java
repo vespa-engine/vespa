@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.dockerapi.DockerImpl.CPU_PERIOD;
 import static com.yahoo.vespa.hosted.dockerapi.DockerImpl.LABEL_NAME_MANAGEDBY;
 
 class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
@@ -163,8 +162,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         containerResources.ifPresent(cr -> hostConfig
                 .withCpuShares(cr.cpuShares())
                 .withMemory(cr.memoryBytes())
-                .withCpuPeriod(cr.cpus() > 0 ? CPU_PERIOD : null)
-                .withCpuQuota(cr.cpus() > 0 ? (int) (CPU_PERIOD * cr.cpus()) : null));
+                .withCpuPeriod(cr.cpuQuota() > 0 ? cr.cpuPeriod() : null)
+                .withCpuQuota(cr.cpuQuota() > 0 ? cr.cpuQuota() : null));
 
         final CreateContainerCmd containerCmd = docker
                 .createContainerCmd(dockerImage.asString())

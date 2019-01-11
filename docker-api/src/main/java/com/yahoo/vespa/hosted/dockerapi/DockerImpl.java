@@ -48,7 +48,6 @@ public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 
     static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
-    static final int CPU_PERIOD = 100_000; // 100 µs
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
     private static final Duration WAIT_BEFORE_KILLING = Duration.ofSeconds(10);
 
@@ -246,8 +245,8 @@ public class DockerImpl implements Docker {
                     // See: https://docs.docker.com/config/containers/resource_constraints/#configure-the-default-cfs-scheduler
                     // --cpus requires API 1.25+ on create and 1.29+ on update
                     // NanoCPUs is supported in docker-java as of 3.1.0 on create and not at all on update
-                    .withCpuPeriod(resources.cpus() > 0 ? CPU_PERIOD : null)
-                    .withCpuQuota(resources.cpus() > 0 ? (int) (CPU_PERIOD * resources.cpus()) : null);
+                    .withCpuPeriod(resources.cpuQuota() > 0 ? resources.cpuPeriod() : null)
+                    .withCpuQuota(resources.cpuQuota() > 0 ? resources.cpuQuota() : null);
 
             updateContainerCmd.exec();
         } catch (NotFoundException e) {
