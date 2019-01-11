@@ -102,6 +102,12 @@ public class Flags {
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static UnboundDoubleFlag defineDoubleFlag(String flagId, double defaultValue, String description,
+                                                     String modificationEffect, FetchVector.Dimension... dimensions) {
+        return define(UnboundDoubleFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
+    }
+
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static <T> UnboundJacksonFlag<T> defineJacksonFlag(String flagId, T defaultValue, Class<T> jacksonClass, String description,
                                                               String modificationEffect, FetchVector.Dimension... dimensions) {
         return define((id2, defaultValue2, vector2) -> new UnboundJacksonFlag<>(id2, defaultValue2, vector2, jacksonClass),
