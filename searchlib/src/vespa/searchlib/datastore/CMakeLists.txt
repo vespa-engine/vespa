@@ -6,5 +6,6 @@ vespa_add_library(searchlib_datastore OBJECT
     bufferstate.cpp
     datastore.cpp
     datastorebase.cpp
+    entryref.cpp
     DEPENDS
 )
