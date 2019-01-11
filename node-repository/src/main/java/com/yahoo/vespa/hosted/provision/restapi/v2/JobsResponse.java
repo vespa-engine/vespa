@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
+import java.util.TreeSet;
 
 /** A response containing maintenance job status */
 public class JobsResponse extends HttpResponse {
@@ -25,13 +25,12 @@ public class JobsResponse extends HttpResponse {
     public void render(OutputStream stream) throws IOException {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-
         Cursor jobArray = root.setArray("jobs");
-        for (String jobName : jobControl.jobs())
+        for (String jobName : new TreeSet<>(jobControl.jobs()))
             jobArray.addObject().setString("name", jobName);
 
         Cursor inactiveArray = root.setArray("inactive");
-        for (String jobName : jobControl.inactiveJobs())
+        for (String jobName : new TreeSet<>(jobControl.inactiveJobs()))
             inactiveArray.addString(jobName);
 
         new JsonFormat(true).encode(stream, slime);

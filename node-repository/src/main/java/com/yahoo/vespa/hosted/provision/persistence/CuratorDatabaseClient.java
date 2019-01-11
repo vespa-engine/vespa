@@ -465,10 +465,10 @@ public class CuratorDatabaseClient {
         });
     }
 
-    public void removeLoadBalancer(LoadBalancer loadBalancer) {
+    public void removeLoadBalancer(LoadBalancerId loadBalancer) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.delete(loadBalancerPath(loadBalancer.id()).getAbsolute()));
+        curatorTransaction.add(CuratorOperations.delete(loadBalancerPath(loadBalancer).getAbsolute()));
         transaction.commit();
     }
 

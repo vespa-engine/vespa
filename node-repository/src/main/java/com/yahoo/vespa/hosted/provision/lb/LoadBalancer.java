@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
 
 import java.util.List;
 import java.util.Objects;
@@ -50,8 +51,8 @@ public class LoadBalancer {
     }
 
     /**
-     * Returns whether this load balancer is inactive. Inactive load balancers cannot be reactivated, and are
-     * eventually deleted
+     * Returns whether this load balancer is inactive. Inactive load balancers cannot be re-activated, and are
+     * eventually removed by {@link LoadBalancerExpirer}.
      */
     public boolean inactive() {
         return inactive;
