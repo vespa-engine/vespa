@@ -67,6 +67,15 @@ public class DockerMock implements Docker {
     }
 
     @Override
+    public void updateContainer(ContainerName containerName, ContainerResources containerResources) {
+        synchronized (monitor) {
+            Container container = containersByContainerName.get(containerName);
+            containersByContainerName.put(containerName,
+                    new Container(container.hostname, container.image, containerResources, container.name, container.state, container.pid));
+        }
+    }
+
+    @Override
     public Optional<Container> getContainer(ContainerName containerName) {
         synchronized (monitor) {
             return Optional.ofNullable(containersByContainerName.get(containerName));

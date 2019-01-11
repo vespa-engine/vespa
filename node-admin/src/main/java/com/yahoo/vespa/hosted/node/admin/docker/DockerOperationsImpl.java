@@ -171,6 +171,11 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
+    public void updateContainer(NodeAgentContext context, ContainerResources containerResources) {
+        docker.updateContainer(context.containerName(), containerResources);
+    }
+
+    @Override
     public Optional<Container> getContainer(NodeAgentContext context) {
         return docker.getContainer(context.containerName());
     }

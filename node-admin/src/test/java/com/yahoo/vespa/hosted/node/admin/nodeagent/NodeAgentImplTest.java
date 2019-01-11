@@ -233,7 +233,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void containerIsRestartedIfFlavorChanged() {
+    public void containerIsUpdatedIfFlavorChanged() {
         NodeSpec.Builder specBuilder = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
@@ -257,9 +257,9 @@ public class NodeAgentImplTest {
         inOrder.verify(orchestrator).resume(any(String.class));
         inOrder.verify(orchestrator).resume(any(String.class));
         inOrder.verify(orchestrator).suspend(any(String.class));
-        inOrder.verify(dockerOperations).removeContainer(eq(thirdContext), any());
-        inOrder.verify(dockerOperations, times(1)).createContainer(eq(thirdContext), any());
-        inOrder.verify(dockerOperations).startContainer(eq(thirdContext));
+        inOrder.verify(dockerOperations).updateContainer(eq(thirdContext), any());
+        inOrder.verify(dockerOperations, never()).removeContainer(any(), any());
+        inOrder.verify(dockerOperations, never()).startContainer(any());
         inOrder.verify(orchestrator).resume(any(String.class));
     }
 

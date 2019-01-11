@@ -310,13 +310,6 @@ public class NodeAgentImpl implements NodeAgent {
             return Optional.of("Container no longer running");
         }
 
-        ContainerResources wantedContainerResources = ContainerResources.from(
-                0, node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
-        if (!wantedContainerResources.equals(existingContainer.resources)) {
-            return Optional.of("Container should be running with different resource allocation, wanted: " +
-                    wantedContainerResources + ", actual: " + existingContainer.resources);
-        }
-
         if (currentRebootGeneration < node.getWantedRebootGeneration()) {
             return Optional.of(String.format("Container reboot wanted. Current: %d, Wanted: %d",
                     currentRebootGeneration, node.getWantedRebootGeneration()));
@@ -354,6 +347,21 @@ public class NodeAgentImpl implements NodeAgent {
             return Optional.empty();
         }
         return Optional.of(existingContainer);
+    }
+
+    private void updateContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
+        ContainerResources wantedContainerResources = ContainerResources.from(
+                0, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb());
+
+        if (wantedContainerResources.equals(existingContainer.resources)) return;
+        context.log(logger, "Container should be running with different resource allocation, wanted: %s, current: %s",
+                wantedContainerResources, existingContainer.resources);
+
+        if (context.node().getState() == Node.State.active) {
+            orchestratorSuspendNode(context);
+        }
+
+        dockerOperations.updateContainer(context, wantedContainerResources);
     }
 
 
@@ -438,6 +446,8 @@ public class NodeAgentImpl implements NodeAgent {
                     startContainer(context);
                     containerState = UNKNOWN;
                     aclMaintainer.ifPresent(AclMaintainer::converge);
+                } else {
+                    updateContainerIfNeeded(context, container.get());
                 }
 
                 startServicesIfNeeded(context);

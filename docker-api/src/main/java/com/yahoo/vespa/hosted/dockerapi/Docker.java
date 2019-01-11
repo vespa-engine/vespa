@@ -65,6 +65,8 @@ public interface Docker {
 
     void deleteContainer(ContainerName containerName);
 
+    void updateContainer(ContainerName containerName, ContainerResources containerResources);
+
     List<Container> getAllContainersManagedBy(String manager);
 
     Optional<Container> getContainer(ContainerName containerName);

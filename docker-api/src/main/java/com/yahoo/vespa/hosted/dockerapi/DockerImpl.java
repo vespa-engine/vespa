@@ -234,6 +234,31 @@ public class DockerImpl implements Docker {
     }
 
     @Override
+    public void updateContainer(ContainerName containerName, ContainerResources resources) {
+        try {
+            UpdateContainerCmd updateContainerCmd = dockerClient.updateContainerCmd(containerName.asString())
+                    .withCpuShares(resources.cpuShares())
+                    .withMemory(resources.memoryBytes())
+
+                    // Command line argument `--cpus c` is sent over to docker daemon as "NanoCPUs", which is the
+                    // value of `c * 1e9`. This however, is just a shorthand for `--cpu-period p` and `--cpu-quota q`
+                    // where p = 100000 and q = c * 100000.
+                    // See: https://docs.docker.com/config/containers/resource_constraints/#configure-the-default-cfs-scheduler
+                    // --cpus requires API 1.25+ on create and 1.29+ on update
+                    // NanoCPUs is supported in docker-java as of 3.1.0 on create and not at all on update
+                    .withCpuPeriod(resources.cpus() > 0 ? CPU_PERIOD : null)
+                    .withCpuQuota(resources.cpus() > 0 ? (int) (CPU_PERIOD * resources.cpus()) : null);
+
+            updateContainerCmd.exec();
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
+        } catch (RuntimeException e) {
+            numberOfDockerDaemonFails.add();
+            throw new DockerException("Failed to update container '" + containerName.asString() + "' to " + resources, e);
+        }
+    }
+
+    @Override
     public List<Container> getAllContainersManagedBy(String manager) {
         return listAllContainers().stream()
                 .filter(container -> isManagedBy(container, manager))
