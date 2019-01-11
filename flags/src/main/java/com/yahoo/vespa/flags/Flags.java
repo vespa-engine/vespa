@@ -77,6 +77,12 @@ public class Flags {
             HOSTNAME
     );
 
+    public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
+            "container-cpu-cap", 0,
+            "Hard limit on how many CPUs a container may use",
+            "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
+            HOSTNAME, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
