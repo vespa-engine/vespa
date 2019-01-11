@@ -361,24 +361,40 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE (cancel) ongoing change
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", DELETE)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
-                              new File("application-deployment-cancelled.json"));
+                              "{\"message\":\"Changed deployment from 'application change to 1.0.42-commit1' to 'no change' for application 'tenant1.application1'\"}");
 
         // DELETE (cancel) again is a no-op
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", DELETE)
                                       .userIdentity(USER_ID)
                                       .data("{\"cancel\":\"all\"}"),
-                              new File("application-deployment-cancelled-no-op.json"));
+                              "{\"message\":\"No deployment in progress for application 'tenant1.application1' at this time\"}");
 
         // POST pinning to a given version to an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/pin", POST)
                                       .userIdentity(USER_ID)
                                       .data("6.1.0"),
-                              new File("application-deployment.json"));
+                              "{\"message\":\"Triggered pin to 6.1 for tenant1.application1\"}");
 
         // DELETE only the pin to a given version
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/pin", DELETE)
                                       .userIdentity(USER_ID),
-                              new File("application-pin-cancelled.json"));
+                              "{\"message\":\"Changed deployment from 'pin to 6.1' to 'upgrade to 6.1' for application 'tenant1.application1'\"}");
+
+        // POST pinning to a different version to an application
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/pin", POST)
+                                      .userIdentity(USER_ID)
+                                      .data("6.240.0"),
+                              "{\"message\":\"Triggered pin to 6.240 for tenant1.application1\"}");
+
+        // DELETE only the version, but leave the pin
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/platform", DELETE)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Changed deployment from 'pin to 6.240' to 'pin to current platform' for application 'tenant1.application1'\"}");
+
+        // DELETE also the pin to a given version
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/pin", DELETE)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Changed deployment from 'pin to current platform' to 'no change' for application 'tenant1.application1'\"}");
 
         // POST a pause to a production job
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/production-us-west-1/pause", POST)
