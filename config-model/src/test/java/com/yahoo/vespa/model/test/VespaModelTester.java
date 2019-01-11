@@ -16,10 +16,6 @@ import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagId;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.JsonNodeRawFlag;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
@@ -144,13 +140,11 @@ public class VespaModelTester {
                 .useDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
                 .build();
 
-        FlagSource flagSource = (FlagId id, FetchVector vector) -> Optional.of(JsonNodeRawFlag.fromJson(String.valueOf(useDedicatedNodeForLogserver)));
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(appPkg)
                 .modelHostProvisioner(provisioner)
                 .properties(properties)
                 .zone(zone)
-                .flagSource(flagSource)
                 .build();
         return modelCreatorWithMockPkg.create(false, deployState, configModelRegistry);
     }
