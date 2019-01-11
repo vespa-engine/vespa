@@ -89,6 +89,7 @@ public class ProxyServer implements Runnable {
         this.configClient = createClient(clientUpdater, delayedResponses, source, timingValues, memoryCache, configClient);
         this.fileDownloader = new FileDownloader(new JRTConnectionPool(source));
         new FileDistributionRpcServer(supervisor, fileDownloader);
+        new UrlDownloadRpcServer(supervisor);
     }
 
     static ProxyServer createTestServer(ConfigSourceSet source) {

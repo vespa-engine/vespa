@@ -249,6 +249,10 @@ public class StorageMaintainer {
         FileFinder.directories(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("var/db/vespa/filedistribution")))
                 .match(olderThan(Duration.ofDays(31)))
                 .deleteRecursively();
+
+        FileFinder.directories(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("var/db/vespa/download")))
+                .match(olderThan(Duration.ofDays(31)))
+                .deleteRecursively();
     }
 
     /** Checks if container has any new coredumps, reports and archives them if so */
