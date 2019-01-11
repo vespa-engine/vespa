@@ -10,6 +10,9 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
@@ -100,8 +103,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         if (deployState.getProperties().useDedicatedNodeForLogserver() &&
                 context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT &&
                 deployState.isHosted() &&
-                deployState.zone().system() == SystemName.cd &&
-                deployState.zone().environment() == Environment.dev)
+                logServerFlagValue(deployState))
             return NodesSpecification.dedicated(1, context);
         else
             return NodesSpecification.nonDedicated(1, context);
@@ -221,6 +223,12 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             slobrok.initService(deployLogger);
         }
         admin.addSlobroks(slobroks);
+    }
+
+    private boolean logServerFlagValue(DeployState deployState) {
+        return Flags.ENABLE_LOGSERVER.bindTo(deployState.flagSource())
+                .with(FetchVector.Dimension.APPLICATION_ID, deployState.getProperties().applicationId().serializedForm())
+                .value();
     }
 
 }
