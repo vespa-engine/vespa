@@ -4,9 +4,11 @@ package com.yahoo.document.serialization;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.vespa.objects.FieldBase;
 
 /**
  * Class used for de-serializing documents on the current head document format.
@@ -42,4 +44,8 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer42 {
         }
     }
 
+    @Override
+    public void read(FieldBase field, BoolFieldValue value) {
+        value.setBoolean((getByte(null) != 0));
+    }
 }
