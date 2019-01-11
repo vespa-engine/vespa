@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -117,6 +118,9 @@ public class SiaUtils {
     public static List<AthenzService> findSiaServices(Path root) {
         String keyFileSuffix = ".key.pem";
         Path keysDirectory = root.resolve("keys");
+        if ( ! Files.exists(keysDirectory))
+            return emptyList();
+
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(keysDirectory)) {
             return StreamSupport.stream(directoryStream.spliterator(), false)
                     .map(path -> path.getFileName().toString())
