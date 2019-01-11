@@ -97,7 +97,7 @@ SigBusHandler::handle(int sig, siginfo_t *si, void *ucv)
     do {
         // Protect against multiple threads.
         TryLockGuard guard;
-        if (!guard.gotLock()) {
+        if (!guard.gotLock() || _fired) {
             raced = true;
             break;
         }
@@ -121,18 +121,19 @@ SigBusHandler::handle(int sig, siginfo_t *si, void *ucv)
         sleep(5);
         return;
     }
-    untrap(); // Further bus errors will trigger core dump
 
     if (_unwind != nullptr) {
         // Unit test is using siglongjmp based unwinding
         sigjmp_buf *unwind = _unwind;
         _unwind = nullptr;
+        untrap(); // Further bus errors will trigger core dump
         siglongjmp(*unwind, 1);
     } else {
         // Normal case, sleep 3 seconds (i.e. allow main thread to detect
         // issue and notify cluster controller) before returning and
         // likely core dumping.
         sleep(3);
+        untrap(); // Further bus errors will trigger core dump
     }
 }
 
