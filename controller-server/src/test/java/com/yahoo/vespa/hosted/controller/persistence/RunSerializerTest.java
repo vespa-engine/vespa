@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -78,7 +79,9 @@ public class RunSerializerTest {
                                                                 "master",
                                                                 "f00bad"),
                                              123,
-                                             "a@b"),
+                                             "a@b",
+                                             Version.fromString("6.3.1"),
+                                             Instant.ofEpochMilli(100)),
                      run.versions().targetApplication());
         assertEquals(new Version(1, 2, 2), run.versions().sourcePlatform().get());
         assertEquals(ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",

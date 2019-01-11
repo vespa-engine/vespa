@@ -155,7 +155,8 @@ public class ControllerTest {
                 .region("deep-space-9")
                 .build();
         try {
-            tester.controller().jobController().submit(app1.id(), BuildJob.defaultSourceRevision, "a@b", 2, applicationPackage.zippedContent(), new byte[0]);
+            tester.controller().jobController().submit(app1.id(), BuildJob.defaultSourceRevision, "a@b",
+                                                       2, applicationPackage, new byte[0]);
             fail("Expected exception due to illegal deployment spec.");
         }
         catch (IllegalArgumentException e) {

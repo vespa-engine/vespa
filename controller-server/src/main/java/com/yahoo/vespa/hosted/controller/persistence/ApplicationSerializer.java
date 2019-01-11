@@ -81,6 +81,8 @@ public class ApplicationSerializer {
     private final String branchField = "branchField";
     private final String commitField = "commitField";
     private final String authorEmailField = "authorEmailField";
+    private final String compileVersionField = "compileVersion";
+    private final String buildTimeField = "buildTime";
     private final String lastQueriedField = "lastQueried";
     private final String lastWrittenField = "lastWritten";
     private final String lastQueriesPerSecondField = "lastQueriesPerSecond";
@@ -231,6 +233,8 @@ public class ApplicationSerializer {
             object.setLong(applicationBuildNumberField, applicationVersion.buildNumber().getAsLong());
             toSlime(applicationVersion.source().get(), object.setObject(sourceRevisionField));
             applicationVersion.authorEmail().ifPresent(email -> object.setString(authorEmailField, email));
+            applicationVersion.compileVersion().ifPresent(version -> object.setString(compileVersionField, version.toString()));
+            applicationVersion.buildTime().ifPresent(time -> object.setLong(buildTimeField, time.toEpochMilli()));
         }
     }
 
@@ -406,12 +410,21 @@ public class ApplicationSerializer {
         if ( ! object.valid()) return ApplicationVersion.unknown;
         OptionalLong applicationBuildNumber = optionalLong(object.field(applicationBuildNumberField));
         Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
-        if (!sourceRevision.isPresent() || !applicationBuildNumber.isPresent()) {
+        if ( ! sourceRevision.isPresent() || ! applicationBuildNumber.isPresent()) {
             return ApplicationVersion.unknown;
         }
-        return object.field(authorEmailField).valid()
-                ? ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong(), object.field(authorEmailField).asString())
-                : ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong());
+        Optional<String> authorEmail = optionalString(object.field(authorEmailField));
+        Optional<Version> compileVersion = optionalString(object.field(compileVersionField)).map(Version::fromString);
+        Optional<Instant> buildTime = optionalInstant(object.field(buildTimeField));
+
+        if ( ! authorEmail.isPresent())
+            return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong());
+
+        if ( ! compileVersion.isPresent() || ! buildTime.isPresent())
+            return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong(), authorEmail.get());
+
+        return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong(), authorEmail.get(),
+                                       compileVersion.get(), buildTime.get());
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {

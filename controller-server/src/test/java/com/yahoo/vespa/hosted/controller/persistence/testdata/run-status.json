@@ -26,6 +26,8 @@
       "commit": "f00bad",
       "build": 123,
       "authorEmail": "a@b",
+      "compileVersion": "6.3.1",
+      "buildTime": 100,
       "source": {
         "platform": "1.2.2",
         "repository": "git@github.com:user/repo.git",

@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -27,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
+import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -398,19 +400,16 @@ class JobControllerApiHandlerHelper {
      * @return Response with the new application version
      */
     static HttpResponse submitResponse(JobController jobController, String tenant, String application,
-                                       SourceRevision sourceRevision, String authorEmail,
-                                       long projectId, byte[] appPackage, byte[] testPackage) {
+                                       SourceRevision sourceRevision, String authorEmail, long projectId,
+                                       ApplicationPackage applicationPackage, byte[] testPackage) {
         ApplicationVersion version = jobController.submit(ApplicationId.from(tenant, application, "default"),
                                                           sourceRevision,
                                                           authorEmail,
                                                           projectId,
-                                                          appPackage,
+                                                          applicationPackage,
                                                           testPackage);
 
-        Slime slime = new Slime();
-        Cursor responseObject = slime.setObject();
-        responseObject.setString("version", version.id());
-        return new SlimeJsonResponse(slime);
+        return new MessageResponse(version.toString());
     }
 
     /** Aborts any job of the given type. */
