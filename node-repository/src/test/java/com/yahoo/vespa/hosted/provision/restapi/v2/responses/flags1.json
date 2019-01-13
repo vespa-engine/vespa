@@ -5,13 +5,6 @@
       "enabled": false,
       "enabledHostnames": [],
       "enabledApplications": ["zoneapp:zoneapp:zoneapp"]
-    },
-    {
-      "id": "new-cache-counting",
-      "enabled": false,
-      "enabledHostnames": [],
-      "enabledApplications": []
     }
-
   ]
 }

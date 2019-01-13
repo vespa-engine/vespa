@@ -20,7 +20,6 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.flag.Flag;
 import com.yahoo.vespa.hosted.provision.flag.FlagId;
-import com.yahoo.vespa.hosted.provision.flag.Flags;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -69,15 +68,17 @@ public class CuratorDatabaseClient {
     private final CuratorDatabase curatorDatabase;
     private final Clock clock;
     private final Zone zone;
-    private final Flags flags;
 
     public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache) {
         this.nodeSerializer = new NodeSerializer(flavors);
         this.zone = zone;
-        this.flags = new Flags(this);
         this.curatorDatabase = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
         initZK();
+    }
+
+    public List<HostName> cluster() {
+        return curatorDatabase.cluster();
     }
 
     private void initZK() {
@@ -91,20 +92,12 @@ public class CuratorDatabaseClient {
         curatorDatabase.create(flagsRoot);
     }
 
-    public List<HostName> cluster() {
-        return curatorDatabase.cluster();
-    }
-
-    public Flags flags() {
-        return flags;
-    }
-
     /**
      * Adds a set of nodes. Rollbacks/fails transaction if any node is not in the expected state.
      */
     public List<Node> addNodesInState(List<Node> nodes, Node.State expectedState) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
             if (node.state() != expectedState)
                 throw new IllegalArgumentException(node + " is not in the " + node.state() + " state");
@@ -139,7 +132,7 @@ public class CuratorDatabaseClient {
 
         for (Node node : nodes) {
             Path path = toPath(node.state(), node.hostname());
-            CuratorTransaction curatorTransaction = newCuratorTransactionIn(transaction);
+            CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
             curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
         }
 
@@ -209,7 +202,7 @@ public class CuratorDatabaseClient {
 
         List<Node> writtenNodes = new ArrayList<>(nodes.size());
 
-        CuratorTransaction curatorTransaction = newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
             Node newNode = new Node(node.id(), node.ipAddresses(), node.ipAddressPool().asSet(), node.hostname(),
                                     node.parentHostname(), node.flavor(),
@@ -377,7 +370,7 @@ public class CuratorDatabaseClient {
 
     public void writeInactiveJobs(Set<String> inactiveJobs) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(inactiveJobsPath().getAbsolute(),
                                                          stringSetSerializer.toJson(inactiveJobs)));
         transaction.commit();
@@ -397,7 +390,7 @@ public class CuratorDatabaseClient {
 
     public void writeInfrastructureVersions(Map<NodeType, Version> infrastructureVersions) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(infrastructureVersionsPath().getAbsolute(),
                                                          NodeTypeVersionsSerializer.toJson(infrastructureVersions)));
         transaction.commit();
@@ -417,7 +410,7 @@ public class CuratorDatabaseClient {
 
     public void writeOsVersions(Map<NodeType, Version> versions) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(osVersionsPath().getAbsolute(),
                                                          NodeTypeVersionsSerializer.toJson(versions)));
         transaction.commit();
@@ -458,7 +451,7 @@ public class CuratorDatabaseClient {
     }
 
     public void writeLoadBalancers(Collection<LoadBalancer> loadBalancers, NestedTransaction transaction) {
-        CuratorTransaction curatorTransaction = newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         loadBalancers.forEach(loadBalancer -> {
             curatorTransaction.add(createOrSet(loadBalancerPath(loadBalancer.id()),
                                                LoadBalancerSerializer.toJson(loadBalancer)));
@@ -467,7 +460,7 @@ public class CuratorDatabaseClient {
 
     public void removeLoadBalancer(LoadBalancerId loadBalancer) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.delete(loadBalancerPath(loadBalancer).getAbsolute()));
         transaction.commit();
     }
@@ -483,7 +476,7 @@ public class CuratorDatabaseClient {
     public void writeFlag(Flag flag) {
         Path path = flagPath(flag.id());
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         curatorTransaction.add(createOrSet(path, FlagSerializer.toJson(flag)));
         transaction.commit();
     }
@@ -505,12 +498,6 @@ public class CuratorDatabaseClient {
             return CuratorOperations.setData(path.getAbsolute(), data);
         }
         return CuratorOperations.create(path.getAbsolute(), data);
-    }
-
-    private CuratorTransaction newCuratorTransactionIn(NestedTransaction transaction) {
-        return flags.get(FlagId.newCacheCounting).isEnabled()
-                ? curatorDatabase.newCuratorTransactionIn(transaction)
-                : curatorDatabase.newEagerCuratorTransactionIn(transaction);
     }
 
 }

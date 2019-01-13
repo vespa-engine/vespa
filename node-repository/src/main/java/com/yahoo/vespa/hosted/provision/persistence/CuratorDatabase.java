@@ -93,16 +93,6 @@ public class CuratorDatabase {
         return curatorTransaction;
     }
 
-    // TODO jvenstad: remove.
-    /** Kept for now to be able to revert to old caching behaviour. */
-    CuratorTransaction newEagerCuratorTransactionIn(NestedTransaction transaction) {
-        // Add a counting transaction first, to make sure we always invalidate the current state on any transaction commit
-        transaction.add(new EagerCountingCuratorTransaction(changeGenerationCounter), CuratorTransaction.class);
-        CuratorTransaction curatorTransaction = new CuratorTransaction(curator);
-        transaction.add(curatorTransaction);
-        return curatorTransaction;
-    }
-
     /** Creates a path in curator and all its parents as necessary. If the path already exists this does nothing. */
     void create(Path path) {
         curator.create(path);

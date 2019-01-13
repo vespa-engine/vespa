@@ -11,10 +11,7 @@ import java.util.Arrays;
 public enum FlagId {
 
     /** Indicates whether a exclusive load balancer should be provisioned */
-    exclusiveLoadBalancer("exclusive-load-balancer"),
-
-    /** Temporary. Indicates whether to use the new cache generation counting, or the old one (with a known bug) */
-    newCacheCounting("new-cache-counting");
+    exclusiveLoadBalancer("exclusive-load-balancer");
 
     private final String serializedValue;
 

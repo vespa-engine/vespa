@@ -10,12 +10,6 @@
         "zoneapp:zoneapp:zoneapp",
         "foo:bar:default"
       ]
-    },
-    {
-      "id": "new-cache-counting",
-      "enabled": false,
-      "enabledHostnames": [],
-      "enabledApplications": []
     }
   ]
 }
