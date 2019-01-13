@@ -40,7 +40,7 @@ vespalib::string run_cmd(const vespalib::string &cmd) {
 }
 
 vespalib::string getPage(int port, const vespalib::string &path, const vespalib::string &extra_params = "") {
-    return run_cmd(make_string("curl -s %s http://localhost:%d%s", extra_params.c_str(), port, path.c_str()));
+    return run_cmd(make_string("curl -s %s 'http://localhost:%d%s'", extra_params.c_str(), port, path.c_str()));
 }
 
 vespalib::string getFull(int port, const vespalib::string &path) { return getPage(port, path, "-D -"); }
@@ -121,6 +121,50 @@ TEST_FF("require that host is passed correctly", EchoHost(), HttpServer(0)) {
     EXPECT_EQUAL(localhost_result, run_cmd(make_string("curl -s http://localhost:%d/my/path", f2.port())));
     EXPECT_EQUAL(silly_result, run_cmd(make_string("curl -s http://localhost:%d/my/path -H \"Host: sillyserver\"", f2.port())));
     EXPECT_EQUAL(default_result, run_cmd(make_string("curl -s http://localhost:%d/my/path -H \"Host:\"", f2.port())));
+}
+
+struct SamplingHandler : JsonGetHandler {
+    mutable std::mutex my_lock;
+    mutable vespalib::string my_host;
+    mutable vespalib::string my_path;
+    mutable std::map<vespalib::string,vespalib::string> my_params;
+    vespalib::string get(const vespalib::string &host, const vespalib::string &path,
+                         const std::map<vespalib::string,vespalib::string> &params) const override
+    {
+        {
+            auto guard = std::lock_guard(my_lock);
+            my_host = host;
+            my_path = path;
+            my_params = params;
+        }
+        return "[]";
+    }
+};
+
+TEST_FF("require that request parameters can be inspected", SamplingHandler(), HttpServer(0))
+{
+    auto token = f2.repo().bind("/foo", f1);
+    EXPECT_EQUAL("[]", getPage(f2.port(), "/foo?a=b&x=y&z"));
+    {
+        auto guard = std::lock_guard(f1.my_lock);
+        EXPECT_EQUAL(f1.my_path, "/foo");
+        EXPECT_EQUAL(f1.my_params.size(), 3u);
+        EXPECT_EQUAL(f1.my_params["a"], "b");
+        EXPECT_EQUAL(f1.my_params["x"], "y");
+        EXPECT_EQUAL(f1.my_params["z"], "");
+        EXPECT_EQUAL(f1.my_params.size(), 3u); // "z" was present
+    }
+}
+
+TEST_FF("require that request path is dequoted", SamplingHandler(), HttpServer(0))
+{
+    auto token = f2.repo().bind("/[foo]", f1);
+    EXPECT_EQUAL("[]", getPage(f2.port(), "/%5bfoo%5D"));
+    {
+        auto guard = std::lock_guard(f1.my_lock);
+        EXPECT_EQUAL(f1.my_path, "/[foo]");
+        EXPECT_EQUAL(f1.my_params.size(), 0u);
+    }
 }
 
 //-----------------------------------------------------------------------------

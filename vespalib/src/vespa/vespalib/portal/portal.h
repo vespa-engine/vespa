@@ -60,6 +60,10 @@ public:
         const vespalib::string &get_header(const vespalib::string &name) const;
         const vespalib::string &get_host() const;
         const vespalib::string &get_uri() const;
+        const vespalib::string &get_path() const;
+        bool has_param(const vespalib::string &name) const;
+        const vespalib::string &get_param(const vespalib::string &name) const;
+        std::map<vespalib::string, vespalib::string> export_params() const;
         void respond_with_content(const vespalib::string &content_type,
                                   const vespalib::string &content);
         void respond_with_error(int code, const vespalib::string &msg);

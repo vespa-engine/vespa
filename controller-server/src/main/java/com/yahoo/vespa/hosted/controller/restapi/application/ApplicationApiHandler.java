@@ -803,7 +803,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         StringBuilder response = new StringBuilder();
         controller.applications().lockOrThrow(id, application -> {
             Change change = application.get().change();
-            if ( ! change.isPresent()) {
+            if ( ! change.isPresent() && ! change.isPinned()) {
                 response.append("No deployment in progress for " + application + " at this time");
                 return;
             }
@@ -1322,9 +1322,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         long projectId = Math.max(1, submitOptions.field("projectId").asLong());
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
-        if ( ! applicationPackage.deploymentSpec().athenzDomain().isPresent())
-            throw new IllegalArgumentException("Application must define an Athenz service in deployment.xml!");
-        controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant), applicationPackage, Optional.of(getUserPrincipal(request).getIdentity()));
+        controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
+                                                                         applicationPackage,
+                                                                         Optional.of(getUserPrincipal(request).getIdentity()));
 
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
                                                             tenant,
@@ -1332,7 +1332,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                             sourceRevision,
                                                             authorEmail,
                                                             projectId,
-                                                            applicationPackage.zippedContent(),
+                                                            applicationPackage,
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
     }
 

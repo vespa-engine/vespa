@@ -24,32 +24,52 @@ import java.util.stream.Collectors;
 
 /**
  * Authorizer for config server REST APIs. This contains the rules for all API paths where the authorization process
- * requires information from the node-repository to make a decision
+ * may require information from the node-repository to make a decision
  *
  * @author mpolden
  * @author bjorncs
  */
 public class Authorizer implements BiPredicate<NodePrincipal, URI> {
-
     private final NodeRepository nodeRepository;
     private final Set<String> whitelistedHostnames;
+    private final AthenzIdentity controllerIdentity;
+    private final AthenzIdentity configServerIdentity = new AthenzService("vespa.vespa", "configserver");
+    private final AthenzIdentity proxyIdentity = new AthenzService("vespa.vespa", "proxy");
+    private final AthenzIdentity tenantIdentity = new AthenzService("vespa.vespa", "tenant-host");
     private final Set<AthenzIdentity> trustedIdentities;
+    private final Set<AthenzIdentity> hostAdminIdentities;
 
     // TODO Remove whitelisted hostnames as these nodes should be included through 'trustedIdentities'
     public Authorizer(SystemName system, NodeRepository nodeRepository, Set<String> whitelistedHostnames) {
         this.nodeRepository = nodeRepository;
         this.whitelistedHostnames = whitelistedHostnames;
-        this.trustedIdentities = getTrustedIdentities(system);
+        controllerIdentity = system == SystemName.main
+                ? new AthenzService("vespa.vespa", "hosting")
+                : new AthenzService("vespa.vespa.cd", "hosting");
+        this.trustedIdentities = new HashSet<>(Arrays.asList(controllerIdentity, configServerIdentity));
+        this.hostAdminIdentities = new HashSet<>(Arrays.asList(controllerIdentity, configServerIdentity, proxyIdentity, tenantIdentity));
     }
 
     /** Returns whether principal is authorized to access given URI */
     @Override
     public boolean test(NodePrincipal principal, URI uri) {
-        // Trusted services can access everything
-        if (principal.getAthenzIdentityName().isPresent()
-                && trustedIdentities.contains(principal.getAthenzIdentityName().get())) {
-            return true;
+        if (principal.getAthenzIdentityName().isPresent()) {
+            // All host admins can retrieve flags data
+            if (uri.getPath().equals("/flags/v1/data") || uri.getPath().equals("/flags/v1/data/")) {
+                return hostAdminIdentities.contains(principal.getAthenzIdentityName().get());
+            }
+
+            // Only controller can access everything else in flags
+            if (uri.getPath().startsWith("/flags/v1/")) {
+                return principal.getAthenzIdentityName().get().equals(controllerIdentity);
+            }
+
+            // Trusted services can access everything
+            if (trustedIdentities.contains(principal.getAthenzIdentityName().get())) {
+                return true;
+            }
         }
+
         if (principal.getHostname().isPresent()) {
             String hostname = principal.getHostname().get();
             if (isAthenzProviderApi(uri)) {
@@ -106,18 +126,6 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
     /** Returns whether principal can access any of the given resources */
     private <T> boolean canAccessAny(List<T> resources, NodePrincipal principal, BiPredicate<T, NodePrincipal> predicate) {
         return !resources.isEmpty() && resources.stream().anyMatch(resource -> predicate.test(resource, principal));
-    }
-
-
-    private static Set<AthenzIdentity> getTrustedIdentities(SystemName system) {
-        Set<AthenzIdentity> trustedIdentities = new HashSet<>();
-        trustedIdentities.add(new AthenzService("vespa.vespa", "configserver"));
-        AthenzService controllerIdentity =
-                system == SystemName.main
-                        ? new AthenzService("vespa.vespa", "hosting")
-                        : new AthenzService("vespa.vespa.cd", "hosting");
-        trustedIdentities.add(controllerIdentity);
-        return trustedIdentities;
     }
 
     private Optional<Node> getNode(String hostname) {

@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/portal/http_request.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib;
 using namespace vespalib::portal;
@@ -115,6 +116,60 @@ TEST("require that header line must contain separator") {
     TEST_DO(verify_invalid_request("GET /my/path HTTP/1.1\r\n"
                                    "ok-header: ok-value\r\n"
                                    "missing separator\r\n"));
+}
+
+TEST("require that uri parameters can be parsed") {
+    auto req = make_request("GET /my/path?foo=bar&baz HTTP/1.1\r\n\r\n");
+    EXPECT_EQUAL(req.get_uri(), "/my/path?foo=bar&baz");
+    EXPECT_EQUAL(req.get_path(), "/my/path");
+    EXPECT_TRUE(req.has_param("foo"));
+    EXPECT_TRUE(!req.has_param("bar"));
+    EXPECT_TRUE(req.has_param("baz"));
+    EXPECT_EQUAL(req.get_param("foo"), "bar");
+    EXPECT_EQUAL(req.get_param("bar"), "");
+    EXPECT_EQUAL(req.get_param("baz"), "");
+}
+
+TEST("require that byte values in uri segments (path, key, value) are dequoted as expected") {
+    vespalib::string str = "0123456789aBcDeF";
+    for (size_t a = 0; a < 16; ++a) {
+        for (size_t b = 0; b < 16; ++b) {
+            vespalib::string expect = " foo ";
+            expect.push_back((a * 16) + b);
+            expect.push_back((a * 16) + b);
+            expect.append(" bar ");
+            vespalib::string input = vespalib::make_string("+foo+%%%c%c%%%c%c+bar+",
+                    str[a], str[b], str[a], str[b]);
+            vespalib::string uri = vespalib::make_string("%s?%s=%s&extra=yes",
+                    input.c_str(), input.c_str(), input.c_str());
+            auto req = make_request(vespalib::make_string("GET %s HTTP/1.1\r\n\r\n",
+                            uri.c_str()));
+            EXPECT_EQUAL(req.get_uri(), uri);
+            EXPECT_EQUAL(req.get_path(), expect);
+            EXPECT_TRUE(req.has_param(expect));
+            EXPECT_EQUAL(req.get_param(expect), expect);
+            EXPECT_TRUE(req.has_param("extra"));
+            EXPECT_EQUAL(req.get_param("extra"), "yes");
+        }
+    }
+}
+
+TEST("require that percent character becomes plain if not followed by exactly 2 hex digits") {
+    auto req = make_request("GET %/5%5:%@5%5G%`5%5g%5?% HTTP/1.1\r\n\r\n");
+    EXPECT_EQUAL(req.get_path(), "%/5%5:%@5%5G%`5%5g%5");
+    EXPECT_TRUE(req.has_param("%"));
+}
+
+TEST("require that last character of uri segments (path, key, value) can be quoted") {
+    auto req = make_request("GET /%41?%42=%43 HTTP/1.1\r\n\r\n");
+    EXPECT_EQUAL(req.get_path(), "/A");
+    EXPECT_EQUAL(req.get_param("B"), "C");
+}
+
+TEST("require that additional query and key/value separators are not special") {
+    auto req = make_request("GET /?" "?== HTTP/1.1\r\n\r\n");
+    EXPECT_EQUAL(req.get_path(), "/");
+    EXPECT_EQUAL(req.get_param("?"), "=");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

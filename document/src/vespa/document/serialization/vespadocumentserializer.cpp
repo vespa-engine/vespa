@@ -6,6 +6,7 @@
 #include "util.h"
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/boolfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/doublefieldvalue.h>
@@ -24,6 +25,7 @@
 #include <vespa/document/update/updates.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -183,6 +185,10 @@ void VespaDocumentSerializer::write(const MapFieldValue &value) {
         (*entry.first).accept(*this);
         (*entry.second).accept(*this);
     }
+}
+
+void VespaDocumentSerializer::write(const BoolFieldValue &value) {
+    _stream << value.getValue();
 }
 
 void VespaDocumentSerializer::write(const ByteFieldValue &value) {

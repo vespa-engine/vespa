@@ -14,7 +14,7 @@ public:
     AbsDistanceDFW(const vespalib::string & attrName);
 
     bool IsGenerated() const override { return true; }
-    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
+    void insertField(uint32_t docid, GetDocsumsState *state,
                      ResType type, vespalib::slime::Inserter &target) override;
 };
 
@@ -28,8 +28,7 @@ public:
     PositionsDFW(const vespalib::string & attrName);
 
     bool IsGenerated() const override { return true; }
-    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
-                     ResType type, vespalib::slime::Inserter &target) override ;
+    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) override;
 };
 
 PositionsDFW::UP createPositionsDFW(const char *attribute_name, IAttributeManager *index_man);

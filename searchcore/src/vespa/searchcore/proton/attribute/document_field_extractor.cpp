@@ -3,6 +3,7 @@
 #include "document_field_extractor.h"
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/boolfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/doublefieldvalue.h>
@@ -17,6 +18,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 using document::FieldValue;
+using document::BoolFieldValue;
 using document::ByteFieldValue;
 using document::ShortFieldValue;
 using document::IntFieldValue;
@@ -45,6 +47,7 @@ class SetUndefinedValueVisitor : public FieldValueVisitor
 {
     void visit(document::AnnotationReferenceFieldValue &) override { }
     void visit(ArrayFieldValue &) override { }
+    void visit(BoolFieldValue &) override { }
     void visit(ByteFieldValue &value) override { value = getUndefined<int8_t>(); }
     void visit(Document &) override { }
     void visit(DoubleFieldValue &value) override { value = getUndefined<double>(); }
@@ -65,6 +68,7 @@ class SetUndefinedValueVisitor : public FieldValueVisitor
 SetUndefinedValueVisitor setUndefinedValueVisitor;
 
 const ArrayDataType arrayTypeByte(*DataType::BYTE);
+const ArrayDataType arrayTypeBool(*DataType::BOOL);
 const ArrayDataType arrayTypeShort(*DataType::SHORT);
 const ArrayDataType arrayTypeInt(*DataType::INT);
 const ArrayDataType arrayTypeLong(*DataType::LONG);
@@ -77,6 +81,8 @@ getArrayType(const DataType &fieldType)
 {
     switch (fieldType.getId()) {
     case DataType::Type::T_BYTE:
+        return &arrayTypeByte;
+    case DataType::Type::T_BOOL:
         return &arrayTypeByte;
     case DataType::Type::T_SHORT:
         return &arrayTypeShort;

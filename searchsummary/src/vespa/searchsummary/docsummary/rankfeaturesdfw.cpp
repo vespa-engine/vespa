@@ -20,7 +20,7 @@ RankFeaturesDFW::init(IDocsumEnvironment * env)
 }
 
 void
-RankFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *state,
+RankFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state,
                              ResType type, vespalib::slime::Inserter &target)
 {
     if (state->_rankFeatures.get() == nullptr) {

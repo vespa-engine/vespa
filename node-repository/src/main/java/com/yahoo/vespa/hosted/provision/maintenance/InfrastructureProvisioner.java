@@ -108,9 +108,12 @@ public class InfrastructureProvisioner extends Maintainer {
     }
 
     private void removeApplication(ApplicationId applicationId) {
-        NestedTransaction nestedTransaction = new NestedTransaction();
-        provisioner.remove(nestedTransaction, applicationId);
-        nestedTransaction.commit();
-        duperModel.infraApplicationRemoved(applicationId);
+        // Use the DuperModel as source-of-truth on whether it has also been activated (to avoid periodic removals)
+        if (duperModel.infraApplicationIsActive(applicationId)) {
+            NestedTransaction nestedTransaction = new NestedTransaction();
+            provisioner.remove(nestedTransaction, applicationId);
+            nestedTransaction.commit();
+            duperModel.infraApplicationRemoved(applicationId);
+        }
     }
 }

@@ -10,7 +10,7 @@ namespace search::docsummary {
 
 class IDocsumEnvironment;
 
-class FeaturesDFW : public IDocsumFieldWriter
+class FeaturesDFW : public IDocsumFW
 {
 protected:
     void featureDump(vespalib::JSONStringer & json, vespalib::stringref name, double feature);
@@ -29,7 +29,7 @@ public:
     ~SummaryFeaturesDFW() override;
     void init(IDocsumEnvironment * env);
     bool IsGenerated() const override { return true; }
-    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
+    void insertField(uint32_t docid, GetDocsumsState *state,
                      ResType type, vespalib::slime::Inserter &target) override;
 };
 

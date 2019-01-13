@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.flags.json.Rule;
@@ -21,8 +20,6 @@ import java.util.Optional;
  * @author hakonhall
  */
 public class FileFlagSource implements FlagSource {
-    private static final ObjectMapper mapper = new ObjectMapper();
-
     static final String FLAGS_DIRECTORY = "/etc/vespa/flags";
 
     private final Path flagsDirectory;

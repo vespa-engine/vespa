@@ -9,6 +9,7 @@
 #include <vespa/document/annotation/spantreevisitor.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/boolfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/doublefieldvalue.h>
@@ -42,6 +43,7 @@ using document::Annotation;
 using document::AnnotationReferenceFieldValue;
 using document::ArrayDataType;
 using document::ArrayFieldValue;
+using document::BoolFieldValue;
 using document::ByteFieldValue;
 using document::DataType;
 using document::Document;
@@ -229,7 +231,7 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
     FieldValue::UP       _field_value;
     FieldValueConverter &_structuredFieldConverter;
 
-    virtual void visit(const ArrayFieldValue &value) override {
+    void visit(const ArrayFieldValue &value) override {
         _field_value = _structuredFieldConverter.convert(value);
     }
 
@@ -237,17 +239,18 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
     void visitPrimitive(const T &t) {
         _field_value.reset(t.clone());
     }
-    virtual void visit(const IntFieldValue &value) override { visitPrimitive(value); }
-    virtual void visit(const LongFieldValue &value) override { visitPrimitive(value); }
-    virtual void visit(const ShortFieldValue &value) override { visitPrimitive(value); }
-    virtual void visit(const ByteFieldValue &value) override {
+    void visit(const IntFieldValue &value) override { visitPrimitive(value); }
+    void visit(const LongFieldValue &value) override { visitPrimitive(value); }
+    void visit(const ShortFieldValue &value) override { visitPrimitive(value); }
+    void visit(const BoolFieldValue &value) override { visitPrimitive(value); }
+    void visit(const ByteFieldValue &value) override {
         int8_t signedValue = value.getAsByte();
         _field_value.reset(new ShortFieldValue(signedValue));
     }
-    virtual void visit(const DoubleFieldValue &value) override { visitPrimitive(value); }
-    virtual void visit(const FloatFieldValue &value) override { visitPrimitive(value); }
+    void visit(const DoubleFieldValue &value) override { visitPrimitive(value); }
+    void visit(const FloatFieldValue &value) override { visitPrimitive(value); }
 
-    virtual void visit(const StringFieldValue &value) override {
+    void visit(const StringFieldValue &value) override {
         if (_tokenize) {
             SummaryHandler handler(value.getValue(), _str);
             handleIndexingTerms(handler, value);
@@ -256,33 +259,29 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
         }
     }
 
-    virtual void visit(const AnnotationReferenceFieldValue & v ) override {
+    void visit(const AnnotationReferenceFieldValue & v ) override {
         _field_value = _structuredFieldConverter.convert(v);
     }
-    virtual void visit(const Document & v) override {
+    void visit(const Document & v) override {
         _field_value = _structuredFieldConverter.convert(v);
     }
 
-    virtual void
-    visit(const PredicateFieldValue &value) override
-    {
+    void visit(const PredicateFieldValue &value) override {
         _str << value.toString();
     }
 
-    virtual void
-    visit(const RawFieldValue &value) override
-    {
+    void visit(const RawFieldValue &value) override {
         visitPrimitive(value);
     }
 
-    virtual void visit(const MapFieldValue & v) override {
+    void visit(const MapFieldValue & v) override {
         _field_value = _structuredFieldConverter.convert(v);
     }
 
-    virtual void visit(const StructFieldValue &value) override {
+    void visit(const StructFieldValue &value) override {
         if (*value.getDataType() == *SearchDataType::URI) {
             FieldValue::UP uriAllValue = value.getValue("all");
-            if (uriAllValue.get() != NULL &&
+            if (uriAllValue &&
                 uriAllValue->inherits(IDENTIFIABLE_CLASSID(StringFieldValue)))
             {
                 uriAllValue->accept(*this);
@@ -292,11 +291,11 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
         _field_value = _structuredFieldConverter.convert(value);
     }
 
-    virtual void visit(const WeightedSetFieldValue &value) override {
+    void visit(const WeightedSetFieldValue &value) override {
         _field_value = _structuredFieldConverter.convert(value);
     }
 
-    virtual void visit(const TensorFieldValue &value) override {
+    void visit(const TensorFieldValue &value) override {
         visitPrimitive(value);
     }
 
@@ -315,7 +314,7 @@ public:
         if (_field_value.get()) {
             return std::move(_field_value);
         }
-        return FieldValue::UP(new StringFieldValue(_str.str()));
+        return std::make_unique<StringFieldValue>(_str.str());
     }
 };
 
@@ -323,7 +322,7 @@ SummaryFieldValueConverter::SummaryFieldValueConverter(bool tokenize, FieldValue
     : _str(), _tokenize(tokenize),
       _structuredFieldConverter(subConverter)
 {}
-SummaryFieldValueConverter::~SummaryFieldValueConverter() {}
+SummaryFieldValueConverter::~SummaryFieldValueConverter() = default;
 
 using namespace vespalib::slime::convenience;
 
@@ -331,14 +330,14 @@ class SlimeFiller : public ConstFieldValueVisitor {
     Inserter    &_inserter;
     bool         _tokenize;
 
-    virtual void visit(const AnnotationReferenceFieldValue & v ) override {
+    void visit(const AnnotationReferenceFieldValue & v ) override {
         (void)v;
         Cursor &c = _inserter.insertObject();
         Memory key("error");
         Memory val("cannot convert from annotation reference field");
         c.setString(key, val);
     }
-    virtual void visit(const Document & v) override {
+    void visit(const Document & v) override {
         (void)v;
         Cursor &c = _inserter.insertObject();
         Memory key("error");
@@ -346,7 +345,7 @@ class SlimeFiller : public ConstFieldValueVisitor {
         c.setString(key, val);
     }
 
-    virtual void visit(const MapFieldValue & v) override {
+    void visit(const MapFieldValue & v) override {
         Cursor &a = _inserter.insertArray();
         Symbol keysym = a.resolve("key");
         Symbol valsym = a.resolve("value");
@@ -364,7 +363,7 @@ class SlimeFiller : public ConstFieldValueVisitor {
         }
     }
 
-    virtual void visit(const ArrayFieldValue &value) override {
+    void visit(const ArrayFieldValue &value) override {
         Cursor &a = _inserter.insertArray();
         if (value.size() > 0) {
             ArrayInserter ai(a);
@@ -375,7 +374,7 @@ class SlimeFiller : public ConstFieldValueVisitor {
         }
     }
 
-    virtual void visit(const StringFieldValue &value) override {
+    void visit(const StringFieldValue &value) override {
         if (_tokenize) {
             asciistream tmp;
             SummaryHandler handler(value.getValue(), tmp);
@@ -386,48 +385,48 @@ class SlimeFiller : public ConstFieldValueVisitor {
         }
     }
 
-    virtual void visit(const IntFieldValue &value) override {
+    void visit(const IntFieldValue &value) override {
         int32_t v = value.getValue();
         _inserter.insertLong(v);
     }
-    virtual void visit(const LongFieldValue &value) override {
+    void visit(const LongFieldValue &value) override {
         int64_t v = value.getValue();
         _inserter.insertLong(v);
     }
-    virtual void visit(const ShortFieldValue &value) override {
+    void visit(const ShortFieldValue &value) override {
         int16_t v = value.getValue();
         _inserter.insertLong(v);
     }
-    virtual void visit(const ByteFieldValue &value) override {
+    void visit(const ByteFieldValue &value) override {
         int8_t v = value.getAsByte();
         _inserter.insertLong(v);
     }
-    virtual void visit(const DoubleFieldValue &value) override {
+    void visit(const BoolFieldValue &value) override {
+        bool v = value.getValue();
+        _inserter.insertBool(v);
+    }
+    void visit(const DoubleFieldValue &value) override {
         double v = value.getValue();
         _inserter.insertDouble(v);
     }
-    virtual void visit(const FloatFieldValue &value) override {
+    void visit(const FloatFieldValue &value) override {
         float v = value.getValue();
         _inserter.insertDouble(v);
     }
 
-    virtual void
-    visit(const PredicateFieldValue &value) override
-    {
+    void visit(const PredicateFieldValue &value) override {
         vespalib::slime::inject(value.getSlime().get(), _inserter);
     }
 
-    virtual void
-    visit(const RawFieldValue &value) override
-    {
+    void visit(const RawFieldValue &value) override {
         std::pair<const char *, size_t> buf = value.getAsRaw();
         _inserter.insertData(Memory(buf.first, buf.second));
     }
 
-    virtual void visit(const StructFieldValue &value) override {
+    void visit(const StructFieldValue &value) override {
         if (*value.getDataType() == *SearchDataType::URI) {
             FieldValue::UP uriAllValue = value.getValue("all");
-            if (uriAllValue.get() != NULL &&
+            if (uriAllValue &&
                 uriAllValue->inherits(IDENTIFIABLE_CLASSID(StringFieldValue)))
             {
                 uriAllValue->accept(*this);
@@ -444,7 +443,7 @@ class SlimeFiller : public ConstFieldValueVisitor {
         }
     }
 
-    virtual void visit(const WeightedSetFieldValue &value) override {
+    void visit(const WeightedSetFieldValue &value) override {
         Cursor &a = _inserter.insertArray();
         if (value.size() > 0) {
             Symbol isym = a.resolve("item");
@@ -460,7 +459,7 @@ class SlimeFiller : public ConstFieldValueVisitor {
         }
     }
 
-    virtual void visit(const TensorFieldValue &value) override {
+    void visit(const TensorFieldValue &value) override {
         const auto &tensor = value.getAsTensorPtr();
         vespalib::nbostream s;
         if (tensor) {
@@ -495,7 +494,7 @@ public:
         search::RawBuf rbuf(4096);
         search::SlimeOutputRawBufAdapter adapter(rbuf);
         vespalib::slime::BinaryFormat::encode(slime, adapter);
-        return FieldValue::UP(new RawFieldValue(rbuf.GetDrainPos(), rbuf.GetUsedLen()));
+        return std::make_unique<RawFieldValue>(rbuf.GetDrainPos(), rbuf.GetUsedLen());
     }
 };
 

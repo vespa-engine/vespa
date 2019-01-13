@@ -179,7 +179,7 @@ public class Search implements Serializable, ImmutableSearch {
         return importedFields
                 .map(fields -> fields.fields().values().stream())
                 .orElse(Stream.empty())
-                .map(ImmutableImportedSDField::new);
+                .map(field -> field.asImmutableSDField());
     }
 
     @Override

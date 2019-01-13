@@ -2,11 +2,13 @@
 package com.yahoo.document.serialization;
 
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.vespa.objects.FieldBase;
 
 /**
  * Class used for serializing documents on the current head document format.
@@ -69,5 +71,10 @@ public class VespaDocumentSerializerHead extends VespaDocumentSerializer42 {
     public void write(AddFieldPathUpdate update) {
         write((FieldPathUpdate)update);
         update.getNewValues().serialize(this);
+    }
+
+    @Override
+    public void write(FieldBase field, ByteFieldValue value) {
+        buf.put(value.getByte());
     }
 }

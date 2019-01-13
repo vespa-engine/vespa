@@ -48,6 +48,34 @@ Portal::GetRequest::get_uri() const
     return _conn->get_request().get_uri();
 }
 
+const vespalib::string &
+Portal::GetRequest::get_path() const
+{
+    assert(active());
+    return _conn->get_request().get_path();
+}
+
+bool
+Portal::GetRequest::has_param(const vespalib::string &name) const
+{
+    assert(active());
+    return _conn->get_request().has_param(name);
+}
+
+const vespalib::string &
+Portal::GetRequest::get_param(const vespalib::string &name) const
+{
+    assert(active());
+    return _conn->get_request().get_param(name);
+}
+
+std::map<vespalib::string, vespalib::string>
+Portal::GetRequest::export_params() const
+{
+    assert(active());
+    return _conn->get_request().export_params();
+}
+
 void
 Portal::GetRequest::respond_with_content(const vespalib::string &content_type,
                                  const vespalib::string &content)
@@ -131,7 +159,7 @@ Portal::handle_http(portal::HttpConnection *conn)
             conn->respond_with_error(501, "Not Implemented");
         } else {
             GetHandler *get_handler = nullptr;
-            auto guard = lookup_get_handler(conn->get_request().get_uri(), get_handler);
+            auto guard = lookup_get_handler(conn->get_request().get_path(), get_handler);
             if (guard.valid()) {
                 assert(get_handler != nullptr);
                 conn->resolve_host(_my_host);

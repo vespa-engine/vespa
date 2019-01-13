@@ -9,9 +9,11 @@ import com.yahoo.prelude.query.Item;
  * @author Tony Vaagenes
  */
 public interface Discloser {
+
     void addProperty(String key, Object value);
 
     //A given item should either call setValue or addChild, not both.
     void setValue(Object value);
     void addChild(Item item);
+
 }

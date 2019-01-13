@@ -17,6 +17,10 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
 
     private final Map<LoadBalancerId, LoadBalancer> loadBalancers = new HashMap<>();
 
+    public Map<LoadBalancerId, LoadBalancer> loadBalancers() {
+        return Collections.unmodifiableMap(loadBalancers);
+    }
+
     @Override
     public Protocol protocol() {
         return Protocol.ipv4;

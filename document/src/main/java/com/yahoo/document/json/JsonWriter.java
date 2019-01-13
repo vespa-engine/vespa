@@ -9,6 +9,7 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.annotation.AnnotationReference;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
@@ -137,6 +138,11 @@ public class JsonWriter implements DocumentWriter {
     @Override
     public void write(FieldBase field, ByteFieldValue value) {
         serializeByteField(generator, field, value);
+    }
+
+    @Override
+    public void write(FieldBase field, BoolFieldValue value) {
+        serializeBoolField(generator, field, value);
     }
 
     @Override

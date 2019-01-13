@@ -8,6 +8,7 @@ import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
+import com.yahoo.searchdefinition.document.ImportedSimpleField;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
@@ -53,8 +54,8 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
         Search targetSearch = new Search("target_doc", MockApplicationPackage.createEmpty());
         SDField targetField = new SDField("target_field", DataType.INT);
         DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSearch);
-        ImportedField importedField = new ImportedField(fieldName, documentReference, targetField);
-        return new ImportedFields(Collections.singletonMap(fieldName, importedField), Collections.emptyMap());
+        ImportedField importedField = new ImportedSimpleField(fieldName, documentReference, targetField);
+        return new ImportedFields(Collections.singletonMap(fieldName, importedField));
     }
 
     private static DocumentSummary createDocumentSummary(String fieldName) {

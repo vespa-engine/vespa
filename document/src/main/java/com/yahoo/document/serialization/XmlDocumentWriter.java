@@ -7,6 +7,7 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.annotation.AnnotationReference;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
@@ -133,6 +134,11 @@ public final class XmlDocumentWriter implements DocumentWriter {
 
     @Override
     public void write(FieldBase field, ByteFieldValue value) {
+        singleValueTag(field, value);
+    }
+
+    @Override
+    public void write(FieldBase field, BoolFieldValue value) {
         singleValueTag(field, value);
     }
 

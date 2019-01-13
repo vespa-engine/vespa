@@ -7,7 +7,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -65,9 +64,9 @@ public class StorageMaintainer {
         this.archiveContainerStoragePath = archiveContainerStoragePath;
     }
 
-    public void writeMetricsConfig(NodeAgentContext context, NodeSpec node) {
+    public void writeMetricsConfig(NodeAgentContext context) {
         List<SecretAgentCheckConfig> configs = new ArrayList<>();
-        Map<String, Object> tags = generateTags(context, node);
+        Map<String, Object> tags = generateTags(context);
 
         // host-life
         Path hostLifeCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_host_life");
@@ -154,26 +153,26 @@ public class StorageMaintainer {
         dockerOperations.executeCommandInContainerAsRoot(context, "service", "yamas-agent", "restart");
     }
 
-    private Map<String, Object> generateTags(NodeAgentContext context, NodeSpec node) {
+    private Map<String, Object> generateTags(NodeAgentContext context) {
         Map<String, String> tags = new LinkedHashMap<>();
         tags.put("namespace", "Vespa");
-        tags.put("role", nodeTypeToRole(node.getNodeType()));
+        tags.put("role", nodeTypeToRole(context.node().getNodeType()));
         tags.put("zone", String.format("%s.%s", context.zoneId().environment().value(), context.zoneId().regionName().value()));
-        node.getVespaVersion().ifPresent(version -> tags.put("vespaVersion", version));
+        context.node().getVespaVersion().ifPresent(version -> tags.put("vespaVersion", version));
 
         if (! isConfigserverLike(context.nodeType())) {
-            tags.put("flavor", node.getFlavor());
-            tags.put("canonicalFlavor", node.getCanonicalFlavor());
-            tags.put("state", node.getState().toString());
-            node.getParentHostname().ifPresent(parent -> tags.put("parentHostname", parent));
-            node.getOwner().ifPresent(owner -> {
+            tags.put("flavor", context.node().getFlavor());
+            tags.put("canonicalFlavor", context.node().getCanonicalFlavor());
+            tags.put("state", context.node().getState().toString());
+            context.node().getParentHostname().ifPresent(parent -> tags.put("parentHostname", parent));
+            context.node().getOwner().ifPresent(owner -> {
                 tags.put("tenantName", owner.getTenant());
                 tags.put("app", owner.getApplication() + "." + owner.getInstance());
                 tags.put("applicationName", owner.getApplication());
                 tags.put("instanceName", owner.getInstance());
                 tags.put("applicationId", owner.getTenant() + "." + owner.getApplication() + "." + owner.getInstance());
             });
-            node.getMembership().ifPresent(membership -> {
+            context.node().getMembership().ifPresent(membership -> {
                 tags.put("clustertype", membership.getClusterType());
                 tags.put("clusterid", membership.getClusterId());
             });
@@ -250,26 +249,30 @@ public class StorageMaintainer {
         FileFinder.directories(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("var/db/vespa/filedistribution")))
                 .match(olderThan(Duration.ofDays(31)))
                 .deleteRecursively();
+
+        FileFinder.directories(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("var/db/vespa/download")))
+                .match(olderThan(Duration.ofDays(31)))
+                .deleteRecursively();
     }
 
     /** Checks if container has any new coredumps, reports and archives them if so */
-    public void handleCoreDumpsForContainer(NodeAgentContext context, NodeSpec node, Optional<Container> container) {
-        final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(context, node, container);
+    public void handleCoreDumpsForContainer(NodeAgentContext context, Optional<Container> container) {
+        final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(context, container);
         coredumpHandler.converge(context, nodeAttributes);
     }
 
-    private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, NodeSpec node, Optional<Container> container) {
+    private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, Optional<Container> container) {
         Map<String, String> attributes = new HashMap<>();
-        attributes.put("hostname", node.getHostname());
+        attributes.put("hostname", context.node().getHostname());
         attributes.put("region", context.zoneId().regionName().value());
         attributes.put("environment", context.zoneId().environment().value());
-        attributes.put("flavor", node.getFlavor());
+        attributes.put("flavor", context.node().getFlavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
 
         container.map(c -> c.image).ifPresent(image -> attributes.put("docker_image", image.asString()));
-        node.getParentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
-        node.getVespaVersion().ifPresent(version -> attributes.put("vespa_version", version));
-        node.getOwner().ifPresent(owner -> {
+        context.node().getParentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
+        context.node().getVespaVersion().ifPresent(version -> attributes.put("vespa_version", version));
+        context.node().getOwner().ifPresent(owner -> {
             attributes.put("tenant", owner.getTenant());
             attributes.put("application", owner.getApplication());
             attributes.put("instance", owner.getInstance());

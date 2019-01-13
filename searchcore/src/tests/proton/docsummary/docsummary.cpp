@@ -106,7 +106,7 @@ public:
                TuneFileSummary(),
                _fileHeaderContext,
                _noTlSyncer,
-               NULL),
+               nullptr),
           _serialNum(1)
     {
     }
@@ -262,7 +262,7 @@ public:
         op.setPrevDbDocumentId(prevDbdId);
         _ddb->getFeedHandler().storeOperation(op, std::make_shared<search::IgnoreCallback>());
         SearchView *sv(dynamic_cast<SearchView *>(_ddb->getReadySubDB()->getSearchView().get()));
-        if (sv != NULL) {
+        if (sv != nullptr) {
             // cf. FeedView::putAttributes()
             DocIdLimit &docIdLimit = sv->getDocIdLimit();
             if (docIdLimit.get() <= lid)
@@ -278,14 +278,11 @@ private:
     ResultConfig          _resultCfg;
     std::set<vespalib::string> _markupFields;
 
-    const ResultConfig &getResultConfig() const
-    {
+    const ResultConfig &getResultConfig() const{
         return _resultCfg;
     }
 
-    const std::set<vespalib::string> &
-    getMarkupFields() const
-    {
+    const std::set<vespalib::string> &getMarkupFields() const{
         return _markupFields;
     }
 
@@ -295,31 +292,12 @@ private:
     GeneralResultPtr
     getResult(const DocsumReply & reply, uint32_t id, uint32_t resultClassID);
 
-    bool
-    assertString(const std::string & exp,
-                 const std::string & fieldName,
-                 DocumentStoreAdapter &dsa,
-                 uint32_t id);
+    bool assertString(const std::string & exp, const std::string & fieldName, DocumentStoreAdapter &dsa, uint32_t id);
 
-    bool
-    assertString(const std::string &exp,
-                 const std::string &fieldName,
-                 const DocsumReply &reply,
-                 uint32_t id,
-                 uint32_t resultClassID);
+    void assertTensor(const Tensor::UP &exp, const std::string &fieldName, const DocsumReply &reply,
+                      uint32_t id, uint32_t resultClassID);
 
-    void
-    assertTensor(const Tensor::UP &exp,
-                 const std::string &fieldName,
-                 const DocsumReply &reply,
-                 uint32_t id,
-                 uint32_t resultClassID);
-
-    bool
-    assertSlime(const std::string &exp,
-                const DocsumReply &reply,
-                uint32_t id,
-                bool relaxed = false);
+    bool assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id,bool relaxed = false);
 
     void requireThatAdapterHandlesAllFieldTypes();
     void requireThatAdapterHandlesMultipleDocuments();
@@ -346,12 +324,10 @@ GeneralResultPtr
 Test::getResult(DocumentStoreAdapter & dsa, uint32_t docId)
 {
     DocsumStoreValue docsum = dsa.getMappedDocsum(docId);
-    ASSERT_TRUE(docsum.pt() != NULL);
-    GeneralResultPtr retval(new GeneralResult(dsa.getResultClass(),
-                                              0, 0, 0));
+    ASSERT_TRUE(docsum.pt() != nullptr);
+    auto retval = std::make_unique<GeneralResult>(dsa.getResultClass());
     // skip the 4 byte class id
-    ASSERT_TRUE(retval->unpack(docsum.pt() + 4,
-                               docsum.len() - 4) == 0);
+    ASSERT_TRUE(retval->unpack(docsum.pt() + 4, docsum.len() - 4));
     return retval;
 }
 
@@ -359,46 +335,26 @@ Test::getResult(DocumentStoreAdapter & dsa, uint32_t docId)
 GeneralResultPtr
 Test::getResult(const DocsumReply & reply, uint32_t id, uint32_t resultClassID)
 {
-    GeneralResultPtr retval(new GeneralResult(getResultConfig().
-                                              LookupResultClass(resultClassID),
-                                              0, 0, 0));
+    auto retval = std::make_unique<GeneralResult>(getResultConfig().LookupResultClass(resultClassID));
     const DocsumReply::Docsum & docsum = reply.docsums[id];
     // skip the 4 byte class id
-    ASSERT_EQUAL(0, retval->unpack(docsum.data.c_str() + 4, docsum.data.size() - 4));
+    ASSERT_TRUE(retval->unpack(docsum.data.c_str() + 4, docsum.data.size() - 4));
     return retval;
 }
 
 
 bool
 Test::assertString(const std::string & exp, const std::string & fieldName,
-                   DocumentStoreAdapter &dsa,
-                   uint32_t id)
+                   DocumentStoreAdapter &dsa, uint32_t id)
 {
     GeneralResultPtr res = getResult(dsa, id);
-    return EXPECT_EQUAL(exp, std::string(res->GetEntry(fieldName.c_str())->
-                                       _stringval,
-                                       res->GetEntry(fieldName.c_str())->
-                                       _stringlen));
+    return EXPECT_EQUAL(exp, std::string(res->GetEntry(fieldName.c_str())->_stringval,
+                                         res->GetEntry(fieldName.c_str())->_stringlen));
 }
-
-
-bool
-Test::assertString(const std::string & exp, const std::string & fieldName,
-                   const DocsumReply & reply,
-                   uint32_t id, uint32_t resultClassID)
-{
-    GeneralResultPtr res = getResult(reply, id, resultClassID);
-    return EXPECT_EQUAL(exp, std::string(res->GetEntry(fieldName.c_str())->
-                                       _stringval,
-                                       res->GetEntry(fieldName.c_str())->
-                                       _stringlen));
-}
-
 
 void
 Test::assertTensor(const Tensor::UP & exp, const std::string & fieldName,
-                   const DocsumReply & reply,
-                   uint32_t id, uint32_t)
+                   const DocsumReply & reply, uint32_t id, uint32_t)
 {
     const DocsumReply::Docsum & docsum = reply.docsums[id];
     uint32_t classId;
@@ -408,8 +364,7 @@ Test::assertTensor(const Tensor::UP & exp, const std::string & fieldName,
     vespalib::Slime slime;
     vespalib::Memory serialized(docsum.data.c_str() + sizeof(classId),
                                 docsum.data.size() - sizeof(classId));
-    size_t decodeRes = BinaryFormat::decode(serialized,
-                                                             slime);
+    size_t decodeRes = BinaryFormat::decode(serialized, slime);
     ASSERT_EQUAL(decodeRes, serialized.size);
 
     EXPECT_EQUAL(exp.get() != nullptr, slime.get()[fieldName].valid());
@@ -547,7 +502,7 @@ Test::requireThatAdapterHandlesMultipleDocuments()
     }
     { // doc 2
         DocsumStoreValue docsum = dsa.getMappedDocsum(2);
-        EXPECT_TRUE(docsum.pt() == NULL);
+        EXPECT_TRUE(docsum.pt() == nullptr);
     }
     { // doc 0 (again)
         GeneralResultPtr res = getResult(dsa, 0);
@@ -640,7 +595,7 @@ Test::requireThatDocsumRequestIsProcessed()
     EXPECT_TRUE(assertSlime("{a:40}", *rep, 1, false));
     EXPECT_EQUAL(search::endDocId, rep->docsums[2].docid);
     EXPECT_EQUAL(gid9, rep->docsums[2].gid);
-    EXPECT_TRUE(rep->docsums[2].data.get() == NULL);
+    EXPECT_TRUE(rep->docsums[2].data.get() == nullptr);
 }
 
 
@@ -874,11 +829,11 @@ Test::requireThatSummaryAdapterHandlesPutAndRemove()
     dc._sa->put(1, 1, *exp);
     IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, *bc._repo);
-    EXPECT_TRUE(act.get() != NULL);
+    EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQUAL(exp->getType(), act->getType());
     EXPECT_EQUAL("foo", act->getValue("f1")->toString());
     dc._sa->remove(2, 1);
-    EXPECT_TRUE(store.read(1, *bc._repo).get() == NULL);
+    EXPECT_TRUE(store.read(1, *bc._repo).get() == nullptr);
 }
 
 
@@ -928,7 +883,7 @@ Test::requireThatAnnotationsAreUsed()
 
     IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, *bc._repo);
-    EXPECT_TRUE(act.get() != NULL);
+    EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQUAL(exp->getType(), act->getType());
     EXPECT_EQUAL("foo bar", act->getValue("g")->getAsString());
     EXPECT_EQUAL("foo bar", act->getValue("dynamicstring")->getAsString());
@@ -1082,7 +1037,7 @@ Test::requireThatUrisAreUsed()
     IDocumentStore & store =
         dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, *bc._repo);
-    EXPECT_TRUE(act.get() != NULL);
+    EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQUAL(exp->getType(), act->getType());
 
     DocumentStoreAdapter dsa(store, *bc._repo, getResultConfig(), "class0",
@@ -1140,7 +1095,7 @@ Test::requireThatPositionsAreUsed()
     IDocumentStore & store =
         dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, *bc._repo);
-    EXPECT_TRUE(act.get() != NULL);
+    EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQUAL(exp->getType(), act->getType());
 
     DocsumRequest req;
@@ -1219,7 +1174,7 @@ Test::requireThatRawFieldsWorks()
 
     IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, *bc._repo);
-    EXPECT_TRUE(act.get() != NULL);
+    EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQUAL(exp->getType(), act->getType());
 
     DocumentStoreAdapter dsa(store, *bc._repo, getResultConfig(), "class0",

@@ -12,6 +12,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetireIPv4OnlyNodes;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicyList;
@@ -50,6 +51,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final NodeRetirer nodeRetirer;
     private final MetricsReporter metricsReporter;
     private final InfrastructureProvisioner infrastructureProvisioner;
+    private final LoadBalancerExpirer loadBalancerExpirer;
 
     private final JobControl jobControl;
     private final InfrastructureVersions infrastructureVersions;
@@ -59,15 +61,17 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig,
-                                     DuperModelInfraApi duperModelInfraApi) {
+                                     DuperModelInfraApi duperModelInfraApi,
+                                     LoadBalancerService loadBalancerService) {
         this(nodeRepository, deployer, provisioner, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
-                orchestrator, metric, configserverConfig, duperModelInfraApi);
+                orchestrator, metric, configserverConfig, duperModelInfraApi, loadBalancerService);
     }
 
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Provisioner provisioner,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
-                                     ConfigserverConfig configserverConfig, DuperModelInfraApi duperModelInfraApi) {
+                                     ConfigserverConfig configserverConfig, DuperModelInfraApi duperModelInfraApi,
+                                     LoadBalancerService loadBalancerService) {
         DefaultTimes defaults = new DefaultTimes(zone);
         jobControl = new JobControl(nodeRepository.database());
         infrastructureVersions = new InfrastructureVersions(nodeRepository.database());
@@ -84,6 +88,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval), jobControl);
         metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
         infrastructureProvisioner = new InfrastructureProvisioner(provisioner, nodeRepository, infrastructureVersions, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval), jobControl, duperModelInfraApi);
+        loadBalancerExpirer = new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expiry").orElse(defaults.loadBalancerExpiry), jobControl, loadBalancerService);
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintain();
@@ -109,6 +114,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         provisionedExpirer.deconstruct();
         metricsReporter.deconstruct();
         infrastructureProvisioner.deconstruct();
+        loadBalancerExpirer.deconstruct();
     }
 
     public JobControl jobControl() { return jobControl; }
@@ -156,6 +162,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration metricsInterval;
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
+        private final Duration loadBalancerExpiry;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -171,6 +178,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             metricsInterval = Duration.ofMinutes(1);
             infrastructureProvisionInterval = Duration.ofMinutes(3);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
+            loadBalancerExpiry = Duration.ofHours(1);
 
             if (zone.environment().equals(Environment.prod) && zone.system() != SystemName.cd) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy

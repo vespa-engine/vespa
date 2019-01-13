@@ -15,6 +15,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 
@@ -38,6 +40,7 @@ public class ApplicationMojo extends AbstractMojo {
         File applicationPackage = new File(project.getBasedir(), sourceDir);
         File applicationDestination = new File(project.getBasedir(), destinationDir);
         copyApplicationPackage(applicationPackage, applicationDestination);
+        addBuildMetaData(applicationDestination);
 
         File componentsDir = createComponentsDir(applicationDestination);
         copyModuleBundles(project.getBasedir(), componentsDir);
@@ -47,6 +50,24 @@ public class ApplicationMojo extends AbstractMojo {
             Compression.zipDirectory(applicationDestination);
         } catch (Exception e) {
             throw new MojoExecutionException("Failed zipping application.", e);
+        }
+    }
+
+    /** Writes meta data about this package if the destination directory exists, and the "vespaversion" property is set. */
+    private void addBuildMetaData(File applicationDestination) throws MojoExecutionException {
+        String compileVersion = project.getProperties().getProperty("vespaversion");
+        if ( ! applicationDestination.exists() || compileVersion == null)
+            return;
+
+        String metaData = String.format("{\"compileVersion\": \"%s\",\n \"buildTime\": %d}",
+                                        compileVersion,
+                                        System.currentTimeMillis());
+        try {
+            Files.write(applicationDestination.toPath().resolve("build-meta.json"),
+                        metaData.getBytes(StandardCharsets.UTF_8));
+        }
+        catch (IOException e) {
+            throw new MojoExecutionException("Failed writing compile version and build time.", e);
         }
     }
 

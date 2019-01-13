@@ -9,31 +9,34 @@ package com.yahoo.vespa.hosted.provision.testutils;
  */
 public class ContainerConfig {
 
-        public static String servicesXmlV2(int port) {
-                return "<jdisc version='1.0'>\n" +
-                       "  <config name=\"container.handler.threadpool\">\n" +
-                       "    <maxthreads>10</maxthreads>\n" +
-                       "  </config>  \n" +
-                       "  <component id='com.yahoo.test.ManualClock'/>\n" +
-                       "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
-                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock'/>\n" +
-                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockDeployer'/>\n" +
-                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockProvisioner'/>\n" +
-                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker'/>\n" +
-                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub'/>\n" +
-                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockDuperModel'/>\n" +
-                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors'/>\n" +
-                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository'/>\n" +
-                       "  <component id='com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock'/>\n" +
-                       "  <component id='com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance'/>\n" +
-                       "  <component id='com.yahoo.config.provision.Zone'/>\n" +
-                       "  <handler id='com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler'>\n" +
-                       "    <binding>http://*/nodes/v2/*</binding>\n" +
-                       "  </handler>\n" +
-                       "  <http>\n" +
-                       "    <server id='myServer' port='" + port + "'/>\n" +
-                       "  </http>\n" +
-                       "</jdisc>";
-        }
+    public static String servicesXmlV2(int port) {
+        return "<jdisc version='1.0'>\n" +
+               "  <config name=\"container.handler.threadpool\">\n" +
+               "    <maxthreads>10</maxthreads>\n" +
+               "  </config>  \n" +
+               "  <component id='com.yahoo.test.ManualClock'/>\n" +
+               "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockDeployer'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockProvisioner'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockDuperModel'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance'/>\n" +
+               "  <component id='com.yahoo.config.provision.Zone'/>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler'>\n" +
+               "    <binding>http://*/nodes/v2/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.provision.restapi.v2.LoadBalancersApiHandler'>\n" +
+               "    <binding>http://*/loadbalancers/v1/*</binding>\n" +
+               "  </handler>\n" +
+               "  <http>\n" +
+               "    <server id='myServer' port='" + port + "'/>\n" +
+               "  </http>\n" +
+               "</jdisc>";
+    }
 
 }

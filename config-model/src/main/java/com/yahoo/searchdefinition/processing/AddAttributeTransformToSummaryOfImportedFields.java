@@ -4,7 +4,9 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.ImmutableImportedComplexSDField;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.ImportedComplexField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -30,17 +32,19 @@ public class AddAttributeTransformToSummaryOfImportedFields extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         search.allImportedFields()
-                .flatMap(this::getSummaryFieldsForImportedField)
-                .forEach(AddAttributeTransformToSummaryOfImportedFields::setAttributeTransform);
-        search.importedFields().map(fields -> fields.complexFields().values().stream()).
-                orElse(Stream.empty()).
-                map(ImmutableImportedSDField::new).
-                flatMap(this::getSummaryFieldsForImportedField).
-                forEach(AddAttributeTransformToSummaryOfImportedFields::setAttributeCombinerTransform);
+                .forEach(field -> setTransform(field));
     }
 
     private Stream<SummaryField> getSummaryFieldsForImportedField(ImmutableSDField importedField) {
         return search.getSummaryFields(importedField).values().stream();
+    }
+
+    private void setTransform(ImmutableSDField field) {
+        if (field instanceof ImmutableImportedComplexSDField) {
+            getSummaryFieldsForImportedField(field).forEach(AddAttributeTransformToSummaryOfImportedFields::setAttributeCombinerTransform);
+        } else {
+            getSummaryFieldsForImportedField(field).forEach(AddAttributeTransformToSummaryOfImportedFields::setAttributeTransform);
+        }
     }
 
     private static void setAttributeTransform(SummaryField summaryField) {

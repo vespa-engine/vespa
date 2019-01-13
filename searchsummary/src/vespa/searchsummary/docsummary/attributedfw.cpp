@@ -21,6 +21,7 @@ using namespace search;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::attribute::BasicType;
+using vespalib::slime::Inserter;
 
 namespace search::docsummary {
 
@@ -42,12 +43,8 @@ public:
     SingleAttrDFW(const vespalib::string & attrName) :
         AttrDFW(attrName)
     { }
-    virtual void insertField(uint32_t docid,
-                             GeneralResult *gres,
-                             GetDocsumsState *state,
-                             ResType type,
-                             vespalib::slime::Inserter &target) override;
-   virtual bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const override;
+    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, Inserter &target) override;
+    bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const override;
 };
 
 bool SingleAttrDFW::isDefaultValue(uint32_t docid, const GetDocsumsState * state) const
@@ -56,11 +53,7 @@ bool SingleAttrDFW::isDefaultValue(uint32_t docid, const GetDocsumsState * state
 }
 
 void
-SingleAttrDFW::insertField(uint32_t docid,
-                          GeneralResult *,
-                          GetDocsumsState * state,
-                          ResType type,
-                          vespalib::slime::Inserter &target)
+SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType type, Inserter &target)
 {
     const char *s="";
     const IAttributeVector & v = vec(*state);
@@ -78,6 +71,11 @@ SingleAttrDFW::insertField(uint32_t docid,
     case RES_BYTE: {
         uint8_t val = v.getInt(docid);
         target.insertLong(val);
+        break;
+    }
+    case RES_BOOL: {
+        uint8_t val = v.getInt(docid);
+        target.insertBool(val != 0);
         break;
     }
     case RES_FLOAT: {
@@ -141,20 +139,12 @@ class MultiAttrDFW : public AttrDFW
 {
 public:
     MultiAttrDFW(const vespalib::string & attrName) : AttrDFW(attrName) {}
-    virtual void insertField(uint32_t docid,
-                             GeneralResult *gres,
-                             GetDocsumsState *state,
-                             ResType type,
-                             vespalib::slime::Inserter &target) override;
+    void insertField(uint32_t docid, GetDocsumsState *state, ResType type, Inserter &target) override;
 
 };
 
 void
-MultiAttrDFW::insertField(uint32_t docid,
-                          GeneralResult *,
-                          GetDocsumsState *state,
-                          ResType,
-                          vespalib::slime::Inserter &target)
+MultiAttrDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, Inserter &target)
 {
     using vespalib::slime::Cursor;
     using vespalib::Memory;

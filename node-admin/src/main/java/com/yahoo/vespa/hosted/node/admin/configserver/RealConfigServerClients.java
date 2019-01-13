@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
+import com.yahoo.vespa.hosted.node.admin.configserver.flags.FlagRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.flags.RealFlagRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.RealNodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
@@ -19,6 +21,7 @@ public class RealConfigServerClients implements ConfigServerClients {
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final State state;
+    private final RealFlagRepository flagRepository;
 
     /**
      * @param configServerApi the backend API to use - will be closed at {@link #stop()}.
@@ -28,6 +31,7 @@ public class RealConfigServerClients implements ConfigServerClients {
         nodeRepository = new RealNodeRepository(configServerApi);
         orchestrator = new OrchestratorImpl(configServerApi);
         state = new StateImpl(configServerApi);
+        flagRepository = new RealFlagRepository(configServerApi);
     }
 
     @Override
@@ -43,6 +47,11 @@ public class RealConfigServerClients implements ConfigServerClients {
     @Override
     public State state() {
         return state;
+    }
+
+    @Override
+    public FlagRepository flagRepository() {
+        return flagRepository;
     }
 
     @Override

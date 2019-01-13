@@ -2,19 +2,18 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
-import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.document.StructDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.ImportedComplexField;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
+import com.yahoo.searchdefinition.document.ImportedSimpleField;
 import com.yahoo.searchdefinition.document.TemporaryImportedField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -34,7 +33,6 @@ import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isM
 public class ImportedFieldsResolver extends Processor {
 
     private final Map<String, ImportedField> importedFields = new LinkedHashMap<>();
-    private final Map<String, ImportedField> importedComplexFields = new LinkedHashMap<>();
     private final Optional<DocumentReferences> references;
 
     public ImportedFieldsResolver(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
@@ -45,7 +43,7 @@ public class ImportedFieldsResolver extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         search.temporaryImportedFields().get().fields().forEach((name, field) -> resolveImportedField(field, validate));
-        search.setImportedFields(new ImportedFields(importedFields, importedComplexFields));
+        search.setImportedFields(new ImportedFields(importedFields));
     }
 
     private void resolveImportedField(TemporaryImportedField importedField, boolean validate) {
@@ -71,34 +69,41 @@ public class ImportedFieldsResolver extends Processor {
                 reference.referenceField().getName(), PositionDataType.getZCurveFieldName(targetField.getName()));
         ImmutableSDField targetZCurveField = getTargetField(importedZCurveField, reference);
         resolveImportedNormalField(importedZCurveField, reference, targetZCurveField, validate);
-        makeImportedComplexField(importedField, reference, targetField);
+        ImportedComplexField importedStructField = new ImportedComplexField(importedField.fieldName(), reference, targetField);
+        registerImportedField(importedField, null, importedStructField);
     }
 
     private void resolveImportedArrayOfStructField(TemporaryImportedField importedField, DocumentReference reference,
                                                    ImmutableSDField targetField, boolean validate) {
-        resolveImportedNestedStructField(importedField, reference, targetField, validate);
-        makeImportedComplexField(importedField, reference, targetField);
+        ImportedComplexField importedStructField = new ImportedComplexField(importedField.fieldName(), reference, targetField);
+        resolveImportedNestedStructField(importedField, reference, importedStructField, targetField, validate);
+        registerImportedField(importedField, null, importedStructField);
     }
 
     private void resolveImportedMapOfStructField(TemporaryImportedField importedField, DocumentReference reference,
                                                  ImmutableSDField targetField, boolean validate) {
-        resolveImportedNestedField(importedField, reference, targetField.getStructField("key"), validate);
-        resolveImportedNestedStructField(importedField, reference, targetField.getStructField("value"), validate);
-        makeImportedComplexField(importedField, reference, targetField);
+        ImportedComplexField importedMapField = new ImportedComplexField(importedField.fieldName(), reference, targetField);
+        ImportedComplexField importedStructField = new ImportedComplexField(importedField.fieldName() + ".value", reference, targetField.getStructField("value"));
+        importedMapField.addNestedField(importedStructField);
+        resolveImportedNestedField(importedField, reference, importedMapField, targetField.getStructField("key"), validate);
+        resolveImportedNestedStructField(importedField, reference, importedStructField, importedStructField.targetField(), validate);
+        registerImportedField(importedField, null, importedMapField);
     }
 
-    private void makeImportedNormalField(TemporaryImportedField importedField, String name, DocumentReference reference,
-                                         ImmutableSDField targetField) {
-        if (importedFields.get(name) != null) {
-            fail(importedField, name, targetFieldAsString(targetField.getName(), reference) +": Field already imported");
+    private void makeImportedNormalField(TemporaryImportedField importedField, ImportedComplexField owner, String name, DocumentReference reference, ImmutableSDField targetField) {
+        ImportedField importedSimpleField = new ImportedSimpleField(name, reference, targetField);
+        registerImportedField(importedField, owner, importedSimpleField);
+    }
+
+    private void registerImportedField(TemporaryImportedField temporaryImportedField, ImportedComplexField owner, ImportedField importedField) {
+        if (owner != null) {
+            owner.addNestedField(importedField);
+        } else {
+            if (importedFields.get(importedField.fieldName()) != null) {
+                fail(temporaryImportedField, importedField.fieldName(), targetFieldAsString(importedField.targetField().getName(), importedField.reference()) + ": Field already imported");
+            }
+            importedFields.put(importedField.fieldName(), importedField);
         }
-        importedFields.put(name, new ImportedField(name, reference, targetField));
-    }
-
-    private void makeImportedComplexField(TemporaryImportedField importedField, DocumentReference reference,
-                                                 ImmutableSDField targetField) {
-        String name = importedField.fieldName();
-        importedComplexFields.put(name, new ImportedField(name, reference, targetField));
     }
 
     private static String makeImportedNestedFieldName(TemporaryImportedField importedField, ImmutableSDField targetNestedField) {
@@ -106,11 +111,11 @@ public class ImportedFieldsResolver extends Processor {
     }
 
     private boolean resolveImportedNestedField(TemporaryImportedField importedField, DocumentReference reference,
-                                               ImmutableSDField targetNestedField, boolean requireAttribute) {
-        Attribute attribute = targetNestedField.getAttributes().get(targetNestedField.getName());
+                                               ImportedComplexField owner, ImmutableSDField targetNestedField, boolean requireAttribute) {
+        Attribute attribute = targetNestedField.getAttribute();
         String importedNestedFieldName = makeImportedNestedFieldName(importedField, targetNestedField);
         if (attribute != null) {
-            makeImportedNormalField(importedField, importedNestedFieldName, reference, targetNestedField);
+            makeImportedNormalField(importedField, owner, importedNestedFieldName, reference, targetNestedField);
         } else if (requireAttribute) {
             fail(importedField, importedNestedFieldName, targetFieldAsString(targetNestedField.getName(), reference) +
                     ": Is not an attribute field. Only attribute fields supported");
@@ -119,10 +124,10 @@ public class ImportedFieldsResolver extends Processor {
     }
 
     private void resolveImportedNestedStructField(TemporaryImportedField importedField, DocumentReference reference,
-                                                  ImmutableSDField targetNestedField, boolean validate) {
+                                                  ImportedComplexField ownerField, ImmutableSDField targetNestedField, boolean validate) {
         boolean foundAttribute = false;
         for (ImmutableSDField targetStructField : targetNestedField.getStructFields()) {
-            if (resolveImportedNestedField(importedField, reference, targetStructField, false)) {
+            if (resolveImportedNestedField(importedField, reference, ownerField, targetStructField, false)) {
                 foundAttribute = true;
             };
         }
@@ -135,9 +140,10 @@ public class ImportedFieldsResolver extends Processor {
 
     private void resolveImportedMapOfPrimitiveField(TemporaryImportedField importedField, DocumentReference reference,
                                                     ImmutableSDField targetField, boolean validate) {
-        resolveImportedNestedField(importedField, reference, targetField.getStructField("key"), validate);
-        resolveImportedNestedField(importedField, reference, targetField.getStructField("value"), validate);
-        makeImportedComplexField(importedField, reference, targetField);
+        ImportedComplexField importedMapField = new ImportedComplexField(importedField.fieldName(), reference, targetField);
+        resolveImportedNestedField(importedField, reference, importedMapField, targetField.getStructField("key"), validate);
+        resolveImportedNestedField(importedField, reference, importedMapField, targetField.getStructField("value"), validate);
+        registerImportedField(importedField, null, importedMapField);
     }
 
     private void resolveImportedNormalField(TemporaryImportedField importedField, DocumentReference reference,
@@ -145,7 +151,7 @@ public class ImportedFieldsResolver extends Processor {
         if (validate) {
             validateTargetField(importedField, targetField, reference);
         }
-        makeImportedNormalField(importedField, importedField.fieldName(), reference, targetField);
+        makeImportedNormalField(importedField, null, importedField.fieldName(), reference, targetField);
     }
 
     private DocumentReference validateDocumentReference(TemporaryImportedField importedField) {

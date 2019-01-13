@@ -26,6 +26,7 @@ public class ConfigTransformer<T extends ConfigInstance> {
     private final Class<T> clazz;
 
     private static volatile PathAcquirer pathAcquirer = new IdentityPathAcquirer();
+    private static volatile UrlDownloader urlDownloader;
 
     /**
      * For internal use only *
@@ -34,6 +35,10 @@ public class ConfigTransformer<T extends ConfigInstance> {
         ConfigTransformer.pathAcquirer = (pathAcquirer == null) ?
                 new IdentityPathAcquirer() :
                 pathAcquirer;
+    }
+
+    public static void setUrlDownloader(UrlDownloader urlDownloader) {
+        ConfigTransformer.urlDownloader = urlDownloader;
     }
 
     /**
@@ -53,7 +58,7 @@ public class ConfigTransformer<T extends ConfigInstance> {
      */
     public ConfigInstance.Builder toConfigBuilder(ConfigPayload payload) {
         ConfigInstance.Builder builder = getRootBuilder();
-        ConfigPayloadApplier<?> creator = new ConfigPayloadApplier<>(builder, pathAcquirer);
+        ConfigPayloadApplier<?> creator = new ConfigPayloadApplier<>(builder, pathAcquirer, urlDownloader);
         creator.applyPayload(payload);
         return builder;
     }

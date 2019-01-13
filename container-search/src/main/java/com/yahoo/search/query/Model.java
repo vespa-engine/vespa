@@ -7,7 +7,6 @@ import com.yahoo.language.LocaleFactory;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.TaggableItem;
-import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.parser.Parsable;
@@ -18,7 +17,13 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.searchchain.Execution;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -169,9 +174,9 @@ public class Model implements Cloneable {
     public void setLanguage(Language language) { this.language = language; }
 
     /**
-     * <p>Explicitly sets the language to be used during parsing. The argument is first normalized by replacing
+     * Explicitly sets the language to be used during parsing. The argument is first normalized by replacing
      * underscores with hyphens (to support locale strings being used as RFC 5646 language tags), and then forwarded to
-     * {@link #setLocale(String)} so that the Locale information of the tag is preserved.</p>
+     * {@link #setLocale(String)} so that the Locale information of the tag is preserved.
      *
      * @param language The language string to parse.
      * @see #getLanguage()
@@ -182,9 +187,9 @@ public class Model implements Cloneable {
     }
 
     /**
-     * <p>Returns the explicitly set parsing locale of this query model, or null if none.</p>
+     * Returns the explicitly set parsing locale of this query model, or null if none.
      *
-     * @return The locale of this.
+     * @return the locale of this
      * @see #setLocale(Locale)
      */
     public Locale getLocale() {
@@ -195,7 +200,7 @@ public class Model implements Cloneable {
      * <p>Explicitly sets the locale to be used during parsing. This method also calls {@link #setLanguage(Language)}
      * with the corresponding {@link Language} instance.</p>
      *
-     * @param locale The locale to set.
+     * @param locale the locale to set
      * @see #getLocale()
      * @see #setLanguage(Language)
      */
@@ -205,10 +210,10 @@ public class Model implements Cloneable {
     }
 
     /**
-     * <p>Explicitly sets the locale to be used during parsing. This creates a Locale instance from the given language
-     * tag, and passes that to {@link #setLocale(Locale)}.</p>
+     * Explicitly sets the locale to be used during parsing. This creates a Locale instance from the given language
+     * tag, and passes that to {@link #setLocale(Locale)}.
      *
-     * @param languageTag The language tag to parse.
+     * @param languageTag the language tag to parse
      * @see #setLocale(Locale)
      */
     public void setLocale(String languageTag) {

@@ -24,8 +24,7 @@ using search::attribute::IAttributeFunctor;
 using vespalib::string;
 using std::vector;
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 namespace {
 
@@ -136,7 +135,7 @@ void checkWritePositionField(Test &test, AttrType &attr,
 
     vespalib::Slime target;
     vespalib::slime::SlimeInserter inserter(target);
-    writer->insertField(doc_id, nullptr, &state, res_type, inserter);
+    writer->insertField(doc_id, &state, res_type, inserter);
 
     vespalib::Memory got = target.get().asString();
     test.EXPECT_EQUAL(expected.size(), got.size);
@@ -154,7 +153,6 @@ void Test::requireThat2DPositionFieldIsWritten() {
 }
 
 }  // namespace
-}  // namespace docsummary
-}  // namespace search
+}
 
 TEST_APPHOOK(search::docsummary::Test);

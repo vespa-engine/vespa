@@ -68,6 +68,8 @@ class RunSerializer {
     private static final String branchField = "branch";
     private static final String commitField = "commit";
     private static final String authorEmailField = "authorEmail";
+    private static final String compileVersionField = "compileVersion";
+    private static final String buildTimeField = "buildTime";
     private static final String buildField = "build";
     private static final String sourceField = "source";
     private static final String lastTestRecordField = "lastTestRecord";
@@ -123,9 +125,16 @@ class RunSerializer {
                                                      versionObject.field(branchField).asString(),
                                                      versionObject.field(commitField).asString());
         long buildNumber = versionObject.field(buildField).asLong();
-        return versionObject.field(authorEmailField).valid()
-                ? ApplicationVersion.from(revision, buildNumber, versionObject.field(authorEmailField).asString())
-                : ApplicationVersion.from(revision, buildNumber);
+
+        if ( ! versionObject.field(authorEmailField).valid())
+            return ApplicationVersion.from(revision, buildNumber);
+
+        if ( ! versionObject.field(compileVersionField).valid() || ! versionObject.field(buildTimeField).valid())
+            return ApplicationVersion.from(revision, buildNumber, versionObject.field(authorEmailField).asString());
+
+        return ApplicationVersion.from(revision, buildNumber, versionObject.field(authorEmailField).asString(),
+                                       Version.fromString(versionObject.field(compileVersionField).asString()),
+                                       Instant.ofEpochMilli(versionObject.field(buildTimeField).asLong()));
     }
 
     Slime toSlime(Iterable<Run> runs) {
@@ -173,6 +182,8 @@ class RunSerializer {
         versionsObject.setLong(buildField, applicationVersion.buildNumber()
                                                              .orElseThrow(() -> new IllegalArgumentException("Build number must be present in application version.")));
         applicationVersion.authorEmail().ifPresent(email -> versionsObject.setString(authorEmailField, email));
+        applicationVersion.compileVersion().ifPresent(version -> versionsObject.setString(compileVersionField, version.toString()));
+        applicationVersion.buildTime().ifPresent(time -> versionsObject.setLong(buildTimeField, time.toEpochMilli()));
     }
 
     static String valueOf(Step step) {

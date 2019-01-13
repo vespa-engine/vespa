@@ -42,7 +42,7 @@ public class AdjustPositionSummaryFields extends Processor {
             if (isPositionDataType(summaryField.getDataType())) {
                 String originalSource = summaryField.getSingleSource();
                 if (originalSource.indexOf('.') == -1) { // Eliminate summary fields with pos.x or pos.y as source
-                    ImmutableSDField sourceField = getSourceField(originalSource);
+                    ImmutableSDField sourceField = search.getField(originalSource);
                     if (sourceField != null) {
                         String zCurve = null;
                         if (sourceField.getDataType().equals(summaryField.getDataType())) {
@@ -95,26 +95,12 @@ public class AdjustPositionSummaryFields extends Processor {
         summary.add(oldField);
     }
 
-    private ImmutableSDField getSourceField(String name) {
-        ImmutableSDField field = search.getField(name);
-        if (field == null && search.importedFields().isPresent()) {
-            ImportedField importedField = search.importedFields().get().complexFields().get(name);
-            if (importedField != null) {
-                field = new ImmutableImportedSDField(importedField);
-            }
-        }
-        return field;
-    }
-
     private boolean hasPositionAttribute(String name) {
         Attribute attribute = search.getAttribute(name);
         if (attribute == null) {
             ImmutableSDField field = search.getField(name);
             if (field != null && field.isImportedField()) {
-                while (field.isImportedField()) {
-                    field = field.getBackingField();
-                }
-                attribute = field.getAttributes().get(field.getName());
+                attribute = field.getAttribute();
             }
         }
         return attribute != null && attribute.isPosition();

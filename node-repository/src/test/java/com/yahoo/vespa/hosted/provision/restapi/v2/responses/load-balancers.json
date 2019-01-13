@@ -1,0 +1,43 @@
+{
+  "loadBalancers": [
+    {
+      "id": "zoneapp:zoneapp:zoneapp:node-admin",
+      "application": "zoneapp",
+      "tenant": "zoneapp",
+      "instance": "zoneapp",
+      "cluster": "node-admin",
+      "hostname": "lb-zoneapp.zoneapp.zoneapp-node-admin",
+      "ports": [
+        4443
+      ],
+      "reals": [
+        {
+          "hostname": "dockerhost4.yahoo.com",
+          "ipAddress": "127.0.0.1",
+          "port": 4443
+        },
+        {
+          "hostname": "dockerhost5.yahoo.com",
+          "ipAddress": "127.0.0.1",
+          "port": 4443
+        },
+        {
+          "hostname": "dockerhost2.yahoo.com",
+          "ipAddress": "127.0.0.1",
+          "port": 4443
+        },
+        {
+          "hostname": "dockerhost3.yahoo.com",
+          "ipAddress": "127.0.0.1",
+          "port": 4443
+        },
+        {
+          "hostname": "dockerhost1.yahoo.com",
+          "ipAddress": "127.0.0.1",
+          "port": 4443
+        }
+      ],
+      "inactive": false
+    }
+  ]
+}

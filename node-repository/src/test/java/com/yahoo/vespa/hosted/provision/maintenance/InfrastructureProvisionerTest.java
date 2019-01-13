@@ -78,6 +78,7 @@ public class InfrastructureProvisionerTest {
     public void remove_application_if_without_target_version() {
         when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.empty());
         addNode(1, Node.State.active, Optional.of(target));
+        when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(true);
         infrastructureProvisioner.maintain();
         verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
         verifyRemoved(1);
@@ -85,12 +86,26 @@ public class InfrastructureProvisionerTest {
 
     @Test
     public void remove_application_if_without_nodes() {
+        remove_application_without_nodes(true);
+    }
+
+    @Test
+    public void skip_remove_unless_active() {
+        remove_application_without_nodes(false);
+    }
+
+    private void remove_application_without_nodes(boolean applicationIsActive) {
         when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
         addNode(1, Node.State.failed, Optional.of(target));
         addNode(2, Node.State.parked, Optional.empty());
+        when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(applicationIsActive);
         infrastructureProvisioner.maintain();
-        verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
-        verifyRemoved(1);
+        if (applicationIsActive) {
+            verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
+            verifyRemoved(1);
+        } else {
+            verifyRemoved(0);
+        }
     }
 
     @Test
@@ -199,6 +214,7 @@ public class InfrastructureProvisionerTest {
     @Test
     public void avoid_provisioning_if_no_usable_nodes() {
         when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
+        when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(true);
 
         infrastructureProvisioner.maintain();
         verifyRemoved(1);

@@ -23,6 +23,7 @@ namespace {
     const char *Double = "Double";
     const char *Uri = "Uri";
     const char *Byte = "Byte";
+    const char *Bool = "Bool";
     const char *Predicate = "Predicate";
     const char *Tensor = "Tensor";
 
@@ -37,6 +38,7 @@ namespace {
             case DataType::T_DOUBLE: return Double;
             case DataType::T_URI: return Uri;
             case DataType::T_BYTE: return Byte;
+            case DataType::T_BOOL: return Bool;
             case DataType::T_PREDICATE: return Predicate;
             case DataType::T_TENSOR: return Tensor;
             default:
@@ -56,16 +58,17 @@ FieldValue::UP
 PrimitiveDataType::createFieldValue() const
 {
     switch (getId()) {
-        case T_INT: return FieldValue::UP(new IntFieldValue);
-        case T_SHORT: return FieldValue::UP(new ShortFieldValue);
-        case T_FLOAT: return FieldValue::UP(new FloatFieldValue);
-        case T_URI: return FieldValue::UP(new StringFieldValue);
-        case T_STRING: return FieldValue::UP(new StringFieldValue);
-        case T_RAW: return FieldValue::UP(new RawFieldValue);
-        case T_LONG: return FieldValue::UP(new LongFieldValue);
-        case T_DOUBLE: return FieldValue::UP(new DoubleFieldValue);
-        case T_BYTE: return FieldValue::UP(new ByteFieldValue);
-        case T_PREDICATE: return FieldValue::UP(new PredicateFieldValue);
+        case T_INT: return std::make_unique<IntFieldValue>();
+        case T_SHORT: return std::make_unique<ShortFieldValue>();
+        case T_FLOAT: return std::make_unique<FloatFieldValue>();
+        case T_URI: return std::make_unique<StringFieldValue>();
+        case T_STRING: return std::make_unique<StringFieldValue>();
+        case T_RAW: return std::make_unique<RawFieldValue>();
+        case T_LONG: return std::make_unique<LongFieldValue>();
+        case T_DOUBLE: return std::make_unique<DoubleFieldValue>();
+        case T_BOOL: return std::make_unique<BoolFieldValue>();
+        case T_BYTE: return std::make_unique<ByteFieldValue>();
+        case T_PREDICATE: return std::make_unique<PredicateFieldValue>();
         case T_TENSOR: return std::make_unique<TensorFieldValue>();
     }
     LOG_ABORT("getId() returned value out of range");

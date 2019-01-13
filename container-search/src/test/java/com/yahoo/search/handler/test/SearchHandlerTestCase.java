@@ -406,6 +406,19 @@ public class SearchHandlerTestCase {
     }
 
     /** Referenced from config */
+    public static class EchoingQuerySearcher extends Searcher {
+
+        @Override
+        public Result search(Query query, Execution execution) {
+            Result result = execution.search(query);
+            Hit hit = new Hit("Query");
+            hit.setField("query", query.yqlRepresentation());
+            result.hits().add(hit);
+            return result;
+        }
+    }
+
+    /** Referenced from config */
     public static class ForwardingHandler extends ThreadedHttpRequestHandler {
 
         private final SearchHandler searchHandler;

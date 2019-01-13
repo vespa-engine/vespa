@@ -27,6 +27,7 @@ import com.yahoo.document.annotation.SpanNode;
 import com.yahoo.document.annotation.SpanNodeParent;
 import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
@@ -111,6 +112,7 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
     public void read(Document document) {
          read(null, document);
     }
+
     public void read(FieldBase field, Document doc) {
 
         // Verify that we have correct version
@@ -218,6 +220,10 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
 
     public <T extends FieldValue> void read(FieldBase field, CollectionFieldValue<T> value) {
         throw new IllegalArgumentException("read not implemented yet.");
+    }
+    @Override
+    public void read(FieldBase field, BoolFieldValue value) {
+        value.setBoolean((getByte(null) != 0));
     }
     public void read(FieldBase field, ByteFieldValue value)    { value.assign(getByte(null)); }
     public void read(FieldBase field, DoubleFieldValue value)  { value.assign(getDouble(null)); }

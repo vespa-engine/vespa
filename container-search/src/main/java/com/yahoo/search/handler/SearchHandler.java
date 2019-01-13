@@ -579,7 +579,8 @@ public class SearchHandler extends LoggingRequestHandler {
                 byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
                 inspector = SlimeUtils.jsonToSlime(byteArray).get();
                 if (inspector.field("error_message").valid()){
-                    throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
+                    throw new QueryException("Illegal query: " + inspector.field("error_message").asString() + ", at: " +
+                                             new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
                 }
 
             } catch (IOException e) {
@@ -631,7 +632,7 @@ public class SearchHandler extends LoggingRequestHandler {
                     map.put(qualifiedKey, value.asString());
                     break;
                 case OBJECT:
-                    if (qualifiedKey.equals("select.where") || qualifiedKey.equals("select.grouping")){
+                    if (qualifiedKey.equals("select.where") || qualifiedKey.equals("select.grouping")) {
                         map.put(qualifiedKey, value.toString());
                         break;
                     }

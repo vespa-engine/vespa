@@ -17,8 +17,7 @@ import java.util.function.Consumer;
  * @author hakonhall
  */
 @Immutable
-public
-class FetchVector {
+public class FetchVector {
     public enum Dimension {
         /** Value from ZoneId::value */
         ZONE_ID,

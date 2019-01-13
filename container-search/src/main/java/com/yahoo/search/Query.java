@@ -107,14 +107,14 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         private final int intValue;
         private final String stringValue;
 
-        Type(int intValue,String stringValue) {
+        Type(int intValue, String stringValue) {
             this.intValue = intValue;
             this.stringValue = stringValue;
         }
 
         /** Converts a type argument value into a query type */
         public static Type getType(String typeString) {
-            for (Type type:Type.values())
+            for (Type type : Type.values())
                 if (type.stringValue.equals(typeString))
                     return type;
             return ALL;
@@ -187,6 +187,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public static final CompoundName OFFSET = new CompoundName("offset");
     public static final CompoundName HITS = new CompoundName("hits");
 
+    public static final CompoundName QUERY_PROFILE = new CompoundName("queryProfile");
     public static final CompoundName SEARCH_CHAIN = new CompoundName("searchChain");
     public static final CompoundName TRACE_LEVEL = new CompoundName("traceLevel");
     public static final CompoundName NO_CACHE = new CompoundName("noCache");
@@ -202,6 +203,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(OFFSET.toString(), "integer", "offset start"));
         argumentType.addField(new FieldDescription(HITS.toString(), "integer", "hits count"));
         // TODO: Should this be added to com.yahoo.search.query.properties.QueryProperties? If not, why not?
+        argumentType.addField(new FieldDescription(QUERY_PROFILE.toString(), "string"));
         argumentType.addField(new FieldDescription(SEARCH_CHAIN.toString(), "string"));
         argumentType.addField(new FieldDescription(TRACE_LEVEL.toString(), "integer", "tracelevel"));
         argumentType.addField(new FieldDescription(NO_CACHE.toString(), "boolean", "nocache"));
@@ -329,8 +331,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         init(requestMap, queryProfile);
     }
 
-
-
     private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
         startTime = System.currentTimeMillis();
         if (queryProfile != null) {
@@ -411,10 +411,10 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                     }
                 }
             } else {
-                Object value=originalProperties.get(fullName,context);
-                if (value!=null) {
+                Object value = originalProperties.get(fullName,context);
+                if (value != null) {
                     try {
-                        properties().set(fullName,value,context);
+                        properties().set(fullName, value, context);
                     } catch (IllegalArgumentException e) {
                         throw new QueryException("Invalid request parameter", e);
                     }
@@ -427,7 +427,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties) {
         for (Map.Entry<String, String> entry : requestMap.entrySet()) {
             try {
-                if (entry.getKey().equals("queryProfile")) continue;
                 properties.set(entry.getKey(), entry.getValue(), requestMap);
             }
             catch (IllegalArgumentException e) {
@@ -446,12 +445,12 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      */
     private void traceProperties() {
         if (traceLevel == 0) return;
-        CompiledQueryProfile profile=null;
-        QueryProfileProperties profileProperties=properties().getInstance(QueryProfileProperties.class);
-        if (profileProperties!=null)
-            profile=profileProperties.getQueryProfile();
+        CompiledQueryProfile profile = null;
+        QueryProfileProperties profileProperties = properties().getInstance(QueryProfileProperties.class);
+        if (profileProperties != null)
+            profile = profileProperties.getQueryProfile();
 
-        if (profile==null)
+        if (profile == null)
             trace("No query profile is used", false, 1);
         else
             trace("Using " + profile.toString(), false, 1);
@@ -466,7 +465,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
             b.append(requestProperty.getKey());
             b.append("=");
-            b.append(String.valueOf(resolvedValue)); // (may be null)
+            b.append(resolvedValue); // (may be null)
             b.append(" (");
 
             if (profile != null && ! profile.isOverridable(new CompoundName(requestProperty.getKey()), requestProperties()))
@@ -476,8 +475,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             b.append(")\n");
             mentioned.add(requestProperty.getKey());
         }
-        if (profile!=null) {
-            appendQueryProfileProperties(profile,mentioned,b);
+        if (profile != null) {
+            appendQueryProfileProperties(profile, mentioned, b);
         }
         trace(b.toString(),false,4);
     }
@@ -487,7 +486,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
 
     private void appendQueryProfileProperties(CompiledQueryProfile profile,Set<String> mentioned,StringBuilder b) {
-        for (Map.Entry<String,Object> property : profile.listValues("",requestProperties()).entrySet()) {
+        for (Map.Entry<String,Object> property : profile.listValues("", requestProperties()).entrySet()) {
             if ( ! mentioned.contains(property.getKey()))
                 b.append(property.getKey() + "=" + property.getValue() + " (value from query profile)<br/>\n");
         }

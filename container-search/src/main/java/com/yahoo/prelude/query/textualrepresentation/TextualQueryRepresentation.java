@@ -8,11 +8,12 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 /**
- * Creates a detailed, QED inspired representation of a query tree.
+ * Creates a detailed representation of a query tree.
  *
  * @author Tony Vaagenes
  */
 public class TextualQueryRepresentation {
+
     private Map<Item, Integer> itemReferences = new IdentityHashMap<>();
     private int nextItemReference = 0;
 
@@ -207,4 +208,5 @@ public class TextualQueryRepresentation {
     public String toString() {
         return rootDiscloser.toString();
     }
+
 }

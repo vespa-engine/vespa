@@ -19,7 +19,7 @@
 #define CID_StringFieldValue       DOCUMENT_CID(15)
 #define CID_RawFieldValue          DOCUMENT_CID(16)
 //Gone with vespa 6 #define CID_ContentFieldValue      DOCUMENT_CID(17)
-//Long gone #define CID_ContentMetaFieldValue  DOCUMENT_CID(18)
+#define CID_BoolFieldValue  DOCUMENT_CID(18)
 #define CID_ArrayFieldValue        DOCUMENT_CID(19)
 #define CID_WeightedSetFieldValue  DOCUMENT_CID(20)
 #define CID_FieldMapValue          DOCUMENT_CID(21)

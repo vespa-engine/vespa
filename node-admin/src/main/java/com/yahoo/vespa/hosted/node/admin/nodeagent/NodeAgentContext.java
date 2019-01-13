@@ -6,6 +6,7 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.component.ZoneId;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 
 import java.nio.file.Path;
@@ -13,11 +14,17 @@ import java.nio.file.Paths;
 
 public interface NodeAgentContext extends TaskContext {
 
+    NodeSpec node();
+
     ContainerName containerName();
 
-    HostName hostname();
+    default HostName hostname() {
+        return HostName.from(node().getHostname());
+    }
 
-    NodeType nodeType();
+    default NodeType nodeType() {
+        return node().getNodeType();
+    }
 
     AthenzService identity();
 

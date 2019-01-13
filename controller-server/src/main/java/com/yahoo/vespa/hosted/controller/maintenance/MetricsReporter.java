@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.chef.AttributeMapping;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNode;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -37,6 +38,7 @@ public class MetricsReporter extends Maintainer {
     public static final String deploymentFailMetric = "deployment.failurePercentage";
     public static final String deploymentAverageDuration = "deployment.averageDuration";
     public static final String deploymentFailingUpgrades = "deployment.failingUpgrades";
+    public static final String deploymentBuildAgeSeconds = "deployment.buildAgeSeconds";
     public static final String remainingRotations = "remaining_rotations";
 
     private final Metric metric;
@@ -128,6 +130,14 @@ public class MetricsReporter extends Maintainer {
         deploymentsFailingUpgrade(applications).forEach((application, failingJobs) -> {
             metric.set(deploymentFailingUpgrades, failingJobs, metric.createContext(dimensions(application)));
         });
+
+        for (Application application : applications.asList())
+            application.deploymentJobs().statusOf(JobType.component)
+                       .flatMap(JobStatus::lastSuccess)
+                       .flatMap(run -> run.application().buildTime())
+                       .ifPresent(buildTime -> metric.set(deploymentBuildAgeSeconds,
+                                                          controller().clock().instant().getEpochSecond() - buildTime.getEpochSecond(),
+                                                          metric.createContext(dimensions(application.id()))));
     }
     
     private static double deploymentFailRatio(ApplicationList applicationList) {

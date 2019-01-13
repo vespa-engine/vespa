@@ -15,11 +15,11 @@ void strip_cr(vespalib::string &str) {
     }
 }
 
-std::vector<vespalib::string> split(vespalib::stringref str, vespalib::stringref sep) {
+std::vector<vespalib::string> split(vespalib::stringref str, char sep) {
     vespalib::string token;
     std::vector<vespalib::string> list;
     for (char c: str) {
-        if (sep.find(c) == vespalib::stringref::npos) {
+        if (c != sep) {
             token.push_back(c);
         } else if (!token.empty()) {
             list.push_back(token);
@@ -30,6 +30,49 @@ std::vector<vespalib::string> split(vespalib::stringref str, vespalib::stringref
         list.push_back(token);
     }
     return list;
+}
+
+int decode_hex_digit(char c) {
+    if ((c >= '0') && (c <= '9')) {
+        return (c - '0');
+    }
+    if ((c >= 'a') && (c <= 'f')) {
+        return ((c - 'a') + 10);
+    }
+    if ((c >= 'A') && (c <= 'F')) {
+        return ((c - 'A') + 10);
+    }
+    return -1;
+}
+
+int decode_hex_num(vespalib::stringref src, size_t idx) {
+    if (src.size() < (idx + 2)) {
+        return -1;
+    }
+    int a = decode_hex_digit(src[idx]);
+    int b = decode_hex_digit(src[idx + 1]);
+    if ((a < 0) || (b < 0)) {
+        return -1;
+    }
+    return ((a << 4) | b);
+}
+
+vespalib::string dequote(vespalib::stringref src) {
+    vespalib::string dst;
+    for (size_t idx = 0; idx < src.size(); ++idx) {
+        char c = src[idx];
+        if (c == '+') {
+            c = ' ';
+        } else if (c == '%') {
+            int x = decode_hex_num(src, idx + 1);
+            if (x >= 0) {
+                c = x;
+                idx += 2;
+            }
+        }
+        dst.push_back(c);
+    }
+    return dst;
 }
 
 } // namespace vespalib::portal::<unnamed>
@@ -49,13 +92,30 @@ HttpRequest::set_error()
 void
 HttpRequest::handle_request_line(const vespalib::string &line)
 {
-    auto parts = split(line, " ");
+    auto parts = split(line, ' ');
     if (parts.size() != 3) {
         return set_error(); // malformed request line
     }
     _method = parts[0];
     _uri = parts[1];
     _version = parts[2];
+    size_t query_sep = _uri.find("?");
+    if (query_sep == vespalib::string::npos) {
+        _path = dequote(_uri);
+    } else {
+        _path = dequote(_uri.substr(0, query_sep));
+        auto query = split(_uri.substr(query_sep + 1), '&');
+        for (const auto &param: query) {
+            size_t value_sep = param.find("=");
+            if (value_sep == vespalib::string::npos) {
+                _params[dequote(param)] = "";
+            } else {
+                auto key = param.substr(0, value_sep);
+                auto value = param.substr(value_sep + 1);
+                _params[dequote(key)] = dequote(value);
+            }
+        }
+    }
 }
 
 void
@@ -158,6 +218,22 @@ HttpRequest::get_header(const vespalib::string &name) const
 {
     auto pos = _headers.find(name);
     if (pos == _headers.end()) {
+        return _empty;
+    }
+    return pos->second;
+}
+
+bool
+HttpRequest::has_param(const vespalib::string &name) const
+{
+    return (_params.find(name) != _params.end());
+}
+
+const vespalib::string &
+HttpRequest::get_param(const vespalib::string &name) const
+{
+    auto pos = _params.find(name);
+    if (pos == _params.end()) {
         return _empty;
     }
     return pos->second;

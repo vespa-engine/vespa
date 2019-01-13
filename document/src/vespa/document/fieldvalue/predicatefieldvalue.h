@@ -40,5 +40,4 @@ public:
     DECLARE_IDENTIFIABLE(PredicateFieldValue);
 };
 
-}  // namespace document
-
+}

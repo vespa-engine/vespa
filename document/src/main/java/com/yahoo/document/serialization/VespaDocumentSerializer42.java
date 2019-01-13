@@ -20,6 +20,7 @@ import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanNode;
 import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
@@ -57,7 +58,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import static com.yahoo.text.Utf8.calculateBytePositions;
 
@@ -168,14 +168,15 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
         }
     }
 
-    /**
-     * Write out the value of byte field
-     *
-     * @param field - field description (name and data type)
-     * @param value - field value
-     */
+    @Override
     public void write(FieldBase field, ByteFieldValue value) {
         buf.put(value.getByte());
+    }
+
+    @Override
+    public void write(FieldBase field, BoolFieldValue value) {
+        byte v = value.getBoolean() ? (byte)1 : (byte)0;
+        buf.put(v);
     }
 
     /**

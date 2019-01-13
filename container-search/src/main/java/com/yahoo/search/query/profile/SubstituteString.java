@@ -27,23 +27,23 @@ public class SubstituteString {
      * Returns a new SubstituteString if the given string contains substitutions, null otherwise.
      */
     public static SubstituteString create(String value) {
-        int lastEnd=0;
-        int start=value.indexOf("%{");
-        if (start<0) return null; // Shortcut
-        List<Component> components=new ArrayList<>();
-        while (start>=0) {
-            int end=value.indexOf("}",start+2);
-            if (end<0)
+        int lastEnd = 0;
+        int start = value.indexOf("%{");
+        if (start < 0) return null; // Shortcut
+        List<Component> components = new ArrayList<>();
+        while (start >= 0) {
+            int end = value.indexOf("}", start + 2);
+            if (end < 0)
                 throw new IllegalArgumentException("Unterminated value substitution '" + value.substring(start) + "'");
-            String propertyName=value.substring(start+2,end);
-            if (propertyName.indexOf("%{")>=0)
+            String propertyName = value.substring(start+2,end);
+            if (propertyName.indexOf("%{") >= 0)
                 throw new IllegalArgumentException("Unterminated value substitution '" + value.substring(start) + "'");
-            components.add(new StringComponent(value.substring(lastEnd,start)));
+            components.add(new StringComponent(value.substring(lastEnd, start)));
             components.add(new PropertyComponent(propertyName));
-            lastEnd=end+1;
-            start=value.indexOf("%{",lastEnd);
+            lastEnd = end+1;
+            start = value.indexOf("%{", lastEnd);
         }
-        components.add(new StringComponent(value.substring(lastEnd,value.length())));
+        components.add(new StringComponent(value.substring(lastEnd)));
         return new SubstituteString(components, value);
     }
 
@@ -83,7 +83,7 @@ public class SubstituteString {
 
     private abstract static class Component {
 
-        protected abstract String getValue(Map<String,String> context,Properties substitution);
+        protected abstract String getValue(Map<String, String> context, Properties substitution);
 
     }
 
@@ -92,11 +92,11 @@ public class SubstituteString {
         private final String value;
 
         public StringComponent(String value) {
-            this.value=value;
+            this.value = value;
         }
 
         @Override
-        public String getValue(Map<String,String> context,Properties substitution) {
+        public String getValue(Map<String, String> context, Properties substitution) {
             return value;
         }
 
@@ -112,13 +112,13 @@ public class SubstituteString {
         private final String propertyName;
 
         public PropertyComponent(String propertyName) {
-            this.propertyName=propertyName;
+            this.propertyName = propertyName;
         }
 
         @Override
-        public String getValue(Map<String,String> context,Properties substitution) {
-            Object value=substitution.get(propertyName,context,substitution);
-            if (value==null) return "";
+        public String getValue(Map<String,String> context, Properties substitution) {
+            Object value = substitution.get(propertyName, context, substitution);
+            if (value == null) return "";
             return String.valueOf(value);
         }
 

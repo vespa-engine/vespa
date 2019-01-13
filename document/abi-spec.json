@@ -2463,6 +2463,7 @@
       "public void clear()",
       "public void assign(java.lang.Object)",
       "public boolean getBoolean()",
+      "public void setBoolean(boolean)",
       "public java.lang.Object getWrappedValue()",
       "public com.yahoo.document.DataType getDataType()",
       "public void printXml(com.yahoo.document.serialization.XmlStream)",
@@ -4740,6 +4741,7 @@
       "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Array)",
       "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.MapFieldValue)",
       "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.ByteFieldValue)",
+      "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.BoolFieldValue)",
       "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.CollectionFieldValue)",
       "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.DoubleFieldValue)",
       "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FloatFieldValue)",
@@ -4773,6 +4775,7 @@
       "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Array)",
       "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.MapFieldValue)",
       "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.ByteFieldValue)",
+      "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.BoolFieldValue)",
       "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.CollectionFieldValue)",
       "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.DoubleFieldValue)",
       "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FloatFieldValue)",
@@ -4878,6 +4881,7 @@
       "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Array)",
       "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.MapFieldValue)",
       "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.CollectionFieldValue)",
+      "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.BoolFieldValue)",
       "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.ByteFieldValue)",
       "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.DoubleFieldValue)",
       "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FloatFieldValue)",
@@ -4917,7 +4921,8 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.document.DocumentTypeManager, com.yahoo.io.GrowableByteBuffer)",
-      "public void read(com.yahoo.document.DocumentUpdate)"
+      "public void read(com.yahoo.document.DocumentUpdate)",
+      "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.BoolFieldValue)"
     ],
     "fields": []
   },
@@ -4937,6 +4942,7 @@
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Array)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.MapFieldValue)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.ByteFieldValue)",
+      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.BoolFieldValue)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.CollectionFieldValue)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.DoubleFieldValue)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FloatFieldValue)",
@@ -4982,7 +4988,8 @@
       "public void write(com.yahoo.document.DocumentUpdate)",
       "public void write(com.yahoo.document.fieldpathupdate.FieldPathUpdate)",
       "public void write(com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate)",
-      "public void write(com.yahoo.document.fieldpathupdate.AddFieldPathUpdate)"
+      "public void write(com.yahoo.document.fieldpathupdate.AddFieldPathUpdate)",
+      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.ByteFieldValue)"
     ],
     "fields": []
   },
@@ -5003,6 +5010,7 @@
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Array)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.MapFieldValue)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.ByteFieldValue)",
+      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.BoolFieldValue)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.CollectionFieldValue)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.DoubleFieldValue)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FloatFieldValue)",

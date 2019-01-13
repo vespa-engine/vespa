@@ -3,3 +3,5 @@
 [ret] :- keyword:[B];
 
 retailer:"[...]" -> retailer:[...];
+
+iphone 7 +> ?i7;

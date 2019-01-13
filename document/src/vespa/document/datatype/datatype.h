@@ -66,6 +66,7 @@ public:
         T_RAW         =  3,
         T_LONG        =  4,
         T_DOUBLE      =  5,
+        T_BOOL        =  6,
         T_DOCUMENT    =  8, // Type of super document type Document.0 that all documents inherit.
         // T_TIMESTAMP   =  9,  // Not used anymore, Id should probably not be reused
         T_URI         = 10,
@@ -88,6 +89,7 @@ public:
     static const DataType *const LONG;
     static const DataType *const FLOAT;
     static const DataType *const DOUBLE;
+    static const DataType *const BOOL;
     static const DataType *const STRING;
     static const DataType *const RAW;
     static const DocumentType *const DOCUMENT;
@@ -108,7 +110,7 @@ public:
      * Create a field value using this datatype.
      */
     virtual std::unique_ptr<FieldValue> createFieldValue() const = 0;
-    virtual DataType* clone() const override = 0;
+    DataType* clone() const override = 0;
 
     /**
      * Whether another datatype is a supertype of this one. Document types may

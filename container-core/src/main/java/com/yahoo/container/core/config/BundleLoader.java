@@ -177,7 +177,7 @@ public class BundleLoader {
     private String installedBundlesMessage() {
         StringBuilder sb = new StringBuilder("Installed bundles: {" );
         for (Bundle b : osgi.getBundles())
-            sb.append("[" + b.getBundleId() + "]" + b.getSymbolicName() + ", ");
+            sb.append("[" + b.getBundleId() + "]" + b.getSymbolicName() + ":" + b.getVersion() + ", ");
         sb.setLength(sb.length() - 2);
         sb.append("}");
         return sb.toString();

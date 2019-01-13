@@ -389,7 +389,7 @@ public class Request extends AbstractResource {
      * @throws BindingNotFoundException If the corresponding call to {@link Container#resolveHandler(Request)} returns
      *                                  null.
      */
-    public ContentChannel connect(final ResponseHandler responseHandler) {
+    public ContentChannel connect(ResponseHandler responseHandler) {
         try {
             Objects.requireNonNull(responseHandler, "responseHandler");
             RequestHandler requestHandler = container().resolveHandler(this);

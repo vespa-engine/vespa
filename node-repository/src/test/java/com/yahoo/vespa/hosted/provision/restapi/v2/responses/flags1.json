@@ -4,7 +4,7 @@
       "id": "exclusive-load-balancer",
       "enabled": false,
       "enabledHostnames": [],
-      "enabledApplications": []
+      "enabledApplications": ["zoneapp:zoneapp:zoneapp"]
     }
   ]
 }

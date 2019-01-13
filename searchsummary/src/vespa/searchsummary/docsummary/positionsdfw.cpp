@@ -66,8 +66,7 @@ AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state)
 }
 
 void
-AbsDistanceDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *state,
-                            ResType type, vespalib::slime::Inserter &target)
+AbsDistanceDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target)
 {
     bool forceEmpty = true;
 
@@ -166,8 +165,7 @@ formatField(const attribute::IAttributeVector &attribute, uint32_t docid, ResTyp
 }
 
 void
-PositionsDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState * dsState,
-                          ResType type, vespalib::slime::Inserter &target)
+PositionsDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType type, vespalib::slime::Inserter &target)
 {
     vespalib::asciistream val(formatField(vec(*dsState), docid, type));
     target.insertString(vespalib::Memory(val.c_str(), val.size()));
@@ -175,8 +173,7 @@ PositionsDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState * dsS
 
 //--------------------------------------------------------------------------
 
-PositionsDFW::UP createPositionsDFW(const char *attribute_name,
-                                    IAttributeManager *attribute_manager)
+PositionsDFW::UP createPositionsDFW(const char *attribute_name, IAttributeManager *attribute_manager)
 {
     PositionsDFW::UP ret;
     if (attribute_manager != nullptr) {
@@ -195,12 +192,10 @@ PositionsDFW::UP createPositionsDFW(const char *attribute_name,
             return ret;
         }
     }
-    ret.reset(new PositionsDFW(attribute_name));
-    return ret;
+    return std::make_unique<PositionsDFW>(attribute_name);
 }
 
-AbsDistanceDFW::UP createAbsDistanceDFW(const char *attribute_name,
-                                        IAttributeManager *attribute_manager)
+AbsDistanceDFW::UP createAbsDistanceDFW(const char *attribute_name, IAttributeManager *attribute_manager)
 {
     AbsDistanceDFW::UP ret;
     if (attribute_manager != nullptr) {
@@ -219,8 +214,7 @@ AbsDistanceDFW::UP createAbsDistanceDFW(const char *attribute_name,
             return ret;
         }
     }
-    ret.reset(new AbsDistanceDFW(attribute_name));
-    return ret;
+    return std::make_unique<AbsDistanceDFW>(attribute_name);
 }
 
 }

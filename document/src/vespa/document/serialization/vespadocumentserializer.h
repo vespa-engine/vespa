@@ -4,12 +4,10 @@
 
 #include <vespa/document/fieldvalue/fieldvaluevisitor.h>
 #include <vespa/document/fieldvalue/fieldvaluewriter.h>
-#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/fieldset/fieldset.h>
 #include <vespa/document/update/updatevisitor.h>
 
-namespace vespalib {
-    class nbostream;
-}
+namespace vespalib { class nbostream; }
 
 namespace document {
 
@@ -40,6 +38,7 @@ public:
     void write(const AnnotationReferenceFieldValue &value);
     void write(const ArrayFieldValue &value);
     void write(const MapFieldValue &map);
+    void write(const BoolFieldValue &value);
     void write(const ByteFieldValue &value);
     void write(const DoubleFieldValue &val);
     void write(const FloatFieldValue &value);
@@ -90,6 +89,7 @@ private:
 
     void visit(const AnnotationReferenceFieldValue &value) override { write(value); }
     void visit(const ArrayFieldValue &value)               override { write(value); }
+    void visit(const BoolFieldValue &value)                override { write(value); }
     void visit(const ByteFieldValue &value)                override { write(value); }
     void visit(const Document &value)                      override { write(value, COMPLETE); }
     void visit(const DoubleFieldValue &value)              override { write(value); }

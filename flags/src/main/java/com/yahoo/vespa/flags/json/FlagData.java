@@ -8,6 +8,7 @@ import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.flags.json.wire.WireFlagData;
+import com.yahoo.vespa.flags.json.wire.WireFlagDataList;
 import com.yahoo.vespa.flags.json.wire.WireRule;
 
 import javax.annotation.concurrent.Immutable;
@@ -112,6 +113,24 @@ public class FlagData {
                 FetchVectorHelper.fromWire(wireFlagData.defaultFetchVector),
                 rulesFromWire(wireFlagData.rules)
         );
+    }
+
+    public static byte[] serializeListToUtf8Json(List<FlagData> list) {
+        return listToWire(list).serializeToBytes();
+    }
+
+    public static List<FlagData> deserializeList(byte[] bytes) {
+        return listFromWire(WireFlagDataList.deserializeFrom(bytes));
+    }
+
+    public static WireFlagDataList listToWire(List<FlagData> list) {
+        WireFlagDataList wireList = new WireFlagDataList();
+        wireList.flags = list.stream().map(FlagData::toWire).collect(Collectors.toList());
+        return wireList;
+    }
+
+    public static List<FlagData> listFromWire(WireFlagDataList wireList) {
+        return wireList.flags.stream().map(FlagData::fromWire).collect(Collectors.toList());
     }
 
     private static List<Rule> rulesFromWire(List<WireRule> wireRules) {

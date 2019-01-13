@@ -8,6 +8,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.PrimitiveDataType;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
@@ -234,6 +235,10 @@ public class JsonSerializationHelper {
         serializeByte(generator, field, value.getByte());
     }
 
+    public static void serializeBoolField(JsonGenerator generator, FieldBase field, BoolFieldValue value) {
+        serializeBool(generator, field, value.getBoolean());
+    }
+
     public static void serializePredicateField(JsonGenerator generator, FieldBase field, PredicateFieldValue value){
         serializeString(generator, field, value.toString());
     }
@@ -250,6 +255,11 @@ public class JsonSerializationHelper {
     public static void serializeByte(JsonGenerator generator, FieldBase field,  byte value) {
         fieldNameIfNotNull(generator, field);
         wrapIOException(() -> generator.writeNumber(value));
+    }
+
+    public static void serializeBool(JsonGenerator generator, FieldBase field,  boolean value) {
+        fieldNameIfNotNull(generator, field);
+        wrapIOException(() -> generator.writeBoolean(value));
     }
 
     public static void serializeShort(JsonGenerator generator, FieldBase field, short value) {

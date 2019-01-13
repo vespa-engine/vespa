@@ -30,7 +30,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundBooleanFlag DUPERMODEL_USE_CONFIGSERVERCONFIG = defineFeatureFlag(
-            "dupermodel-use-configserverconfig", true,
+            "dupermodel-use-configserverconfig", false,
             "For historical reasons, the ApplicationInfo in the DuperModel for controllers and config servers " +
                     "is based on the ConfigserverConfig (this flag is true). We want to transition to use the " +
                     "infrastructure application activated by the InfrastructureProvisioner once that supports health.",
@@ -70,6 +70,12 @@ public class Flags {
             "enable-nessus", true,
             "Whether to enable Nessus.", "Takes effect on next host admin tick",
             HOSTNAME);
+
+    public static final UnboundBooleanFlag ENABLE_CPU_TEMPERATURE_TASK = defineFeatureFlag(
+            "enable-cputemptask", true,
+            "Whether to enable CPU temperature task", "Takes effect on next host admin tick",
+            HOSTNAME
+    );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

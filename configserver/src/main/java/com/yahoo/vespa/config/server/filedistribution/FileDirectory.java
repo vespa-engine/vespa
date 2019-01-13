@@ -23,6 +23,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.logging.Logger;
 
 public class FileDirectory  {
+
     private static final Logger log = Logger.getLogger(FileDirectory.class.getName());
     private final File root;
 
