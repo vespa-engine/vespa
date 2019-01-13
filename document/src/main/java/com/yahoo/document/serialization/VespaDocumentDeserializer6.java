@@ -18,6 +18,7 @@ import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DataTypeName;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
@@ -202,6 +203,13 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         throw new IllegalArgumentException("read not implemented yet.");
     }
     public void read(FieldBase field, ByteFieldValue value)    { value.assign(getByte(null)); }
+
+    @Override
+    public void read(FieldBase field, BoolFieldValue value) {
+        byte asByte = value.getBoolean() ? (byte)1 : (byte)0;
+        buf.put(asByte);
+    }
+
     public void read(FieldBase field, DoubleFieldValue value)  { value.assign(getDouble(null)); }
     public void read(FieldBase field, FloatFieldValue value)   { value.assign(getFloat(null)); }
     public void read(FieldBase field, IntegerFieldValue value) { value.assign(getInt(null)); }

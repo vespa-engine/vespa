@@ -20,6 +20,7 @@ import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanNode;
 import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
@@ -162,6 +163,11 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      */
     public void write(FieldBase field, ByteFieldValue value) {
         buf.put(value.getByte());
+    }
+
+    @Override
+    public void write(FieldBase field, BoolFieldValue value) {
+        value.setBoolean((getByte(null) != 0));
     }
 
     /**
