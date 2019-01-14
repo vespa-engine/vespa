@@ -23,10 +23,17 @@ public class ResultNodeVectorTestCase extends ResultNodeTest {
         assertThat(new Int16ResultNodeVector().getClassId(), is(Int16ResultNodeVector.classId));
         assertThat(new Int8ResultNodeVector().getClassId(), is(Int8ResultNodeVector.classId));
         assertThat(new FloatResultNodeVector().getClassId(), is(FloatResultNodeVector.classId));
+        assertThat(new BoolResultNodeVector().getClassId(), is(BoolResultNodeVector.classId));
     }
 
     @Test
     public void testVectorAdd() {
+        BoolResultNodeVector b = new BoolResultNodeVector();
+        b.add(new BoolResultNode(true));
+        b.add(new BoolResultNode(false));
+        b.add((ResultNode)new BoolResultNode(false));
+        assertThat(b.getVector().size(), is(3));
+
         Int8ResultNodeVector i8 = new Int8ResultNodeVector();
         i8.add(new Int8ResultNode((byte)9));
         i8.add(new Int8ResultNode((byte)2));
@@ -157,11 +164,12 @@ public class ResultNodeVectorTestCase extends ResultNodeTest {
 
     @Test
     public void testSerialize() throws InstantiationException, IllegalAccessException {
-       assertCorrectSerialization(new FloatResultNodeVector().add(new FloatResultNode(1.1)).add(new FloatResultNode(3.3)), new FloatResultNodeVector());
-       assertCorrectSerialization(new IntegerResultNodeVector().add(new IntegerResultNode(1)).add(new IntegerResultNode(3)), new IntegerResultNodeVector());
-       assertCorrectSerialization(new Int16ResultNodeVector().add(new Int16ResultNode((short) 1)).add(new Int16ResultNode((short) 3)), new Int16ResultNodeVector());
-       assertCorrectSerialization(new Int8ResultNodeVector().add(new Int8ResultNode((byte) 1)).add(new Int8ResultNode((byte) 3)), new Int8ResultNodeVector());
-       assertCorrectSerialization(new StringResultNodeVector().add(new StringResultNode("foo")).add(new StringResultNode("bar")), new StringResultNodeVector());
-       assertCorrectSerialization(new RawResultNodeVector().add(new RawResultNode(new byte[]{6, 9})).add(new RawResultNode(new byte[]{9, 6})), new RawResultNodeVector());
+        assertCorrectSerialization(new FloatResultNodeVector().add(new FloatResultNode(1.1)).add(new FloatResultNode(3.3)), new FloatResultNodeVector());
+        assertCorrectSerialization(new IntegerResultNodeVector().add(new IntegerResultNode(1)).add(new IntegerResultNode(3)), new IntegerResultNodeVector());
+        assertCorrectSerialization(new Int16ResultNodeVector().add(new Int16ResultNode((short) 1)).add(new Int16ResultNode((short) 3)), new Int16ResultNodeVector());
+        assertCorrectSerialization(new Int8ResultNodeVector().add(new Int8ResultNode((byte) 1)).add(new Int8ResultNode((byte) 3)), new Int8ResultNodeVector());
+        assertCorrectSerialization(new StringResultNodeVector().add(new StringResultNode("foo")).add(new StringResultNode("bar")), new StringResultNodeVector());
+        assertCorrectSerialization(new RawResultNodeVector().add(new RawResultNode(new byte[]{6, 9})).add(new RawResultNode(new byte[]{9, 6})), new RawResultNodeVector());
+        assertCorrectSerialization(new BoolResultNodeVector().add(new BoolResultNode(true)).add(new BoolResultNode(false)), new BoolResultNodeVector());
     }
 }
