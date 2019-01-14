@@ -14,16 +14,18 @@
 namespace storage::framework {
 
 class HttpUrlPath : public vespalib::Printable {
-    vespalib::string _urlPath;
     vespalib::string _path;
     std::map<vespalib::string, vespalib::string> _attributes;
     vespalib::string _serverSpec; // "host:port"
 
-    void init();
+    void init(const vespalib::string &urlpath);
 
 public:
     HttpUrlPath(const vespalib::string& urlpath);
     HttpUrlPath(const vespalib::string& urlpath, const vespalib::string& serverSpec);
+    HttpUrlPath(vespalib::string path,
+                std::map<vespalib::string, vespalib::string> attributes,
+                vespalib::string serverSpec);
     ~HttpUrlPath();
 
     const vespalib::string& getPath() const { return _path; }
@@ -31,8 +33,8 @@ public:
             { return _attributes; }
 
     bool hasAttribute(const vespalib::string& id) const;
-    const vespalib::string& getAttribute(const vespalib::string& id,
-                                         const vespalib::string& defaultValue = "") const;
+    vespalib::string getAttribute(const vespalib::string& id,
+                                  const vespalib::string& defaultValue = "") const;
 
     const vespalib::string& getServerSpec() const {
         return _serverSpec;
