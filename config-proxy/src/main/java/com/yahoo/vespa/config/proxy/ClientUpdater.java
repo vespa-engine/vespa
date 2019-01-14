@@ -31,18 +31,12 @@ class ClientUpdater {
     /**
      * This method will be called when a response with changed config is received from upstream
      * (content or generation has changed) or the server timeout has elapsed.
-     * Updates the cache with the returned config. Will only be called when in default mode
      *
      * @param config new config
      */
     void updateSubscribers(RawConfig config) {
         log.log(LogLevel.DEBUG, () -> "Config updated for " + config.getKey() + "," + config.getGeneration());
-        sendResponse(config);
-    }
-
-    private void sendResponse(RawConfig config) {
         if (config.isError()) { statistics.incErrorCount(); }
-        log.log(LogLevel.DEBUG, () -> "Sending response for " + config.getKey() + "," + config.getGeneration());
         DelayQueue<DelayedResponse> responseDelayQueue = delayedResponses.responses();
         log.log(LogLevel.SPAM, () -> "Delayed response queue: " + responseDelayQueue);
         if (responseDelayQueue.size() == 0) {
@@ -51,11 +45,11 @@ class ClientUpdater {
         } else {
             log.log(LogLevel.DEBUG, () -> "Delayed response queue has " + responseDelayQueue.size() + " elements");
         }
-        DelayedResponse[] responses = responseDelayQueue.toArray(new DelayedResponse[0]);
         boolean found = false;
-        for (DelayedResponse response : responses) {
+        for (DelayedResponse response : responseDelayQueue.toArray(new DelayedResponse[0])) {
             JRTServerConfigRequest request = response.getRequest();
-            if (request.getConfigKey().equals(config.getKey())) {
+            if (request.getConfigKey().equals(config.getKey())
+                    && (config.getGeneration() >= request.getRequestGeneration())) {
                 if (delayedResponses.remove(response)) {
                     found = true;
                     log.log(LogLevel.DEBUG, () -> "Call returnOkResponse for " + config.getKey() + "," + config.getGeneration());

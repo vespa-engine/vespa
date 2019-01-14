@@ -64,4 +64,26 @@ public class ClientUpdaterTest {
         assertThat(statistics.errors(), is(1L));
     }
 
+    @Test
+    public void it_does_not_send_old_config_in_response() {
+        assertThat(rpcServer.responses, is(0L));
+
+        RawConfig fooConfigOldGeneration = ProxyServerTest.fooConfig;
+
+        final RawConfig fooConfig = ProxyServerTest.createConfigWithNextConfigGeneration(fooConfigOldGeneration, 0);
+        clientUpdater.updateSubscribers(fooConfig);
+
+        // No delayed response, so not returned
+        assertEquals(0, rpcServer.responses);
+
+        delayedResponses.add(new DelayedResponse(JRTServerConfigRequestV3.createFromRequest(JRTConfigRequestFactory.createFromRaw(fooConfig, -10L).getRequest())));
+        clientUpdater.updateSubscribers(fooConfig);
+        assertEquals(1, rpcServer.responses);
+
+        delayedResponses.add(new DelayedResponse(JRTServerConfigRequestV3.createFromRequest(JRTConfigRequestFactory.createFromRaw(fooConfig, -10L).getRequest())));
+        clientUpdater.updateSubscribers(fooConfigOldGeneration);
+        // Old config generation, so not returned
+        assertEquals(1, rpcServer.responses);
+    }
+
 }
