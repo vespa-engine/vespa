@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.lb;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
@@ -26,7 +25,7 @@ public class LoadBalancer {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.ports = Ordering.natural().immutableSortedCopy(requirePorts(ports));
-        this.reals = ImmutableList.copyOf(Objects.requireNonNull(reals, "targets must be non-null"));
+        this.reals = Ordering.natural().immutableSortedCopy(Objects.requireNonNull(reals, "targets must be non-null"));
         this.inactive = inactive;
     }
 
