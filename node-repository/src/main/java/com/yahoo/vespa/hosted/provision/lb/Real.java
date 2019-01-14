@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class Real {
+public class Real implements Comparable<Real> {
 
     private static int defaultPort = 4443;
 
@@ -75,6 +75,11 @@ public class Real {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("ipAddress must be a valid IP address", e);
         }
+    }
+
+    @Override
+    public int compareTo(Real that) {
+        return hostname.compareTo(that.hostname());
     }
 
 }
