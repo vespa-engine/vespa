@@ -34,7 +34,7 @@ public class BadgeApiTest extends ControllerContainerTest {
                                                    new SourceRevision("repository", "branch", "commit"),
                                                    "foo@bar",
                                                    123,
-                                                   packageWithService.zippedContent(),
+                                                   packageWithService,
                                                    new byte[0]);
 
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default"),
