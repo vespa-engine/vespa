@@ -306,6 +306,7 @@
       "public boolean isManuallyDeployed()",
       "public boolean isTest()",
       "public boolean isProduction()",
+      "public boolean isMultiRegion()",
       "public static com.yahoo.config.provision.Environment defaultEnvironment()",
       "public static com.yahoo.config.provision.Environment from(java.lang.String)",
       "public java.lang.String value()"

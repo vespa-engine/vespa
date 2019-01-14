@@ -6,12 +6,8 @@ import com.yahoo.config.provision.RegionName;
 import org.custommonkey.xmlunit.XMLUnit;
 import org.junit.Test;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
-import java.io.IOException;
 import java.io.StringReader;
 
 /**
@@ -41,6 +37,11 @@ public class OverrideProcessorTest {
                 "      <document deploy:environment='staging prod' deploy:region='us-east-3' mode='index' type='music2'/>\n" +
                 "      <document deploy:environment='prod' mode='index' type='music3'/>\n" +
                 "      <document deploy:environment='prod' deploy:region='us-west' mode='index' type='music4'/>\n" +
+                "    </documents>" +
+                "    <documents deploy:environment='dev'>" +
+                "      <document mode='store-only' type='music'/>\n" +
+                "      <document type='music5' mode='streaming' />\n" +
+                "      <document deploy:region='us-east-1' type='music6' mode='streaming' />\n" +
                 "    </documents>" +
                 "    <documents>" +
                 "      <document mode='store-only' type='music'/>\n" +
@@ -214,7 +215,7 @@ public class OverrideProcessorTest {
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
                         "      <document mode=\"store-only\" type=\"music\"/>" +
-                        "      <document mode=\"streaming\" type=\"music2\"/>" +
+                        "      <document mode=\"streaming\" type=\"music5\"/>" +
                         "    </documents>" +
                         "    <nodes>" +
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -229,6 +230,35 @@ public class OverrideProcessorTest {
                         "  </jdisc>" +
                         "</services>";
         assertOverride(Environment.from("dev"), RegionName.defaultName(), expected);
+    }
+
+    @Test
+    public void testParsingDevEnvironmentAndRegion() throws Exception {
+        String expected =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
+                "  <admin version=\"2.0\">" +
+                "    <adminserver hostalias=\"node0\"/>" +
+                "  </admin>" +
+                "  <content id=\"foo\" version=\"1.0\">" +
+                "    <redundancy>1</redundancy>" +
+                "    <documents>" +
+                "      <document mode=\"streaming\" type=\"music6\"/>" +
+                "    </documents>" +
+                "    <nodes>" +
+                "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
+                "    </nodes>" +
+                "  </content>" +
+                "  <jdisc id=\"stateless\" version=\"1.0\">" +
+                "    <search/>" +
+                "    <component id=\"foo\" class=\"MyFoo\" bundle=\"foobundle\" />" +
+                "    <nodes>" +
+                "      <node hostalias=\"node0\"/>" +
+                "    </nodes>" +
+                "  </jdisc>" +
+                "</services>";
+
+        assertOverride(Environment.from("dev"), RegionName.from("us-east-1"), expected);
     }
 
     @Test
@@ -317,7 +347,7 @@ public class OverrideProcessorTest {
     }
 
     private void assertOverride(Environment environment, RegionName region, String expected) throws TransformerException {
-        Document inputDoc = Xml.getDocument(new StringReader(input));
+        Document inputDoc = Xml.getDocument(new StringReader(OverrideProcessorTest.input));
         Document newDoc = new OverrideProcessor(environment, region).process(inputDoc);
         TestBase.assertDocument(expected, newDoc);
     }
