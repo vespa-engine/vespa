@@ -167,7 +167,8 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
     @Override
     public void write(FieldBase field, BoolFieldValue value) {
-        value.setBoolean((getByte(null) != 0));
+        byte asByte = value.getBoolean() ? (byte)1 : (byte)0;
+        buf.put(asByte);
     }
 
     /**

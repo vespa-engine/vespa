@@ -206,8 +206,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     @Override
     public void read(FieldBase field, BoolFieldValue value) {
-        byte asByte = value.getBoolean() ? (byte)1 : (byte)0;
-        buf.put(asByte);
+        value.setBoolean((getByte(null) != 0));
     }
 
     public void read(FieldBase field, DoubleFieldValue value)  { value.assign(getDouble(null)); }
