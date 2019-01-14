@@ -82,8 +82,7 @@ public class NodeAgentImplTest {
     private final ContainerStats emptyContainerStats = new ContainerStats(Collections.emptyMap(),
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
     private final AthenzCredentialsMaintainer athenzCredentialsMaintainer = mock(AthenzCredentialsMaintainer.class);
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
-            .withFlag(Flags.CONTAINER_CPU_CAP.id());
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
 
     @Test
