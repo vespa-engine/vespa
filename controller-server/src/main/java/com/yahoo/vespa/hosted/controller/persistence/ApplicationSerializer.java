@@ -64,6 +64,7 @@ public class ApplicationSerializer {
     private final String outstandingChangeField = "outstandingChangeField";
     private final String ownershipIssueIdField = "ownershipIssueId";
     private final String ownerField = "confirmedOwner";
+    private final String majorVersionField = "majorVersion";
     private final String writeQualityField = "writeQuality";
     private final String queryQualityField = "queryQuality";
     private final String rotationField = "rotation";
@@ -153,6 +154,7 @@ public class ApplicationSerializer {
         toSlime(application.outstandingChange(), root, outstandingChangeField);
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
         application.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
+        application.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         application.rotation().ifPresent(rotation -> root.setString(rotationField, rotation.asString()));
@@ -314,13 +316,14 @@ public class ApplicationSerializer {
         Change outstandingChange = changeFromSlime(root.field(outstandingChangeField));
         Optional<IssueId> ownershipIssueId = optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
         Optional<User> owner = optionalString(root.field(ownerField)).map(User::from);
+        Optional<Integer> majorVersion = optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
         Optional<RotationId> rotation = rotationFromSlime(root.field(rotationField));
         Map<HostName, RotationStatus> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs, deploying,
-                               outstandingChange, ownershipIssueId, owner, metrics, rotation, rotationStatus);
+                               outstandingChange, ownershipIssueId, owner, majorVersion, metrics, rotation, rotationStatus);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {
@@ -498,6 +501,10 @@ public class ApplicationSerializer {
 
     private OptionalLong optionalLong(Inspector field) {
         return field.valid() ? OptionalLong.of(field.asLong()) : OptionalLong.empty();
+    }
+
+    private Optional<Integer> optionalInteger(Inspector field) {
+        return field.valid() ? Optional.of((int)field.asLong()) : Optional.empty();
     }
 
     private OptionalDouble optionalDouble(Inspector field) {

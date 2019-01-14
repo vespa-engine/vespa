@@ -1,0 +1,87 @@
+{
+  "application": "application2",
+  "instance": "default",
+  "deployments": "http://localhost:8080/application/v4/tenant/tenant2/application/application2/instance/default/job/",
+  "source": {
+    "gitRepository": "repository1",
+    "gitBranch": "master",
+    "gitCommit": "commit1"
+  },
+  "projectId": 456,
+  "deploying": {
+    "version": "(ignore)"
+  },
+  "outstandingChange": {
+    "revision": {
+      "hash": "(ignore)",
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
+    }
+  },
+  "deployedInternally": false,
+  "deploymentJobs": [
+    {
+      "type": "component",
+      "success": true,
+      "lastCompleted": {
+        "id": 42,
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "Application commit",
+        "at": "(ignore)"
+      },
+      "lastSuccess": {
+        "id": 42,
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "Application commit",
+        "at": "(ignore)"
+      }
+    },
+    {
+      "type": "system-test",
+      "success": false,
+      "lastTriggered": {
+        "id": -1,
+        "version": "7.0.0",
+        "revision": {
+          "hash": "1.0.42-commit1",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "Testing last changes outside prod",
+        "at": "(ignore)"
+      }
+    }
+  ],
+  "changeBlockers": [],
+  "compileVersion": "6.1.0",
+  "majorVersion": 7,
+  "globalRotations": [],
+  "instances": [],
+  "metrics": {
+    "queryServiceQuality": 0.0,
+    "writeServiceQuality": 0.0
+  },
+  "activity": {}
+}

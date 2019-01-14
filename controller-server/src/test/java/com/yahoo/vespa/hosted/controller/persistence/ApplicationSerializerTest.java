@@ -109,6 +109,7 @@ public class ApplicationSerializerTest {
                                                Change.of(ApplicationVersion.from(new SourceRevision("repo", "master", "deadcafe"), 42)),
                                                Optional.of(IssueId.from("1234")),
                                                Optional.of(User.from("by-username")),
+                                               Optional.of(7),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of(new RotationId("my-rotation")),
                                                rotationStatus);
@@ -142,6 +143,7 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
         assertEquals(original.owner(), serialized.owner());
+        assertEquals(original.majorVersion(), serialized.majorVersion());
 
         assertEquals(original.change(), serialized.change());
         assertEquals(original.rotation().get(), serialized.rotation().get());

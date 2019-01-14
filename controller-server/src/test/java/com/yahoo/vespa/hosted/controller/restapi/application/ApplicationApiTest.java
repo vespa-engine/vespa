@@ -82,6 +82,7 @@ import java.util.function.Supplier;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
+import static com.yahoo.application.container.handler.Request.Method.PATCH;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static org.junit.Assert.assertEquals;
@@ -309,6 +310,24 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .submit();
 
         // GET application having both change and outstanding change
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
+                                      .userIdentity(USER_ID),
+                              new File("application2.json"));
+
+        // PATCH in a major version override
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"majorVersion\":7}"),
+                              "{\"message\":\"Set major version to 7\"}");
+        // GET an application with a major version override
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
+                                      .userIdentity(USER_ID),
+                              new File("application2-with-majorVersion.json"));
+        // PATCH in removal of the application major version override removal
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"majorVersion\":null}"),
+                              "{\"message\":\"Set major version to empty\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
                                       .userIdentity(USER_ID),
                               new File("application2.json"));
@@ -1280,55 +1299,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     "}";
     }
 
-    private static class RequestBuilder implements Supplier<Request> {
-
-        private final String path;
-        private final Request.Method method;
-        private byte[] data = new byte[0];
-        private AthenzIdentity identity;
-        private OktaAccessToken oktaAccessToken;
-        private String contentType = "application/json";
-        private String recursive;
-
-        private RequestBuilder(String path, Request.Method method) {
-            this.path = path;
-            this.method = method;
-        }
-
-        private RequestBuilder data(byte[] data) { this.data = data; return this; }
-        private RequestBuilder data(String data) { return data(data.getBytes(StandardCharsets.UTF_8)); }
-        private RequestBuilder data(HttpEntity data) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try {
-                data.writeTo(out);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            return data(out.toByteArray()).contentType(data.getContentType().getValue());
-        }
-        private RequestBuilder userIdentity(UserId userId) { this.identity = HostedAthenzIdentities.from(userId); return this; }
-        private RequestBuilder screwdriverIdentity(ScrewdriverId screwdriverId) { this.identity = HostedAthenzIdentities.from(screwdriverId); return this; }
-        private RequestBuilder oktaAccessToken(OktaAccessToken oktaAccessToken) { this.oktaAccessToken = oktaAccessToken; return this; }
-        private RequestBuilder contentType(String contentType) { this.contentType = contentType; return this; }
-        private RequestBuilder recursive(String recursive) { this.recursive = recursive; return this; }
-
-        @Override
-        public Request get() {
-            Request request = new Request("http://localhost:8080" + path +
-                                          // user and domain parameters are translated to a Principal by MockAuthorizer as we do not run HTTP filters
-                                          (recursive == null ? "" : "?recursive=" + recursive),
-                                          data, method);
-            request.getHeaders().put("Content-Type", contentType);
-            if (identity != null) {
-                addIdentityToRequest(request, identity);
-            }
-            if (oktaAccessToken != null) {
-                addOktaAccessToken(request, oktaAccessToken);
-            }
-            return request;
-        }
-    }
-
     /** Make a request with (athens) user domain1.mytenant */
     private RequestBuilder request(String path, Request.Method method) {
         return new RequestBuilder(path, method);
@@ -1493,6 +1463,55 @@ public class ApplicationApiTest extends ControllerContainerTest {
         PropertyId p = new PropertyId(String.valueOf(propertyId));
         contactRetriever().addContact(p, new Contact(URI.create("www.issues.tld/" + p.id()), URI.create("www.contacts.tld/" + p.id()), URI.create("www.properties.tld/" + p.id()), Arrays.asList(Collections.singletonList("alice"),
                 Collections.singletonList("bob")), "queue", Optional.empty()));
+    }
+
+    private static class RequestBuilder implements Supplier<Request> {
+
+        private final String path;
+        private final Request.Method method;
+        private byte[] data = new byte[0];
+        private AthenzIdentity identity;
+        private OktaAccessToken oktaAccessToken;
+        private String contentType = "application/json";
+        private String recursive;
+
+        private RequestBuilder(String path, Request.Method method) {
+            this.path = path;
+            this.method = method;
+        }
+
+        private RequestBuilder data(byte[] data) { this.data = data; return this; }
+        private RequestBuilder data(String data) { return data(data.getBytes(StandardCharsets.UTF_8)); }
+        private RequestBuilder data(HttpEntity data) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try {
+                data.writeTo(out);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return data(out.toByteArray()).contentType(data.getContentType().getValue());
+        }
+        private RequestBuilder userIdentity(UserId userId) { this.identity = HostedAthenzIdentities.from(userId); return this; }
+        private RequestBuilder screwdriverIdentity(ScrewdriverId screwdriverId) { this.identity = HostedAthenzIdentities.from(screwdriverId); return this; }
+        private RequestBuilder oktaAccessToken(OktaAccessToken oktaAccessToken) { this.oktaAccessToken = oktaAccessToken; return this; }
+        private RequestBuilder contentType(String contentType) { this.contentType = contentType; return this; }
+        private RequestBuilder recursive(String recursive) { this.recursive = recursive; return this; }
+
+        @Override
+        public Request get() {
+            Request request = new Request("http://localhost:8080" + path +
+                                          // user and domain parameters are translated to a Principal by MockAuthorizer as we do not run HTTP filters
+                                          (recursive == null ? "" : "?recursive=" + recursive),
+                                          data, method);
+            request.getHeaders().put("Content-Type", contentType);
+            if (identity != null) {
+                addIdentityToRequest(request, identity);
+            }
+            if (oktaAccessToken != null) {
+                addOktaAccessToken(request, oktaAccessToken);
+            }
+            return request;
+        }
     }
 
 }
