@@ -118,20 +118,8 @@ StatusWebServer::WebServer::get(vespalib::Portal::GetRequest request)
 void
 StatusWebServer::WebServer::handle_get(vespalib::Portal::GetRequest request)
 {
-    const vespalib::string &tmpurl = request.get_uri();
-    Fast_URL urlCodec;
-    int bufLength = tmpurl.length() * 2 + 10;
-    char * encodedUrl = new char[bufLength];
-    strcpy(encodedUrl, tmpurl.c_str());
-    char decodedUrl[bufLength];
-    urlCodec.DecodeQueryString(encodedUrl);
-    urlCodec.decode(encodedUrl, decodedUrl, bufLength);
-    delete [] encodedUrl;
-
-    vespalib::string url = decodedUrl;
-
-    LOG(debug, "Status got get request '%s'", url.c_str());
-    framework::HttpUrlPath urlpath(url.c_str(), request.get_host());
+    LOG(debug, "Status got get request '%s'", request.get_uri().c_str());
+    framework::HttpUrlPath urlpath(request.get_path(), request.export_params(), request.get_host());
     _status.handlePage(urlpath, std::move(request));
 }
 
