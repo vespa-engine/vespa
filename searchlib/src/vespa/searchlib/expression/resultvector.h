@@ -13,8 +13,7 @@
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class ResultNodeVector : public ResultNode
 {
@@ -304,6 +303,15 @@ public:
 
 };
 
+class BoolResultNodeVector : public NumericResultNodeVectorT<BoolResultNode>
+{
+public:
+    BoolResultNodeVector() { }
+    DECLARE_RESULTNODE(BoolResultNodeVector);
+
+    const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
+};
+
 class Int8ResultNodeVector : public NumericResultNodeVectorT<Int8ResultNode>
 {
 public:
@@ -426,7 +434,4 @@ private:
     std::vector<ResultNode::CP> _v;
 };
 
-
 }
-}
-

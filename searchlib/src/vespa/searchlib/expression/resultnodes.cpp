@@ -12,8 +12,7 @@
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 using vespalib::nbo;
 using vespalib::Serializer;
@@ -31,6 +30,7 @@ IMPLEMENT_RESULTNODE(StringResultNode,           SingleResultNode);
 IMPLEMENT_RESULTNODE(NullResultNode,             SingleResultNode);
 IMPLEMENT_RESULTNODE(PositiveInfinityResultNode, SingleResultNode);
 IMPLEMENT_RESULTNODE(RawResultNode,              SingleResultNode);
+IMPLEMENT_RESULTNODE(BoolResultNode,             IntegerResultNode);
 IMPLEMENT_RESULTNODE(Int8ResultNode,             IntegerResultNode);
 IMPLEMENT_RESULTNODE(Int16ResultNode,            IntegerResultNode);
 IMPLEMENT_RESULTNODE(Int32ResultNode,            IntegerResultNode);
@@ -38,13 +38,9 @@ IMPLEMENT_RESULTNODE(Int64ResultNode,            IntegerResultNode);
 IMPLEMENT_RESULTNODE(EnumResultNode,             IntegerResultNode);
 IMPLEMENT_RESULTNODE(FloatResultNode,            NumericResultNode);
 
-void ResultNode::sort()
-{
-}
+void ResultNode::sort() {}
 
-void ResultNode::reverse()
-{
-}
+void ResultNode::reverse() {}
 
 void ResultNode::negate()
 {
@@ -85,19 +81,22 @@ FloatResultNode::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "value", _value);
 }
 
-ResultNode::ConstBufferRef FloatResultNode::onGetString(size_t index, ResultNode::BufferRef buf) const
+ResultNode::ConstBufferRef
+FloatResultNode::onGetString(size_t index, ResultNode::BufferRef buf) const
 {
     (void) index;
     int numWritten = std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%g", _value)));
     return ConstBufferRef(buf.str(), numWritten);
 }
 
-bool FloatResultNode::isNan() const
+bool
+FloatResultNode::isNan() const
 {
     return std::isnan(_value);
 }
 
-int FloatResultNode::onCmp(const Identifiable & b) const
+int
+FloatResultNode::onCmp(const Identifiable & b) const
 {
     const FloatResultNode & rhs(static_cast<const FloatResultNode &>(b));
     if (isNan()) {
@@ -150,13 +149,15 @@ int PositiveInfinityResultNode::onCmp(const Identifiable & b) const
 
 int64_t StringResultNode::onGetInteger(size_t index) const { (void) index; return strtoll(_value.c_str(), NULL, 0); }
 double  StringResultNode::onGetFloat(size_t index)   const { (void) index; return vespalib::locale::c::strtod(_value.c_str(), NULL); }
-Serializer & StringResultNode::onSerialize(Serializer & os) const
+Serializer &
+StringResultNode::onSerialize(Serializer & os) const
 {
     os << _value;
     return os;
 }
 
-int StringResultNode::onCmp(const Identifiable & b) const
+int
+StringResultNode::onCmp(const Identifiable & b) const
 {
     if (b.inherits(PositiveInfinityResultNode::classId)) {
         return -1;
@@ -171,14 +172,16 @@ int StringResultNode::onCmp(const Identifiable & b) const
     }
 }
 
-Deserializer & StringResultNode::onDeserialize(Deserializer & is)
+Deserializer &
+StringResultNode::onDeserialize(Deserializer & is)
 {
     is >> _value;
     return is;
 }
 
 
-void RawResultNode::add(const ResultNode & b)
+void
+RawResultNode::add(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
@@ -196,7 +199,8 @@ void RawResultNode::add(const ResultNode & b)
 
 }
 
-void RawResultNode::min(const ResultNode & b)
+void
+RawResultNode::min(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
@@ -206,7 +210,8 @@ void RawResultNode::min(const ResultNode & b)
     }
 }
 
-void RawResultNode::max(const ResultNode & b)
+void
+RawResultNode::max(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
@@ -216,14 +221,16 @@ void RawResultNode::max(const ResultNode & b)
     }
 }
 
-void RawResultNode::negate()
+void
+RawResultNode::negate()
 {
     for (size_t i(0); i < _value.size(); i++) {
         _value[i] = - _value[i];
     }
 }
 
-void StringResultNode::add(const ResultNode & b)
+void
+StringResultNode::add(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
@@ -238,7 +245,8 @@ void StringResultNode::add(const ResultNode & b)
     }
 }
 
-void StringResultNode::min(const ResultNode & b)
+void
+StringResultNode::min(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
@@ -248,7 +256,8 @@ void StringResultNode::min(const ResultNode & b)
     }
 }
 
-void StringResultNode::max(const ResultNode & b)
+void
+StringResultNode::max(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
@@ -258,7 +267,8 @@ void StringResultNode::max(const ResultNode & b)
     }
 }
 
-void StringResultNode::negate()
+void
+StringResultNode::negate()
 {
     for (size_t i(0); i < _value.length(); i++) {
         _value[i] = - _value[i];
@@ -271,9 +281,14 @@ StringResultNode::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "value", _value);
 }
 
-ResultNode::ConstBufferRef StringResultNode::onGetString(size_t index, ResultNode::BufferRef ) const { (void) index; return ConstBufferRef(_value.c_str(), _value.size()); }
+ResultNode::ConstBufferRef
+StringResultNode::onGetString(size_t index, ResultNode::BufferRef ) const {
+    (void) index;
+    return ConstBufferRef(_value.c_str(), _value.size());
+}
 
-void StringResultNode::set(const ResultNode & rhs)
+void
+StringResultNode::set(const ResultNode & rhs)
 {
     char buf[32];
     ConstBufferRef b(rhs.getString(BufferRef(buf, sizeof(buf))));
@@ -310,13 +325,15 @@ size_t hashBuf(const void *s, size_t sz)
 
 size_t StringResultNode::hash() const { return hashBuf(_value.c_str(),  _value.size()); }
 
-size_t StringResultNode::hash(const void * buf) const
+size_t
+StringResultNode::hash(const void * buf) const
 {
     const vespalib::string & s = *static_cast<const vespalib::string *>(buf);
     return hashBuf(s.c_str(), s.size());
 }
 
-int64_t RawResultNode::onGetInteger(size_t index) const
+int64_t
+RawResultNode::onGetInteger(size_t index) const
 {
     (void) index;
     union {
@@ -367,19 +384,22 @@ int RawResultNode::onCmp(const Identifiable & b) const
 
 size_t RawResultNode::hash() const { return hashBuf(&_value[0], _value.size()); }
 
-size_t RawResultNode::hash(const void * buf) const
+size_t
+RawResultNode::hash(const void * buf) const
 {
     const std::vector<uint8_t> & s = *static_cast<const std::vector<uint8_t> *>(buf);
     return hashBuf(&s[0], s.size());
 }
 
-Deserializer & RawResultNode::onDeserialize(Deserializer & is)
+Deserializer &
+RawResultNode::onDeserialize(Deserializer & is)
 {
     is >> _value;
     return is;
 }
 
-ResultDeserializer & RawResultNode::onDeserializeResult(ResultDeserializer & is)
+ResultDeserializer &
+RawResultNode::onDeserializeResult(ResultDeserializer & is)
 {
     return is.getResult(getClass(), *this);
 }
@@ -390,13 +410,15 @@ RawResultNode::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "value", _value);
 }
 
-void RawResultNode::set(const ResultNode & rhs)
+void
+RawResultNode::set(const ResultNode & rhs)
 {
     char buf[32];
     ConstBufferRef b(rhs.getString(BufferRef(buf, sizeof(buf))));
     setBuffer(b.data(), b.size());
 }
-void RawResultNode::setBuffer(const void *buf, size_t sz)
+void
+RawResultNode::setBuffer(const void *buf, size_t sz)
 {
     _value.resize(sz + 1);
     memcpy(&_value[0], buf, sz);
@@ -404,37 +426,49 @@ void RawResultNode::setBuffer(const void *buf, size_t sz)
     _value.resize(sz);
 }
 
-ResultNode::ConstBufferRef RawResultNode::onGetString(size_t index, BufferRef ) const { (void) index; return ConstBufferRef(&_value[0], _value.size()); }
+namespace {
+    const vespalib::string TRUE = "true";
+    const vespalib::string FALSE = "false";
+}
 
-ResultNode::ConstBufferRef EnumResultNode::onGetString(size_t index, BufferRef buf) const {
-    (void) index;
+ResultNode::ConstBufferRef
+RawResultNode::onGetString(size_t, BufferRef ) const {
+    return ConstBufferRef(&_value[0], _value.size());
+}
+
+ResultNode::ConstBufferRef
+EnumResultNode::onGetString(size_t, BufferRef buf) const {
     int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%ld", getValue()))));
     return ConstBufferRef(buf.str(), numWritten);
 }
 
-ResultNode::ConstBufferRef Int8ResultNode::onGetString(size_t index, BufferRef buf) const {
-    (void) index;
+ResultNode::ConstBufferRef
+BoolResultNode::onGetString(size_t, BufferRef) const {
+    return getValue() ? ConstBufferRef(TRUE.data(), TRUE.size()) : ConstBufferRef(FALSE.data(), FALSE.size());
+}
+
+ResultNode::ConstBufferRef
+Int8ResultNode::onGetString(size_t, BufferRef buf) const {
     int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%d", getValue()))));
     return ConstBufferRef(buf.str(), numWritten);
 }
 
-ResultNode::ConstBufferRef Int16ResultNode::onGetString(size_t index, BufferRef buf) const {
-    (void) index;
+ResultNode::ConstBufferRef
+Int16ResultNode::onGetString(size_t, BufferRef buf) const {
     int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%d", getValue()))));
     return ConstBufferRef(buf.str(), numWritten);
 }
 
-ResultNode::ConstBufferRef Int32ResultNode::onGetString(size_t index, BufferRef buf) const {
-    (void) index;
+ResultNode::ConstBufferRef
+Int32ResultNode::onGetString(size_t, BufferRef buf) const {
     int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%d", getValue()))));
     return ConstBufferRef(buf.str(), numWritten);
 }
 
-ResultNode::ConstBufferRef Int64ResultNode::onGetString(size_t index, BufferRef buf) const {
-    (void) index;
+ResultNode::ConstBufferRef
+Int64ResultNode::onGetString(size_t, BufferRef buf) const {
     int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%ld", getValue()))));
     return ConstBufferRef(buf.str(), numWritten);
 }
 
-}
 }

@@ -4,6 +4,7 @@
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
+#include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/testdocman.h>
@@ -1534,12 +1535,37 @@ AttributeGuard createInt8Attribute() {
     return attr1;
 }
 
+AttributeGuard createBoolAttribute() {
+    SingleBoolAttribute *selectAttr1(new SingleBoolAttribute("selectAttr1", search::GrowStrategy()));
+    DocId docId(0);
+    selectAttr1->addDoc(docId);
+    selectAttr1->setBit(docId, true);
+    selectAttr1->addDoc(docId);
+    selectAttr1->setBit(docId, false);
+    selectAttr1->addDoc(docId);
+    selectAttr1->addDoc(docId);
+    selectAttr1->setBit(docId, true);
+    selectAttr1->addDoc(docId);
+    selectAttr1->setBit(docId, true);
+
+
+    AttributeVector::SP spSelectAttr1(selectAttr1);
+    AttributeGuard attr1( spSelectAttr1 );
+    return attr1;
+}
+
 TEST("testIntegerTypes") {
-    EXPECT_EQUAL(AttributeNode(*createInt8Attribute()).prepare(false)
+    EXPECT_EQUAL(AttributeNode(*createBoolAttribute()).prepare(false)
                  .getResult().getClass().id(),
+                 uint32_t(BoolResultNode::classId));
+    EXPECT_EQUAL(AttributeNode(*createBoolAttribute())
+                 .prepare(true).getResult().getClass().id(),
+                 uint32_t(BoolResultNode::classId));
+    EXPECT_EQUAL(AttributeNode(*createInt8Attribute()).prepare(false)
+                         .getResult().getClass().id(),
                  uint32_t(Int64ResultNode::classId));
     EXPECT_EQUAL(AttributeNode(*createInt8Attribute())
-                 .prepare(true).getResult().getClass().id(),
+                         .prepare(true).getResult().getClass().id(),
                  uint32_t(Int8ResultNode::classId));
     EXPECT_EQUAL(AttributeNode(*createInt16Attribute())
                  .prepare(false).getResult().getClass().id(),

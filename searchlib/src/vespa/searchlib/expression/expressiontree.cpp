@@ -7,8 +7,7 @@
 #include "arrayatlookupfunctionnode.h"
 #include "attributenode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 using vespalib::Serializer;
 using vespalib::Deserializer;
@@ -223,7 +222,6 @@ operator >> (Deserializer & is, ExpressionTree & et)
     return is;
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

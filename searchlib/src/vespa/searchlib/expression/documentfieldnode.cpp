@@ -10,8 +10,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.documentfieldnode");
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 using namespace vespalib;
 using namespace document;
@@ -23,9 +22,7 @@ IMPLEMENT_EXPRESSIONNODE(GetDocIdNamespaceSpecificFunctionNode, DocumentAccessor
 
 const vespalib::string DocumentAccessorNode::_S_docId("documentid");
 
-DocumentFieldNode::~DocumentFieldNode()
-{
-}
+DocumentFieldNode::~DocumentFieldNode() = default;
 
 DocumentFieldNode::DocumentFieldNode(const DocumentFieldNode & rhs) :
     DocumentAccessorNode(rhs),
@@ -67,6 +64,8 @@ deduceResultNode(vespalib::stringref fieldName, const FieldValue & fv, bool pres
         }
     } else if (cInfo.inherits(FloatFieldValue::classId) || cInfo.inherits(DoubleFieldValue::classId)) {
         value.reset(nestedMultiValue ? static_cast<ResultNode *>(new FloatResultNodeVector()) : static_cast<ResultNode *>(new FloatResultNode()));
+    } else if (cInfo.inherits(BoolFieldValue::classId)) {
+        value.reset(nestedMultiValue ? static_cast<ResultNode *>(new BoolResultNodeVector()) : static_cast<ResultNode *>(new BoolResultNode()));
     } else if (cInfo.inherits(StringFieldValue::classId)) {
         value.reset(nestedMultiValue ? static_cast<ResultNode *>(new StringResultNodeVector()) : static_cast<ResultNode *>(new StringResultNode()));
     } else if (cInfo.inherits(RawFieldValue::classId)) {
@@ -83,6 +82,8 @@ deduceResultNode(vespalib::stringref fieldName, const FieldValue & fv, bool pres
         const Identifiable::RuntimeClass & rInfo = value->getClass();
         if (rInfo.inherits(ResultNodeVector::classId)) {
             //Already multivalue, so we are good to go.
+        } else if (rInfo.inherits(BoolResultNode::classId)) {
+            value.reset(new BoolResultNodeVector());
         } else if (rInfo.inherits(Int8ResultNode::classId)) {
             value.reset(new Int8ResultNodeVector());
         } else if (rInfo.inherits(Int16ResultNode::classId)) {
@@ -338,7 +339,6 @@ GetYMUMChecksumFunctionNode::visitMembers(vespalib::ObjectVisitor &visitor) cons
     visit(visitor, "checkSum", _checkSum);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

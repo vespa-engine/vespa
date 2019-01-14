@@ -2,10 +2,10 @@
 
 #include "resultvector.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 IMPLEMENT_ABSTRACT_EXPRESSIONNODE(ResultNodeVector, ResultNode);
+IMPLEMENT_RESULTNODE(BoolResultNodeVector, ResultNodeVector);
 IMPLEMENT_RESULTNODE(Int8ResultNodeVector, ResultNodeVector);
 IMPLEMENT_RESULTNODE(Int16ResultNodeVector, ResultNodeVector);
 IMPLEMENT_RESULTNODE(Int32ResultNodeVector, ResultNodeVector);
@@ -54,7 +54,6 @@ ResultNodeVector::onDeserializeResult(ResultDeserializer & is)
     return is.getResult(getClass(), *this);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

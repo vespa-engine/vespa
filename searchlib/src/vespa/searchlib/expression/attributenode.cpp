@@ -140,7 +140,10 @@ void AttributeNode::onPrepare(bool preserveAccurateTypes)
         BasicType::Type basicType = attribute->getBasicType();
         if (attribute->isIntegerType()) {
             if (_hasMultiValue) {
-                if (preserveAccurateTypes) {
+                if (basicType == BasicType::BOOL) {
+                    setResultType(std::make_unique<BoolResultNodeVector>());
+                    _handler = std::make_unique<IntegerHandler<BoolResultNodeVector>>(updateResult());
+                } else if (preserveAccurateTypes) {
                     switch (basicType) {
                       case BasicType::INT8:
                         setResultType(std::make_unique<Int8ResultNodeVector>());
@@ -167,7 +170,9 @@ void AttributeNode::onPrepare(bool preserveAccurateTypes)
                     _handler = std::make_unique<IntegerHandler<IntegerResultNodeVector>>(updateResult());
                 }
             } else {
-                if (preserveAccurateTypes) {
+                if (basicType == BasicType::BOOL) {
+                    setResultType(std::make_unique<BoolResultNode>());
+                } else if (preserveAccurateTypes) {
                     switch (basicType) {
                       case BasicType::INT8:
                         setResultType(std::make_unique<Int8ResultNode>());

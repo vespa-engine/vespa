@@ -5,8 +5,7 @@
 #include "serializer.h"
 #include <vespa/vespalib/util/buffer.h>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class BucketResultNode;
 
@@ -123,5 +122,4 @@ public:
     virtual const BucketResultNode& getNullBucket() const;
 };
 
-}
 }

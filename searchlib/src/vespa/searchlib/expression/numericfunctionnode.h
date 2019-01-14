@@ -4,8 +4,7 @@
 #include "multiargfunctionnode.h"
 #include "resultvector.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class NumericFunctionNode : public MultiArgFunctionNode
 {
@@ -173,5 +172,4 @@ private:
     std::unique_ptr<Handler> _handler;
 };
 
-}
 }

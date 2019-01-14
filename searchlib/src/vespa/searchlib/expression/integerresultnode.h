@@ -5,8 +5,7 @@
 #include <vespa/vespalib/util/sort.h>
 #include <limits>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class BucketResultNode;
 
@@ -88,6 +87,17 @@ private:
     T _value;
 };
 
+class BoolResultNode : public IntegerResultNodeT<bool>
+{
+private:
+    using Base = IntegerResultNodeT<bool>;
+public:
+    DECLARE_RESULTNODE(BoolResultNode);
+    BoolResultNode(bool v=false) : Base(v) { }
+private:
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
+};
+
 class Int8ResultNode : public IntegerResultNodeT<int8_t>
 {
 private:
@@ -133,5 +143,3 @@ private:
 };
 
 }
-}
-

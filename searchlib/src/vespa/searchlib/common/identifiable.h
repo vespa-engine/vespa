@@ -149,6 +149,9 @@
 #define CID_search_expression_NormalizeSubjectFunctionNode  SEARCHLIB_CID(143)
 #define CID_search_expression_DebugWaitFunctionNode         SEARCHLIB_CID(144)
 #define CID_search_expression_AttributeMapLookupNode        SEARCHLIB_CID(145)
+#define CID_search_expression_BoolResultNode                SEARCHLIB_CID(146)
+#define CID_search_expression_BoolResultNodeVector          SEARCHLIB_CID(147)
+
 
 #define CID_search_QueryNode                                SEARCHLIB_CID(150)
 #define CID_search_Query                                    SEARCHLIB_CID(151)
