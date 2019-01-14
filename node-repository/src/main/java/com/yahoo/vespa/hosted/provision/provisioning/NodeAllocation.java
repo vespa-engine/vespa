@@ -161,7 +161,7 @@ class NodeAllocation {
      */
     private boolean exclusiveTo(TenantName tenant, Optional<String> parentHostname) {
         if ( ! parentHostname.isPresent()) return true;
-        for (Node nodeOnHost : nodeRepository.getChildNodes(parentHostname.get())) {
+        for (Node nodeOnHost : nodeRepository.list().childrenOf(parentHostname.get()).asList()) {
             if ( ! nodeOnHost.allocation().isPresent()) continue;
 
             if ( nodeOnHost.allocation().get().membership().cluster().isExclusive() &&
@@ -174,7 +174,7 @@ class NodeAllocation {
     private boolean hostsOnly(TenantName tenant, Optional<String> parentHostname) {
         if ( ! parentHostname.isPresent()) return true; // yes, as host is exclusive
 
-        for (Node nodeOnHost : nodeRepository.getChildNodes(parentHostname.get())) {
+        for (Node nodeOnHost : nodeRepository.list().childrenOf(parentHostname.get()).asList()) {
             if ( ! nodeOnHost.allocation().isPresent()) continue;
             if ( ! nodeOnHost.allocation().get().owner().tenant().equals(tenant))
                 return false;

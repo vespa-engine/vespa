@@ -162,18 +162,9 @@ public class NodeRepository extends AbstractComponent {
         return db.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
 
-    /**
-     * Finds and returns all nodes that are children of the given parent node
-     *
-     * @param hostname Parent hostname
-     * @return List of child nodes
-     */
-    public List<Node> getChildNodes(String hostname) {
-        return db.getNodes().stream()
-                .filter(node -> node.parentHostname()
-                        .map(parentHostname -> parentHostname.equals(hostname))
-                        .orElse(false))
-                .collect(Collectors.toList());
+    /** Returns a filterable list of all nodes in this repository */
+    public NodeList list() {
+        return new NodeList(getNodes());
     }
 
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return db.getNodes(id, inState); }
@@ -255,7 +246,7 @@ public class NodeRepository extends AbstractComponent {
      * @return List of node ACLs
      */
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
-        NodeList candidates = new NodeList(getNodes());
+        NodeList candidates = list();
         if (children) {
             return candidates.childrenOf(node).asList().stream()
                              .map(childNode -> getNodeAcl(childNode, candidates))
@@ -413,7 +404,7 @@ public class NodeRepository extends AbstractComponent {
 
         List<Node> nodesToDirty =
                 (nodeToDirty.type().isDockerHost() ?
-                        Stream.concat(getChildNodes(hostname).stream(), Stream.of(nodeToDirty)) :
+                        Stream.concat(list().childrenOf(hostname).asList().stream(), Stream.of(nodeToDirty)) :
                         Stream.of(nodeToDirty))
                 .filter(node -> node.state() != Node.State.dirty)
                 .collect(Collectors.toList());
@@ -483,9 +474,9 @@ public class NodeRepository extends AbstractComponent {
     }
 
     private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
-        List<Node> moved = getChildNodes(hostname).stream()
-                .map(child -> move(child, toState, agent, reason))
-                .collect(Collectors.toList());
+        List<Node> moved = list().childrenOf(hostname).asList().stream()
+                                         .map(child -> move(child, toState, agent, reason))
+                                         .collect(Collectors.toList());
 
         moved.add(move(hostname, toState, agent, reason));
         return moved;
@@ -547,9 +538,9 @@ public class NodeRepository extends AbstractComponent {
             List<Node> removed = new ArrayList<>();
 
              if (node.type().isDockerHost()) {
-                 getChildNodes(node.hostname()).stream()
-                                               .filter(child -> force || canRemove(child, true))
-                                               .forEach(removed::add);
+                 list().childrenOf(node).asList().stream()
+                       .filter(child -> force || canRemove(child, true))
+                       .forEach(removed::add);
              }
 
             if (force || canRemove(node, false)) removed.add(node);

@@ -135,7 +135,7 @@ public class DynamicDockerProvisioningTest {
 
         Map<Integer, Integer> numberOfChildrenStat = new HashMap<>();
         for (Node node : dockerHosts) {
-            int nofChildren = tester.nodeRepository().getChildNodes(node.hostname()).size();
+            int nofChildren = tester.nodeRepository().list().childrenOf(node).size();
             if (!numberOfChildrenStat.containsKey(nofChildren)) {
                 numberOfChildrenStat.put(nofChildren, 0);
             }

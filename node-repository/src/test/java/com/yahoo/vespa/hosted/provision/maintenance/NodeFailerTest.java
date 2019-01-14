@@ -52,8 +52,8 @@ public class NodeFailerTest {
         });
 
         // The host should have 2 nodes in active and 1 ready
-        Map<Node.State, List<String>> hostnamesByState = tester.nodeRepository.getChildNodes(hostWithHwFailure).stream()
-                .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
+        Map<Node.State, List<String>> hostnamesByState = tester.nodeRepository.list().childrenOf(hostWithHwFailure).asList().stream()
+                                                                              .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
         assertEquals(2, hostnamesByState.get(Node.State.active).size());
         assertEquals(1, hostnamesByState.get(Node.State.ready).size());
 
@@ -70,8 +70,8 @@ public class NodeFailerTest {
         expectedHostnamesByState1Iter.put(Node.State.failed,
                 Arrays.asList(hostnamesByState.get(Node.State.active).get(0), hostnamesByState.get(Node.State.ready).get(0)));
         expectedHostnamesByState1Iter.put(Node.State.active, hostnamesByState.get(Node.State.active).subList(1, 2));
-        Map<Node.State, List<String>> hostnamesByState1Iter = tester.nodeRepository.getChildNodes(hostWithHwFailure).stream()
-                .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
+        Map<Node.State, List<String>> hostnamesByState1Iter = tester.nodeRepository.list().childrenOf(hostWithHwFailure).asList().stream()
+                                                                                   .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
         assertEquals(expectedHostnamesByState1Iter, hostnamesByState1Iter);
 
         // Suspend the second of the active nodes
@@ -82,8 +82,8 @@ public class NodeFailerTest {
         tester.failer.run();
 
         // All of the children should be failed now
-        Set<Node.State> childStates2Iter = tester.nodeRepository.getChildNodes(hostWithHwFailure).stream()
-                .map(Node::state).collect(Collectors.toSet());
+        Set<Node.State> childStates2Iter = tester.nodeRepository.list().childrenOf(hostWithHwFailure).asList().stream()
+                                                                .map(Node::state).collect(Collectors.toSet());
         assertEquals(Collections.singleton(Node.State.failed), childStates2Iter);
         // The host itself is still active as it too must be allowed to suspend
         assertEquals(Node.State.active, tester.nodeRepository.getNode(hostWithHwFailure).get().state());
