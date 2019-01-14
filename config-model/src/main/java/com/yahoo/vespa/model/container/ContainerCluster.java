@@ -27,6 +27,7 @@ import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
+import com.yahoo.container.jdisc.jrt.DefaultJrtFactory;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
@@ -234,6 +235,7 @@ public final class ContainerCluster
         addSimpleComponent("com.yahoo.container.protect.FreezeDetector");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
+        addSimpleComponent(DefaultJrtFactory.class);
         addJaxProviders();
     }
 
