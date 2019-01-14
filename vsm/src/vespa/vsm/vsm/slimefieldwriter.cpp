@@ -43,13 +43,13 @@ using namespace vespalib::slime::convenience;
 namespace vsm {
 
 void
-SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
-                                    Inserter &inserter)
+SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &inserter)
 {
+    const auto & clazz = fv.getClass();
     LOG(debug, "traverseRecursive: class(%s), fieldValue(%s), currentPath(%s)",
-        fv.getClass().name(), fv.toString().c_str(), toString(_currPath).c_str());
+        clazz.name(), fv.toString().c_str(), toString(_currPath).c_str());
 
-    if (fv.getClass().inherits(document::CollectionFieldValue::classId)) {
+    if (clazz.inherits(document::CollectionFieldValue::classId)) {
         const document::CollectionFieldValue & cfv = static_cast<const document::CollectionFieldValue &>(fv);
         if (cfv.inherits(document::ArrayFieldValue::classId)) {
             const document::ArrayFieldValue & afv = static_cast<const document::ArrayFieldValue &>(cfv);
@@ -73,11 +73,9 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
                 o.setLong(wsym, weight);
             }
         } else {
-            LOG(warning, "traverseRecursive: Cannot handle collection field value of type '%s'",
-                fv.getClass().name());
+            LOG(warning, "traverseRecursive: Cannot handle collection field value of type '%s'", clazz.name());
         }
-
-    } else if (fv.getClass().inherits(document::MapFieldValue::classId)) {
+    } else if (clazz.inherits(document::MapFieldValue::classId)) {
         const document::MapFieldValue & mfv = static_cast<const document::MapFieldValue &>(fv);
         Cursor &a = inserter.insertArray();
         Symbol keysym = a.resolve("key");
@@ -91,7 +89,7 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
             traverseRecursive(*entry.second, vi);
             _currPath.pop_back();
         }
-    } else if (fv.getClass().inherits(document::StructuredFieldValue::classId)) {
+    } else if (clazz.inherits(document::StructuredFieldValue::classId)) {
         const document::StructuredFieldValue & sfv = static_cast<const document::StructuredFieldValue &>(fv);
         Cursor &o = inserter.insertObject();
         for (const document::Field & entry : sfv) {
@@ -105,10 +103,10 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
             }
         }
     } else {
-        if (fv.getClass().inherits(document::LiteralFieldValueB::classId)) {
+        if (clazz.inherits(document::LiteralFieldValueB::classId)) {
             const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(fv);
             inserter.insertString(lfv.getValueRef());
-        } else if (fv.getClass().inherits(document::NumericFieldValueBase::classId)) {
+        } else if (clazz.inherits(document::NumericFieldValueBase::classId)) {
             switch (fv.getDataType()->getId()) {
             case document::DataType::T_BYTE:
             case document::DataType::T_SHORT:
@@ -125,6 +123,9 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
             default:
                 inserter.insertString(fv.getAsString());
             }
+        } else if (clazz.inherits(document::BoolFieldValue::classId)) {
+            const auto & bfv = static_cast<const document::BoolFieldValue &>(fv);
+            inserter.insertBool(bfv.getValue());
         } else {
             inserter.insertString(fv.toString());
         }
@@ -134,7 +135,7 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
 bool
 SlimeFieldWriter::explorePath(vespalib::stringref candidate)
 {
-    if (_inputFields == NULL) {
+    if (_inputFields == nullptr) {
         return true;
     }
     // find out if we should explore the current path
@@ -161,18 +162,18 @@ SlimeFieldWriter::explorePath(vespalib::stringref candidate)
 SlimeFieldWriter::SlimeFieldWriter() :
     _rbuf(4096),
     _slime(),
-    _inputFields(NULL),
+    _inputFields(nullptr),
     _currPath()
 {
 }
 
-SlimeFieldWriter::~SlimeFieldWriter() {}
+SlimeFieldWriter::~SlimeFieldWriter() = default;
 
 void
 SlimeFieldWriter::convert(const document::FieldValue & fv)
 {
     if (LOG_WOULD_LOG(debug)) {
-        if (_inputFields != NULL) {
+        if (_inputFields != nullptr) {
             for (size_t i = 0; i < _inputFields->size(); ++i) {
                 LOG(debug, "write: input field path [%zd] '%s'", i, toString((*_inputFields)[i].getPath()).c_str());
             }

@@ -13,9 +13,9 @@ namespace vsm {
  **/
 class FlattenDocsumWriter : public document::fieldvalue::IteratorHandler {
 private:
-    CharBuffer  _output;
+    CharBuffer       _output;
     vespalib::string _separator;
-    bool        _useSeparator;
+    bool             _useSeparator;
 
     void considerSeparator();
     void onPrimitive(uint32_t, const Content & c) override;

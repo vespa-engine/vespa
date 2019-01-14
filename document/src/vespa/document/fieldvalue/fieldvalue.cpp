@@ -21,7 +21,9 @@
 
 using vespalib::FieldBase;
 using vespalib::nbostream;
+using vespalib::IllegalArgumentException;
 using namespace vespalib::xml;
+
 namespace document {
 
 using namespace fieldvalue;
@@ -82,7 +84,7 @@ FieldValue::fastCompare(const FieldValue& other) const {
 FieldValue&
 FieldValue::assign(const FieldValue& value)
 {
-    throw vespalib::IllegalArgumentException(
+    throw IllegalArgumentException(
             "Cannot assign value of type " + value.getDataType()->toString()
             + " to value of type " + value.getDataType()->toString(), VESPA_STRLOC);
 }
@@ -106,81 +108,76 @@ FieldValue::toXml(const std::string& indent) const
 
 // Subtypes should implement the conversion functions that make sense
 
-FieldValue& FieldValue::operator=(vespalib::stringref)
+FieldValue&
+FieldValue::operator=(vespalib::stringref)
 {
-    throw vespalib::IllegalArgumentException(
-            "Cannot assign string to datatype " + getDataType()->toString(),
-            VESPA_STRLOC);
+    throw IllegalArgumentException("Cannot assign string to datatype " + getDataType()->toString(), VESPA_STRLOC);
 }
 
-FieldValue& FieldValue::operator=(int32_t)
+FieldValue&
+FieldValue::operator=(int32_t)
 {
-    throw vespalib::IllegalArgumentException(
-            "Cannot assign int to datatype " + getDataType()->toString(),
-            VESPA_STRLOC);
+    throw IllegalArgumentException("Cannot assign int to datatype " + getDataType()->toString(), VESPA_STRLOC);
 }
 
-FieldValue& FieldValue::operator=(int64_t)
+FieldValue&
+FieldValue::operator=(int64_t)
 {
-    throw vespalib::IllegalArgumentException(
-            "Cannot assign long to datatype " + getDataType()->toString(),
-            VESPA_STRLOC);
+    throw IllegalArgumentException("Cannot assign long to datatype " + getDataType()->toString(), VESPA_STRLOC);
 }
 
-FieldValue& FieldValue::operator=(float)
+FieldValue&
+FieldValue::operator=(float)
 {
-    throw vespalib::IllegalArgumentException(
-            "Cannot assign float to datatype " + getDataType()->toString(),
-            VESPA_STRLOC);
+    throw IllegalArgumentException("Cannot assign float to datatype " + getDataType()->toString(), VESPA_STRLOC);
 }
 
-FieldValue& FieldValue::operator=(double)
+FieldValue&
+FieldValue::operator=(double)
 {
-    throw vespalib::IllegalArgumentException(
-            "Cannot assign double to datatype " + getDataType()->toString(),
-            VESPA_STRLOC);
+    throw IllegalArgumentException("Cannot assign double to datatype " + getDataType()->toString(), VESPA_STRLOC);
 }
 
-char FieldValue::getAsByte() const
+char
+FieldValue::getAsByte() const
 {
-    throw InvalidDataTypeConversionException(
-            *getDataType(), *DataType::BYTE, VESPA_STRLOC);
+    throw InvalidDataTypeConversionException(*getDataType(), *DataType::BYTE, VESPA_STRLOC);
 }
 
-int32_t FieldValue::getAsInt() const
+int32_t
+FieldValue::getAsInt() const
 {
-    throw InvalidDataTypeConversionException(
-            *getDataType(), *DataType::INT, VESPA_STRLOC);
+    throw InvalidDataTypeConversionException(*getDataType(), *DataType::INT, VESPA_STRLOC);
 }
 
-int64_t FieldValue::getAsLong() const
+int64_t
+FieldValue::getAsLong() const
 {
-    throw InvalidDataTypeConversionException(
-            *getDataType(), *DataType::LONG, VESPA_STRLOC);
+    throw InvalidDataTypeConversionException(*getDataType(), *DataType::LONG, VESPA_STRLOC);
 }
 
-float FieldValue::getAsFloat() const
+float
+FieldValue::getAsFloat() const
 {
-    throw InvalidDataTypeConversionException(
-            *getDataType(), *DataType::FLOAT, VESPA_STRLOC);
+    throw InvalidDataTypeConversionException(*getDataType(), *DataType::FLOAT, VESPA_STRLOC);
 }
 
-double FieldValue::getAsDouble() const
+double
+FieldValue::getAsDouble() const
 {
-    throw InvalidDataTypeConversionException(
-            *getDataType(), *DataType::DOUBLE, VESPA_STRLOC);
+    throw InvalidDataTypeConversionException(*getDataType(), *DataType::DOUBLE, VESPA_STRLOC);
 }
 
-vespalib::string FieldValue::getAsString() const
+vespalib::string
+FieldValue::getAsString() const
 {
-    throw InvalidDataTypeConversionException(
-            *getDataType(), *DataType::STRING, VESPA_STRLOC);
+    throw InvalidDataTypeConversionException(*getDataType(), *DataType::STRING, VESPA_STRLOC);
 }
 
-std::pair<const char*, size_t> FieldValue::getAsRaw() const
+std::pair<const char*, size_t>
+FieldValue::getAsRaw() const
 {
-    throw InvalidDataTypeConversionException(
-            *getDataType(), *DataType::RAW, VESPA_STRLOC);
+    throw InvalidDataTypeConversionException(*getDataType(), *DataType::RAW, VESPA_STRLOC);
 }
 
 FieldValue::UP

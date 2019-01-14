@@ -126,6 +126,8 @@ DocsumTest::testFlattenDocsumWriter()
     { // basic tests
         TEST_DO(assertFlattenDocsumWriter(StringFieldValue("foo bar"), "foo bar"));
         TEST_DO(assertFlattenDocsumWriter(RawFieldValue("foo bar"), "foo bar"));
+        TEST_DO(assertFlattenDocsumWriter(BoolFieldValue(true), "true"));
+        TEST_DO(assertFlattenDocsumWriter(BoolFieldValue(false), "false"));
         TEST_DO(assertFlattenDocsumWriter(LongFieldValue(123456789), "123456789"));
         TEST_DO(assertFlattenDocsumWriter(createFieldValue(StringList().add("foo bar").add("baz").add(" qux ")),
                                   "foo bar baz  qux "));
@@ -160,6 +162,8 @@ DocsumTest::testSlimeFieldWriter()
 {
     { // basic types
         assertSlimeFieldWriter(LongFieldValue(123456789), "123456789");
+        assertSlimeFieldWriter(BoolFieldValue(true), "true");
+        assertSlimeFieldWriter(BoolFieldValue(false), "false");
         assertSlimeFieldWriter(DoubleFieldValue(12.34), "12.34");
         assertSlimeFieldWriter(StringFieldValue("foo bar"), "\"foo bar\"");
     }
