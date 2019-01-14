@@ -13,6 +13,7 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.SimpleJrtFactory;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.apache.commons.io.FileUtils;
@@ -173,7 +174,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 new ApplicationRepository(tenantRepository,
                                           new SessionHandlerTest.MockProvisioner(),
                                           new OrchestratorMock(),
-                                          clock),
+                                          clock, new SimpleJrtFactory()),
                 tenantRepository);
     }
 }

@@ -64,8 +64,9 @@ public class InjectedGlobalComponentRegistryTest {
                         .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                         .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath()));
         sessionPreparer = new SessionTest.MockSessionPreparer();
+        SimpleJrtFactory jrtFactory = new SimpleJrtFactory();
         rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(),
-                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(temporaryFolder.newFolder("filereferences")));
+                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(temporaryFolder.newFolder("filereferences"), jrtFactory), jrtFactory);
         generationCounter = new SuperModelGenerationCounter(curator);
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);

@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionProvider;
+import com.yahoo.vespa.config.server.SimpleJrtFactory;
 
 import java.io.File;
 
@@ -15,7 +16,7 @@ public class MockFileDistributionFactory extends FileDistributionFactory {
     public final MockFileDistributionProvider mockFileDistributionProvider;
 
     public MockFileDistributionFactory(ConfigserverConfig configserverConfig) {
-        super(configserverConfig);
+        super(configserverConfig, new SimpleJrtFactory());
         mockFileDistributionProvider = new MockFileDistributionProvider(new File(configserverConfig.fileReferencesDir()));
     }
 

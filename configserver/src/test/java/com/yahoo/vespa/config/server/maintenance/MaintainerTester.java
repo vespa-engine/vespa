@@ -6,6 +6,7 @@ import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.SimpleJrtFactory;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -25,7 +26,8 @@ class MaintainerTester {
         applicationRepository = new ApplicationRepository(tenantRepository,
                                                           new SessionHandlerTest.MockProvisioner(),
                                                           new OrchestratorMock(),
-                                                          Clock.systemUTC());
+                                                          Clock.systemUTC(),
+                                                          new SimpleJrtFactory());
     }
 
     Curator curator() { return curator; }

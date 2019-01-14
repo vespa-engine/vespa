@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.config.server.SimpleJrtFactory;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import org.junit.Before;
 import org.junit.Rule;
@@ -31,7 +32,7 @@ public class FileServerTest {
     @Before
     public void setup() throws IOException {
         File rootDir = new File(temporaryFolder.newFolder("fileserver-root").getAbsolutePath());
-        fileServer = new FileServer(rootDir);
+        fileServer = new FileServer(rootDir, new SimpleJrtFactory());
     }
 
     @Test
@@ -96,7 +97,7 @@ public class FileServerTest {
     private FileServer createFileServer(ConfigserverConfig.Builder configBuilder) throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();
         configBuilder.fileReferencesDir(fileReferencesDir.getAbsolutePath());
-        return new FileServer(new ConfigserverConfig(configBuilder));
+        return new FileServer(new ConfigserverConfig(configBuilder), new SimpleJrtFactory());
     }
 
     private static class FileReceiver implements FileServer.Receiver {

@@ -32,6 +32,7 @@ import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.SimpleJrtFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
@@ -364,7 +365,8 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                                         new ApplicationRepository(tenantRepository,
                                                                   hostProvisioner,
                                                                   new OrchestratorMock(),
-                                                                  clock),
+                                                                  clock,
+                                                                  new SimpleJrtFactory()),
                                         tenantRepository,
                                         Zone.defaultZone());
     }
