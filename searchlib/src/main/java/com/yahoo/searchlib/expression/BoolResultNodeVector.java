@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -6,33 +6,22 @@ import com.yahoo.vespa.objects.Serializer;
 
 import java.util.ArrayList;
 
-/**
- * This result holds nothing.
- *
- * @author baldersheim
- * @author Simon Thoresen Hult
- */
-public class Int8ResultNodeVector extends ResultNodeVector {
+public class BoolResultNodeVector extends ResultNodeVector {
+    public static final int classId = registerClass(0x4000 + 147, BoolResultNodeVector.class);
+    private ArrayList<BoolResultNode> vector = new ArrayList<>();
 
-    public static final int classId = registerClass(0x4000 + 116, Int8ResultNodeVector.class);
-    private ArrayList<Int8ResultNode> vector = new ArrayList<>();
-
-    public Int8ResultNodeVector() {
-
-    }
-
-    public Int8ResultNodeVector add(Int8ResultNode v) {
+    public BoolResultNodeVector() {}
+    public BoolResultNodeVector add(BoolResultNode v) {
         vector.add(v);
         return this;
     }
 
-    public ArrayList<Int8ResultNode> getVector() {
+    public ArrayList<BoolResultNode> getVector() {
         return vector;
     }
-
     @Override
     public ResultNodeVector add(ResultNode r) {
-        return add((Int8ResultNode)r);
+        return add((BoolResultNode)r);
     }
 
     @Override
@@ -44,7 +33,7 @@ public class Int8ResultNodeVector extends ResultNodeVector {
     protected void onSerialize(Serializer buf) {
         super.onSerialize(buf);
         buf.putInt(null, vector.size());
-        for (Int8ResultNode node : vector) {
+        for (BoolResultNode node : vector) {
             node.serialize(buf);
         }
     }
@@ -55,7 +44,7 @@ public class Int8ResultNodeVector extends ResultNodeVector {
         int sz = buf.getInt(null);
         vector = new ArrayList<>();
         for (int i = 0; i < sz; i++) {
-            Int8ResultNode node = new Int8ResultNode((byte)0);
+            BoolResultNode node = new BoolResultNode();
             node.deserialize(buf);
             vector.add(node);
         }
@@ -66,7 +55,7 @@ public class Int8ResultNodeVector extends ResultNodeVector {
         if (classId != rhs.getClassId()) {
             return (classId - rhs.getClassId());
         }
-        Int8ResultNodeVector b = (Int8ResultNodeVector)rhs;
+        BoolResultNodeVector b = (BoolResultNodeVector)rhs;
         int minLength = vector.size();
         if (b.vector.size() < minLength) {
             minLength = b.vector.size();

@@ -33,7 +33,7 @@ public class IntegerResultNodeTestCase extends ResultNodeTest {
         assertThat(new Int16ResultNode().getClassId(), is(Int16ResultNode.classId));
         assertThat(new Int32ResultNode().getClassId(), is(Int32ResultNode.classId));
         assertThat(new IntegerResultNode().getClassId(), is(IntegerResultNode.classId));
-
+        assertThat(new BoolResultNode().getClassId(), is(BoolResultNode.classId));
     }
 
     @Test
@@ -77,6 +77,18 @@ public class IntegerResultNodeTestCase extends ResultNodeTest {
             assertThat(node.hashCode(), is((int)(8 + node.getClassId())));
             assertTrue(dumpNode(node).contains("value: 8"));
         }
+    }
+
+    @Test
+    public void testBool() {
+        BoolResultNode node = new BoolResultNode();
+        assertEquals(0, node.getInteger());
+        assertEquals(0.0, node.getFloat(), 0.000000000001);
+        assertEquals("false", node.getString());
+        node.setValue(true);
+        assertEquals(1, node.getInteger());
+        assertEquals(1.0, node.getFloat(), 0.000000000001);
+        assertEquals("true", node.getString());
     }
 
     @Test

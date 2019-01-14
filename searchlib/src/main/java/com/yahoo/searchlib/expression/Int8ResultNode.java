@@ -18,9 +18,7 @@ public class Int8ResultNode extends NumericResultNode {
     public static final int classId = registerClass(0x4000 + 104, Int8ResultNode.class);
     private byte value = 0;
 
-    @SuppressWarnings("UnusedDeclaration")
     public Int8ResultNode() {
-        // used by deserializer
     }
 
     /**
