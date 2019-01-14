@@ -224,7 +224,7 @@ public class LockedApplication {
                 ownershipIssueId, Optional.ofNullable(owner), majorVersion, metrics, rotation, rotationStatus);
     }
 
-    /** Set a major vewrsion for this, or set to null to remove any major version override */
+    /** Set a major version for this, or set to null to remove any major version override */
     public LockedApplication withMajorVersion(Integer majorVersion) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs, change, outstandingChange,

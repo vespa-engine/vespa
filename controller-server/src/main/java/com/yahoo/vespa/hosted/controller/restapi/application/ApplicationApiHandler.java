@@ -353,12 +353,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse application(String tenantName, String applicationName, HttpRequest request) {
         Slime slime = new Slime();
-        toSlime(slime.setObject(), getApplication(tenantName, applicationName, request), request);
+        toSlime(slime.setObject(), getApplication(tenantName, applicationName), request);
         return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse setMajorVersion(String tenantName, String applicationName, HttpRequest request) {
-        Application application = getApplication(tenantName, applicationName, request);
+        Application application = getApplication(tenantName, applicationName);
         Inspector majorVersionField = toSlime(request.getData()).get().field("majorVersion");
         if ( ! majorVersionField.valid())
             throw new IllegalArgumentException("Request body must contain a majorVersion field");
@@ -368,7 +368,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new MessageResponse("Set major version to " + ( majorVersion == null ? "empty" : majorVersion));
     }
 
-    private Application getApplication(String tenantName, String applicationName, HttpRequest request) {
+    private Application getApplication(String tenantName, String applicationName) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
         return controller.applications().get(applicationId)
                           .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
