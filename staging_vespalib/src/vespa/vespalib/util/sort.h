@@ -169,6 +169,27 @@ public:
 };
 
 template<>
+class convertForSort<bool, true>
+{
+public:
+    typedef bool  InputType;
+    typedef bool  IntType;
+    typedef bool UIntType;
+    typedef std::less<InputType> Compare;
+    static inline UIntType convert(IntType value)   { return value; }
+};
+template<>
+class convertForSort<bool, false>
+{
+public:
+    typedef bool  InputType;
+    typedef bool  IntType;
+    typedef bool UIntType;
+    typedef std::less<InputType> Compare;
+    static inline UIntType convert(IntType value)   { return !value; }
+};
+
+template<>
 class convertForSort<int8_t, true>
 {
 public:

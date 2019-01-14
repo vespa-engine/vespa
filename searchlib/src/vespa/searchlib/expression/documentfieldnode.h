@@ -6,8 +6,7 @@
 #include "resultvector.h"
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class DefaultValue final : public ResultNode
 {
@@ -69,13 +68,12 @@ private:
     bool onExecute() const override;
     void onDoc(const document::Document & doc) override;
     void onDocType(const document::DocumentType & docType) override;
-    document::FieldPath    _fieldPath;
-    mutable ResultNode::CP           _value;
+    document::FieldPath                _fieldPath;
+    mutable ResultNode::CP             _value;
     mutable std::unique_ptr<Handler>   _handler;
-    vespalib::string                 _fieldName;
-    const document::Document       * _doc;
+    vespalib::string                   _fieldName;
+    const document::Document         * _doc;
 
 };
 
-}
 }

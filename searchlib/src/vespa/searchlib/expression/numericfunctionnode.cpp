@@ -5,8 +5,8 @@ namespace search::expression {
 
 IMPLEMENT_ABSTRACT_EXPRESSIONNODE(NumericFunctionNode,  MultiArgFunctionNode);
 
-NumericFunctionNode::NumericFunctionNode() : _handler() { }
-NumericFunctionNode::~NumericFunctionNode() {}
+NumericFunctionNode::NumericFunctionNode() = default;
+NumericFunctionNode::~NumericFunctionNode() = default;
 
 NumericFunctionNode::NumericFunctionNode(const NumericFunctionNode & rhs) :
     MultiArgFunctionNode(rhs),

@@ -89,6 +89,13 @@ public:
         return getFast(doc);
     }
     const BitVector & getBitVector() const { return _bv; }
+    void setBit(DocId doc, bool value) {
+        if (value) {
+            _bv.setBit(doc);
+        } else {
+            _bv.clearBit(doc);
+        }
+    }
 protected:
     bool findEnum(int8_t, EnumHandle &) const override {
         return false;
