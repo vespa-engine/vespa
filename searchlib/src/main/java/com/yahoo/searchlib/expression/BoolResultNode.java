@@ -28,6 +28,8 @@ public class BoolResultNode extends ResultNode {
         return this;
     }
 
+    public boolean getValue() { return value; }
+
     @Override
     protected int onGetClassId() {
         return classId;
