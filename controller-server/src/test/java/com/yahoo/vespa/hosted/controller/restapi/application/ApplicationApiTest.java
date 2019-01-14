@@ -479,13 +479,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(createApplicationSubmissionData(packageWithService)),
                               "{\"message\":\"Application package version: 1.0.44-d00d, source revision of repository 'repo', branch 'master' with commit 'd00d', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/badge", GET)
-                                      .userIdentity(USER_ID),
-                              "", 302);
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/badge/system-test?historyLength=2", GET)
-                                      .userIdentity(USER_ID),
-                              "", 302);
-
         ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
