@@ -90,7 +90,7 @@ StructFields::~StructFields() = default;
 }
 
 AttributeCombinerDFW::AttributeCombinerDFW(const vespalib::string &fieldName)
-    : IDocsumFW(),
+    : ISimpleDFW(),
       _stateIndex(0),
       _fieldName(fieldName)
 {

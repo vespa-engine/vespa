@@ -13,7 +13,7 @@ IntFieldSearcher::IntFieldSearcher(FieldIdT fId) :
     _intTerm()
 { }
 
-IntFieldSearcher::~IntFieldSearcher() {}
+IntFieldSearcher::~IntFieldSearcher() = default;
 
 void IntFieldSearcher::prepare(QueryTermList & qtl, const SharedSearcherBuf & buf)
 {

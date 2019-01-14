@@ -10,7 +10,7 @@ namespace search::docsummary {
 
 class IDocsumEnvironment;
 
-class FeaturesDFW : public IDocsumFW
+class FeaturesDFW : public ISimpleDFW
 {
 protected:
     void featureDump(vespalib::JSONStringer & json, vespalib::stringref name, double feature);
