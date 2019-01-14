@@ -7,7 +7,7 @@
 namespace document {
 
 /**
- * Represent the value in a filed of type 'bool' which can be either true or false.
+ * Represent the value in a field of type 'bool' which can be either true or false.
  **/
 class BoolFieldValue : public FieldValue {
     bool _value;
