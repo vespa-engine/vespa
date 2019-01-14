@@ -8,6 +8,7 @@
 #include <vespa/vsm/searcher/utf8exactstringfieldsearcher.h>
 #include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/intfieldsearcher.h>
+#include <vespa/vsm/searcher/boolfieldsearcher.h>
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
 #include <vespa/vespalib/util/regexp.h>
 
@@ -83,6 +84,9 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
         } else {
             _searcher = FUTF8StrChrFieldSearcher(fid);
         }
+        break;
+    case VsmfieldsConfig::Fieldspec::BOOL:
+        _searcher = BoolFieldSearcher(fid);
         break;
     case VsmfieldsConfig::Fieldspec::INT8:
     case VsmfieldsConfig::Fieldspec::INT16:

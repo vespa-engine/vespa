@@ -20,7 +20,6 @@ protected:
         IntInfo(int64_t low, int64_t high, bool v) : _lower(low), _upper(high), _valid(v) { if (low > high) { _lower = high; _upper = low; } }
         bool cmp(int64_t key) const { return (_lower <= key) && (key <= _upper); }
         bool valid()          const { return _valid; }
-        void setValid(bool v)       { _valid = v; }
     private:
         int64_t _lower;
         int64_t _upper;

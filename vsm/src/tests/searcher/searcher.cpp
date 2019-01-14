@@ -6,6 +6,7 @@
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
 #include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/intfieldsearcher.h>
+#include <vespa/vsm/searcher/boolfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8flexiblestringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8exactstringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
@@ -113,7 +114,7 @@ SnippetModifierSetup::SnippetModifierSetup(const StringList & terms)
 {
     searcher->prepare(query.qtl, buf);
 }
-SnippetModifierSetup::~SnippetModifierSetup() {}
+SnippetModifierSetup::~SnippetModifierSetup() = default;
 
 // helper functions
 ArrayFieldValue getFieldValue(const StringList &fv);
@@ -151,6 +152,13 @@ void assertInt(IntFieldSearcher & fs, const StringList &query, int64_t field, co
 
 void assertInt(IntFieldSearcher & fs, const std::string &term, int64_t field, bool exp) {
     assertInt(fs, StringList().add(term), field, BoolList().add(exp));
+}
+
+void assertBool(BoolFieldSearcher & fs, const StringList &query, bool field, const BoolList &exp) {
+    assertNumeric(fs, query, BoolFieldValue(field), exp);
+}
+void assertBool(BoolFieldSearcher & fs, const std::string &term, bool field, bool exp) {
+    assertBool(fs, StringList().add(term), field, BoolList().add(exp));
 }
 
 void assertInt(IntFieldSearcher & fs, const StringList &query, const LongList &field, const HitsList &exp) {
@@ -595,9 +603,23 @@ TEST("utf8 flexible searcher"){
     EXPECT_TRUE(testStringFieldInfo(fs));
 }
 
+TEST("bool search") {
+    BoolFieldSearcher fs(0);
+    TEST_DO(assertBool(fs,     "true",  true, true));
+    TEST_DO(assertBool(fs,     "true",  false, false));
+    TEST_DO(assertBool(fs,     "1",  true, true));
+    TEST_DO(assertBool(fs,     "1",  false, false));
+    TEST_DO(assertBool(fs,     "false",  true, false));
+    TEST_DO(assertBool(fs,     "false",  false, true));
+    TEST_DO(assertBool(fs,     "0",  true, false));
+    TEST_DO(assertBool(fs,     "0",  false, true));
+    TEST_DO(assertBool(fs, StringList().add("true").add("false").add("true"),  true, BoolList().add(true).add(false).add(true)));
+    TEST_DO(assertBool(fs, StringList().add("true").add("false").add("true"),  false, BoolList().add(false).add(true).add(false)));
+}
+
 TEST("integer search")
 {
-    IntFieldSearcher fs;
+    IntFieldSearcher fs(0);
     TEST_DO(assertInt(fs,     "10",  10, true));
     TEST_DO(assertInt(fs,      "9",  10, false));
     TEST_DO(assertInt(fs,     ">9",  10, true));
