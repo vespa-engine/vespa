@@ -76,7 +76,7 @@ public class ModelGeneratorTest {
     private List<ApplicationInfo> getExampleApplicationInfos() {
         List<ApplicationInfo> applicationInfos = new ArrayList<>();
         ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig();
-        applicationInfos.add(new ConfigServerApplication().makeApplicationInfoFromConfig(config));
+        applicationInfos.add(ConfigserverUtil.makeExampleConfigServer());
         applicationInfos.addAll(ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT).getAllApplicationInfos());
         return applicationInfos;
     }

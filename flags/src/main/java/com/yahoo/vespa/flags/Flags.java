@@ -17,27 +17,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag HEALTHMONITOR_MONITOR_INFRA = defineFeatureFlag(
-            "healthmonitor-monitorinfra", true,
-                    "Whether the health monitor in service monitor monitors the health of infrastructure applications.",
-                    "Affects all applications activated after the value is changed.",
-            HOSTNAME);
-
-    public static final UnboundBooleanFlag DUPERMODEL_CONTAINS_INFRA = defineFeatureFlag(
-            "dupermodel-contains-infra", true,
-            "Whether the DuperModel in config server/controller includes active infrastructure applications " +
-                    "(except from controller/config apps).",
-            "Requires restart of config server/controller to take effect.",
-            HOSTNAME);
-
-    public static final UnboundBooleanFlag DUPERMODEL_USE_CONFIGSERVERCONFIG = defineFeatureFlag(
-            "dupermodel-use-configserverconfig", false,
-            "For historical reasons, the ApplicationInfo in the DuperModel for controllers and config servers " +
-                    "is based on the ConfigserverConfig (this flag is true). We want to transition to use the " +
-                    "infrastructure application activated by the InfrastructureProvisioner once that supports health.",
-            "Requires restart of config server/controller to take effect.",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag USE_CONFIG_SERVER_CACHE = defineFeatureFlag(
             "use-config-server-cache", true,
             "Whether config server will use cache to answer config requests.",
@@ -48,18 +27,6 @@ public class Flags {
             "config-server-bootstrap-in-separate-thread", true,
             "Whether to run config server/controller bootstrap in a separate thread.",
             "Takes effect only at bootstrap of config server/controller",
-            HOSTNAME);
-
-    public static final UnboundBooleanFlag PROXYHOST_USES_REAL_ORCHESTRATOR = defineFeatureFlag(
-            "proxyhost-uses-real-orchestrator", true,
-            "Whether proxy hosts uses the real Orchestrator when suspending/resuming, or a synthetic.",
-            "Takes effect immediately when changed.",
-            HOSTNAME);
-
-    public static final UnboundBooleanFlag CONFIGHOST_USES_REAL_ORCHESTRATOR = defineFeatureFlag(
-            "confighost-uses-real-orchestrator", true,
-            "Whether the config server hosts uses the real Orchestrator when suspending/resuming, or a synthetic.",
-            "Takes effect immediately when changed.",
             HOSTNAME);
 
     public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(

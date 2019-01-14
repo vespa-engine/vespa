@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 
@@ -36,8 +35,7 @@ public class DuperModelManager implements DuperModelInfraApi {
     private final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
     private final ControllerApplication controllerApplication = new ControllerApplication();
     private final ControllerHostApplication controllerHostApplication = new ControllerHostApplication();
-    // this must be static to be referenced in this(). Remove static once legacy config server from config is gone.
-    private static final ConfigServerApplication configServerApplication = new ConfigServerApplication();
+    private final ConfigServerApplication configServerApplication = new ConfigServerApplication();
 
     private final Map<ApplicationId, InfraApplication> supportedInfraApplications = Stream.of(
             configServerApplication,
@@ -47,8 +45,6 @@ public class DuperModelManager implements DuperModelInfraApi {
             controllerHostApplication)
             .collect(Collectors.toMap(InfraApplication::getApplicationId, Function.identity()));
 
-    private final boolean containsInfra;
-    private final boolean useConfigserverConfig;
     private final boolean multitenant;
 
     private final Object monitor = new Object();
@@ -58,30 +54,13 @@ public class DuperModelManager implements DuperModelInfraApi {
 
     @Inject
     public DuperModelManager(ConfigserverConfig configServerConfig, FlagSource flagSource, SuperModelProvider superModelProvider) {
-        this(
-                Flags.DUPERMODEL_CONTAINS_INFRA.bindTo(flagSource).value(),
-                Flags.DUPERMODEL_USE_CONFIGSERVERCONFIG.bindTo(flagSource).value(),
-                configServerConfig.multitenant(),
-                configServerApplication.makeApplicationInfoFromConfig(configServerConfig),
-                superModelProvider,
-                new DuperModel());
+        this(configServerConfig.multitenant(), superModelProvider, new DuperModel());
     }
 
     /** For testing */
-    public DuperModelManager(boolean containsInfra,
-                             boolean useConfigserverConfig,
-                             boolean multitenant,
-                             ApplicationInfo configServerApplicationInfoFromConfig,
-                             SuperModelProvider superModelProvider,
-                             DuperModel duperModel) {
-        this.containsInfra = containsInfra;
-        this.useConfigserverConfig = useConfigserverConfig;
+    public DuperModelManager(boolean multitenant, SuperModelProvider superModelProvider, DuperModel duperModel) {
         this.multitenant = multitenant;
         this.duperModel = duperModel;
-
-        if (isConfigServerFromConfigInDuperModel()) {
-            duperModel.add(configServerApplicationInfoFromConfig);
-        }
 
         superModelProvider.registerListener(new SuperModelListener() {
             @Override
@@ -183,22 +162,11 @@ public class DuperModelManager implements DuperModelInfraApi {
         }
     }
 
-    private boolean isConfigServerFromConfigInDuperModel() {
-        return multitenant && useConfigserverConfig;
-    }
-
     private boolean infraApplicationBelongsInDuperModel(ApplicationId applicationId) {
-        // At most 1 of the following 3 applications can be in the duper model:
-        //  - config server built from ConfigserverConfig (legacy on both controller and config server)
-        //  - config server
-        //  - controller
+        // At most 1 of the config server and controller applications can be in the duper model.
         // The problem of allowing more than 1 is that orchestration will fail since hostname -> application lookup
         // will not be unique.
-        if (!containsInfra) {
-            return false;
-        }
         if (applicationId.equals(controllerApplication.getApplicationId())) {
-            if (isConfigServerFromConfigInDuperModel()) return false;
             if (!multitenant) return false;
             if (duperModel.contains(configServerApplication.getApplicationId())) {
                 logger.log(LogLevel.ERROR, "Refusing to add controller application to duper model " +
@@ -207,7 +175,6 @@ public class DuperModelManager implements DuperModelInfraApi {
             }
             return true;
         } else if (applicationId.equals(configServerApplication.getApplicationId())) {
-            if (isConfigServerFromConfigInDuperModel()) return false;
             if (!multitenant) return false;
             if (duperModel.contains(controllerApplication.getApplicationId())) {
                 logger.log(LogLevel.ERROR, "Refusing to add config server application to duper model " +

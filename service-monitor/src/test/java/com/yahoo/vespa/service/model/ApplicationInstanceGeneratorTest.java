@@ -1,13 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.model;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
-import com.yahoo.vespa.service.monitor.ConfigserverUtil;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 import org.junit.Test;
 
@@ -36,14 +35,9 @@ public class ApplicationInstanceGeneratorTest {
     @Test
     public void toApplicationInstance() {
         when(statusProvider.getStatus(any(), any(), any(), any())).thenReturn(ServiceStatus.NOT_CHECKED);
-        ConfigserverConfig config = ConfigserverUtil.create(
-                true,
-                true,
-                configServer1,
-                configServer2,
-                configServer3);
         Zone zone = mock(Zone.class);
-        ApplicationInfo configServer = configServerApplication.makeApplicationInfoFromConfig(config);
+        ApplicationInfo configServer = configServerApplication.makeApplicationInfo(
+                configServerList.stream().map(HostName::from).collect(Collectors.toList()));
         ApplicationInstance applicationInstance = new ApplicationInstanceGenerator(configServer, zone)
                 .makeApplicationInstance(statusProvider);
 
