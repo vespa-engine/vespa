@@ -160,7 +160,7 @@ public class ApplicationList {
     }
 
     /**
-     * Returns the subset of applications that hasn't pinned to another major version than the given one.
+     * Returns the subset of applications that hasn't pinned to an an earlier major version than the given one.
      *
      * @param targetMajorVersion the target major version which applications returned allows upgrading to
      * @param defaultMajorVersion the default major version to assume for applications not specifying one
