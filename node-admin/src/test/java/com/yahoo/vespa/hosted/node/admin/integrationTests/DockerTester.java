@@ -6,7 +6,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.system.ProcessExecuter;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -60,7 +59,7 @@ public class DockerTester implements AutoCloseable {
     final Orchestrator orchestrator = mock(Orchestrator.class);
     final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
     final InOrder inOrder = Mockito.inOrder(docker, nodeRepository, orchestrator, storageMaintainer);
-    final InMemoryFlagSource flagSource = new InMemoryFlagSource().withFlag(Flags.CONTAINER_CPU_CAP.id());
+    final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     final NodeAdminStateUpdater nodeAdminStateUpdater;
     final NodeAdminImpl nodeAdmin;

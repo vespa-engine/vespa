@@ -1,11 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.yahoo.vespa.flags.json.FlagData;
-import com.yahoo.vespa.flags.json.Rule;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,29 +8,50 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Basic in-memory flag source useful for testing
  *
+ * Creates an empty flag source that will make all flags return their default values (from {@code value()}).
+ * The with* methods can be used to set a different return value.
+ *
  * @author freva
  */
 public class InMemoryFlagSource implements FlagSource {
-    private final Map<FlagId, FlagData> flagDataById = new ConcurrentHashMap<>();
+    private final Map<FlagId, RawFlag> rawFlagsById = new ConcurrentHashMap<>();
 
-    public InMemoryFlagSource withFlag(FlagId flagId) {
-        flagDataById.put(flagId, new FlagData(flagId));
-        return this;
+    public InMemoryFlagSource withBooleanFlag(FlagId flagId, boolean value) {
+        return withRawFlag(flagId, new UnboundBooleanFlag(flagId, value).serializer().serialize(value));
+    }
+
+    public InMemoryFlagSource withStringFlag(FlagId flagId, String value) {
+        return withRawFlag(flagId, new UnboundStringFlag(flagId, value).serializer().serialize(value));
+    }
+
+    public InMemoryFlagSource withIntFlag(FlagId flagId, int value) {
+        return withRawFlag(flagId, new UnboundIntFlag(flagId, value).serializer().serialize(value));
+    }
+
+    public InMemoryFlagSource withLongFlag(FlagId flagId, long value) {
+        return withRawFlag(flagId, new UnboundLongFlag(flagId, value).serializer().serialize(value));
     }
 
     public InMemoryFlagSource withDoubleFlag(FlagId flagId, double value) {
-        return withRawFlag(flagId, new DoubleNode(value));
+        return withRawFlag(flagId, new UnboundDoubleFlag(flagId, value).serializer().serialize(value));
     }
 
-    private InMemoryFlagSource withRawFlag(FlagId flagId, JsonNode rawFlag) {
-        Rule rule = new Rule(Optional.of(JsonNodeRawFlag.fromJsonNode(rawFlag)));
-        flagDataById.put(flagId, new FlagData(flagId, new FetchVector(), rule));
+    public <T> InMemoryFlagSource withJacksonFlag(FlagId flagId, T value, Class<T> jacksonClass) {
+        return withRawFlag(flagId, new UnboundJacksonFlag<>(flagId, value, jacksonClass).serializer().serialize(value));
+    }
+
+    public InMemoryFlagSource removeFlag(FlagId flagId) {
+        rawFlagsById.remove(flagId);
+        return this;
+    }
+
+    private InMemoryFlagSource withRawFlag(FlagId flagId, RawFlag rawFlag) {
+        rawFlagsById.put(flagId, rawFlag);
         return this;
     }
 
     @Override
     public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
-        return Optional.ofNullable(flagDataById.get(id))
-                .flatMap(flagData -> flagData.resolve(vector));
+        return Optional.ofNullable(rawFlagsById.get(id));
     }
 }
