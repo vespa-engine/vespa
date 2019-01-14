@@ -8,9 +8,7 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.duper.DuperModelManager;
 import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.executor.RunletExecutorImpl;
@@ -50,26 +48,19 @@ public class HealthMonitorManager implements MonitorManager {
     private final ConcurrentHashMap<ApplicationId, ApplicationHealthMonitor> healthMonitors = new ConcurrentHashMap<>();
     private final DuperModelManager duperModel;
     private final ApplicationHealthMonitorFactory applicationHealthMonitorFactory;
-    private final BooleanFlag monitorInfra;
 
     @Inject
     public HealthMonitorManager(DuperModelManager duperModel, FlagSource flagSource) {
-        this(duperModel,
-                Flags.HEALTHMONITOR_MONITOR_INFRA.bindTo(flagSource),
-                new StateV1HealthModel(TARGET_HEALTH_STALENESS, HEALTH_REQUEST_TIMEOUT, KEEP_ALIVE, new RunletExecutorImpl(THREAD_POOL_SIZE)));
+        this(duperModel, new StateV1HealthModel(
+                TARGET_HEALTH_STALENESS, HEALTH_REQUEST_TIMEOUT, KEEP_ALIVE, new RunletExecutorImpl(THREAD_POOL_SIZE)));
     }
 
-    private HealthMonitorManager(DuperModelManager duperModel,
-                                 BooleanFlag monitorInfra,
-                                 StateV1HealthModel healthModel) {
-        this(duperModel, monitorInfra, id -> new ApplicationHealthMonitor(id, healthModel));
+    private HealthMonitorManager(DuperModelManager duperModel, StateV1HealthModel healthModel) {
+        this(duperModel, id -> new ApplicationHealthMonitor(id, healthModel));
     }
 
-    HealthMonitorManager(DuperModelManager duperModel,
-                         BooleanFlag monitorInfra,
-                         ApplicationHealthMonitorFactory applicationHealthMonitorFactory) {
+    HealthMonitorManager(DuperModelManager duperModel, ApplicationHealthMonitorFactory applicationHealthMonitorFactory) {
         this.duperModel = duperModel;
-        this.monitorInfra = monitorInfra;
         this.applicationHealthMonitorFactory = applicationHealthMonitorFactory;
     }
 
@@ -111,14 +102,6 @@ public class HealthMonitorManager implements MonitorManager {
 
     @Override
     public boolean wouldMonitor(ApplicationId id) {
-        if (duperModel.isSupportedInfraApplication(id) && monitorInfra.value()) {
-            return true;
-        }
-
-        if (id.equals(duperModel.getConfigServerApplication().getApplicationId())) {
-            return true;
-        }
-
-        return false;
+        return duperModel.isSupportedInfraApplication(id);
     }
 }

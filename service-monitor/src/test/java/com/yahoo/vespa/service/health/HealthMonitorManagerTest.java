@@ -7,7 +7,6 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import com.yahoo.vespa.service.duper.ControllerHostApplication;
 import com.yahoo.vespa.service.duper.DuperModelManager;
@@ -25,7 +24,6 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,10 +31,9 @@ import static org.mockito.Mockito.when;
 public class HealthMonitorManagerTest {
     private final ConfigServerApplication configServerApplication = new ConfigServerApplication();
     private final DuperModelManager duperModel = mock(DuperModelManager.class);
-    private final BooleanFlag monitorInfra = mock(BooleanFlag.class);
     private final ApplicationHealthMonitor monitor = mock(ApplicationHealthMonitor.class);
     private final ApplicationHealthMonitorFactory monitorFactory = mock(ApplicationHealthMonitorFactory.class);
-    private final HealthMonitorManager manager = new HealthMonitorManager(duperModel, monitorInfra, monitorFactory);
+    private final HealthMonitorManager manager = new HealthMonitorManager(duperModel, monitorFactory);
 
     @Before
     public void setUp() {
@@ -45,18 +42,21 @@ public class HealthMonitorManagerTest {
     }
 
     @Test
-    public void addRemove() {
-        when(monitorInfra.value()).thenReturn(false);
+    public void addAndRemove() {
         ApplicationInfo applicationInfo = ConfigserverUtil.makeExampleConfigServer();
+        when(duperModel.isSupportedInfraApplication(applicationInfo.getApplicationId())).thenReturn(true);
+
+        verify(monitor, times(0)).monitor(applicationInfo);
         manager.applicationActivated(applicationInfo);
         verify(monitor, times(1)).monitor(applicationInfo);
+
+        verify(monitor, times(0)).close();
         manager.applicationRemoved(applicationInfo.getApplicationId());
         verify(monitor, times(1)).close();
     }
 
     @Test
     public void withHostAdmin() {
-        when(monitorInfra.value()).thenReturn(false);
         ServiceStatus status = manager.getStatus(
                 ZoneApplication.ZONE_APPLICATION_ID,
                 ClusterId.NODE_ADMIN,
@@ -67,23 +67,6 @@ public class HealthMonitorManagerTest {
 
     @Test
     public void infrastructureApplication() {
-        when(monitorInfra.value()).thenReturn(false);
-
-        ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
-        when(duperModel.isSupportedInfraApplication(proxyHostApplication.getApplicationId())).thenReturn(true);
-        List<HostName> hostnames = Stream.of("proxyhost1", "proxyhost2").map(HostName::from).collect(Collectors.toList());
-        ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
-
-        manager.applicationActivated(proxyHostApplicationInfo);
-        verify(monitorFactory, never()).create(proxyHostApplicationInfo.getApplicationId());
-
-        assertStatus(ServiceStatus.NOT_CHECKED, 0, proxyHostApplication, "proxyhost1");
-    }
-
-    @Test
-    public void infrastructureApplicationWithMonitoring() {
-        when(monitorInfra.value()).thenReturn(true);
-
         ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
         when(duperModel.isSupportedInfraApplication(proxyHostApplication.getApplicationId())).thenReturn(true);
         List<HostName> hostnames = Stream.of("proxyhost1", "proxyhost2").map(HostName::from).collect(Collectors.toList());
