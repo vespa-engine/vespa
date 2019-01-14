@@ -3,6 +3,7 @@ package com.yahoo.search.grouping.vespa;
 
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.GroupingRequest;
+import com.yahoo.search.grouping.result.BoolId;
 import com.yahoo.search.grouping.result.DoubleBucketId;
 import com.yahoo.search.grouping.result.DoubleId;
 import com.yahoo.search.grouping.result.Group;
@@ -30,6 +31,7 @@ import com.yahoo.searchlib.aggregation.MinAggregationResult;
 import com.yahoo.searchlib.aggregation.StandardDeviationAggregationResult;
 import com.yahoo.searchlib.aggregation.SumAggregationResult;
 import com.yahoo.searchlib.aggregation.XorAggregationResult;
+import com.yahoo.searchlib.expression.BoolResultNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FloatBucketResultNode;
 import com.yahoo.searchlib.expression.FloatResultNode;
@@ -212,6 +214,8 @@ class ResultBuilder {
                 return new DoubleId(res.getFloat());
             } else if (res instanceof IntegerResultNode) {
                 return new LongId(res.getInteger());
+            } else if (res instanceof BoolResultNode) {
+                return new BoolId(((BoolResultNode)res).getValue());
             } else if (res instanceof NullResultNode) {
                 return new NullId();
             } else if (res instanceof RawResultNode) {

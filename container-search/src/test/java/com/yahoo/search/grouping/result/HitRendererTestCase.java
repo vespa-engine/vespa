@@ -43,6 +43,14 @@ public class HitRendererTestCase {
                      "<group relevance=\"1.0\">\n" +
                      "<id type=\"long\">69</id>\n" +
                      "</group>\n");
+        assertRender(newGroup(new BoolId(true)),
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"bool\">true</id>\n" +
+                        "</group>\n");
+        assertRender(newGroup(new BoolId(false)),
+                "<group relevance=\"1.0\">\n" +
+                        "<id type=\"bool\">false</id>\n" +
+                        "</group>\n");
         assertRender(newGroup(new NullId()),
                      "<group relevance=\"1.0\">\n" +
                      "<id type=\"null\"/>\n" +

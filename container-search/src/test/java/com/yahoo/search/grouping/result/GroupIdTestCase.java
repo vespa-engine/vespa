@@ -35,6 +35,9 @@ public class GroupIdTestCase {
         rangeId = new StringBucketId("6", "9");
         assertEquals("6", rangeId.getFrom());
         assertEquals("9", rangeId.getTo());
+
+        valueId = new BoolId(true);
+        assertEquals(true, valueId.getValue());
     }
 
     @Test
