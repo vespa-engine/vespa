@@ -8,7 +8,7 @@ namespace search::attribute { class IAttributeVector; }
 
 namespace search::docsummary {
 
-class AttrDFW : public IDocsumFW
+class AttrDFW : public ISimpleDFW
 {
 private:
     vespalib::string _attrName;

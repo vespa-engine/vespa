@@ -43,7 +43,7 @@ private:
     static const vespalib::string _empty;
 };
 
-class IDocsumFW : public IDocsumFieldWriter
+class ISimpleDFW : public IDocsumFieldWriter
 {
 public:
     virtual void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) = 0;
@@ -56,7 +56,7 @@ public:
 
 //--------------------------------------------------------------------------
 
-class EmptyDFW : public IDocsumFW
+class EmptyDFW : public ISimpleDFW
 {
 public:
     EmptyDFW();

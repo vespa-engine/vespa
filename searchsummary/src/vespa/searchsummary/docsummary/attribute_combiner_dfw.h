@@ -15,7 +15,7 @@ class DynamicDocsumWriter;
  * This class reads values from multiple struct field attributes and
  * inserts them as an array of struct or a map of struct.
  */
-class AttributeCombinerDFW : public IDocsumFW
+class AttributeCombinerDFW : public ISimpleDFW
 {
 protected:
     uint32_t _stateIndex;
