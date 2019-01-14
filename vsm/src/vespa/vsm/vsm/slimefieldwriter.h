@@ -17,7 +17,7 @@ namespace vsm {
 class SlimeFieldWriter
 {
 private:
-    search::RawBuf _rbuf;
+    search::RawBuf  _rbuf;
     vespalib::Slime _slime;
     const DocsumFieldSpec::FieldIdentifierVector * _inputFields;
     std::vector<vespalib::string> _currPath;
@@ -49,7 +49,7 @@ public:
 
     void clear() {
         _rbuf.Reuse();
-        _inputFields = NULL;
+        _inputFields = nullptr;
         _currPath.clear();
     }
 };

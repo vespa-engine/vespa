@@ -18,11 +18,14 @@ FlattenDocsumWriter::onPrimitive(uint32_t, const Content & c)
 {
     considerSeparator();
     const document::FieldValue & fv = c.getValue();
-    if (fv.getClass().inherits(document::LiteralFieldValueB::classId)) {
+    const auto & clazz = fv.getClass();
+    if (clazz.inherits(document::LiteralFieldValueB::classId)) {
         const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(fv);
         vespalib::stringref value = lfv.getValueRef();
         _output.put(value.data(), value.size());
-    } else if (fv.getClass().inherits(document::NumericFieldValueBase::classId)) {
+    } else if (clazz.inherits(document::NumericFieldValueBase::classId) ||
+               clazz.inherits(document::BoolFieldValue::classId))
+    {
         vespalib::string value = fv.getAsString();
         _output.put(value.data(), value.size());
     } else {
@@ -38,6 +41,6 @@ FlattenDocsumWriter::FlattenDocsumWriter(const vespalib::string & separator) :
     _useSeparator(false)
 { }
 
-FlattenDocsumWriter::~FlattenDocsumWriter() {}
+FlattenDocsumWriter::~FlattenDocsumWriter() = default;
 
 }

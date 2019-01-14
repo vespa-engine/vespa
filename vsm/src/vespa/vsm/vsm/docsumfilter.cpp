@@ -93,7 +93,7 @@ public:
         const document::FieldValue & fv = c.getValue();
         try {
             std::pair<const char *, size_t> buf = fv.getAsRaw();
-            if (buf.first != NULL) {
+            if (buf.first != nullptr) {
                 switch (_type) {
                 case RES_DATA:
                     _packer.AddData(buf.first, buf.second);
@@ -184,14 +184,14 @@ DocsumFilter::getFieldValue(const DocsumFieldSpec::FieldIdentifier & fieldId,
 {
     FieldIdT fId = fieldId.getId();
     const document::FieldValue * fv = docsum.getField(fId);
-    if (fv == NULL) {
-        return NULL;
+    if (fv == nullptr) {
+        return nullptr;
     }
     switch (command) {
     case VsmsummaryConfig::Fieldmap::FLATTENJUNIPER:
-        if (_snippetModifiers != NULL) {
+        if (_snippetModifiers != nullptr) {
             FieldModifier * mod = _snippetModifiers->getModifier(fId);
-            if (mod != NULL) {
+            if (mod != nullptr) {
                 _cachedValue = mod->modify(*fv, fieldId.getPath());
                 modified = true;
                 return _cachedValue.get();
@@ -209,9 +209,9 @@ DocsumFilter::DocsumFilter(const DocsumToolsPtr &tools, const IDocSumCache & doc
     _tools(tools),
     _fields(),
     _highestFieldNo(0),
-    _packer(tools.get() ? tools->getResultConfig() : NULL),
+    _packer(tools ? tools->getResultConfig() : nullptr),
     _flattenWriter(),
-    _snippetModifiers(NULL),
+    _snippetModifiers(nullptr),
     _cachedValue(),
     _emptyFieldPath()
 { }
@@ -223,7 +223,7 @@ void DocsumFilter::init(const FieldMap & fieldMap, const FieldPathMapT & fieldPa
     if (_tools.get()) {
         const ResultClass *resClass = _tools->getResultClass();
         const std::vector<DocsumTools::FieldSpec> & inputSpecs = _tools->getFieldSpecs();
-        if (resClass != NULL) {
+        if (resClass != nullptr) {
             uint32_t entryCnt = resClass->GetNumEntries();
             assert(entryCnt == inputSpecs.size());
             for (uint32_t i = 0; i < entryCnt; ++i) {
@@ -266,6 +266,12 @@ DocsumFilter::writeField(const document::FieldValue & fv, const FieldPath & path
         uint8_t val = rh.value;
         packer.AddByte(val);
         break; }
+    case RES_BOOL: {
+        IntResultHandler rh;
+        fv.iterateNested(path, rh);
+        uint8_t val = rh.value;
+        packer.AddByte(val);
+        break; }
     case RES_FLOAT: {
         FloatResultHandler rh;
         fv.iterateNested(path, rh);
@@ -301,9 +307,7 @@ DocsumFilter::writeField(const document::FieldValue & fv, const FieldPath & path
         }
         break;
     default:
-        LOG(warning,
-            "Unknown docsum field type: %s",
-            ResultConfig::GetResTypeName(type));
+        LOG(warning, "Unknown docsum field type: %s", ResultConfig::GetResTypeName(type));
         packer.AddEmpty(); // unhandled output type
         break;
     }
@@ -318,7 +322,7 @@ DocsumFilter::writeSlimeField(const DocsumFieldSpec & fieldSpec,
     if (fieldSpec.getCommand() == VsmsummaryConfig::Fieldmap::NONE) {
         const DocsumFieldSpec::FieldIdentifier & fieldId = fieldSpec.getOutputField();
         const document::FieldValue * fv = docsum.getField(fieldId.getId());
-        if (fv != NULL) {
+        if (fv != nullptr) {
             LOG(debug, "writeSlimeField: About to write field '%d' as Slime: field value = '%s'",
                 fieldId.getId(), fv->toString().c_str());
             SlimeFieldWriter writer;
@@ -369,7 +373,7 @@ DocsumFilter::writeFlattenField(const DocsumFieldSpec & fieldSpec,
         const DocsumFieldSpec::FieldIdentifier & fieldId = inputFields[i];
         bool modified = false;
         const document::FieldValue * fv = getFieldValue(fieldId, fieldSpec.getCommand(), docsum, modified);
-        if (fv != NULL) {
+        if (fv != nullptr) {
             LOG(debug, "writeFlattenField: About to flatten field '%d' with field value (%s) '%s'",
                 fieldId.getId(), modified ? "modified" : "original", fv->toString().c_str());
             if (modified) {
@@ -436,8 +440,8 @@ DocsumStoreValue
 DocsumFilter::getMappedDocsum(uint32_t id)
 {
     const ResultClass *resClass = _tools->getResultClass();
-    if (resClass == NULL) {
-        return DocsumStoreValue(NULL, 0);
+    if (resClass == nullptr) {
+        return DocsumStoreValue(nullptr, 0);
     }
 
     const Document & doc = _docsumCache->getDocSum(id);
@@ -452,7 +456,7 @@ DocsumFilter::getMappedDocsum(uint32_t id)
             if (it->getInputFields().size() == 1 && it->getCommand() == VsmsummaryConfig::Fieldmap::NONE) {
                 const DocsumFieldSpec::FieldIdentifier & fieldId = it->getInputFields()[0];
                 const document::FieldValue * field = doc.getField(fieldId.getId());
-                if (field != NULL) {
+                if (field != nullptr) {
                     writeField(*field, fieldId.getPath(), type, _packer);
                 } else {
                     writeEmpty(type, _packer); // void input
@@ -472,7 +476,7 @@ DocsumFilter::getMappedDocsum(uint32_t id)
     if (ok) {
         return DocsumStoreValue(buf, buflen);
     } else {
-        return DocsumStoreValue(NULL, 0);
+        return DocsumStoreValue(nullptr, 0);
     }
 }
 
