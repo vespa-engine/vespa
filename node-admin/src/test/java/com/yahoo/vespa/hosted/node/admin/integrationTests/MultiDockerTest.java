@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -60,8 +59,7 @@ public class MultiDockerTest {
         tester.addChildNodeRepositoryNode(nodeSpec);
 
         ContainerName containerName = ContainerName.fromHostname(hostName);
-        tester.inOrder(tester.docker).createContainerCommand(
-                eq(dockerImage), eq(ContainerResources.from(2, 4)), eq(containerName), eq(hostName));
+        tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(containerName));
         tester.inOrder(tester.docker).executeInContainerAsUser(
                 eq(containerName), eq("root"), any(), eq(DockerTester.NODE_PROGRAM), eq("resume"));
         tester.inOrder(tester.nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withDockerImage(dockerImage)));

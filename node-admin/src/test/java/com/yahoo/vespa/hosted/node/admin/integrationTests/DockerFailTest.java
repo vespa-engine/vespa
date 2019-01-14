@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -39,16 +38,14 @@ public class DockerFailTest {
                     .minDiskAvailableGb(1)
                     .build());
 
-            tester.inOrder(tester.docker).createContainerCommand(
-                    eq(dockerImage), eq(ContainerResources.from(1, 1)), eq(containerName), eq(hostname));
+            tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(containerName));
             tester.inOrder(tester.docker).executeInContainerAsUser(
                     eq(containerName), eq("root"), any(), eq(DockerTester.NODE_PROGRAM), eq("resume"));
 
             tester.docker.deleteContainer(new ContainerName("host1"));
 
             tester.inOrder(tester.docker).deleteContainer(eq(containerName));
-            tester.inOrder(tester.docker).createContainerCommand(
-                    eq(dockerImage), eq(ContainerResources.from(1, 1)), eq(containerName), eq(hostname));
+            tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(containerName));
             tester.inOrder(tester.docker).executeInContainerAsUser(
                     eq(containerName), eq("root"), any(), eq(DockerTester.NODE_PROGRAM), eq("resume"));
 

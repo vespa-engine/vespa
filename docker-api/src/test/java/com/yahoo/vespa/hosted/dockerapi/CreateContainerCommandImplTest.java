@@ -17,12 +17,14 @@ public class CreateContainerCommandImplTest {
     @Test
     public void testToString() throws UnknownHostException {
         DockerImage dockerImage = new DockerImage("docker.registry.domain.tld/my/image:1.2.3");
-        ContainerResources containerResources = new ContainerResources(100, 1024);
+        ContainerResources containerResources = new ContainerResources(2.5, 100, 1024);
         String hostname = "docker-1.region.domain.tld";
         ContainerName containerName = ContainerName.fromHostname(hostname);
 
         Docker.CreateContainerCommand createContainerCommand = new CreateContainerCommandImpl(
-                null, dockerImage, containerResources, containerName, hostname)
+                null, dockerImage, containerName)
+                .withHostName(hostname)
+                .withResources(containerResources)
                 .withLabel("my-label", "test-label")
                 .withUlimit("nofile", 1, 2)
                 .withUlimit("nproc", 10, 20)
@@ -41,6 +43,7 @@ public class CreateContainerCommandImplTest {
         assertEquals("--name docker-1 " +
                 "--hostname docker-1.region.domain.tld " +
                 "--cpu-shares 100 " +
+                "--cpus 2.5 " +
                 "--memory 1024 " +
                 "--label my-label=test-label " +
                 "--ulimit nofile=1:2 " +
@@ -71,7 +74,7 @@ public class CreateContainerCommandImplTest {
 
         Stream.of(addresses).forEach(address -> {
             String generatedMac = CreateContainerCommandImpl.generateMACAddress(
-                    address[0], Optional.ofNullable(address[1]), Optional.ofNullable(address[2]));
+                    Optional.of(address[0]), Optional.ofNullable(address[1]), Optional.ofNullable(address[2]));
             String expectedMac = address[3];
             assertEquals(expectedMac, generatedMac);
         });

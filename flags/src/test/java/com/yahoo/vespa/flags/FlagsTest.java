@@ -81,6 +81,11 @@ public class FlagsTest {
     }
 
     @Test
+    public void testDouble() {
+        testGeneric(Flags.defineDoubleFlag("double-id", 3.142, "desc", "mod"), 3.142, 2.718);
+    }
+
+    @Test
     public void testJacksonClass() {
         ExampleJacksonClass defaultInstance = new ExampleJacksonClass();
         ExampleJacksonClass instance = new ExampleJacksonClass();

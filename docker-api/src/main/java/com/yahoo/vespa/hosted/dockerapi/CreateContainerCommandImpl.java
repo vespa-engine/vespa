@@ -5,6 +5,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Capability;
+import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Ulimit;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 
@@ -25,13 +26,13 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.hosted.dockerapi.DockerImpl.LABEL_NAME_MANAGEDBY;
+
 class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
     private final DockerClient docker;
     private final DockerImage dockerImage;
-    private final ContainerResources containerResources;
     private final ContainerName containerName;
-    private final String hostName;
     private final Map<String, String> labels = new HashMap<>();
     private final List<String> environmentAssignments = new ArrayList<>();
     private final List<String> volumeBindSpecs = new ArrayList<>();
@@ -39,22 +40,31 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final Set<Capability> addCapabilities = new HashSet<>();
     private final Set<Capability> dropCapabilities = new HashSet<>();
 
+    private Optional<String> hostName = Optional.empty();
+    private Optional<ContainerResources> containerResources = Optional.empty();
     private Optional<String> networkMode = Optional.empty();
     private Optional<String> ipv4Address = Optional.empty();
     private Optional<String> ipv6Address = Optional.empty();
     private Optional<String[]> entrypoint = Optional.empty();
     private boolean privileged = false;
 
-    CreateContainerCommandImpl(DockerClient docker,
-                               DockerImage dockerImage,
-                               ContainerResources containerResources,
-                               ContainerName containerName,
-                               String hostName) {
+    CreateContainerCommandImpl(DockerClient docker, DockerImage dockerImage, ContainerName containerName) {
         this.docker = docker;
         this.dockerImage = dockerImage;
-        this.containerResources = containerResources;
         this.containerName = containerName;
-        this.hostName = hostName;
+    }
+
+
+    @Override
+    public Docker.CreateContainerCommand withHostName(String hostName) {
+        this.hostName = Optional.of(hostName);
+        return this;
+    }
+
+    @Override
+    public Docker.CreateContainerCommand withResources(ContainerResources containerResources) {
+        this.containerResources = Optional.of(containerResources);
+        return this;
     }
 
     @Override
@@ -65,7 +75,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     public Docker.CreateContainerCommand withManagedBy(String manager) {
-        return withLabel(DockerImpl.LABEL_NAME_MANAGEDBY, manager);
+        return withLabel(LABEL_NAME_MANAGEDBY, manager);
     }
 
     @Override
@@ -140,19 +150,25 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         try {
             createCreateContainerCmd().exec();
         } catch (RuntimeException e) {
-            throw new DockerException("Failed to create container " + containerName.asString(), e);
+            throw new DockerException("Failed to create container " + toString(), e);
         }
     }
 
     private CreateContainerCmd createCreateContainerCmd() {
         List<Bind> volumeBinds = volumeBindSpecs.stream().map(Bind::parse).collect(Collectors.toList());
 
+        final HostConfig hostConfig = new HostConfig();
+
+        containerResources.ifPresent(cr -> hostConfig
+                .withCpuShares(cr.cpuShares())
+                .withMemory(cr.memoryBytes())
+                .withCpuPeriod(cr.cpuQuota() > 0 ? cr.cpuPeriod() : null)
+                .withCpuQuota(cr.cpuQuota() > 0 ? cr.cpuQuota() : null));
+
         final CreateContainerCmd containerCmd = docker
                 .createContainerCmd(dockerImage.asString())
-                .withCpuShares(containerResources.cpuShares())
-                .withMemory(containerResources.memoryBytes())
+                .withHostConfig(hostConfig) // MUST BE FIRST (some of the later setters are simply proxied to HostConfig)
                 .withName(containerName.asString())
-                .withHostName(hostName)
                 .withLabels(labels)
                 .withEnv(environmentAssignments)
                 .withBinds(volumeBinds)
@@ -165,6 +181,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .filter(mode -> ! mode.toLowerCase().equals("host"))
                 .ifPresent(mode -> containerCmd.withMacAddress(generateMACAddress(hostName, ipv4Address, ipv6Address)));
 
+        hostName.ifPresent(containerCmd::withHostName);
         networkMode.ifPresent(containerCmd::withNetworkMode);
         ipv4Address.ifPresent(containerCmd::withIpv4Address);
         ipv6Address.ifPresent(containerCmd::withIpv6Address);
@@ -174,17 +191,17 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     /** Maps ("--env", {"A", "B", "C"}) to "--env A --env B --env C" */
-    private String toRepeatedOption(String option, List<String> optionValues) {
+    private static String toRepeatedOption(String option, List<String> optionValues) {
         return optionValues.stream()
                 .map(optionValue -> option + " " + optionValue)
                 .collect(Collectors.joining(" "));
     }
 
-    private String toOptionalOption(String option, Optional<String> value) {
+    private static String toOptionalOption(String option, Optional<?> value) {
         return value.map(o -> option + " " + o).orElse("");
     }
 
-    private String toFlagOption(String option, boolean value) {
+    private static String toFlagOption(String option, boolean value) {
         return value ? option : "";
     }
 
@@ -205,9 +222,10 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
         return Stream.of(
                 "--name " + containerName.asString(),
-                "--hostname " + hostName,
-                "--cpu-shares " + containerResources.cpuShares(),
-                "--memory " + containerResources.memoryBytes(),
+                toOptionalOption("--hostname", hostName),
+                toOptionalOption("--cpu-shares", containerResources.map(ContainerResources::cpuShares)),
+                toOptionalOption("--cpus", containerResources.map(ContainerResources::cpus)),
+                toOptionalOption("--memory", containerResources.map(ContainerResources::memoryBytes)),
                 toRepeatedOption("--label", labelList),
                 toRepeatedOption("--ulimit", ulimitList),
                 toRepeatedOption("--env", environmentAssignments),
@@ -228,8 +246,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     /**
      * Generates a pseudo-random MAC address based on the hostname, IPv4- and IPv6-address.
      */
-    static String generateMACAddress(String hostname, Optional<String> ipv4Address, Optional<String> ipv6Address) {
-        final String seed = hostname + ipv4Address.orElse("") + ipv6Address.orElse("");
+    static String generateMACAddress(Optional<String> hostname, Optional<String> ipv4Address, Optional<String> ipv6Address) {
+        final String seed = hostname.orElse("") + ipv4Address.orElse("") + ipv6Address.orElse("");
         Random rand = getPRNG(seed);
         byte[] macAddr = new byte[6];
         rand.nextBytes(macAddr);

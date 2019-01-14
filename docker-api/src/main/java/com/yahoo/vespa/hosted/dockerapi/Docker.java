@@ -15,6 +15,8 @@ import java.util.OptionalLong;
 public interface Docker {
 
     interface CreateContainerCommand {
+        CreateContainerCommand withHostName(String hostname);
+        CreateContainerCommand withResources(ContainerResources containerResources);
         CreateContainerCommand withLabel(String name, String value);
         CreateContainerCommand withEnvironment(String name, String value);
 
@@ -53,11 +55,7 @@ public interface Docker {
         void create();
     }
 
-    CreateContainerCommand createContainerCommand(
-            DockerImage dockerImage,
-            ContainerResources containerResources,
-            ContainerName containerName,
-            String hostName);
+    CreateContainerCommand createContainerCommand(DockerImage dockerImage, ContainerName containerName);
 
     Optional<ContainerStats> getContainerStats(ContainerName containerName);
 
@@ -66,6 +64,8 @@ public interface Docker {
     void stopContainer(ContainerName containerName);
 
     void deleteContainer(ContainerName containerName);
+
+    void updateContainer(ContainerName containerName, ContainerResources containerResources);
 
     List<Container> getAllContainersManagedBy(String manager);
 

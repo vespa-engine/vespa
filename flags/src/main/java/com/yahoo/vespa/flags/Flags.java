@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 
 /**
@@ -41,7 +42,7 @@ public class Flags {
             "use-config-server-cache", true,
             "Whether config server will use cache to answer config requests.",
             "Takes effect immediately when changed.",
-            HOSTNAME, FetchVector.Dimension.APPLICATION_ID);
+            HOSTNAME, APPLICATION_ID);
 
     public static final UnboundBooleanFlag CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD = defineFeatureFlag(
             "config-server-bootstrap-in-separate-thread", true,
@@ -77,6 +78,12 @@ public class Flags {
             HOSTNAME
     );
 
+    public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
+            "container-cpu-cap", 0,
+            "Hard limit on how many CPUs a container may use",
+            "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
+            HOSTNAME, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
@@ -99,6 +106,12 @@ public class Flags {
     public static UnboundLongFlag defineLongFlag(String flagId, long defaultValue, String description,
                                                  String modificationEffect, FetchVector.Dimension... dimensions) {
         return define(UnboundLongFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
+    }
+
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static UnboundDoubleFlag defineDoubleFlag(String flagId, double defaultValue, String description,
+                                                     String modificationEffect, FetchVector.Dimension... dimensions) {
+        return define(UnboundDoubleFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

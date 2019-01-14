@@ -4,6 +4,10 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.flags.DoubleFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
@@ -69,6 +73,8 @@ public class NodeAgentImpl implements NodeAgent {
     private final Optional<AclMaintainer> aclMaintainer;
     private final Optional<HealthChecker> healthChecker;
 
+    private final DoubleFlag containerCpuCap;
+
     private int numberOfUnhandledException = 0;
     private DockerImage imageBeingDownloaded = null;
 
@@ -108,6 +114,7 @@ public class NodeAgentImpl implements NodeAgent {
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
             final StorageMaintainer storageMaintainer,
+            final FlagSource flagSource,
             final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer,
             final Optional<AclMaintainer> aclMaintainer,
             final Optional<HealthChecker> healthChecker) {
@@ -119,6 +126,9 @@ public class NodeAgentImpl implements NodeAgent {
         this.athenzCredentialsMaintainer = athenzCredentialsMaintainer;
         this.aclMaintainer = aclMaintainer;
         this.healthChecker = healthChecker;
+
+        this.containerCpuCap = Flags.CONTAINER_CPU_CAP.bindTo(flagSource)
+                .with(FetchVector.Dimension.HOSTNAME, contextSupplier.currentContext().node().getHostname());
 
         this.loopThread = new Thread(() -> {
             while (!terminated.get()) {
@@ -310,13 +320,6 @@ public class NodeAgentImpl implements NodeAgent {
             return Optional.of("Container no longer running");
         }
 
-        ContainerResources wantedContainerResources = ContainerResources.from(
-                node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
-        if (!wantedContainerResources.equals(existingContainer.resources)) {
-            return Optional.of("Container should be running with different resource allocation, wanted: " +
-                    wantedContainerResources + ", actual: " + existingContainer.resources);
-        }
-
         if (currentRebootGeneration < node.getWantedRebootGeneration()) {
             return Optional.of(String.format("Container reboot wanted. Current: %d, Wanted: %d",
                     currentRebootGeneration, node.getWantedRebootGeneration()));
@@ -332,9 +335,7 @@ public class NodeAgentImpl implements NodeAgent {
             context.log(logger, "Will remove container: " + removeReason.get());
 
             if (existingContainer.state.isRunning()) {
-                if (context.node().getState() == Node.State.active) {
-                    orchestratorSuspendNode(context);
-                }
+                orchestratorSuspendNode(context);
 
                 try {
                     if (context.node().getState() != Node.State.dirty) {
@@ -354,6 +355,25 @@ public class NodeAgentImpl implements NodeAgent {
             return Optional.empty();
         }
         return Optional.of(existingContainer);
+    }
+
+    private void updateContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
+        double cpuCap = context.node().getOwner()
+                .map(NodeSpec.Owner::asApplicationId)
+                .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
+                .orElse(containerCpuCap)
+                .value();
+
+        ContainerResources wantedContainerResources = ContainerResources.from(
+                cpuCap, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb());
+
+        if (wantedContainerResources.equals(existingContainer.resources)) return;
+        context.log(logger, "Container should be running with different resource allocation, wanted: %s, current: %s",
+                wantedContainerResources, existingContainer.resources);
+
+        orchestratorSuspendNode(context);
+
+        dockerOperations.updateContainer(context, wantedContainerResources);
     }
 
 
@@ -438,6 +458,8 @@ public class NodeAgentImpl implements NodeAgent {
                     startContainer(context);
                     containerState = UNKNOWN;
                     aclMaintainer.ifPresent(AclMaintainer::converge);
+                } else {
+                    updateContainerIfNeeded(context, container.get());
                 }
 
                 startServicesIfNeeded(context);
@@ -663,6 +685,8 @@ public class NodeAgentImpl implements NodeAgent {
     // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
     // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
     private void orchestratorSuspendNode(NodeAgentContext context) {
+        if (context.node().getState() != Node.State.active) return;
+
         context.log(logger, "Ask Orchestrator for permission to suspend node");
         orchestrator.suspend(context.hostname().value());
     }

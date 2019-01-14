@@ -63,10 +63,10 @@ public class DockerOperationsImpl implements DockerOperations {
                         ". Missing an AAAA DNS entry?"));
 
         Docker.CreateContainerCommand command = docker.createContainerCommand(
-                context.node().getWantedDockerImage().get(),
-                ContainerResources.from(context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb()),
-                context.containerName(),
-                context.node().getHostname())
+                context.node().getWantedDockerImage().get(), context.containerName())
+                .withHostName(context.node().getHostname())
+                .withResources(ContainerResources.from(
+                        0, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb()))
                 .withManagedBy(MANAGER_NAME)
                 .withUlimit("nofile", 262_144, 262_144)
                 // The nproc aka RLIMIT_NPROC resource limit works as follows:
@@ -168,6 +168,11 @@ public class DockerOperationsImpl implements DockerOperations {
 
         context.log(logger, "Deleting container");
         docker.deleteContainer(context.containerName());
+    }
+
+    @Override
+    public void updateContainer(NodeAgentContext context, ContainerResources containerResources) {
+        docker.updateContainer(context.containerName(), containerResources);
     }
 
     @Override

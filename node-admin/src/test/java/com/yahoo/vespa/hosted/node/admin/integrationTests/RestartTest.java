@@ -36,8 +36,7 @@ public class RestartTest {
                     .currentRestartGeneration(1)
                     .build());
 
-            tester.inOrder(tester.docker).createContainerCommand(
-                    eq(dockerImage), any(), eq(new ContainerName("host1")), eq(hostname));
+            tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(new ContainerName("host1")));
             tester.inOrder(tester.nodeRepository).updateNodeAttributes(
                     eq(hostname), eq(new NodeAttributes().withDockerImage(dockerImage)));
 

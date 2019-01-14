@@ -6,9 +6,11 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.InspectImageResponse;
+import com.github.dockerjava.api.command.UpdateContainerCmd;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
+import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Statistics;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -114,9 +116,8 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public CreateContainerCommand createContainerCommand(DockerImage image, ContainerResources containerResources,
-                                                         ContainerName name, String hostName) {
-        return new CreateContainerCommandImpl(dockerClient, image, containerResources, name, hostName);
+    public CreateContainerCommand createContainerCommand(DockerImage image, ContainerName containerName) {
+        return new CreateContainerCommandImpl(dockerClient, image, containerName);
     }
 
 
@@ -232,6 +233,32 @@ public class DockerImpl implements Docker {
     }
 
     @Override
+    public void updateContainer(ContainerName containerName, ContainerResources resources) {
+        try {
+            UpdateContainerCmd updateContainerCmd = dockerClient.updateContainerCmd(containerName.asString())
+                    .withCpuShares(resources.cpuShares())
+                    .withMemory(resources.memoryBytes())
+
+                    // Command line argument `--cpus c` is sent over to docker daemon as "NanoCPUs", which is the
+                    // value of `c * 1e9`. This however, is just a shorthand for `--cpu-period p` and `--cpu-quota q`
+                    // where p = 100000 and q = c * 100000.
+                    // See: https://docs.docker.com/config/containers/resource_constraints/#configure-the-default-cfs-scheduler
+                    // --cpus requires API 1.25+ on create and 1.29+ on update
+                    // NanoCPUs is supported in docker-java as of 3.1.0 on create and not at all on update
+                    // TODO: Simplify this to .withNanoCPUs(resources.cpu()) when docker-java supports it
+                    .withCpuPeriod(resources.cpuQuota() > 0 ? resources.cpuPeriod() : null)
+                    .withCpuQuota(resources.cpuQuota() > 0 ? resources.cpuQuota() : null);
+
+            updateContainerCmd.exec();
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
+        } catch (RuntimeException e) {
+            numberOfDockerDaemonFails.add();
+            throw new DockerException("Failed to update container '" + containerName.asString() + "' to " + resources, e);
+        }
+    }
+
+    @Override
     public List<Container> getAllContainersManagedBy(String manager) {
         return listAllContainers().stream()
                 .filter(container -> isManagedBy(container, manager))
@@ -251,14 +278,19 @@ public class DockerImpl implements Docker {
                         new Container(
                                 response.getConfig().getHostName(),
                                 new DockerImage(response.getConfig().getImage()),
-                                new ContainerResources(response.getHostConfig().getCpuShares(),
-                                        response.getHostConfig().getMemory()),
+                                containerResourcesFromHostConfig(response.getHostConfig()),
                                 new ContainerName(decode(response.getName())),
                                 Container.State.valueOf(response.getState().getStatus().toUpperCase()),
                                 response.getState().getPid()
                         ))
                 .map(Stream::of)
                 .orElse(Stream.empty());
+    }
+
+    private static ContainerResources containerResourcesFromHostConfig(HostConfig hostConfig) {
+        final double cpus = hostConfig.getCpuPeriod() > 0 ?
+                (double) hostConfig.getCpuQuota() / hostConfig.getCpuPeriod() : 0;
+        return new ContainerResources(cpus, hostConfig.getCpuShares(), hostConfig.getMemory());
     }
 
     private boolean isManagedBy(com.github.dockerjava.api.model.Container container, String manager) {
