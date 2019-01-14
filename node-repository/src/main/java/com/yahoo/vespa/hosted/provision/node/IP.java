@@ -59,7 +59,7 @@ public class IP {
 
         public AddressPool(Node owner, Set<String> addresses) {
             this.owner = Objects.requireNonNull(owner, "owner must be non-null");
-            this.addresses = ImmutableSet.copyOf(requireAddresses(addresses));
+            this.addresses = ImmutableSet.copyOf(Objects.requireNonNull(addresses, "addresses must be non-null"));
         }
 
         /**
@@ -110,25 +110,6 @@ public class IP {
         @Override
         public int hashCode() {
             return Objects.hash(addresses);
-        }
-
-        private static Set<String> requireAddresses(Set<String> addresses) {
-            Objects.requireNonNull(addresses, "ipAddressPool must be non-null");
-
-            long ipv6AddrCount = addresses.stream().filter(IP::isV6).count();
-            if (ipv6AddrCount == addresses.size()) {
-                return addresses; // IPv6-only pool is valid
-            }
-
-            long ipv4AddrCount = addresses.stream().filter(IP::isV4).count();
-            if (ipv4AddrCount == ipv6AddrCount) {
-                return addresses;
-            }
-
-            throw new IllegalArgumentException(String.format("Dual-stacked IP address pool must have an " +
-                                                             "equal number of addresses of each version " +
-                                                             "[IPv6 address count = %d, IPv4 address count = %d]",
-                                                             ipv6AddrCount, ipv4AddrCount));
         }
 
     }
@@ -222,6 +203,38 @@ public class IP {
     /** Returns whether given string is an IPv6 address */
     public static boolean isV6(String ipAddress) {
         return InetAddresses.forString(ipAddress) instanceof Inet6Address;
+    }
+
+    /** Validates and returns the given set of IP addresses */
+    public static Set<String> requireAddresses(Set<String> addresses) {
+        String message = "A node must have at least one valid IP address";
+        if (addresses.isEmpty()) {
+            throw new IllegalArgumentException(message);
+        }
+        try {
+            addresses.forEach(InetAddresses::forString);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(message, e);
+        }
+        return addresses;
+    }
+
+    /** Validates and returns the given IP address pool */
+    public static Set<String> requireAddressPool(Set<String> addresses) {
+        long ipv6AddrCount = addresses.stream().filter(IP::isV6).count();
+        if (ipv6AddrCount == addresses.size()) {
+            return addresses; // IPv6-only pool is valid
+        }
+
+        long ipv4AddrCount = addresses.stream().filter(IP::isV4).count();
+        if (ipv4AddrCount == ipv6AddrCount) {
+            return addresses;
+        }
+
+        throw new IllegalArgumentException(String.format("Dual-stacked IP address list must have an " +
+                                                         "equal number of addresses of each version " +
+                                                         "[IPv6 address count = %d, IPv4 address count = %d]",
+                                                         ipv6AddrCount, ipv4AddrCount));
     }
 
 }

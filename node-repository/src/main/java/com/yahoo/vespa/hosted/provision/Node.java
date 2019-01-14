@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
@@ -67,7 +66,7 @@ public final class Node {
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation,
                 History history, NodeType type) {
         Objects.requireNonNull(id, "A node must have an ID");
-        requireIpAddresses(ipAddresses, "A node must have at least one valid IP address");
+        requireNonEmpty(ipAddresses, "A node must have at least one valid IP address");
         requireNonEmptyString(hostname, "A node must have a hostname");
         requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
         Objects.requireNonNull(flavor, "A node must have a flavor");
@@ -261,8 +260,7 @@ public final class Node {
 
     private static void requireNonEmptyString(Optional<String> value, String message) {
         Objects.requireNonNull(value, message);
-        if (value.isPresent())
-            requireNonEmptyString(value.get(), message);
+        value.ifPresent(v -> requireNonEmptyString(v, message));
     }
 
     private static void requireNonEmptyString(String value, String message) {
@@ -271,14 +269,9 @@ public final class Node {
             throw new IllegalArgumentException(message + ", but was '" + value + "'");
     }
 
-    private static void requireIpAddresses(Set<String> values, String message) {
-        if (values.isEmpty()) {
+    private static void requireNonEmpty(Set<String> values, String message) {
+        if (values == null || values.isEmpty()) {
             throw new IllegalArgumentException(message);
-        }
-        try {
-            values.forEach(InetAddresses::forString);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(message, e);
         }
     }
 

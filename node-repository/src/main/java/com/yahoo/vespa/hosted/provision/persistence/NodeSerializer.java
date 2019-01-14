@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 
 /**
  * Serializes a node to/from JSON.
@@ -99,8 +100,8 @@ public class NodeSerializer {
 
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
-        toSlime(node.ipAddresses(), object.setArray(ipAddressesKey));
-        toSlime(node.ipAddressPool().asSet(), object.setArray(ipAddressPoolKey));
+        toSlime(node.ipAddresses(), object.setArray(ipAddressesKey), IP::requireAddresses);
+        toSlime(node.ipAddressPool().asSet(), object.setArray(ipAddressPoolKey), IP::requireAddressPool);
         object.setString(idKey, node.id());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         object.setString(flavorKey, node.flavor().name());
@@ -141,8 +142,9 @@ public class NodeSerializer {
         object.setString(agentKey, toString(event.agent()));
     }
 
-    private void toSlime(Set<String> ipAddresses, Cursor array) {
-        ipAddresses.stream().sorted(IP.naturalOrder).forEach(array::addString);
+    private void toSlime(Set<String> ipAddresses, Cursor array, UnaryOperator<Set<String>> validator) {
+        // Validating IP address format expensive, so we do it at serialization time instead of Node construction time
+        validator.apply(ipAddresses).stream().sorted(IP.naturalOrder).forEach(array::addString);
     }
 
     // ---------------- Deserialization --------------------------------------------------
@@ -260,7 +262,7 @@ public class NodeSerializer {
         return Optional.empty();
     }
 
-    // Enum <-> string mappings
+    // ----------------- Enum <-> string mappings ----------------------------------------
     
     /** Returns the event type, or null if this event type should be ignored */
     private History.Event.Type eventTypeFromString(String eventTypeString) {
