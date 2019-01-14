@@ -23,7 +23,7 @@ public class SessionTest implements SessionHandler {
     }
 
     private static class Session {
-        private static int     cnt   = 0;
+        private static volatile int cnt = 0;
         private static boolean error = false;
 
         private int     value   = 0;
@@ -235,7 +235,7 @@ public class SessionTest implements SessionHandler {
                           int clientFiniCount) {
         server.transport().sync().sync();
         client.transport().sync().sync();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 12000; i++) {
             if ((sessionCount    == Session.cnt()    || sessionCount    < 0) &&
                 (serverInitCount == server.initCount || serverInitCount < 0) &&
                 (serverLiveCount == server.liveCount || serverLiveCount < 0) &&
@@ -247,7 +247,7 @@ public class SessionTest implements SessionHandler {
                 (clientFiniCount == client.finiCount || clientFiniCount < 0)) {
                 break;
             }
-            try { Thread.sleep(100); } catch (InterruptedException e) {}
+            try { Thread.sleep(10); } catch (InterruptedException e) {}
         }
         server.transport().sync().sync();
         client.transport().sync().sync();
