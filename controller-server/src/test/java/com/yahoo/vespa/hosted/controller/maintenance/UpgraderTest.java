@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -895,7 +896,7 @@ public class UpgraderTest {
     }
 
     @Test
-    public void testPinningMajorVersionInApplication() {
+    public void testPinningMajorVersionInDeploymentXml() {
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
@@ -909,6 +910,41 @@ public class UpgraderTest {
         // Setup applications
         Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
         Application default0 = tester.createAndDeploy("default0", 2, version6ApplicationPackage);
+
+        // New major version is released
+        version = Version.fromString("7.0");
+        tester.upgradeSystem(version);
+        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        tester.triggerUntilQuiescence();
+
+        // ... canary upgrade to it
+        assertEquals(2, tester.buildService().jobs().size());
+        tester.completeUpgrade(canary0, version, "canary");
+        assertEquals(0, tester.buildService().jobs().size());
+        tester.computeVersionStatus();
+
+        // The other application does not because it has pinned to major version 6
+        tester.upgrader().maintain();
+        tester.triggerUntilQuiescence();
+        assertEquals(0, tester.buildService().jobs().size());
+    }
+
+    @Test
+    public void testPinningMajorVersionInApplication() {
+        Version version = Version.fromString("6.2");
+        tester.upgradeSystem(version);
+
+        ApplicationPackage default0ApplicationPackage = new ApplicationPackageBuilder()
+                                                                .upgradePolicy("default")
+                                                                .environment(Environment.prod)
+                                                                .region("us-west-1")
+                                                                .build();
+
+        // Setup applications
+        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Application default0 = tester.createAndDeploy("default0", 2, default0ApplicationPackage);
+        tester.applications().lockOrThrow(default0.id(), a -> tester.applications().store(a.withMajorVersion(6)));
+        assertEquals(Optional.of(6), tester.applications().get(default0.id()).get().majorVersion());
 
         // New major version is released
         version = Version.fromString("7.0");

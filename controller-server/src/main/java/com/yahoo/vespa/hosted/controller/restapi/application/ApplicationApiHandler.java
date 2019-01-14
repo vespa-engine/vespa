@@ -137,6 +137,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 case GET: return handleGET(request);
                 case PUT: return handlePUT(request);
                 case POST: return handlePOST(request);
+                case PATCH: return handlePATCH(request);
                 case DELETE: return handleDELETE(request);
                 case OPTIONS: return handleOPTIONS();
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
@@ -215,6 +216,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
+    private HttpResponse handlePATCH(HttpRequest request) {
+        Path path = new Path(request.getUri().getPath());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}"))
+            return setMajorVersion(path.get("tenant"), path.get("application"), request);
+        return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
     private HttpResponse handleDELETE(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
@@ -233,7 +241,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // We implement this to avoid redirect loops on OPTIONS requests from browsers, but do not really bother
         // spelling out the methods supported at each path, which we should
         EmptyJsonResponse response = new EmptyJsonResponse();
-        response.headers().put("Allow", "GET,PUT,POST,DELETE,OPTIONS");
+        response.headers().put("Allow", "GET,PUT,POST,PATCH,DELETE,OPTIONS");
         return response;
     }
 
@@ -342,14 +350,26 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse application(String tenantName, String applicationName, HttpRequest request) {
-        ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
-        Application application =
-                controller.applications().get(applicationId)
-                        .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
-
         Slime slime = new Slime();
-        toSlime(slime.setObject(), application, request);
+        toSlime(slime.setObject(), getApplication(tenantName, applicationName), request);
         return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse setMajorVersion(String tenantName, String applicationName, HttpRequest request) {
+        Application application = getApplication(tenantName, applicationName);
+        Inspector majorVersionField = toSlime(request.getData()).get().field("majorVersion");
+        if ( ! majorVersionField.valid())
+            throw new IllegalArgumentException("Request body must contain a majorVersion field");
+        Integer majorVersion = majorVersionField.asLong() == 0 ? null : (int)majorVersionField.asLong();
+        controller.applications().lockIfPresent(application.id(),
+                                                a -> controller.applications().store(a.withMajorVersion(majorVersion)));
+        return new MessageResponse("Set major version to " + ( majorVersion == null ? "empty" : majorVersion));
+    }
+
+    private Application getApplication(String tenantName, String applicationName) {
+        ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
+        return controller.applications().get(applicationId)
+                          .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
     }
 
     private HttpResponse logs(String tenantName, String applicationName, String instanceName, String environment, String region, String query) {
@@ -449,6 +469,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Compile version. The version that should be used when building an application
         object.setString("compileVersion", controller.applications().oldestInstalledPlatform(application.id()).toFullString());
+
+        application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
         // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
