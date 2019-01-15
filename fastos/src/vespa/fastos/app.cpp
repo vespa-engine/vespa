@@ -7,7 +7,6 @@
  */
 
 #include "app.h"
-#include "socket.h"
 #include "file.h"
 
 #include "process.h"
@@ -55,34 +54,18 @@ bool FastOS_ApplicationInterface::Init ()
 {
     bool rc=false;
 
-    if(PreThreadInit())
-    {
-        if(FastOS_Thread::InitializeClass())
-        {
-            if(FastOS_File::InitializeClass())
-            {
-                const char *errorMsg = FastOS_Socket::InitializeServices();
+    if(PreThreadInit()) {
+        if(FastOS_Thread::InitializeClass()) {
+            if(FastOS_File::InitializeClass()) {
 
-                if(errorMsg == nullptr)
-                {
                     _processListMutex = new std::mutex;
                     _threadPool = new FastOS_ThreadPool(128 * 1024);
                     rc = true;
-                }
-                else
-                {
-                    fprintf(stderr,
-                            "FastOS_Socket::InitializeServices() returned:\n[%s]\n",
-                            errorMsg);
-                }
-            }
-            else
+            } else
                 fprintf(stderr, "FastOS_File class initialization failed.\n");
-        }
-        else
+        } else
             fprintf(stderr, "FastOS_Thread class initialization failed.\n");
-    }
-    else
+    } else
         fprintf(stderr, "FastOS_PreThreadInit failed.\n");
 
     return rc;
@@ -91,8 +74,7 @@ bool FastOS_ApplicationInterface::Init ()
 
 void FastOS_ApplicationInterface::Cleanup ()
 {
-    if(_threadPool != nullptr)
-    {
+    if(_threadPool != nullptr) {
         //      printf("Closing threadpool...\n");
         _threadPool->Close();
         //      printf("Deleting threadpool...\n");
@@ -100,13 +82,11 @@ void FastOS_ApplicationInterface::Cleanup ()
         _threadPool = nullptr;
     }
 
-    if(_processListMutex != nullptr)
-    {
+    if(_processListMutex != nullptr) {
         delete _processListMutex;
         _processListMutex = nullptr;
     }
 
-    FastOS_Socket::CleanupServices();
     FastOS_File::CleanupClass();
     FastOS_Thread::CleanupClass();
 }

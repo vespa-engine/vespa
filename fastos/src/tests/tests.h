@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/app.h>
-#include <vespa/fastos/socket.h>
 #include <vespa/fastos/thread.h>
 #include <cstring>
 
@@ -72,13 +71,6 @@ public:
    }
 
    bool Progress (bool result, const char *str, const FastOS_ThreadInterface *s1)
-   {
-      char string[MAX_STR_LEN-100];
-      snprintf(string, sizeof(string), str, s1);
-      return Progress(result, string);
-   }
-
-   bool Progress (bool result, const char *str, const FastOS_Socket *s1)
    {
       char string[MAX_STR_LEN-100];
       snprintf(string, sizeof(string), str, s1);

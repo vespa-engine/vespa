@@ -6,9 +6,6 @@ vespa_add_library(fastos_objects OBJECT
     file.cpp
     linux_file.cpp
     process.cpp
-    serversocket.cpp
-    socket.cpp
-    socketevent.cpp
     thread.cpp
     time.cpp
     timestamp.cpp
@@ -17,7 +14,6 @@ vespa_add_library(fastos_objects OBJECT
     unix_file.cpp
     unix_ipc.cpp
     unix_process.cpp
-    unix_socket.cpp
     unix_thread.cpp
     unix_time.cpp
 )
