@@ -22,20 +22,16 @@ public class TransportSecurityUtils {
         return getConfigFile().isPresent();
     }
 
-    public static boolean isInsecureMixedModeEnabled() {
-        return getInsecureMixedMode().isPresent();
-    }
-
-    public static Optional<MixedMode> getInsecureMixedMode() {
-        if (!isTransportSecurityEnabled()) return Optional.empty();
+    public static MixedMode getInsecureMixedMode() {
         return getEnvironmentVariable(INSECURE_MIXED_MODE_ENVIRONMENT_VARIABLE)
-                .map(MixedMode::fromConfigValue);
+                .map(MixedMode::fromConfigValue)
+                .orElse(MixedMode.defaultValue());
     }
 
-    public static Optional<AuthorizationMode> getInsecureAuthorizationMode() {
-        if (!isInsecureMixedModeEnabled()) return Optional.empty();
+    public static AuthorizationMode getInsecureAuthorizationMode() {
         return getEnvironmentVariable(INSECURE_AUTHORIZATION_MODE_ENVIRONMENT_VARIABLE)
-                .map(AuthorizationMode::fromConfigValue);
+                .map(AuthorizationMode::fromConfigValue)
+                .orElse(AuthorizationMode.defaultValue());
     }
 
     public static Optional<Path> getConfigFile() {

@@ -23,14 +23,13 @@ public interface CryptoEngine extends AutoCloseable {
         if (!TransportSecurityUtils.isTransportSecurityEnabled()) {
             return new NullCryptoEngine();
         }
-        AuthorizationMode mode = TransportSecurityUtils.getInsecureAuthorizationMode().orElse(AuthorizationMode.ENFORCE);
+        AuthorizationMode mode = TransportSecurityUtils.getInsecureAuthorizationMode();
         TlsContext tlsContext = new ReloadingTlsContext(TransportSecurityUtils.getConfigFile().get(), mode);
         TlsCryptoEngine tlsCryptoEngine = new TlsCryptoEngine(tlsContext);
-        if (!TransportSecurityUtils.isInsecureMixedModeEnabled()) {
-            return tlsCryptoEngine;
-        }
-        MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode().get();
+        MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode();
         switch (mixedMode) {
+            case DISABLED:
+                return tlsCryptoEngine;
             case PLAINTEXT_CLIENT_MIXED_SERVER:
                 return new MaybeTlsCryptoEngine(tlsCryptoEngine, false);
             case TLS_CLIENT_MIXED_SERVER:
