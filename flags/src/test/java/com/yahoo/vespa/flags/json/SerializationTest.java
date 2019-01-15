@@ -57,7 +57,8 @@ public class SerializationTest {
                 "    \"attributes\": {\n" +
                 "        \"zone\": \"z1\",\n" +
                 "        \"application\": \"a1\",\n" +
-                "        \"hostname\": \"h1\"\n" +
+                "        \"hostname\": \"h1\",\n" +
+                "        \"node-type\": \"nt1\"\n" +
                 "    }\n" +
                 "}";
 
@@ -85,6 +86,7 @@ public class SerializationTest {
         assertThat(wireData.defaultFetchVector.get("zone"), equalTo("z1"));
         assertThat(wireData.defaultFetchVector.get("application"), equalTo("a1"));
         assertThat(wireData.defaultFetchVector.get("hostname"), equalTo("h1"));
+        assertThat(wireData.defaultFetchVector.get("node-type"), equalTo("nt1"));
 
         // Verify serialization of RawFlag == serialization by ObjectMapper
         ObjectMapper mapper = new ObjectMapper();
