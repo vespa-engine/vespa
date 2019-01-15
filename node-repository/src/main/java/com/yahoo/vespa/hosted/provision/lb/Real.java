@@ -13,7 +13,8 @@ import java.util.Objects;
  */
 public class Real implements Comparable<Real> {
 
-    private static int defaultPort = 4443;
+    // TODO: Change to 4443 when moving to HTTPS
+    private static int defaultPort = 4080;
 
     private final HostName hostname;
     private final String ipAddress;

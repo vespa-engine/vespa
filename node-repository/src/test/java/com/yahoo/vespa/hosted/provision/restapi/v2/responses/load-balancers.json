@@ -14,27 +14,27 @@
         {
           "hostname": "dockerhost1.yahoo.com",
           "ipAddress": "127.0.0.1",
-          "port": 4443
+          "port": 4080
         },
         {
           "hostname": "dockerhost2.yahoo.com",
           "ipAddress": "127.0.0.1",
-          "port": 4443
+          "port": 4080
         },
         {
           "hostname": "dockerhost3.yahoo.com",
           "ipAddress": "127.0.0.1",
-          "port": 4443
+          "port": 4080
         },
         {
           "hostname": "dockerhost4.yahoo.com",
           "ipAddress": "127.0.0.1",
-          "port": 4443
+          "port": 4080
         },
         {
           "hostname": "dockerhost5.yahoo.com",
           "ipAddress": "127.0.0.1",
-          "port": 4443
+          "port": 4080
         }
       ],
       "inactive": false
