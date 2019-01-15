@@ -48,7 +48,7 @@ public class ContainerResources {
     }
 
     public int cpuQuota() {
-        return (int) cpus * CPU_PERIOD;
+        return (int) (cpus * CPU_PERIOD);
     }
 
     public int cpuPeriod() {
