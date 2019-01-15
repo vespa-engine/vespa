@@ -38,6 +38,7 @@ import static com.yahoo.security.KeyAlgorithm.RSA;
  * @author bjorncs
  */
 public class KeyUtils {
+
     private KeyUtils() {}
 
     public static KeyPair generateKeypair(KeyAlgorithm algorithm, int keySize) {
