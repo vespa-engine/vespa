@@ -54,13 +54,13 @@ public class Flags {
 
     public static final UnboundStringFlag TLS_INSECURE_MIXED_MODE = defineStringFlag(
             "tls-insecure-mixed-mode", "plaintext_client_mixed_server",
-            "TLS insecure mixed mode",
+            "TLS insecure mixed mode. Allowed values: ['plaintext_client_mixed_server', 'tls_client_mixed_server', 'tls_client_tls_server']",
             "Takes effect on restart of Docker container",
             ZONE_ID, APPLICATION_ID, HOSTNAME);
 
     public static final UnboundStringFlag TLS_INSECURE_AUTHORIZATION_MODE = defineStringFlag(
             "tls-insecure-authorization-mode", "log_only",
-            "TLS insecure authorization mode",
+            "TLS insecure authorization mode. Allowed values: ['disable', 'log_only', 'enforce']",
             "Takes effect on restart of Docker container",
             ZONE_ID, APPLICATION_ID, HOSTNAME);
 
