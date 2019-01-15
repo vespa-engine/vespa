@@ -10,6 +10,7 @@ import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
 /**
  * @author hakonhall
@@ -56,6 +57,18 @@ public class Flags {
             "Hard limit on how many CPUs a container may use",
             "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
             HOSTNAME, APPLICATION_ID);
+
+    public static final UnboundStringFlag TLS_INSECURE_MIXED_MODE = defineStringFlag(
+            "tls-insecure-mixed-mode", "plaintext_client_mixed_server",
+            "TLS insecure mixed mode. Allowed values: ['plaintext_client_mixed_server', 'tls_client_mixed_server', 'tls_client_tls_server']",
+            "Takes effect on restart of Docker container",
+            ZONE_ID, APPLICATION_ID, HOSTNAME);
+
+    public static final UnboundStringFlag TLS_INSECURE_AUTHORIZATION_MODE = defineStringFlag(
+            "tls-insecure-authorization-mode", "log_only",
+            "TLS insecure authorization mode. Allowed values: ['disable', 'log_only', 'enforce']",
+            "Takes effect on restart of Docker container",
+            ZONE_ID, APPLICATION_ID, HOSTNAME);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
