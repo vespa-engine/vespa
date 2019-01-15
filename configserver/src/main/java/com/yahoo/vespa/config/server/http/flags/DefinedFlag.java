@@ -12,7 +12,6 @@ import com.yahoo.vespa.flags.json.DimensionHelper;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Optional;
 
 /**
  * @author hakonhall
@@ -20,9 +19,9 @@ import java.util.Optional;
 public class DefinedFlag extends HttpResponse {
     private static ObjectMapper mapper = new ObjectMapper();
 
-    private final Optional<FlagDefinition> flagDefinition;
+    private final FlagDefinition flagDefinition;
 
-    public DefinedFlag(Optional<FlagDefinition> flagDefinition) {
+    public DefinedFlag(FlagDefinition flagDefinition) {
         super(Response.Status.OK);
         this.flagDefinition = flagDefinition;
     }
@@ -30,7 +29,7 @@ public class DefinedFlag extends HttpResponse {
     @Override
     public void render(OutputStream outputStream) throws IOException {
         ObjectNode rootNode = mapper.createObjectNode();
-        flagDefinition.ifPresent(definition -> renderFlagDefinition(definition, rootNode));
+        renderFlagDefinition(flagDefinition, rootNode);
         mapper.writeValue(outputStream, rootNode);
     }
 
