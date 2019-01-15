@@ -74,7 +74,7 @@ ClusterState::ClusterState(const vespalib::string& serialized)
         if (index == vespalib::string::npos) {
             throw IllegalArgumentException("Token " + *it + " does not contain ':': " + serialized, VESPA_STRLOC);
         }
-        vespalib::stringref key = it->substr(0, index);
+        vespalib::string key = it->substr(0, index);
         vespalib::stringref value = it->substr(index + 1);
         if (key.size() > 0 && key[0] == '.') {
             if (lastAbsolutePath == "") {
