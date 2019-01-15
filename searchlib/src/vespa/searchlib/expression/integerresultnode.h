@@ -94,6 +94,7 @@ private:
 public:
     DECLARE_RESULTNODE(BoolResultNode);
     BoolResultNode(bool v=false) : Base(v) { }
+    bool getBool() const { return getValue(); }
 private:
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
 };

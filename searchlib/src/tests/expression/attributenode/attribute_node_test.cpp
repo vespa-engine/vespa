@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
@@ -25,6 +26,7 @@ using search::AttributeVector;
 using search::IntegerAttribute;
 using search::FloatingPointAttribute;
 using search::StringAttribute;
+using search::SingleBoolAttribute;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
@@ -36,6 +38,7 @@ using search::expression::EnumResultNodeVector;
 using search::expression::FloatResultNode;
 using search::expression::FloatResultNodeVector;
 using search::expression::Int8ResultNode;
+using search::expression::BoolResultNode;
 using search::expression::Int8ResultNodeVector;
 using search::expression::IntegerResultNodeVector;
 using search::expression::IntegerResultNode;
@@ -69,6 +72,7 @@ struct AttributeManagerFixture
     template <typename AttributeType, typename ValueType>
     void buildAttribute(const vespalib::string &name, BasicType type, std::vector<ValueType> values);
     void buildStringAttribute(const vespalib::string &name, std::vector<vespalib::string> values);
+    void buildBoolAttribute(const vespalib::string &name, std::vector<bool> values);
     void buildFloatAttribute(const vespalib::string &name, std::vector<double> values);
     void buildIntegerAttribute(const vespalib::string &name, BasicType type, std::vector<IAttributeVector::largeint_t> values);
     template <typename AttributeType, typename ValueType>
@@ -82,14 +86,15 @@ AttributeManagerFixture::AttributeManagerFixture()
     : mgr()
 {
     buildStringAttribute("sfield", { "n1", ""});
-    buildIntegerAttribute("ifield", BasicType::Type::INT8, { 10, getUndefined<int8_t>() });
+    buildBoolAttribute("bfield", { true, false,false,true,true,false });
+    buildIntegerAttribute("ifield", BasicType::INT8, { 10, getUndefined<int8_t>() });
     buildFloatAttribute("ffield", { 110.0, getUndefined<double>() });
     buildStringArrayAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {}});
-    buildIntegerArrayAttribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {}});
+    buildIntegerArrayAttribute("array.val", BasicType::INT8, {{ 10, 11}, {20, 21 }, {}});
     buildFloatArrayAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
     buildStringArrayAttribute("smap.key", {{"k1.1", "k1.2"}, {"k2"}, {}});
     buildStringArrayAttribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2"}, {}});
-    buildIntegerArrayAttribute("smap.value.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {}});
+    buildIntegerArrayAttribute("smap.value.val", BasicType::INT8, {{ 10, 11}, {20, 21 }, {}});
     buildFloatArrayAttribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
     buildStringArrayAttribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {}});
     buildStringArrayAttribute("map.value", {{"n1.1", "n1.2"}, {"n2"}, {}});
@@ -101,8 +106,7 @@ AttributeManagerFixture::~AttributeManagerFixture() = default;
 
 template <typename AttributeType, typename ValueType>
 void
-AttributeManagerFixture::buildAttribute(const vespalib::string &name,
-                                        BasicType type,
+AttributeManagerFixture::buildAttribute(const vespalib::string &name, BasicType type,
                                         std::vector<ValueType> values)
 {
     Config cfg(type, CollectionType::Type::SINGLE);
@@ -136,17 +140,22 @@ AttributeManagerFixture::buildFloatAttribute(const vespalib::string &name,
 }
 
 void
-AttributeManagerFixture::buildIntegerAttribute(const vespalib::string &name,
-                                               BasicType type,
+AttributeManagerFixture::buildIntegerAttribute(const vespalib::string &name, BasicType type,
                                                std::vector<IAttributeVector::largeint_t> values)
 {
     buildAttribute<IntegerAttribute, IAttributeVector::largeint_t>(name, type, std::move(values));
 }
 
+void
+AttributeManagerFixture::buildBoolAttribute(const vespalib::string &name,
+                                            std::vector<bool> values)
+{
+    buildAttribute<SingleBoolAttribute>(name, BasicType::BOOL, std::move(values));
+}
+
 template <typename AttributeType, typename ValueType>
 void
-AttributeManagerFixture::buildArrayAttribute(const vespalib::string &name,
-                                             BasicType type,
+AttributeManagerFixture::buildArrayAttribute(const vespalib::string &name, BasicType type,
                                              std::vector<std::vector<ValueType>> values)
 {
     Config cfg(type, CollectionType::Type::ARRAY);
@@ -198,6 +207,7 @@ struct Fixture
     ~Fixture();
     std::unique_ptr<AttributeNode> makeNode(const vespalib::string &attributeName, bool useEnumOptimiation = false, bool preserveAccurateTypes = false);
     void assertInts(std::vector<IAttributeVector::largeint_t> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
+    void assertBools(std::vector<bool> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
     void assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributteName, bool useEnumOptimization = false);
     void assertFloats(std::vector<double> expVals, const vespalib::string &attributteName);
     void assertIntArrays(std::vector<std::vector<IAttributeVector::largeint_t>> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
@@ -251,6 +261,25 @@ Fixture::assertInts(std::vector<IAttributeVector::largeint_t> expVals, const ves
         EXPECT_EQUAL(expDocVal, docVal);
     }
 }
+
+void
+Fixture::assertBools(std::vector<bool> expVals, const vespalib::string &attributeName, bool preserveAccurateTypes)
+{
+    auto node = makeNode(attributeName, false, preserveAccurateTypes);
+    uint32_t docId = 0;
+    for (const auto &expDocVal : expVals) {
+        ++docId;
+        node->setDocId(docId);
+        node->execute();
+        const auto &result = node->getResult();
+
+        ASSERT_TRUE(result.inherits(BoolResultNode::classId));
+        const BoolResultNode & bResult = static_cast<const BoolResultNode &>(result);
+
+        EXPECT_EQUAL(expDocVal, bResult.getBool());
+    }
+}
+
 
 void
 Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributeName, bool useEnumOptimization)
@@ -370,6 +399,8 @@ Fixture::assertFloatArrays(std::vector<std::vector<double>> expVals, const vespa
 
 TEST_F("test single values", Fixture)
 {
+    TEST_DO(f.assertBools({ true, false,false,true,true,false }, "bfield"));
+    TEST_DO(f.assertBools({ true, false,false,true,true,false }, "bfield", true));
     TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield"));
     TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield", true));
     TEST_DO(f.assertStrings({ "n1", "" }, "sfield"));
