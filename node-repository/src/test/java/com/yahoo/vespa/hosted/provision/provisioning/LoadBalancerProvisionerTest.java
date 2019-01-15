@@ -64,13 +64,13 @@ public class LoadBalancerProvisionerTest {
         assertEquals(loadBalancers.get(0).id().cluster(), containerCluster1);
         assertEquals(loadBalancers.get(0).ports(), Collections.singletonList(4443));
         assertEquals(loadBalancers.get(0).reals().get(0).ipAddress(), "127.0.0.1");
-        assertEquals(loadBalancers.get(0).reals().get(0).port(), 4443);
+        assertEquals(loadBalancers.get(0).reals().get(0).port(), 4080);
         assertEquals(loadBalancers.get(0).reals().get(1).ipAddress(), "127.0.0.2");
-        assertEquals(loadBalancers.get(0).reals().get(1).port(), 4443);
+        assertEquals(loadBalancers.get(0).reals().get(1).port(), 4080);
 
         // A container is failed
         List<Node> containers = tester.getNodes(app1).type(ClusterSpec.Type.container).asList();
-        tester.nodeRepository().fail(containers.get(0).hostname(), Agent.system, "Failed by unit test");
+        tester.nodeRepository().fail(containers.get(0).hostname(), Agent.system, this.getClass().getSimpleName());
 
         // Redeploying replaces failed node
         tester.activate(app1, prepare(app1,
