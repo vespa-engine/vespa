@@ -55,6 +55,11 @@ void readSelectorArray(const string &selector_name, SelectorArray &selector_arra
     auto it = selector->createIterator();
     for (uint32_t i = 0; i < num_docs; ++i) {
         search::queryeval::Source source = it->getSource(i);
+        // Workaround for source selector corruption.
+        // Treat out of range source as last source.
+        if (source >= id_map.size()) {
+            source = id_map.size() - 1;
+        }
         assert(source < id_map.size());
         selector_array.push_back(id_map[source]);
     }
