@@ -4,7 +4,7 @@ package com.yahoo.search.grouping.result;
 /**
  * This class is used in {@link Group} instances where the identifying expression evaluated to a {@link Boolean}.
  *
- * @author @baldersheim
+ * @author baldersheim
  */
 public class BoolId extends ValueGroupId<Boolean> {
     public BoolId(Boolean value) {
