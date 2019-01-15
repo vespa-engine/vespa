@@ -75,6 +75,11 @@ public class MockSearchCluster extends SearchCluster {
     }
 
     @Override
+    public int groupsWithSufficientCoverage() {
+        return numGroups;
+    }
+
+    @Override
     public Optional<Group> group(int n) {
         if (n < numGroups) {
             return Optional.of(groups.get(n));

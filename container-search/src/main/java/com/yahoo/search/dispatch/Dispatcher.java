@@ -135,7 +135,9 @@ public class Dispatcher extends AbstractComponent {
             return invokerFactory.supply(query, -1, Arrays.asList(node), true);
         }
 
-        int max = Integer.min(searchCluster.orderedGroups().size(), MAX_GROUP_SELECTION_ATTEMPTS);
+        int covered = searchCluster.groupsWithSufficientCoverage();
+        int groups = searchCluster.orderedGroups().size();
+        int max = Integer.min(Integer.min(covered + 1, groups), MAX_GROUP_SELECTION_ATTEMPTS);
         Set<Integer> rejected = null;
         for (int i = 0; i < max; i++) {
             Optional<Group> groupInCluster = loadBalancer.takeGroup(rejected);

@@ -44,6 +44,16 @@ public class Group {
         hasSufficientCoverage.lazySet(sufficientCoverage);
     }
 
+    public int workingNodes() {
+        int nodesUp = 0;
+        for (Node node : nodes) {
+            if (node.isWorking()) {
+                nodesUp++;
+            }
+        }
+        return nodesUp;
+    }
+
     void aggregateActiveDocuments() {
         long activeDocumentsInGroup = 0;
         for (Node node : nodes) {
