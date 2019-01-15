@@ -47,8 +47,10 @@ public class ContainerResources {
         return cpus;
     }
 
+    // Although docker allows to update cpu quota to 0, this is not a legal value, must be set -1 for unlimited
+    // See: https://github.com/docker/for-linux/issues/558
     public int cpuQuota() {
-        return (int) cpus * CPU_PERIOD;
+        return cpus > 0 ? (int) (cpus * CPU_PERIOD) : -1;
     }
 
     public int cpuPeriod() {

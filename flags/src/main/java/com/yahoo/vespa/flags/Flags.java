@@ -54,7 +54,8 @@ public class Flags {
 
     public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
             "container-cpu-cap", 0,
-            "Hard limit on how many CPUs a container may use",
+            "Hard limit on how many CPUs a container may use. This value is multiplied by CPU allocated to node, so " +
+            "to cap CPU at 200%, set this to 2, etc.",
             "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
             HOSTNAME, APPLICATION_ID);
 
