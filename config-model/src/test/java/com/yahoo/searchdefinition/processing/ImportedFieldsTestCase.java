@@ -81,25 +81,27 @@ public class ImportedFieldsTestCase {
         return builder.getSearch("ad");
     }
 
-    private static void checkStructImport(ParentSdBuilder parentBuilder) throws ParseException {
-        Search search = buildChildSearch(parentBuilder.build(), joinLines("search child {",
-                "  document child {",
-                "    field parent_ref type reference<parent> {",
-                "      indexing: attribute | summary",
-                "    }",
-                "  }",
-                "  import field parent_ref.elem_array as my_elem_array {}",
-                "  import field parent_ref.elem_map as my_elem_map {}",
-                "  import field parent_ref.str_int_map as my_str_int_map {}",
-                "}"));
+    private static void checkStructImport(AncestorStructSdBuilder parentBuilder) throws ParseException {
+        Search search = buildChildSearch(parentBuilder.build(), new ChildStructSdBuilder().build());
+        checkImportedStructFields(search, parentBuilder);
+    }
+
+    private static void checkNestedStructImport(AncestorStructSdBuilder grandParentBuilder) throws ParseException {
+        Search search = buildChildSearch(grandParentBuilder.build(),
+                new IntermediateParentStructSdBuilder().build(),
+                new ChildStructSdBuilder().build());
+        checkImportedStructFields(search, grandParentBuilder);
+    }
+
+    private static void checkImportedStructFields(Search search, AncestorStructSdBuilder ancestorBuilder) {
         assertEquals(3, search.importedFields().get().fields().size());
-        checkImportedField("my_elem_array.name", "parent_ref", "parent", "elem_array.name", search, parentBuilder.elem_array_name_attr);
-        checkImportedField("my_elem_array.weight", "parent_ref", "parent", "elem_array.weight", search, parentBuilder.elem_array_weight_attr);
-        checkImportedField("my_elem_map.key", "parent_ref", "parent", "elem_map.key", search, parentBuilder.elem_map_key_attr);
-        checkImportedField("my_elem_map.value.name", "parent_ref", "parent", "elem_map.value.name", search, parentBuilder.elem_map_value_name_attr);
-        checkImportedField("my_elem_map.value.weight", "parent_ref", "parent", "elem_map.value.weight", search, parentBuilder.elem_map_value_weight_attr);
-        checkImportedField("my_str_int_map.key", "parent_ref", "parent", "str_int_map.key", search, parentBuilder.str_int_map_key_attr);
-        checkImportedField("my_str_int_map.value", "parent_ref", "parent", "str_int_map.value", search, parentBuilder.str_int_map_value_attr);
+        checkImportedField("my_elem_array.name", "parent_ref", "parent", "elem_array.name", search, ancestorBuilder.elem_array_name_attr);
+        checkImportedField("my_elem_array.weight", "parent_ref", "parent", "elem_array.weight", search, ancestorBuilder.elem_array_weight_attr);
+        checkImportedField("my_elem_map.key", "parent_ref", "parent", "elem_map.key", search, ancestorBuilder.elem_map_key_attr);
+        checkImportedField("my_elem_map.value.name", "parent_ref", "parent", "elem_map.value.name", search, ancestorBuilder.elem_map_value_name_attr);
+        checkImportedField("my_elem_map.value.weight", "parent_ref", "parent", "elem_map.value.weight", search, ancestorBuilder.elem_map_value_weight_attr);
+        checkImportedField("my_str_int_map.key", "parent_ref", "parent", "str_int_map.key", search, ancestorBuilder.str_int_map_key_attr);
+        checkImportedField("my_str_int_map.value", "parent_ref", "parent", "str_int_map.value", search, ancestorBuilder.str_int_map_value_attr);
         checkImportedField("my_elem_array", "parent_ref", "parent", "elem_array", search, true);
         checkImportedField("my_elem_map", "parent_ref", "parent", "elem_map", search, true);
         checkImportedField("my_str_int_map", "parent_ref", "parent", "str_int_map", search, true);
@@ -107,47 +109,68 @@ public class ImportedFieldsTestCase {
 
     @Test
     public void check_struct_import() throws ParseException {
-        checkStructImport(new ParentSdBuilder());
-        checkStructImport(new ParentSdBuilder().elem_array_weight_attr(false).elem_map_value_weight_attr(false));
-        checkStructImport(new ParentSdBuilder().elem_array_name_attr(false).elem_map_value_name_attr(false));
+        checkStructImport(new ParentStructSdBuilder());
+        checkStructImport(new ParentStructSdBuilder().elem_array_weight_attr(false).elem_map_value_weight_attr(false));
+        checkStructImport(new ParentStructSdBuilder().elem_array_name_attr(false).elem_map_value_name_attr(false));
+    }
+
+    @Test
+    public void check_nested_struct_import() throws ParseException {
+        checkNestedStructImport(new GrandParentStructSdBuilder());
+        checkNestedStructImport(new GrandParentStructSdBuilder().elem_array_weight_attr(false).elem_map_value_weight_attr(false));
+        checkNestedStructImport(new GrandParentStructSdBuilder().elem_array_name_attr(false).elem_map_value_name_attr(false));
     }
 
     @Test
     public void check_illegal_struct_import_missing_array_of_struct_attributes() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'child', import field 'my_elem_array': Field 'elem_array' via reference field 'parent_ref': Is not a struct containing an attribute field.");
-        checkStructImport(new ParentSdBuilder().elem_array_name_attr(false).elem_array_weight_attr(false));
+        checkStructImport(new ParentStructSdBuilder().elem_array_name_attr(false).elem_array_weight_attr(false));
     }
 
     @Test
     public void check_illegal_struct_import_missing_map_of_struct_key_attribute() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'child', import field 'my_elem_map' (nested to 'my_elem_map.key'): Field 'elem_map.key' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
-        checkStructImport(new ParentSdBuilder().elem_map_key_attr(false));
+        checkStructImport(new ParentStructSdBuilder().elem_map_key_attr(false));
     }
 
     @Test
     public void check_illegal_struct_import_missing_map_of_struct_value_attributes() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'child', import field 'my_elem_map' (nested to 'my_elem_map.value'): Field 'elem_map.value' via reference field 'parent_ref': Is not a struct containing an attribute field.");
-        checkStructImport(new ParentSdBuilder().elem_map_value_name_attr(false).elem_map_value_weight_attr(false));
+        checkStructImport(new ParentStructSdBuilder().elem_map_value_name_attr(false).elem_map_value_weight_attr(false));
     }
 
     @Test
     public void check_illegal_struct_import_missing_map_of_primitive_key_attribute() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'child', import field 'my_str_int_map' (nested to 'my_str_int_map.key'): Field 'str_int_map.key' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
-        checkStructImport(new ParentSdBuilder().str_int_map_key_attr(false));
+        checkStructImport(new ParentStructSdBuilder().str_int_map_key_attr(false));
     }
 
     @Test
     public void check_illegal_struct_import_missing_map_of_primitive_value_attribute() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'child', import field 'my_str_int_map' (nested to 'my_str_int_map.value'): Field 'str_int_map.value' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
-        checkStructImport(new ParentSdBuilder().str_int_map_value_attr(false));
+        checkStructImport(new ParentStructSdBuilder().str_int_map_value_attr(false));
     }
 
-    private static class ParentSdBuilder {
+    private static class NamedSdBuilder {
+        protected String name;
+        private String fieldPrefix;
+
+        public NamedSdBuilder(String name, String fieldPrefix) {
+            this.name = name;
+            this.fieldPrefix = fieldPrefix;
+        }
+
+        protected String prefixedFieldName(String name) {
+            return fieldPrefix + name;
+        }
+    }
+
+    private static class AncestorStructSdBuilder extends NamedSdBuilder {
         private boolean elem_array_name_attr;
         private boolean elem_array_weight_attr;
         private boolean elem_map_key_attr;
@@ -156,7 +179,8 @@ public class ImportedFieldsTestCase {
         private boolean str_int_map_key_attr;
         private boolean str_int_map_value_attr;
 
-        public ParentSdBuilder() {
+        public AncestorStructSdBuilder(String name, String fieldPrefix) {
+            super(name, fieldPrefix);
             elem_array_name_attr = true;
             elem_array_weight_attr = true;
             elem_map_key_attr = true;
@@ -166,22 +190,22 @@ public class ImportedFieldsTestCase {
             str_int_map_value_attr = true;
         }
 
-        public ParentSdBuilder elem_array_name_attr(boolean v) { elem_array_name_attr = v; return this; }
-        public ParentSdBuilder elem_array_weight_attr(boolean v) { elem_array_weight_attr = v; return this; }
-        public ParentSdBuilder elem_map_key_attr(boolean v) { elem_map_key_attr = v; return this; }
-        public ParentSdBuilder elem_map_value_name_attr(boolean v) { elem_map_value_name_attr = v; return this; }
-        public ParentSdBuilder elem_map_value_weight_attr(boolean v) { elem_map_value_weight_attr = v; return this; }
-        public ParentSdBuilder str_int_map_key_attr(boolean v) { str_int_map_key_attr = v; return this; }
-        public ParentSdBuilder str_int_map_value_attr(boolean v) { str_int_map_value_attr = v; return this; }
+        public AncestorStructSdBuilder elem_array_name_attr(boolean v) { elem_array_name_attr = v; return this; }
+        public AncestorStructSdBuilder elem_array_weight_attr(boolean v) { elem_array_weight_attr = v; return this; }
+        public AncestorStructSdBuilder elem_map_key_attr(boolean v) { elem_map_key_attr = v; return this; }
+        public AncestorStructSdBuilder elem_map_value_name_attr(boolean v) { elem_map_value_name_attr = v; return this; }
+        public AncestorStructSdBuilder elem_map_value_weight_attr(boolean v) { elem_map_value_weight_attr = v; return this; }
+        public AncestorStructSdBuilder str_int_map_key_attr(boolean v) { str_int_map_key_attr = v; return this; }
+        public AncestorStructSdBuilder str_int_map_value_attr(boolean v) { str_int_map_value_attr = v; return this; }
 
         public String build() {
-            return joinLines("search parent {",
-                    "  document parent {",
+            return joinLines("search " + name + " {",
+                    "  document " + name + " {",
                     "    struct elem {",
                     "      field name type string {}",
                     "      field weight type int {}",
                     "    }",
-                    "    field elem_array type array<elem> {",
+                    "    field " + prefixedFieldName("elem_array") + " type array<elem> {",
                     "      indexing: summary",
                     "      struct-field name {",
                     structFieldSpec(elem_array_name_attr),
@@ -190,7 +214,7 @@ public class ImportedFieldsTestCase {
                     structFieldSpec(elem_array_weight_attr),
                     "      }",
                     "    }",
-                    "    field elem_map type map<string, elem> {",
+                    "    field " + prefixedFieldName("elem_map") + " type map<string, elem> {",
                     "      indexing: summary",
                     "      struct-field key {",
                     structFieldSpec(elem_map_key_attr),
@@ -202,7 +226,7 @@ public class ImportedFieldsTestCase {
                     structFieldSpec(elem_map_value_weight_attr),
                     "      }",
                     "    }",
-                    "    field str_int_map type map<string, int> {",
+                    "    field " + prefixedFieldName("str_int_map") + " type map<string, int> {",
                     "      indexing: summary",
                     "      struct-field key {",
                     structFieldSpec(str_int_map_key_attr),
@@ -218,16 +242,67 @@ public class ImportedFieldsTestCase {
         private static String structFieldSpec(boolean isAttribute) {
             return isAttribute ? "        indexing: attribute" : "";
         }
+    }
 
-        private static int b2i(boolean b) {
-            return b ? 1 : 0;
+    private static class ParentStructSdBuilder extends AncestorStructSdBuilder {
+        ParentStructSdBuilder() {
+            super("parent", "");
+        }
+    }
+
+    private static class GrandParentStructSdBuilder extends AncestorStructSdBuilder {
+        GrandParentStructSdBuilder() {
+            super("grandparent", "gp_");
+        }
+    }
+
+    private static class DescendantSdBuilder extends NamedSdBuilder {
+        protected String parentName;
+        private String parentFieldPrefix;
+
+        public DescendantSdBuilder(String name, String fieldPrefix, String parentName, String parentFieldPrefix) {
+            super(name, fieldPrefix);
+            this.parentName = parentName;
+            this.parentFieldPrefix = parentFieldPrefix;
         }
 
-        public int countAttrs() {
-            int elem_array_attr_count = b2i(elem_array_name_attr) + b2i(elem_array_weight_attr);
-            int elem_map_attr_count = b2i(elem_map_key_attr) + b2i(elem_map_value_name_attr) + b2i(elem_map_value_weight_attr);
-            int str_int_map_attr_count = b2i(str_int_map_key_attr) + b2i(str_int_map_value_attr);
-            return elem_array_attr_count + elem_map_attr_count + str_int_map_attr_count;
+        protected String parentRef() {
+            return parentName + "_ref";
+        }
+
+        protected String importParentField(String fieldName) {
+            return "  import field " + parentRef() + "." + parentFieldPrefix + fieldName + " as " + prefixedFieldName(fieldName) + " {}";
+        }
+    }
+
+    private static class DescendantStructSdBuilder extends DescendantSdBuilder {
+        public DescendantStructSdBuilder(String name, String fieldPrefix, String parentName, String parentFieldPrefix) {
+            super(name, fieldPrefix, parentName, parentFieldPrefix);
+        }
+
+        public String build() {
+            return joinLines("search " + name + " {",
+                    "  document " + name + " {",
+                    "    field " + parentRef() + " type reference<" + parentName + "> {",
+                    "      indexing: attribute | summary",
+                    "    }",
+                    "  }",
+                    importParentField("elem_array"),
+                    importParentField("elem_map"),
+                    importParentField("str_int_map"),
+                    "}");
+        }
+    }
+
+    private static class ChildStructSdBuilder extends DescendantStructSdBuilder {
+        public ChildStructSdBuilder() {
+            super("child", "my_", "parent", "");
+        }
+    }
+
+    private static class IntermediateParentStructSdBuilder extends DescendantStructSdBuilder {
+        public IntermediateParentStructSdBuilder() {
+            super("parent", "", "grandparent", "gp_");
         }
     }
 
@@ -239,11 +314,24 @@ public class ImportedFieldsTestCase {
         return builder.getSearch("child");
     }
 
-    private static class ParentPosSdBuilder {
+    private static Search buildChildSearch(String grandParentSdContent, String parentSdContent, String sdContent) throws ParseException {
+        SearchBuilder builder = new SearchBuilder();
+        builder.importString(grandParentSdContent);
+        builder.importString(parentSdContent);
+        builder.importString(sdContent);
+        builder.build();
+        return builder.getSearch("child");
+    }
+
+    private static class AncestorPosSdBuilder extends NamedSdBuilder {
+        public AncestorPosSdBuilder(String name, String fieldPrefix) {
+            super(name, fieldPrefix);
+        }
+
         public String build() {
-            return joinLines("search parent {",
-                    "  document parent {",
-                    "field pos type position {",
+            return joinLines("search " + name + " {",
+                    "  document " + name + " {",
+                    "field " + prefixedFieldName("pos") + " type position {",
                     "indexing: attribute | summary",
                     "    }",
                     "  }",
@@ -251,24 +339,33 @@ public class ImportedFieldsTestCase {
         }
     }
 
-    private static class ChildPosSdBuilder {
+    private static class ParentPosSdBuilder extends AncestorPosSdBuilder {
+        public ParentPosSdBuilder() { super("parent", ""); }
+    }
+
+    private static class GrandParentPosSdBuilder extends AncestorPosSdBuilder {
+        public GrandParentPosSdBuilder() { super("grandparent", "gp_"); }
+    }
+
+    private static class DescendantPosSdBuilder extends DescendantSdBuilder {
         private boolean import_pos_zcurve_before;
 
-        public ChildPosSdBuilder() {
+        public DescendantPosSdBuilder(String name, String fieldPrefix, String parentName, String parentFieldPrefix) {
+            super(name, fieldPrefix, parentName, parentFieldPrefix);
             import_pos_zcurve_before = false;
         }
 
-        ChildPosSdBuilder import_pos_zcurve_before(boolean v) { import_pos_zcurve_before = v; return this; }
+        DescendantPosSdBuilder import_pos_zcurve_before(boolean v) { import_pos_zcurve_before = v; return this; }
 
         public String build() {
-            return joinLines("search child {",
-                    "  document child {",
-                    "    field parent_ref type reference<parent> {",
+            return joinLines("search " + name + " {",
+                    "  document " + name + " {",
+                    "    field " + parentRef() + " type reference<" + parentName + "> {",
                     "      indexing: attribute | summary",
                     "    }",
                     "  }",
                     importPosZCurve(import_pos_zcurve_before),
-                    "  import field parent_ref.pos as my_pos {}",
+                    importParentField("pos"),
                     "}");
         }
 
@@ -277,8 +374,29 @@ public class ImportedFieldsTestCase {
         }
     }
 
-    private static void checkPosImport(ParentPosSdBuilder parentBuilder, ChildPosSdBuilder childBuilder) throws ParseException {
+    private static class ChildPosSdBuilder extends DescendantPosSdBuilder {
+        public ChildPosSdBuilder() {
+            super("child", "my_", "parent", "");
+        }
+    }
+
+    private static class IntermediateParentPosSdBuilder extends DescendantPosSdBuilder {
+        public IntermediateParentPosSdBuilder() {
+            super("parent", "", "grandparent", "gp_");
+        }
+    }
+
+    private static void checkPosImport(ParentPosSdBuilder parentBuilder, DescendantPosSdBuilder childBuilder) throws ParseException {
         Search search = buildChildSearch(parentBuilder.build(), childBuilder.build());
+        checkImportedPosFields(search);
+    }
+
+    private static void checkNestedPosImport(GrandParentPosSdBuilder grandParentBuilder, DescendantPosSdBuilder childBuilder) throws ParseException {
+        Search search = buildChildSearch(grandParentBuilder.build(), new IntermediateParentPosSdBuilder().build(), childBuilder.build());
+        checkImportedPosFields(search);
+    }
+
+    private static void checkImportedPosFields(Search search) {
         assertEquals(2, search.importedFields().get().fields().size());
         assertSearchContainsImportedField("my_pos_zcurve", "parent_ref", "parent", "pos_zcurve", search);
         assertSearchContainsImportedField("my_pos", "parent_ref", "parent", "pos", search);
@@ -287,6 +405,11 @@ public class ImportedFieldsTestCase {
     @Test
     public void check_pos_import() throws ParseException {
         checkPosImport(new ParentPosSdBuilder(), new ChildPosSdBuilder());
+    }
+
+    @Test
+    public void check_nested_pos_import() throws ParseException {
+        checkNestedPosImport(new GrandParentPosSdBuilder(), new ChildPosSdBuilder());
     }
 
     @Test
