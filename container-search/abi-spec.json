@@ -4192,6 +4192,17 @@
     ],
     "fields": []
   },
+  "com.yahoo.search.grouping.result.BoolId": {
+    "superClass": "com.yahoo.search.grouping.result.ValueGroupId",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.Boolean)"
+    ],
+    "fields": []
+  },
   "com.yahoo.search.grouping.result.BucketGroupId": {
     "superClass": "com.yahoo.search.grouping.result.GroupId",
     "interfaces": [],
