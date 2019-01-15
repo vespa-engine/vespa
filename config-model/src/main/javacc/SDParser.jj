@@ -419,10 +419,7 @@ Search rootSearch(String dir) :
     Search search;
 }
 {
-    ( <SEARCH> name = identifier() { if (!name.matches("[a-zA-Z_][a-zA-Z_:0-9]*")) {
-                                         deployLogger.log(Level.WARNING, name + " can not be used in YQL+ expressions.");
-                                     }
-                                     search = new Search(name, app);
+    ( <SEARCH> name = identifier() { search = new Search(name, app);
                                      rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
                                      rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));}
       lbrace() (rootSearchItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
