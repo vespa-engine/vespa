@@ -28,7 +28,7 @@ public enum MixedMode {
         return DISABLED;
     }
 
-    static MixedMode fromConfigValue(String configValue) {
+    public static MixedMode fromConfigValue(String configValue) {
         return Arrays.stream(values())
                 .filter(v -> v.configValue.equals(configValue))
                 .findFirst()

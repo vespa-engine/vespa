@@ -29,7 +29,7 @@ public enum AuthorizationMode {
     }
 
 
-    static AuthorizationMode fromConfigValue(String configValue) {
+    public static AuthorizationMode fromConfigValue(String configValue) {
         return Arrays.stream(values())
                 .filter(v -> v.configValue.equals(configValue))
                 .findFirst()
