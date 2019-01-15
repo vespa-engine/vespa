@@ -21,6 +21,14 @@ public enum AuthorizationMode {
         return configValue;
     }
 
+    /**
+     * @return Default value when authorization mode is not explicitly specified
+     */
+    public static AuthorizationMode defaultValue() {
+        return ENFORCE;
+    }
+
+
     static AuthorizationMode fromConfigValue(String configValue) {
         return Arrays.stream(values())
                 .filter(v -> v.configValue.equals(configValue))
