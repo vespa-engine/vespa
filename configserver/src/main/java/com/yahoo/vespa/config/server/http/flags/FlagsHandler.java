@@ -40,7 +40,8 @@ public class FlagsHandler extends HttpHandler {
         if (path.matches("/flags/v1")) return new V1Response(flagsV1Uri(request), "data", "defined");
         if (path.matches("/flags/v1/data")) return getFlagDataList(request);
         if (path.matches("/flags/v1/data/{flagId}")) return getFlagData(findFlagId(request, path));
-        if (path.matches("/flags/v1/defined")) return getDefinedFlagList(request);
+        if (path.matches("/flags/v1/defined")) return new DefinedFlags(Flags.getAllFlags());
+        if (path.matches("/flags/v1/defined/{flagId}")) return getDefinedFlag(findFlagId(request, path));
         throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
@@ -58,14 +59,16 @@ public class FlagsHandler extends HttpHandler {
         throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
-    private HttpResponse getDefinedFlagList(HttpRequest request) {
-        return new DefinedFlags(Flags.getAllFlags());
-    }
-
     private String flagsV1Uri(HttpRequest request) {
         URI uri = request.getUri();
         String port = uri.getPort() < 0 ? "" : ":" + uri.getPort();
         return uri.getScheme() + "://" + uri.getHost() + port + "/flags/v1";
+    }
+
+    private HttpResponse getDefinedFlag(FlagId flagId) {
+        FlagDefinition definition = Flags.getFlag(flagId)
+                .orElseThrow(() -> new NotFoundException("Flag " + flagId + " not defined"));
+        return new DefinedFlag(definition);
     }
 
     private HttpResponse getFlagDataList(HttpRequest request) {

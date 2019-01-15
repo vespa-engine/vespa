@@ -2,13 +2,11 @@
 package com.yahoo.vespa.config.server.http.flags;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.flags.FlagDefinition;
-import com.yahoo.vespa.flags.json.DimensionHelper;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,10 +33,7 @@ public class DefinedFlags extends HttpResponse {
         ObjectNode rootNode = mapper.createObjectNode();
         flags.stream().sorted(sortByFlagId).forEach(flagDefinition -> {
             ObjectNode definitionNode = rootNode.putObject(flagDefinition.getUnboundFlag().id().toString());
-            definitionNode.put("description", flagDefinition.getDescription());
-            definitionNode.put("modification-effect", flagDefinition.getModificationEffect());
-            ArrayNode dimensionsNode = definitionNode.putArray("dimensions");
-            flagDefinition.getDimensions().forEach(dimension -> dimensionsNode.add(DimensionHelper.toWire(dimension)));
+            DefinedFlag.renderFlagDefinition(flagDefinition, definitionNode);
         });
         mapper.writeValue(outputStream, rootNode);
     }

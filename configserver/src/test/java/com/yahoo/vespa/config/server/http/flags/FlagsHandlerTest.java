@@ -58,6 +58,9 @@ public class FlagsHandlerTest {
             Flags.defineFeatureFlag("id", false, "desc", "mod", FetchVector.Dimension.HOSTNAME);
             verifySuccessfulRequest(Method.GET, "/defined", "",
                     "{\"id\":{\"description\":\"desc\",\"modification-effect\":\"mod\",\"dimensions\":[\"hostname\"]}}");
+
+            verifySuccessfulRequest(Method.GET, "/defined/id", "",
+                    "{\"description\":\"desc\",\"modification-effect\":\"mod\",\"dimensions\":[\"hostname\"]}");
         }
     }
 
