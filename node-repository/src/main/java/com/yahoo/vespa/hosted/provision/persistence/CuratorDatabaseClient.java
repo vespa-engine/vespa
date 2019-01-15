@@ -25,8 +25,10 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -88,6 +90,7 @@ public class CuratorDatabaseClient {
         curatorDatabase.create(inactiveJobsPath());
         curatorDatabase.create(infrastructureVersionsPath());
         curatorDatabase.create(osVersionsPath());
+        curatorDatabase.create(firmwareCheckPath());
         curatorDatabase.create(loadBalancersRoot);
         curatorDatabase.create(flagsRoot);
     }
@@ -422,6 +425,25 @@ public class CuratorDatabaseClient {
 
     private Path osVersionsPath() {
         return root.append("osVersions");
+    }
+
+    /** Stores the instant after which a firmware check is required, or clears any outstanding ones if empty is given. */
+    public void writeFirmwareCheck(Optional<Instant> after) {
+        byte[] data = after.map(instant -> Long.toString(instant.toEpochMilli()).getBytes())
+                           .orElse(new byte[0]);
+        NestedTransaction transaction = new NestedTransaction();
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        curatorTransaction.add(CuratorOperations.setData(firmwareCheckPath().getAbsolute(), data));
+        transaction.commit();
+    }
+
+    /** Returns the instant after which a firmware check is required, if any. */
+    public Optional<Instant> readFirmwareCheck() {
+        return read(firmwareCheckPath(), data -> Instant.ofEpochMilli(Long.parseLong(new String(data))));
+    }
+
+    private Path firmwareCheckPath() {
+        return root.append("firmwareCheck");
     }
 
     public Map<LoadBalancerId, LoadBalancer> readLoadBalancers() {

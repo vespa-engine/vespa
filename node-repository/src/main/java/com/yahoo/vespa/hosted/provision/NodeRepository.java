@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
 import com.yahoo.vespa.hosted.provision.provisioning.OsVersions;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NotFoundException;
 
@@ -81,6 +82,7 @@ public class NodeRepository extends AbstractComponent {
     private final NameResolver nameResolver;
     private final DockerImage dockerImage;
     private final OsVersions osVersions;
+    private final FirmwareChecks firmwareChecks;
     private final Flags flags;
 
     /**
@@ -105,6 +107,7 @@ public class NodeRepository extends AbstractComponent {
         this.nameResolver = nameResolver;
         this.dockerImage = dockerImage;
         this.osVersions = new OsVersions(this.db);
+        this.firmwareChecks = new FirmwareChecks(db, clock);
         this.flags = new Flags(this.db);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
@@ -123,6 +126,9 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns the OS versions to use for nodes in this */
     public OsVersions osVersions() { return osVersions; }
+
+    /** Returns the status of firmware checks for hosts managed by this. */
+    public FirmwareChecks firmwareChecks() { return firmwareChecks; }
 
     /** Returns feature flags of this node repository */
     public Flags flags() {

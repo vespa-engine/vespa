@@ -665,6 +665,30 @@ public class RestApiTest {
     }
 
     @Test
+    public void test_firmware_upgrades() throws IOException {
+        // dockerhost1 checks firmware at time 100.
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"currentFirmwareCheck\":100}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+
+        // Schedule a firmware check at time 123 (the mock default).
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/firmware", new byte[0], Request.Method.POST),
+                       "{\"message\":\"Will request firmware checks on all hosts.\"}");
+
+        // dockerhost1 displays both values.
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"),
+                       "dockerhost1-with-firmware-data.json");
+
+        // host1 has no wantedFirmwareCheck, as it's not a docker host.
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"),
+                   "node1.json");
+
+        // Cancel the firmware check.
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/firmware", new byte[0], Request.Method.DELETE),
+                       "{\"message\":\"Cancelled outstanding requests for firmware checks\"}");
+    }
+
+    @Test
     public void test_flags() throws Exception {
         assertFile(new Request("http://localhost:8080/nodes/v2/flags/"), "flags1.json");
 

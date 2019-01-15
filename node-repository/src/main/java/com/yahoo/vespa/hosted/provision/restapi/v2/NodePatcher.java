@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -116,6 +117,8 @@ public class NodePatcher {
                 return node.with(node.status().withVespaVersion(Version.fromString(asString(value))));
             case "currentOsVersion" :
                 return node.with(node.status().withOsVersion(Version.fromString(asString(value))));
+            case "currentFirmwareCheck":
+                return node.with(node.status().withFirmwareVerifiedAt(Instant.ofEpochMilli(asLong(value))));
             case "failCount" :
                 return node.with(node.status().setFailCount(asLong(value).intValue()));
             case "flavor" :
