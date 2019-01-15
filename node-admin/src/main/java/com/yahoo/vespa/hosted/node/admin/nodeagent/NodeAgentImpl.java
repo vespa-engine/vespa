@@ -362,7 +362,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .map(NodeSpec.Owner::asApplicationId)
                 .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
                 .orElse(containerCpuCap)
-                .value();
+                .value() * context.node().getMinCpuCores();
 
         ContainerResources wantedContainerResources = ContainerResources.from(
                 cpuCap, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb());

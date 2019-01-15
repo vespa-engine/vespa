@@ -278,7 +278,7 @@ public class NodeAgentImplTest {
         flagSource.withDoubleFlag(Flags.CONTAINER_CPU_CAP.id(), 2.3);
 
         nodeAgent.converge(thirdContext);
-        inOrder.verify(dockerOperations).updateContainer(eq(thirdContext), eq(ContainerResources.from(2.3, 4, 16)));
+        inOrder.verify(dockerOperations).updateContainer(eq(thirdContext), eq(ContainerResources.from(9.2, 4, 16)));
         inOrder.verify(orchestrator).resume(any(String.class));
     }
 
