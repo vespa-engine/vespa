@@ -191,12 +191,10 @@ public class ApplicationRepositoryTest {
 
         // Target for regular application depends on environment
         assertEquals(sessionVersion, ApplicationRepository.decideVersion(regularApp, Environment.prod, sessionVersion, false));
-        assertEquals(sessionVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, sessionVersion, false));
-        // assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, sessionVersion, false));
+        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, sessionVersion, false));
         // If bootstrap, version should be target version
         assertEquals(sessionVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, sessionVersion, true));
-        assertEquals(sessionVersion, ApplicationRepository.decideVersion(regularApp, Environment.perf, sessionVersion, false));
-        // assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.perf, sessionVersion, false));
+        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.perf, sessionVersion, false));
     }
 
     @Test
