@@ -16,6 +16,7 @@ public class DimensionHelper {
         serializedDimensions.put(FetchVector.Dimension.ZONE_ID, "zone");
         serializedDimensions.put(FetchVector.Dimension.HOSTNAME, "hostname");
         serializedDimensions.put(FetchVector.Dimension.APPLICATION_ID, "application");
+        serializedDimensions.put(FetchVector.Dimension.NODE_TYPE, "node-type");
 
         if (serializedDimensions.size() != FetchVector.Dimension.values().length) {
             throw new IllegalStateException(FetchVectorHelper.class.getName() + " is not in sync with " +

@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
+import com.yahoo.vespa.flags.json.DimensionHelper;
+
 import javax.annotation.concurrent.Immutable;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -18,13 +20,18 @@ import java.util.function.Consumer;
  */
 @Immutable
 public class FetchVector {
+    /**
+     * Note: If this enum is changed, you must also change {@link DimensionHelper}.
+     */
     public enum Dimension {
-        /** Value from ZoneId::value */
+        /** Value from ZoneId::value of the form environment.region. */
         ZONE_ID,
-        /** Value from ApplicationId::serializedForm */
+        /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
         APPLICATION_ID,
         /** Fully qualified hostname */
-        HOSTNAME
+        HOSTNAME,
+        /** Node type from com.yahoo.config.provision.NodeType::name, e.g. tenant, host, confighost, controller, etc. */
+        NODE_TYPE
     }
 
     private final Map<Dimension, String> map;

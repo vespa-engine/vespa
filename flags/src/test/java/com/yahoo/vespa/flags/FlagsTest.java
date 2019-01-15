@@ -48,8 +48,9 @@ public class FlagsTest {
         assertThat(vector.getValue().getValue(FetchVector.Dimension.HOSTNAME).get(), is(not(emptyOrNullString())));
         // zone is set because it was set on the unbound flag above
         assertThat(vector.getValue().getValue(FetchVector.Dimension.ZONE_ID), is(Optional.of("a-zone")));
-        // application is not set
+        // application and node type are not set
         assertThat(vector.getValue().getValue(FetchVector.Dimension.APPLICATION_ID), is(Optional.empty()));
+        assertThat(vector.getValue().getValue(FetchVector.Dimension.NODE_TYPE), is(Optional.empty()));
 
         RawFlag rawFlag = mock(RawFlag.class);
         when(source.fetch(eq(new FlagId("id")), any())).thenReturn(Optional.of(rawFlag));
