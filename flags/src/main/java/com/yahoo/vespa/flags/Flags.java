@@ -49,8 +49,12 @@ public class Flags {
     public static final UnboundBooleanFlag ENABLE_CPU_TEMPERATURE_TASK = defineFeatureFlag(
             "enable-cputemptask", true,
             "Whether to enable CPU temperature task", "Takes effect on next host admin tick",
-            HOSTNAME
-    );
+            HOSTNAME);
+    
+    public static final UnboundBooleanFlag ENABLE_LOGSERVER = defineFeatureFlag(
+            "enable-logserver", false,
+            "Whether to enable logserver.", "Takes effect at redeployment",
+            APPLICATION_ID);
 
     public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
             "container-cpu-cap", 0,
