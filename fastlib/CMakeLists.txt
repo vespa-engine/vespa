@@ -7,8 +7,6 @@ vespa_define_module(
     LIBS
     src/vespa/fastlib/io
     src/vespa/fastlib/io/tests
-    src/vespa/fastlib/net
-    src/vespa/fastlib/net/tests
     src/vespa/fastlib/testsuite
     src/vespa/fastlib/text
     src/vespa/fastlib/text/apps
