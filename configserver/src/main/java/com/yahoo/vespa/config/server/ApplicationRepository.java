@@ -21,6 +21,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.jrt.JrtFactory;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -101,20 +102,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ApplicationRepository(TenantRepository tenantRepository,
                                  HostProvisionerProvider hostProvisionerProvider,
                                  ConfigConvergenceChecker configConvergenceChecker,
-                                 HttpProxy httpProxy, 
+                                 HttpProxy httpProxy,
                                  ConfigserverConfig configserverConfig,
-                                 Orchestrator orchestrator) {
+                                 Orchestrator orchestrator,
+                                 JrtFactory jrtFactory) {
         this(tenantRepository, hostProvisionerProvider.getHostProvisioner(),
              configConvergenceChecker, httpProxy, configserverConfig, orchestrator,
-             Clock.systemUTC(), new FileDistributionStatus());
-    }
-
-    // For testing
-    public ApplicationRepository(TenantRepository tenantRepository,
-                                 Provisioner hostProvisioner,
-                                 Orchestrator orchestrator,
-                                 Clock clock) {
-        this(tenantRepository, hostProvisioner, orchestrator, clock, new ConfigserverConfig(new ConfigserverConfig.Builder()));
+             Clock.systemUTC(), new FileDistributionStatus(jrtFactory));
     }
 
     // For testing
@@ -122,9 +116,19 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  Provisioner hostProvisioner,
                                  Orchestrator orchestrator,
                                  Clock clock,
-                                 ConfigserverConfig configserverConfig) {
+                                 JrtFactory jrtFactory) {
+        this(tenantRepository, hostProvisioner, orchestrator, clock, new ConfigserverConfig(new ConfigserverConfig.Builder()), jrtFactory);
+    }
+
+    // For testing
+    public ApplicationRepository(TenantRepository tenantRepository,
+                                 Provisioner hostProvisioner,
+                                 Orchestrator orchestrator,
+                                 Clock clock,
+                                 ConfigserverConfig configserverConfig,
+                                 JrtFactory jrtFactory) {
         this(tenantRepository, Optional.of(hostProvisioner), new ConfigConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
-             configserverConfig, orchestrator, clock, new FileDistributionStatus());
+             configserverConfig, orchestrator, clock, new FileDistributionStatus(jrtFactory));
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,

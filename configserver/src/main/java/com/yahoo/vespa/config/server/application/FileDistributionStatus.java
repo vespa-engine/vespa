@@ -1,15 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.container.jdisc.jrt.JrtFactory;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
-import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
@@ -39,7 +40,12 @@ public class FileDistributionStatus extends AbstractComponent {
     enum Status {UNKNOWN, FINISHED, IN_PROGRESS}
 
     private final ExecutorService rpcExecutor = Executors.newCachedThreadPool(new DaemonThreadFactory("filedistribution status"));
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor;
+
+    @Inject
+    public FileDistributionStatus(JrtFactory jrtFactory) {
+        this.supervisor = jrtFactory.createSupervisor();
+    }
 
     public StatusAllHosts status(Application application, Duration timeout) {
         List<HostStatus> hostStatuses = new ArrayList<>();

@@ -3,12 +3,13 @@ package com.yahoo.vespa.config.server.rpc;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.component.Version;
+import com.yahoo.container.jdisc.jrt.JrtFactory;
 import com.yahoo.jrt.Acceptor;
 import com.yahoo.jrt.DataValue;
 import com.yahoo.jrt.Int32Value;
@@ -20,7 +21,6 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
-import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.JRTMethods;
@@ -28,14 +28,14 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
+import com.yahoo.vespa.config.server.GetConfigContext;
+import com.yahoo.vespa.config.server.ReloadListener;
+import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
-import com.yahoo.vespa.config.server.ReloadListener;
-import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
@@ -80,7 +80,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
     private static final long SHUTDOWN_TIMEOUT = 60;
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor;
     private Spec spec;
     private final boolean useRequestVersion;
     private final boolean hostedVespa;
@@ -119,8 +119,10 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @Inject
     public RpcServer(ConfigserverConfig config, SuperModelRequestHandler superModelRequestHandler,
                      MetricUpdaterFactory metrics, HostRegistries hostRegistries,
-                     HostLivenessTracker hostLivenessTracker, FileServer fileServer) {
+                     HostLivenessTracker hostLivenessTracker, FileServer fileServer,
+                     JrtFactory jrtFactory) {
         this.superModelRequestHandler = superModelRequestHandler;
+        this.supervisor = jrtFactory.createSupervisor();
         metricUpdaterFactory = metrics;
         supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
         this.metrics = metrics.getOrCreateMetricUpdater(Collections.emptyMap());

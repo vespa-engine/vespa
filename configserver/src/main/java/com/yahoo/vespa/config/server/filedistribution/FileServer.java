@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.subscription.ConfigSourceSet;
+import com.yahoo.container.jdisc.jrt.JrtFactory;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
@@ -73,13 +74,13 @@ public class FileServer {
 
     @SuppressWarnings("WeakerAccess") // Created by dependency injection
     @Inject
-    public FileServer(ConfigserverConfig configserverConfig) {
-        this(createConnectionPool(configserverConfig), new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())));
+    public FileServer(ConfigserverConfig configserverConfig, JrtFactory jrtFactory) {
+        this(createConnectionPool(configserverConfig, jrtFactory), new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())));
     }
 
     // For testing only
-    public FileServer(File rootDir) {
-        this(new EmptyConnectionPool(), rootDir);
+    public FileServer(File rootDir, JrtFactory jrtFactory) {
+        this(new EmptyConnectionPool(jrtFactory), rootDir);
     }
 
     private FileServer(ConnectionPool connectionPool, File rootDir) {
@@ -196,17 +197,23 @@ public class FileServer {
     }
 
     // Connection pool with all config servers except this one (might be an empty pool if there is only one config server)
-    private static ConnectionPool createConnectionPool(ConfigserverConfig configserverConfig) {
+    private static ConnectionPool createConnectionPool(ConfigserverConfig configserverConfig, JrtFactory jrtFactory) {
         List<String> configServers = ConfigServerSpec.fromConfig(configserverConfig)
                 .stream()
                 .filter(spec -> !spec.getHostName().equals(HostName.getLocalhost()))
                 .map(spec -> "tcp/" + spec.getHostName() + ":" + spec.getConfigServerPort())
                 .collect(Collectors.toList());
 
-        return configServers.size() > 0 ? new JRTConnectionPool(new ConfigSourceSet(configServers)) : new EmptyConnectionPool();
+        return configServers.size() > 0 ? new JRTConnectionPool(jrtFactory.createSupervisor(), new ConfigSourceSet(configServers)) : new EmptyConnectionPool(jrtFactory);
     }
 
     private static class EmptyConnectionPool implements ConnectionPool {
+
+        final JrtFactory jrtFactory;
+
+        EmptyConnectionPool(JrtFactory jrtFactory) {
+            this.jrtFactory = jrtFactory;
+        }
 
         @Override
         public void close() {}
@@ -224,6 +231,6 @@ public class FileServer {
         public int getSize() { return 0; }
 
         @Override
-        public Supervisor getSupervisor() { return new Supervisor(new Transport()); }
+        public Supervisor getSupervisor() { return jrtFactory.createSupervisor(); }
     }
 }
