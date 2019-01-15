@@ -8,7 +8,8 @@ import java.util.Arrays;
  */
 public enum MixedMode {
     PLAINTEXT_CLIENT_MIXED_SERVER("plaintext_client_mixed_server"),
-    TLS_CLIENT_MIXED_SERVER("tls_client_mixed_server");
+    TLS_CLIENT_MIXED_SERVER("tls_client_mixed_server"),
+    DISABLED("tls_client_tls_server");
 
     final String configValue;
 
@@ -20,7 +21,14 @@ public enum MixedMode {
         return configValue;
     }
 
-    static MixedMode fromConfigValue(String configValue) {
+    /**
+     * @return Default value when mixed mode is not explicitly specified
+     */
+    public static MixedMode defaultValue() {
+        return DISABLED;
+    }
+
+    public static MixedMode fromConfigValue(String configValue) {
         return Arrays.stream(values())
                 .filter(v -> v.configValue.equals(configValue))
                 .findFirst()
