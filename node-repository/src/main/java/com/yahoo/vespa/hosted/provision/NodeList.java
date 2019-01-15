@@ -86,12 +86,16 @@ public class NodeList {
     }
 
     /** Returns the child nodes of the given parent node */
-    public NodeList childrenOf(Node parent) {
+    public NodeList childrenOf(String hostname) {
         return nodes.stream()
                     .filter(n -> n.parentHostname()
-                                  .map(hostName -> hostName.equals(parent.hostname()))
+                                  .map(hostName -> hostName.equals(hostname))
                                   .orElse(false))
                     .collect(collectingAndThen(Collectors.toList(), NodeList::new));
+    }
+
+    public NodeList childrenOf(Node parent) {
+        return childrenOf(parent.hostname());
     }
 
     public int size() { return nodes.size(); }

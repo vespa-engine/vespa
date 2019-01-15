@@ -405,6 +405,11 @@ public class RestApiTest {
                                    new byte[0], Request.Method.DELETE),
                        400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Failed to delete host2.yahoo.com: Node host2.yahoo.com can only be removed from following states: provisioned, failed, parked\"}");
 
+        // Attempt to DELETE allocated node
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                                   new byte[0], Request.Method.DELETE),
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Failed to delete host4.yahoo.com: Node is currently allocated and cannot be removed: allocated to tenant3.application3.instance3 as 'content/id3/0/0'\"}");
+
         // PUT current restart generation with string instead of long
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    Utf8.toBytes("{\"currentRestartGeneration\": \"1\"}"), Request.Method.PATCH),

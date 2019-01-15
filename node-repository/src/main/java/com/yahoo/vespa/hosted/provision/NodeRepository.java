@@ -31,9 +31,9 @@ import com.yahoo.vespa.hosted.provision.restapi.v2.NotFoundException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -149,7 +149,7 @@ public class NodeRepository extends AbstractComponent {
      * @return the node, or empty if it was not found in any of the given states
      */
     public List<Node> getNodes(Node.State ... inState) {
-        return db.getNodes(inState).stream().collect(Collectors.toList());
+        return new ArrayList<>(db.getNodes(inState));
     }
     /**
      * Finds and returns the nodes of the given type in any of the given states.
@@ -162,18 +162,9 @@ public class NodeRepository extends AbstractComponent {
         return db.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
 
-    /**
-     * Finds and returns all nodes that are children of the given parent node
-     *
-     * @param hostname Parent hostname
-     * @return List of child nodes
-     */
-    public List<Node> getChildNodes(String hostname) {
-        return db.getNodes().stream()
-                .filter(node -> node.parentHostname()
-                        .map(parentHostname -> parentHostname.equals(hostname))
-                        .orElse(false))
-                .collect(Collectors.toList());
+    /** Returns a filterable list of all nodes in this repository */
+    public NodeList list() {
+        return new NodeList(getNodes());
     }
 
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return db.getNodes(id, inState); }
@@ -255,7 +246,7 @@ public class NodeRepository extends AbstractComponent {
      * @return List of node ACLs
      */
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
-        NodeList candidates = new NodeList(getNodes());
+        NodeList candidates = list();
         if (children) {
             return candidates.childrenOf(node).asList().stream()
                              .map(childNode -> getNodeAcl(childNode, candidates))
@@ -413,7 +404,7 @@ public class NodeRepository extends AbstractComponent {
 
         List<Node> nodesToDirty =
                 (nodeToDirty.type().isDockerHost() ?
-                        Stream.concat(getChildNodes(hostname).stream(), Stream.of(nodeToDirty)) :
+                        Stream.concat(list().childrenOf(hostname).asList().stream(), Stream.of(nodeToDirty)) :
                         Stream.of(nodeToDirty))
                 .filter(node -> node.state() != Node.State.dirty)
                 .collect(Collectors.toList());
@@ -483,9 +474,9 @@ public class NodeRepository extends AbstractComponent {
     }
 
     private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
-        List<Node> moved = getChildNodes(hostname).stream()
-                .map(child -> move(child, toState, agent, reason))
-                .collect(Collectors.toList());
+        List<Node> moved = list().childrenOf(hostname).asList().stream()
+                                         .map(child -> move(child, toState, agent, reason))
+                                         .collect(Collectors.toList());
 
         moved.add(move(hostname, toState, agent, reason));
         return moved;
@@ -544,13 +535,15 @@ public class NodeRepository extends AbstractComponent {
 
     private List<Node> removeRecursively(Node node, boolean force) {
         try (Mutex lock = lockUnallocated()) {
-            List<Node> removed = !node.type().isDockerHost() ?
-                    new ArrayList<>() :
-                    getChildNodes(node.hostname()).stream()
-                            .filter(child -> force || verifyRemovalIsAllowed(child, true))
-                            .collect(Collectors.toList());
+            List<Node> removed = new ArrayList<>();
 
-            if (force || verifyRemovalIsAllowed(node, false)) removed.add(node);
+             if (node.type().isDockerHost()) {
+                 list().childrenOf(node).asList().stream()
+                       .filter(child -> force || canRemove(child, true))
+                       .forEach(removed::add);
+             }
+
+            if (force || canRemove(node, false)) removed.add(node);
             db.removeNodes(removed);
 
             return removed;
@@ -560,32 +553,38 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /**
-     * Allowed to a node delete if:
-     *  Non-docker-container node: iff in state provisioned|failed|parked
+     * Returns whether given node can be removed. Removal is allowed if:
+     *  Tenant node: node is unallocated
+     *  Non-Docker-container node: iff in state provisioned|failed|parked
      *  Docker-container-node:
      *    If only removing the container node: node in state ready
      *    If also removing the parent node: child is in state provisioned|failed|parked|ready
      */
-    private boolean verifyRemovalIsAllowed(Node nodeToRemove, boolean deletingAsChild) {
-        if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !deletingAsChild) {
-            if (nodeToRemove.state() != Node.State.ready) {
+    private boolean canRemove(Node node, boolean deletingAsChild) {
+        if (node.type() == NodeType.tenant && node.allocation().isPresent()) {
+            throw new IllegalArgumentException("Node is currently allocated and cannot be removed: " +
+                                               node.allocation().get());
+        }
+        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !deletingAsChild) {
+            if (node.state() != Node.State.ready) {
                 throw new IllegalArgumentException(
-                        String.format("Docker container node %s can only be removed when in state ready", nodeToRemove.hostname()));
+                        String.format("Docker container %s can only be removed when in ready state", node.hostname()));
             }
 
-        } else if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
-            List<Node.State> legalStates = Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.ready);
+        } else if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
+            Set<Node.State> legalStates = EnumSet.of(Node.State.provisioned, Node.State.failed, Node.State.parked,
+                                                     Node.State.ready);
 
-            if (! legalStates.contains(nodeToRemove.state())) {
+            if (! legalStates.contains(node.state())) {
                 throw new IllegalArgumentException(String.format("Child node %s can only be removed from following states: %s",
-                        nodeToRemove.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
+                        node.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
             }
         } else {
-            List<Node.State> legalStates = Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked);
+            Set<Node.State> legalStates = EnumSet.of(Node.State.provisioned, Node.State.failed, Node.State.parked);
 
-            if (! legalStates.contains(nodeToRemove.state())) {
+            if (! legalStates.contains(node.state())) {
                 throw new IllegalArgumentException(String.format("Node %s can only be removed from following states: %s",
-                        nodeToRemove.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
+                        node.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
             }
         }
 

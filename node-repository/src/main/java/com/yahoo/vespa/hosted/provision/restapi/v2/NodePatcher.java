@@ -49,7 +49,7 @@ public class NodePatcher {
             this.node = node;
             this.nodeRepository = nodeRepository;
             this.children = node.type().isDockerHost() ?
-                    nodeRepository.getChildNodes(node.hostname()) :
+                    nodeRepository.list().childrenOf(node).asList() :
                     Collections.emptyList();
         }
         catch (IOException e) {

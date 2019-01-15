@@ -101,10 +101,10 @@ public class FailedExpirer extends Maintainer {
         for (Node candidate : nodes) {
             if (hasHardwareIssue(candidate)) {
                 List<String> unparkedChildren = !candidate.type().isDockerHost() ? Collections.emptyList() :
-                        nodeRepository.getChildNodes(candidate.hostname()).stream()
-                                .filter(node -> node.state() != Node.State.parked)
-                                .map(Node::hostname)
-                                .collect(Collectors.toList());
+                        nodeRepository.list().childrenOf(candidate).asList().stream()
+                                      .filter(node -> node.state() != Node.State.parked)
+                                      .map(Node::hostname)
+                                      .collect(Collectors.toList());
 
                 if (unparkedChildren.isEmpty()) {
                     nodeRepository.park(candidate.hostname(), Agent.system,

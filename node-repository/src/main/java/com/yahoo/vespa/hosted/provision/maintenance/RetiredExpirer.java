@@ -93,9 +93,9 @@ public class RetiredExpirer extends Maintainer {
     private boolean canRemove(Node node) {
         if (node.type().isDockerHost()) {
             if (nodeRepository()
-                        .getChildNodes(node.hostname()).stream()
-                        .allMatch(child -> child.state() == Node.State.parked ||
-                                child.state() == Node.State.failed)) {
+                    .list().childrenOf(node).asList().stream()
+                    .allMatch(child -> child.state() == Node.State.parked ||
+                                       child.state() == Node.State.failed)) {
                 log.info("Docker host " + node + " has no non-parked/failed children");
                 return true;
             }
