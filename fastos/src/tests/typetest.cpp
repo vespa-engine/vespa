@@ -3,7 +3,6 @@
 #include "tests.h"
 #include <vespa/fastos/file.h>
 #include <vespa/fastos/time.h>
-#include <vespa/fastos/serversocket.h>
 
 #include <cstdlib>
 
@@ -19,9 +18,6 @@ private:
       Progress(true, "FastOS_DirectoryScan %d", sizeof(FastOS_DirectoryScan));
       Progress(true, "FastOS_File:         %d", sizeof(FastOS_File));
       Progress(true, "FastOS_Runnable      %d", sizeof(FastOS_Runnable));
-      Progress(true, "FastOS_ServerSocket  %d", sizeof(FastOS_ServerSocket));
-      Progress(true, "FastOS_Socket:       %d", sizeof(FastOS_Socket));
-      Progress(true, "FastOS_SocketFactory %d", sizeof(FastOS_SocketFactory));
       Progress(true, "FastOS_StatInfo      %d", sizeof(FastOS_StatInfo));
       Progress(true, "FastOS_Thread:       %d", sizeof(FastOS_Thread));
       Progress(true, "FastOS_ThreadPool:   %d", sizeof(FastOS_ThreadPool));
