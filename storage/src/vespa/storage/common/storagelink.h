@@ -23,6 +23,7 @@
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/document/util/printable.h>
+#include <atomic>
 
 namespace storage {
 
@@ -41,7 +42,7 @@ private:
     std::string _name;
     StorageLink* _up;
     std::unique_ptr<StorageLink> _down;
-    State _state;
+    std::atomic<State> _state;
 
 public:
     StorageLink(const StorageLink &) = delete;
@@ -59,7 +60,7 @@ public:
     void push_back(StorageLink::UP);
 
     /** Get the current state of the storage link. */
-    State getState() const { return _state; }
+    State getState() const noexcept { return _state.load(std::memory_order_relaxed); }
 
     /**
      * Called by storage server after the storage chain have been created.

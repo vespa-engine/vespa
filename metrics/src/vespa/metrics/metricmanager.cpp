@@ -176,7 +176,7 @@ MetricManager::init(const config::ConfigUri & uri, FastOS_ThreadPool& pool,
         // Wait for first iteration to have completed, such that it is safe
         // to access snapshots afterwards.
         vespalib::MonitorGuard sync(_waiter);
-        while (_lastProcessedTime == 0) {
+        while (_lastProcessedTime.load(std::memory_order_relaxed) == 0) {
             sync.wait(1);
         }
     } else {
@@ -863,10 +863,10 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
         }
         _forceEventLogging = false;
     }
-    _lastProcessedTime = (nextWorkTime <= currentTime ? nextWorkTime
-                                                      : currentTime);
+    _lastProcessedTime.store(nextWorkTime <= currentTime ? nextWorkTime : currentTime,
+                             std::memory_order_relaxed);
     LOG(spam, "Worker thread done with processing for time %" PRIu64 ".",
-        _lastProcessedTime);
+        _lastProcessedTime.load(std::memory_order_relaxed));
     time_t next = std::min(
             _logPeriod.second,
             _snapshots[0]->getPeriod() + _snapshots[0]->getToTime());

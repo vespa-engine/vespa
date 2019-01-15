@@ -29,6 +29,7 @@
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/base/testdocman.h>
+#include <atomic>
 
 namespace storage {
 
@@ -49,7 +50,7 @@ protected:
     document::TestDocMan _docMan;
     TestNodeStateUpdater _nodeStateUpdater;
     vespalib::string _configId;
-    bool _initialized;
+    std::atomic<bool> _initialized;
 
 public:
     /**

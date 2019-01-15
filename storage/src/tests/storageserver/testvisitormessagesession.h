@@ -7,6 +7,8 @@
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
 #include <vespa/storage/storageserver/priorityconverter.h>
 #include <vespa/config/subscription/configuri.h>
+
+#include <atomic>
 #include <deque>
 
 namespace storage {
@@ -23,7 +25,7 @@ public:
 
     VisitorThread& thread;
     Visitor& visitor;
-    uint32_t pendingCount;
+    std::atomic<uint32_t> pendingCount;
 
     ~TestVisitorMessageSession();
 

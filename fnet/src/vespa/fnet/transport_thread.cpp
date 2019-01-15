@@ -116,7 +116,7 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
     bool wasEmpty;
     {
         std::unique_lock<std::mutex> guard(_lock);
-        if (_shutdown) {
+        if (IsShutDown()) {
             guard.unlock();
             SafeDiscardEvent(cpacket, context);
             return false;
@@ -381,8 +381,8 @@ FNET_TransportThread::ShutDown(bool waitFinished)
     bool wasEmpty = false;
     {
         std::lock_guard<std::mutex> guard(_lock);
-        if (!_shutdown) {
-            _shutdown = true;
+        if (!IsShutDown()) {
+            _shutdown.store(true, std::memory_order_relaxed);
             wasEmpty  = _queue.IsEmpty_NoLock();
         }
     }
@@ -519,7 +519,7 @@ FNET_TransportThread::EventLoopIteration()
     FastOS_Time beforeGetEvents;
 #endif
 
-    if (!_shutdown) {
+    if (!IsShutDown()) {
 
 #ifdef FNET_SANITY_CHECKS
         // Warn if event loop takes more than 250ms
@@ -569,7 +569,7 @@ FNET_TransportThread::EventLoopIteration()
         FlushDeleteList();
     }                      // -- END OF MAIN EVENT LOOP --
 
-    if (!_shutdown)
+    if (!IsShutDown())
         return true;
     if (_finished)
         return false;

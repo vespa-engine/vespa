@@ -20,6 +20,7 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/file.h>
+#include <atomic>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".filestormanagertest");
@@ -668,8 +669,8 @@ class MessagePusherThread : public document::Runnable
 public:
     FileStorHandler& _handler;
     Document::SP _doc;
-    bool _done;
-    bool _threadDone;
+    std::atomic<bool> _done;
+    std::atomic<bool> _threadDone;
 
     MessagePusherThread(FileStorHandler& handler, Document::SP doc);
     ~MessagePusherThread();
@@ -698,10 +699,10 @@ public:
     const uint32_t _threadId;
     FileStorHandler& _handler;
     std::atomic<uint32_t> _config;
-    uint32_t _fetchedCount;
-    bool _done;
-    bool _failed;
-    bool _threadDone;
+    std::atomic<uint32_t> _fetchedCount;
+    std::atomic<bool> _done;
+    std::atomic<bool> _failed;
+    std::atomic<bool> _threadDone;
 
     MessageFetchingThread(FileStorHandler& handler)
         : _threadId(handler.getNextStripeId(0)), _handler(handler), _config(0), _fetchedCount(0), _done(false),
@@ -766,7 +767,7 @@ FileStorManagerTest::testHandlerPausedMultiThread()
         ResumeGuard guard = filestorHandler.pause();
         thread._config.fetch_add(1);
         uint32_t count = thread._fetchedCount;
-        CPPUNIT_ASSERT_EQUAL(count, thread._fetchedCount);
+        CPPUNIT_ASSERT_EQUAL(count, thread._fetchedCount.load());
     }
 
     pushthread._done = true;

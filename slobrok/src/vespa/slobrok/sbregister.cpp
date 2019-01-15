@@ -102,7 +102,7 @@ RegisterAPI::registerName(vespalib::stringref name)
             return;
         }
     }
-    _busy = true;
+    _busy.store(true, std::memory_order_relaxed);
     _names.push_back(name);
     _pending.push_back(name);
     discard(_unreg, name);
@@ -114,7 +114,7 @@ void
 RegisterAPI::unregisterName(vespalib::stringref name)
 {
     std::lock_guard<std::mutex> guard(_lock);
-    _busy = true;
+    _busy.store(true, std::memory_order_relaxed);
     discard(_names, name);
     discard(_pending, name);
     _unreg.push_back(name);
@@ -137,7 +137,7 @@ RegisterAPI::handleReqDone()
                     _target->SubRef();
                 }
                 _target = 0;
-                _busy = true;
+                _busy.store(true, std::memory_order_relaxed);
             } else {
                 LOG(warning, "%s(%s -> %s) failed: %s",
                     _req->GetMethodName(),
@@ -241,7 +241,7 @@ RegisterAPI::handlePending()
         std::lock_guard<std::mutex> guard(_lock);
         _pending = _names;
         LOG(debug, "done, reschedule in 30s");
-        _busy = false;
+        _busy.store(false, std::memory_order_relaxed);
         Schedule(30.0);
     }
 }

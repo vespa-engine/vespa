@@ -10,6 +10,7 @@
 #include <vespa/fastos/time.h>
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/selector.h>
+#include <atomic>
 #include <mutex>
 #include <condition_variable>
 
@@ -48,7 +49,7 @@ private:
     std::condition_variable  _cond;           // used for synchronization
     std::recursive_mutex     _pseudo_thread;  // used after transport thread has shut down
     bool                     _started;        // event loop started ?
-    bool                     _shutdown;       // should stop event loop ?
+    std::atomic<bool>        _shutdown;       // should stop event loop ?
     bool                     _finished;       // event loop stopped ?
     bool                     _waitFinished;   // someone is waiting for _finished
     bool                     _deleted;        // destructor called ?
@@ -170,6 +171,10 @@ private:
      * @return true when active, false after shutdown.
      **/
     bool EventLoopIteration();
+
+    bool IsShutDown() const noexcept {
+        return _shutdown.load(std::memory_order_relaxed);
+    }
 
 public:
     /**

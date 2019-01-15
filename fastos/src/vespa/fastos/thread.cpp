@@ -266,7 +266,7 @@ void FastOS_ThreadInterface::Hook ()
             }
             _owner = nullptr;
             _startArg = nullptr;
-            _breakFlag = false;
+            _breakFlag.store(false, std::memory_order_relaxed);
             finished = _pool->isClosed();
 
             dispatchedGuard.unlock();      // END lock
@@ -322,7 +322,7 @@ void FastOS_ThreadInterface::Dispatch(FastOS_Runnable *newOwner, void *arg)
 void FastOS_ThreadInterface::SetBreakFlag()
 {
     std::lock_guard<std::mutex> dispatchedGuard(_dispatchedMutex);
-    _breakFlag = true;
+    _breakFlag.store(true, std::memory_order_relaxed);
     _dispatchedCond.notify_one();
 }
 

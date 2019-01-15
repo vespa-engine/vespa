@@ -9,6 +9,8 @@
 #include "configsubscription.h"
 #include "configprovider.h"
 
+#include <atomic>
+
 namespace config {
 
 /**
@@ -60,7 +62,7 @@ private:
     int64_t               _currentGeneration;     // Holds the current config generation.
     SubscriptionList      _subscriptionList;      // List of current subscriptions.
 
-    SubscriberState _state;              // Current state of this subscriber.
+    std::atomic<SubscriberState> _state;              // Current state of this subscriber.
 };
 
 } // namespace config
