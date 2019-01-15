@@ -300,16 +300,16 @@ public class InternalStepRunner implements StepRunner {
                                            node.hostname(),
                                            node.serviceState(),
                                            node.wantedVersion() + (node.currentVersion().equals(node.wantedVersion()) ? "" : " <-- " + node.currentVersion()),
-                                           node.restartGeneration() == node.wantedRestartGeneration() ? ""
+                                           node.restartGeneration() >= node.wantedRestartGeneration() ? ""
                                                    : "restart pending (" + node.wantedRestartGeneration() + " <-- " + node.restartGeneration() + ")",
-                                           node.rebootGeneration() == node.wantedRebootGeneration() ? ""
+                                           node.rebootGeneration() >= node.wantedRebootGeneration() ? ""
                                                    : "reboot pending (" + node.wantedRebootGeneration() + " <-- " + node.rebootGeneration() + ")"))
                 .collect(Collectors.toList());
         logger.log(statuses);
 
         return nodes.stream().allMatch(node ->    node.currentVersion().equals(target)
-                                               && node.restartGeneration() == node.wantedRestartGeneration()
-                                               && node.rebootGeneration() == node.wantedRebootGeneration());
+                                               && node.restartGeneration() >= node.wantedRestartGeneration()
+                                               && node.rebootGeneration() >= node.wantedRebootGeneration());
     }
 
     private boolean servicesConverged(ApplicationId id, JobType type, DualLogger logger) {
