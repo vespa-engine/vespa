@@ -3,7 +3,6 @@
 #include "statuswebserver.h"
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/fastlib/net/url.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/component/vtag.h>
