@@ -140,7 +140,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             String keys = invokers.stream().map(SearchInvoker::distributionKey).map(dk -> dk.map(i -> i.toString()).orElse("(unspecified)"))
                     .collect(Collectors.joining(", "));
 
-            result.hits().addError(ErrorMessage.createTimeout("Backend communication timeout on node with distribution-keys: " + keys));
+            result.hits().addError(ErrorMessage.createTimeout("Backend communication timeout on nodes with distribution-keys: " + keys));
             timedOut = true;
         }
     }
