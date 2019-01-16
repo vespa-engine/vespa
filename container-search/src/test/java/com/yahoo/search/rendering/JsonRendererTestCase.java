@@ -146,7 +146,7 @@ public class JsonRendererTestCase {
                 + "                    \"float\": 14.29,\n"
                 + "                    \"integer\": 1,\n"
                 + "                    \"long\": 4398046511104,\n"
-                + "                    \"bool\": \"true\",\n"
+                + "                    \"bool\": true,\n"
                 + "                    \"object\": \"thingie\",\n"
                 + "                    \"string\": \"stuff\",\n"
                 + "                    \"predicate\": \"a in [b]\",\n"
