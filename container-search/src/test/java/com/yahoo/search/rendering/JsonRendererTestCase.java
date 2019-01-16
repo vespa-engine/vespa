@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,7 +53,6 @@ import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -66,7 +64,6 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.times;
 
 /**
  * Functional testing of {@link JsonRenderer}.
@@ -149,6 +146,7 @@ public class JsonRendererTestCase {
                 + "                    \"float\": 14.29,\n"
                 + "                    \"integer\": 1,\n"
                 + "                    \"long\": 4398046511104,\n"
+                + "                    \"bool\": \"true\",\n"
                 + "                    \"object\": \"thingie\",\n"
                 + "                    \"string\": \"stuff\",\n"
                 + "                    \"predicate\": \"a in [b]\",\n"
@@ -174,6 +172,7 @@ public class JsonRendererTestCase {
         h.setField("float", 14.29f);
         h.setField("integer", 1);
         h.setField("long", 4398046511104L);
+        h.setField("bool", true);
         h.setField("string", "stuff");
         h.setField("predicate", Predicate.fromString("a in [b]"));
         h.setField("tensor1", new TensorFieldValue(Tensor.from("{ {x:a}: 2.0}")));
