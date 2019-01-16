@@ -360,8 +360,7 @@ TOKEN :
 | < CONSTANTS: "constants" >
 | < FILE: "file" >
 | < URI: "uri" >
-| < IDENTIFIER:           ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_"])* >
-| < IDENTIFIER_WITH_DASH: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])* >
+| < IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])* >
 | < QUOTEDSTRING: "\"" ( ~["\""] )* "\"" >
 | < CONTEXT: ["a"-"z","A"-"Z"] (["a"-"z", "A"-"Z", "0"-"9"])* >
 | < DOUBLE: ("-")? (["0"-"9"])+ "." (["0"-"9"])+ >
@@ -419,7 +418,10 @@ Search rootSearch(String dir) :
     Search search;
 }
 {
-    ( <SEARCH> name = identifier() { search = new Search(name, app);
+    ( <SEARCH> name = identifier() { if (!name.matches("[a-zA-Z_][a-zA-Z_:0-9]*")) {
+                                         deployLogger.log(Level.WARNING, name + " can not be used in YQL+ expressions.");
+                                     }
+                                     search = new Search(name, app);
                                      rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
                                      rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));}
       lbrace() (rootSearchItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
@@ -670,15 +672,14 @@ void fieldSetItem(String setName, Search search) :
   ( <FIELDS><COLON> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); }
     ( <COMMA> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); } )* )
   |
-    ( <QUERYCOMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { search.fieldSets().userFieldSets().get(setName).queryCommands().add(queryCommand);}
+    ( <QUERYCOMMAND> <COLON> (queryCommand = identifier() | queryCommand = quotedString())) { search.fieldSets().userFieldSets().get(setName).queryCommands().add(queryCommand);}
   |
     ( match(matchSettings) ) { matchSettings.applyOperations(); search.fieldSets().userFieldSets().get(setName).setMatching(matchSettings.getMatching());}
 }
 
 /**
  * This rule consumes a annotation block from within either a document element or a search element.
-
- * @param search the search object to add content to.
+ * @param search The search object to add content to.
  */
 void annotationOutside(Search search) :
 {
@@ -700,7 +701,6 @@ void annotationOutside(Search search) :
 
 /**
  * This rule consumes a annotation block from within either a document element.
- *
  * @param document The document object to add content to.
  */
 void annotation(Search search, SDDocumentType document) :
@@ -1186,7 +1186,7 @@ Object sortingSetting(SortingOperation sorting, String attributeName) :
                              | <QUATERNARY> { sorting.setStrength(Sorting.Strength.QUATERNARY); }
                              | <IDENTICAL>  { sorting.setStrength(Sorting.Strength.IDENTICAL); }
                            )
-      | <LOCALE> <COLON> locale = identifierWithDash() { sorting.setLocale(locale); }
+      | <LOCALE> <COLON> locale = identifier() { sorting.setLocale(locale); }
     )
     { return null; }
 }
@@ -1438,7 +1438,7 @@ void summaryProperty(SummaryInFieldLongOperation field) :
     String name, value;
 }
 {
-    name = identifierWithDash() <COLON> (value = identifierWithDash() | value = quotedString())
+    name = identifier() <COLON> (value = identifier() | value = quotedString())
     { field.addProperty(new SummaryField.Property(name, value)); }
 }
 
@@ -1453,7 +1453,7 @@ void fieldStemming(FieldOperationContainer field) :
     StemmingOperation op = new StemmingOperation();
 }
 {
-    <STEMMING> <COLON> setting = identifierWithDash()
+    <STEMMING> <COLON> setting = identifier()
     {
         op.setSetting(setting);
         field.addOperation(op);
@@ -1470,7 +1470,7 @@ void searchStemming(Search search) :
     String setting;
 }
 {
-    <STEMMING> <COLON> setting = identifierWithDash()
+    <STEMMING> <COLON> setting = identifier()
     { search.setStemming(Stemming.get(setting)); }
 }
 
@@ -1485,7 +1485,7 @@ void normalizing(FieldOperationContainer field) :
     String setting;
 }
 {
-    <NORMALIZING> <COLON> setting = identifierWithDash()
+    <NORMALIZING> <COLON> setting = identifier()
     {
         field.addOperation(new NormalizingOperation(setting));
     }
@@ -1543,7 +1543,7 @@ void queryCommand(FieldOperationContainer container) :
     QueryCommandOperation field = new QueryCommandOperation();
 }
 {
-    <QUERYCOMMAND> <COLON> command = identifierWithDash()
+    <QUERYCOMMAND> <COLON> command = identifier()
     {
         field.addQueryCommand(command);
         container.addOperation(field);
@@ -1556,7 +1556,7 @@ void alias(FieldOperationContainer container) :
     String alias;
 }
 {
-    <ALIAS> [aliasedName = identifier()] <COLON> alias = identifierWithDash()
+    <ALIAS> [aliasedName = identifier()] <COLON> alias = identifier()
     {
        AliasOperation op = new AliasOperation(aliasedName, alias);
        container.addOperation(op);
@@ -1790,9 +1790,9 @@ Object indexBody(IndexOperation index) :
     double threshold;
 }
 {
-    ( <PREFIX>                                           { index.setPrefix(true); }
-      | <ALIAS> <COLON> str = identifierWithDash()       { index.addAlias(str); }
-      | <STEMMING> <COLON> str = identifierWithDash()    { index.setStemming(str); }
+    ( <PREFIX>                                   { index.setPrefix(true); }
+      | <ALIAS> <COLON> str = identifier()       { index.addAlias(str); }
+      | <STEMMING> <COLON> str = identifier()    { index.setStemming(str); }
       | <RISE> {
               if (true) throw new ParseException("'index:rise' is no longer an option. Use 'indexing:attribute' instead. " +
                                        "If it is a weighted set field you should also add 'attribute:fast-search'." +
@@ -1877,7 +1877,7 @@ void rankProfile(Search search) :
     RankProfile profile;
 }
 {
-    ( <RANKPROFILE> name = identifierWithDash()
+    ( <RANKPROFILE> name = identifier()
         {
             if (documentsOnly) {
                 profile = new DocumentsOnlyRankProfile(name, search, rankProfileRegistry);
@@ -1934,7 +1934,7 @@ void inheritsRankProfile(RankProfile profile) :
     String str;
 }
 {
-    <INHERITS> str = identifierWithDash()
+    <INHERITS> str = identifier()
     { profile.setInherited(str); }
 }
 
@@ -2233,9 +2233,9 @@ String rankPropertyItem() :
     String image, ret = "";
 }
 {
-    ( ( image = identifierWithDash()              { ret += image; }
-        | image = quotedString()                  { ret += image; }
-        | ( "(" | ")" | <DOT> | <COMMA> )         { ret += token.image; } )+ )
+    ( ( image = identifier()              { ret += image; }
+        | image = quotedString()          { ret += image; }
+        | ( "(" | ")" | <DOT> | <COMMA> ) { ret += token.image; } )+ )
     { return ret; }
 }
 
@@ -2474,16 +2474,6 @@ String expression() :
       <EXPRESSION_ML> { exp = token.image.substring(token.image.indexOf("{") + 1,
                                                     token.image.lastIndexOf("}")); } )
     { return exp; }
-}
-
-String identifierWithDash() :
-{
-    String identifier;
-}
-{
-    ( identifier = identifier() { return identifier; } )
-    |
-    ( <IDENTIFIER_WITH_DASH> { return token.image; } )
 }
 
 /**
