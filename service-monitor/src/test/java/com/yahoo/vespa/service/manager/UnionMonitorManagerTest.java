@@ -3,16 +3,14 @@ package com.yahoo.vespa.service.manager;
 
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.health.HealthMonitorManager;
 import com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl;
 import org.junit.Test;
 
-import static com.yahoo.vespa.applicationmodel.ClusterId.NODE_ADMIN;
 import static com.yahoo.vespa.applicationmodel.ServiceStatus.DOWN;
 import static com.yahoo.vespa.applicationmodel.ServiceStatus.NOT_CHECKED;
 import static com.yahoo.vespa.applicationmodel.ServiceStatus.UP;
-import static com.yahoo.vespa.applicationmodel.ServiceType.CONTAINER;
-import static com.yahoo.vespa.service.duper.ZoneApplication.ZONE_APPLICATION_ID;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -38,7 +36,10 @@ public class UnionMonitorManagerTest {
                           ServiceStatus expectedStatus) {
         when(healthMonitorManager.getStatus(any(), any(), any(), any())).thenReturn(healthStatus);
         when(slobrokMonitorManager.getStatus(any(), any(), any(), any())).thenReturn(slobrokStatus);
-        ServiceStatus status = manager.getStatus(ZONE_APPLICATION_ID, NODE_ADMIN, CONTAINER, new ConfigId("config-id"));
+        ServiceStatus status = manager.getStatus(
+                ZoneApplication.getApplicationId(),
+                ZoneApplication.getNodeAdminClusterId(),
+                ZoneApplication.getNodeAdminServiceType(), new ConfigId("config-id"));
         assertSame(expectedStatus, status);
     }
 }

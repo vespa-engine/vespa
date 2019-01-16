@@ -108,8 +108,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
         }
     }
 
-    @Override
-    public boolean wouldMonitor(ApplicationId applicationId) {
+    private boolean wouldMonitor(ApplicationId applicationId) {
         if (duperModel.isSupportedInfraApplication(applicationId)) {
             return false;
         }

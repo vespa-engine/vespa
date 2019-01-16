@@ -131,7 +131,7 @@ public class ApplicationInstanceGenerator {
                 toConfigId(serviceInfo));
     }
 
-    private static ClusterId getClusterId(ServiceInfo serviceInfo) {
+    public static ClusterId getClusterId(ServiceInfo serviceInfo) {
         return new ClusterId(serviceInfo.getProperty(CLUSTER_ID_PROPERTY_NAME).orElse(""));
     }
 
@@ -141,7 +141,7 @@ public class ApplicationInstanceGenerator {
         return new ServiceClusterKey(clusterId, serviceType);
     }
 
-    private static ServiceType toServiceType(ServiceInfo serviceInfo) {
+    public static ServiceType toServiceType(ServiceInfo serviceInfo) {
         return new ServiceType(serviceInfo.getServiceType());
     }
 

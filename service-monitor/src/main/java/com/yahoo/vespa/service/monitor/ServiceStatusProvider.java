@@ -22,7 +22,4 @@ public interface ServiceStatusProvider {
                             ClusterId clusterId,
                             ServiceType serviceType,
                             ConfigId configId);
-
-    /** Returns true if the status provider would start monitoring the application. */
-    boolean wouldMonitor(ApplicationId applicationId);
 }
