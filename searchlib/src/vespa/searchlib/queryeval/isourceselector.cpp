@@ -10,4 +10,12 @@ ISourceSelector::ISourceSelector(Source defaultSource) :
     assert(defaultSource < SOURCE_LIMIT);
 }
 
+void
+ISourceSelector::setDefaultSource(Source source)
+{
+    assert(source < SOURCE_LIMIT);
+    assert(source >= _defaultSource);
+    _defaultSource = source;
+}
+
 }

@@ -66,12 +66,19 @@ FixedSourceSelector::cloneAndSubtract(const vespalib::string & attrBaseFileName,
 }
 
 FixedSourceSelector::UP
-FixedSourceSelector::load(const vespalib::string & baseFileName)
+FixedSourceSelector::load(const vespalib::string & baseFileName, uint32_t currentId)
 {
     LoadInfo::UP info = extractLoadInfo(baseFileName);
     info->load();
+    uint32_t defaultSource = currentId - info->header()._baseId;
+    assert(defaultSource < SOURCE_LIMIT);
+    if (defaultSource != info->header()._defaultSource) {
+        LOG(info, "Default source mismatch: header says %u, should be %u selector %s",
+            (uint32_t) info->header()._defaultSource, defaultSource,
+            baseFileName.c_str());
+    }
     FixedSourceSelector::UP selector(new FixedSourceSelector(
-                                             info->header()._defaultSource,
+                                             defaultSource,
                                              info->header()._baseFileName,
                                              0));
     selector->setBaseId(info->header()._baseId);

@@ -43,9 +43,9 @@ FusionRunner::~FusionRunner() {
 namespace {
 
 void readSelectorArray(const string &selector_name, SelectorArray &selector_array,
-                       const vector<uint8_t> &id_map, uint32_t base_id) {
+                       const vector<uint8_t> &id_map, uint32_t base_id, uint32_t fusion_id) {
     FixedSourceSelector::UP selector =
-        FixedSourceSelector::load(selector_name);
+        FixedSourceSelector::load(selector_name, fusion_id);
     if (base_id != selector->getBaseId()) {
         selector = selector->cloneAndSubtract("tmp_for_fusion", base_id - selector->getBaseId());
     }
@@ -115,7 +115,7 @@ FusionRunner::fuse(const FusionSpec &fusion_spec,
 
     const string selector_name = IndexDiskLayout::getSelectorFileName(_diskLayout.getFlushDir(fusion_id));
     SelectorArray selector_array;
-    readSelectorArray(selector_name, selector_array, id_map, fusion_spec.last_fusion_id);
+    readSelectorArray(selector_name, selector_array, id_map, fusion_spec.last_fusion_id, fusion_id);
 
     if (!operations.runFusion(_schema, fusion_dir, sources, selector_array, lastSerialNum)) {
         return 0;

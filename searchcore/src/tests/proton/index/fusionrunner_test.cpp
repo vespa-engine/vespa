@@ -165,6 +165,7 @@ void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
         _fusion_spec.flush_ids.push_back(id);
     }
     const string index_dir = ost.str();
+    _selector->setDefaultSource(id - _selector->getBaseId());
 
     Schema schema = getSchema();
     DocBuilder doc_builder(schema);

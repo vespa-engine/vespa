@@ -167,7 +167,7 @@ Test::requireThatSelectorCanSaveAndLoad(bool compactLidSpace)
         selector.extractSaveInfo(base_file_name);
     save_info->save(TuneFileAttributes(), DummyFileHeaderContext());
     typename SelectorType::UP
-        selector2(SelectorType::load(base_file_name));
+        selector2(SelectorType::load(base_file_name, default_source + base_id));
     testSourceSelector(docs, arraysize(docs) - compactLidSpace, default_source, *selector2, true);
     EXPECT_EQUAL(base_id, selector2->getBaseId());
     if (compactLidSpace) {
