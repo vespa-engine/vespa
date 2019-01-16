@@ -236,7 +236,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void containerIsUpdatedIfFlavorChanged() {
+    public void containerIsUpdatedIfCpuChanged() {
         NodeSpec.Builder specBuilder = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
@@ -277,9 +277,44 @@ public class NodeAgentImplTest {
         // Set the feature flag
         flagSource.withDoubleFlag(Flags.CONTAINER_CPU_CAP.id(), 2.3);
 
-        nodeAgent.converge(thirdContext);
+        nodeAgent.doConverge(thirdContext);
         inOrder.verify(dockerOperations).updateContainer(eq(thirdContext), eq(ContainerResources.from(9.2, 4, 16)));
         inOrder.verify(orchestrator).resume(any(String.class));
+    }
+
+    @Test
+    public void containerIsRestartedIfMemoryChanged() {
+        NodeSpec.Builder specBuilder = nodeBuilder
+                .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
+                .state(Node.State.active)
+                .wantedVespaVersion(vespaVersion)
+                .vespaVersion(vespaVersion);
+
+        NodeAgentContext firstContext = createContext(specBuilder.build());
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
+
+        when(dockerOperations.pullImageAsyncIfNeeded(any())).thenReturn(true);
+        when(storageMaintainer.getDiskUsageFor(any())).thenReturn(Optional.of(201326592000L));
+
+        nodeAgent.doConverge(firstContext);
+        NodeAgentContext secondContext = createContext(specBuilder.minMainMemoryAvailableGb(20).build());
+        nodeAgent.doConverge(secondContext);
+        ContainerResources resourcesAfterThird = ContainerResources.from(0, 2, 20);
+        mockGetContainer(dockerImage, resourcesAfterThird, true);
+
+        InOrder inOrder = inOrder(orchestrator, dockerOperations);
+        inOrder.verify(orchestrator).resume(any(String.class));
+        inOrder.verify(orchestrator).suspend(any(String.class));
+        inOrder.verify(dockerOperations).removeContainer(eq(secondContext), any());
+        inOrder.verify(dockerOperations, times(1)).createContainer(eq(secondContext), any());
+        inOrder.verify(dockerOperations).startContainer(eq(secondContext));
+        inOrder.verify(dockerOperations, never()).updateContainer(any(), any());
+
+        nodeAgent.doConverge(secondContext);
+        inOrder.verify(orchestrator).resume(any(String.class));
+        inOrder.verify(dockerOperations, never()).updateContainer(any(), any());
+        inOrder.verify(dockerOperations, never()).removeContainer(any(), any());
     }
 
     @Test
