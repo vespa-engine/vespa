@@ -26,7 +26,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author gjoranv
- * @since 5.1.10
  */
 public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
@@ -35,7 +34,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void gui_search_handler_is_always_included_when_search_is_specified() throws Exception{
+    public void gui_search_handler_is_always_included_when_search_is_specified() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <search />",
@@ -61,7 +60,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
 
     @Test
-    public void search_handler_bindings_can_be_overridden() throws Exception {
+    public void search_handler_bindings_can_be_overridden() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <search>",
@@ -80,7 +79,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void search_handler_bindings_can_be_disabled() throws Exception {
+    public void search_handler_bindings_can_be_disabled() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <search>",
@@ -111,7 +110,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(chainsConfig().chains(), hasItemWithMethod("vespa", "id"));
     }
 
-    private void createClusterWithOnlyDefaultChains() throws SAXException, IOException {
+    private void createClusterWithOnlyDefaultChains() {
         Element containerElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <search/>",
@@ -124,7 +123,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void manually_setting_up_search_handler_is_forbidden() throws IOException, SAXException {
+    public void manually_setting_up_search_handler_is_forbidden() {
         try {
             Element clusterElem = DomBuilderTest.parse(
                     "<jdisc id='default' version='1.0'>",
@@ -193,7 +192,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
 
-    private VespaModel getVespaModelWithMusic(String hosts, String services) throws ParseException {
+    private VespaModel getVespaModelWithMusic(String hosts, String services) {
         return new VespaModelCreatorWithMockPkg(hosts, services, ApplicationPackageUtils.generateSearchDefinitions("music")).create();
     }
 
