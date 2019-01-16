@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/fastos/file.h>
 
@@ -28,6 +29,7 @@ const string index_dir = "test_data";
 const string base_file_name = "test_data/sourcelist";
 const string base_file_name2 = "test_data/sourcelist2";
 const uint32_t default_source = 7;
+const uint32_t invalid_source = (uint8_t)search::attribute::getUndefined<int8_t>();
 const uint32_t base_id = 42;
 
 class Test : public vespalib::TestApp
@@ -50,6 +52,7 @@ private:
     void requireThatSourcesAreCountedCorrectly();
     void requireThatSourcesAreCountedCorrectly();
     void requireThatDocIdLimitIsCorrect();
+    void requireThatCorrectDefaultValueIsUsedAfterCompaction();
 };
 
 int
@@ -66,6 +69,7 @@ Test::Main()
     TEST_DO(requireThatCompleteSourceRangeIsHandled());
     TEST_DO(requireThatSourcesAreCountedCorrectly());
     TEST_DO(requireThatDocIdLimitIsCorrect());
+    TEST_DO(requireThatCorrectDefaultValueIsUsedAfterCompaction());
 
     TEST_DONE();
 }
@@ -235,6 +239,27 @@ Test::requireThatDocIdLimitIsCorrect()
     auto selector2 = selector.cloneAndSubtract(base_file_name2, 3);
     EXPECT_EQUAL(7u, selector2->getDocIdLimit());
 }
+
+void
+Test::requireThatCorrectDefaultValueIsUsedAfterCompaction()
+{
+    FixedSourceSelector selector(default_source, base_file_name);
+    EXPECT_EQUAL(0u, selector.getDocIdLimit());
+    auto it(selector.createIterator());
+    selector.setSource(8, 4);
+    EXPECT_EQUAL(default_source, (uint32_t) it->getSource(9));
+    EXPECT_EQUAL(default_source, (uint32_t) it->getSource(6));
+    selector.compactLidSpace(4);
+    EXPECT_EQUAL(4u, selector.getDocIdLimit());
+    EXPECT_EQUAL(default_source, (uint32_t) it->getSource(4));
+    EXPECT_EQUAL(invalid_source, (uint32_t) it->getSource(5)); // beyond guard
+    selector.setSource(6, 4);
+    EXPECT_EQUAL(7u, selector.getDocIdLimit());
+    EXPECT_EQUAL(default_source, (uint32_t) it->getSource(5));
+    EXPECT_EQUAL(4u, (uint8_t) it->getSource(6));
+    EXPECT_EQUAL(default_source, (uint32_t) it->getSource(7));
+}
+
 
 }  // namespace
 

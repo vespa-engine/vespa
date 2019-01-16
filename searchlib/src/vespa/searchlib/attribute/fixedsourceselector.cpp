@@ -70,9 +70,9 @@ void FixedSourceSelector::reserve(uint32_t numDocs)
     if (newMaxDocIdPlussOne > maxDoc) {
         uint32_t newDocId(0);
         for (_source.addDoc(newDocId); newDocId < numDocs; _source.addDoc(newDocId));
-        for (uint32_t i = maxDoc; i < newMaxDocIdPlussOne; ++i) {
-            _source.set(i, getDefaultSource());
-        }
+    }
+    for (uint32_t i = _source.getCommittedDocIdLimit(); i < newMaxDocIdPlussOne; ++i) {
+        _source.set(i, getDefaultSource());
     }
 }
 
