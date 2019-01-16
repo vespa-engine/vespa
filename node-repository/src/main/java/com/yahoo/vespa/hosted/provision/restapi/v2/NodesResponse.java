@@ -168,6 +168,9 @@ class NodesResponse extends HttpResponse {
         object.setLong("currentRebootGeneration", node.status().reboot().current());
         node.status().osVersion().ifPresent(version -> object.setString("currentOsVersion", version.toFullString()));
         nodeRepository.osVersions().targetFor(node.type()).ifPresent(version -> object.setString("wantedOsVersion", version.toFullString()));
+        node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong("currentFirmwareCheck", instant.toEpochMilli()));
+        if (node.type().isDockerHost())
+            nodeRepository.firmwareChecks().requiredAfter().ifPresent(after -> object.setLong("wantedFirmwareCheck", after.toEpochMilli()));
         node.status().vespaVersion()
                 .filter(version -> !version.isEmpty())
                 .ifPresent(version -> {

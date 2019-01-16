@@ -37,6 +37,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -170,6 +171,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.matches("/nodes/v2/maintenance/inactive/{job}")) return setJobActive(path.get("job"), false);
         if (path.matches("/nodes/v2/flags/{flag}")) return setFlag(path.get("flag"), true, "", "");
         if (path.matches("/nodes/v2/flags/{flag}/{dimension}/{value}")) return setFlag(path.get("flag"), true, path.get("dimension"), path.get("value"));
+        if (path.matches("/nodes/v2/upgrade/firmware")) return requestFirmwareCheckResponse();
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
     }
@@ -184,6 +186,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.matches("/nodes/v2/maintenance/inactive/{job}")) return setJobActive(path.get("job"), true);
         if (path.matches("/nodes/v2/flags/{flag}")) return setFlag(path.get("flag"), false, "", "");
         if (path.matches("/nodes/v2/flags/{flag}/{dimension}/{value}")) return setFlag(path.get("flag"), false, path.get("dimension"), path.get("value"));
+        if (path.matches("/nodes/v2/upgrade/firmware")) return cancelFirmwareCheckResponse();
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
     }
@@ -299,7 +302,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private MessageResponse setTargetVersions(HttpRequest request) {
         NodeType nodeType = NodeType.valueOf(lastElement(request.getUri().getPath()).toLowerCase());
         Inspector inspector = toSlime(request.getData()).get();
-        List<String> messageParts = new ArrayList<>(2);
+        List<String> messageParts = new ArrayList<>(3);
 
         boolean force = inspector.field("force").asBool();
         Inspector versionField = inspector.field("version");
@@ -329,6 +332,16 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
         return new MessageResponse("Set " + String.join(", ", messageParts) +
                                    " for nodes of type " + nodeType);
+    }
+
+    private MessageResponse cancelFirmwareCheckResponse() {
+        nodeRepository.firmwareChecks().cancel();
+        return new MessageResponse("Cancelled outstanding requests for firmware checks");
+    }
+
+    private MessageResponse requestFirmwareCheckResponse() {
+        nodeRepository.firmwareChecks().request();
+        return new MessageResponse("Will request firmware checks on all hosts.");
     }
 
     private static String hostnamesAsString(List<Node> nodes) {

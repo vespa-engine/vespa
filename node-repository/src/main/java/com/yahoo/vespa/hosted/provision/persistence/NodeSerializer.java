@@ -61,6 +61,7 @@ public class NodeSerializer {
     private static final String wantToDeprovisionKey = "wantToDeprovision";
     private static final String hardwareDivergenceKey = "hardwareDivergence";
     private static final String osVersionKey = "osVersion";
+    private static final String firmwareCheckKey = "firmwareCheck";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -118,6 +119,7 @@ public class NodeSerializer {
         node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString(hardwareDivergenceKey,
                                                                                             hardwareDivergence));
         node.status().osVersion().ifPresent(version -> object.setString(osVersionKey, version.toString()));
+        node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
     }
 
     private void toSlime(Allocation allocation, Cursor object) {
@@ -175,7 +177,8 @@ public class NodeSerializer {
                           object.field(wantToRetireKey).asBool(),
                           object.field(wantToDeprovisionKey).asBool(),
                           removeQuotedNulls(hardwareDivergenceFromSlime(object)),
-                          versionFromSlime(object.field(osVersionKey)));
+                          versionFromSlime(object.field(osVersionKey)),
+                          instantFromSlime(object.field(firmwareCheckKey)));
     }
 
     private Flavor flavorFromSlime(Inspector object) {
@@ -227,6 +230,12 @@ public class NodeSerializer {
     private Optional<Version> versionFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(Version.fromString(object.asString()));
+    }
+
+    private Optional<Instant> instantFromSlime(Inspector object) {
+        if ( ! object.valid())
+            return Optional.empty();
+        return Optional.of(Instant.ofEpochMilli(object.asLong()));
     }
 
     private Optional<String> parentHostnameFromSlime(Inspector object) {

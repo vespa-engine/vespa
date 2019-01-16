@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
@@ -308,6 +309,16 @@ public class SerializationTest {
                                                .withOsVersion(Version.fromString("7.1")));
         serialized = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(serialized));
         assertEquals(Version.fromString("7.1"), serialized.status().osVersion().get());
+    }
+
+    @Test
+    public void firmware_check_serialization() {
+        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        assertFalse(node.status().firmwareVerifiedAt().isPresent());
+
+        node = node.with(node.status().withFirmwareVerifiedAt(Instant.ofEpochMilli(100)));
+        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+        assertEquals(100, node.status().firmwareVerifiedAt().get().toEpochMilli());
     }
 
     @Test
