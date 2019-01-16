@@ -47,11 +47,6 @@ class ApplicationHealthMonitor implements ServiceStatusProvider, AutoCloseable {
     }
 
     @Override
-    public boolean wouldMonitor(ApplicationId applicationId) {
-        return true;
-    }
-
-    @Override
     public ServiceStatus getStatus(ApplicationId applicationId,
                                    ClusterId clusterId,
                                    ServiceType serviceType,

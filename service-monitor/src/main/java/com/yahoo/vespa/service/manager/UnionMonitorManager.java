@@ -38,11 +38,6 @@ public class UnionMonitorManager implements MonitorManager {
     }
 
     @Override
-    public boolean wouldMonitor(ApplicationId id) {
-        return healthMonitorManager.wouldMonitor(id) || slobrokMonitorManager.wouldMonitor(id);
-    }
-
-    @Override
     public void applicationActivated(ApplicationInfo application) {
         slobrokMonitorManager.applicationActivated(application);
         healthMonitorManager.applicationActivated(application);

@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.executor.RunletExecutor;
 import com.yahoo.vespa.service.model.ApplicationInstanceGenerator;
 import com.yahoo.vespa.service.model.ServiceId;
@@ -29,23 +30,36 @@ public class StateV1HealthModel implements AutoCloseable {
     private final Duration requestTimeout;
     private final Duration connectionKeepAlive;
     private final RunletExecutor executor;
+    private final boolean monitorTenantHostHealth;
 
     StateV1HealthModel(Duration targetHealthStaleness,
                        Duration requestTimeout,
                        Duration connectionKeepAlive,
-                       RunletExecutor executor) {
+                       RunletExecutor executor,
+                       boolean monitorTenantHostHealth) {
         this.targetHealthStaleness = targetHealthStaleness;
         this.requestTimeout = requestTimeout;
         this.connectionKeepAlive = connectionKeepAlive;
         this.executor = executor;
+        this.monitorTenantHostHealth = monitorTenantHostHealth;
     }
 
     Map<ServiceId, HealthEndpoint> extractHealthEndpoints(ApplicationInfo application) {
         Map<ServiceId, HealthEndpoint> endpoints = new HashMap<>();
 
+        boolean isZoneApplication = application.getApplicationId().equals(ZoneApplication.getApplicationId());
+
         for (HostInfo hostInfo : application.getModel().getHosts()) {
             HostName hostname = HostName.from(hostInfo.getHostname());
             for (ServiceInfo serviceInfo : hostInfo.getServices()) {
+
+                if (monitorTenantHostHealth && isZoneApplication &&
+                        !ZoneApplication.isNodeAdminServiceInfo(application.getApplicationId(), serviceInfo)) {
+                    // Only the node admin/host admin cluster of the zone application should be monitored
+                    // TODO: Move the node admin cluster out to a separate infrastructure application
+                    continue;
+                }
+
                 ServiceId serviceId = ApplicationInstanceGenerator.getServiceId(application, serviceInfo);
                 for (PortInfo portInfo : serviceInfo.getPorts()) {
                     if (portInfo.getTags().containsAll(HTTP_HEALTH_PORT_TAGS)) {
