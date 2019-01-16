@@ -28,8 +28,9 @@ final public class Document {
         this.data = ByteBuffer.wrap(data);
     }
 
-    public Document(String documentId, CharSequence data, Object context) {
+    public Document(String documentId, String operationId, CharSequence data, Object context) {
         this.documentId = documentId;
+        this.operationId = operationId;
         this.context = context;
         try {
             this.data = StandardCharsets.UTF_8.newEncoder().encode(CharBuffer.wrap(data));

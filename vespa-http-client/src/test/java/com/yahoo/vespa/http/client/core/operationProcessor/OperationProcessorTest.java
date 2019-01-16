@@ -27,16 +27,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.20
+ * @author Einar M R Rosenvinge
  */
 public class OperationProcessorTest {
 
     final Queue<Result> queue = new ArrayDeque<>();
-    final Document doc1 = new Document("doc:a:b", "data doc 1", null /* context */);
-    final Document doc1b = new Document("doc:a:b", "data doc 1b", null /* context */);
-    final Document doc2 = new Document("doc:a:b2", "data doc 2", null /* context */);
-    final Document doc3 = new Document("doc:a:b3", "data doc 3", null /* context */);
+    final Document doc1 = new Document("doc:a:b", null, "data doc 1", null);
+    final Document doc1b = new Document("doc:a:b", null, "data doc 1b", null);
+    final Document doc2 = new Document("doc:a:b2", null, "data doc 2", null);
+    final Document doc3 = new Document("doc:a:b3", null, "data doc 3", null);
 
     @Test
     public void testBasic() {
@@ -204,7 +203,7 @@ public class OperationProcessorTest {
 
         Queue<Document> documentQueue = new ArrayDeque<>();
         for (int x = 0; x < 100; x++) {
-            Document document = new Document("doc:a:b", String.valueOf(x), null /* context */);
+            Document document = new Document("doc:a:b", null, String.valueOf(x), null);
             operationProcessor.sendDocument(document);
             documentQueue.add(document);
         }

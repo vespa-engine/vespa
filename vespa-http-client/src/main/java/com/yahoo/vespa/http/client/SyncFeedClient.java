@@ -3,12 +3,14 @@ package com.yahoo.vespa.http.client;
 import com.google.common.annotations.Beta;
 import com.yahoo.vespa.http.client.config.SessionParams;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A utility wrapper of a FeedClient which feeds a list of documents and blocks until all responses are returned,
@@ -41,7 +43,7 @@ public class SyncFeedClient implements AutoCloseable {
     public SyncResult stream(List<SyncOperation> operations) {
         callback.expectResultsOf(operations);
         for (SyncOperation operation : operations)
-            wrappedClient.stream(operation.documentId, operation.documentData, operation.context);
+            wrappedClient.stream(operation.documentId, operation.operationId, operation.documentData, operation.context);
         return callback.waitForResults();
     }
 
@@ -57,6 +59,9 @@ public class SyncFeedClient implements AutoCloseable {
         private final CharSequence documentData;
         private final Object context;
 
+        /** Operation id passed on to the Document created from this */
+        private final String operationId;
+
         public SyncOperation(String documentId, CharSequence documentData) {
             this(documentId, documentData, null);
         }
@@ -65,6 +70,7 @@ public class SyncFeedClient implements AutoCloseable {
             this.documentId = Objects.requireNonNull(documentId, "documentId");
             this.documentData = Objects.requireNonNull(documentData, "documentData");
             this.context = context;
+            this.operationId = new BigInteger(64, ThreadLocalRandom.current()).toString(32);
         }
 
     }
@@ -113,10 +119,27 @@ public class SyncFeedClient implements AutoCloseable {
         private Exception exception = null;
 
         /**
-         * A map from document ids to their results. This is initially populated with null values to keep track of
+         * A map from operation ids to their results. This is initially populated with null values to keep track of
          * which responses we are waiting for.
          */
         private LinkedHashMap<String, Result> results = null;
+
+        void resetExpectedResults() {
+            synchronized (monitor) {
+                if (results != null)
+                    throw new ConcurrentModificationException("A SyncFeedClient instance is used by multiple threads");
+
+                resultsReceived = 0;
+                exception = null;
+                results = new LinkedHashMap<>();
+            }
+        }
+
+        void addExpectationOfResultFor(String operationId) {
+            synchronized (monitor) {
+                results.put(operationId, null);
+            }
+        }
 
         void expectResultsOf(List<SyncOperation> operations) {
             synchronized (monitor) {
@@ -127,10 +150,9 @@ public class SyncFeedClient implements AutoCloseable {
                 exception = null;
                 results = new LinkedHashMap<>(operations.size());
                 for (SyncOperation operation : operations)
-                    results.put(operation.documentId, null);
+                    results.put(operation.operationId, null);
             }
         }
-
         SyncResult waitForResults() {
             try {
                 synchronized (monitor) {
@@ -150,9 +172,9 @@ public class SyncFeedClient implements AutoCloseable {
         @Override
         public void onCompletion(String docId, Result documentResult) {
             synchronized (monitor) {
-                if ( ! results.containsKey(docId)) return; // Not expecting this result - ignore
+                if ( ! results.containsKey(documentResult.getOperationId())) return; // Stale result - ignore
 
-                Result previousValue = results.put(docId, documentResult);
+                Result previousValue = results.put(documentResult.getOperationId(), documentResult);
                 if (previousValue != null)
                     throw new IllegalStateException("Received duplicate result for " + docId);
 

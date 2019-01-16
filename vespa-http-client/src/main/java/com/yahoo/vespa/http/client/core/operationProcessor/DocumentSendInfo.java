@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * Keeps an overview of what is sent and what is received for an operation.
- * This class is NOT thread-safe by design.
+ * This class is NOT thread-safe.
  */
 class DocumentSendInfo {
 

@@ -10,11 +10,12 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 public class DocumentTest {
+
     @Test
-    public void simpleCaseOk() throws Document.DocumentException {
+    public void simpleCaseOk() {
         String docId = "doc id";
         String docContent = "foo";
-        Document document = new Document(docId, docContent.getBytes(), null /* context */);
+        Document document = new Document(docId, docContent.getBytes(), null);
         assertThat(document.getDocumentId(), is(docId));
         assertThat(document.getData(), is(ByteBuffer.wrap(docContent.getBytes())));
         assertThat(document.getDataAsString().toString(), is(docContent));
@@ -26,13 +27,14 @@ public class DocumentTest {
 
     @Test(expected = ReadOnlyBufferException.class)
     public void notMutablePutTest() {
-        Document document = new Document("id", "data", null /* context */);
+        Document document = new Document("id", null, "data", null /* context */);
         document.getData().put("a".getBytes());
     }
 
     @Test(expected = ReadOnlyBufferException.class)
     public void notMutableCompactTest() {
-        Document document = new Document("id", "data", null /* context */);
+        Document document = new Document("id", null, "data", null /* context */);
         document.getData().compact();
     }
+
 }

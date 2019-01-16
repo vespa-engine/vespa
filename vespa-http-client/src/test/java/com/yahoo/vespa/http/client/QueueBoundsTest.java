@@ -30,12 +30,13 @@ import static org.junit.Assert.fail;
 
 /**
  * Only runs on screwdriver to save time!
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.29
+ *
+ * @author Einar M R Rosenvinge
  */
 public class QueueBoundsTest extends TestOnCiBuildingSystemOnly {
 
     public static final List<TestDocument> documents;
+
     static {
         List<TestDocument> docs = new ArrayList<>();
         docs.add(new TestDocument("id:music:music::http://music.yahoo.com/bobdylan/BestOf",
