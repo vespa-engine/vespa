@@ -118,7 +118,7 @@ FastS_FNET_DataSet::isGoodRow(uint32_t rowId)
         isBad = true;
         if (!wasBad) {
             _failedRowsBitmask |= rowBit;
-            LOG(warning, "Not enough active docs in row %d (only %lu docs, average is %g)",
+            LOG(warning, "Not enough active docs in group %d (only %lu docs, average is %g)",
                 rowId, candDocs, restAvg);
         }
     }
@@ -131,13 +131,13 @@ FastS_FNET_DataSet::isGoodRow(uint32_t rowId)
         isBad = true;
         if (!wasBad) {
             _failedRowsBitmask |= rowBit;
-            LOG(warning, "Coverage of row %d is only %ld/%ld (requires %ld)",
+            LOG(warning, "Coverage of group %d is only %ld/%ld (requires %ld)",
                 rowId, nodesUp, configuredParts, configuredParts-nodesAllowedDown);
         }
     }
     if (wasBad && !isBad) {
         _failedRowsBitmask &= ~rowBit;
-        LOG(info, "Row %d is now good again (%lu/%g active docs, coverage %ld/%ld)",
+        LOG(info, "Group %d is now good again (%lu/%g active docs, coverage %ld/%ld)",
             rowId, candDocs, restAvg, nodesUp, configuredParts);
     }
     return !isBad;
