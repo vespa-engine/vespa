@@ -41,6 +41,8 @@ public class TransportMetrics {
         return clientUnencryptedConnectionsEstablished.get();
     }
 
+    public Snapshot snapshot() { return new Snapshot(this); }
+
     void incrementTlsCertificateVerificationFailures() {
         tlsCertificateVerificationFailures.incrementAndGet();
     }
@@ -75,5 +77,38 @@ public class TransportMetrics {
                 ", serverUnencryptedConnectionsEstablished=" + serverUnencryptedConnectionsEstablished +
                 ", clientUnencryptedConnectionsEstablished=" + clientUnencryptedConnectionsEstablished +
                 '}';
+    }
+
+    public static class Snapshot {
+        private final long tlsCertificateVerificationFailures, peerAuthorizationFailures, serverTlsConnectionsEstablished,
+                clientTlsConnectionsEstablished, serverUnencryptedConnectionsEstablished, clientUnencryptedConnectionsEstablished;
+
+        private Snapshot(TransportMetrics metrics) {
+            tlsCertificateVerificationFailures = metrics.tlsCertificateVerificationFailures.get();
+            peerAuthorizationFailures = metrics.peerAuthorizationFailures.get();
+            serverTlsConnectionsEstablished = metrics.serverTlsConnectionsEstablished.get();
+            clientTlsConnectionsEstablished = metrics.clientTlsConnectionsEstablished.get();
+            serverUnencryptedConnectionsEstablished = metrics.serverUnencryptedConnectionsEstablished.get();
+            clientUnencryptedConnectionsEstablished = metrics.clientUnencryptedConnectionsEstablished.get();
+        }
+
+        public long tlsCertificateVerificationFailures() { return tlsCertificateVerificationFailures; }
+        public long peerAuthorizationFailures() { return peerAuthorizationFailures; }
+        public long serverTlsConnectionsEstablished() { return serverTlsConnectionsEstablished; }
+        public long clientTlsConnectionsEstablished() { return clientTlsConnectionsEstablished; }
+        public long serverUnencryptedConnectionsEstablished() { return serverUnencryptedConnectionsEstablished; }
+        public long clientUnencryptedConnectionsEstablished() { return clientUnencryptedConnectionsEstablished; }
+
+        @Override
+        public String toString() {
+            return "Snapshot{" +
+                    "tlsCertificateVerificationFailures=" + tlsCertificateVerificationFailures +
+                    ", peerAuthorizationFailures=" + peerAuthorizationFailures +
+                    ", serverTlsConnectionsEstablished=" + serverTlsConnectionsEstablished +
+                    ", clientTlsConnectionsEstablished=" + clientTlsConnectionsEstablished +
+                    ", serverUnencryptedConnectionsEstablished=" + serverUnencryptedConnectionsEstablished +
+                    ", clientUnencryptedConnectionsEstablished=" + clientUnencryptedConnectionsEstablished +
+                    '}';
+        }
     }
 }
