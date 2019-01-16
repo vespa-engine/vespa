@@ -150,6 +150,7 @@ public class VespaModelFactoryTest {
     }
 
     private ModelContext createMockModelContext(String hosts, String services, HostProvisioner provisionerToOverride) {
+
         return new MockModelContext() {
             @Override
             public ApplicationPackage applicationPackage() {
@@ -219,6 +220,11 @@ public class VespaModelFactoryTest {
 
                     @Override
                     public boolean useDedicatedNodeForLogserver() { return false; }
+
+                    @Override
+                    public boolean enableLogServer() {
+                        return false;
+                    }
                 };
             }
         };

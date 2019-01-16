@@ -47,6 +47,7 @@ import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.hamcrest.core.Is;
 import org.junit.Before;
@@ -80,6 +81,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     private static final TenantName tenantName = TenantName.from("activatetest");
     private static final String activatedMessage = " for tenant '" + tenantName + "' activated.";
 
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final Clock clock = Clock.systemUTC();
     private Curator curator;
     private RemoteSessionRepo remoteSessionRepo;
@@ -231,7 +233,8 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
         localRepo.addSession(new LocalSession(tenantName, sessionId, new SessionTest.MockSessionPreparer(),
                                               new SessionContext(app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),
-                                                                 applicationRepo, new HostRegistry<>(), new SuperModelGenerationCounter(curator))));
+                                                                 applicationRepo, new HostRegistry<>(), new SuperModelGenerationCounter(curator),
+                                                                 flagSource)));
     }
 
     private ActivateRequest activateAndAssertOKPut(long sessionId, long previousSessionId, String subPath) throws Exception {

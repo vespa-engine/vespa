@@ -2,10 +2,11 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.vespa.config.server.host.HostValidator;
-import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.host.HostValidator;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.io.File;
 
@@ -22,16 +23,19 @@ public class SessionContext {
     private final TenantApplications applicationRepo;
     private final HostValidator<ApplicationId> hostRegistry;
     private final SuperModelGenerationCounter superModelGenerationCounter;
+    private final FlagSource flagSource;
 
     public SessionContext(ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient,
                           File serverDBSessionDir, TenantApplications applicationRepo,
-                          HostValidator<ApplicationId> hostRegistry, SuperModelGenerationCounter superModelGenerationCounter) {
+                          HostValidator<ApplicationId> hostRegistry, SuperModelGenerationCounter superModelGenerationCounter,
+                          FlagSource flagSource) {
         this.applicationPackage = applicationPackage;
         this.sessionZooKeeperClient = sessionZooKeeperClient;
         this.serverDBSessionDir = serverDBSessionDir;
         this.applicationRepo = applicationRepo;
         this.hostRegistry = hostRegistry;
         this.superModelGenerationCounter = superModelGenerationCounter;
+        this.flagSource = flagSource;
     }
 
     public ApplicationPackage getApplicationPackage() {
@@ -56,4 +60,7 @@ public class SessionContext {
         return superModelGenerationCounter;
     }
 
+    public FlagSource getFlagSource() {
+        return flagSource;
+    }
 }

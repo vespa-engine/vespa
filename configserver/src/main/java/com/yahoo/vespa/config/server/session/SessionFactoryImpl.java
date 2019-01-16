@@ -18,6 +18,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.io.File;
 import java.time.Clock;
@@ -50,6 +51,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     private final String serverId;
     private final Optional<NodeFlavors> nodeFlavors;
     private final Clock clock;
+    private final FlagSource flagSource;
 
     public SessionFactoryImpl(GlobalComponentRegistry globalComponentRegistry,
                               TenantApplications applicationRepo,
@@ -69,6 +71,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         this.serverId = globalComponentRegistry.getConfigserverConfig().serverId();
         this.nodeFlavors = globalComponentRegistry.getZone().nodeFlavors();
         this.clock = globalComponentRegistry.getClock();
+        this.flagSource = globalComponentRegistry.getFlagSource();
     }
 
     /** Create a session for a true application package change */
@@ -110,7 +113,8 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Creating upload waiter for session " + sessionId);
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
         log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Done creating upload waiter for session " + sessionId);
-        LocalSession session = new LocalSession(tenant, sessionId, sessionPreparer, new SessionContext(applicationPackage, sessionZKClient, getSessionAppDir(sessionId), applicationRepo, hostRegistry, superModelGenerationCounter));
+        SessionContext context = new SessionContext(applicationPackage, sessionZKClient, getSessionAppDir(sessionId), applicationRepo, hostRegistry, superModelGenerationCounter, flagSource);
+        LocalSession session = new LocalSession(tenant, sessionId, sessionPreparer, context);
         log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Waiting on upload waiter for session " + sessionId);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
         log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Done waiting on upload waiter for session " + sessionId);
@@ -179,7 +183,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                                             serverId,
                                                                             nodeFlavors);
         SessionContext context = new SessionContext(applicationPackage, sessionZKClient, sessionDir, applicationRepo, 
-                                                    hostRegistry, superModelGenerationCounter);
+                                                    hostRegistry, superModelGenerationCounter, flagSource);
         return new LocalSession(tenant, sessionId, sessionPreparer, context);
     }
 

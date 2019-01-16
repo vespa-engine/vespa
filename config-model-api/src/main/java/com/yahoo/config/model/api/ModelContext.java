@@ -52,6 +52,7 @@ public interface ModelContext {
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
         boolean useDedicatedNodeForLogserver();
+        boolean enableLogServer();
     }
 
 }

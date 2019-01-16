@@ -33,6 +33,7 @@ import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -66,6 +67,7 @@ public class SessionPreparerTest {
     private static final Version version321 = new Version(3, 2, 1);
     private static final Version version323 = new Version(3, 2, 3);
 
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private MockCurator curator;
     private ConfigCurator configCurator;
     private SessionPreparer preparer;
@@ -105,7 +107,8 @@ public class SessionPreparerTest {
                 componentRegistry.getConfigserverConfig(),
                 componentRegistry.getStaticConfigDefinitionRepo(),
                 curator,
-                componentRegistry.getZone());
+                componentRegistry.getZone(),
+                flagSource);
     }
 
     @Test(expected = InvalidApplicationException.class)
@@ -236,7 +239,8 @@ public class SessionPreparerTest {
                                   new SessionZooKeeperClient(curator, sessionsPath),
                                   app.getAppDir(),
                                   new MemoryTenantApplications(), new HostRegistry<>(),
-                                  new SuperModelGenerationCounter(curator));
+                                  new SuperModelGenerationCounter(curator),
+                                  flagSource);
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {

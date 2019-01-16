@@ -7,28 +7,40 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.io.IOUtils;
-import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.transaction.Transaction;
-import com.yahoo.log.LogLevel;
-import com.yahoo.path.Path;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.io.IOUtils;
+import com.yahoo.log.LogLevel;
+import com.yahoo.path.Path;
+import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.host.HostRegistry;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
-import com.yahoo.vespa.config.server.session.*;
+import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.session.DummyTransaction;
+import com.yahoo.vespa.config.server.session.LocalSession;
+import com.yahoo.vespa.config.server.session.MockSessionZKClient;
+import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.session.SessionContext;
+import com.yahoo.vespa.config.server.session.SessionFactory;
+import com.yahoo.vespa.config.server.session.SessionPreparer;
+import com.yahoo.vespa.config.server.session.SessionTest;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -73,6 +85,7 @@ public class SessionHandlerTest {
 
     public static class MockSession extends LocalSession {
 
+        private final InMemoryFlagSource flagSource;
         public boolean doVerboseLogging = false;
         public Session.Status status;
         private final SessionPreparer preparer;
@@ -82,9 +95,14 @@ public class SessionHandlerTest {
         private ApplicationId applicationId;
 
         public MockSession(long id, ApplicationPackage app) {
-            super(TenantName.defaultName(), id, null, new SessionContext(null, new MockSessionZKClient(MockApplicationPackage.createEmpty()), null, null, new HostRegistry<>(), null));
+            this(id, app, new InMemoryFlagSource());
+        }
+
+        private MockSession(long id, ApplicationPackage app, InMemoryFlagSource flagSource) {
+            super(TenantName.defaultName(), id, null, new SessionContext(null, new MockSessionZKClient(MockApplicationPackage.createEmpty()), null, null, new HostRegistry<>(), null, flagSource));
             this.app = app;
             this.preparer = new SessionTest.MockSessionPreparer();
+            this.flagSource = flagSource;
         }
 
         public MockSession(long sessionId, ApplicationPackage applicationPackage, long createTime) {

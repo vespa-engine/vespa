@@ -21,7 +21,7 @@ public class SessionTest {
         public boolean isPrepared = false;
 
         public MockSessionPreparer() {
-            super(null, null, null, null, null, null, new MockCurator(), null);
+            super(null, null, null, null, null, null, new MockCurator(), null, null);
         }
 
         @Override

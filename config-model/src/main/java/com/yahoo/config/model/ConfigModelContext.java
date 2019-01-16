@@ -26,7 +26,8 @@ public final class ConfigModelContext {
 
     private ConfigModelContext(ApplicationType applicationType,
                                DeployState deployState,
-                               VespaModel vespaModel, ConfigModelRepoAdder configModelRepoAdder,
+                               VespaModel vespaModel,
+                               ConfigModelRepoAdder configModelRepoAdder,
                                AbstractConfigProducer parent,
                                String producerId) {
         this.applicationType = applicationType;

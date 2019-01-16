@@ -14,6 +14,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 
 import java.io.File;
 import java.net.URI;
@@ -126,8 +129,10 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
         private final boolean useDedicatedNodeForLogserver;
+        private final boolean enableLogServer;
 
         public Properties(ApplicationId applicationId,
+                          FlagSource flagSource,
                           boolean multitenant,
                           List<ConfigServerSpec> configServerSpecs,
                           HostName loadBalancerName,
@@ -151,6 +156,10 @@ public class ModelContextImpl implements ModelContext {
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
             this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
+            this.enableLogServer = Flags.ENABLE_LOGSERVER
+                    .bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
+                    .value();
         }
 
         @Override
@@ -192,6 +201,11 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
+
+        @Override
+        public boolean enableLogServer() {
+            return enableLogServer;
+        }
     }
 
 }

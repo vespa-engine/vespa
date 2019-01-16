@@ -120,6 +120,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
 
     private ModelContext.Properties createModelContextProperties(ApplicationId applicationId) {
         return new ModelContextImpl.Properties(applicationId,
+                                               flagSource,
                                                configserverConfig.multitenant(),
                                                ConfigServerSpec.fromConfig(configserverConfig),
                                                HostName.from(configserverConfig.loadBalancerAddress()),

@@ -23,6 +23,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,6 +39,7 @@ import static org.junit.Assert.*;
  */
 public class LocalSessionTest {
 
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private Path tenantPath = Path.createRoot();
     private Curator curator;
     private ConfigCurator configCurator;
@@ -173,7 +175,15 @@ public class LocalSessionTest {
         zkClient.write(Collections.singletonMap(new Version(0, 0, 0), new MockFileRegistry()));
         File sessionDir = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
         sessionDir.createNewFile();
-        return new LocalSession(tenant, sessionId, preparer, new SessionContext(FilesApplicationPackage.fromFile(testApp), zkc, sessionDir, new MemoryTenantApplications(), new HostRegistry<>(), superModelGenerationCounter));
+        return new LocalSession(tenant, sessionId, preparer,
+                new SessionContext(
+                        FilesApplicationPackage.fromFile(testApp),
+                        zkc,
+                        sessionDir,
+                        new MemoryTenantApplications(),
+                        new HostRegistry<>(),
+                        superModelGenerationCounter,
+                        flagSource));
     }
 
     private void doPrepare(LocalSession session, Instant now) {

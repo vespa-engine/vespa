@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -43,6 +44,7 @@ public class ModelContextImplTest {
                 Optional.empty(),
                 new ModelContextImpl.Properties(
                         ApplicationId.defaultId(),
+                        new InMemoryFlagSource(),
                         true,
                         Collections.emptyList(),
                         null,

@@ -23,6 +23,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.flags.FileFlagSource;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 
 import java.time.Clock;
@@ -154,7 +155,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionFactory,
                                                                   hostProvisionerProvider, permApp,
                                                                   configserverConfig, defRepo, curator,
-                                                                  zone);
+                                                                  zone, new InMemoryFlagSource());
             return new TestComponentRegistry(curator, ConfigCurator.create(curator), metrics, modelFactoryRegistry,
                                              permApp, fileDistributionFactory, hostRegistries, configserverConfig,
                                              sessionPreparer, hostProvisioner, defRepo, reloadListener, tenantListener,

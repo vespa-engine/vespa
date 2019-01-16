@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.component.Version;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -25,6 +26,8 @@ public class DeployProperties {
     private final String athenzDnsSuffix;
     private final boolean hostedVespa;
     private final Version vespaVersion;
+    private final boolean enableLogServer;
+    private final ModelContext.Properties modelContextProperties;
     private final boolean isBootstrap;
     private final boolean isFirstTimeDeployment;
     private final boolean useDedicatedNodeForLogserver;
@@ -40,11 +43,15 @@ public class DeployProperties {
                              Version vespaVersion,
                              boolean isBootstrap,
                              boolean isFirstTimeDeployment,
-                             boolean useDedicatedNodeForLogserver) {
+                             boolean useDedicatedNodeForLogserver,
+                             boolean enableLogServer,
+                             ModelContext.Properties modelContextProperties) {
         this.loadBalancerName = loadBalancerName;
         this.ztsUrl = ztsUrl;
         this.athenzDnsSuffix = athenzDnsSuffix;
         this.vespaVersion = vespaVersion;
+        this.enableLogServer = enableLogServer;
+        this.modelContextProperties = modelContextProperties;
         this.multitenant = multitenant || hostedVespa || Boolean.getBoolean("multitenant");
         this.applicationId = applicationId;
         this.serverSpecs.addAll(configServerSpecs);
@@ -95,6 +102,10 @@ public class DeployProperties {
 
     public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
 
+    public boolean enableLogServer() { return enableLogServer; }
+
+    public ModelContext.Properties getModelContextProperties() { return modelContextProperties; }
+
     public static class Builder {
 
         private ApplicationId applicationId = ApplicationId.defaultId();
@@ -108,6 +119,8 @@ public class DeployProperties {
         private boolean isBootstrap = false;
         private boolean isFirstTimeDeployment = false;
         private boolean useDedicatedNodeForLogserver = false;
+        private boolean enableLogServer;
+        private ModelContext.Properties properties;
 
         public Builder applicationId(ApplicationId applicationId) {
             this.applicationId = applicationId;
@@ -164,10 +177,20 @@ public class DeployProperties {
             return this;
         }
 
+        public Builder enableLogServer(boolean enableLogServer) {
+            this.enableLogServer = enableLogServer;
+            return this;
+        }
+
+        public Builder modelContextProperties(ModelContext.Properties properties) {
+            this.properties = properties;
+            return this;
+        }
+
         public DeployProperties build() {
             return new DeployProperties(multitenant, applicationId, configServerSpecs, loadBalancerName, hostedVespa,
                                         ztsUrl, athenzDnsSuffix, vespaVersion, isBootstrap, isFirstTimeDeployment,
-                                        useDedicatedNodeForLogserver);
+                                        useDedicatedNodeForLogserver, enableLogServer, properties);
         }
     }
 

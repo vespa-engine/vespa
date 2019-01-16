@@ -136,6 +136,11 @@ public class MockModelContext implements ModelContext {
 
             @Override
             public boolean useDedicatedNodeForLogserver() { return false; }
+
+            @Override
+            public boolean enableLogServer() {
+                return false;
+            }
         };
     }
 }
