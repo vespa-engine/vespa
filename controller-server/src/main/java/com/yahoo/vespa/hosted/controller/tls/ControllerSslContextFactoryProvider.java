@@ -14,66 +14,67 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Configures the controller's HTTPS connector with certificate and private key from a secret store.
  *
  * @author mpolden
+ * @author bjorncs
  */
 @SuppressWarnings("unused") // Injected
 public class ControllerSslContextFactoryProvider extends AbstractComponent implements SslContextFactoryProvider {
 
-    private final SecretStore secretStore;
-    private final TlsConfig config;
-    private final SslContextFactory sslContextFactory;
+    private final KeyStore truststore;
+    private final KeyStore keystore;
+    private final Map<Integer, SslContextFactory> sslContextFactories = new ConcurrentHashMap<>();
 
     @Inject
     public ControllerSslContextFactoryProvider(SecretStore secretStore, TlsConfig config) {
-        this.secretStore = Objects.requireNonNull(secretStore, "secretStore must be non-null");
-        this.config = Objects.requireNonNull(config, "config must be non-null");
-        this.sslContextFactory = create();
+        if (!Files.isReadable(Paths.get(config.caTrustStore()))) {
+            throw new IllegalArgumentException("CA trust store file is not readable: " + config.caTrustStore());
+        }
+        // Trust store containing CA trust store from file
+        this.truststore = KeyStoreBuilder.withType(KeyStoreType.JKS)
+                .fromFile(Paths.get(config.caTrustStore()))
+                .build();
+        // Key store containing key pair from secret store
+        this.keystore = KeyStoreBuilder.withType(KeyStoreType.JKS)
+                .withKeyEntry(getClass().getSimpleName(), privateKey(secretStore, config), certificates(secretStore, config))
+                .build();
     }
 
     @Override
     public SslContextFactory getInstance(String containerId, int port) {
-        return sslContextFactory;
+        return sslContextFactories.computeIfAbsent(port, this::createSslContextFactory);
     }
 
     /** Create a SslContextFactory backed by an in-memory key and trust store */
-    private SslContextFactory create() {
-        if (!Files.isReadable(Paths.get(config.caTrustStore()))) {
-            throw new IllegalArgumentException("CA trust store file is not readable: " + config.caTrustStore());
-        }
+    private SslContextFactory createSslContextFactory(int port) {
         SslContextFactory factory = new SslContextFactory();
-
+        // TODO Remove cipher exclusions on Vespa 7 (require ciphers with forward secrecy)
         // Do not exclude TLS_RSA_* ciphers
         String[] excludedCiphers = Arrays.stream(factory.getExcludeCipherSuites())
                                          .filter(cipherPattern -> !cipherPattern.equals("^TLS_RSA_.*$"))
                                          .toArray(String[]::new);
         factory.setExcludeCipherSuites(excludedCiphers);
-        factory.setWantClientAuth(true);
-
-        // Trust store containing CA trust store from file
-        factory.setTrustStore(KeyStoreBuilder.withType(KeyStoreType.JKS)
-                                             .fromFile(Paths.get(config.caTrustStore()))
-                                             .build());
-
-        // Key store containing key pair from secret store
-        factory.setKeyStore(KeyStoreBuilder.withType(KeyStoreType.JKS)
-                                           .withKeyEntry(getClass().getSimpleName(), privateKey(), certificates())
-                                           .build());
-
+        if (port != 443) {
+            factory.setWantClientAuth(true);
+        }
+        factory.setTrustStore(truststore);
+        factory.setKeyStore(keystore);
         factory.setKeyStorePassword("");
         return factory;
     }
 
-    /** Get private key from secret store */
-    private PrivateKey privateKey() {
+    /** Get private key from secret store **/
+    private static PrivateKey privateKey(SecretStore secretStore, TlsConfig config) {
         return KeyUtils.fromPemEncodedPrivateKey(secretStore.getSecret(config.privateKeySecret()));
     }
 
@@ -81,7 +82,7 @@ public class ControllerSslContextFactoryProvider extends AbstractComponent imple
      * Get certificate from secret store. If certificate secret contains multiple certificates, e.g. intermediate
      * certificates, the entire chain will be read
      */
-    private List<X509Certificate> certificates() {
+    private static List<X509Certificate> certificates(SecretStore secretStore, TlsConfig config) {
         return X509CertificateUtils.certificateListFromPem(secretStore.getSecret(config.certificateSecret()));
     }
 
