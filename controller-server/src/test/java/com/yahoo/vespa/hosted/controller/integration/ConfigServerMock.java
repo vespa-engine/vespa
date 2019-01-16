@@ -7,7 +7,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
@@ -16,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -28,8 +28,6 @@ import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,6 +53,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
     private final Version initialVersion = new Version(6, 1, 0);
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
+    private final Map<DeploymentId, List<LoadBalancer>> loadBalancers = new HashMap<>();
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
@@ -170,6 +169,15 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment) {
         return Optional.ofNullable(serviceStatus.get(deployment));
+    }
+
+    @Override
+    public List<LoadBalancer> getLoadBalancers(DeploymentId deployment) {
+        return loadBalancers.getOrDefault(deployment, Collections.emptyList());
+    }
+
+    public void addLoadBalancers(ZoneId zoneId, ApplicationId applicationId, List<LoadBalancer> loadBalancers) {
+        this.loadBalancers.put(new DeploymentId(applicationId, zoneId), loadBalancers);
     }
 
     @Override

@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -25,7 +24,7 @@ public class MemoryNameService implements NameService {
 
     @Override
     public RecordId createCname(RecordName alias, RecordData canonicalName) {
-        RecordId id = new RecordId(UUID.randomUUID().toString());
+        RecordId id = new RecordId(alias.asString());
         records.put(id, new Record(id, Record.Type.CNAME, alias, canonicalName));
         return id;
     }

@@ -71,4 +71,6 @@ public interface ConfigServer {
     /** Get service convergence status for given deployment */
     Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment);
 
+    List<LoadBalancer> getLoadBalancers(DeploymentId deployment);
+
 }

@@ -52,6 +52,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final JobRunner jobRunner;
     private final ContactInformationMaintainer contactInformationMaintainer;
     private final CostReportMaintainer costReportMaintainer;
+    private final LoadBalancerMaintainer loadbalancerMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
@@ -81,6 +82,7 @@ public class ControllerMaintenance extends AbstractComponent {
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepositoryClient, Clock.systemUTC(), selfHostedCostConfig);
+        loadbalancerMaintainer = new LoadBalancerMaintainer(controller, Duration.ofMinutes(5), jobControl, nameService);
     }
 
     public Upgrader upgrader() { return upgrader; }

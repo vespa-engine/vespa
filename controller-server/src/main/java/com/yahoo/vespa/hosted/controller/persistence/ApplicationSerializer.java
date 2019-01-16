@@ -88,6 +88,7 @@ public class ApplicationSerializer {
     private final String lastWrittenField = "lastWritten";
     private final String lastQueriesPerSecondField = "lastQueriesPerSecond";
     private final String lastWritesPerSecondField = "lastWritesPerSecond";
+    private final String loadBalancers = "loadBalancers";
 
     // DeploymentJobs fields
     private final String projectIdField = "projectId";
@@ -179,6 +180,7 @@ public class ApplicationSerializer {
         deployment.activity().lastWritten().ifPresent(instant -> object.setLong(lastWrittenField, instant.toEpochMilli()));
         deployment.activity().lastQueriesPerSecond().ifPresent(value -> object.setDouble(lastQueriesPerSecondField, value));
         deployment.activity().lastWritesPerSecond().ifPresent(value -> object.setDouble(lastWritesPerSecondField, value));
+        loadBalancersToSlime(deployment.loadBalancers(), object);
     }
 
     private void deploymentMetricsToSlime(DeploymentMetrics metrics, Cursor object) {
@@ -301,6 +303,13 @@ public class ApplicationSerializer {
         });
     }
 
+    private void loadBalancersToSlime(Map<ClusterSpec.Id, HostName> loadBalancerMap, Cursor parentObject) {
+        Cursor root = parentObject.setObject(loadBalancers);
+        for (Map.Entry<ClusterSpec.Id, HostName> entry : loadBalancerMap.entrySet()) {
+            root.setString(entry.getKey().value(), entry.getValue().value());
+        }
+    }
+
     // ------------------ Deserialization
 
     public Application fromSlime(Slime slime) {
@@ -343,7 +352,8 @@ public class ApplicationSerializer {
                               DeploymentActivity.create(optionalInstant(deploymentObject.field(lastQueriedField)),
                                                         optionalInstant(deploymentObject.field(lastWrittenField)),
                                                         optionalDouble(deploymentObject.field(lastQueriesPerSecondField)),
-                                                        optionalDouble(deploymentObject.field(lastWritesPerSecondField))));
+                                                        optionalDouble(deploymentObject.field(lastWritesPerSecondField))),
+                              loadBalancerMapFromSlime(deploymentObject.field(loadBalancers)));
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {
@@ -497,6 +507,12 @@ public class ApplicationSerializer {
 
     private Optional<RotationId> rotationFromSlime(Inspector field) {
         return field.valid() ? optionalString(field).map(RotationId::new) : Optional.empty();
+    }
+
+    private Map<ClusterSpec.Id, HostName> loadBalancerMapFromSlime(Inspector object) {
+        Map<ClusterSpec.Id, HostName> map = new HashMap<>();
+        object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), HostName.from(value.asString())));
+        return map;
     }
 
     private OptionalLong optionalLong(Inspector field) {
