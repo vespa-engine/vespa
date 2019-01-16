@@ -123,6 +123,23 @@ public class SyncFeedClient implements AutoCloseable {
          */
         private LinkedHashMap<String, Result> results = null;
 
+        void resetExpectedResults() {
+            synchronized (monitor) {
+                if (results != null)
+                    throw new ConcurrentModificationException("A SyncFeedClient instance is used by multiple threads");
+
+                resultsReceived = 0;
+                exception = null;
+                results = new LinkedHashMap<>();
+            }
+        }
+
+        void addExpectationOfResultFor(String operationId) {
+            synchronized (monitor) {
+                results.put(operationId, null);
+            }
+        }
+
         void expectResultsOf(List<SyncOperation> operations) {
             synchronized (monitor) {
                 if (results != null)
