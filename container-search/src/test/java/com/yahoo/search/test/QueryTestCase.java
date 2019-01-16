@@ -308,17 +308,6 @@ public class QueryTestCase {
     }
 
     @Test
-    public void testLanguageSubstitution() {
-        QueryProfile profile = new QueryProfile("myProfile");
-        profile.set("myField1", "Language: %{model.language}", null);
-        profile.set("myField2", "Locale: %{locale}", null);
-        Query q = new Query(QueryTestCase.httpEncode("/search?lang=en-us"), profile.compile(null));
-        assertEquals("Language: ENGLISH", q.properties().get("myField1"));
-        q.properties().set("locale", q.getHttpRequest().propertyMap().get("lang"));
-        assertEquals("Locale: en-us", q.properties().get("myField2"));
-    }
-
-    @Test
     public void testTimeoutInRequestOverridesQueryProfile() {
         QueryProfile profile = new QueryProfile("test");
         profile.set("timeout", 318, (QueryProfileRegistry)null);

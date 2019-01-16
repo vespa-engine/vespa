@@ -33,9 +33,10 @@ import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
  * You might find it tempting to remove e.g. the getParameter... methods,
  * but keep in mind that this IS-A servlet request and must provide the
  * full api of such a request for use outside the "JDisc filter world".
+ *
+ * @since 5.27
  */
 public class ServletRequest extends HttpServletRequestWrapper implements ServletOrJdiscHttpRequest {
-
     public static final String JDISC_REQUEST_PRINCIPAL = "jdisc.request.principal";
     public static final String JDISC_REQUEST_X509CERT = "jdisc.request.X509Certificate";
     public static final String SERVLET_REQUEST_X509CERT = "javax.servlet.request.X509Certificate";
