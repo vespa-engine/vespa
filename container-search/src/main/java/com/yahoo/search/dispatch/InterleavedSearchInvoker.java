@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_ADAPTIVE_TIMEOUT;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
@@ -135,15 +136,11 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     }
 
     private void insertTimeoutErrors() {
-        for (SearchInvoker invoker : invokers) {
-            Optional<Integer> dk = invoker.distributionKey();
-            String message;
-            if (dk.isPresent()) {
-                message = "Backend communication timeout on node with distribution-key " + dk.get();
-            } else {
-                message = "Backend communication timeout";
-            }
-            result.hits().addError(ErrorMessage.createBackendCommunicationError(message));
+        if (!invokers.isEmpty()) {
+            String keys = invokers.stream().map(SearchInvoker::distributionKey).map(dk -> dk.map(i -> i.toString()).orElse("(unspecified)"))
+                    .collect(Collectors.joining(", "));
+
+            result.hits().addError(ErrorMessage.createTimeout("Backend communication timeout on node with distribution-keys: " + keys));
             timedOut = true;
         }
     }
