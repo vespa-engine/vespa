@@ -10,6 +10,22 @@ namespace search {
 
 namespace {
     attribute::Config getConfig() { return attribute::Config(attribute::BasicType::INT8); }
+
+uint32_t
+capSelector(queryeval::sourceselector::Iterator::SourceStore &store, queryeval::Source defaultSource)
+{
+    uint32_t committedDocIdLimit = store.getCommittedDocIdLimit();
+    uint32_t cappedSources = 0;
+    for (uint32_t docId = 0; docId < committedDocIdLimit; ++docId) {
+        queryeval::Source source = store.getFast(docId);
+        if (source > defaultSource) {
+            ++cappedSources;
+            store.set(docId, defaultSource);
+        }
+    }
+    return cappedSources;
+}
+
 }
 
 FixedSourceSelector::Iterator::Iterator(const FixedSourceSelector & sourceSelector) :
@@ -60,6 +76,10 @@ FixedSourceSelector::load(const vespalib::string & baseFileName)
                                              0));
     selector->setBaseId(info->header()._baseId);
     selector->_source.load();
+    uint32_t cappedSources = capSelector(selector->_source, selector->getDefaultSource());
+    if (cappedSources > 0) {
+        LOG(warning, "%u sources capped in source selector %s", cappedSources, baseFileName.c_str());
+    }
     return selector;
 }
 
