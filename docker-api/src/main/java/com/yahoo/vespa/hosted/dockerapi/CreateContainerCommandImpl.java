@@ -162,6 +162,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         containerResources.ifPresent(cr -> hostConfig
                 .withCpuShares(cr.cpuShares())
                 .withMemory(cr.memoryBytes())
+                .withMemorySwap(cr.memoryBytes())
                 .withCpuPeriod(cr.cpuQuota() > 0 ? cr.cpuPeriod() : null)
                 .withCpuQuota(cr.cpuQuota() > 0 ? cr.cpuQuota() : null));
 

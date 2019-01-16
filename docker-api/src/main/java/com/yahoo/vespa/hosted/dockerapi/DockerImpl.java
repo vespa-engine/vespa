@@ -238,6 +238,7 @@ public class DockerImpl implements Docker {
             UpdateContainerCmd updateContainerCmd = dockerClient.updateContainerCmd(containerName.asString())
                     .withCpuShares(resources.cpuShares())
                     .withMemory(resources.memoryBytes())
+                    .withMemorySwap(resources.memoryBytes())
 
                     // Command line argument `--cpus c` is sent over to docker daemon as "NanoCPUs", which is the
                     // value of `c * 1e9`. This however, is just a shorthand for `--cpu-period p` and `--cpu-quota q`
