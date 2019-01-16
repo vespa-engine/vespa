@@ -422,6 +422,7 @@ public class IndexedSearchCluster extends SearchCluster
         }
         builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
         builder.useMultilevelDispatch(useMultilevelDispatchSetup());
+        builder.useLocalNode(tuning.dispatch.useLocalNode);
         builder.searchableCopies(rootDispatch.getSearchableCopies());
         if (searchCoverage != null) {
             if (searchCoverage.getMinimum() != null)

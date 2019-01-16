@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # Configuration of dispatch from container nodes to search clusters
 
 namespace=vespa.config.search
@@ -18,6 +18,9 @@ distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ROUNDROBIN
 
 # Is multi-level dispatch configured for this cluster
 useMultilevelDispatch bool default=false
+
+# Dispatch only to local nodes
+useLocalNode bool default=false
 
 # Number of document copies
 searchableCopies long default=1

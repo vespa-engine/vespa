@@ -35,7 +35,7 @@ public class LoadBalancer {
         for (Group group : searchCluster.orderedGroups()) {
             scoreboard.add(new GroupStatus(group));
         }
-        if (roundRobin) {
+        if (roundRobin || scoreboard.size() == 1) {
             this.scheduler = new RoundRobinScheduler(scoreboard);
         } else {
             this.scheduler = new AdaptiveScheduler(new Random(), scoreboard);
