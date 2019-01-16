@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -123,23 +122,6 @@ public class SyncFeedClient implements AutoCloseable {
          * which responses we are waiting for.
          */
         private LinkedHashMap<String, Result> results = null;
-
-        void resetExpectedResults() {
-            synchronized (monitor) {
-                if (results != null)
-                    throw new ConcurrentModificationException("A SyncFeedClient instance is used by multiple threads");
-
-                resultsReceived = 0;
-                exception = null;
-                results = new LinkedHashMap<>();
-            }
-        }
-
-        void addExpectationOfResultFor(String operationId) {
-            synchronized (monitor) {
-                results.put(operationId, null);
-            }
-        }
 
         void expectResultsOf(List<SyncOperation> operations) {
             synchronized (monitor) {
