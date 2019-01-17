@@ -1,8 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vbench/test/all.h>
+#include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
+#include <vespa/vespalib/test/make_tls_options_for_testing.h>
 
 using namespace vbench;
+
+auto null_crypto = std::make_shared<vespalib::NullCryptoEngine>();
+auto tls_crypto = std::make_shared<vespalib::TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing());
 
 using OutputWriter = vespalib::OutputWriter;
 
@@ -32,43 +38,32 @@ struct Agent {
     }
 };
 
-struct Client : public Agent, public vespalib::Runnable {
-    Client(Stream::UP s) : Agent(std::move(s)) {}
-    void run() override {
-        TEST_THREAD("client");
-        write("client-");
-        read("server-");
-    }
-};
-
-struct Server : public Agent, public vespalib::Runnable {
-    Server(Stream::UP s) : Agent(std::move(s)) {}
-    void run() override {
-        TEST_THREAD("server");
-        read("client-");
-        write("server-");
-    }
-};
-
-TEST("socket") {
-    ServerSocket serverSocket;
-    Client client(Stream::UP(new Socket("localhost", serverSocket.port())));
-    Server server(serverSocket.accept());
-    vespalib::Thread clientThread(client);
-    vespalib::Thread serverThread(server);
-    clientThread.start();
-    serverThread.start();
-    clientThread.join();
-    serverThread.join();
-    {
-        server.socket.reset();
+void verify_socket(CryptoEngine &crypto, ServerSocket &server_socket, size_t thread_id) {
+    if (thread_id == 0) { // client
+        Agent client(std::make_unique<Socket>(crypto, "localhost", server_socket.port()));
+        client.write("client-");
+        client.read("server-");
+        TEST_BARRIER();   // #1
         LineReader reader(*client.socket);
         string line;
         EXPECT_FALSE(reader.readLine(line));
         EXPECT_TRUE(line.empty());
         EXPECT_TRUE(client.socket->eof());
         EXPECT_FALSE(client.socket->tainted());
+    } else {              // server
+        Agent server(server_socket.accept(crypto));
+        server.read("client-");
+        server.write("server-");
+        TEST_BARRIER();   // #1
     }
+}
+
+TEST_MT_F("socket", 2, ServerSocket()) {
+    TEST_DO(verify_socket(*null_crypto, f1, thread_id));
+}
+
+TEST_MT_F("secure socket", 2, ServerSocket()) {
+    TEST_DO(verify_socket(*tls_crypto, f1, thread_id));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

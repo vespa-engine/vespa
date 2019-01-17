@@ -9,14 +9,17 @@ namespace vbench {
 namespace {
 
 vespalib::SocketHandle connect(const string &host, int port) {
-    return vespalib::SocketSpec::from_host_port(host, port).client_address().connect();
+    auto tweak = [](vespalib::SocketHandle &handle) {
+        return handle.set_nodelay(true);
+    };
+    return vespalib::SocketSpec::from_host_port(host, port).client_address().connect(tweak);
 }
 
 } // namespace vbench::<unnamed>
 
 constexpr size_t READ_SIZE = 32768;
 
-Socket::Socket(vespalib::SocketHandle socket)
+Socket::Socket(SyncCryptoSocket::UP socket)
     : _socket(std::move(socket)),
       _input(),
       _output(),
@@ -25,28 +28,32 @@ Socket::Socket(vespalib::SocketHandle socket)
 {
 }
 
-Socket::Socket(const string &host, int port)
-    : _socket(connect(host, port)),
+Socket::Socket(CryptoEngine &crypto, const string &host, int port)
+    : _socket(SyncCryptoSocket::create(crypto, connect(host, port), false)),
       _input(),
       _output(),
       _taint(),
       _eof(false)
 {
-    if (!_socket.valid() || !_socket.set_linger(false, 0)) {
+    if (!_socket) {
         _taint.reset(strfmt("socket connect failed: host: %s, port: %d",
                             host.c_str(), port));
-        _socket.reset();
     }
 }
 
-Socket::~Socket() { }
+Socket::~Socket()
+{
+    if (_socket) {
+        _socket->half_close();
+    }
+}
 
 Memory
 Socket::obtain()
 {
     if ((_input.get().size == 0) && !_eof && !_taint) {
         WritableMemory buf = _input.reserve(READ_SIZE);
-        ssize_t res = _socket.read(buf.data, buf.size);
+        ssize_t res = _socket->read(buf.data, buf.size);
         if (res > 0) {
             _input.commit(res);
         } else if (res < 0) {
@@ -77,7 +84,7 @@ Socket::commit(size_t bytes)
     _output.commit(bytes);
     while ((_output.get().size > 0) && !_taint) {
         Memory buf = _output.obtain();
-        ssize_t res = _socket.write(buf.data, buf.size);
+        ssize_t res = _socket->write(buf.data, buf.size);
         if (res > 0) {
             _output.evict(res);
         } else {

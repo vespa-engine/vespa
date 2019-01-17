@@ -186,7 +186,8 @@ ConfigStatus::fetch_json(std::string configId, std::string host, int port,
                          std::string path, std::string &data)
 {
     MyHttpHandler myHandler(configId);
-    bool ok = vbench::HttpClient::fetch(vbench::ServerSpec(host, port), path, myHandler);
+    auto crypto = vespalib::CryptoEngine::get_default();
+    bool ok = vbench::HttpClient::fetch(*crypto, vbench::ServerSpec(host, port), path, myHandler);
 
     if (ok) {
         data = myHandler.getJson();

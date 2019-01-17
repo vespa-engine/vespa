@@ -11,6 +11,7 @@ VBench::VBench(const vespalib::Slime &cfg)
       _inputs(),
       _taint()
 {
+    CryptoEngine::SP crypto = std::make_shared<vespalib::NullCryptoEngine>();
     _analyzers.push_back(Analyzer::UP(new RequestSink()));
     vespalib::slime::Inspector &analyzers = cfg.get()["analyze"];
     for (size_t i = analyzers.children(); i-- > 0; ) {
@@ -19,7 +20,8 @@ VBench::VBench(const vespalib::Slime &cfg)
             _analyzers.push_back(Analyzer::UP(obj.release()));
         }
     }
-    _scheduler.reset(new RequestScheduler(*_analyzers.back(),
+    _scheduler.reset(new RequestScheduler(crypto,
+                                          *_analyzers.back(),
                                           cfg.get()["http_threads"].asLong()));
     vespalib::slime::Inspector &inputs = cfg.get()["inputs"];
     for (size_t i = inputs.children(); i-- > 0; ) {

@@ -4,10 +4,11 @@
 
 namespace vbench {
 
-HttpConnectionPool::HttpConnectionPool(Timer &timer)
+HttpConnectionPool::HttpConnectionPool(CryptoEngine::SP crypto, Timer &timer)
     : _lock(),
       _map(),
       _store(),
+      _crypto(std::move(crypto)),
       _timer(timer)
 {
 }
@@ -32,7 +33,7 @@ HttpConnectionPool::getConnection(const ServerSpec &server)
         queue.pop();
         return ret;
     }
-    return HttpConnection::UP(new HttpConnection(server));
+    return HttpConnection::UP(new HttpConnection(*_crypto, server));
 }
 
 void

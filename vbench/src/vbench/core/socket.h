@@ -7,6 +7,8 @@
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/server_socket.h>
+#include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/sync_crypto_socket.h>
 #include <memory>
 
 namespace vbench {
@@ -16,19 +18,21 @@ using Memory = vespalib::Memory;
 using Output = vespalib::Output;
 using SimpleBuffer = vespalib::SimpleBuffer;
 using WritableMemory = vespalib::WritableMemory;
+using CryptoEngine = vespalib::CryptoEngine;
+using SyncCryptoSocket = vespalib::SyncCryptoSocket;
 
 class Socket : public Stream
 {
 private:
-    vespalib::SocketHandle _socket;
+    SyncCryptoSocket::UP   _socket;
     SimpleBuffer           _input;
     SimpleBuffer           _output;
     Taint                  _taint;
     bool                   _eof;
 
 public:
-    Socket(vespalib::SocketHandle socket);
-    Socket(const string &host, int port);
+    Socket(SyncCryptoSocket::UP socket);
+    Socket(CryptoEngine &crypto, const string &host, int port);
     ~Socket();
     bool eof() const override { return _eof; }
     Memory obtain() override;
@@ -42,10 +46,10 @@ struct ServerSocket {
     vespalib::ServerSocket server_socket;
     ServerSocket() : server_socket(0) {}
     int port() const { return server_socket.address().port(); }
-    Stream::UP accept() {
+    Stream::UP accept(CryptoEngine &crypto) {
         vespalib::SocketHandle handle = server_socket.accept();
         if (handle.valid()) {
-            return std::make_unique<Socket>(std::move(handle));
+            return std::make_unique<Socket>(SyncCryptoSocket::create(crypto, std::move(handle), true));
         } else {
             return Stream::UP();
         }

@@ -1,11 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vbench/test/all.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 using namespace vbench;
 
 using InputReader = vespalib::InputReader;
 using OutputWriter = vespalib::OutputWriter;
+
+auto null_crypto = std::make_shared<vespalib::NullCryptoEngine>();
 
 void checkMemory(const string &expect, const Memory &mem) {
     EXPECT_EQUAL(expect, string(mem.data, mem.size));
@@ -41,20 +44,20 @@ TEST_MT_F("verify request", 2, ServerSocket()) {
             out.write("\r\n");
         }
         SimpleBuffer actual;
-        Stream::UP stream = f1.accept();
+        Stream::UP stream = f1.accept(*null_crypto);
         ASSERT_TRUE(stream.get() != 0);
         readUntil(*stream, actual, "\r\n\r\n");
         EXPECT_TRUE(expect == actual);
     } else {
         SimpleHttpResultHandler handler;
-        HttpClient::fetch(ServerSpec("localhost", f1.port()),
+        HttpClient::fetch(*null_crypto, ServerSpec("localhost", f1.port()),
                           "/this/is/the/url", handler);
     }
 }
 
 TEST_MT_F("verify connection close", 2, ServerSocket()) {
     if (thread_id == 0) {
-        Stream::UP stream = f1.accept();
+        Stream::UP stream = f1.accept(*null_crypto);
         SimpleBuffer ignore;
         readUntil(*stream, ignore, "\r\n\r\n");
         OutputWriter out(*stream, 256);
@@ -63,7 +66,7 @@ TEST_MT_F("verify connection close", 2, ServerSocket()) {
         out.write("data");
     } else {
         SimpleHttpResultHandler handler;
-        HttpClient::fetch(ServerSpec("localhost", f1.port()),
+        HttpClient::fetch(*null_crypto, ServerSpec("localhost", f1.port()),
                           "/foo", handler);
         EXPECT_EQUAL(0u, handler.failures().size());
         EXPECT_EQUAL(0u, handler.headers().size());
@@ -73,7 +76,7 @@ TEST_MT_F("verify connection close", 2, ServerSocket()) {
 
 TEST_MT_F("verify content length", 2, ServerSocket()) {
     if (thread_id == 0) {
-        Stream::UP stream = f1.accept();
+        Stream::UP stream = f1.accept(*null_crypto);
         SimpleBuffer ignore;
         readUntil(*stream, ignore, "\r\n\r\n");
         OutputWriter out(*stream, 256);
@@ -83,7 +86,7 @@ TEST_MT_F("verify content length", 2, ServerSocket()) {
         out.write("data");
     } else {
         SimpleHttpResultHandler handler;
-        HttpClient::fetch(ServerSpec("localhost", f1.port()),
+        HttpClient::fetch(*null_crypto, ServerSpec("localhost", f1.port()),
                           "/foo", handler);
         EXPECT_EQUAL(0u, handler.failures().size());
         EXPECT_EQUAL(1u, handler.headers().size());
@@ -93,7 +96,7 @@ TEST_MT_F("verify content length", 2, ServerSocket()) {
 
 TEST_MT_F("verify chunked encoding", 2, ServerSocket()) {
     if (thread_id == 0) {
-        Stream::UP stream = f1.accept();
+        Stream::UP stream = f1.accept(*null_crypto);
         SimpleBuffer ignore;
         readUntil(*stream, ignore, "\r\n\r\n");
         OutputWriter out(*stream, 256);
@@ -108,7 +111,7 @@ TEST_MT_F("verify chunked encoding", 2, ServerSocket()) {
         out.write("\r\n");
     } else {
         SimpleHttpResultHandler handler;
-        HttpClient::fetch(ServerSpec("localhost", f1.port()),
+        HttpClient::fetch(*null_crypto, ServerSpec("localhost", f1.port()),
                           "/foo", handler);
         if (handler.failures().size() > 0) {
             fprintf(stderr, "failure: %s\n", handler.failures()[0].c_str());

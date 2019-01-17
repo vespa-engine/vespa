@@ -56,22 +56,22 @@ private:
     bool readChunkSize(bool first, size_t &size);
     bool skipTrailers();
     bool readContent();
-    bool perform();
+    bool perform(CryptoEngine &crypto);
 
 public:
     ~HttpClient();
-    static bool fetch(const ServerSpec &server, const string &url,
+    static bool fetch(CryptoEngine &crypto, const ServerSpec &server, const string &url,
                       HttpResultHandler &handler)
     {
-        HttpClient client(HttpConnection::UP(new HttpConnection(server)), url, handler);
-        return client.perform();
+        HttpClient client(HttpConnection::UP(new HttpConnection(crypto, server)), url, handler);
+        return client.perform(crypto);
     }
     static bool fetch(HttpConnectionPool &pool,
                       const ServerSpec &server, const string &url,
                       HttpResultHandler &handler)
     {
         HttpClient client(pool.getConnection(server), url, handler);
-        if (client.perform()) {
+        if (client.perform(pool.crypto())) {
             if (client.serverKeepAlive()) {
                 pool.putConnection(std::move(client._conn));
             }

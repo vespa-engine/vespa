@@ -4,6 +4,7 @@
 #include <vbench/http/server_spec.h>
 #include <vbench/http/http_client.h>
 #include <vespa/fastos/app.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 using namespace vbench;
 
@@ -33,8 +34,9 @@ App::Main()
         printf("usage: dumpurl <host> <port> <url>\n");
         return -1;
     }
+    auto null_crypto = std::make_shared<vespalib::NullCryptoEngine>();
     MyHttpHandler myHandler;
-    bool ok = HttpClient::fetch(ServerSpec(_argv[1], atoi(_argv[2])), _argv[3], myHandler);
+    bool ok = HttpClient::fetch(*null_crypto, ServerSpec(_argv[1], atoi(_argv[2])), _argv[3], myHandler);
     return ok ? 0 : 1;
 }
 

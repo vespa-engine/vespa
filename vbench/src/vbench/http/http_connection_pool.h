@@ -24,11 +24,13 @@ private:
     vespalib::Lock     _lock;
     Map                _map;
     std::vector<Queue> _store;
+    CryptoEngine::SP   _crypto;
     Timer             &_timer;
 
 public:
-    HttpConnectionPool(Timer &timer);
+    HttpConnectionPool(CryptoEngine::SP crypto, Timer &timer);
     ~HttpConnectionPool();
+    CryptoEngine &crypto() { return *_crypto; }
     HttpConnection::UP getConnection(const ServerSpec &server);
     void putConnection(HttpConnection::UP conn);
 };
