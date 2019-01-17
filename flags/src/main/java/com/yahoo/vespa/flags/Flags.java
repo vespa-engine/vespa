@@ -55,7 +55,8 @@ public class Flags {
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", Collections.emptyList(),
-            "List of host-admin task names that should be skipped", "Takes effect on next host admin tick",
+            "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
+            "Takes effect on next host admin tick",
             HOSTNAME, NODE_TYPE);
 
     public static final UnboundBooleanFlag USE_DEDICATED_NODE_FOR_LOGSERVER = defineFeatureFlag(
