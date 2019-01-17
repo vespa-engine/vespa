@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -33,8 +33,8 @@ public class NodeAclResponse extends HttpResponse {
         this.slime = new Slime();
         this.aclsForChildren = request.getBooleanProperty(CHILDREN_REQUEST_PROPERTY);
 
-        final Cursor root = slime.setObject();
-        final String hostname = baseName(request.getUri().getPath());
+        Cursor root = slime.setObject();
+        String hostname = baseName(request.getUri().getPath());
         toSlime(hostname, root);
     }
 
@@ -81,8 +81,8 @@ public class NodeAclResponse extends HttpResponse {
     }
 
     @Override
-    public void render(OutputStream outputStream) throws IOException {
-        outputStream.write(SlimeUtils.toJsonBytes(slime));
+    public void render(OutputStream stream) throws IOException {
+        new JsonFormat(true).encode(stream, slime);
     }
 
     @Override
