@@ -31,7 +31,6 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static com.yahoo.jdisc.http.HttpResponse.Status.FORBIDDEN;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -87,7 +86,7 @@ public class ControllerAuthorizationFilterTest {
 
         ControllerAuthorizationFilter filter = createFilter(controllerTester);
 
-        List<AthenzIdentity> allowed = asList(HOSTED_OPERATOR, TENANT_ADMIN);
+        List<AthenzIdentity> allowed = List.of(HOSTED_OPERATOR, TENANT_ADMIN);
         List<AthenzIdentity> forbidden = singletonList(USER);
 
         testApiAccess(DELETE, "/application/v4/tenant/mytenant",
@@ -110,8 +109,8 @@ public class ControllerAuthorizationFilterTest {
 
         ControllerAuthorizationFilter filter = createFilter(controllerTester);
 
-        List<AthenzIdentity> allowed = asList(HOSTED_OPERATOR, TENANT_PIPELINE);
-        List<AthenzIdentity> forbidden = asList(TENANT_ADMIN, USER);
+        List<AthenzIdentity> allowed = List.of(HOSTED_OPERATOR, TENANT_PIPELINE);
+        List<AthenzIdentity> forbidden = List.of(TENANT_ADMIN, USER);
 
         testApiAccess(POST, "/application/v4/tenant/mytenant/application/myapp/environment/prod/region/myregion/instance/default/deploy",
                       allowed, forbidden, filter);

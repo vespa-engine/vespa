@@ -9,7 +9,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,7 +37,7 @@ public class MaintainerTest {
 
     @Test
     public void staggering() {
-        List<HostName> cluster = Arrays.asList(HostName.from("cfg1"), HostName.from("cfg2"), HostName.from("cfg3"));
+        List<HostName> cluster = List.of(HostName.from("cfg1"), HostName.from("cfg2"), HostName.from("cfg3"));
         Instant now = Instant.ofEpochMilli(1001);
         Duration interval = Duration.ofMillis(300);
 

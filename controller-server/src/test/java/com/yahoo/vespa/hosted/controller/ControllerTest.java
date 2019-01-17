@@ -33,7 +33,7 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -227,7 +227,7 @@ public class ControllerTest {
         ZoneId zone = ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName());
         ApplicationId app = ApplicationId.from("tenant", "app1", "default");
         DeploymentId deployment = new DeploymentId(app, zone);
-        tester.routingGenerator().putEndpoints(deployment, Arrays.asList(
+        tester.routingGenerator().putEndpoints(deployment, List.of(
                 new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream2"),
                 new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
                 new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream3"),
@@ -256,7 +256,7 @@ public class ControllerTest {
         assertEquals("unit-test", findStatusByUpstream.apply("upstream1").get().getReason());
 
         // Deployment without a global endpoint
-        tester.routingGenerator().putEndpoints(deployment, Arrays.asList(
+        tester.routingGenerator().putEndpoints(deployment, List.of(
                 new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream2"),
                 new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
                 new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream3")

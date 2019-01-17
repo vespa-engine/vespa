@@ -5,14 +5,14 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import org.junit.Test;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -75,7 +75,7 @@ public class TenantSerializerTest {
                 URI.create("http://contact1.test"),
                 URI.create("http://property1.test"),
                 URI.create("http://issue-tracker-1.test"),
-                Arrays.asList(
+                List.of(
                         Collections.singletonList("person1"),
                         Collections.singletonList("person2")
                 ),

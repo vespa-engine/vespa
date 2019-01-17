@@ -12,7 +12,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -50,7 +49,7 @@ public class SystemUpgraderTest {
 
         Version version1 = Version.fromString("6.5");
         // Bootstrap a system without host applications
-        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4), SystemApplication.configServer,
+        tester.configServer().bootstrap(List.of(zone1, zone2, zone3, zone4), SystemApplication.configServer,
                                         SystemApplication.zone);
         // Fail a few nodes. Failed nodes should not affect versions
         failNodeIn(zone1, SystemApplication.configServer);
@@ -184,7 +183,7 @@ public class SystemUpgraderTest {
         );
 
         Version version1 = Version.fromString("6.5");
-        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4), SystemApplication.all(), Optional.empty());
+        tester.configServer().bootstrap(List.of(zone1, zone2, zone3, zone4), SystemApplication.all(), Optional.empty());
         tester.upgradeSystem(version1);
         systemUpgrader.maintain();
         assertCurrentVersion(SystemApplication.all(), version1, zone1, zone2, zone3, zone4);
@@ -196,7 +195,7 @@ public class SystemUpgraderTest {
 
         // System upgrades in zone 1:
         systemUpgrader.maintain();
-        List<SystemApplication> allExceptZone = Arrays.asList(SystemApplication.configServerHost,
+        List<SystemApplication> allExceptZone = List.of(SystemApplication.configServerHost,
                                                               SystemApplication.proxyHost,
                                                               SystemApplication.configServer);
         completeUpgrade(allExceptZone, version2, zone1);

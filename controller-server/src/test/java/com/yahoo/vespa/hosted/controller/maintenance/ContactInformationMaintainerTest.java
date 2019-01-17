@@ -4,20 +4,17 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -63,8 +60,8 @@ public class ContactInformationMaintainerTest {
         URI contactUrl = URI.create("http://contact1.test");
         URI issueTrackerUrl = URI.create("http://issue-tracker1.test");
         URI propertyUrl = URI.create("http://property1.test");
-        List<List<String>> persons = Arrays.asList(Collections.singletonList("alice"),
-                                                   Collections.singletonList("bob"));
+        List<List<String>> persons = List.of(Collections.singletonList("alice"),
+                                             Collections.singletonList("bob"));
         String queue = "queue";
         Optional<String> component = Optional.empty();
         return new Contact(contactUrl, propertyUrl, issueTrackerUrl, persons, queue, component);

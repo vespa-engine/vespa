@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
@@ -75,7 +74,7 @@ public class JobRunnerTest {
                                                           Optional.empty());
 
     @Test
-    public void multiThreadedExecutionFinishes() throws InterruptedException {
+    public void multiThreadedExecutionFinishes() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == startTests? Optional.of(error) : Optional.of(running);
@@ -124,38 +123,38 @@ public class JobRunnerTest {
         Map<Step, Status> steps = run.get().steps();
         runner.maintain();
         assertEquals(steps, run.get().steps());
-        assertEquals(Arrays.asList(deployReal, deployTester), run.get().readySteps());
+        assertEquals(List.of(deployReal, deployTester), run.get().readySteps());
 
         outcomes.put(deployReal, running);
         runner.maintain();
-        assertEquals(Arrays.asList(installReal, deployTester), run.get().readySteps());
+        assertEquals(List.of(installReal, deployTester), run.get().readySteps());
 
         outcomes.put(installReal, running);
         runner.maintain();
-        assertEquals(Arrays.asList(deployTester), run.get().readySteps());
+        assertEquals(List.of(deployTester), run.get().readySteps());
 
         outcomes.put(deployTester, running);
         runner.maintain();
-        assertEquals(Arrays.asList(installTester), run.get().readySteps());
+        assertEquals(List.of(installTester), run.get().readySteps());
 
         outcomes.put(installTester, running);
         runner.maintain();
-        assertEquals(Arrays.asList(startTests), run.get().readySteps());
+        assertEquals(List.of(startTests), run.get().readySteps());
 
         outcomes.put(startTests, running);
         runner.maintain();
-        assertEquals(Arrays.asList(endTests), run.get().readySteps());
+        assertEquals(List.of(endTests), run.get().readySteps());
 
         // Failure ending tests fails the run, but run-always steps continue.
         outcomes.put(endTests, testFailure);
         runner.maintain();
         assertTrue(run.get().hasFailed());
-        assertEquals(Arrays.asList(deactivateReal, deactivateTester), run.get().readySteps());
+        assertEquals(List.of(deactivateReal, deactivateTester), run.get().readySteps());
 
         // Abortion does nothing, as the run has already failed.
         jobs.abort(run.get().id());
         runner.maintain();
-        assertEquals(Arrays.asList(deactivateReal, deactivateTester), run.get().readySteps());
+        assertEquals(List.of(deactivateReal, deactivateTester), run.get().readySteps());
 
         outcomes.put(deactivateReal, running);
         outcomes.put(deactivateTester, running);
