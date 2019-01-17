@@ -51,7 +51,9 @@ public interface FeedClient extends AutoCloseable {
      * Don't call stream() after close is called.
      *
      * @param documentId the document id of the document.
-     * @param operationId the id to use for this operation, or null to let the client decide an operation id
+     * @param operationId the id to use for this operation, or null to let the client decide an operation id.
+     *                    This id must be unique for every operation. Passing the operation id allows clients
+     *                    to prepare to receive a response for it before issuing the operation to the client.
      * @param documentData the document data as JSON or XML (as specified when using the factory to create the API)
      * @param context a context object which will be accessible in the result of the callback, or null if none
      */
