@@ -31,6 +31,13 @@ public class LoadBalancerList {
                             .collect(collectingAndThen(Collectors.toList(), LoadBalancerList::new));
     }
 
+    /** Returns the subset of load balancers that are inactive */
+    public LoadBalancerList inactive() {
+        return loadBalancers.stream()
+                            .filter(LoadBalancer::inactive)
+                            .collect(collectingAndThen(Collectors.toList(), LoadBalancerList::new));
+    }
+
     public List<LoadBalancer> asList() {
         return loadBalancers;
     }

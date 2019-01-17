@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
@@ -12,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -45,15 +45,15 @@ public class LoadBalancerExpirer extends Maintainer {
         List<LoadBalancerId> failed = new ArrayList<>();
         Exception lastException = null;
         try (Lock lock = db.lockLoadBalancers()) {
-            for (LoadBalancerId loadBalancer : inactiveLoadBlancers()) {
-                if (hasNodes(loadBalancer.application())) { // Defer removal if there are still nodes allocated to application
+            for (LoadBalancer loadBalancer : nodeRepository().loadBalancers().inactive().asList()) {
+                if (hasNodes(loadBalancer.id().application())) { // Defer removal if there are still nodes allocated to application
                     continue;
                 }
                 try {
-                    service.remove(loadBalancer);
-                    db.removeLoadBalancer(loadBalancer);
+                    service.remove(loadBalancer.id());
+                    db.removeLoadBalancer(loadBalancer.id());
                 } catch (Exception e) {
-                    failed.add(loadBalancer);
+                    failed.add(loadBalancer.id());
                     lastException = e;
                 }
             }
@@ -71,13 +71,6 @@ public class LoadBalancerExpirer extends Maintainer {
 
     private boolean hasNodes(ApplicationId application) {
         return !nodeRepository().getNodes(application).isEmpty();
-    }
-
-    private List<LoadBalancerId> inactiveLoadBlancers() {
-        return db.readLoadBalancers().entrySet().stream()
-                 .filter(entry -> entry.getValue().inactive())
-                 .map(Map.Entry::getKey)
-                 .collect(Collectors.toList());
     }
 
 }
