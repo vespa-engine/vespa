@@ -218,10 +218,12 @@ public class PhraseItem extends CompositeIndexedItem {
                 WordItem wordItem = (WordItem) item;
 
                 buffer.append(wordItem.getWord());
-            } else {
+            } else if (item instanceof PhraseSegmentItem) {
                 PhraseSegmentItem seg = (PhraseSegmentItem) item;
 
                 seg.appendContentsString(buffer);
+            } else {
+                buffer.append(item.toString());
             }
             if (i.hasNext()) {
                 buffer.append(" ");
@@ -250,7 +252,6 @@ public class PhraseItem extends CompositeIndexedItem {
 
     public int getNumWords() {
         int numWords = 0;
-
         for (Iterator<Item> j = getItemIterator(); j.hasNext();) {
             numWords += ((IndexedItem) j.next()).getNumWords();
         }
