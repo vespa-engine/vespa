@@ -68,5 +68,4 @@ sleepTimeWhenRedeployingFails long default=30
 
 # Feature Flags (poor man's feature flags, to be overridden in configserver-config.xml if needed)
 buildMinimalSetOfConfigModels bool default=true
-useDedicatedNodeForLogserver bool default=true
 throwIfBootstrappingTenantRepoFails bool default=true

@@ -161,8 +161,6 @@ public class VespaModelFactory implements ModelFactory {
                 .isBootstrap(properties.isBootstrap())
                 .isFirstTimeDeployment(properties.isFirstTimeDeployment())
                 .useDedicatedNodeForLogserver(properties.useDedicatedNodeForLogserver())
-                .enableLogServer(properties.enableLogServer())
-                .modelContextProperties(properties)
                 .build();
     }
 

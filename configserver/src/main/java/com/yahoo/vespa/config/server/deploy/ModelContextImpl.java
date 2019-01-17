@@ -129,10 +129,8 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
         private final boolean useDedicatedNodeForLogserver;
-        private final boolean enableLogServer;
 
         public Properties(ApplicationId applicationId,
-                          FlagSource flagSource,
                           boolean multitenant,
                           List<ConfigServerSpec> configServerSpecs,
                           HostName loadBalancerName,
@@ -143,7 +141,7 @@ public class ModelContextImpl implements ModelContext {
                           Set<Rotation> rotations,
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
-                          boolean useDedicatedNodeForLogserver) {
+                          FlagSource flagSource) {
             this.applicationId = applicationId;
             this.multitenant = multitenant;
             this.configServerSpecs = configServerSpecs;
@@ -155,8 +153,7 @@ public class ModelContextImpl implements ModelContext {
             this.rotations = rotations;
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
-            this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
-            this.enableLogServer = Flags.ENABLE_LOGSERVER
+            this.useDedicatedNodeForLogserver = Flags.USE_DEDICATED_NODE_FOR_LOGSERVER
                     .bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
                     .value();
@@ -201,11 +198,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
-
-        @Override
-        public boolean enableLogServer() {
-            return enableLogServer;
-        }
     }
 
 }

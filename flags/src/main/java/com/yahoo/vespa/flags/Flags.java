@@ -57,9 +57,9 @@ public class Flags {
             "Whether to enable CPU temperature task", "Takes effect on next host admin tick",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag ENABLE_LOGSERVER = defineFeatureFlag(
-            "enable-logserver", false,
-            "Whether to enable logserver.", "Takes effect at redeployment",
+    public static final UnboundBooleanFlag USE_DEDICATED_NODE_FOR_LOGSERVER = defineFeatureFlag(
+            "use-dedicated-node-for-logserver", false,
+            "Whether to use a dedicated node for the logserver.", "Takes effect at redeployment",
             APPLICATION_ID);
 
     public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(

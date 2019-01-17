@@ -156,7 +156,6 @@ public class SessionPreparer {
             this.rotations = new Rotations(curator, tenantPath);
             this.rotationsSet = getRotations(params.rotations());
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
-                                                              context.getFlagSource(),
                                                               configserverConfig.multitenant(),
                                                               ConfigServerSpec.fromConfig(configserverConfig),
                                                               HostName.from(configserverConfig.loadBalancerAddress()),
@@ -167,7 +166,7 @@ public class SessionPreparer {
                                                               rotationsSet,
                                                               params.isBootstrap(),
                                                               ! currentActiveApplicationSet.isPresent(),
-                                                              configserverConfig.useDedicatedNodeForLogserver());
+                                                              context.getFlagSource());
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.test;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -137,7 +138,6 @@ public class VespaModelTester {
                 .hostedVespa(hosted)
                 .applicationId(applicationId)
                 .useDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
-                .enableLogServer(true)
                 .build();
 
         DeployState deployState = new DeployState.Builder()
