@@ -16,6 +16,6 @@ public class JacksonArraySerializer<T> implements FlagSerializer<List<T>> {
 
     @Override
     public RawFlag serialize(List<T> value) {
-        return null;
+        return JsonNodeRawFlag.fromJacksonClass(value);
     }
 }

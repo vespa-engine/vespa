@@ -106,14 +106,15 @@ public class FlagsTest {
                 defaultInstance, instance);
     }
 
-    private <T> void testGeneric(UnboundFlag<?, ?, ?> unboundFlag, T defaultValue, T value) {
+    private <T> void testGeneric(UnboundFlag<T, ?, ?> unboundFlag, T defaultValue, T value) {
         FlagSource source = mock(FlagSource.class);
-        Flag<?, ?> flag = unboundFlag.bindTo(source);
+        Flag<T, ?> flag = unboundFlag.bindTo(source);
 
-        when(source.fetch(any(), any())).thenReturn(Optional.empty());
+        when(source.fetch(any(), any()))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(flag.serializer().serialize(value)));
+
         assertThat(flag.boxedValue(), equalTo(defaultValue));
-
-        when(source.fetch(any(), any())).thenReturn(Optional.of(JsonNodeRawFlag.fromJacksonClass(value)));
         assertThat(flag.boxedValue(), equalTo(value));
 
         assertTrue(Flags.getFlag(unboundFlag.id()).isPresent());
