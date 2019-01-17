@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.config.provision.HostName;
@@ -44,11 +45,11 @@ public class Deployment {
         this.applicationVersion = Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
         this.version = Objects.requireNonNull(version, "version cannot be null");
         this.deployTime = Objects.requireNonNull(deployTime, "deployTime cannot be null");
-        this.clusterUtilization = Objects.requireNonNull(clusterUtilization, "clusterUtilization cannot be null");
-        this.clusterInfo = Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null");
+        this.clusterUtilization = ImmutableMap.copyOf(Objects.requireNonNull(clusterUtilization, "clusterUtilization cannot be null"));
+        this.clusterInfo = ImmutableMap.copyOf(Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null"));
         this.metrics = Objects.requireNonNull(metrics, "deploymentMetrics cannot be null");
         this.activity = Objects.requireNonNull(activity, "activity cannot be null");
-        this.loadBalancers = Objects.requireNonNull(loadBalancers, "loadBalancers cannot be null");
+        this.loadBalancers = ImmutableMap.copyOf(Objects.requireNonNull(loadBalancers, "loadBalancers cannot be null"));
     }
 
     /** Returns the zone this was deployed to */

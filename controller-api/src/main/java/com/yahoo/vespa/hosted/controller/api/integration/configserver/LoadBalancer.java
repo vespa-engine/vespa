@@ -1,19 +1,26 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 
+/**
+ *  A load balancer
+ *
+ * @author mortent
+ */
 public class LoadBalancer {
     private final String id;
     private final TenantId tenant;
     private final ApplicationId application;
     private final InstanceId instance;
-    private final String cluster;
-    private final String hostname;
+    private final ClusterSpec.Id cluster;
+    private final HostName hostname;
 
-    public LoadBalancer(String id, TenantId tenant, ApplicationId application, InstanceId instance, String cluster, String hostname) {
+    public LoadBalancer(String id, TenantId tenant, ApplicationId application, InstanceId instance, ClusterSpec.Id cluster, HostName hostname) {
         this.id = id;
         this.tenant = tenant;
         this.application = application;
@@ -38,11 +45,11 @@ public class LoadBalancer {
         return instance;
     }
 
-    public String cluster() {
+    public ClusterSpec.Id cluster() {
         return cluster;
     }
 
-    public String hostname() {
+    public HostName hostname() {
         return hostname;
     }
 }

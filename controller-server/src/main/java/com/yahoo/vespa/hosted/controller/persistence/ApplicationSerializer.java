@@ -510,9 +510,9 @@ public class ApplicationSerializer {
     }
 
     private Map<ClusterSpec.Id, HostName> loadBalancerMapFromSlime(Inspector object) {
-        Map<ClusterSpec.Id, HostName> map = new HashMap<>();
-        object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), HostName.from(value.asString())));
-        return map;
+        Map<ClusterSpec.Id, HostName> loadBalancers = new HashMap<>();
+        object.traverse((String name, Inspector value) -> loadBalancers.put(new ClusterSpec.Id(name), HostName.from(value.asString())));
+        return loadBalancers;
     }
 
     private OptionalLong optionalLong(Inspector field) {

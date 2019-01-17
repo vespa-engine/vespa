@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -22,9 +23,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * Maintains loadbalancer endpoints.
+ * Reads load balancer information for each application in all zones and updates name service.
+ *
+ * @author mortent
+ */
 public class LoadBalancerMaintainer extends Maintainer {
 
     private static final Logger log = Logger.getLogger(LoadBalancerMaintainer.class.getName());
@@ -55,26 +63,26 @@ public class LoadBalancerMaintainer extends Maintainer {
 
     private void updateApplicationLoadBalancers(Application application) {
         // Get a list of all load balancers for this applications (for all zones and clusters)
-        Map<ZoneId, List<LoadBalancer>> applicationZoneLoadBalancers = new HashMap<>();
+        Map<ZoneId, List<LoadBalancer>> zoneLoadBalancers = new HashMap<>();
         for (ZoneId zoneId : application.deployments().keySet()) {
             try {
-                applicationZoneLoadBalancers.put(zoneId, controller().applications().configServer().getLoadBalancers(new DeploymentId(application.id(), zoneId)));
+                zoneLoadBalancers.put(zoneId, controller().applications().configServer().getLoadBalancers(new DeploymentId(application.id(), zoneId)));
             } catch (Exception e) {
-                log.log(LogLevel.INFO,
-                        String.format("Got exception fetching load balancers for application: %s, in zone: %s",
-                                      application.id().toShortString(), zoneId.value()),
+                log.log(LogLevel.WARNING,
+                        String.format("Got exception fetching load balancers for application: %s, in zone: %s. Retrying in %s",
+                                      application.id().toShortString(), zoneId.value(), maintenanceInterval()),
                         e);
             }
         }
 
         // store the load balancers on the deployments
-        controller().applications().lockIfPresent(application.id(), lockedApplication -> storeApplicationWithLoadBalancers(lockedApplication, applicationZoneLoadBalancers));
+        controller().applications().lockIfPresent(application.id(), lockedApplication -> storeApplicationWithLoadBalancers(lockedApplication, zoneLoadBalancers));
     }
 
     private void storeApplicationWithLoadBalancers(LockedApplication lockedApplication, Map<ZoneId, List<LoadBalancer>> loadBalancers) {
         for (Map.Entry<ZoneId, List<LoadBalancer>> entry : loadBalancers.entrySet()) {
             Map<ClusterSpec.Id, HostName> loadbalancerClusterMap = entry.getValue().stream()
-                    .collect(Collectors.toMap(lb -> ClusterSpec.Id.from(lb.id()), lb -> HostName.from(lb.hostname())));
+                    .collect(Collectors.toMap(LoadBalancer::cluster, LoadBalancer::hostname));
             lockedApplication = lockedApplication.withDeploymentLoadBalancers(entry.getKey(), loadbalancerClusterMap);
 
         }
@@ -89,12 +97,17 @@ public class LoadBalancerMaintainer extends Maintainer {
                 try {
                     RecordName recordName = RecordName.from(getEndpointName(loadBalancers.getKey(), application.id(), zone));
                     RecordData recordData = RecordData.fqdn(loadBalancers.getValue().value());
-                    nameService.createCname(recordName, recordData);
+                    Optional<Record> existingRecord = nameService.findRecord(Record.Type.CNAME, recordName);
+                    if(existingRecord.isPresent()) {
+                        nameService.updateRecord(existingRecord.get().id(), recordData);
+                    } else {
+                        nameService.createCname(recordName, recordData);
+                    }
                 } catch (Exception e) {
                     // Catching any exception, will be retried on next run
-                    log.log(LogLevel.INFO,
-                            String.format("Got exception updating name service for application: %s, cluster: %s in zone: %s",
-                                          application.id().toShortString(), loadBalancers.getKey().value(), zone.value()),
+                    log.log(LogLevel.WARNING,
+                            String.format("Got exception updating name service for application: %s, cluster: %s in zone: %s. Retrying in %s",
+                                          application.id().toShortString(), loadBalancers.getKey().value(), zone.value(), maintenanceInterval()),
                             e);
                 }
             }

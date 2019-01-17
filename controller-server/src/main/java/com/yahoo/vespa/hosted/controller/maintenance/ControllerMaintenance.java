@@ -110,6 +110,7 @@ public class ControllerMaintenance extends AbstractComponent {
         jobRunner.deconstruct();
         contactInformationMaintainer.deconstruct();
         costReportMaintainer.deconstruct();
+        loadbalancerMaintainer.deconstruct();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */

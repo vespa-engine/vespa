@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
@@ -25,7 +26,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author mpolden
+ * @author mortent
  */
 public class LoadBalancerMaintainerTest {
 
@@ -105,8 +106,8 @@ public class LoadBalancerMaintainerTest {
                                      new TenantId(applicationId.tenant().value()),
                                      new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(applicationId.application().value()),
                                      new InstanceId(applicationId.instance().value()),
-                                     "cluster-"+i,
-                                     "loadbalancer-"+i+"-zone-"+zone.value()
+                                     ClusterSpec.Id.from("cluster-"+i),
+                                     HostName.from("loadbalancer-" + i + "-zone-" + zone.value())
                                      ));
         }
         return loadBalancers;

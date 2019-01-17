@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -147,7 +146,8 @@ public class LockedApplication {
                                                   previousDeployment.clusterUtils(),
                                                   previousDeployment.clusterInfo(),
                                                   previousDeployment.metrics(),
-                                                  previousDeployment.activity(), Collections.emptyMap());
+                                                  previousDeployment.activity(),
+                                                  previousDeployment.loadBalancers());
         return with(newDeployment);
     }
 
