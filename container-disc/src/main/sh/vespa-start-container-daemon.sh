@@ -90,6 +90,12 @@ configure_memory() {
     fi
 }
 
+configure_cpu() {
+    if ((jvm_availableProcessors > 0)); then
+        cpu_options="-XX:ActiveProcessorCount=${jvm_availableProcessors}"
+    fi
+}
+
 configure_numactl() {
     log_message debug "starting ${VESPA_SERVICE_NAME} for ${VESPA_CONFIG_ID}"
     if numactl --interleave all true &> /dev/null; then
@@ -177,11 +183,14 @@ configure_gcopts
 configure_env_vars
 configure_classpath
 configure_numactl
+configure_cpu
 configure_preload
 
 exec $numactlcmd $envcmd java \
         -Dconfig.id="${VESPA_CONFIG_ID}" \
         -XX:+PreserveFramePointer \
+        ${VESPA_CONTAINER_JVMARGS} \
+        ${cpu_options} \
         ${memory_options} \
         ${jvm_gcopts} \
         -XX:MaxJavaStackTraceDepth=1000000 \
