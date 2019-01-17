@@ -27,6 +27,10 @@ jvm.directMemorySizeCache int default=0 restart
 ## value above. Setting outside [1, 99] disables this setting.
 jvm.heapSizeAsPercentageOfPhysicalMemory int default=0 restart
 
+## Number of processors available, can be used to set -XX:ActiveProcessorCount if set to non-zero.
+## In that case will be the number returned by the JVM when calling Runtime.getRuntime().availableProcessors()
+jvm.availableProcessors int default=0 restart
+
 ## Extra environment variables
 qrs.env string default="YELL_MA_EURO=INXIGHT" restart
 
