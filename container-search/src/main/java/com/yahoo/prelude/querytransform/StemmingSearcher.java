@@ -37,6 +37,14 @@ import static com.yahoo.prelude.querytransform.CJKSearcher.TERM_ORDER_RELAXATION
 @Provides(StemmingSearcher.STEMMING)
 public class StemmingSearcher extends Searcher {
 
+    private static class StemContext {
+        public boolean isCJK = false;
+        public boolean insidePhrase = false;
+        public Language language = null;
+        public IndexFacts.Session indexFacts = null;
+        public Map<Item, TaggableItem> reverseConnectivity = null;
+    }
+
     public static final String STEMMING = "Stemming";
     public static final CompoundName DISABLE = new CompoundName("nostemming");
     private final Linguistics linguistics;
@@ -67,7 +75,10 @@ public class StemmingSearcher extends Searcher {
             for (String field : highlightFields) {
                 StemMode stemMode = indexFacts.getIndex(field).getStemMode();
                 if (stemMode != StemMode.NONE) {
-                    Item newHighlight = scan(highlight.getHighlightItems().get(field), false, Language.ENGLISH, indexFacts, null);
+                    StemContext context = new StemContext();
+                    context.language = Language.ENGLISH;
+                    context.indexFacts = indexFacts;
+                    Item newHighlight = scan(highlight.getHighlightItems().get(field), context);
                     highlight.getHighlightItems().put(field, (AndItem)newHighlight);
                 }
             }
@@ -82,8 +93,12 @@ public class StemmingSearcher extends Searcher {
         if (language == Language.UNKNOWN) {
             return q.getModel().getQueryTree().getRoot();
         }
-        return scan(q.getModel().getQueryTree().getRoot(), language.isCjk(), language, indexFacts,
-                    createReverseConnectivities(q.getModel().getQueryTree().getRoot()));
+        StemContext context = new StemContext();
+        context.isCJK = language.isCjk();
+        context.language = language;
+        context.indexFacts = indexFacts;
+        context.reverseConnectivity = createReverseConnectivities(q.getModel().getQueryTree().getRoot());
+        return scan(q.getModel().getQueryTree().getRoot(), context);
     }
 
     private Map<Item, TaggableItem> createReverseConnectivities(Item root) {
@@ -108,36 +123,38 @@ public class StemmingSearcher extends Searcher {
         return reverseConnectivity;
     }
 
-    private Item scan(Item item, boolean isCJK, Language l, IndexFacts.Session indexFacts, 
-                      Map<Item, TaggableItem> reverseConnectivity) {
+    private Item scan(Item item, StemContext context) {
         if (item == null) {
             return null;
-        } else if (item instanceof BlockItem) {
-            return checkBlock((BlockItem) item, isCJK, l, indexFacts, reverseConnectivity);
+        }
+        boolean old = context.insidePhrase;
+        if (item instanceof PhraseItem || item instanceof PhraseSegmentItem) {
+            context.insidePhrase = true;
+        }
+        if (item instanceof BlockItem) {
+            item = checkBlock((BlockItem) item, context);
         } else if (item instanceof CompositeItem) {
             CompositeItem comp = (CompositeItem) item;
             ListIterator<Item> i = comp.getItemIterator();
 
             while (i.hasNext()) {
                 Item original = i.next();
-                Item transformed = scan(original, isCJK, l, indexFacts, reverseConnectivity);
+                Item transformed = scan(original, context);
                 if (original != transformed)
                     i.set(transformed);
             }
-            return item;
-        } else {
-            return item;
         }
+        context.insidePhrase = old;
+        return item;
     }
 
-    private Item checkBlock(BlockItem b, boolean isCJK, Language language,
-                            IndexFacts.Session indexFacts, Map<Item, TaggableItem> reverseConnectivity) {
+    private Item checkBlock(BlockItem b, StemContext context) {
         if (b instanceof PrefixItem || !b.isWords()) return (Item) b;
 
         if (b.isFromQuery() && !b.isStemmed()) {
-            Index index = indexFacts.getIndex(b.getIndexName());
+            Index index = context.indexFacts.getIndex(b.getIndexName());
             StemMode stemMode = index.getStemMode();
-            if (stemMode != StemMode.NONE) return stem(b, isCJK, language, reverseConnectivity, index);
+            if (stemMode != StemMode.NONE) return stem(b, context, index);
         }
         return (Item) b;
     }
@@ -158,21 +175,20 @@ public class StemmingSearcher extends Searcher {
     }
 
     // The rewriting logic is here
-    private Item stem(BlockItem current, boolean isCJK,
-                      Language language, Map<Item, TaggableItem> reverseConnectivity, Index index) {
+    private Item stem(BlockItem current, StemContext context, Index index) {
         Item blockAsItem = (Item)current;
         CompositeItem composite;
-        List<StemList> segments = linguistics.getStemmer().stem(current.stringValue(), index.getStemMode(), language);
+        List<StemList> segments = linguistics.getStemmer().stem(current.stringValue(), index.getStemMode(), context.language);
         String indexName = current.getIndexName();
         Substring substring = getOffsets(current);
 
         if (segments.size() == 1) {
-            TaggableItem w = singleWordSegment(current, segments.get(0), index, substring);
-            setMetaData(current, reverseConnectivity, w);
+            TaggableItem w = singleWordSegment(current, segments.get(0), index, substring, context.insidePhrase);
+            setMetaData(current, context.reverseConnectivity, w);
             return (Item) w;
         }
 
-        if (isCJK) {
+        if (context.isCJK) {
             composite = chooseCompositeForCJK(current,
                                               ((Item) current).getParent(),
                                               indexName);
@@ -181,7 +197,7 @@ public class StemmingSearcher extends Searcher {
         }
 
         for (StemList segment : segments) {
-            TaggableItem w = singleWordSegment(current, segment, index, substring);
+            TaggableItem w = singleWordSegment(current, segment, index, substring, context.insidePhrase);
 
             if (composite instanceof AndSegmentItem) {
                 setSignificance(w, current);
@@ -189,7 +205,7 @@ public class StemmingSearcher extends Searcher {
             composite.addItem((Item) w);
         }
         if (composite instanceof AndSegmentItem) {
-            andSegmentConnectivity(current, reverseConnectivity, composite);
+            andSegmentConnectivity(current, context.reverseConnectivity, composite);
         }
         copyAttributes(blockAsItem, composite);
         composite.lock();
@@ -197,7 +213,7 @@ public class StemmingSearcher extends Searcher {
         if (composite instanceof PhraseSegmentItem) {
             PhraseSegmentItem replacement = (PhraseSegmentItem) composite;
             setSignificance(replacement, current);
-            phraseSegmentConnectivity(current, reverseConnectivity, replacement);
+            phraseSegmentConnectivity(current, context.reverseConnectivity, replacement);
         }
 
         return composite;
@@ -265,23 +281,22 @@ public class StemmingSearcher extends Searcher {
     private TaggableItem singleWordSegment(BlockItem current,
                                            StemList segment,
                                            Index index,
-                                           Substring substring) {
+                                           Substring substring,
+                                           boolean insidePhrase) {
         String indexName = current.getIndexName();
-        if (index.getLiteralBoost() || index.getStemMode() == StemMode.ALL) {
-            // Yes, this will create a new WordAlternativesItem even if stemmed
-            // and original form are identical. This is to decrease complexity
-            // in accent removal and lowercasing.
+        if (insidePhrase == false && ((index.getLiteralBoost() || index.getStemMode() == StemMode.ALL))) {
             List<Alternative> terms = new ArrayList<>(segment.size() + 1);
             terms.add(new Alternative(current.stringValue(), 1.0d));
             for (String term : segment) {
                 terms.add(new Alternative(term, 0.7d));
             }
             WordAlternativesItem alternatives = new WordAlternativesItem(indexName, current.isFromQuery(), substring, terms);
-            return alternatives;
-        } else {
-            WordItem first = singleStemSegment((Item) current, segment.get(0), indexName, substring);
-            return first;
+            if (alternatives.getAlternatives().size() > 1) {
+                return alternatives;
+            }
         }
+        WordItem first = singleStemSegment((Item) current, segment.get(0), indexName, substring);
+        return first;
     }
 
     private void setMetaData(BlockItem current, Map<Item, TaggableItem> reverseConnectivity, TaggableItem replacement) {
