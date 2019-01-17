@@ -898,6 +898,7 @@ public class YqlParserTestCase {
         assertEquals(2, phrase.getItemCount());
         assertEquals("forest", ((WordItem) phrase.getItem(0)).getWord());
         checkWordAlternativesContent((WordAlternativesItem) phrase.getItem(1));
+        assertEquals("foo:\"forest WORD_ALTERNATIVES foo:[ tree(0.7) trees(1.0) ]\"", root.toString());
     }
 
     private void checkWordAlternativesContent(WordAlternativesItem alternatives) {
