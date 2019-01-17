@@ -28,7 +28,7 @@ jvm.directMemorySizeCache int default=0 restart
 jvm.heapSizeAsPercentageOfPhysicalMemory int default=0 restart
 
 ## Extra environment variables
-qrs.env string default="YELL_MA_EURO=INXIGHT" restart
+qrs.env string default="" restart
 
 ## Set ulimit -v in start script? this is mainly a safeguard against JNI stuff leaking memory.
 ulimitv string default="" restart
