@@ -35,9 +35,9 @@ public:
     ~asciistream();
     asciistream(const asciistream & rhs);
     asciistream & operator = (const asciistream & rhs);
-    asciistream(asciistream &&) = default;
-    asciistream & operator = (asciistream &&) = default;
-    void swap(asciistream & rhs);
+    asciistream(asciistream &&) noexcept;
+    asciistream & operator = (asciistream &&) noexcept;
+    void swap(asciistream & rhs) noexcept;
     asciistream & operator << (bool v)                { if (v) { *this << '1'; } else { *this << '0'; } return *this; }
     asciistream & operator << (char v)                { doFill(1); write(&v, 1); return *this; }
     asciistream & operator << (unsigned char v)       { doFill(1); write(&v, 1); return *this; }

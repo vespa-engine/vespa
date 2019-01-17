@@ -23,6 +23,7 @@ public:
     void testWriteThenRead();
     void testGetLine();
     void testCopyConstruct();
+    void testMoveIsWellDefined();
     void testIllegalNumbers();
     void testDouble();
     void testStateSaver();
@@ -166,6 +167,23 @@ AsciistreamTest::testCopyConstruct()
     EXPECT_FALSE(os3.str() == os2.str());
     os.swap(os2);
     EXPECT_TRUE(os3.str() == os2.str());
+}
+
+void
+AsciistreamTest::testMoveIsWellDefined()
+{
+    asciistream read_only("hello world");
+    asciistream dest(std::move(read_only));
+    EXPECT_EQUAL("hello world", dest.str());
+
+    read_only = asciistream("a string long enough to not be short string optimized");
+    dest = std::move(read_only);
+    EXPECT_EQUAL("a string long enough to not be short string optimized", dest.str());
+
+    asciistream written_src;
+    written_src << "a foo walks into a bar";
+    dest = std::move(written_src);
+    EXPECT_EQUAL("a foo walks into a bar", dest.str());
 }
 
 void
@@ -518,6 +536,7 @@ AsciistreamTest::Main()
     TEST_DO(verifyBothWays<uint64_t>(7, "7"));
 
     testCopyConstruct();
+    testMoveIsWellDefined();
     testIntegerManip();
     testFill();
     testString();
