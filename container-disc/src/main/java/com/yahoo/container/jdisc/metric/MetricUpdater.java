@@ -88,11 +88,13 @@ public class MetricUpdater extends AbstractComponent {
         private final Metric metric;
         private final ContainerWatchdogMetrics containerWatchdogMetrics;
         private final GarbageCollectionMetrics garbageCollectionMetrics;
+        private final JrtMetrics jrtMetrics;
 
         public UpdaterTask(Metric metric, ContainerWatchdogMetrics containerWatchdogMetrics) {
             this.metric = metric;
             this.containerWatchdogMetrics = containerWatchdogMetrics;
             this.garbageCollectionMetrics = new GarbageCollectionMetrics(Clock.systemUTC());
+            this.jrtMetrics = new JrtMetrics(metric);
         }
 
         @SuppressWarnings("deprecation")
@@ -109,6 +111,7 @@ public class MetricUpdater extends AbstractComponent {
 
             containerWatchdogMetrics.emitMetrics(metric);
             garbageCollectionMetrics.emitMetrics(metric);
+            jrtMetrics.emitMetrics();
         }
     }
 
