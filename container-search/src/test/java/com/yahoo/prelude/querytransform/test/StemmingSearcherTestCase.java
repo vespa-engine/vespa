@@ -130,6 +130,20 @@ public class StemmingSearcherTestCase {
         assertTrue("Did not find original word form in query.", foundExpectedBaseForm);
     }
 
+    @Test
+    public void testMultipleStemming() {
+        try {
+        Query q = new Query(QueryTestCase.httpEncode("/search?language=en&search=four&query=trees \"nouns girls\" flowers \"a verbs a\" girls&default-index=foobar"));
+        executeStemming(q);
+        assertEquals("AND WORD_ALTERNATIVES foobar:[ tree(0.7) trees(1.0) ] "+
+                     "foobar:\"noun girl\" WORD_ALTERNATIVES foobar:[ flower(0.7) flowers(1.0) ] "+
+                     "foobar:\"a verb a\" WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]", q.getModel().getQueryTree().getRoot().toString());
+       } catch (Exception e) {
+           System.err.println("got exception: "+ e);
+           e.printStackTrace();
+       }
+    }
+
     private Execution.Context newExecutionContext() {
         return new Execution.Context(null, indexFacts, null, null, linguistics);
     }
