@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.google.common.collect.Iterators;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
@@ -60,13 +61,13 @@ public class LoadBalancerProvisionerTest {
         List<LoadBalancer> loadBalancers = loadBalancerProvisioner.get(app1);
         assertEquals(1, loadBalancers.size());
 
-        assertEquals(loadBalancers.get(0).id().application(), app1);
-        assertEquals(loadBalancers.get(0).id().cluster(), containerCluster1);
-        assertEquals(loadBalancers.get(0).ports(), Collections.singletonList(4443));
-        assertEquals(loadBalancers.get(0).reals().get(0).ipAddress(), "127.0.0.1");
-        assertEquals(loadBalancers.get(0).reals().get(0).port(), 4080);
-        assertEquals(loadBalancers.get(0).reals().get(1).ipAddress(), "127.0.0.2");
-        assertEquals(loadBalancers.get(0).reals().get(1).port(), 4080);
+        assertEquals(app1, loadBalancers.get(0).id().application());
+        assertEquals(containerCluster1, loadBalancers.get(0).id().cluster());
+        assertEquals(Collections.singleton(4443), loadBalancers.get(0).ports());
+        assertEquals("127.0.0.1", get(loadBalancers.get(0).reals(), 0).ipAddress());
+        assertEquals(4080, get(loadBalancers.get(0).reals(), 0).port());
+        assertEquals("127.0.0.2", get(loadBalancers.get(0).reals(), 1).ipAddress());
+        assertEquals(4080, get(loadBalancers.get(0).reals(), 1).port());
 
         // A container is failed
         List<Node> containers = tester.getNodes(app1).type(ClusterSpec.Type.container).asList();
@@ -81,8 +82,8 @@ public class LoadBalancerProvisionerTest {
         containers = tester.getNodes(app1).type(ClusterSpec.Type.container).asList();
         LoadBalancer loadBalancer = loadBalancerProvisioner.get(app1).get(0);
         assertEquals(2, loadBalancer.reals().size());
-        assertEquals(containers.get(0).hostname(), loadBalancer.reals().get(0).hostname().value());
-        assertEquals(containers.get(1).hostname(), loadBalancer.reals().get(1).hostname().value());
+        assertEquals(containers.get(0).hostname(), get(loadBalancer.reals(), 0).hostname().value());
+        assertEquals(containers.get(1).hostname(), get(loadBalancer.reals(), 1).hostname().value());
 
         // Add another container cluster
         ClusterSpec.Id containerCluster2 = ClusterSpec.Id.from("qrs2");
@@ -129,6 +130,10 @@ public class LoadBalancerProvisionerTest {
             allNodes.addAll(tester.prepare(application, spec, 2, 1, "default"));
         }
         return allNodes;
+    }
+
+    private static <T> T get(Set<T> set, int position) {
+        return Iterators.get(set.iterator(), position, null);
     }
 
 }

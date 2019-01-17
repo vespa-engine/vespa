@@ -7,8 +7,8 @@ import com.yahoo.config.provision.HostName;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author mpolden
@@ -27,11 +27,11 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancer create(ApplicationId application, ClusterSpec.Id cluster, List<Real> reals) {
+    public LoadBalancer create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals) {
         LoadBalancer loadBalancer = new LoadBalancer(
                 new LoadBalancerId(application, cluster),
                 HostName.from("lb-" + application.toShortString() + "-" + cluster.value()),
-                Collections.singletonList(4443),
+                Collections.singleton(4443),
                 reals,
                 false);
         loadBalancers.put(loadBalancer.id(), loadBalancer);

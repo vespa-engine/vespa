@@ -12,8 +12,8 @@ import com.yahoo.vespa.hosted.provision.lb.Real;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Serializer for load balancers.
@@ -57,7 +57,7 @@ public class LoadBalancerSerializer {
     public static LoadBalancer fromJson(byte[] data) {
         Cursor object = SlimeUtils.jsonToSlime(data).get();
 
-        List<Real> reals = new ArrayList<>();
+        Set<Real> reals = new LinkedHashSet<>();
         object.field(realsField).traverse((ArrayTraverser) (i, realObject) -> {
             reals.add(new Real(HostName.from(realObject.field(hostnameField).asString()),
                                realObject.field(ipAddressField).asString(),
@@ -65,7 +65,7 @@ public class LoadBalancerSerializer {
 
         });
 
-        List<Integer> ports = new ArrayList<>();
+        Set<Integer> ports = new LinkedHashSet<>();
         object.field(portsField).traverse((ArrayTraverser) (i, port) -> ports.add((int) port.asLong()));
 
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
