@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -84,6 +86,12 @@ public class FlagsTest {
     @Test
     public void testDouble() {
         testGeneric(Flags.defineDoubleFlag("double-id", 3.142, "desc", "mod"), 3.142, 2.718);
+    }
+
+    @Test
+    public void testList() {
+        testGeneric(Flags.defineListFlag("list-id", Collections.singletonList("a"), "desc", "mod"),
+                Collections.singletonList("a"), Arrays.asList("a", "b", "c"));
     }
 
     @Test

@@ -118,6 +118,12 @@ public class Flags {
                 flagId, defaultValue, description, modificationEffect, dimensions);
     }
 
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static <T> UnboundListFlag<T> defineListFlag(String flagId, List<T> defaultValue, String description,
+                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
+        return define(UnboundListFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
+    }
+
     @FunctionalInterface
     private interface TypedUnboundFlagFactory<T, U extends UnboundFlag<?, ?, ?>> {
         U create(FlagId id, T defaultVale, FetchVector defaultFetchVector);
