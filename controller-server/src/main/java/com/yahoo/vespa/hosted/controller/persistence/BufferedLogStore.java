@@ -95,7 +95,7 @@ public class BufferedLogStore {
         while (firstChunk > 0 && chunkIds[--firstChunk] > after + 1);
         return logSerializer.fromJson(Arrays.stream(chunkIds, firstChunk, chunkIds.length)
                                             .mapToObj(chunkId -> buffer.readLog(id, type, chunkId))
-                                            .filter(Optional::isPresent).map(Optional::get)
+                                            .flatMap(Optional::stream)
                                             .collect(Collectors.toList()),
                                       after);
     }

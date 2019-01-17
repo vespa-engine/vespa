@@ -66,7 +66,7 @@ public class DeploymentSteps {
     public List<JobType> toJobs(DeploymentSpec.Step step) {
         return step.zones().stream()
                    .map(this::toJob)
-                   .filter(Optional::isPresent).map(Optional::get)
+                   .flatMap(Optional::stream)
                    .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 

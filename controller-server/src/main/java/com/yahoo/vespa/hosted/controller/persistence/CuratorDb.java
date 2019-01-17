@@ -316,8 +316,7 @@ public class CuratorDb {
     public List<Tenant> readTenants() {
         return readTenantNames().stream()
                                 .map(this::readTenant)
-                                .filter(Optional::isPresent)
-                                .map(Optional::get)
+                                .flatMap(Optional::stream)
                                 .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
@@ -354,8 +353,7 @@ public class CuratorDb {
                       .map(ApplicationId::fromSerializedForm)
                       .filter(applicationFilter)
                       .map(this::readApplication)
-                      .filter(Optional::isPresent)
-                      .map(Optional::get)
+                      .flatMap(Optional::stream)
                       .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
