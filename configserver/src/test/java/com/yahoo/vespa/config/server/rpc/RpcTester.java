@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.server.*;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
-import com.yahoo.vespa.config.server.SimpleJrtFactory;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
@@ -83,7 +82,6 @@ public class RpcTester implements AutoCloseable {
 
     void createAndStartRpcServer() throws IOException {
         ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
-        SimpleJrtFactory jrtFactory = new SimpleJrtFactory();
         rpcServer = new RpcServer(new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                                  .rpcport(port)
                                                                  .numRpcThreads(1)
@@ -95,8 +93,7 @@ public class RpcTester implements AutoCloseable {
                                                                        emptyNodeFlavors(),
                                                                        generationCounter)),
                                   Metrics.createTestMetrics(), new HostRegistries(),
-                                  hostLivenessTracker, new FileServer(temporaryFolder.newFolder(), jrtFactory),
-                                  jrtFactory);
+                                  hostLivenessTracker, new FileServer(temporaryFolder.newFolder()));
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);
         t = new Thread(rpcServer);
         t.start();

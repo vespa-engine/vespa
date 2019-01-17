@@ -94,7 +94,7 @@ public class ApplicationRepositoryTest {
         tenantRepository.addTenant(tenant3);
         orchestrator = new OrchestratorMock();
         provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, orchestrator, clock, new SimpleJrtFactory());
+        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, orchestrator, clock);
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
 
@@ -210,7 +210,7 @@ public class ApplicationRepositoryTest {
 
         tenantRepository.addTenant(tenant1);
         Provisioner provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, orchestrator, clock, new SimpleJrtFactory());
+        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, orchestrator, clock);
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
 
         // TODO: Deploy an app with a bundle or file that will be a file reference, too much missing in test setup to get this working now

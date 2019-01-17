@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
-import com.yahoo.vespa.config.server.SimpleJrtFactory;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
@@ -69,8 +68,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                                          new ApplicationRepository(tenantRepository,
                                                                    new MockProvisioner(),
                                                                    new OrchestratorMock(),
-                                                                   clock,
-                                                                   new SimpleJrtFactory()));
+                                                                   clock));
         pathPrefix = createPath(idTenant1, Zone.defaultZone());
         baseUrl = baseServer + pathPrefix;
     }

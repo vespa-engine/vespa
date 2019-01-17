@@ -28,7 +28,6 @@ import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.MockRefeedAction;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.http.*;
-import com.yahoo.vespa.config.server.SimpleJrtFactory;
 import com.yahoo.vespa.config.server.session.*;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -387,8 +386,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 new ApplicationRepository(tenantRepository,
                                           new MockProvisioner(),
                                           new OrchestratorMock(),
-                                          clock,
-                                          new SimpleJrtFactory()),
+                                          clock),
                 tenantRepository,
                 componentRegistry.getConfigserverConfig());
 
