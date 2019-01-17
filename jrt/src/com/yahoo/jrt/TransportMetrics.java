@@ -10,12 +10,18 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class TransportMetrics {
 
+    private static final TransportMetrics instance = new TransportMetrics();
+
     private final AtomicLong tlsCertificateVerificationFailures = new AtomicLong(0);
     private final AtomicLong peerAuthorizationFailures = new AtomicLong(0);
     private final AtomicLong serverTlsConnectionsEstablished = new AtomicLong(0);
     private final AtomicLong clientTlsConnectionsEstablished = new AtomicLong(0);
     private final AtomicLong serverUnencryptedConnectionsEstablished = new AtomicLong(0);
     private final AtomicLong clientUnencryptedConnectionsEstablished = new AtomicLong(0);
+
+    private TransportMetrics() {}
+
+    public static TransportMetrics getInstance() { return instance; }
 
     public long tlsCertificateVerificationFailures() {
         return tlsCertificateVerificationFailures.get();
@@ -65,6 +71,15 @@ public class TransportMetrics {
 
     void incrementClientUnencryptedConnectionsEstablished() {
         clientUnencryptedConnectionsEstablished.incrementAndGet();
+    }
+
+    void reset() {
+        tlsCertificateVerificationFailures.set(0);
+        peerAuthorizationFailures.set(0);
+        serverTlsConnectionsEstablished.set(0);
+        clientTlsConnectionsEstablished.set(0);
+        serverUnencryptedConnectionsEstablished.set(0);
+        clientUnencryptedConnectionsEstablished.set(0);
     }
 
     @Override

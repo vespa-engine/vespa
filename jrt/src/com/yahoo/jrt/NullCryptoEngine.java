@@ -9,7 +9,7 @@ import java.nio.channels.SocketChannel;
  * CryptoEngine implementation that performs no encryption.
  **/
 public class NullCryptoEngine implements CryptoEngine {
-    @Override public CryptoSocket createCryptoSocket(TransportMetrics metrics, SocketChannel channel, boolean isServer) {
-        return new NullCryptoSocket(metrics, channel, isServer);
+    @Override public CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer) {
+        return new NullCryptoSocket(channel, isServer);
     }
 }

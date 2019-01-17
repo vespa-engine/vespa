@@ -16,6 +16,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 public class EchoTest {
 
+    TransportMetrics metrics;
     Supervisor server;
     Acceptor   acceptor;
     Supervisor client;
@@ -23,7 +24,7 @@ public class EchoTest {
     Values     refValues;
 
     private interface MetricsAssertions {
-        void assertMetrics(TransportMetrics serverMetrics, TransportMetrics clientMetrics) throws AssertionError;
+        void assertMetrics(TransportMetrics metrics) throws AssertionError;
     }
 
     @Parameter(value = 0) public CryptoEngine crypto;
@@ -34,33 +35,35 @@ public class EchoTest {
         return new Object[][] {
                 {
                         new NullCryptoEngine(),
-                        (MetricsAssertions) (serverMetrics, clientMetrics) -> {
-                            assertEquals(1, serverMetrics.serverUnencryptedConnectionsEstablished());
-                            assertEquals(1, clientMetrics.clientUnencryptedConnectionsEstablished());
+                        (MetricsAssertions) metrics -> {
+                            assertEquals(1, metrics.serverUnencryptedConnectionsEstablished());
+                            assertEquals(1, metrics.clientUnencryptedConnectionsEstablished());
                         }},
                 {new XorCryptoEngine(), null},
                 {
                         new TlsCryptoEngine(createTestTlsContext()),
-                        (MetricsAssertions) (serverMetrics, clientMetrics) -> {
-                            assertEquals(1, serverMetrics.serverTlsConnectionsEstablished());
-                            assertEquals(1, clientMetrics.clientTlsConnectionsEstablished());
+                        (MetricsAssertions) metrics -> {
+                            assertEquals(1, metrics.serverTlsConnectionsEstablished());
+                            assertEquals(1, metrics.clientTlsConnectionsEstablished());
                         }},
                 {
                         new MaybeTlsCryptoEngine(new TlsCryptoEngine(createTestTlsContext()), false),
-                        (MetricsAssertions) (serverMetrics, clientMetrics) -> {
-                            assertEquals(1, serverMetrics.serverUnencryptedConnectionsEstablished());
-                            assertEquals(1, clientMetrics.clientUnencryptedConnectionsEstablished());
+                        (MetricsAssertions) metrics -> {
+                            assertEquals(1, metrics.serverUnencryptedConnectionsEstablished());
+                            assertEquals(1, metrics.clientUnencryptedConnectionsEstablished());
                         }},
                 {
                         new MaybeTlsCryptoEngine(new TlsCryptoEngine(createTestTlsContext()), true),
-                        (MetricsAssertions) (serverMetrics, clientMetrics) -> {
-                             assertEquals(1, serverMetrics.serverTlsConnectionsEstablished());
-                             assertEquals(1, clientMetrics.clientTlsConnectionsEstablished());
+                        (MetricsAssertions) metrics -> {
+                             assertEquals(1, metrics.serverTlsConnectionsEstablished());
+                             assertEquals(1, metrics.clientTlsConnectionsEstablished());
                         }}};
     }
 
     @Before
     public void setUp() throws ListenFailedException {
+        metrics =  TransportMetrics.getInstance();
+        metrics.reset();
         server   = new Supervisor(new Transport(crypto));
         client   = new Supervisor(new Transport(crypto));
         acceptor = server.listen(new Spec(0));
@@ -131,7 +134,7 @@ public class EchoTest {
         assertTrue(Test.equals(req.returnValues(), refValues));
         assertTrue(Test.equals(req.parameters(), refValues));
         if (metricsAssertions != null) {
-            metricsAssertions.assertMetrics(server.transport().metrics(), client.transport().metrics());
+            metricsAssertions.assertMetrics(metrics);
         }
     }
 }
