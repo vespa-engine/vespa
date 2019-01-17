@@ -4,6 +4,7 @@ package com.yahoo.vespa.flags;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -52,10 +53,10 @@ public class Flags {
             "Whether to enable Nessus.", "Takes effect on next host admin tick",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag ENABLE_CPU_TEMPERATURE_TASK = defineFeatureFlag(
-            "enable-cputemptask", true,
-            "Whether to enable CPU temperature task", "Takes effect on next host admin tick",
-            HOSTNAME);
+    public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
+            "disabled-host-admin-tasks", Collections.emptyList(),
+            "List of host-admin task names that should be skipped", "Takes effect on next host admin tick",
+            HOSTNAME, NODE_TYPE);
 
     public static final UnboundBooleanFlag USE_DEDICATED_NODE_FOR_LOGSERVER = defineFeatureFlag(
             "use-dedicated-node-for-logserver", false,
