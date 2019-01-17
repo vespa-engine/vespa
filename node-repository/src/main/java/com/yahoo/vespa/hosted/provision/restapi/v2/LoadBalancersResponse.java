@@ -9,11 +9,11 @@ import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,12 +32,15 @@ public class LoadBalancersResponse extends HttpResponse {
     }
 
     private Optional<ApplicationId> application() {
-        return Optional.ofNullable(request.getProperty("application")).map(ApplicationFilter::toApplicationId);
+        return Optional.ofNullable(request.getProperty("application"))
+                       .map(ApplicationFilter::toApplicationId);
     }
 
     private List<LoadBalancer> loadBalancers() {
-        return application().map(nodeRepository.database()::readLoadBalancers)
-                            .orElseGet(() -> new ArrayList<>(nodeRepository.database().readLoadBalancers().values()));
+        LoadBalancerList loadBalancers = nodeRepository.loadBalancers();
+        return application().map(loadBalancers::owner)
+                            .map(LoadBalancerList::asList)
+                            .orElseGet(loadBalancers::asList);
     }
 
     @Override

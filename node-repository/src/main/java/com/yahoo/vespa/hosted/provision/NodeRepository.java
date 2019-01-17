@@ -16,6 +16,7 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.flag.Flags;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -171,6 +172,11 @@ public class NodeRepository extends AbstractComponent {
     /** Returns a filterable list of all nodes in this repository */
     public NodeList list() {
         return new NodeList(getNodes());
+    }
+
+    /** Returns a filterable list of all load balancers in this repository */
+    public LoadBalancerList loadBalancers() {
+        return new LoadBalancerList(database().readLoadBalancers().values());
     }
 
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return db.getNodes(id, inState); }

@@ -42,11 +42,6 @@ public class LoadBalancerProvisioner {
         this.service = service;
     }
 
-    /** Get load balancers assigned to given application */
-    public List<LoadBalancer> get(ApplicationId application) {
-        return db.readLoadBalancers(application);
-    }
-
     /**
      * Provision load balancer(s) for given application.
      *
@@ -73,9 +68,9 @@ public class LoadBalancerProvisioner {
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (Mutex applicationLock = nodeRepository.lock(application)) {
             try (Mutex loadBalancersLock = db.lockLoadBalancers()) {
-                List<LoadBalancer> deactivatedLoadBalancers = db.readLoadBalancers(application).stream()
-                                                                .map(LoadBalancer::deactivate)
-                                                                .collect(Collectors.toList());
+                List<LoadBalancer> deactivatedLoadBalancers = nodeRepository.loadBalancers().owner(application).asList().stream()
+                                                                            .map(LoadBalancer::deactivate)
+                                                                            .collect(Collectors.toList());
                 db.writeLoadBalancers(deactivatedLoadBalancers, transaction);
             }
         }
