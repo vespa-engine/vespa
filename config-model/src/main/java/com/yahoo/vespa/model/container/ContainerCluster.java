@@ -185,6 +185,7 @@ public final class ContainerCluster
     
     private String hostClusterId = null;
     private String jvmGCOptions = null;
+    private String environmentVars = null;
     private Integer memoryPercentage = null;
 
     private static class AcceptAllVerifier implements ContainerClusterVerifier {
@@ -639,6 +640,11 @@ public final class ContainerCluster
         } else {
             jvmBuilder.gcopts(G1GC);
         }
+        if (environmentVars != null) {
+            QrStartConfig.Qrs.Builder qrsBuilder = new QrStartConfig.Qrs.Builder();
+            qrsBuilder.env(environmentVars);
+            builder.qrs(qrsBuilder);
+        }
         builder.jvm(jvmBuilder);
     }
 
@@ -797,6 +803,7 @@ public final class ContainerCluster
 
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
     public void setJvmGCOptions(String opts) { this.jvmGCOptions = opts; }
+    public void setEnvironmentVars(String environmentVars) { this.environmentVars = environmentVars; }
     public Optional<String> getJvmGCOptions() { return Optional.ofNullable(jvmGCOptions); }
 
     /** 

@@ -506,6 +506,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
+            String environmentVars = nodesElement.getAttribute(VespaDomBuilder.ENVIRONMENT_VARS_ATTRIB_NAME);
+            if (environmentVars != null) {
+                cluster.setEnvironmentVars(environmentVars);
+            }
             applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
             if (useCpuSocketAffinity(nodesElement))
                 AbstractService.distributeCpuSocketAffinity(nodes);
