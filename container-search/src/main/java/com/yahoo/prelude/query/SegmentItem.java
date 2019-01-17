@@ -82,6 +82,7 @@ public abstract class SegmentItem extends CompositeItem implements BlockItem {
         return locked;
     }
 
+    @Override
     public int getNumWords() {
         return getItemCount();
     }

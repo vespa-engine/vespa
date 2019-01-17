@@ -157,6 +157,7 @@ public class WordItem extends TermItem {
         return this.word.equals(other.word);
     }
 
+    @Override
     public int getNumWords() {
         return 1;
     }

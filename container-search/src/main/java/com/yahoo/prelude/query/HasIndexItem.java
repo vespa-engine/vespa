@@ -15,6 +15,7 @@ public interface HasIndexItem {
     @NonNull
     public String getIndexName();
 
+    /** @return how many phrase words does this item contain */
     public int getNumWords();
 
 }
