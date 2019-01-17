@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -19,18 +20,20 @@ public class LoadBalancer {
     private final LoadBalancerId id;
     private final HostName hostname;
     private final Set<Integer> ports;
+    private final Set<String> networks;
     private final Set<Real> reals;
     private final boolean inactive;
 
     // TODO: Remove this when no longer used by internal code
     public LoadBalancer(LoadBalancerId id, HostName hostname, List<Integer> ports, List<Real> reals, boolean inactive) {
-        this(id, hostname,  ImmutableSortedSet.copyOf(ports), ImmutableSortedSet.copyOf(reals), inactive);
+        this(id, hostname, ImmutableSortedSet.copyOf(ports), Collections.emptySet(), ImmutableSortedSet.copyOf(reals), inactive);
     }
 
-    public LoadBalancer(LoadBalancerId id, HostName hostname, Set<Integer> ports, Set<Real> reals, boolean inactive) {
+    public LoadBalancer(LoadBalancerId id, HostName hostname, Set<Integer> ports, Set<String> networks, Set<Real> reals, boolean inactive) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.ports = ImmutableSortedSet.copyOf(requirePorts(ports));
+        this.networks = ImmutableSortedSet.copyOf(Objects.requireNonNull(networks, "networks must be non-null"));
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals, "targets must be non-null"));
         this.inactive = inactive;
     }
@@ -50,6 +53,11 @@ public class LoadBalancer {
         return ports;
     }
 
+    /** Networks (CIDR blocks) of this load balancer */
+    public Set<String> networks() {
+        return networks;
+    }
+
     /** Real servers behind this load balancer */
     public Set<Real> reals() {
         return reals;
@@ -65,7 +73,7 @@ public class LoadBalancer {
 
     /** Return a copy of this that is set inactive */
     public LoadBalancer deactivate() {
-        return new LoadBalancer(id, hostname, ports, reals, true);
+        return new LoadBalancer(id, hostname, ports, networks, reals, true);
     }
 
     private static Set<Integer> requirePorts(Set<Integer> ports) {

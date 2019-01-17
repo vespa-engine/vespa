@@ -25,6 +25,7 @@ public class LoadBalancerSerializerTest {
                                                                         ClusterSpec.Id.from("qrs")),
                                                      HostName.from("lb-host"),
                                                      ImmutableSet.of(4080, 4443),
+                                                     ImmutableSet.of("10.2.3.4/24"),
                                                      ImmutableSet.of(new Real(HostName.from("real-1"),
                                                                               "127.0.0.1",
                                                                               4080),
@@ -37,6 +38,7 @@ public class LoadBalancerSerializerTest {
         assertEquals(loadBalancer.id(), serialized.id());
         assertEquals(loadBalancer.hostname(), serialized.hostname());
         assertEquals(loadBalancer.ports(), serialized.ports());
+        assertEquals(loadBalancer.networks(), serialized.networks());
         assertEquals(loadBalancer.inactive(), serialized.inactive());
         assertEquals(loadBalancer.reals(), serialized.reals());
     }

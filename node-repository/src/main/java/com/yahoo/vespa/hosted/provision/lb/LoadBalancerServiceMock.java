@@ -32,6 +32,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
                 new LoadBalancerId(application, cluster),
                 HostName.from("lb-" + application.toShortString() + "-" + cluster.value()),
                 Collections.singleton(4443),
+                Collections.singleton("10.2.3.4/24"),
                 reals,
                 false);
         loadBalancers.put(loadBalancer.id(), loadBalancer);

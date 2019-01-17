@@ -26,6 +26,7 @@ public class LoadBalancerSerializer {
     private static final String hostnameField = "hostname";
     private static final String inactiveField = "inactive";
     private static final String portsField = "ports";
+    private static final String networksField = "networks";
     private static final String realsField = "reals";
     private static final String ipAddressField = "ipAddress";
     private static final String portField = "port";
@@ -38,6 +39,8 @@ public class LoadBalancerSerializer {
         root.setString(hostnameField, loadBalancer.hostname().toString());
         Cursor portArray = root.setArray(portsField);
         loadBalancer.ports().forEach(portArray::addLong);
+        Cursor networkArray = root.setArray(networksField);
+        loadBalancer.networks().forEach(networkArray::addString);
         Cursor realArray = root.setArray(realsField);
         loadBalancer.reals().forEach(real -> {
             Cursor realObject = realArray.addObject();
@@ -68,9 +71,15 @@ public class LoadBalancerSerializer {
         Set<Integer> ports = new LinkedHashSet<>();
         object.field(portsField).traverse((ArrayTraverser) (i, port) -> ports.add((int) port.asLong()));
 
+        Set<String> networks = new LinkedHashSet<>();
+        if (object.field(networksField).valid()) { // TODO: Remove check after 2019-03-01
+            object.field(networksField).traverse((ArrayTraverser) (i, network) -> networks.add(network.asString()));
+        }
+
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
                                 HostName.from(object.field(hostnameField).asString()),
                                 ports,
+                                networks,
                                 reals,
                                 object.field(inactiveField).asBool());
     }
