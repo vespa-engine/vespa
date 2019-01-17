@@ -101,7 +101,7 @@ public class WordAlternativesItem extends TermItem {
 
     @Override
     public int getNumWords() {
-        return alternatives.size();
+        return 1;
     }
 
     @Override
