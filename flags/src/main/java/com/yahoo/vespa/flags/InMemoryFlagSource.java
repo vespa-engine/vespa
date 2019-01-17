@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +39,10 @@ public class InMemoryFlagSource implements FlagSource {
 
     public <T> InMemoryFlagSource withJacksonFlag(FlagId flagId, T value, Class<T> jacksonClass) {
         return withRawFlag(flagId, new UnboundJacksonFlag<>(flagId, value, jacksonClass).serializer().serialize(value));
+    }
+
+    public <T> InMemoryFlagSource withListFlag(FlagId flagId, List<T> value) {
+        return withRawFlag(flagId, new UnboundListFlag<T>(flagId, value).serializer().serialize(value));
     }
 
     public InMemoryFlagSource removeFlag(FlagId flagId) {
