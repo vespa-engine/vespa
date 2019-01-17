@@ -91,7 +91,13 @@ public class WordAlternativesItem extends TermItem {
 
     @Override
     public String stringValue() {
-        return alternatives.get(maxIndex).word;
+        StringBuilder builder = new StringBuilder();
+        builder.append("[ ");
+        for (Alternative a : alternatives) {
+            builder.append(a.word).append("(").append(a.exactness).append(") ");
+        }
+        builder.append("]");
+        return builder.toString();
     }
 
     @Override
