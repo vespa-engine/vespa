@@ -214,13 +214,13 @@ CryptoEngine::SP create_default_crypto_engine() {
     env = getenv("VESPA_TLS_INSECURE_MIXED_MODE");
     vespalib::string mixed_mode = env ? env : "";
     if (mixed_mode == "plaintext_client_mixed_server") {
-        LOG(debug, "tls insecure mixed-mode activated: plaintext client, mixed server");
+        LOG(debug, "TLS insecure mixed-mode activated: plaintext client, mixed server");
         return std::make_shared<MaybeTlsCryptoEngine>(std::move(tls), false);
     } else if (mixed_mode == "tls_client_mixed_server") {
-        LOG(debug, "tls insecure mixed-mode activated: tls client, mixed server");
+        LOG(debug, "TLS insecure mixed-mode activated: TLS client, mixed server");
         return std::make_shared<MaybeTlsCryptoEngine>(std::move(tls), true);
-    } else if (!mixed_mode.empty()) {
-        LOG(warning, "bad tls insecure mixed-mode specified: '%s' (ignoring)",
+    } else if (!mixed_mode.empty() && (mixed_mode != "tls_client_tls_server")) {
+        LOG(warning, "bad TLS insecure mixed-mode specified: '%s' (ignoring)",
             mixed_mode.c_str());
     }
     return tls;
