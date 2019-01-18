@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ public class NodeAttributes {
     private Optional<DockerImage> dockerImage = Optional.empty();
     private Optional<String> vespaVersion = Optional.empty();
     private Optional<String> currentOsVersion = Optional.empty();
+    private Optional<Instant> currentFirmwareCheck = Optional.empty();
     private Optional<String> hardwareDivergence = Optional.empty();
     private Optional<String> hardwareFailureDescription = Optional.empty();
     private Optional<Boolean> wantToDeprovision = Optional.empty();
@@ -47,6 +49,11 @@ public class NodeAttributes {
 
     public NodeAttributes withCurrentOsVersion(String currentOsVersion) {
         this.currentOsVersion = Optional.of(currentOsVersion);
+        return this;
+    }
+
+    public NodeAttributes withCurrentFirmwareCheck(Instant currentFirmwareCheck) {
+        this.currentFirmwareCheck = Optional.of(currentFirmwareCheck);
         return this;
     }
 
@@ -86,6 +93,10 @@ public class NodeAttributes {
         return currentOsVersion;
     }
 
+    public Optional<Instant> getCurrentFirmwareCheck() {
+        return currentFirmwareCheck;
+    }
+
     public Optional<String> getHardwareDivergence() {
         return hardwareDivergence;
     }
@@ -101,7 +112,7 @@ public class NodeAttributes {
     @Override
     public int hashCode() {
         return Objects.hash(restartGeneration, rebootGeneration, dockerImage, vespaVersion, currentOsVersion,
-                hardwareDivergence, hardwareFailureDescription, wantToDeprovision);
+                currentFirmwareCheck, hardwareDivergence, hardwareFailureDescription, wantToDeprovision);
     }
 
     @Override
@@ -116,6 +127,7 @@ public class NodeAttributes {
                 && Objects.equals(dockerImage, other.dockerImage)
                 && Objects.equals(vespaVersion, other.vespaVersion)
                 && Objects.equals(currentOsVersion, other.currentOsVersion)
+                && Objects.equals(currentFirmwareCheck, other.currentFirmwareCheck)
                 && Objects.equals(hardwareDivergence, other.hardwareDivergence)
                 && Objects.equals(hardwareFailureDescription, other.hardwareFailureDescription)
                 && Objects.equals(wantToDeprovision, other.wantToDeprovision);
@@ -129,6 +141,7 @@ public class NodeAttributes {
                         dockerImage.map(img -> "dockerImage=" + img.asString()),
                         vespaVersion.map(ver -> "vespaVersion=" + ver),
                         currentOsVersion.map(ver -> "currentOsVersion=" + ver),
+                        currentFirmwareCheck.map(at -> "currentFirmwareCheck=" + at),
                         hardwareDivergence.map(hwDivg -> "hardwareDivergence=" + hwDivg),
                         hardwareFailureDescription.map(hwDesc -> "hardwareFailureDescription=" + hwDesc),
                         wantToDeprovision.map(depr -> "wantToDeprovision=" + depr))

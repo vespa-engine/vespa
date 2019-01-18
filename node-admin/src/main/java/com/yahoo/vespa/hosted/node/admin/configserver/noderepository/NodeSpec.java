@@ -6,6 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,6 +37,9 @@ public class NodeSpec {
     private final long wantedRebootGeneration;
     private final long currentRebootGeneration;
 
+    private final Optional<Instant> wantedFirmwareCheck;
+    private final Optional<Instant> currentFirmwareCheck;
+
     private final Optional<Boolean> allowedToBeDown;
     private final Optional<Boolean> wantToDeprovision;
     private final Optional<Owner> owner;
@@ -54,34 +58,36 @@ public class NodeSpec {
     private final Optional<String> parentHostname;
 
     public NodeSpec(
-            final String hostname,
-            final Optional<DockerImage> wantedDockerImage,
-            final Optional<DockerImage> currentDockerImage,
-            final Node.State state,
-            final NodeType nodeType,
-            final String flavor,
-            final String canonicalFlavor,
-            final Optional<String> wantedVespaVersion,
-            final Optional<String> vespaVersion,
-            final Optional<String> wantedOsVersion,
-            final Optional<String> currentOsVersion,
-            final Optional<Boolean> allowedToBeDown,
-            final Optional<Boolean> wantToDeprovision,
-            final Optional<Owner> owner,
-            final Optional<Membership> membership,
-            final Optional<Long> wantedRestartGeneration,
-            final Optional<Long> currentRestartGeneration,
-            final long wantedRebootGeneration,
-            final long currentRebootGeneration,
-            final double minCpuCores,
-            final double minMainMemoryAvailableGb,
-            final double minDiskAvailableGb,
-            final boolean fastDisk,
-            final double bandwidth,
-            final Set<String> ipAddresses,
-            final Optional<String> hardwareDivergence,
-            final Optional<String> hardwareFailureDescription,
-            final Optional<String> parentHostname) {
+            String hostname,
+            Optional<DockerImage> wantedDockerImage,
+            Optional<DockerImage> currentDockerImage,
+            Node.State state,
+            NodeType nodeType,
+            String flavor,
+            String canonicalFlavor,
+            Optional<String> wantedVespaVersion,
+            Optional<String> vespaVersion,
+            Optional<String> wantedOsVersion,
+            Optional<String> currentOsVersion,
+            Optional<Boolean> allowedToBeDown,
+            Optional<Boolean> wantToDeprovision,
+            Optional<Owner> owner,
+            Optional<Membership> membership,
+            Optional<Long> wantedRestartGeneration,
+            Optional<Long> currentRestartGeneration,
+            long wantedRebootGeneration,
+            long currentRebootGeneration,
+            Optional<Instant> wantedFirmwareCheck,
+            Optional<Instant> currentFirmwareCheck,
+            double minCpuCores,
+            double minMainMemoryAvailableGb,
+            double minDiskAvailableGb,
+            boolean fastDisk,
+            double bandwidth,
+            Set<String> ipAddresses,
+            Optional<String> hardwareDivergence,
+            Optional<String> hardwareFailureDescription,
+            Optional<String> parentHostname) {
         this.hostname = Objects.requireNonNull(hostname);
         this.wantedDockerImage = Objects.requireNonNull(wantedDockerImage);
         this.currentDockerImage = Objects.requireNonNull(currentDockerImage);
@@ -101,6 +107,8 @@ public class NodeSpec {
         this.currentRestartGeneration = currentRestartGeneration;
         this.wantedRebootGeneration = wantedRebootGeneration;
         this.currentRebootGeneration = currentRebootGeneration;
+        this.wantedFirmwareCheck = Objects.requireNonNull(wantedFirmwareCheck);
+        this.currentFirmwareCheck = Objects.requireNonNull(currentFirmwareCheck);
         this.minCpuCores = minCpuCores;
         this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
         this.minDiskAvailableGb = minDiskAvailableGb;
@@ -170,6 +178,14 @@ public class NodeSpec {
 
     public long getCurrentRebootGeneration() {
         return currentRebootGeneration;
+    }
+
+    public Optional<Instant> getWantedFirmwareCheck() {
+        return wantedFirmwareCheck;
+    }
+
+    public Optional<Instant> getCurrentFirmwareCheck() {
+        return currentFirmwareCheck;
     }
 
     public Optional<Boolean> getAllowedToBeDown() {
@@ -250,6 +266,8 @@ public class NodeSpec {
                 Objects.equals(currentRestartGeneration, that.currentRestartGeneration) &&
                 Objects.equals(wantedRebootGeneration, that.wantedRebootGeneration) &&
                 Objects.equals(currentRebootGeneration, that.currentRebootGeneration) &&
+                Objects.equals(wantedFirmwareCheck, that.wantedFirmwareCheck) &&
+                Objects.equals(currentFirmwareCheck, that.currentFirmwareCheck) &&
                 Objects.equals(minCpuCores, that.minCpuCores) &&
                 Objects.equals(minMainMemoryAvailableGb, that.minMainMemoryAvailableGb) &&
                 Objects.equals(minDiskAvailableGb, that.minDiskAvailableGb) &&
@@ -283,6 +301,8 @@ public class NodeSpec {
                 currentRestartGeneration,
                 wantedRebootGeneration,
                 currentRebootGeneration,
+                wantedFirmwareCheck,
+                currentFirmwareCheck,
                 minCpuCores,
                 minMainMemoryAvailableGb,
                 minDiskAvailableGb,
@@ -317,6 +337,8 @@ public class NodeSpec {
                 + " currentRestartGeneration=" + currentRestartGeneration
                 + " wantedRebootGeneration=" + wantedRebootGeneration
                 + " currentRebootGeneration=" + currentRebootGeneration
+                + " wantedFirmwareCheck=" + wantedFirmwareCheck
+                + " currentFirmwareCheck=" + currentFirmwareCheck
                 + " minMainMemoryAvailableGb=" + minMainMemoryAvailableGb
                 + " minDiskAvailableGb=" + minDiskAvailableGb
                 + " fastDisk=" + fastDisk
@@ -477,6 +499,8 @@ public class NodeSpec {
         private Optional<Long> currentRestartGeneration = Optional.empty();
         private long wantedRebootGeneration;
         private long currentRebootGeneration;
+        private Optional<Instant> wantedFirmwareCheck = Optional.empty();
+        private Optional<Instant> currentFirmwareCheck = Optional.empty();
         private double minCpuCores;
         private double minMainMemoryAvailableGb;
         private double minDiskAvailableGb;
@@ -516,6 +540,8 @@ public class NodeSpec {
             node.membership.ifPresent(this::membership);
             node.wantedRestartGeneration.ifPresent(this::wantedRestartGeneration);
             node.currentRestartGeneration.ifPresent(this::currentRestartGeneration);
+            node.wantedFirmwareCheck.ifPresent(this::wantedFirmwareCheck);
+            node.currentFirmwareCheck.ifPresent(this::currentFirmwareCheck);
             node.hardwareDivergence.ifPresent(this::hardwareDivergence);
             node.hardwareFailureDescription.ifPresent(this::hardwareFailureDescription);
             node.parentHostname.ifPresent(this::parentHostname);
@@ -613,6 +639,16 @@ public class NodeSpec {
 
         public Builder currentRebootGeneration(long currentRebootGeneration) {
             this.currentRebootGeneration = currentRebootGeneration;
+            return this;
+        }
+
+        public Builder wantedFirmwareCheck(Instant wantedFirmwareCheck) {
+            this.wantedFirmwareCheck = Optional.of(wantedFirmwareCheck);
+            return this;
+        }
+
+        public Builder currentFirmwareCheck(Instant currentFirmwareCheck) {
+            this.currentFirmwareCheck = Optional.of(currentFirmwareCheck);
             return this;
         }
 
@@ -791,6 +827,7 @@ public class NodeSpec {
                     owner, membership,
                     wantedRestartGeneration, currentRestartGeneration,
                     wantedRebootGeneration, currentRebootGeneration,
+                    wantedFirmwareCheck, currentFirmwareCheck,
                     minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb,
                     fastDisk, bandwidth, ipAddresses, hardwareDivergence, hardwareFailureDescription,
                     parentHostname);

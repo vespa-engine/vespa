@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.*;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -190,6 +191,8 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.currentRestartGeneration),
                 node.rebootGeneration,
                 node.currentRebootGeneration,
+                Optional.ofNullable(node.wantedFirmwareCheck).map(Instant::ofEpochMilli),
+                Optional.ofNullable(node.currentFirmwareCheck).map(Instant::ofEpochMilli),
                 node.minCpuCores,
                 node.minMainMemoryAvailableGb,
                 node.minDiskAvailableGb,
@@ -220,6 +223,7 @@ public class RealNodeRepository implements NodeRepository {
         node.currentRebootGeneration = nodeAttributes.getRebootGeneration().orElse(null);
         node.vespaVersion = nodeAttributes.getVespaVersion().orElse(null);
         node.currentOsVersion = nodeAttributes.getCurrentOsVersion().orElse(null);
+        node.currentFirmwareCheck = nodeAttributes.getCurrentFirmwareCheck().map(Instant::toEpochMilli).orElse(null);
         node.hardwareDivergence = nodeAttributes.getHardwareDivergence().orElse(null);
         node.hardwareFailureDescription = nodeAttributes.getHardwareFailureDescription().orElse(null);
         node.wantToDeprovision = nodeAttributes.getWantToDeprovision().orElse(null);
