@@ -720,8 +720,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void honours_environment_vars() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
-                "  <search/>",
+                "<container version='1.0'>",
                 "  <nodes>",
                 "    <environment-variables>",
                 "      <KMP_SETTING>1</KMP_SETTING>",
@@ -729,10 +728,10 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "    </environment-variables>",
                 "    <node hostalias='mockhost'/>",
                 "  </nodes>",
-                "</jdisc>" );
+                "</container>" );
         createModel(root, clusterElem);
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
-        root.getConfig(qrStartBuilder, "jdisc/container.0");
+        root.getConfig(qrStartBuilder, "container/container.0");
         QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
         assertEquals("KMP_SETTING=1 KMP_AFFINITY=granularity=fine,verbose,compact,1,0 ", qrStartConfig.qrs().env());
     }
