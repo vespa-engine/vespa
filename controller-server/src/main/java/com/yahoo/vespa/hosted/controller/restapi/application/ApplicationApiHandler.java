@@ -875,11 +875,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             if(!deployment.isPresent())
                 throw new IllegalArgumentException("Can't redeploy application, no deployment currently exist");
 
-            applicationVersion = Optional.ofNullable(deployment.get().applicationVersion());
-            if(!applicationVersion.isPresent())
+            ApplicationVersion version = deployment.get().applicationVersion();
+            if(version.isUnknown())
                 throw new IllegalArgumentException("Can't redeploy application, application version is unknown");
 
-            vespaVersion = Optional.ofNullable(deployment.get().version());
+            applicationVersion = Optional.of(version);
+            vespaVersion = Optional.of(deployment.get().version());
             applicationPackage = Optional.of(controller.applications().getApplicationPackage(controller.applications().require(applicationId), applicationVersion.get()));
         }
 
