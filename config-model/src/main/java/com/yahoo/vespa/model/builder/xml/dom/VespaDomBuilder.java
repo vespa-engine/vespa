@@ -56,7 +56,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
     private static final String CPU_SOCKET_ATTRIB_NAME = "cpu-socket";
     public static final String CPU_SOCKET_AFFINITY_ATTRIB_NAME = "cpu-socket-affinity";
     public static final String Allocated_MEMORY_ATTRIB_NAME = "allocated-memory";
-    public static final String ENVIRONMENT_VARS_ATTRIB_NAME = "environment-vars";
+    public static final String ENVIRONMENT_VARIABLES_ATTRIB_NAME = "environment-variables";
 
     public static final Logger log = Logger.getLogger(VespaDomBuilder.class.getPackage().toString());
 

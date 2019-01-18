@@ -506,8 +506,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
-            String environmentVars = nodesElement.getAttribute(VespaDomBuilder.ENVIRONMENT_VARS_ATTRIB_NAME);
-            if (environmentVars != null) {
+            String environmentVars = getEnvironmentVariables(XML.getChild(nodesElement, VespaDomBuilder.ENVIRONMENT_VARIABLES_ATTRIB_NAME));
+            if (environmentVars != null && !environmentVars.isEmpty()) {
                 cluster.setEnvironmentVars(environmentVars);
             }
             applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
@@ -516,6 +516,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             cluster.addContainers(nodes);
         }
+    }
+
+    private static String getEnvironmentVariables(Element environmentVariables) {
+        StringBuilder sb = new StringBuilder();
+        if (environmentVariables != null) {
+            for (Element var: XML.getChildren(environmentVariables)) {
+                sb.append(var.getNodeName()).append('=').append(var.getTextContent()).append(' ');
+            }
+        }
+        return sb.toString();
     }
     
     private List<Container> createNodes(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {

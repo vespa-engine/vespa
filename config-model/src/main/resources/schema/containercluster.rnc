@@ -233,6 +233,10 @@ NodesOfContainerCluster = element nodes {
         attribute docker-image { xsd:string }?
       )
       |
+      element environment-variables {
+        anyElement +
+      }
+      |
       element node {
         attribute hostalias { xsd:NCName } &
         attribute cpu-socket { xsd:positiveInteger }? &
