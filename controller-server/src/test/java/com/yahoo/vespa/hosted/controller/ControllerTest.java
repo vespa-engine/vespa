@@ -446,8 +446,6 @@ public class ControllerTest {
     @Test
     public void testDeployDirectly() {
         DeploymentTester tester = new DeploymentTester();
-        Version six = Version.fromString("6.1");
-        tester.upgradeSystem(six);
         tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
         tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "cd-us-central-1"));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -470,12 +468,6 @@ public class ControllerTest {
 
         assertTrue("No job status added",
                    tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
-
-        Version seven = Version.fromString("7.2");
-        tester.upgrader().setTargetMajorVersion(Optional.of(6));
-        tester.upgradeSystem(seven);
-        tester.controller().applications().deploy(app.id(), zone, Optional.of(applicationPackage), options);
-        assertEquals(six, tester.application(app.id()).deployments().get(zone).version());
     }
 
     @Test
