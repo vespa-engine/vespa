@@ -2,6 +2,7 @@
 package com.yahoo.jrt;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.ToLongFunction;
 
 /**
  * Metric values produced by {@link Transport}.
@@ -73,15 +74,6 @@ public class TransportMetrics {
         clientUnencryptedConnectionsEstablished.incrementAndGet();
     }
 
-    void reset() {
-        tlsCertificateVerificationFailures.set(0);
-        peerAuthorizationFailures.set(0);
-        serverTlsConnectionsEstablished.set(0);
-        clientTlsConnectionsEstablished.set(0);
-        serverUnencryptedConnectionsEstablished.set(0);
-        clientUnencryptedConnectionsEstablished.set(0);
-    }
-
     @Override
     public String toString() {
         return "TransportMetrics{" +
@@ -95,16 +87,34 @@ public class TransportMetrics {
     }
 
     public static class Snapshot {
-        private final long tlsCertificateVerificationFailures, peerAuthorizationFailures, serverTlsConnectionsEstablished,
-                clientTlsConnectionsEstablished, serverUnencryptedConnectionsEstablished, clientUnencryptedConnectionsEstablished;
+        private final long tlsCertificateVerificationFailures;
+        private final long peerAuthorizationFailures;
+        private final long serverTlsConnectionsEstablished;
+        private final long clientTlsConnectionsEstablished;
+        private final long serverUnencryptedConnectionsEstablished;
+        private final long clientUnencryptedConnectionsEstablished;
 
         private Snapshot(TransportMetrics metrics) {
-            tlsCertificateVerificationFailures = metrics.tlsCertificateVerificationFailures.get();
-            peerAuthorizationFailures = metrics.peerAuthorizationFailures.get();
-            serverTlsConnectionsEstablished = metrics.serverTlsConnectionsEstablished.get();
-            clientTlsConnectionsEstablished = metrics.clientTlsConnectionsEstablished.get();
-            serverUnencryptedConnectionsEstablished = metrics.serverUnencryptedConnectionsEstablished.get();
-            clientUnencryptedConnectionsEstablished = metrics.clientUnencryptedConnectionsEstablished.get();
+            this(metrics.tlsCertificateVerificationFailures.get(),
+                 metrics.peerAuthorizationFailures.get(),
+                 metrics.serverTlsConnectionsEstablished.get(),
+                 metrics.clientTlsConnectionsEstablished.get(),
+                 metrics.serverUnencryptedConnectionsEstablished.get(),
+                 metrics.clientUnencryptedConnectionsEstablished.get());
+        }
+
+        private Snapshot(long tlsCertificateVerificationFailures,
+                        long peerAuthorizationFailures,
+                        long serverTlsConnectionsEstablished,
+                        long clientTlsConnectionsEstablished,
+                        long serverUnencryptedConnectionsEstablished,
+                        long clientUnencryptedConnectionsEstablished) {
+            this.tlsCertificateVerificationFailures = tlsCertificateVerificationFailures;
+            this.peerAuthorizationFailures = peerAuthorizationFailures;
+            this.serverTlsConnectionsEstablished = serverTlsConnectionsEstablished;
+            this.clientTlsConnectionsEstablished = clientTlsConnectionsEstablished;
+            this.serverUnencryptedConnectionsEstablished = serverUnencryptedConnectionsEstablished;
+            this.clientUnencryptedConnectionsEstablished = clientUnencryptedConnectionsEstablished;
         }
 
         public long tlsCertificateVerificationFailures() { return tlsCertificateVerificationFailures; }
@@ -113,6 +123,20 @@ public class TransportMetrics {
         public long clientTlsConnectionsEstablished() { return clientTlsConnectionsEstablished; }
         public long serverUnencryptedConnectionsEstablished() { return serverUnencryptedConnectionsEstablished; }
         public long clientUnencryptedConnectionsEstablished() { return clientUnencryptedConnectionsEstablished; }
+
+        public Snapshot changesSince(Snapshot base) {
+            return new Snapshot(
+                changesSince(base, Snapshot::tlsCertificateVerificationFailures),
+                changesSince(base, Snapshot::peerAuthorizationFailures),
+                changesSince(base, Snapshot::serverTlsConnectionsEstablished),
+                changesSince(base, Snapshot::clientTlsConnectionsEstablished),
+                changesSince(base, Snapshot::serverUnencryptedConnectionsEstablished),
+                changesSince(base, Snapshot::clientUnencryptedConnectionsEstablished));
+        }
+
+        private long changesSince(Snapshot base, ToLongFunction<Snapshot> metricProperty) {
+            return metricProperty.applyAsLong(this) - metricProperty.applyAsLong(base);
+        }
 
         @Override
         public String toString() {

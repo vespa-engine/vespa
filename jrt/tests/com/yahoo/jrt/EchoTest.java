@@ -17,6 +17,7 @@ import static org.junit.Assert.assertTrue;
 public class EchoTest {
 
     TransportMetrics metrics;
+    TransportMetrics.Snapshot startSnapshot;
     Supervisor server;
     Acceptor   acceptor;
     Supervisor client;
@@ -24,7 +25,7 @@ public class EchoTest {
     Values     refValues;
 
     private interface MetricsAssertions {
-        void assertMetrics(TransportMetrics metrics) throws AssertionError;
+        void assertMetrics(TransportMetrics.Snapshot snapshot) throws AssertionError;
     }
 
     @Parameter(value = 0) public CryptoEngine crypto;
@@ -63,7 +64,7 @@ public class EchoTest {
     @Before
     public void setUp() throws ListenFailedException {
         metrics =  TransportMetrics.getInstance();
-        metrics.reset();
+        startSnapshot = metrics.snapshot();
         server   = new Supervisor(new Transport(crypto));
         client   = new Supervisor(new Transport(crypto));
         acceptor = server.listen(new Spec(0));
@@ -134,7 +135,7 @@ public class EchoTest {
         assertTrue(Test.equals(req.returnValues(), refValues));
         assertTrue(Test.equals(req.parameters(), refValues));
         if (metricsAssertions != null) {
-            metricsAssertions.assertMetrics(metrics);
+            metricsAssertions.assertMetrics(metrics.snapshot().changesSince(startSnapshot));
         }
     }
 }
