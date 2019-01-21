@@ -75,12 +75,13 @@ public class DockerOperationsImplTest {
 
     @Test
     public void runsCommandInNetworkNamespace() throws IOException {
-        Container container = makeContainer("container-42", Container.State.RUNNING, 42);
+        NodeAgentContext context = new NodeAgentContextImpl.Builder("container-42.domain.tld").build();
+        makeContainer("container-42", Container.State.RUNNING, 42);
 
         when(processExecuter.exec(aryEq(new String[]{"nsenter", "--net=/proc/42/ns/net", "--", "iptables", "-nvL"})))
                 .thenReturn(new Pair<>(0, ""));
 
-        dockerOperations.executeCommandInNetworkNamespace(container.name, "iptables", "-nvL");
+        dockerOperations.executeCommandInNetworkNamespace(context, "iptables", "-nvL");
     }
 
     private Container makeContainer(String name, Container.State state, int pid) {

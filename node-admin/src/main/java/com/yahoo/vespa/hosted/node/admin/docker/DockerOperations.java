@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -31,7 +30,7 @@ public interface DockerOperations {
 
     ProcessResult executeCommandInContainerAsRoot(NodeAgentContext context, Long timeoutSeconds, String... command);
 
-    ProcessResult executeCommandInNetworkNamespace(ContainerName containerName, String... command);
+    ProcessResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command);
 
 
     /** Resume node. Resuming a node means that it is ready to take on traffic. */

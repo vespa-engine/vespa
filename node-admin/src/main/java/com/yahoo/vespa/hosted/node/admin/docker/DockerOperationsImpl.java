@@ -6,7 +6,6 @@ import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -196,12 +195,12 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public ProcessResult executeCommandInNetworkNamespace(ContainerName containerName, String... command) {
-        final Integer containerPid = docker.getContainer(containerName)
+    public ProcessResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command) {
+        final int containerPid = docker.getContainer(context.containerName())
                 .filter(container -> container.state.isRunning())
-                .map(container -> container.pid)
-                .orElseThrow(() -> new RuntimeException("PID not found for container with name: " +
-                        containerName.asString()));
+                .orElseThrow(() -> new RuntimeException(
+                        "Found no running container named " + context.containerName().asString()))
+                .pid;
 
         final String[] wrappedCommand = Stream.concat(
                 Stream.of("nsenter", String.format("--net=/proc/%d/ns/net", containerPid), "--"),
@@ -213,12 +212,12 @@ public class DockerOperationsImpl implements DockerOperations {
             if (result.getFirst() != 0) {
                 throw new RuntimeException(String.format(
                         "Failed to execute %s in network namespace for %s (PID = %d), exit code: %d, output: %s",
-                        Arrays.toString(wrappedCommand), containerName.asString(), containerPid, result.getFirst(), result.getSecond()));
+                        Arrays.toString(wrappedCommand), context.containerName().asString(), containerPid, result.getFirst(), result.getSecond()));
             }
             return new ProcessResult(0, result.getSecond(), "");
         } catch (IOException e) {
             throw new RuntimeException(String.format("IOException while executing %s in network namespace for %s (PID = %d)",
-                    Arrays.toString(wrappedCommand), containerName.asString(), containerPid), e);
+                    Arrays.toString(wrappedCommand), context.containerName().asString(), containerPid), e);
         }
     }
 
