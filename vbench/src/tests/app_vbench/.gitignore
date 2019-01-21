@@ -1,4 +1,10 @@
 /vbench.cfg.template
 /vbench.cfg
 /vbench.out
-vbench_app_vbench_test_app
+/vbench.tls.cfg.template
+/vbench.tls.cfg
+/vbench.tls.out
+/ca_certs.pem
+/certs.pem
+/test.key
+/vbench_app_vbench_test_app

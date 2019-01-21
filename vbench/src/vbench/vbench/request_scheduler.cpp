@@ -63,7 +63,6 @@ RequestScheduler &
 RequestScheduler::stop()
 {
     _queue.close();
-    _thread.stop();
     return *this;
 }
 
