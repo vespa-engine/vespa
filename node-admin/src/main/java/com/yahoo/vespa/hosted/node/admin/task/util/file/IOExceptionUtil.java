@@ -12,8 +12,6 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 /**
  * Utils related to IOException.
  *
- * todo: replace much of the below with com.yahoo.yolean.Exceptions::uncheck
- *
  * @author hakonhall
  */
 public class IOExceptionUtil {

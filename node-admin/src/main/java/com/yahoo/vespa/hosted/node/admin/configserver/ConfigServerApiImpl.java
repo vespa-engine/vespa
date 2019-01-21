@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
-import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import org.apache.http.HttpHeaders;
@@ -40,8 +39,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Collections.singleton;
-
 /**
  * Retries request on config server a few times before giving up. Assumes that all requests should be sent with
  * content-type application/json
@@ -58,23 +55,11 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     private final CloseableHttpClient client;
 
-    // TODO: Remove after 2018-12-01
-    public static ConfigServerApiImpl create(ConfigServerInfo info, SiaIdentityProvider provider) {
-        return create(info, provider, new AthenzIdentityVerifier(singleton(info.getConfigServerIdentity())));
-    }
-
     public static ConfigServerApiImpl create(ConfigServerInfo info, SiaIdentityProvider provider, HostnameVerifier hostnameVerifier) {
         return new ConfigServerApiImpl(
                 info.getConfigServerUris(),
                 hostnameVerifier,
                 provider);
-    }
-
-    // TODO: Remove after 2018-12-01
-    public static ConfigServerApiImpl createFor(ConfigServerInfo info,
-                                                SiaIdentityProvider provider,
-                                                HostName configServerHostname) {
-        return createFor(info, provider, new AthenzIdentityVerifier(singleton(info.getConfigServerIdentity())), configServerHostname);
     }
 
     public static ConfigServerApiImpl createFor(ConfigServerInfo info,
