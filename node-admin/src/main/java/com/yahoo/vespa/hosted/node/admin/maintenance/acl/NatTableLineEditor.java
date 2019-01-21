@@ -10,6 +10,8 @@ import java.util.List;
 
 /**
  * An editor that only cares about the REDIRECT statement
+ *
+ * @author smorgrav
  */
 class NatTableLineEditor implements LineEditor {
 
