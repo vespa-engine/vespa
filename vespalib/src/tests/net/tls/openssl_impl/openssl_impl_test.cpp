@@ -632,7 +632,8 @@ TEST_F("Failure statistics are incremented on authorization failures", CertFixtu
     EXPECT_EQUAL(0u, client_stats.invalid_peer_credentials);
     EXPECT_EQUAL(1u, server_stats.failed_tls_handshakes);
     EXPECT_EQUAL(0u, server_stats.tls_connections);
-    EXPECT_EQUAL(0u, client_stats.tls_connections);
+    // Client TLS connection count may be 0 (<= v1.2) or 1 (v1.3), since v1.3
+    // completes its handshake earlier.
 }
 
 TEST_F("Success statistics are incremented on OK authorization", CertFixture) {
