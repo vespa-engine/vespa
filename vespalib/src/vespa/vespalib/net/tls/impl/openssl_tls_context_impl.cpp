@@ -411,9 +411,9 @@ int OpenSslTlsContextImpl::verify_cb_wrapper(int preverified_ok, ::X509_STORE_CT
         return 1; // OK for root/intermediate cert. Callback will be invoked again for other certs.
     }
     // Fetch the SSL instance associated with the X509_STORE_CTX
-    const void* data = ::X509_STORE_CTX_get_ex_data(store_ctx, ::SSL_get_ex_data_X509_STORE_CTX_idx());
+    void* data = ::X509_STORE_CTX_get_ex_data(store_ctx, ::SSL_get_ex_data_X509_STORE_CTX_idx());
     LOG_ASSERT(data != nullptr);
-    const auto* ssl = static_cast<const ::SSL*>(data);
+    auto* ssl = static_cast<::SSL*>(data);
     const ::SSL_CTX* ssl_ctx = ::SSL_get_SSL_CTX(ssl);
     LOG_ASSERT(ssl_ctx != nullptr);
     auto* self = static_cast<OpenSslTlsContextImpl*>(SSL_CTX_get_app_data(ssl_ctx));
