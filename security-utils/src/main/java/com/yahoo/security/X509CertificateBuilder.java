@@ -23,9 +23,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
