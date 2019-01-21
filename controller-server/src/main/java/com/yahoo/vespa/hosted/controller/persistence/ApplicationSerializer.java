@@ -282,7 +282,7 @@ public class ApplicationSerializer {
     }
 
     private void toSlime(Change deploying, Cursor parentObject, String fieldName) {
-        if ( ! deploying.isPresent() && ! deploying.isPinned()) return;
+        if (deploying.isEmpty()) return;
 
         Cursor object = parentObject.setObject(fieldName);
         if (deploying.platform().isPresent())

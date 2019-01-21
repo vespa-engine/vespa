@@ -6,7 +6,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -366,7 +365,7 @@ public class UpgraderTest {
         // staging-test fails and failure is recorded
         tester.deployAndNotify(app, applicationPackage, false, stagingTest);
         assertTrue("Failure is recorded", tester.application(app.id()).deploymentJobs().hasFailures());
-        assertTrue("Application has pending change", tester.application(app.id()).change().isPresent());
+        assertTrue("Application has pending change", tester.application(app.id()).change().hasTargets());
 
         // New version is released
         version = Version.fromString("6.4");
@@ -429,7 +428,7 @@ public class UpgraderTest {
         tester.triggerUntilQuiescence();
 
         // apps pass system-test, but do not trigger next jobs as upgrade is cancelled
-        assertFalse("No change present", tester.applications().require(default4.id()).change().isPresent());
+        assertFalse("No change present", tester.applications().require(default4.id()).change().hasTargets());
         tester.jobCompletion(systemTest).application(default0).submit();
         tester.jobCompletion(systemTest).application(default1).submit();
         tester.jobCompletion(systemTest).application(default2).submit();
@@ -531,7 +530,7 @@ public class UpgraderTest {
         assertEquals(v2, tester.application("default0").deployments().get(ZoneId.from("prod.us-west-1")).version());
         assertEquals("Last zone is upgraded to v1",
                      v1, tester.application("default0").deployments().get(ZoneId.from("prod.us-east-3")).version());
-        assertFalse(tester.application("default0").change().isPresent());
+        assertFalse(tester.application("default0").change().hasTargets());
     }
 
     @Test
@@ -812,7 +811,7 @@ public class UpgraderTest {
         // 5th app never reports back and has a dead job, but no ongoing change
         Application deadLocked = tester.applications().require(default4.id());
         tester.assertRunning(systemTest, deadLocked.id());
-        assertFalse("No change present", deadLocked.change().isPresent());
+        assertFalse("No change present", deadLocked.change().hasTargets());
 
         // 4 out of 5 applications are repaired and confidence is restored
         ApplicationPackage defaultApplicationPackageV2 = new ApplicationPackageBuilder()
@@ -1159,16 +1158,16 @@ public class UpgraderTest {
         assertEquals(Collections.emptyList(), tester.buildService().jobs()); // No jobs left.
 
         tester.outstandingChangeDeployer().run();
-        assertFalse(tester.application(app.id()).change().isPresent());
+        assertFalse(tester.application(app.id()).change().hasTargets());
         clock.advance(Duration.ofHours(2));
 
         tester.outstandingChangeDeployer().run();
-        assertTrue(tester.application(app.id()).change().isPresent());
+        assertTrue(tester.application(app.id()).change().hasTargets());
         tester.readyJobTrigger().run();
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
         tester.deployAndNotify(app, applicationPackage, true, productionUsCentral1);
         tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
-        assertFalse(tester.application(app.id()).change().isPresent());
+        assertFalse(tester.application(app.id()).change().hasTargets());
     }
 
     @Test
@@ -1185,7 +1184,7 @@ public class UpgraderTest {
         tester.deploymentTrigger().forceChange(application.id(), Change.empty().withPin());
 
         tester.deployCompletely(application, applicationPackage);
-        assertFalse(tester.application(application.id()).change().isPresent());
+        assertFalse(tester.application(application.id()).change().hasTargets());
         assertTrue(tester.application(application.id()).change().isPinned());
         assertEquals(2, tester.application(application.id()).deployments().size());
 
@@ -1193,18 +1192,18 @@ public class UpgraderTest {
         Version version1 = Version.fromString("6.3");
         tester.upgradeSystem(version1);
         tester.upgrader().maintain();
-        assertFalse(tester.application(application.id()).change().isPresent());
+        assertFalse(tester.application(application.id()).change().hasTargets());
         assertTrue(tester.application(application.id()).change().isPinned());
 
         // New application package is deployed.
         tester.deployCompletely(application, applicationPackage, BuildJob.defaultBuildNumber + 1);
-        assertFalse(tester.application(application.id()).change().isPresent());
+        assertFalse(tester.application(application.id()).change().hasTargets());
         assertTrue(tester.application(application.id()).change().isPinned());
 
         // Application upgrades to new version when pin is removed.
         tester.deploymentTrigger().cancelChange(application.id(), PIN);
         tester.upgrader().maintain();
-        assertTrue(tester.application(application.id()).change().isPresent());
+        assertTrue(tester.application(application.id()).change().hasTargets());
         assertFalse(tester.application(application.id()).change().isPinned());
 
         // Application is pinned to new version, and upgrade is therefore not cancelled, even though confidence is broken.
@@ -1229,9 +1228,9 @@ public class UpgraderTest {
         tester.deployAndNotify(application, true, systemTest);
         tester.deployAndNotify(application, true, stagingTest);
         tester.deployAndNotify(application, true, productionUsEast3);
-        assertTrue(tester.application(application.id()).change().isPresent());
+        assertTrue(tester.application(application.id()).change().hasTargets());
         tester.deployAndNotify(application, true, productionUsWest1);
-        assertFalse(tester.application(application.id()).change().isPresent());
+        assertFalse(tester.application(application.id()).change().hasTargets());
     }
 
 }

@@ -14,7 +14,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
-import com.yahoo.jdisc.Response;
 import com.yahoo.log.LogLevel;
 import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
@@ -86,7 +85,6 @@ import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
@@ -427,12 +425,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                    .ifPresent(id -> object.setLong("projectId", id));
 
         // Currently deploying change
-        if (application.change().isPresent()) {
+        if ( ! application.change().isEmpty()) {
             toSlime(object.setObject("deploying"), application.change());
         }
 
         // Outstanding change
-        if (application.outstandingChange().isPresent()) {
+        if ( ! application.outstandingChange().isEmpty()) {
             toSlime(object.setObject("outstandingChange"), application.outstandingChange());
         }
 
@@ -823,7 +821,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         StringBuilder response = new StringBuilder();
         controller.applications().lockOrThrow(id, application -> {
             Change change = application.get().change();
-            if ( ! change.isPresent() && ! change.isPinned()) {
+            if (change.isEmpty()) {
                 response.append("No deployment in progress for " + application + " at this time");
                 return;
             }

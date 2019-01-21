@@ -98,7 +98,7 @@ class JobControllerApiHandlerHelper {
         lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, change, steps);
         lastApplicationToSlime(lastVersionsObject.setObject("application"), application, change, steps, controller);
 
-        if (change.isPresent()) {
+        if ( ! change.isEmpty()) {
             Cursor deployingObject = responseObject.setObject("deploying");
             change.platform().ifPresent(version -> deployingObject.setString("platform", version.toString()));
             change.application().ifPresent(version -> applicationVersionToSlime(deployingObject.setObject("application"), version));
@@ -161,9 +161,9 @@ class JobControllerApiHandlerHelper {
         }
         else
             lastPlatformObject.setString("pending",
-                                         application.change().isPresent()
-                                                 ? "Waiting for current deployment to complete"
-                                                 : "Waiting for upgrade slot");
+                                                 application.change().isEmpty()
+                                                 ? "Waiting for upgrade slot"
+                                                 : "Waiting for current deployment to complete");
     }
 
     private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Change change, DeploymentSteps steps, Controller controller) {
@@ -199,7 +199,7 @@ class JobControllerApiHandlerHelper {
                                                         .isPresent());
         if (running.containsKey(type))
             deploymentObject.setString("status", running.get(type).steps().get(deployReal) == unfinished ? "deploying" : "verifying");
-        else if (change.isPresent())
+        else if (change.hasTargets())
             deploymentObject.setString("status", pendingProduction.containsKey(type) ? "pending" : "completed");
     }
 

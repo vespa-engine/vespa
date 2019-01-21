@@ -363,13 +363,13 @@ public class DeploymentTriggerTest {
         tester.deploy(JobType.productionUsWest1, app, applicationPackage);
         tester.jobCompletion(JobType.productionUsWest1).application(app).submit();
         assertTrue("Change is present as not all jobs are complete",
-                   tester.applications().require(app.id()).change().isPresent());
+                   tester.applications().require(app.id()).change().hasTargets());
 
         // All jobs complete
         tester.deploy(JobType.productionUsEast3, app, applicationPackage);
         tester.jobCompletion(JobType.productionUsEast3).application(app).submit();
         assertFalse("Change has been deployed",
-                    tester.applications().require(app.id()).change().isPresent());
+                    tester.applications().require(app.id()).change().hasTargets());
     }
 
     @Test
@@ -445,12 +445,12 @@ public class DeploymentTriggerTest {
               .sourceRevision(new SourceRevision("repository1", "master", "cafed00d"))
               .uploadArtifact(changedApplication)
               .submit();
-        assertTrue(tester.applications().require(app.id()).outstandingChange().isPresent());
+        assertTrue(tester.applications().require(app.id()).outstandingChange().hasTargets());
         tester.deployAndNotify(app, changedApplication, true, systemTest);
         tester.deployAndNotify(app, changedApplication, true, stagingTest);
 
         tester.outstandingChangeDeployer().run();
-        assertTrue(tester.applications().require(app.id()).outstandingChange().isPresent());
+        assertTrue(tester.applications().require(app.id()).outstandingChange().hasTargets());
 
         readyJobsTrigger.run();
         assertEquals(emptyList(), tester.buildService().jobs());
@@ -458,7 +458,7 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
 
         tester.outstandingChangeDeployer().run();
-        assertFalse(tester.applications().require(app.id()).outstandingChange().isPresent());
+        assertFalse(tester.applications().require(app.id()).outstandingChange().hasTargets());
 
         tester.deploymentTrigger().triggerReadyJobs(); // Schedules staging test for the blocked production job(s)
         assertEquals(singletonList(buildJob(app, productionUsWest1)), tester.buildService().jobs());
@@ -502,22 +502,22 @@ public class DeploymentTriggerTest {
 
         // Upgrade is done, and oustanding change rolls out when block window ends.
         assertEquals(Change.empty(), tester.application(application.id()).change());
-        assertFalse(tester.application(application.id()).change().isPresent());
-        assertTrue(tester.application(application.id()).outstandingChange().isPresent());
+        assertFalse(tester.application(application.id()).change().hasTargets());
+        assertTrue(tester.application(application.id()).outstandingChange().hasTargets());
 
         tester.deployAndNotify(application, applicationPackage, true, stagingTest);
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
         clock.advance(Duration.ofHours(1));
         tester.outstandingChangeDeployer().run();
-        assertTrue(tester.application(application.id()).change().isPresent());
-        assertFalse(tester.application(application.id()).outstandingChange().isPresent());
+        assertTrue(tester.application(application.id()).change().hasTargets());
+        assertFalse(tester.application(application.id()).outstandingChange().hasTargets());
 
         tester.readyJobTrigger().run();
         tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
         tester.deployAndNotify(application, applicationPackage, true, productionUsEast3);
 
-        assertFalse(tester.application(application.id()).change().isPresent());
-        assertFalse(tester.application(application.id()).outstandingChange().isPresent());
+        assertFalse(tester.application(application.id()).change().hasTargets());
+        assertFalse(tester.application(application.id()).outstandingChange().hasTargets());
     }
 
     @Test
@@ -695,7 +695,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application1, true, systemTest);
         tester.deployAndNotify(application1, true, stagingTest);
         tester.deployAndNotify(application1, applicationPackage, true, productionEuWest1);
-        assertFalse(app1.get().change().isPresent());
+        assertFalse(app1.get().change().hasTargets());
         assertFalse(app1.get().deploymentJobs().jobStatus().get(productionUsCentral1).isSuccess());
     }
 
@@ -750,7 +750,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, false, productionUsEast3);
         tester.deployAndNotify(application, true, productionUsEast3);
         tester.deployAndNotify(application, true, productionEuWest1);
-        assertFalse(app.get().change().isPresent());
+        assertFalse(app.get().change().hasTargets());
         assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().application().buildNumber().getAsLong());
         assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().application().buildNumber().getAsLong());
     }
@@ -1066,7 +1066,7 @@ public class DeploymentTriggerTest {
         app1 = tester.application(app1.id());
         assertEquals("Application change preserves version", version1, app1.oldestDeployedPlatform().get());
         assertEquals(version1, tester.configServer().lastPrepareVersion().get());
-        assertFalse("Change deployed", app1.change().isPresent());
+        assertFalse("Change deployed", app1.change().hasTargets());
 
         // Version upgrade changes system version
         tester.deploymentTrigger().triggerChange(app1.id(), Change.of(version2));

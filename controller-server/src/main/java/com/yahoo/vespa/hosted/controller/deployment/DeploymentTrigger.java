@@ -236,7 +236,7 @@ public class DeploymentTrigger {
     /** Triggers a change of this application, unless it already has a change. */
     public void triggerChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
-            if ( ! application.get().change().isPresent())
+            if ( ! application.get().change().hasTargets())
                 forceChange(applicationId, change);
         });
     }
@@ -315,7 +315,7 @@ public class DeploymentTrigger {
             List<Job> testJobs = null; // null means "uninitialised", while empty means "don't run any jobs".
             DeploymentSteps steps = steps(application.deploymentSpec());
 
-            if (change.isPresent()) {
+            if (change.hasTargets()) {
                 for (Step step : steps.production()) {
                     List<JobType> stepJobs = steps.toJobs(step);
                     List<JobType> remainingJobs = stepJobs.stream().filter(job -> ! isComplete(change, application, job)).collect(toList());

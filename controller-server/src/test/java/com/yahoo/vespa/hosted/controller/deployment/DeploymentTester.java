@@ -189,7 +189,7 @@ public class DeploymentTester {
     }
 
     private void completeDeployment(Application application, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
-        assertTrue(applications().require(application.id()).change().isPresent());
+        assertTrue(applications().require(application.id()).change().hasTargets());
         DeploymentSteps steps = controller().applications().deploymentTrigger().steps(applicationPackage.deploymentSpec());
         List<JobType> jobs = steps.jobs();
         for (JobType job : jobs) {
@@ -200,10 +200,10 @@ public class DeploymentTester {
             }
         }
         if (failOnJob.isPresent()) {
-            assertTrue(applications().require(application.id()).change().isPresent());
+            assertTrue(applications().require(application.id()).change().hasTargets());
             assertTrue(applications().require(application.id()).deploymentJobs().hasFailures());
         } else {
-            assertFalse(applications().require(application.id()).change().isPresent());
+            assertFalse(applications().require(application.id()).change().hasTargets());
         }
     }
 
@@ -212,7 +212,7 @@ public class DeploymentTester {
     }
 
     public void completeUpgrade(Application application, Version version, ApplicationPackage applicationPackage) {
-        assertTrue(application + " has a change", applications().require(application.id()).change().isPresent());
+        assertTrue(application + " has a change", applications().require(application.id()).change().hasTargets());
         assertEquals(Change.of(version), applications().require(application.id()).change());
         completeDeployment(application, applicationPackage, Optional.empty());
     }
@@ -226,7 +226,7 @@ public class DeploymentTester {
     }
 
     private void completeUpgradeWithError(Application application, Version version, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
-        assertTrue(applications().require(application.id()).change().isPresent());
+        assertTrue(applications().require(application.id()).change().hasTargets());
         assertEquals(Change.of(version), applications().require(application.id()).change());
         completeDeployment(application, applicationPackage, failOnJob);
     }

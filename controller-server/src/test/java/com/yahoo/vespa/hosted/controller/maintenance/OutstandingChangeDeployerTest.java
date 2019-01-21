@@ -44,7 +44,7 @@ public class OutstandingChangeDeployerTest {
         tester.deploymentTrigger().triggerReadyJobs();
 
         assertEquals(Change.of(version), tester.application("app1").change());
-        assertFalse(tester.application("app1").outstandingChange().isPresent());
+        assertFalse(tester.application("app1").outstandingChange().hasTargets());
 
         tester.jobCompletion(JobType.component)
               .application(tester.application("app1"))
@@ -54,7 +54,7 @@ public class OutstandingChangeDeployerTest {
               .submit();
 
         Application app = tester.application("app1");
-        assertTrue(app.outstandingChange().isPresent());
+        assertTrue(app.outstandingChange().hasTargets());
         assertEquals("1.0.43-cafed00d", app.outstandingChange().application().get().id());
         assertEquals(2, tester.buildService().jobs().size());
 
@@ -78,7 +78,7 @@ public class OutstandingChangeDeployerTest {
         assertEquals(1, jobs.size());
         assertEquals(JobType.productionUsWest1.jobName(), jobs.get(0).jobName());
         assertEquals(11, jobs.get(0).projectId());
-        assertFalse(tester.application("app1").outstandingChange().isPresent());
+        assertFalse(tester.application("app1").outstandingChange().hasTargets());
     }
 
 }
