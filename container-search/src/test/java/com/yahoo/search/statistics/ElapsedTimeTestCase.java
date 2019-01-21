@@ -50,6 +50,7 @@ public class ElapsedTimeTestCase {
     }
 
     public static class UselessSearcher extends Searcher {
+
         public UselessSearcher(String name) {
             super(new ComponentId(name));
         }
@@ -58,9 +59,11 @@ public class ElapsedTimeTestCase {
         public Result search(Query query, Execution execution) {
             return execution.search(query);
         }
+
     }
 
     private static class AlmostUselessSearcher extends Searcher {
+
         AlmostUselessSearcher(String name) {
             super(new ComponentId(name));
         }
@@ -73,9 +76,11 @@ public class ElapsedTimeTestCase {
             r.hits().add(h);
             return r;
         }
+
     }
 
     private static class NoForwardSearcher extends Searcher {
+
         @Override
         public Result search(Query query, Execution execution) {
             Result r = new Result(query);
@@ -84,6 +89,7 @@ public class ElapsedTimeTestCase {
             r.hits().add(h);
             return r;
         }
+
     }
 
     private class TestingSearcher extends Searcher {

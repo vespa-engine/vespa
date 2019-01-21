@@ -66,7 +66,6 @@ import java.util.stream.Collectors;
  * @author bjorncs
  */
 @Beta
-// TODO Vespa 7: Remove unused Manhattan metrics
 public class JettyHttpServer extends AbstractServerProvider {
 
     public interface Metrics {
@@ -83,15 +82,12 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         String NUM_BYTES_RECEIVED = "serverBytesReceived";
         String NUM_BYTES_SENT     = "serverBytesSent";
-        @Deprecated String MANHATTAN_NUM_BYTES_RECEIVED = "http.in.bytes";
-        @Deprecated String MANHATTAN_NUM_BYTES_SENT     = "http.out.bytes";
 
         String NUM_CONNECTIONS = "serverNumConnections";
 
         /* For historical reasons, these are all aliases for the same metric. 'jdisc.http' should ideally be the only one. */
         String JDISC_HTTP_REQUESTS = "jdisc.http.requests";
         String NUM_REQUESTS = "serverNumRequests";
-        @Deprecated String MANHATTAN_NUM_REQUESTS = "http.requests";
 
         String NUM_SUCCESSFUL_RESPONSES = "serverNumSuccessfulResponses";
         String NUM_FAILED_RESPONSES = "serverNumFailedResponses";
@@ -99,10 +95,8 @@ public class JettyHttpServer extends AbstractServerProvider {
         String NUM_FAILED_WRITES = "serverNumFailedResponseWrites";
 
         String TOTAL_SUCCESSFUL_LATENCY = "serverTotalSuccessfulResponseLatency";
-        @Deprecated String MANHATTAN_TOTAL_SUCCESSFUL_LATENCY = "http.latency";
         String TOTAL_FAILED_LATENCY = "serverTotalFailedResponseLatency";
         String TIME_TO_FIRST_BYTE = "serverTimeToFirstByte";
-        @Deprecated String MANHATTAN_TIME_TO_FIRST_BYTE = "http.out.firstbytetime";
 
         String RESPONSES_1XX = "http.status.1xx";
         String RESPONSES_2XX = "http.status.2xx";
@@ -113,7 +107,6 @@ public class JettyHttpServer extends AbstractServerProvider {
         String RESPONSES_403 = "http.status.403";
 
         String STARTED_MILLIS = "serverStartedMillis";
-        @Deprecated String MANHATTAN_STARTED_MILLIS = "proc.uptime";
 
         String URI_LENGTH = "jdisc.http.request.uri_length";
         String CONTENT_SIZE = "jdisc.http.request.content_size";
@@ -350,11 +343,9 @@ public class JettyHttpServer extends AbstractServerProvider {
 
     }
 
-    @SuppressWarnings("deprecation")
     private void setServerMetrics(HttpResponseStatisticsCollector statisticsCollector) {
         long timeSinceStarted = System.currentTimeMillis() - timeStarted;
         metric.set(Metrics.STARTED_MILLIS, timeSinceStarted, null);
-        metric.set(Metrics.MANHATTAN_STARTED_MILLIS, timeSinceStarted, null);
 
         addResponseMetrics(statisticsCollector);
     }

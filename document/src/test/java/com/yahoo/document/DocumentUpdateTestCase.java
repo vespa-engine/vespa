@@ -299,13 +299,13 @@ public class DocumentUpdateTestCase {
         docUp.addFieldUpdate(assignSingle);
         docUp.addFieldUpdate(addMultiList);
 
-        DocumentDeserializer buf = DocumentDeserializerFactory.create42(docMan, new GrowableByteBuffer());
-        docUp.serialize((DocumentUpdateWriter)buf);
-        buf.getBuf().flip();
+        GrowableByteBuffer buf = new GrowableByteBuffer();
+        docUp.serialize(DocumentSerializerFactory.create42(buf));
+        buf.flip();
 
         try {
             FileOutputStream fos = new FileOutputStream("src/test/files/updateser.dat");
-            fos.write(buf.getBuf().array(), 0, buf.getBuf().remaining());
+            fos.write(buf.array(), 0, buf.remaining());
             fos.close();
         } catch (Exception e) {
         }
@@ -330,10 +330,9 @@ public class DocumentUpdateTestCase {
 
                            + (4  //valueUpdateClassID
                               + (4 + 4 + 4 + (1 + 1 + 2 + 1) + 4 + (1 + 1 + 2 + 1) + 4 + (1 + 1 + 2 + 1))))) //value
-                , buf.getBuf().remaining());
+                , buf.remaining());
 
-        DocumentUpdate docUpDeser = new DocumentUpdate(buf);
-
+        DocumentUpdate docUpDeser = new DocumentUpdate(DocumentDeserializerFactory.create42(docMan, buf));
         assertEquals(docUp.getDocumentType(), docUpDeser.getDocumentType());
         assertEquals(docUp, docUpDeser);
     }
@@ -402,7 +401,7 @@ public class DocumentUpdateTestCase {
         upd.addFieldUpdate(serAdd);
 
         GrowableByteBuffer buf = new GrowableByteBuffer(100, 2.0f);
-        upd.serialize(buf);
+        upd.serialize(DocumentSerializerFactory.create42(buf));
 
         int size = buf.position();
         buf.position(0);
@@ -630,11 +629,11 @@ public class DocumentUpdateTestCase {
     public void testRequireThatCreateIfNonExistentFlagIsSerializedAndDeserialized() {
         docUp.setCreateIfNonExistent(true);
 
-        DocumentSerializer serializer = DocumentSerializerFactory.createHead(new GrowableByteBuffer());
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(new GrowableByteBuffer());
         docUp.serialize(serializer);
         serializer.getBuf().flip();
 
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.createHead(docMan, serializer.getBuf());
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(docMan, serializer.getBuf());
         DocumentUpdate deserialized = new DocumentUpdate(deserializer);
         assertEquals(docUp, deserialized);
         assertTrue(deserialized.getCreateIfNonExistent());
@@ -655,11 +654,11 @@ public class DocumentUpdateTestCase {
     @Test
     public void testThatAssignValueUpdateForTensorFieldCanBeSerializedAndDeserialized() {
         DocumentUpdate serializedUpdate = createTensorAssignUpdate();
-        DocumentSerializer serializer = DocumentSerializerFactory.createHead(new GrowableByteBuffer());
+        DocumentSerializer serializer = DocumentSerializerFactory.create6(new GrowableByteBuffer());
         serializedUpdate.serialize(serializer);
         serializer.getBuf().flip();
 
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.createHead(docMan, serializer.getBuf());
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(docMan, serializer.getBuf());
         DocumentUpdate deserializedUpdate = new DocumentUpdate(deserializer);
         assertEquals(serializedUpdate, deserializedUpdate);
     }

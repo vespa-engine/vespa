@@ -53,7 +53,6 @@ public class Index {
     private boolean uriIndex = false;
     private boolean hostIndex = false;
     private StemMode stemMode = StemMode.NONE;
-    private Attribute[] matchGroup = null;
     private boolean isAttribute = false;
     private boolean isDefaultPosition = false;
     private boolean dynamicSummary=false;
@@ -165,8 +164,6 @@ public class Index {
             setAttribute(true);
         } else if (commandString.equals("default-position")) {
             setDefaultPosition(true);
-        } else if (commandString.startsWith("match-group ")) {
-            setMatchGroup(commandString.substring(12).split(" "));
         } else if (commandString.equals("plain-tokens")) {
             setPlainTokens(true);
         } else if (commandString.equals("multivalue")) {
@@ -267,19 +264,6 @@ public class Index {
     // TODO: Replace by == Index.null
     public boolean isNull() {
         return "(null)".equals(name);
-    }
-
-    public Attribute[] getMatchGroup() { // TODO: Not in use on Vespa 6
-        return matchGroup;
-    }
-
-    public void setMatchGroup(String[] attributes) {
-        Attribute[] a = new Attribute[attributes.length];
-
-        for (int i = 0; i < attributes.length; i++) {
-            a[i] = new Attribute(attributes[i].trim());
-        }
-        this.matchGroup = a;
     }
 
     public boolean isAttribute() {

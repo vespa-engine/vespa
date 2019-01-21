@@ -708,54 +708,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @Test
-    public void testCppDocSplit() throws IOException {
-        docMan = setUpCppDocType();
-        byte[] headerData = readFile("src/test/document/serializecppsplit_header.dat");
-        byte[] bodyData = readFile("src/test/document/serializecppsplit_body.dat");
-
-        DocumentDeserializer header = DocumentDeserializerFactory.create42(docMan, GrowableByteBuffer.wrap(headerData),
-                GrowableByteBuffer.wrap(bodyData));
-
-        Document doc = new Document(header);
-
-        assertEquals("doc:serializetest:http://test.doc.id/", doc.getId().toString());
-        assertEquals(new IntegerFieldValue(5), doc.getFieldValue("intfield"));
-        assertEquals(new FloatFieldValue((float)-9.23), doc.getFieldValue("floatfield"));
-        assertEquals(new StringFieldValue("This is a string."), doc.getFieldValue("stringfield"));
-        assertEquals(new LongFieldValue(398420092938472983L), doc.getFieldValue("longfield"));
-        assertEquals(new DoubleFieldValue(98374532.398820d), doc.getFieldValue("doublefield"));
-        assertEquals(new StringFieldValue("http://this.is.a.test/"), doc.getFieldValue("urifield"));
-        //NOTE: The value really is unsigned 254, which becomes signed -2:
-        assertEquals(new ByteFieldValue((byte)-2), doc.getFieldValue("bytefield"));
-        ByteBuffer raw = ByteBuffer.wrap("RAW DATA".getBytes());
-        assertEquals(new Raw(raw), doc.getFieldValue("rawfield"));
-
-        Document docindoc = (Document)doc.getFieldValue("docfield");
-        assertEquals(docMan.getDocumentType("docindoc"), docindoc.getDataType());
-        assertEquals(new DocumentId("doc:docindoc:http://embedded"), docindoc.getId());
-
-        WeightedSet wset = (WeightedSet)doc.getFieldValue("wsfield");
-        assertEquals(Integer.valueOf(50), wset.get(new StringFieldValue("Weighted 0")));
-        assertEquals(Integer.valueOf(199), wset.get(new StringFieldValue("Weighted 1")));
-    }
-
-    @Test
-    public void testCppDocSplitNoBody() throws IOException {
-        docMan = setUpCppDocType();
-        byte[] headerData = readFile("src/test/document/serializecppsplit_header.dat");
-
-        DocumentDeserializer header = DocumentDeserializerFactory.create42(docMan, GrowableByteBuffer.wrap(headerData));
-
-        Document doc = new Document(header);
-
-        assertEquals("doc:serializetest:http://test.doc.id/", doc.getId().toString());
-        assertEquals(new FloatFieldValue((float)-9.23), doc.getFieldValue("floatfield"));
-        assertEquals(new StringFieldValue("This is a string."), doc.getFieldValue("stringfield"));
-        assertEquals(new LongFieldValue(398420092938472983L), doc.getFieldValue("longfield"));
-        assertEquals(new StringFieldValue("http://this.is.a.test/"), doc.getFieldValue("urifield"));
-    }
-
-    @Test
     @SuppressWarnings("deprecation")
     public void testGenerateSerializedFile() throws IOException {
 
@@ -862,48 +814,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         }
         assertEquals(doc.getFieldValue("weightedfield"), doc2.getFieldValue("weightedfield"));
         assertEquals(doc.getFieldValue("mapfield"), doc2.getFieldValue("mapfield"));
-        // Do the same thing, splitting document in two
-        DocumentSerializer header = DocumentSerializerFactory.create42(new GrowableByteBuffer(), true);
-        DocumentSerializer body = DocumentSerializerFactory.create42(new GrowableByteBuffer());
-        doc.serializeHeader(header);
-        doc.serializeBody(body);
-        header.getBuf().flip();
-        body.getBuf().flip();
-
-        try {
-            FileOutputStream fos = new FileOutputStream("src/test/files/testser-split.header.dat");
-            fos.write(header.getBuf().array(), 0, header.getBuf().remaining());
-            fos.close();
-            fos = new FileOutputStream("src/test/files/testser-split.body.dat");
-            fos.write(body.getBuf().array(), 0, body.getBuf().remaining());
-            fos.close();
-        } catch (Exception e) {
-        }
-
-        DocumentDeserializer deser = DocumentDeserializerFactory.create42(docMan, header.getBuf(), body.getBuf());
-
-        doc2 = new Document(deser);
-
-        assertEquals(doc.getFieldValue("mailid"), doc2.getFieldValue("mailid"));
-        assertEquals(doc.getFieldValue("date"), doc2.getFieldValue("date"));
-        assertEquals(doc.getFieldValue("from"), doc2.getFieldValue("from"));
-        assertEquals(doc.getFieldValue("to"), doc2.getFieldValue("to"));
-        assertEquals(doc.getFieldValue("subject"), doc2.getFieldValue("subject"));
-        assertEquals(doc.getFieldValue("body"), doc2.getFieldValue("body"));
-        assertEquals(doc.getFieldValue("attachmentcount"), doc2.getFieldValue("attachmentcount"));
-        assertEquals(doc.getFieldValue("attachments"), doc2.getFieldValue("attachments"));
-        docRawBytes = ((Raw)doc.getFieldValue("rawfield")).getByteBuffer().array();
-        doc2RawBytes = ((Raw)doc2.getFieldValue("rawfield")).getByteBuffer().array();
-        assertEquals(docRawBytes.length, doc2RawBytes.length);
-        for (int i = 0; i < docRawBytes.length; i++) {
-            assertEquals(docRawBytes[i], doc2RawBytes[i]);
-        }
-        assertEquals(doc.getFieldValue("weightedfield"), doc2.getFieldValue("weightedfield"));
-        assertEquals(doc.getFieldValue("mapfield"), doc2.getFieldValue("mapfield"));
-
-        Document docInDoc = (Document)doc.getFieldValue("docindoc");
-        assert (docInDoc != null);
-        assertEquals(new StringFieldValue("ball"), docInDoc.getFieldValue("tull"));
     }
 
     @Test
@@ -953,45 +863,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         }
         assertEquals(doc.getFieldValue("weightedfield"), doc2.getFieldValue("weightedfield"));
         assertEquals(doc.getFieldValue("mapfield"), doc2.getFieldValue("mapfield"));
-
-        // Do the same thing, splitting document in two
-        BufferSerializer header = new BufferSerializer(new GrowableByteBuffer());
-        BufferSerializer body = new BufferSerializer(new GrowableByteBuffer());
-        doc.serializeHeader(header);
-        doc.serializeBody(body);
-        header.getBuf().flip();
-        body.getBuf().flip();
-
-        try {
-            FileOutputStream fos = new FileOutputStream("src/test/files/testser-split.header.dat");
-            fos.write(header.getBuf().array(), 0, header.getBuf().remaining());
-            fos.close();
-            fos = new FileOutputStream("src/test/files/testser-split.body.dat");
-            fos.write(body.getBuf().array(), 0, body.getBuf().remaining());
-            fos.close();
-        } catch (Exception e) {
-        }
-
-        DocumentDeserializer deser = DocumentDeserializerFactory.create42(docMan, header.getBuf(), body.getBuf());
-
-        doc2 = new Document(deser);
-
-        assertEquals(doc.getFieldValue("mailid"), doc2.getFieldValue("mailid"));
-        assertEquals(doc.getFieldValue("date"), doc2.getFieldValue("date"));
-        assertEquals(doc.getFieldValue("from"), doc2.getFieldValue("from"));
-        assertEquals(doc.getFieldValue("to"), doc2.getFieldValue("to"));
-        assertEquals(doc.getFieldValue("subject"), doc2.getFieldValue("subject"));
-        assertEquals(doc.getFieldValue("body"), doc2.getFieldValue("body"));
-        assertEquals(doc.getFieldValue("attachmentcount"), doc2.getFieldValue("attachmentcount"));
-        assertEquals(doc.getFieldValue("attachments"), doc2.getFieldValue("attachments"));
-        docRawBytes = ((Raw)doc.getFieldValue("rawfield")).getByteBuffer().array();
-        doc2RawBytes = ((Raw)doc2.getFieldValue("rawfield")).getByteBuffer().array();
-        assertEquals(docRawBytes.length, doc2RawBytes.length);
-        for (int i = 0; i < docRawBytes.length; i++) {
-            assertEquals(docRawBytes[i], doc2RawBytes[i]);
-        }
-        assertEquals(doc.getFieldValue("weightedfield"), doc2.getFieldValue("weightedfield"));
-        assertEquals(doc.getFieldValue("mapfield"), doc2.getFieldValue("mapfield"));
     }
 
     @Test
@@ -1000,7 +871,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         BufferSerializer buf = new BufferSerializer();
         try {
-            new Document(DocumentDeserializerFactory.create42(docMan, buf.getBuf()));
+            new Document(DocumentDeserializerFactory.create6(docMan, buf.getBuf()));
             assertTrue(false);
         } catch (Exception e) {
             assertTrue(true);
@@ -1008,7 +879,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         buf = BufferSerializer.wrap("Hello world".getBytes());
         try {
-            new Document(DocumentDeserializerFactory.create42(docMan, buf.getBuf()));
+            new Document(DocumentDeserializerFactory.create6(docMan, buf.getBuf()));
             assertTrue(false);
         } catch (Exception e) {
             assertTrue(true);
@@ -1450,11 +1321,11 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         }
         public void serialize(String docId) {
             new Document(docType, DocumentId.createFromSerialized(docId))
-                    .serialize(DocumentSerializerFactory.createHead(buffer));
+                    .serialize(DocumentSerializerFactory.create6(buffer));
             buffer.flip();
         }
         public Document deserialize() {
-            return new Document(DocumentDeserializerFactory.createHead(docMan, buffer));
+            return new Document(DocumentDeserializerFactory.create6(docMan, buffer));
         }
     }
 

@@ -14,6 +14,8 @@ com.yahoo.prelude.searcher.FieldCollapsingSearcher.extrafactor double default=2.
 com.yahoo.prelude.searcher.FieldCollapsingSearcher.collapsefield string default="mid"
 
 com.yahoo.prelude.searcher.BlendingSearcher.numthreads int default=200
+
+# The field we'll unique on, use [id] to unique on the document id
 com.yahoo.prelude.searcher.BlendingSearcher.docid string default=""
 
 com.yahoo.prelude.searcher.JuniperSearcher.source string default=""
@@ -73,9 +75,6 @@ searchcluster[].storagecluster.routespec string default=""
 # The available dispatchers on each search cluster
 searchcluster[].dispatcher[].host string
 searchcluster[].dispatcher[].port int
-
-## Not used. TODO: Remove on Vespa 7
-searchcluster[].rowbits int default=0
 
 # Per dispatcher config-id might be nice to have, remove it until needed.
 # searchcluster[].dispatcher[].configid reference

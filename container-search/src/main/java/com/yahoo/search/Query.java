@@ -139,7 +139,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     // The timeout to be used when dumping rank features
     private static final long dumpTimeout = (6 * 60 * 1000); // 6 minutes
-    private static final long defaultTimeout = 5000;
+    private static final long defaultTimeout = 500;
     /** The timeout of the query, in milliseconds */
     private long timeout = defaultTimeout;
 
@@ -527,17 +527,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
 
     /**
-     * @deprecated do not use
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public boolean requestHasProperty(String name) {
-        return httpRequest.hasProperty(name);
-    }
-
-    /**
      * Returns the number of milliseconds to wait for a response from a search backend
-     * before timing it out. Default is 5000.
+     * before timing it out. Default is 500.
      * <p>
      * Note: If Ranking.RANKFEATURES is turned on, this is hardcoded to 6 minutes.
      *
@@ -549,7 +540,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /**
      * Sets the number of milliseconds to wait for a response from a search backend
-     * before time out. Default is 5000.
+     * before time out. Default is 500.
      */
     public void setTimeout(long timeout) {
         if (timeout > 1000000000 || timeout < 0)
@@ -638,24 +629,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         setOffset(offset);
         setHits(hits);
     }
-
-    /**
-     * This is ignored - compression is controlled at the network level.
-     *
-     * @deprecated this is ignored
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public void setCompress(boolean ignored) { }
-
-    /**
-     * Returns false.
-     *
-     * @deprecated this always returns false
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public boolean getCompress() { return false; }
 
     /** Returns a string describing this query */
     @Override
@@ -885,7 +858,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                 yql.append(" limit ").append(Integer.toString(getHits()));
             }
         }
-        if (getTimeout() != 5000L) {
+        if (getTimeout() != defaultTimeout) {
             yql.append(" timeout ").append(Long.toString(getTimeout()));
         }
         yql.append(';');
@@ -1008,22 +981,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * when running with queries from the network.
      */
      public HttpRequest getHttpRequest() { return httpRequest; }
-
-    /**
-     * Returns the unique and stable session id of this query.
-     *
-     * @param create if true this is created if not already set
-     * @return the session id of this query, or null if not set and create is false
-     * @deprecated use getSessionId() or getSessionId(serverId) instead
-     */
-    @Deprecated
-    public SessionId getSessionId(boolean create) {
-        if ( ! create) return getSessionId();
-
-        if (requestId == null)
-            requestId = UniqueRequestId.next();
-        return new SessionId(requestId, getRanking().getProfile());
-    }
 
     /** Returns the session id of this query, or null if none is assigned */
     public SessionId getSessionId() {

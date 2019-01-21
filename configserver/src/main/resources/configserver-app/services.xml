@@ -14,7 +14,7 @@
       <initiallyInRotation>false</initiallyInRotation>
     </config>
 
-    <accesslog type="vespa" fileNamePattern="logs/vespa/configserver/access.log.%Y%m%d%H%M%S" rotationScheme="date" compressOnRotation="true" symlinkName="access.log" />
+    <accesslog type="vespa" fileNamePattern="logs/vespa/configserver/access.log.%Y%m%d%H%M%S" compressOnRotation="true" symlinkName="access.log" />
     <preprocess:include file='access-logging.xml' required='false' />
 
     <component id="com.yahoo.vespa.config.server.ConfigServerBootstrap" bundle="configserver" />
@@ -56,9 +56,6 @@
     <preprocess:include file='node-repository.xml' required='false' />
     <preprocess:include file='hosted-vespa/routing-status.xml' required='false' />
     <preprocess:include file='model-integration.xml' required='true' />
-
-    <!-- TODO Vespa 7: Remove scoreboard.xml, replaced by metrics-packets.xml -->
-    <preprocess:include file='hosted-vespa/scoreboard.xml' required='false' />
 
     <component id="com.yahoo.vespa.configserver.flags.ConfigServerFlagSource" bundle="configserver-flags"/>
     <component id="com.yahoo.vespa.configserver.flags.db.FlagsDbImpl" bundle="configserver-flags"/>

@@ -94,7 +94,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     private static void verifyIgnoreJvmGCOptions(boolean isHosted) throws IOException, SAXException {
-        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvmargs", ContainerCluster.CMS);
+        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvmargs", ContainerCluster.G1GC);
         verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvm-options", "-XX:+UseG1GC");
 
     }
@@ -162,7 +162,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
-        verifyJvmGCOptions(false, Zone.defaultZone(),ContainerCluster.CMS);
+        verifyJvmGCOptions(false, Zone.defaultZone(),ContainerCluster.G1GC);
         verifyJvmGCOptions(true, Zone.defaultZone(), ContainerCluster.G1GC);
     }
 
@@ -483,21 +483,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void legacy_yca_filter_and_its_config_provider_are_included_in_components_config()  {
-        Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
-                "  <filter id='YcaFilter' /> ",
-                "</jdisc>");
-
-        createModel(root, clusterElem);
-        assertThat(componentsConfig().toString(), containsString(".id \"YcaFilter\""));
-
-        String providerId = HttpFilter.configProviderId(ComponentId.fromString("YcaFilter")).stringValue();
-        assertThat(componentsConfig().toString(), containsString(".id \"" + providerId + "\""));
-    }
-
-    @Test
-    public void nested_components_are_injected_to_handlers() {
+    public void nested_components_are_injected_to_handlers() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <handler id='myHandler'>",
@@ -638,7 +624,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test(expected = IllegalArgumentException.class)
     public void renderers_named_DefaultRenderer_are_not_allowed() {
-        createModel(root, generateContainerElementWithRenderer("DefaultRenderer"));
+        createModel(root, generateContainerElementWithRenderer("XmlRenderer"));
     }
 
     @Test
@@ -699,7 +685,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertTrue(config.rpc().enabled());
         assertEquals("", config.rpc().host());
         assertFalse(config.restartOnDeploy());
-        assertFalse(config.coveragereports());
         assertEquals("filedistribution/" + hostname, config.filedistributor().configid());
     }
 

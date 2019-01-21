@@ -13,13 +13,11 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
-import com.yahoo.container.core.QrTemplatesConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.container.protect.FreezeDetector;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.language.Linguistics;
@@ -33,6 +31,7 @@ import com.yahoo.prelude.query.parser.ParseException;
 import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -164,48 +163,6 @@ public class SearchHandler extends LoggingRequestHandler {
                                      Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey());
     }
 
-    /** @deprecated use the constructor with ContainerHttpConfig */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public SearchHandler(
-            final ChainsConfig chainsConfig,
-            final IndexInfoConfig indexInfo,
-            final QrSearchersConfig clusters,
-            final SpecialtokensConfig specialtokens,
-            final Statistics statistics,
-            final Linguistics linguistics,
-            final Metric metric,
-            final ComponentRegistry<Renderer> renderers,
-            final Executor executor,
-            final AccessLog accessLog,
-            final QueryProfilesConfig queryProfileConfig,
-            final ComponentRegistry<Searcher> searchers) {
-        this (chainsConfig, indexInfo, clusters, specialtokens, statistics, linguistics, metric, renderers, executor,
-              accessLog, queryProfileConfig, searchers, new ContainerHttpConfig(new ContainerHttpConfig.Builder()));
-    }
-
-    /** @deprecated use the constructor without deprecated parameters */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public SearchHandler(
-            final ChainsConfig chainsConfig,
-            final IndexInfoConfig indexInfo,
-            final QrSearchersConfig clusters,
-            final SpecialtokensConfig specialTokens,
-            final QrTemplatesConfig ignored,
-            final FreezeDetector ignored2,
-            final Statistics statistics,
-            final Linguistics linguistics,
-            final Metric metric,
-            final ComponentRegistry<Renderer> renderers,
-            final Executor executor,
-            final AccessLog accessLog,
-            final QueryProfilesConfig queryProfileConfig,
-            final ComponentRegistry<Searcher> searchers) {
-        this(chainsConfig, indexInfo, clusters, specialTokens, statistics, linguistics, metric, renderers,
-             executor, accessLog, queryProfileConfig, searchers);
-    }
-
     @Override
     protected void destroy() {
         super.destroy();
@@ -263,8 +220,6 @@ public class SearchHandler extends LoggingRequestHandler {
         Result result = new Result(query, errorMessage);
         Renderer renderer = getRendererCopy(ComponentSpecification.fromString(request.getProperty("format")));
 
-        result.getTemplating().setRenderer(renderer); // Pre-Vespa 6 Result.getEncoding() expects this TODO: Remove opn Vespa 7
-
         return new HttpSearchResponse(getHttpResponseStatus(request, result), result, query, renderer);
     }
 
@@ -291,8 +246,12 @@ public class SearchHandler extends LoggingRequestHandler {
 
         Query query = new Query(request, requestMap, queryProfile);
 
-        boolean benchmarkOutput = VespaHeaders.benchmarkOutput(request);
-        boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarkOutput, request.getJDiscRequest().headers());
+        boolean benchmarking = VespaHeaders.benchmarkOutput(request);
+        boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarking, request.getJDiscRequest().headers());
+
+        // Don't use soft timeout by default when benchmarking to avoid wrong conclusions by excluding nodes
+        if (benchmarking && ! request.hasProperty(SoftTimeout.enableProperty.toString()))
+            query.properties().set(SoftTimeout.enableProperty, false);
 
         // Find and execute search chain if we have a valid query
         String invalidReason = query.validate();
@@ -321,22 +280,14 @@ public class SearchHandler extends LoggingRequestHandler {
             result = search(pathAndQuery, query, searchChain, searchChainRegistry);
         }
 
-        Renderer renderer;
-        if (result.getTemplating().usesDefaultTemplate()) { // TODO: Remove on Vespa 7
-            renderer = toRendererCopy(query.getPresentation().getRenderer());
-            result.getTemplating().setRenderer(renderer); // pre-Vespa 6 Result.getEncoding() expects this to be set.
-        }
-        else { // somebody explicitly assigned a old style template // TODO: Remove on Vespa 7
-            renderer = perRenderingCopy(result.getTemplating().getRenderer());
-        }
-
         // Transform result to response
-        HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result), 
+        Renderer renderer = toRendererCopy(query.getPresentation().getRenderer());
+        HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
                                                              result, query, renderer);
         if (hostResponseHeaderKey.isPresent())
             response.headers().add(hostResponseHeaderKey.get(), selfHostname);
 
-        if (benchmarkOutput)
+        if (benchmarking)
             VespaHeaders.benchmarkOutput(response.headers(), benchmarkCoverage, response.getTiming(),
                                          response.getHitCounts(), getErrors(result), response.getCoverage());
 
@@ -389,9 +340,6 @@ public class SearchHandler extends LoggingRequestHandler {
             execution.context().setDetailedDiagnostics(true);
         }
         Result result = execution.search(query);
-
-        if (result.getTemplating() == null) // TODO: Remove on Vespa 7
-            result.getTemplating().setRenderer(renderer);
 
         ensureQuerySet(result, query);
         execution.fill(result, result.getQuery().getPresentation().getSummary());

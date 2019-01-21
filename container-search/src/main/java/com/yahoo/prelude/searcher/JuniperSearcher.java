@@ -77,10 +77,9 @@ public class JuniperSearcher extends Searcher {
 
     @Override
     public void fill(Result result, String summaryClass, Execution execution) {
-        Result workResult = result;
-        int worstCase = workResult.getHitCount();
+        int worstCase = result.getHitCount();
         List<Hit> hits = new ArrayList<>(worstCase);
-        for (Iterator<Hit> i = workResult.hits().deepIterator(); i.hasNext();) {
+        for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext();) {
             Hit sniffHit = i.next();
             if ( ! (sniffHit instanceof FastHit)) continue;
 
@@ -89,26 +88,26 @@ public class JuniperSearcher extends Searcher {
 
             hits.add(hit);
         }
-        execution.fill(workResult, summaryClass);
-        highlight(workResult.getQuery().getPresentation().getBolding(), hits.iterator(), summaryClass,
+        execution.fill(result, summaryClass);
+        highlight(result.getQuery().getPresentation().getBolding(), hits.iterator(), summaryClass,
                   execution.context().getIndexFacts().newSession(result.getQuery()));
     }
 
     private void highlight(boolean bolding, Iterator<Hit> hitsToHighlight,
                            String summaryClass, IndexFacts.Session indexFacts) {
         while (hitsToHighlight.hasNext()) {
-            Hit sniffHit = hitsToHighlight.next();
-            if ( ! (sniffHit instanceof FastHit)) continue;
+            Hit hit = hitsToHighlight.next();
+            if ( ! (hit instanceof FastHit)) continue;
 
-            FastHit hit = (FastHit) sniffHit;
-            if (summaryClass != null &&  ! hit.isFilled(summaryClass)) continue;
+            FastHit fastHit = (FastHit) hit;
+            if (summaryClass != null &&  ! fastHit.isFilled(summaryClass)) continue;
 
-            Object searchDefinitionField = hit.getField(MAGIC_FIELD);
+            Object searchDefinitionField = fastHit.getField(MAGIC_FIELD);
             if (searchDefinitionField == null) continue;
 
             for (Index index : indexFacts.getIndexes(searchDefinitionField.toString())) {
                 if (index.getDynamicSummary() || index.getHighlightSummary()) {
-                    HitField fieldValue = hit.buildHitField(index.getName(), true, true);
+                    HitField fieldValue = fastHit.buildHitField(index.getName(), true);
                     if (fieldValue != null)
                         insertTags(fieldValue, bolding, index.getDynamicSummary());
                 }
@@ -116,9 +115,9 @@ public class JuniperSearcher extends Searcher {
         }
     }
 
-    private void insertTags(HitField oldProperty, boolean bolding, boolean dynteaser) {
+    private void insertTags(HitField field, boolean bolding, boolean dynteaser) {
         boolean insideHighlight = false;
-        for (ListIterator<FieldPart> i = oldProperty.listIterator(); i.hasNext();) {
+        for (ListIterator<FieldPart> i = field.listIterator(); i.hasNext();) {
             FieldPart f = i.next();
             if (f instanceof SeparatorFieldPart)
                 setSeparatorString(bolding, (SeparatorFieldPart) f);
@@ -138,8 +137,7 @@ public class JuniperSearcher extends Searcher {
                         break;
                     case RAW_SEPARATOR_CHAR:
                         newFieldParts = initFieldParts(newFieldParts);
-                        addSeparator(bolding, dynteaser, f, toQuote, newFieldParts,
-                                     previous, j);
+                        addSeparator(bolding, dynteaser, f, toQuote, newFieldParts, previous, j);
                         previous = j + 1;
                         break;
                     default:

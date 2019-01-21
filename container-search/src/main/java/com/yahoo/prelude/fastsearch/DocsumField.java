@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.log.LogLevel;
 
@@ -31,18 +30,13 @@ public abstract class DocsumField {
             constructors.put(typename, constructor);
         }
 
-        DocsumField create(String typename, String name, LegacyEmulationConfig emulConfig)
+        DocsumField create(String typename, String name)
                 throws InstantiationException, IllegalAccessException,
                        IllegalArgumentException, InvocationTargetException {
             DocsumField f = constructors.get(typename).newInstance(name);
-            f.emulConfig = emulConfig;
             return f;
         }
     }
-
-    private LegacyEmulationConfig emulConfig;
-
-    final LegacyEmulationConfig getEmulConfig() { return emulConfig; }
 
     static {
         fieldFactory = new FieldFactory();
@@ -75,14 +69,9 @@ public abstract class DocsumField {
         this.name = name;
     }
 
-    /* For unit test only */
     public static DocsumField create(String name, String typename) {
-        return create(name, typename, new LegacyEmulationConfig(new LegacyEmulationConfig.Builder()));
-    }
-
-    public static DocsumField create(String name, String typename, LegacyEmulationConfig emulConfig) {
         try {
-            return fieldFactory.create(typename, name, emulConfig);
+            return fieldFactory.create(typename, name);
         } catch (Exception e) {
             throw new RuntimeException("Unknown field type '" + typename + "'", e);
         }

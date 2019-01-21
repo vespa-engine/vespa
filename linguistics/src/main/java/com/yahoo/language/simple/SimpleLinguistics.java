@@ -17,7 +17,8 @@ import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.process.Transformer;
 
 /**
- * Factory of pure Java linguistic processor implementations.
+ * Factory of simple linguistic processor implementations.
+ * Useful for testing and english-only use cases.
  *
  * @author bratseth
  * @author bjorncs
@@ -34,26 +35,9 @@ public class SimpleLinguistics implements Linguistics {
     @Inject
     @SuppressWarnings("deprecation")
     public SimpleLinguistics() {
-        this(true);
-
-    }
-
-    /** @deprecated use OpenNlpLinguistics to get optimaize */
-    @Deprecated // OK
-    public SimpleLinguistics(boolean enableOptimaize) {
-        this(new SimpleDetector(enableOptimaize));
-    }
-
-    /** @deprecated use OpenNlpLinguistics to get optimaize */
-    @Deprecated // OK
-    public SimpleLinguistics(SimpleLinguisticsConfig config) {
-        this(new SimpleDetector(config.detector()));
-    }
-
-    private SimpleLinguistics(Detector detector) {
         this.normalizer = new SimpleNormalizer();
         this.transformer = new SimpleTransformer();
-        this.detector = detector;
+        this.detector = new SimpleDetector();
         this.characterClasses = new CharacterClasses();
         this.gramSplitter = new GramSplitter(characterClasses);
     }
@@ -81,12 +65,5 @@ public class SimpleLinguistics implements Linguistics {
 
     @Override
     public CharacterClasses getCharacterClasses() { return characterClasses; }
-
-    /** @deprecated do not use */
-    @Deprecated // OK
-    @Override
-    public Tuple2<String, Version> getVersion(Component component) {
-        return new Tuple2<>("yahoo", new Version(1, 0));
-    }
 
 }

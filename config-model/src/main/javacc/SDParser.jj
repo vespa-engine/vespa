@@ -114,7 +114,7 @@ public class SDParser {
      */
     @SuppressWarnings("deprecation")
     private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
-        return newIndexingOperation(multiline, new SimpleLinguistics(false));
+        return newIndexingOperation(multiline, new SimpleLinguistics());
     }
 
     /**
@@ -221,7 +221,6 @@ TOKEN :
 | < WEIGHT: "weight" >
 | < TYPE: "type" >
 | < INDEX: "index" >
-| < RISE: "rise" >
 | < MTOKEN: "token" >
 | < TEXT: "text" >
 | < WORD: "word" >
@@ -298,8 +297,6 @@ TOKEN :
 | < MUTABLE: "mutable" >
 | < FASTSEARCH: "fast-search" >
 | < HUGE: "huge" >
-| < PREFETCH: "prefetch" >
-| < NOPREFETCH: "no-prefetch" >
 | < TENSOR_TYPE: "tensor(" (~["(",")"])+ ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
@@ -1209,15 +1206,6 @@ Object attributeSetting(FieldOperationContainer field, AttributeOperation attrib
       | <MUTABLE>             { attribute.setMutable(true); }
       | <ENABLEBITVECTORS>    { attribute.setEnableBitVectors(true); }
       | <ENABLEONLYBITVECTOR> { attribute.setEnableOnlyBitVector(true); }
-
-      | <NOPREFETCH> {
-          deployLogger.log(Level.WARNING, field + ": 'attribute : no-prefetch' is deprecated and has no effect.");
-          attribute.setPrefetch(false);
-      }
-      | <PREFETCH> {
-          deployLogger.log(Level.WARNING, field + ": 'attribute : prefetch' is deprecated and has no effect.");
-          attribute.setPrefetch(true);
-      }
       | sorting(field, attributeName)
       | <ALIAS> { String alias; String aliasedName=attributeName; } [aliasedName = identifier()] <COLON> alias = identifier() {
           attribute.setDoAlias(true);
@@ -1517,8 +1505,6 @@ void body(SDField field) : { }
     <BODY>
     {
         deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
-        field.setHeader(false);
-        field.setHeaderOrBodyDefined(true);
     }
 }
 
@@ -1532,8 +1518,6 @@ void header(SDField field) : { }
     <HEADER>
     {
         deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
-        field.setHeader(true);
-        field.setHeaderOrBodyDefined(true);
     }
 }
 
@@ -1715,8 +1699,7 @@ Object documentSummary(Search search) :
     DocumentSummary summary;
 }
 {
-    ( ( <DOCUMENTSUMMARY> |
-        <SUMMARY> { deployLogger.log(Level.WARNING, "Directive 'summary' is deprecated, use 'document-summary' instead."); } ) // TODO: Remove on Vespa 7
+    ( <DOCUMENTSUMMARY>
       name = identifier() { search.addSummary(summary = new DocumentSummary(name)); }
       lbrace()
          (
@@ -1793,11 +1776,6 @@ Object indexBody(IndexOperation index) :
     ( <PREFIX>                                   { index.setPrefix(true); }
       | <ALIAS> <COLON> str = identifier()       { index.addAlias(str); }
       | <STEMMING> <COLON> str = identifier()    { index.setStemming(str); }
-      | <RISE> {
-              if (true) throw new ParseException("'index:rise' is no longer an option. Use 'indexing:attribute' instead. " +
-                                       "If it is a weighted set field you should also add 'attribute:fast-search'." +
-                                       "This change will require refeeding.");
-          }
       | <ARITY> <COLON> arity = integer()                              { index.setArity(arity); }
       | <LOWERBOUND> <COLON> num = consumeLong()                       { index.setLowerBound(num); }
       | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }
@@ -2551,14 +2529,12 @@ String identifier() : { }
       | <MUTABLE>
       | <NEVER>
       | <NONE>
-      | <NOPREFETCH>
       | <NORMAL>
       | <NORMALIZING>
       | <OFF>
       | <ON>
       | <ONDEMAND>
       | <ORDER>
-      | <PREFETCH>
       | <PREFIX>
       | <PRIMARY>
       | <PROPERTIES>
@@ -2573,7 +2549,6 @@ String identifier() : { }
       | <REFERENCE>
       | <REMOVEIFZERO>
       | <RERANKCOUNT>
-      | <RISE>
       | <SEARCH>
       | <SECONDARY>
       | <SECONDPHASE>

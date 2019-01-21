@@ -48,11 +48,6 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      */
     private ListMap<String,String> headers = null;
 
-    /**
-     * Result rendering infrastructure.
-     */
-    private final Templating templating;
-
     /** Creates a new Result where the top level hit group has id "toplevel" */
     public Result(Query query) {
         this(query, new HitGroup("toplevel"));
@@ -75,7 +70,6 @@ public final class Result extends com.yahoo.processing.Response implements Clone
         if (query.getRanking().getSorting() != null) {
             setHitOrderer(new HitSortOrderer(query.getRanking().getSorting()));
         }
-        templating = new Templating(this);
     }
 
     /** Create a result containing an error */
@@ -92,8 +86,6 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      */
     @SuppressWarnings("deprecation")
     public void mergeWith(Result result) {
-        if (templating.usesDefaultTemplate())
-            templating.setRenderer(result.templating.getRenderer());
         totalHitCount += result.getTotalHitCount();
         deepHitCount += result.getDeepHitCount();
         timeAccountant.merge(result.getElapsedTime());
@@ -228,7 +220,6 @@ public final class Result extends com.yahoo.processing.Response implements Clone
 
         resultClone.hits = hits.clone();
 
-        resultClone.getTemplating().setRenderer(null); // TODO: Remove on Vespa 7
         resultClone.setElapsedTime(new ElapsedTime());
         return resultClone;
     }
@@ -299,9 +290,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      * @param hit
      *                the hit to be analyzed
      */
-    protected void traceExtraHitProperties(StringBuilder hitBuffer, Hit hit) {
-        return;
-    }
+    protected void traceExtraHitProperties(StringBuilder hitBuffer, Hit hit) { }
 
     /** Returns the context of this result - this is equal to getQuery().getContext(create) */
     public QueryContext getContext(boolean create) { return getQuery().getContext(create); }
@@ -335,19 +324,6 @@ public final class Result extends com.yahoo.processing.Response implements Clone
         if (headers == null && create)
             headers = new ListMap<>();
         return headers;
-    }
-
-    /**
-     * The Templating object contains helper methods and data containers for
-     * result rendering.
-     *
-     * @return helper object for result rendering
-     * @deprecated use renderers
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated// OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
-    public Templating getTemplating() {
-        return templating;
     }
 
 }

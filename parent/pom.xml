@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>parent</artifactId>
     <packaging>pom</packaging>
-    <version>6-SNAPSHOT</version>
+    <version>7-SNAPSHOT</version>
     <name>parent</name>
     <description>Parent artifact for all Vespa maven projects.</description>
     <url>https://github.com/vespa-engine</url>
@@ -12,7 +12,7 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>container-dependency-versions</artifactId>
-        <version>6-SNAPSHOT</version>
+        <version>7-SNAPSHOT</version>
         <relativePath>../container-dependency-versions/pom.xml</relativePath>
     </parent>
 
@@ -99,8 +99,11 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.0</version>
                     <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
+                        <jdkToolchain>
+                            <version>11</version>
+                        </jdkToolchain>
+                        <source>11</source>
+                        <target>11</target>
                         <showWarnings>true</showWarnings>
                         <optimize>true</optimize>
                         <showDeprecation>false</showDeprecation>
@@ -153,13 +156,16 @@
                         <doclint>${doclint},-missing</doclint>
                         <quiet>true</quiet>
                         <show>protected</show>
+
+                        <!-- TODO: remove this setting when the plugin looks for element-list (JDK 10+) instead of package-list. -->
+                        <detectOfflineLinks>false</detectOfflineLinks>
                     </configuration>
                     <version>3.0.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
-                    <version>3.5.2</version>
+                    <version>${maven-plugin-tools.version}</version>
                     <configuration>
                         <!-- see http://jira.codehaus.org/browse/MNG-5346 -->
                         <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
@@ -184,16 +190,8 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.1.1</version>
-                    <dependencies>
-                        <!-- TODO: Remove for shade-plugin 3.1.2 - https://issues.apache.org/jira/browse/MSHADE-289 -->
-                        <dependency>
-                            <groupId>org.ow2.asm</groupId>
-                            <artifactId>asm</artifactId>
-                            <version>${asm.version}</version>
-                        </dependency>
-                    </dependencies>
-                </plugin>
+                    <version>${maven-shade-plugin.version}</version>
+                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-site-plugin</artifactId>
@@ -284,28 +282,6 @@
         </pluginManagement>
     </build>
     <profiles>
-        <profile>
-            <!-- TODO: move config into pluginManagement when we don't have to support older jdks -->
-            <id>jdk10</id>
-            <activation>
-                <jdk>[10, )</jdk>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <configuration>
-                                <quiet>true</quiet>
-                                <!-- Avoid javadoc warning ".. not specified the version of HTML .." -->
-                                <additionalJOption>-html4</additionalJOption>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
         <profile>
             <id>attach-sources</id>
             <activation>
@@ -456,6 +432,11 @@
                 <version>1.3.1</version>
             </dependency>
             <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.4</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
                 <version>3.2.1</version>
@@ -531,6 +512,16 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${apache.httpclient.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>${apache.httpcore.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpmime</artifactId>
                 <version>4.3.6</version>
             </dependency>
@@ -552,12 +543,12 @@
             <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
                 <artifactId>maven-plugin-annotations</artifactId>
-                <version>3.5</version>
+                <version>${maven-plugin-tools.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-plugin-api</artifactId>
-                <version>3.5.0</version>
+                <version>${maven-plugin-tools.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
@@ -723,7 +714,9 @@
     <properties>
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.5</antlr4.version>
-        <asm.version>6.2</asm.version>
+        <apache.httpclient.version>4.4.1</apache.httpclient.version>
+        <apache.httpcore.version>4.4.1</apache.httpcore.version>
+        <asm.version>7.0</asm.version>
         <jna.version>4.5.2</jna.version>
         <tensorflow.version>1.12.0</tensorflow.version>
         <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
@@ -736,6 +729,8 @@
                      xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 2, minor = 9, micro = 1/g'
         -->
         <curator.version>2.9.1</curator.version>
+        <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
+        <maven-plugin-tools.version>3.6.0</maven-plugin-tools.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <test.hide>true</test.hide>

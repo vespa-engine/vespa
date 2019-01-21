@@ -57,7 +57,6 @@ public class BundleMapper {
         bundleFromClass.put("com.yahoo.prelude.fastsearch.VespaBackEndSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.querytransform.CJKSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.querytransform.CollapsePhraseSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.querytransform.IndexCombinatorSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.querytransform.LiteralBoostSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.querytransform.NoRankingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.querytransform.NonPhrasingSearcher", searchAndDocprocBundle);
@@ -66,15 +65,12 @@ public class BundleMapper {
         bundleFromClass.put("com.yahoo.prelude.querytransform.RecallSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.querytransform.StemmingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.BlendingSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.DocumentSourceSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.FieldCollapsingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.FillSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.JSONDebugSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.JuniperSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.MultipleResultsSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.PosSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.QuerySnapshotSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.QueryValidatingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.QuotingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.ValidateSortingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.semantics.SemanticSearcher", searchAndDocprocBundle);
@@ -110,10 +106,8 @@ public class BundleMapper {
         bundleFromClass.put("com.yahoo.search.query.rewrite.rewriters.NameRewriter", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.querytransform.AllLowercasingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.querytransform.DefaultPositionSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.querytransform.LegacyCombinator", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.querytransform.LowercasingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.querytransform.NGramSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.querytransform.QueryCombinator", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.querytransform.VespaLowercasingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.rendering.Renderer", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.rendering.SectionedRenderer", searchAndDocprocBundle);

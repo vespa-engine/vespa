@@ -13,17 +13,17 @@ public abstract class TraceVisitor {
      * <p>Visits a {@link TraceNode}. Called by {@link TraceNode#accept(TraceVisitor)}, before visiting its
      * children.</p>
      *
-     * @param node the <tt>TraceNode</tt> being visited
+     * @param node the <code>TraceNode</code> being visited
      * @see TraceNode#accept(TraceVisitor)
      */
     public abstract void visit(TraceNode node);
 
     /**
      * <p>Enters a {@link TraceNode}. This method is called after {@link #visit(TraceNode)}, but before visiting its
-     * children. Note that this method is NOT called if a <tt>TraceNode</tt> has zero children.</p>
+     * children. Note that this method is NOT called if a <code>TraceNode</code> has zero children.</p>
      * <p>The default implementation of this method does nothing.</p>
      *
-     * @param node the <tt>TraceNode</tt> being entered
+     * @param node the <code>TraceNode</code> being entered
      * @see #leaving(TraceNode)
      */
     @SuppressWarnings("UnusedParameters")
@@ -33,10 +33,10 @@ public abstract class TraceVisitor {
 
     /**
      * <p>Leaves a {@link TraceNode}. This method is called after {@link #entering(TraceNode)}, and after visiting its
-     * children. Note that this method is NOT called if a <tt>TraceNode</tt> has zero children.</p>
+     * children. Note that this method is NOT called if a <code>TraceNode</code> has zero children.</p>
      * <p>The default implementation of this method does nothing.</p>
      *
-     * @param node the <tt>TraceNode</tt> being left
+     * @param node the <code>TraceNode</code> being left
      */
     @SuppressWarnings("UnusedParameters")
     public void leaving(TraceNode node) {

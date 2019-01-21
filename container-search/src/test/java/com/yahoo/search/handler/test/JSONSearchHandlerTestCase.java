@@ -232,7 +232,7 @@ public class JSONSearchHandlerTestCase {
     public void testNormalResultExplicitDefaultRenderingFullRendererName1() throws Exception {
         JSONObject json = new JSONObject();
         json.put("query", "abc");
-        json.put("format", "DefaultRenderer");
+        json.put("format", "XmlRenderer");
         assertXmlResult(json, driver);
     }
 
@@ -242,22 +242,6 @@ public class JSONSearchHandlerTestCase {
         json.put("query", "abc");
         json.put("format", "JsonRenderer");
         assertJsonResult(json, driver);
-    }
-
-    @Test
-    public void testResultLegacyTiledFormat() throws Exception {
-        JSONObject json = new JSONObject();
-        json.put("query", "abc");
-        json.put("format", "tiled");
-        assertTiledResult(json, driver);
-    }
-
-    @Test
-    public void testResultLegacyPageFormat() throws Exception {
-        JSONObject json = new JSONObject();
-        json.put("query", "abc");
-        json.put("format", "page");
-        assertPageResult(json, driver);
     }
 
     private static final String xmlResult =
@@ -284,21 +268,6 @@ public class JSONSearchHandlerTestCase {
 
     }
 
-    private static final String tiledResult =
-            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                    "<result version=\"1.0\">\n" +
-                    "\n" +
-                    "  <hit relevance=\"1.0\">\n" +
-                    "    <id>testHit</id>\n" +
-                    "    <uri>testHit</uri>\n" +
-                    "  </hit>\n" +
-                    "\n" +
-                    "</result>\n";
-
-    private void assertTiledResult(JSONObject json, RequestHandlerTestDriver driver) {
-        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), tiledResult);
-    }
-
     private static final String pageResult =
             "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                     "<page version=\"1.0\">\n" +
@@ -311,10 +280,6 @@ public class JSONSearchHandlerTestCase {
                     "  </content>\n" +
                     "\n" +
                     "</page>\n";
-
-    private void assertPageResult(JSONObject json, RequestHandlerTestDriver driver) {
-        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), pageResult);
-    }
 
     private void assertOkResult(RequestHandlerTestDriver.MockResponseHandler response, String expected) {
         assertEquals(expected, response.readAll());
@@ -507,7 +472,6 @@ public class JSONSearchHandlerTestCase {
         Map<String, String> propertyMap = request.propertyMap();
         assertEquals("Should have same mapping for properties", map, propertyMap);
     }
-
 
     @Test
     public void testContentTypeParsing() throws Exception {

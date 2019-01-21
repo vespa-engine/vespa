@@ -9,7 +9,7 @@ jvm.server bool default=true restart
 jvm.verbosegc bool default=true restart
 
 ## Garbage Collection tuning parameters
-jvm.gcopts string default="-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1" restart
+jvm.gcopts string default="-XX:+UseG1GC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1" restart
 
 ## Heap size (in megabytes) for the Java VM
 jvm.heapsize int default=1536 restart
@@ -26,6 +26,10 @@ jvm.directMemorySizeCache int default=0 restart
 ## Set heap size as this percentage of available RAM, instead of absolute
 ## value above. Setting outside [1, 99] disables this setting.
 jvm.heapSizeAsPercentageOfPhysicalMemory int default=0 restart
+
+## Number of processors available, can be used to set -XX:ActiveProcessorCount if set to non-zero.
+## In that case will be the number returned by the JVM when calling Runtime.getRuntime().availableProcessors()
+jvm.availableProcessors int default=0 restart
 
 ## Extra environment variables
 qrs.env string default="YELL_MA_EURO=INXIGHT" restart

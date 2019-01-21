@@ -1,29 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.clients;
 
-import com.yahoo.component.ComponentId;
-import com.yahoo.component.ComponentSpecification;
-import com.yahoo.component.chain.Phase;
-import com.yahoo.component.chain.dependencies.Dependencies;
-import com.yahoo.component.chain.model.ChainSpecification;
-import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
-import com.yahoo.vespa.model.container.search.ContainerSearch;
-import com.yahoo.vespa.model.container.search.searchchain.SearchChain;
-import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
-import com.yahoo.vespa.model.container.search.searchchain.Searcher;
 import com.yahoo.vespaclient.config.FeederConfig;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * @author Einar M R Rosenvinge
@@ -35,51 +21,12 @@ public class ContainerDocumentApi implements FeederConfig.Producer {
 
     public ContainerDocumentApi(ContainerCluster cluster, Options options) {
         this.options = options;
-        setupLegacySearchers(cluster);
         setupHandlers(cluster);
     }
 
     private void setupHandlers(ContainerCluster cluster) {
-        cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandler", "feed"));
-        cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerRemove", "remove"));
-        cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation", "removelocation"));
-        cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerGet", "get"));
-        cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerVisit", "visit"));
         cluster.addComponent(newVespaClientHandler("com.yahoo.document.restapi.resource.RestApi", "document/v1/*"));
-        cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerCompatibility", "document"));
-        cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerStatus", "feedstatus"));
         cluster.addComponent(newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler", ContainerCluster.RESERVED_URI_PREFIX + "/feedapi"));
-    }
-
-    private void setupLegacySearchers(ContainerCluster cluster) {
-        Set<ComponentSpecification> inherited = new TreeSet<>();
-
-        SearchChain vespaGetChain = new SearchChain(new ChainSpecification(new ComponentId("vespaget"),
-                new ChainSpecification.Inheritance(inherited, null), new ArrayList<>(), new TreeSet<>()));
-        vespaGetChain.addInnerComponent(newVespaClientSearcher("com.yahoo.storage.searcher.GetSearcher"));
-
-        SearchChain vespaVisitChain = new SearchChain(new ChainSpecification(new ComponentId("vespavisit"),
-                new ChainSpecification.Inheritance(inherited, null), new ArrayList<>(), new TreeSet<>()));
-        vespaVisitChain.addInnerComponent(newVespaClientSearcher("com.yahoo.storage.searcher.VisitSearcher"));
-
-        SearchChains chains;
-        if (cluster.getSearch() != null) {
-            chains = cluster.getSearchChains();
-        } else {
-            chains = new SearchChains(cluster, "searchchain");
-        }
-        chains.add(vespaGetChain);
-        chains.add(vespaVisitChain);
-
-        if (cluster.getSearch() == null) {
-            ContainerSearch containerSearch = new ContainerSearch(cluster, chains, new ContainerSearch.Options());
-            cluster.setSearch(containerSearch);
-
-            ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(chains, 
-                                                                                    "com.yahoo.search.handler.SearchHandler");
-            searchHandler.addServerBindings("http://*/search/*", "https://*/search/*");
-            cluster.addComponent(searchHandler);
-        }
     }
 
     private Handler newVespaClientHandler(String componentId, String bindingSuffix) {
@@ -91,12 +38,6 @@ public class ContainerDocumentApi implements FeederConfig.Producer {
                     rootBinding + bindingSuffix + '/');
         }
         return handler;
-    }
-
-    private Searcher newVespaClientSearcher(String componentSpec) {
-        return new Searcher<>(new ChainedComponentModel(
-                BundleInstantiationSpecification.getFromStrings(componentSpec, null, vespaClientBundleSpecification),
-                new Dependencies(null, null, null)));
     }
 
     @Override

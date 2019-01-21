@@ -3,10 +3,26 @@ package com.yahoo.test;
 
 
 /**
- * A searcher adding a new hit.
- * TODO: add annotation check
- * @author  Joe Developer
+ * Test class for integration tests. Used to verify that nested classes are visited.
+ *
+ * Do not replace the fully qualified class names with imports!
  */
 public class SimpleSearcher2 extends SimpleSearcher {
     public void dummy() {}
+
+    private class InnerClassProcessor extends com.yahoo.processing.Processor {
+        @Override
+        public com.yahoo.processing.Response process(com.yahoo.processing.Request request,
+                                                     com.yahoo.processing.execution.Execution execution) {
+            return null;
+        }
+    }
+
+    private static class NestedStaticClass {
+        private com.yahoo.metrics.simple.Counter counter;
+
+        @com.google.inject.Inject
+        public NestedStaticClass() { }
+    }
+
 }

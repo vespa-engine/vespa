@@ -66,10 +66,6 @@ flush.memory.each.diskbloatfactor double default=0.2
 ## Unit is seconds with 1 day being the default.
 flush.memory.maxage.time double default=86400.0
 
-## Max diff in serial number allowed before that takes precedence.
-## TODO Deprecated and ignored. Remove soon.
-flush.memory.maxage.serial long default=1000000
-
 ## When resource limit for memory is reached we choose a conservative mode for the flush strategy.
 ## In this case this factor is multiplied with 'maxmemory' and 'each.maxmemory' to calculate conservative values to use instead.
 flush.memory.conservative.memorylimitfactor double default=0.5
@@ -159,10 +155,6 @@ index.cache.size long default=0 restart
 
 ## Control io options during flushing of attributes.
 attribute.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
-
-## Control options for io during search.
-## Dictionary is always MMAP.
-search.io enum {NORMAL, DIRECTIO, MMAP } default=MMAP restart
 
 ## Multiple optional options for use with mmap
 search.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
@@ -255,23 +247,11 @@ summary.log.chunk.compression.level int default=9
 ## Max size in bytes per chunk.
 summary.log.chunk.maxbytes int default=65536
 
-## Max number of documents in each chunk.
-## TODO Deprecated and ignored. Remove soon.
-summary.log.chunk.maxentries int default=256
-
 ## Skip crc32 check on read.
 summary.log.chunk.skipcrconread bool default=false
 
-## Control how compaction is done, write to the front or to new const file.
-## TODO: Remove, will always be false
-summary.log.compact2activefile bool default=false
-
 ## Max size per summary file.
 summary.log.maxfilesize long default=1000000000
-
-## Max number of removes per summary file.
-## TODO Deprecated and ignored. Remove soon.
-summary.log.maxentriesperfile long default=20000000
 
 ## Max disk bloat factor. This will trigger compacting.
 summary.log.maxdiskbloatfactor double default=0.1
@@ -282,11 +262,6 @@ summary.log.maxbucketspread double default=2.5
 ## If a file goes below this ratio compared to allowed max size it will be joined to the front.
 ## Value in the range [0.0, 1.0]
 summary.log.minfilesizefactor double default=0.2
-
-## Number of threads used for compressing incoming documents/compacting.
-## Deprecated. Use feeding.concurrency instead.
-## TODO Remove
-summary.log.numthreads int default=8 restart
 
 ## Control io options during flush of stored documents.
 summary.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO
@@ -301,10 +276,6 @@ summary.read.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
 
 ## Advise to give to os when mapping memory.
 summary.read.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
-
-## Enable compact for bucket oriented access.
-## TODO: Unused, always bucket order.
-summary.compact2buckets bool default=true restart
 
 ## The name of the input document type
 documentdb[].inputdoctypename string
@@ -342,14 +313,6 @@ pruneremoveddocumentsinterval double default=0.0
 ##
 ## Default value is 2 weeks (1209600 seconds).
 pruneremoveddocumentsage double default=1209600.0
-
-## NOT USED. TODO: Remove when going to Vespa 7.
-## Interval between wiping of old removed document fields (in seconds).
-wipeoldremovedfieldsinterval double default=21600.0
-
-## NOT USED. TODO: Remove when going to Vespa 7.
-## Age of removed document fields before they can be wiped (in seconds).
-wipeoldremovedfieldsage double default=1209600.0
 
 ## Timeout of recovery rpc calls in rowcolumn mode
 ##

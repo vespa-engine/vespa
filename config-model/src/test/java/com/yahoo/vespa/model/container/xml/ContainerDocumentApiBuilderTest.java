@@ -21,8 +21,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.11
+ * @author Einar M R Rosenvinge
  */
 public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBase {
 
@@ -38,7 +37,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void document_api_config_is_added_to_container_cluster() throws Exception {
+    public void document_api_config_is_added_to_container_cluster() {
         Element elem = DomBuilderTest.parse(
                 "<jdisc id='cluster1' version='1.0'>",
                 "  <document-api>",
@@ -61,7 +60,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void custom_bindings_are_allowed() throws Exception {
+    public void custom_bindings_are_allowed() {
         Element elem = DomBuilderTest.parse(
                 "<jdisc id='cluster1' version='1.0'>",
                 "  <document-api>",
@@ -72,13 +71,6 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
                 "</jdisc>");
         createModel(root, elem);
 
-        verifyCustomBindings("com.yahoo.feedhandler.VespaFeedHandler", "feed");
-        verifyCustomBindings("com.yahoo.feedhandler.VespaFeedHandlerCompatibility", "document");
-        verifyCustomBindings("com.yahoo.feedhandler.VespaFeedHandlerGet", "get");
-        verifyCustomBindings("com.yahoo.feedhandler.VespaFeedHandlerRemove", "remove");
-        verifyCustomBindings("com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation", "removelocation");
-        verifyCustomBindings("com.yahoo.feedhandler.VespaFeedHandlerStatus", "feedstatus");
-        verifyCustomBindings("com.yahoo.feedhandler.VespaFeedHandlerVisit", "visit");
         verifyCustomBindings("com.yahoo.vespa.http.server.FeedHandler", ContainerCluster.RESERVED_URI_PREFIX + "/feedapi");
     }
 
@@ -94,7 +86,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void requireThatHandlersAreSetup() throws Exception {
+    public void requireThatHandlersAreSetup() {
         Element elem = DomBuilderTest.parse(
                 "<jdisc id='cluster1' version='1.0'>",
                 "  <document-api />",
@@ -107,60 +99,6 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         assertThat(handlerMap.get("com.yahoo.container.handler.VipStatusHandler"), not(nullValue()));
         assertThat(handlerMap.get("com.yahoo.container.handler.observability.ApplicationStatusHandler"), not(nullValue()));
         assertThat(handlerMap.get("com.yahoo.container.jdisc.state.StateHandler"), not(nullValue()));
-
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandler"), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandler").getServerBindings().contains("http://*/feed"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandler").getServerBindings().contains("https://*/feed"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandler").getServerBindings().contains("http://*/feed/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandler").getServerBindings().contains("https://*/feed/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandler").getServerBindings().size(), equalTo(4));
-
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerCompatibility").getComponentId().toString(), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerCompatibility").getServerBindings().contains("http://*/document"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerCompatibility").getServerBindings().contains("https://*/document"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerCompatibility").getServerBindings().contains("http://*/document/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerCompatibility").getServerBindings().contains("https://*/document/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerCompatibility").getServerBindings().size(), equalTo(4));
-
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerGet"), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerGet").getServerBindings().contains("http://*/get"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerGet").getServerBindings().contains("https://*/get"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerGet").getServerBindings().contains("http://*/get/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerGet").getServerBindings().contains("https://*/get/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerGet").getServerBindings().size(), equalTo(4));
-
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemove"), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemove").getServerBindings().contains("http://*/remove"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemove").getServerBindings().contains("https://*/remove"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemove").getServerBindings().contains("http://*/remove/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemove").getServerBindings().contains("https://*/remove/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemove").getServerBindings().size(), equalTo(4));
-
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation"), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation").getServerBindings().contains("http://*/removelocation"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation").getServerBindings().contains("https://*/removelocation"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation").getServerBindings().contains("http://*/removelocation/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation").getServerBindings().contains("https://*/removelocation/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation").getServerBindings().size(), equalTo(4));
-
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerStatus"), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerStatus").getServerBindings().contains("http://*/feedstatus"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerStatus").getServerBindings().contains("https://*/feedstatus"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerStatus").getServerBindings().contains("http://*/feedstatus/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerStatus").getServerBindings().contains("https://*/feedstatus/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerStatus").getServerBindings().size(), equalTo(4));
-
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerVisit"), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerVisit").getServerBindings().contains("http://*/visit"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerVisit").getServerBindings().contains("https://*/visit"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerVisit").getServerBindings().contains("http://*/visit/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerVisit").getServerBindings().contains("https://*/visit/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.feedhandler.VespaFeedHandlerVisit").getServerBindings().size(), equalTo(4));
-
-        assertThat(handlerMap.get("com.yahoo.search.handler.SearchHandler"), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.search.handler.SearchHandler").getServerBindings().contains("http://*/search/*"), is(true));
-        assertThat(handlerMap.get("com.yahoo.search.handler.SearchHandler").getServerBindings().contains("https://*/search/*"), is(true));
-        assertThat(handlerMap.get("com.yahoo.search.handler.SearchHandler").getServerBindings().size(), equalTo(2));
 
         assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler"), not(nullValue()));
         assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().contains("http://*/" + ContainerCluster.RESERVED_URI_PREFIX + "/feedapi"), is(true));

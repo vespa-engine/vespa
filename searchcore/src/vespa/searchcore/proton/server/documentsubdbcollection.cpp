@@ -7,8 +7,7 @@
 #include "i_document_subdb_owner.h"
 #include "maintenancecontroller.h"
 #include "searchabledocsubdb.h"
-
-#include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
+#include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 
 using proton::matching::SessionManager;
 using search::GrowStrategy;
@@ -37,7 +36,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         vespalib::ThreadStackExecutorBase &sharedExecutor,
         const search::common::FileHeaderContext &fileHeaderContext,
         MetricsWireService &metricsWireService,
-        DocumentDBMetricsCollection &metrics,
+        DocumentDBTaggedMetrics &metrics,
         matching::QueryLimiter &queryLimiter,
         const vespalib::Clock &clock,
         std::mutex &configMutex,
@@ -76,13 +75,11 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                         cfg.getNumSearchThreads()),
                 SearchableDocSubDB::Context(FastAccessDocSubDB::Context
                         (context,
-                         AttributeMetricsCollection(metrics.getTaggedMetrics().ready.attributes,
-                                                    metrics.getLegacyMetrics().ready.attributes),
-                        &metrics.getLegacyMetrics().attributes,
-                        metricsWireService),
-                        queryLimiter,
-                        clock,
-                        warmupExecutor)));
+                         metrics.ready.attributes,
+                         metricsWireService),
+                         queryLimiter,
+                         clock,
+                         warmupExecutor)));
     _subDBs.push_back
         (new StoreOnlyDocSubDB(StoreOnlyDocSubDB::Config(docTypeName,
                                                      "1.removed",
@@ -105,9 +102,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                         true,
                         true),
                 FastAccessDocSubDB::Context(context,
-                        AttributeMetricsCollection(metrics.getTaggedMetrics().notReady.attributes,
-                                                   metrics.getLegacyMetrics().notReady.attributes),
-                        nullptr,
+                        metrics.notReady.attributes,
                         metricsWireService)));
 }
 

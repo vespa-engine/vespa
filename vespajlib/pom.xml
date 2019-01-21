@@ -5,12 +5,12 @@
   <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
-    <version>6-SNAPSHOT</version>
+    <version>7-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>vespajlib</artifactId>
   <packaging>container-plugin</packaging>
-  <version>6-SNAPSHOT</version>
+  <version>7-SNAPSHOT</version>
   <description>
     Library for use in Java components of Vespa. Shared code which do
     not fit anywhere else.
@@ -91,6 +91,7 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>

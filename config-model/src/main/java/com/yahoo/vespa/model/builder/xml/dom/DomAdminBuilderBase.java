@@ -72,18 +72,12 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     @Override
     protected Admin doBuild(DeployState deployState, AbstractConfigProducer parent, Element adminElement) {
-        Monitoring monitoring = getMonitoring(getChildWithFallback(adminElement, "monitoring", "yamas"));
+        Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"));
         Metrics metrics = new MetricsBuilder(applicationType, predefinedMetricSets)
                 .buildMetrics(XML.getChild(adminElement, "metrics"));
-        Map<String, MetricsConsumer> legacyMetricsConsumers = DomMetricBuilderHelper
-                .buildMetricsConsumers(XML.getChild(adminElement, "metric-consumers"));
-        if (! legacyMetricsConsumers.isEmpty()) {
-            deployState.getDeployLogger().log(WARNING, "Element 'metric-consumers' is deprecated and will be removed in Vespa 7. Use 'metrics' instead!");
-        }
         FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent);
 
-        Admin admin = new Admin(parent, monitoring, metrics, legacyMetricsConsumers, multitenant,
-                                fileDistributionConfigProducer, deployState.isHosted());
+        Admin admin = new Admin(parent, monitoring, metrics, multitenant, fileDistributionConfigProducer, deployState.isHosted());
         admin.setApplicationType(applicationType);
         doBuildAdmin(deployState, admin, adminElement);
         new ModelConfigProvider(admin);
@@ -93,12 +87,6 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     private FileDistributionConfigProducer getFileDistributionConfigProducer(AbstractConfigProducer parent) {
         return new FileDistributionConfigProducer(parent, fileRegistry, configServerSpecs);
-    }
-
-    private Element getChildWithFallback(Element parent, String childName, String alternativeChildName) {
-        Element child = XML.getChild(parent, childName);
-        if (child != null) return child;
-        return XML.getChild(parent, alternativeChildName);
     }
 
     protected abstract void doBuildAdmin(DeployState deployState, Admin admin, Element adminE);

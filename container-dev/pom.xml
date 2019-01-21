@@ -9,11 +9,11 @@
   <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
-    <version>6-SNAPSHOT</version>
+    <version>7-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>container-dev</artifactId>
-  <version>6-SNAPSHOT</version>
+  <version>7-SNAPSHOT</version>
   <packaging>jar</packaging>
   <dependencies>
     <dependency>
@@ -100,10 +100,6 @@
           <groupId>commons-lang</groupId>
           <artifactId>commons-lang</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -151,6 +147,10 @@
           <artifactId>icu4j</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>commons-collections</groupId>
           <artifactId>commons-collections</artifactId>
         </exclusion>
@@ -182,6 +182,10 @@
       <artifactId>document</artifactId>
       <version>${project.version}</version>
       <exclusions>
+        <exclusion>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>commons-collections</groupId>
           <artifactId>commons-collections</artifactId>

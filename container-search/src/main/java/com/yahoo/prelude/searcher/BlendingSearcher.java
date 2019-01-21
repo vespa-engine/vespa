@@ -38,21 +38,20 @@ public class BlendingSearcher extends Searcher {
 
     public static final String BLENDING = "Blending";
 
-    private final String documentId;
+    private final String blendingField;
 
     @Inject
     public BlendingSearcher(ComponentId id, QrSearchersConfig cfg) {
         super(id);
         QrSearchersConfig.Com.Yahoo.Prelude.Searcher.BlendingSearcher s = cfg.com().yahoo().prelude().searcher().BlendingSearcher();
-        documentId = s.docid().length() > 0 ? s.docid() : null;
-
+        blendingField = s.docid().length() > 0 ? s.docid() : null;
     }
 
     /**
      * Only for legacy tests.
      */
-    public BlendingSearcher(String blendingDocumentId) {
-        this.documentId = blendingDocumentId;
+    public BlendingSearcher(String blendingField) {
+        this.blendingField = blendingField;
     }
 
     @Override
@@ -107,7 +106,7 @@ public class BlendingSearcher extends Searcher {
             result.hits().setOrderer(groups.get(0).getOrderer());
             return result;
         } else {
-            if (documentId != null) {
+            if (blendingField != null) {
                 return blendResultsUniquely(result, q, offset, hits, groups, execution);
             } else {
                 return blendResultsDirectly(result, q, offset, hits, groups, execution);
@@ -125,6 +124,7 @@ public class BlendingSearcher extends Searcher {
     }
 
     private abstract class DocumentMerger {
+
         protected Set<String> documentsToStrip;
         protected Result result;
         protected HitGroup group;
@@ -137,22 +137,22 @@ public class BlendingSearcher extends Searcher {
             return result;
         }
 
-        //Since we cannot use prelude.hit#getProperty, we'll have to improvise
         private String getProperty(Hit hit, String field) {
+            if ("[id]".equals(field)) return hit.getId().toString();
             Object o = hit.getField(field);
             return o == null ? null : o.toString();
         }
 
 
         protected void storeID(Hit hit, Execution execution) {
-            String id = getProperty(hit, documentId);
+            String id = getProperty(hit, blendingField);
 
             if (id != null) {
                 documentsToStrip.add(id);
             } else {
                 if (!result.isFilled(result.getQuery().getPresentation().getSummary())) {
                     fill(result, result.getQuery().getPresentation().getSummary(), execution);
-                    id = getProperty(hit, documentId);
+                    id = getProperty(hit, blendingField);
                     if (id != null) {
                         documentsToStrip.add(id);
                     }
@@ -161,14 +161,14 @@ public class BlendingSearcher extends Searcher {
         }
 
         protected boolean known(HitGroup source, Hit hit, Execution execution) {
-            String stripID = getProperty(hit, documentId);
+            String stripID = getProperty(hit, blendingField);
 
             if (stripID == null) {
                 if (!source.isFilled(result.getQuery().getPresentation().getSummary())) {
                     Result nResult = new Result(result.getQuery());
                     nResult.hits().add(source);
                     fill(nResult, nResult.getQuery().getPresentation().getSummary(), execution);
-                    stripID = getProperty(hit, documentId);
+                    stripID = getProperty(hit, blendingField);
                     if (stripID == null) {
                         return false;
                     }

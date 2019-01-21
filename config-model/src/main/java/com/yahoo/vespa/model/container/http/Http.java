@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.container.http;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.container.jdisc.config.HttpServerConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
@@ -19,8 +18,7 @@ import java.util.Optional;
  *
  * @author Tony Vaagenes
  */
-public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>>
-        implements HttpServerConfig.Producer, ServerConfig.Producer {
+public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> implements ServerConfig.Producer {
 
     public static class Binding {
         public final ComponentSpecification filterId;
@@ -89,12 +87,6 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>>
     }
 
     @Override
-    public void getConfig(HttpServerConfig.Builder builder) {
-        for (Binding binding: bindings)
-            builder.filter(filterBindings(binding));
-    }
-
-    @Override
     public void getConfig(ServerConfig.Builder builder) {
         for (final Binding binding : bindings) {
             builder.filter(
@@ -103,14 +95,6 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>>
                             .binding(binding.binding));
         }
     }
-
-    static HttpServerConfig.Filter.Builder filterBindings(Binding binding) {
-        HttpServerConfig.Filter.Builder builder = new HttpServerConfig.Filter.Builder();
-        builder.id(binding.filterId.stringValue()).
-                binding(binding.binding);
-        return builder;
-    }
-
 
     @Override
     public void validate() throws Exception {

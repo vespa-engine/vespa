@@ -43,7 +43,9 @@ public interface AsyncSession extends Session {
      * @param document the Document to put
      * @return the synchronous result of this operation
      */
-    Result put(Document document, DocumentProtocol.Priority priority);
+    default Result put(Document document, DocumentProtocol.Priority priority) {
+        return put(document);
+    }
 
     /**
      * <p>Gets a document. This method returns immediately.</p>
@@ -71,8 +73,30 @@ public interface AsyncSession extends Session {
      * @param priority The priority with which to perform this operation.
      * @return the synchronous result of this operation
      * @throws UnsupportedOperationException if this access implementation does not support retrieving
+     * @deprecated the 'headersonly' flag has no effect
      */
-    Result get(DocumentId id, boolean headersOnly, DocumentProtocol.Priority priority);
+    @Deprecated // TODO: Remove on Vespa 8
+    default Result get(DocumentId id, boolean headersOnly, DocumentProtocol.Priority priority) {
+        return get(id);
+    }
+
+    /**
+     * <p>Gets a document. This method returns immediately.</p>
+     *
+     * <p>If this result is a success, this
+     * call will cause one or more {@link DocumentResponse} objects to appear within the timeout time of this session.
+     * The response returned later will contain the requested document if it is a success.
+     * If it was not a success, this method has no further effects.</p>
+     *
+     * @param id the id of the document to get
+     * @param priority The priority with which to perform this operation.
+     * @return the synchronous result of this operation
+     * @throws UnsupportedOperationException if this access implementation does not support retrieving
+     */
+    default Result get(DocumentId id, DocumentProtocol.Priority priority) {
+        return get(id);
+    }
+
 
     /**
      * <p>Removes a document if it is present. This method returns immediately.</p>
@@ -101,7 +125,9 @@ public interface AsyncSession extends Session {
      * @return the synchronous result of this operation
      * @throws UnsupportedOperationException if this access implementation does not support removal
      */
-    Result remove(DocumentId id, DocumentProtocol.Priority priority);
+    default Result remove(DocumentId id, DocumentProtocol.Priority priority) {
+        return remove(id);
+    }
 
     /**
      * <p>Updates a document. This method returns immediately.</p>
@@ -130,7 +156,9 @@ public interface AsyncSession extends Session {
      * @return the synchronous result of this operation
      * @throws UnsupportedOperationException if this access implementation does not support update
      */
-    Result update(DocumentUpdate update, DocumentProtocol.Priority priority);
+    default Result update(DocumentUpdate update, DocumentProtocol.Priority priority) {
+        return update(update);
+    }
 
     /**
      * Returns the current send window size of the session.

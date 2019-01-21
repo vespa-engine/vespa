@@ -295,7 +295,6 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
                 logEntry.setRemotePort(remoteAddress.getPort());
             }
             URI uri = AccessLogUtil.getUri(httpRequest);
-            setDeprecatedUri(logEntry, uri);
             logEntry.setRawPath(uri.getRawPath());
             logEntry.setRawQuery(uri.getRawQuery());
             logEntry.setUserAgent(AccessLogUtil.getUserAgentHeader(httpRequest));
@@ -305,11 +304,6 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Could not populate the access log [" + fullRequest + "]", e);
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    private static void setDeprecatedUri(AccessLogEntry logEntry, URI uri) {
-        logEntry.setURI(uri);
     }
 
 }

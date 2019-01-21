@@ -55,7 +55,6 @@ public class ApacheGatewayConnectionTest {
         final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
-                .setEnableV3Protocol(true)
                 .build();
         final List<Document> documents = new ArrayList<>();
 
@@ -90,7 +89,6 @@ public class ApacheGatewayConnectionTest {
         final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
-                .setEnableV3Protocol(true)
                 .build();
 
         // This is the fake server, returns wrong session Id.
@@ -115,7 +113,6 @@ public class ApacheGatewayConnectionTest {
         final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
-                .setEnableV3Protocol(true)
                 .build();
 
         final ApacheGatewayConnection.HttpClientFactory mockFactory =
@@ -192,7 +189,7 @@ public class ApacheGatewayConnectionTest {
     @Test
     public void testCompressedWriteOperations() throws Exception {
         final Endpoint endpoint = Endpoint.create("hostname", 666, false);
-        final FeedParams feedParams = new FeedParams.Builder().build();
+        final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.XML_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
                 .setUseCompression(true)

@@ -24,7 +24,7 @@ class AnalyzeMethodVisitor extends MethodVisitor implements ImportCollector {
     private final AnalyzeClassVisitor analyzeClassVisitor;
 
     AnalyzeMethodVisitor(AnalyzeClassVisitor analyzeClassVisitor) {
-        super(Opcodes.ASM6);
+        super(Opcodes.ASM7);
         this.analyzeClassVisitor = analyzeClassVisitor;
     }
 

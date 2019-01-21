@@ -77,7 +77,6 @@ public class FastHit extends Hit {
     // Note: This constructor is only used for tests, production use is always of the empty constructor
     public FastHit(String uri, double relevance, String source) {
         setId(uri);
-        super.setField("uri", uri); // TODO: Remove on Vespa 7
         setRelevance(new Relevance(relevance));
         setSource(source);
         types().add("summary");
@@ -96,13 +95,6 @@ public class FastHit extends Hit {
     public URI getId() {
         URI uri = super.getId();
         if (uri != null) return uri;
-
-        // TODO: Remove on Vespa 7, this should be one of the last vestiges of URL field magic
-        Object uriField = getField("uri");
-        if (uriField != null) {
-            setId(uriField.toString());
-            return super.getId();
-        }
 
         // Fallback to index:[source]/[partid]/[id]
         if (indexUri != null) return indexUri;
@@ -315,21 +307,6 @@ public class FastHit extends Hit {
         return super.hasFields();
     }
 
-    /**
-     * Changes the key under which a value is found. This is useful because it allows keys to be changed
-     * without accessing the value (which may be lazily created).
-     *
-     * @deprecated do not use
-     */
-    @Deprecated // OK
-    @Override
-    @SuppressWarnings("deprecation")
-    public void changeFieldKey(String oldKey, String newKey) {
-        Object value = removeField(oldKey);
-        if (value != null)
-            setField(newKey, value);
-    }
-
     private Object getSummaryValue(String name) {
         if (removedFields != null && removedFields.contains(name))
             return null;
@@ -355,13 +332,6 @@ public class FastHit extends Hit {
         } else {
             return super.hashCode();
         }
-    }
-
-    /** @deprecated do not use */
-    // TODO: Make private on Vespa 7
-    @Deprecated // OK
-    public static String asHexString(GlobalId gid) {
-        return asHexString(new StringBuilder(), gid).toString();
     }
 
     private static StringBuilder asHexString(StringBuilder sb, GlobalId gid) {
@@ -539,7 +509,7 @@ public class FastHit extends Hit {
             DocsumField fieldType = type.getField(name);
             if (fieldType == null) return null;
             Inspector fieldValue = data.field(name);
-            if ( ! fieldValue.valid() && ! fieldType.getEmulConfig().forceFillEmptyFields()) return null;
+            if ( ! fieldValue.valid()) return null;
             return fieldType.convert(fieldValue);
         }
 

@@ -140,7 +140,7 @@ public class VisitorParameters extends Parameters {
 
     public boolean getVisitRemoves() { return visitRemoves; }
 
-    public boolean getVisitHeadersOnly() { return "[header]".equals(fieldSet); }
+    public boolean getVisitHeadersOnly() { return false; }
 
     /** @return The field set to use. */
     public String fieldSet() { return fieldSet; }
@@ -231,7 +231,9 @@ public class VisitorParameters extends Parameters {
 
     public void setVisitRemoves(boolean visitRemoves) { this.visitRemoves = visitRemoves; }
 
-    public void setVisitHeadersOnly(boolean headersOnly) { this.fieldSet = headersOnly ? "[header]" : "[all]"; }
+    /** @deprecated this option is ignored */
+    @Deprecated // TODO: Remove on Vespa 8
+    public void setVisitHeadersOnly(boolean headersOnly) { }
 
     /** Set field set to use. */
     public void fieldSet(String fieldSet) { this.fieldSet = fieldSet; }

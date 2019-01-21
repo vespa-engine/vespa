@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler {
 
     public static final String CONTENT_TYPE = "Content-Type";
-    public static final String DATE = "Date"; // TODO: Remove on Vespa 7
     private static final String RENDERING_ERRORS = "rendering_errors";
 
     /** Logger for subclasses */

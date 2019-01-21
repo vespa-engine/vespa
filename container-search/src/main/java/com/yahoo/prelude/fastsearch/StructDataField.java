@@ -4,7 +4,6 @@ package com.yahoo.prelude.fastsearch;
 import com.yahoo.search.result.StructuredData;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Type;
-import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.prelude.hitfield.JSONString;
 
 /**
@@ -23,7 +22,7 @@ public class StructDataField extends JSONField {
 
     @Override
     public Object convert(Inspector value) {
-        if (getEmulConfig().stringBackedStructuredData() || value.type() == Type.STRING) {
+        if (value.type() == Type.STRING) {
             return super.convert(value);
         }
         return new StructuredData(value);

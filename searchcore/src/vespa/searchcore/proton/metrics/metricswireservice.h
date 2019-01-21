@@ -5,33 +5,30 @@
 #include <string>
 
 namespace proton {
-class AttributeMetricsCollection;
-class DocumentDBMetricsCollection;
-class LegacyAttributeMetrics;
+
+class AttributeMetrics;
+class DocumentDBTaggedMetrics;
 
 struct MetricsWireService {
-    virtual void addAttribute(const AttributeMetricsCollection &subAttributes,
-                              LegacyAttributeMetrics *totalAttributes,
+    virtual void addAttribute(AttributeMetrics &subAttributes,
                               const std::string &name) = 0;
-    virtual void removeAttribute(const AttributeMetricsCollection &subAttributes,
-                                 LegacyAttributeMetrics *totalAttributes,
+    virtual void removeAttribute(AttributeMetrics &subAttributes,
                                  const std::string &name) = 0;
-    virtual void cleanAttributes(const AttributeMetricsCollection &subAttributes,
-                                 LegacyAttributeMetrics *totalAttributes) = 0;
-    virtual void addRankProfile(DocumentDBMetricsCollection &owner,
+    virtual void cleanAttributes(AttributeMetrics &subAttributes) = 0;
+    virtual void addRankProfile(DocumentDBTaggedMetrics &owner,
                                 const std::string &name,
                                 size_t numDocIdPartitions) = 0;
-    virtual void cleanRankProfiles(DocumentDBMetricsCollection &owner) = 0;
+    virtual void cleanRankProfiles(DocumentDBTaggedMetrics &owner) = 0;
     virtual ~MetricsWireService() {}
 };
 
 struct DummyWireService : public MetricsWireService {
-    virtual void addAttribute(const AttributeMetricsCollection &, LegacyAttributeMetrics *, const std::string &) override {}
-    virtual void removeAttribute(const AttributeMetricsCollection &, LegacyAttributeMetrics *, const std::string &) override {}
-    virtual void cleanAttributes(const AttributeMetricsCollection &, LegacyAttributeMetrics *) override {}
-    virtual void addRankProfile(DocumentDBMetricsCollection &, const std::string &, size_t) override {}
-    virtual void cleanRankProfiles(DocumentDBMetricsCollection &) override {}
+    virtual void addAttribute(AttributeMetrics &, const std::string &) override {}
+    virtual void removeAttribute(AttributeMetrics &, const std::string &) override {}
+    virtual void cleanAttributes(AttributeMetrics &) override {}
+    virtual void addRankProfile(DocumentDBTaggedMetrics &, const std::string &, size_t) override {}
+    virtual void cleanRankProfiles(DocumentDBTaggedMetrics &) override {}
 };
 
-}  // namespace proton
+}
 

@@ -39,8 +39,10 @@ public final class IndexModel {
 
     /**
      * Use IndexModel as a pure wrapper for the parameters given.
+     *
+     * @deprecated use the constructor without the third parameter
      */
-    // TODO: Deprecate on Vespa 7 and remove on Vespa 8
+    @Deprecated // TODO: Remove Vespa 8
     public IndexModel(Map<String, List<String>> masterClusters,
                       Map<String, SearchDefinition> searchDefinitions,
                       SearchDefinition unionSearchDefinition) {
@@ -90,7 +92,6 @@ public final class IndexModel {
                 IndexInfoConfig.Indexinfo.Command command = j.next();
                 sd.addCommand(command.indexname(),command.command());
             }
-            sd.fillMatchGroups();
             searchDefinitions.put(info.name(), sd);
         }
 
@@ -127,7 +128,6 @@ public final class IndexModel {
             }
 
         }
-        union.fillMatchGroups();
         return union;
     }
 
@@ -135,7 +135,8 @@ public final class IndexModel {
 
     public Map<String, SearchDefinition> getSearchDefinitions() { return searchDefinitions; }
 
-    // TODO: Deprecate on Vespa 7 and make package scope on Vespa 8
+    /** @deprecated do not use */
+    @Deprecated // TODO: Remove on Vespa 8
     public SearchDefinition getUnionSearchDefinition() { return unionSearchDefinition; }
 
 }

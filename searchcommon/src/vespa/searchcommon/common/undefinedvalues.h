@@ -11,17 +11,17 @@ namespace attribute {
 
 // for all integers
 template <typename T>
-T getUndefined() {
+constexpr T getUndefined() {
     return std::numeric_limits<T>::min();
 }
 
 template <>
-inline float getUndefined<float>() {
+inline constexpr float getUndefined<float>() {
     return -std::numeric_limits<float>::quiet_NaN();
 }
 
 template <>
-inline double getUndefined<double>() {
+inline constexpr double getUndefined<double>() {
     return -std::numeric_limits<double>::quiet_NaN();
 }
 

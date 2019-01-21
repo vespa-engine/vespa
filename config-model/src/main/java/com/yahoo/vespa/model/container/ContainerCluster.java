@@ -26,7 +26,6 @@ import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
-import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.container.jdisc.jrt.DefaultJrtFactory;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.container.jdisc.state.StateHandler;
@@ -117,7 +116,6 @@ public final class ContainerCluster
         PageTemplatesConfig.Producer,
         SemanticRulesConfig.Producer,
         DocprocConfig.Producer,
-        MetricDefaultsConfig.Producer,
         ClusterInfoConfig.Producer,
         ServletPathsConfig.Producer,
         RoutingProviderConfig.Producer,
@@ -140,7 +138,7 @@ public final class ContainerCluster
     public static final String BINDINGS_OVERVIEW_HANDLER_CLASS = BindingsOverviewHandler.class.getName();
     public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
     public static final String STATISTICS_HANDLER_CLASS = "com.yahoo.container.config.StatisticsRequestHandler";
-    public static final String SIMPLE_LINGUISTICS_PROVIDER = "com.yahoo.language.provider.SimpleLinguisticsProvider";
+    public static final String DEFAULT_LINGUISTICS_PROVIDER = "com.yahoo.language.provider.DefaultLinguisticsProvider";
     public static final String CMS = "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
     public static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
 
@@ -176,7 +174,6 @@ public final class ContainerCluster
     private final boolean isHostedVespa;
 
     private Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
-    private MetricDefaultsConfig.Factory.Enum defaultMetricConsumerFactory;
 
     private ApplicationMetaData applicationMetaData = null;
 
@@ -221,7 +218,7 @@ public final class ContainerCluster
         addSimpleComponent(ThreadPoolProvider.class);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent("com.yahoo.jdisc.http.filter.SecurityFilterInvoker");
-        addSimpleComponent(SIMPLE_LINGUISTICS_PROVIDER);
+        addSimpleComponent(DEFAULT_LINGUISTICS_PROVIDER);
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
@@ -232,7 +229,6 @@ public final class ContainerCluster
         addSimpleComponent(com.yahoo.metrics.simple.jdisc.JdiscMetricsFactory.class.getName(), null, MetricProperties.BUNDLE_SYMBOLIC_NAME);
         addSimpleComponent("com.yahoo.container.jdisc.state.StateMonitor");
         addSimpleComponent("com.yahoo.container.jdisc.ContainerThreadFactory");
-        addSimpleComponent("com.yahoo.container.protect.FreezeDetector");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addSimpleComponent(DefaultJrtFactory.class);
@@ -294,7 +290,6 @@ public final class ContainerCluster
     private void addJaxProviders() {
         addSimpleComponent(com.yahoo.container.xml.providers.DatatypeFactoryProvider.class);
         addSimpleComponent(com.yahoo.container.xml.providers.DocumentBuilderFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.JAXBContextFactoryProvider.class);
         addSimpleComponent(com.yahoo.container.xml.providers.SAXParserFactoryProvider.class);
         addSimpleComponent(com.yahoo.container.xml.providers.SchemaFactoryProvider.class);
         addSimpleComponent(com.yahoo.container.xml.providers.TransformerFactoryProvider.class);
@@ -631,9 +626,6 @@ public final class ContainerCluster
         } else if (isHostedVespa()) {
             jvmBuilder.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ? 17 : 60);
         }
-    	if (containerSearch!=null) {
-            jvmBuilder.directMemorySizeCache(containerSearch.totalCacheSizeMb());
-        }
         if (jvmGCOptions != null) {
             jvmBuilder.gcopts(jvmGCOptions);
         } else {
@@ -710,7 +702,7 @@ public final class ContainerCluster
     }
 
     public void addDefaultSearchAccessLog() {
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.queryAccessLog, getName(), isHostedVespa));
+        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, getName(), isHostedVespa));
     }
 
     @Override
@@ -720,11 +712,6 @@ public final class ContainerCluster
         for (AbstractSearchCluster searchCluster : searchClusters) {
             searchCluster.getConfig(builder);
         }
-    }
-
-    @Override
-    public void getConfig(MetricDefaultsConfig.Builder builder) {
-        if (defaultMetricConsumerFactory != null) builder.factory(defaultMetricConsumerFactory);
     }
 
     @Override
@@ -762,11 +749,6 @@ public final class ContainerCluster
             );
         }
         return builders;
-    }
-
-    public void setDefaultMetricConsumerFactory(MetricDefaultsConfig.Factory.Enum defaultMetricConsumerFactory) {
-        Objects.requireNonNull(defaultMetricConsumerFactory, "defaultMetricConsumerFactory");
-        this.defaultMetricConsumerFactory = defaultMetricConsumerFactory;
     }
 
     public boolean isHostedVespa() {

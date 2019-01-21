@@ -13,7 +13,6 @@
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
-#include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/docstore/cachestats.h>
@@ -71,17 +70,12 @@ updateDiskUsageMetric(metrics::LongValueMetric &metric, uint64_t diskUsage, Tota
 }
 
 void
-updateIndexMetrics(DocumentDBMetricsCollection &metrics, const search::SearchableStats &stats, TotalStats &totalStats)
+updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::SearchableStats &stats, TotalStats &totalStats)
 {
-    DocumentDBTaggedMetrics::IndexMetrics &indexMetrics = metrics.getTaggedMetrics().index;
+    DocumentDBTaggedMetrics::IndexMetrics &indexMetrics = metrics.index;
     updateDiskUsageMetric(indexMetrics.diskUsage, stats.sizeOnDisk(), totalStats);
     updateMemoryUsageMetrics(indexMetrics.memoryUsage, stats.memoryUsage(), totalStats);
     indexMetrics.docsInMemory.set(stats.docsInMemory());
-
-    LegacyDocumentDBMetrics::IndexMetrics &legacyIndexMetrics = metrics.getLegacyMetrics().index;
-    legacyIndexMetrics.memoryUsage.set(stats.memoryUsage().allocatedBytes());
-    legacyIndexMetrics.docsInMemory.set(stats.docsInMemory());
-    legacyIndexMetrics.diskUsage.set(stats.sizeOnDisk());
 }
 
 struct TempAttributeMetric
@@ -153,22 +147,6 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
 }
 
 void
-updateLegacyAttributeMetrics(LegacyAttributeMetrics &metrics, const TempAttributeMetrics &tmpMetrics)
-{
-    for (const auto &attr : tmpMetrics.attrs) {
-        LegacyAttributeMetrics::List::Entry *entry = metrics.list.get(attr.first);
-        if (entry) {
-            entry->memoryUsage.set(attr.second.memoryUsage.allocatedBytes());
-            entry->bitVectors.set(attr.second.bitVectors);
-        } else {
-            LOG(debug, "Could not update metrics for attribute: '%s'", attr.first.c_str());
-        }
-    }
-    metrics.memoryUsage.set(tmpMetrics.total.memoryUsage.allocatedBytes());
-    metrics.bitVectors.set(tmpMetrics.total.bitVectors);
-}
-
-void
 updateAttributeMetrics(AttributeMetrics &metrics, const TempAttributeMetrics &tmpMetrics)
 {
     for (const auto &attr : tmpMetrics.attrs) {
@@ -180,60 +158,43 @@ updateAttributeMetrics(AttributeMetrics &metrics, const TempAttributeMetrics &tm
 }
 
 void
-updateAttributeMetrics(DocumentDBMetricsCollection &metrics, const DocumentSubDBCollection &subDbs, TotalStats &totalStats)
+updateAttributeMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBCollection &subDbs, TotalStats &totalStats)
 {
     TempAttributeMetrics totalMetrics;
     TempAttributeMetrics readyMetrics;
     TempAttributeMetrics notReadyMetrics;
     fillTempAttributeMetrics(totalMetrics, readyMetrics, notReadyMetrics, subDbs);
 
-    updateLegacyAttributeMetrics(metrics.getLegacyMetrics().attributes, totalMetrics);
-    updateLegacyAttributeMetrics(metrics.getLegacyMetrics().ready.attributes, readyMetrics);
-    updateLegacyAttributeMetrics(metrics.getLegacyMetrics().notReady.attributes, notReadyMetrics);
-
-    updateAttributeMetrics(metrics.getTaggedMetrics().ready.attributes, readyMetrics);
-    updateAttributeMetrics(metrics.getTaggedMetrics().notReady.attributes, notReadyMetrics);
-    updateMemoryUsageMetrics(metrics.getTaggedMetrics().attribute.totalMemoryUsage, totalMetrics.total.memoryUsage, totalStats);
+    updateAttributeMetrics(metrics.ready.attributes, readyMetrics);
+    updateAttributeMetrics(metrics.notReady.attributes, notReadyMetrics);
+    updateMemoryUsageMetrics(metrics.attribute.totalMemoryUsage, totalMetrics.total.memoryUsage, totalStats);
 }
 
 void
-updateLegacyRankProfileMetrics(LegacyDocumentDBMetrics::MatchingMetrics &matchingMetrics,
-                               const vespalib::string &rankProfileName,
-                               const MatchingStats &stats)
-{
-    auto itr = matchingMetrics.rank_profiles.find(rankProfileName);
-    assert(itr != matchingMetrics.rank_profiles.end());
-    itr->second->update(stats);
-}
-
-void
-updateMatchingMetrics(DocumentDBMetricsCollection &metrics, const IDocumentSubDB &ready)
+updateMatchingMetrics(DocumentDBTaggedMetrics &metrics, const IDocumentSubDB &ready)
 {
     MatchingStats totalStats;
-    for (const auto &rankProfile : metrics.getTaggedMetrics().matching.rank_profiles) {
+    for (const auto &rankProfile : metrics.matching.rank_profiles) {
         MatchingStats matchingStats = ready.getMatcherStats(rankProfile.first);
         rankProfile.second->update(matchingStats);
-        updateLegacyRankProfileMetrics(metrics.getLegacyMetrics().matching, rankProfile.first, matchingStats);
 
         totalStats.add(matchingStats);
     }
-    metrics.getTaggedMetrics().matching.update(totalStats);
-    metrics.getLegacyMetrics().matching.update(totalStats);
+    metrics.matching.update(totalStats);
 }
 
 void
-updateSessionCacheMetrics(DocumentDBMetricsCollection &metrics, proton::matching::SessionManager &sessionManager)
+updateSessionCacheMetrics(DocumentDBTaggedMetrics &metrics, proton::matching::SessionManager &sessionManager)
 {
     auto searchStats = sessionManager.getSearchStats();
-    metrics.getTaggedMetrics().sessionCache.search.update(searchStats);
+    metrics.sessionCache.search.update(searchStats);
 
     auto groupingStats = sessionManager.getGroupingStats();
-    metrics.getTaggedMetrics().sessionCache.grouping.update(groupingStats);
-    metrics.getLegacyMetrics().sessionManager.update(groupingStats);
+    metrics.sessionCache.grouping.update(groupingStats);
 }
 
 void
-updateDocumentsMetrics(DocumentDBMetricsCollection &metrics, const DocumentSubDBCollection &subDbs)
+updateDocumentsMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBCollection &subDbs)
 {
     DocumentMetaStoreReadGuards dms(subDbs);
     uint32_t active = dms.numActiveDocs();
@@ -241,18 +202,11 @@ updateDocumentsMetrics(DocumentDBMetricsCollection &metrics, const DocumentSubDB
     uint32_t total = dms.numTotalDocs();
     uint32_t removed = dms.numRemovedDocs();
 
-    auto &docsMetrics = metrics.getTaggedMetrics().documents;
+    auto &docsMetrics = metrics.documents;
     docsMetrics.active.set(active);
     docsMetrics.ready.set(ready);
     docsMetrics.total.set(total);
     docsMetrics.removed.set(removed);
-
-    auto &legacyMetrics = metrics.getLegacyMetrics();
-    legacyMetrics.numDocs.set(ready);
-    legacyMetrics.numActiveDocs.set(active);
-    legacyMetrics.numIndexedDocs.set(ready);
-    legacyMetrics.numStoredDocs.set(total);
-    legacyMetrics.numRemovedDocs.set(removed);
 }
 
 void
@@ -280,28 +234,6 @@ updateCountMetric(uint64_t currVal, uint64_t lastVal, metrics::LongCountMetric &
 {
     uint64_t delta = (currVal >= lastVal) ? (currVal - lastVal) : 0;
     metric.inc(delta);
-}
-
-void
-updateLegacyDocstoreMetrics(LegacyDocumentDBMetrics::DocstoreMetrics &metrics,
-                            const DocumentSubDBCollection &sub_dbs,
-                            CacheStats &lastCacheStats)
-{
-    size_t memoryUsage = 0;
-    CacheStats cache_stats;
-    for (const auto subDb : sub_dbs) {
-        const ISummaryManager::SP &summaryMgr = subDb->getSummaryManager();
-        if (summaryMgr) {
-            cache_stats += summaryMgr->getBackingStore().getCacheStats();
-            memoryUsage += summaryMgr->getBackingStore().memoryUsed();
-        }
-    }
-    metrics.memoryUsage.set(memoryUsage);
-    updateCountMetric(cache_stats.lookups(), lastCacheStats.lookups(), metrics.cacheLookups);
-    updateDocumentStoreCacheHitRate(cache_stats, lastCacheStats, metrics.cacheHitRate);
-    metrics.cacheElements.set(cache_stats.elements);
-    metrics.cacheMemoryUsed.set(cache_stats.memory_used);
-    lastCacheStats = cache_stats;
 }
 
 void
@@ -353,37 +285,20 @@ updateLidSpaceMetrics(MetricSetType &metrics, const search::IDocumentMetaStore &
 }
 
 void
-DocumentDBMetricsUpdater::updateMetrics(DocumentDBMetricsCollection &metrics)
+DocumentDBMetricsUpdater::updateMetrics(DocumentDBTaggedMetrics &metrics)
 {
     TotalStats totalStats;
     ExecutorThreadingServiceStats threadingServiceStats = _writeService.getStats();
-    updateLegacyMetrics(metrics.getLegacyMetrics(), threadingServiceStats);
     updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats(), totalStats);
     updateAttributeMetrics(metrics, _subDBs, totalStats);
     updateMatchingMetrics(metrics, *_subDBs.getReadySubDB());
     updateSessionCacheMetrics(metrics, _sessionManager);
     updateDocumentsMetrics(metrics, _subDBs);
-    updateDocumentStoreMetrics(metrics.getTaggedMetrics(), _subDBs, _lastDocStoreCacheStats, totalStats);
-    updateMiscMetrics(metrics.getTaggedMetrics(), threadingServiceStats);
+    updateDocumentStoreMetrics(metrics, _subDBs, _lastDocStoreCacheStats, totalStats);
+    updateMiscMetrics(metrics, threadingServiceStats);
 
-    metrics.getTaggedMetrics().totalMemoryUsage.update(totalStats.memoryUsage);
-    metrics.getTaggedMetrics().totalDiskUsage.set(totalStats.diskUsage);
-}
-
-void
-DocumentDBMetricsUpdater::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats)
-{
-    metrics.executor.update(threadingServiceStats.getMasterExecutorStats());
-    metrics.summaryExecutor.update(threadingServiceStats.getSummaryExecutorStats());
-    metrics.indexExecutor.update(threadingServiceStats.getIndexExecutorStats());
-    updateLegacyDocstoreMetrics(metrics.docstore, _subDBs, _lastDocStoreCacheStats.total);
-
-    DocumentMetaStoreReadGuards dmss(_subDBs);
-    updateLidSpaceMetrics(metrics.ready.docMetaStore, dmss.readydms->get());
-    updateLidSpaceMetrics(metrics.notReady.docMetaStore, dmss.notreadydms->get());
-    updateLidSpaceMetrics(metrics.removed.docMetaStore, dmss.remdms->get());
-
-    metrics.numBadConfigs.set(_state.getDelayedConfig() ? 1u : 0u);
+    metrics.totalMemoryUsage.update(totalStats.memoryUsage);
+    metrics.totalDiskUsage.set(totalStats.diskUsage);
 }
 
 void

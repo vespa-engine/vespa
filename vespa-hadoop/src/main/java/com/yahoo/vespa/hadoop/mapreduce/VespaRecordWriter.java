@@ -100,7 +100,6 @@ public class VespaRecordWriter extends RecordWriter {
         ConnectionParams.Builder connParamsBuilder = new ConnectionParams.Builder();
         connParamsBuilder.setDryRun(configuration.dryrun());
         connParamsBuilder.setUseCompression(configuration.useCompression());
-        connParamsBuilder.setEnableV3Protocol(configuration.useV3Protocol());
         connParamsBuilder.setNumPersistentConnectionsPerEndpoint(configuration.numConnections());
         connParamsBuilder.setMaxRetries(configuration.numRetries());
         if (configuration.proxyHost() != null) {

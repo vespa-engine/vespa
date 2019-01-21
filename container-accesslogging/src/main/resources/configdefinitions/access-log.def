@@ -9,28 +9,9 @@ fileHandler.pattern string
 # Could just configure "every N minutes" instead
 fileHandler.rotation string default="0 60 ..."
 
-# TODO remove in Vespa 7, always use DATE
-#
-# Defines how file rotation is done. There are two options:
-#
-# DATE:
-# The active log file is given the name resulting from pattern (but in this case "pattern" must yield a
-# time-dependent name. In addition, a symlink is created pointing to the newest file.
-# The symlink is given the name of the symlink parameter (or the name of this service
-# if no parameter is given.
-#
-# SEQUENCE:
-# The active log file is given the name
-# defined by "pattern" (which in this case will likely just be a constant string).
-# At rotation, this file is given the name pattern.N where N is 1 + the largest integer found by
-# extracting the integers from all files ending by .Integer in the same directory
-#
-fileHandler.rotateScheme enum {DATE, SEQUENCE} default=DATE
-
 # Use this as the name of the symlink created pointing to the newest file in the "date" naming scheme.
 # This is ignored if the sequence naming scheme is used.
 fileHandler.symlink string default=""
 
 # compress the previous access log after rotation
-# TODO change to "true" for Vespa 7
-fileHandler.compressOnRotation bool default=false
+fileHandler.compressOnRotation bool default=true

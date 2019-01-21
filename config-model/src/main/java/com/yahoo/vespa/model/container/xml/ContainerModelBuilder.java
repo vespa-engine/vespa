@@ -25,7 +25,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.text.XML;
@@ -174,7 +173,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addDefaultHandlers(cluster);
         addStatusHandlers(cluster, context);
-        setDefaultMetricConsumerFactory(cluster);
 
         addHttp(deployState, spec, cluster);
 
@@ -184,7 +182,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addClientProviders(deployState, spec, cluster);
         addServerProviders(deployState, spec, cluster);
-        addLegacyFilters(deployState, spec, cluster);  // TODO: Remove for Vespa 7
 
         addAthensCopperArgos(cluster, context);  // Must be added after nodes.
     }
@@ -256,10 +253,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(deployState, cluster, spec, "component");
     }
 
-    private void setDefaultMetricConsumerFactory(ContainerCluster cluster) {
-        cluster.setDefaultMetricConsumerFactory(MetricDefaultsConfig.Factory.Enum.STATE_MONITOR);
-    }
-
     private void addDefaultHandlers(ContainerCluster cluster) {
         addDefaultHandlersExceptStatus(cluster);
     }
@@ -299,21 +292,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addServerProviders(DeployState deployState, Element spec, ContainerCluster cluster) {
         addConfiguredComponents(deployState, cluster, spec, "server");
-    }
-
-    private void addLegacyFilters(DeployState deployState, Element spec, ContainerCluster cluster) {
-        for (Component component : buildLegacyFilters(deployState, cluster, spec)) {
-            cluster.addComponent(component);
-        }
-    }
-
-    private List<Component> buildLegacyFilters(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
-        List<Component> components = new ArrayList<>();
-
-        for (Element node : XML.getChildren(spec, "filter")) {
-            components.add(new DomFilterBuilder().build(deployState, ancestor, node));
-        }
-        return components;
     }
 
     private void addAccessLogs(DeployState deployState, ContainerCluster cluster, Element spec) {
@@ -464,7 +442,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         } else if ((zone.system() == SystemName.dev) || isHostedVespa) {
             return null;
         } else {
-            return ContainerCluster.CMS;
+            return ContainerCluster.G1GC;
         }
     }
     private static String getJvmOptions(ContainerCluster cluster, Element nodesElement, DeployLogger deployLogger) {
@@ -480,7 +458,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
             if (incompatibleGCOptions(jvmOptions)) {
                 deployLogger.log(Level.WARNING, "You need to move out your GC related options from 'jvmargs' to 'jvm-gc-options'");
-                cluster.setJvmGCOptions(ContainerCluster.CMS);
+                cluster.setJvmGCOptions(ContainerCluster.G1GC);
             }
         }
         return jvmOptions;
@@ -849,7 +827,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
 
     /**
-     * Disallow renderers named "DefaultRenderer" or "JsonRenderer"
+     * Disallow renderers named "XmlRenderer" or "JsonRenderer"
      */
     private static void validateRendererElement(Element element) {
         String idAttr = element.getAttribute("id");

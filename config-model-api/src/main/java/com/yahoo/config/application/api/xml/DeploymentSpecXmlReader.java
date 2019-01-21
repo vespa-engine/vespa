@@ -219,13 +219,10 @@ public class DeploymentSpecXmlReader {
     private List<DeploymentSpec.ChangeBlocker> readChangeBlockers(Element root) {
         List<DeploymentSpec.ChangeBlocker> changeBlockers = new ArrayList<>();
         for (Element tag : XML.getChildren(root)) {
-            // TODO: Remove block-upgrade on Vespa 7
-            if ( ! blockChangeTag.equals(tag.getTagName()) && !"block-upgrade".equals(tag.getTagName())) continue;
+            if ( ! blockChangeTag.equals(tag.getTagName())) continue;
 
-            boolean blockVersions = tag.getTagName().equals("block-upgrade") || //  TODO: Remove condition on Vespa 7
-                                    trueOrMissing(tag.getAttribute("version"));
-            boolean blockRevisions = trueOrMissing(tag.getAttribute("revision"))
-                                     && !tag.getTagName().equals("block-upgrade"); //  TODO: Remove condition on Vespa 7
+            boolean blockVersions = trueOrMissing(tag.getAttribute("version"));
+            boolean blockRevisions = trueOrMissing(tag.getAttribute("revision"));
 
             String daySpec = tag.getAttribute("days");
             String hourSpec = tag.getAttribute("hours");

@@ -20,7 +20,6 @@ import java.util.logging.Logger;
 /**
  * @author oyving
  */
-
 public class HostedVespaPolicy implements Policy {
 
     public static final String APPLICATION_SUSPENDED_CONSTRAINT = "application-suspended";
@@ -28,8 +27,6 @@ public class HostedVespaPolicy implements Policy {
     public static final String SET_NODE_STATE_CONSTRAINT = "controller-set-node-state";
     public static final String CLUSTER_CONTROLLER_AVAILABLE_CONSTRAINT = "controller-available";
     public static final String DEADLINE_CONSTRAINT = "deadline";
-
-    private static final Logger log = Logger.getLogger(HostedVespaPolicy.class.getName());
 
     private final HostedVespaClusterPolicy clusterPolicy;
     private final ClusterControllerClientFactory clusterControllerClientFactory;

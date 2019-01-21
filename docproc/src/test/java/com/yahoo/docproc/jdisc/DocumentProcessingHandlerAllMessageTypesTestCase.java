@@ -16,8 +16,6 @@ import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
-import com.yahoo.vdslib.DocumentList;
-import com.yahoo.vdslib.Entry;
 import org.junit.Test;
 
 import java.util.ArrayList;

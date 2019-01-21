@@ -100,7 +100,7 @@ public class VdsVisitorTestCase {
     private class QueryArguments {
         // General query parameters
         String query = "test";
-        long timeout = 5;
+        double timeout = 0.5;
         int offset = 0;
         int hits = 10;
         int traceLevel = 0;
@@ -114,7 +114,6 @@ public class VdsVisitorTestCase {
         String userId = null;
         String groupName = null;
         String selection = null;
-        boolean headersOnly = false;
         long from = 0;
         long to = 0;
         String loadTypeName = null;
@@ -140,7 +139,6 @@ public class VdsVisitorTestCase {
             userId = "1234";
             groupName = null;
             selection = null;
-            headersOnly = true;
             from = 123;
             to = 456;
             loadTypeName = "low";
@@ -155,7 +153,7 @@ public class VdsVisitorTestCase {
     private Query buildQuery(QueryArguments qa) throws Exception {
         StringBuilder queryString = new StringBuilder();
         queryString.append("/?query=").append(qa.query);
-        if (qa.timeout != 5) {
+        if (qa.timeout != 0.5) {
             queryString.append("&timeout=").append(qa.timeout);
         }
         if (qa.offset != 0) {
@@ -191,9 +189,6 @@ public class VdsVisitorTestCase {
         }
         if (qa.selection != null) {
             queryString.append("&streaming.selection=").append(URLEncoder.encode(qa.selection, "UTF-8"));
-        }
-        if (qa.headersOnly) {
-            queryString.append("&streaming.headersonly=").append(qa.headersOnly);
         }
         if (qa.from != 0) {
             queryString.append("&streaming.fromtimestamp=").append(qa.from);
@@ -236,7 +231,6 @@ public class VdsVisitorTestCase {
         } else {
             assertEquals(docType + " and ( " + qa.selection + " )", params.getDocumentSelection());
         }
-        assertEquals(qa.headersOnly, params.getVisitHeadersOnly());
         assertEquals(qa.from, params.getFromTimestamp());
         assertEquals(qa.to, params.getToTimestamp());
         if (qa.loadTypeName != null && loadTypeSet.getNameMap().get(qa.loadTypeName) != null) {
@@ -276,8 +270,8 @@ public class VdsVisitorTestCase {
         }
 
         // Verify parameters based only on query
-        assertEquals(qa.timeout*1000, params.getTimeoutMs());
-        assertEquals(qa.timeout*1000, params.getSessionTimeoutMs());
+        assertEquals(qa.timeout*1000, params.getTimeoutMs(),0.0000001);
+        assertEquals(qa.timeout*1000, params.getSessionTimeoutMs(), 0.0000001);
         assertEquals("searchvisitor", params.getVisitorLibrary());
         assertEquals(Integer.MAX_VALUE, params.getMaxPending());
         assertEquals(qa.traceLevel, params.getTraceLevel());

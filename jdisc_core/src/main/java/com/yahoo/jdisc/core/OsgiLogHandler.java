@@ -6,7 +6,9 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogService;
 
+import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -160,5 +162,11 @@ class OsgiLogHandler extends Handler {
         public int compareTo(Object o) {
             return 0;
         }
+
+        @Override
+        public Dictionary<String, Object> getProperties() {
+            return new Hashtable<>();
+        }
+
     }
 }
