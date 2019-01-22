@@ -48,7 +48,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         derived.getAttributeFields(); // TODO: assert content
 
         // Check il script addition
-        assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"SHORTEST\" | index a; }",
+        assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
                                      "clear_state | guard { input a | tokenize | index a_literal; }"),
                        search);
 
@@ -76,7 +76,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         DerivedConfiguration derived = new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(),new ImportedMlModels());
 
         // Check il script addition
-        assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"SHORTEST\" | index a; }",
+        assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
                                      "clear_state | guard { input a | tokenize | index a_literal; }"),
                        search);
 
@@ -101,8 +101,8 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
 
         search = SearchBuilder.buildFromRawSearch(search, rankProfileRegistry, new QueryProfileRegistry());
         new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(), new ImportedMlModels());
-        assertIndexing(Arrays.asList("clear_state | guard { input title | tokenize normalize stem:\"SHORTEST\" | summary title | index title; }",
-                                     "clear_state | guard { input body | tokenize normalize stem:\"SHORTEST\" | summary body | index body; }",
+        assertIndexing(Arrays.asList("clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
+                                     "clear_state | guard { input body | tokenize normalize stem:\"BEST\" | summary body | index body; }",
                                      "clear_state | guard { input title | tokenize | index title_literal; }",
                                      "clear_state | guard { input body | tokenize | index body_literal; }"),
                        search);

@@ -13,7 +13,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.handler.ThreadpoolConfig;
-import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
@@ -29,6 +28,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
 
+import static com.yahoo.vespa.model.container.ContainerCluster.G1GC;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -37,21 +37,6 @@ import static org.junit.Assert.assertTrue;
  * @author Simon Thoresen Hult
  */
 public class ContainerClusterTest {
-
-    @Test
-    public void requireThatDefaultMetricConsumerFactoryCanBeConfigured() {
-        ContainerCluster cluster = newContainerCluster();
-        cluster.setDefaultMetricConsumerFactory(MetricDefaultsConfig.Factory.Enum.YAMAS_SCOREBOARD);
-        assertEquals(MetricDefaultsConfig.Factory.Enum.YAMAS_SCOREBOARD,
-                getMetricDefaultsConfig(cluster).factory());
-    }
-
-    @Test
-    public void requireThatDefaultMetricConsumerFactoryMatchesConfigDefault() {
-        ContainerCluster cluster = newContainerCluster();
-        assertEquals(new MetricDefaultsConfig(new MetricDefaultsConfig.Builder()).factory(),
-                getMetricDefaultsConfig(cluster).factory());
-    }
 
     @Test
     public void requireThatClusterInfoIsPopulated() {
@@ -227,7 +212,7 @@ public class ContainerClusterTest {
         MockRoot root = createRoot(false);
         ContainerCluster cluster = createClusterControllerCluster(root);
         addClusterController(root.deployLogger(), cluster, "host-c1");
-        assertFalse(contains("com.yahoo.language.provider.SimpleLinguisticsProvider", cluster.getAllComponents()));
+        assertFalse(contains("com.yahoo.language.provider.DefaultLinguisticsProvider", cluster.getAllComponents()));
     }
 
     @Test
@@ -235,7 +220,7 @@ public class ContainerClusterTest {
         MockRoot root = createRoot(false);
         ContainerCluster cluster = createContainerCluster(root, false);
         addClusterController(root.deployLogger(), cluster, "host-c1");
-        assertTrue(contains("com.yahoo.language.provider.SimpleLinguisticsProvider", cluster.getAllComponents()));
+        assertTrue(contains("com.yahoo.language.provider.DefaultLinguisticsProvider", cluster.getAllComponents()));
     }
 
     private static boolean contains(String componentId, Collection<Component<?, ?>> componentList) {
@@ -298,12 +283,6 @@ public class ContainerClusterTest {
         addContainer(deployState.getDeployLogger(), cluster, "c1", "host-c1");
         addContainer(deployState.getDeployLogger(), cluster, "c2", "host-c2");
         return cluster;
-    }
-
-    private static MetricDefaultsConfig getMetricDefaultsConfig(ContainerCluster cluster) {
-        MetricDefaultsConfig.Builder builder = new MetricDefaultsConfig.Builder();
-        cluster.getConfig(builder);
-        return new MetricDefaultsConfig(builder);
     }
 
     private static ClusterInfoConfig getClusterInfoConfig(ContainerCluster cluster) {

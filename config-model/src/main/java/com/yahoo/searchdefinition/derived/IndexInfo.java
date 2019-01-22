@@ -27,7 +27,6 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     private static final String CMD_HIGHLIGHT = "highlight";
     private static final String CMD_INDEX = "index";
     private static final String CMD_LOWERCASE = "lowercase";
-    private static final String CMD_MATCH_GROUP = "match-group ";
     private static final String CMD_NORMALIZE = "normalize";
     private static final String CMD_STEM = "stem";
     private static final String CMD_URLHOST = "urlhost";
@@ -74,24 +73,6 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                 addIndexCommand(summaryField.getName(), CMD_HIGHLIGHT);
             }
         }
-    }
-
-    @Override
-    protected void derive(Index index, Search search) {
-        if (index.getMatchGroup().size() > 0) {
-            addIndexCommand(index.getName(), CMD_MATCH_GROUP + toSpaceSeparated(index.getMatchGroup()));
-        }
-    }
-
-    private String toSpaceSeparated(Collection c) {
-        StringBuffer b = new StringBuffer();
-        for (Iterator i = c.iterator(); i.hasNext();) {
-            b.append(i.next());
-            if (i.hasNext()) {
-                b.append(" ");
-            }
-        }
-        return b.toString();
     }
 
     private static boolean isPositionArrayField(ImmutableSDField field) {
@@ -442,8 +423,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         if (active != null) {
             return active;
         }
-        // assume default: TODO: Change to Stemming.BEST on Vespa 7
-        return Stemming.SHORTEST;
+        return Stemming.BEST;  // assume default
     }
 
     private boolean stemming(ImmutableSDField field) {

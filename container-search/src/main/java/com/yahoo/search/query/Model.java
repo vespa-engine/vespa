@@ -59,7 +59,7 @@ public class Model implements Cloneable {
         argumentType.addField(new FieldDescription(QUERY_STRING, "string", "query"));
         argumentType.addField(new FieldDescription(TYPE, "string", "type"));
         argumentType.addField(new FieldDescription(FILTER, "string","filter"));
-        argumentType.addField(new FieldDescription(DEFAULT_INDEX, "string", "default-index def-idx defidx"));
+        argumentType.addField(new FieldDescription(DEFAULT_INDEX, "string", "default-index"));
         argumentType.addField(new FieldDescription(LANGUAGE, "string", "language lang"));
         argumentType.addField(new FieldDescription(ENCODING, "string", "encoding"));
         argumentType.addField(new FieldDescription(SOURCES, "string", "sources search"));
@@ -91,34 +91,6 @@ public class Model implements Cloneable {
 
     public Model(Query query) {
         setParent(query);
-    }
-
-    /**
-     * Creates trace a message of language detection results into this Model
-     * instance's parent query. Do note this will give bogus results if the
-     * Execution instance is not set correctly. This is done automatically
-     * inside {@link Execution#search(Query)}. If tracing the same place as
-     * creating the query instance, {@link #setExecution(Execution)} has to be
-     * invoked first with the same Execution instance the query is intended to
-     * be run by.
-     * 
-     * @deprecated do not use; language can now be assigned later and for parts of the query tree, making this quite useless
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public void traceLanguage() {
-        if (getParent().getTraceLevel() < 2) return;
-        if (language != null) {
-            getParent().trace("Language " + getLanguage() + " specified directly as a parameter", false, 2);
-        }
-        else {
-            Language l = getParsingLanguage();
-            // Don't include the query, it will trigger query parsing
-            getParent().trace("Detected language: " + l, false, 2);
-            getParent().trace("Language " + l + " determined by " +
-                              (Language.fromEncoding(encoding) != Language.UNKNOWN ? "query encoding" :
-                               "the characters in the terms") + ".", false, 2);
-        }
     }
 
     public Language getParsingLanguage() {
@@ -533,30 +505,6 @@ public class Model implements Cloneable {
         for (Object pin : haystack)
             if (pin == needle) return true;
         return false;
-    }
-
-    /**
-     * Set the YTrace header value to use when transmitting this model to a
-     * search backend (of some kind).
-     *
-     * @param next string representation of header value
-     * @deprecated not used, ytrace has been discontinued
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public void setYTraceHeaderToNext(String next) { }
-
-    /**
-     * Get the YTrace header value to use when transmitting this model to a
-     * search backend (of some kind). Returns null if no ytrace data is not
-     * turned on.
-     * 
-     * @deprecated not used, ytrace has been discontinued
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public String getYTraceHeaderToNext() {
-        return null;
     }
 
 }

@@ -4,12 +4,9 @@ package com.yahoo.search.rendering;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.prelude.templates.PageTemplateSet;
-import com.yahoo.prelude.templates.SearchRendererAdaptor;
-import com.yahoo.prelude.templates.TiledTemplateSet;
-import com.yahoo.prelude.templates.UserTemplate;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.search.Result;
+import com.yahoo.search.pagetemplates.result.PageTemplatesXmlRenderer;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -23,14 +20,11 @@ import java.util.concurrent.Executor;
  */
 public final class RendererRegistry extends ComponentRegistry<com.yahoo.processing.rendering.Renderer<Result>> {
 
-    public static final ComponentId xmlRendererId = ComponentId.fromString("DefaultRenderer");
-    private static final ComponentId newXmlRendererId = ComponentId.fromString("XmlRenderer");
+    public static final ComponentId xmlRendererId = ComponentId.fromString("XmlRenderer");
+    public static final ComponentId pageRendererId = ComponentId.fromString("PageTemplatesXmlRenderer");
     public static final ComponentId jsonRendererId = ComponentId.fromString("JsonRenderer");
     public static final ComponentId defaultRendererId = jsonRendererId;
     
-    private final ComponentId tiledRendererId;
-    private final ComponentId pageRendererId;
-
     /** Creates a registry containing the built-in renderers only */
     public RendererRegistry() {
         this(Collections.emptyList());
@@ -61,22 +55,18 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         register(jsonRenderer.getId(), jsonRenderer);
 
         // Add xml renderer
-        Renderer xmlRenderer = new DefaultRenderer(executor);
+        Renderer xmlRenderer = new XmlRenderer(executor);
         xmlRenderer.initId(xmlRendererId);
         register(xmlRenderer.getId(), xmlRenderer);
 
-        // Add new Vespa 7 xml renderer
-        Renderer newXmlRenderer = new XmlRenderer(executor);
-        newXmlRenderer.initId(newXmlRendererId);
-        register(newXmlRenderer.getId(), newXmlRenderer);
+        // Add page templates renderer
+        Renderer pageRenderer = new PageTemplatesXmlRenderer(executor);
+        pageRenderer.initId(pageRendererId);
+        register(pageRenderer.getId(), pageRenderer);
 
         // add application renderers
         for (Renderer renderer : renderers)
             register(renderer.getId(), renderer);
-
-        // add legacy "templates" converted to renderers // TODO: Remove on Vespa 7
-        tiledRendererId = addTemplateSet(new TiledTemplateSet());
-        pageRendererId = addTemplateSet(new PageTemplateSet());
 
         freeze();
     }
@@ -86,18 +76,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         // deconstruct the renderers which was created by this
         getRenderer(jsonRendererId.toSpecification()).deconstruct();
         getRenderer(xmlRendererId.toSpecification()).deconstruct();
-        getRenderer(newXmlRendererId.toSpecification()).deconstruct();
-        getRenderer(tiledRendererId.toSpecification()).deconstruct();
         getRenderer(pageRendererId.toSpecification()).deconstruct();
-    }
-
-    @SuppressWarnings({"deprecation", "unchecked"})
-    private ComponentId addTemplateSet(UserTemplate<?> templateSet) {
-        Renderer renderer = new SearchRendererAdaptor(templateSet);
-        ComponentId rendererId = new ComponentId(templateSet.getName());
-        renderer.initId(rendererId);
-        register(rendererId, renderer);
-        return rendererId;
     }
 
     /**
@@ -120,6 +99,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         if (format == null || format.stringValue().equals("default")) return getDefaultRenderer();
         if (format.stringValue().equals("json")) return getComponent(jsonRendererId);
         if (format.stringValue().equals("xml")) return getComponent(xmlRendererId);
+        if (format.stringValue().equals("page")) return getComponent(pageRendererId);
 
         com.yahoo.processing.rendering.Renderer<Result> renderer = getComponent(format);
         if (renderer == null)

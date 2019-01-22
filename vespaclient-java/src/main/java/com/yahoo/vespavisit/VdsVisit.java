@@ -189,7 +189,7 @@ public class VdsVisit {
                 .desc("Only visit up to the given timestamp (microseconds).")
                 .type(Number.class).build());
 
-        options.addOption("e", "headersonly", false, "Only visit headers of documents.[Deprecated]");
+        options.addOption("e", "headersonly", false, "Only visit headers of documents.[Removed in Vespa 7]");
 
         options.addOption(Option.builder("l")
                 .longOpt("fieldset")
@@ -345,16 +345,15 @@ public class VdsVisit {
 
         options.addOption(Option.builder()
                 .longOpt("jsonoutput")
-                .desc("Output documents as JSON")
+                .desc("Output documents as JSON (default format)")
                 .hasArg(false)
                 .build());
 
         options.addOption(Option.builder("x")
               .longOpt("xmloutput")
-              .desc("Output documents as XML (default format)")
+              .desc("Output documents as XML")
               .hasArg(false)
               .build());
-
 
         options.addOption(Option.builder()
                 .longOpt("bucketspace")
@@ -481,7 +480,7 @@ public class VdsVisit {
                 params.setToTimestamp(((Number) line.getParsedOptionValue("t")).longValue());
             }
             if (line.hasOption("e")) {
-                params.fieldSet("[header]");
+                throw new IllegalArgumentException("Headers only option has been removed.");
             }
             if (line.hasOption("l")) {
                 params.fieldSet(line.getOptionValue("l"));
@@ -586,7 +585,7 @@ public class VdsVisit {
             if (jsonOutput && xmlOutput) {
                 throw new IllegalArgumentException("Cannot combine both xml and json output");
             }
-            allParams.setJsonOutput((!jsonOutput && !xmlOutput) ? false : jsonOutput); // TODO Vespa 7 Change default to JSON
+            allParams.setJsonOutput(!xmlOutput);
 
             allParams.setVisitorParameters(params);
             return allParams;

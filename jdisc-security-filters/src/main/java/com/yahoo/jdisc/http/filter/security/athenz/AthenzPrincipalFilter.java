@@ -69,7 +69,7 @@ public class AthenzPrincipalFilter extends CorsRequestFilterBase {
 
             if (!certificatePrincipal.isPresent() && !nTokenPrincipal.isPresent()) {
                 String errorMessage = "Unable to authenticate Athenz identity. " +
-                                      "Either client certificate or principal token is required.";
+                        "Either client certificate or principal token is required.";
                 return createResponse(request, Response.Status.UNAUTHORIZED, errorMessage);
             }
             if (certificatePrincipal.isPresent() && nTokenPrincipal.isPresent()

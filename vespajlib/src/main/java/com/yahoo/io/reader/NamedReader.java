@@ -36,6 +36,7 @@ public class NamedReader extends Reader {
     }
 
     // The rest is reader method implementations which delegates to the wrapped reader
+    public static Reader nullReader() { return new NamedReader("nullReader", Reader.nullReader()); }
     @Override
     public int read(CharBuffer charBuffer) throws IOException { return reader.read(charBuffer); }
     @Override
@@ -56,10 +57,8 @@ public class NamedReader extends Reader {
     public void reset() throws IOException { reader.reset(); }
     @Override
     public void close() throws IOException { reader.close(); }
-
-    // TODO Java 10: uncomment
-//    @Override
-//    public long transferTo(Writer out) throws IOException { return reader.transferTo(out); }
+    @Override
+    public long transferTo(Writer out) throws IOException { return reader.transferTo(out); }
 
     /** Convenience method for closing a list of readers. Does nothing if the given reader list is null. */
     public static void closeAll(List<NamedReader> readers) {

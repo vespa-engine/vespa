@@ -7,9 +7,7 @@
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
-#include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
-#include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
-#include <vespa/searchcore/proton/metrics/legacy_attribute_metrics.h>
+#include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_task.h>
@@ -108,7 +106,7 @@ struct MyMetricsWireService : public DummyWireService
 {
     std::set<vespalib::string> _attributes;
     MyMetricsWireService() : _attributes() {}
-    virtual void addAttribute(const AttributeMetricsCollection &, LegacyAttributeMetrics *, const std::string &name) override {
+    virtual void addAttribute(AttributeMetrics &, const std::string &name) override {
         _attributes.insert(name);
     }
 };
@@ -142,7 +140,7 @@ struct MyStoreOnlyContext
     MySyncProxy _syncProxy;
     MyGetSerialNum _getSerialNum;
     MyFileHeaderContext _fileHeader;
-    DocumentDBMetricsCollection _metrics;
+    DocumentDBTaggedMetrics _metrics;
     std::mutex       _configMutex;
     HwInfo           _hwInfo;
     StoreOnlyContext _ctx;
@@ -182,8 +180,6 @@ struct MyFastAccessContext
 {
     MyStoreOnlyContext _storeOnlyCtx;
     AttributeMetrics _attributeMetrics;
-    LegacyAttributeMetrics _legacyAttributeMetrics;
-    AttributeMetricsCollection _attributeMetricsCollection;
     MyMetricsWireService _wireService;
     FastAccessContext _ctx;
     MyFastAccessContext(IThreadingService &writeService,
@@ -203,10 +199,9 @@ MyFastAccessContext::MyFastAccessContext(IThreadingService &writeService, Thread
                                          std::shared_ptr<BucketDBOwner> bucketDB,
                                          IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
     : _storeOnlyCtx(writeService, summaryExecutor, bucketDB, bucketDBHandlerInitializer),
-      _attributeMetrics(NULL), _legacyAttributeMetrics(NULL),
-      _attributeMetricsCollection(_attributeMetrics, _legacyAttributeMetrics),
+      _attributeMetrics(NULL),
       _wireService(),
-      _ctx(_storeOnlyCtx._ctx, _attributeMetricsCollection, NULL, _wireService)
+      _ctx(_storeOnlyCtx._ctx, _attributeMetrics, _wireService)
 {}
 MyFastAccessContext::~MyFastAccessContext() = default;
 

@@ -9,7 +9,6 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.FileReference;
-import com.yahoo.container.core.DiagnosticsConfig;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.Container;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
@@ -148,9 +147,6 @@ public class HandlersConfigurerDi {
             protected void configure() {
                 bind(com.yahoo.container.Container.class).toInstance(vespaContainer);
                 bind(com.yahoo.statistics.Statistics.class).toInstance(Statistics.nullImplementation);
-                bind(com.yahoo.container.protect.FreezeDetector.class).toInstance(
-                        new com.yahoo.container.protect.FreezeDetector(
-                                new DiagnosticsConfig(new DiagnosticsConfig.Builder().disabled(true))));
                 bind(AccessLog.class).toInstance(new AccessLog(new ComponentRegistry<>()));
                 bind(Executor.class).toInstance(Executors.newCachedThreadPool(ThreadFactoryFactory.getThreadFactory("HandlersConfigurerDI")));
 

@@ -6,8 +6,8 @@ import com.yahoo.collections.MethodCache;
 import java.lang.reflect.Method;
 
 /**
- * Superclass of components. You must use this instead of subclassing Component if your component
- * needs to be called on destruction.
+ * Superclass of destructible components. Container components to be created via dependency injection
+ * do not have to extend this class unless they need to implement {@link #deconstruct}.
  *
  * @author bratseth
  */
@@ -24,17 +24,22 @@ public class AbstractComponent implements Component {
     protected final boolean isDeconstructable;
 
     /**
+     * Creates a new component which is invalid until {@link #initId} is called on it.
+     * The dependency injection framework (DI) will always set the id, so components to be created
+     * via DI do not have to implement other constructors, and should not set the id themselves.
+     */
+    protected AbstractComponent() {
+        isDeconstructable = setIsDeconstructable();
+    }
+
+    /**
      * Creates a new component with an id.
+     * Only for testing and components that are not created via dependency injection.
      *
      * @throws NullPointerException if the given id is null
      */
     protected AbstractComponent(ComponentId id) {
         initId(id);
-        isDeconstructable = setIsDeconstructable();
-    }
-
-    /** Creates a new component which is invalid until {@link #initId} is called on it. */
-    protected AbstractComponent() {
         isDeconstructable = setIsDeconstructable();
     }
 

@@ -3,9 +3,7 @@ install_fat_java_artifact(container-disc)
 
 vespa_install_script(src/main/sh/vespa-start-container-daemon.sh vespa-start-container-daemon bin)
 
-install_config_definition(src/main/resources/configdefinitions/container.jdisc.config.http-server.def)
 install_config_definition(src/main/resources/configdefinitions/jdisc-bindings.def container.jdisc.jdisc-bindings.def)
 install_config_definition(src/main/resources/configdefinitions/jersey-connection.def container.config.jersey.jersey-connection.def)
 install_config_definition(src/main/resources/configdefinitions/jersey-web-app-pool.def container.config.jersey.jersey-web-app-pool.def)
-install_config_definition(src/main/resources/configdefinitions/metric-defaults.def container.jdisc.config.metric-defaults.def)
 install_config_definition(src/main/resources/configdefinitions/score-board.def jdisc.metrics.yamasconsumer.cloud.score-board.def)

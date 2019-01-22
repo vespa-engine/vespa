@@ -145,16 +145,18 @@ public class SuperModelControllerTest {
         Applications.Hosts hosts = app.hosts(host);
         assertThat(hosts.hostname(), is(host));
         for (Map.Entry<String, Applications.Hosts.Services> e : app.hosts(host).services().entrySet()) {
-            System.out.println(e);
+            System.out.println(e.getKey());
             if ("qrserver".equals(e.getKey())) {
                 Applications.Hosts.Services s = e.getValue();
+                System.out.println(s);
                 assertThat(s.type(), is("qrserver"));
                 assertThat(s.ports().size(), is(4));
+                assertThat(s.ports().get(0).number(), is(8000));
                 assertThat(s.index(), is(0));
                 return;
             }
         }
-        org.junit.Assert.fail("No qrserver service in config");
+        org.junit.Assert.fail("No container service in config");
     }
 
     private DeployState createDeployState(File applicationPackage, ApplicationId applicationId) {
@@ -170,6 +172,3 @@ public class SuperModelControllerTest {
     }
 
 }
-
-
-

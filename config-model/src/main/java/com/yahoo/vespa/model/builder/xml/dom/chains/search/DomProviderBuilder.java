@@ -2,8 +2,6 @@
 package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 
 import com.yahoo.binaryprefix.BinaryPrefix;
-import com.yahoo.component.chain.dependencies.Dependencies;
-import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.deploy.DeployState;
@@ -13,7 +11,7 @@ import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.BinaryScaledAmountParser;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
-import com.yahoo.vespa.model.container.search.searchchain.HttpProvider;
+import com.yahoo.vespa.model.container.search.searchchain.GenericProvider;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.Provider;
 import com.yahoo.vespa.model.container.search.searchchain.Source;
@@ -23,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Builds a provider from xml.
@@ -211,9 +208,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
                                    ProviderReader providerReader, FederationOptions federationOptions) {
 
         if (providerReader.type == null) {
-            return buildEmptyHttpProvider(specWithoutInnerSearchers, providerReader, federationOptions);
-        } else if (com.yahoo.search.searchchain.model.federation.HttpProviderSpec.includesType(providerReader.type)) { // TODO: Remove on Vespa 7
-            return buildHttpProvider(specWithoutInnerSearchers, providerReader, federationOptions);
+            return new GenericProvider(specWithoutInnerSearchers, federationOptions);
         } else if (LocalProviderSpec.includesType(providerReader.type)) {
             return buildLocalProvider(specWithoutInnerSearchers, providerReader, federationOptions);
         } else {
@@ -236,63 +231,6 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         }
     }
 
-    // TODO: Remove on Vespa 7
-    @SuppressWarnings("deprecation")
-    private Provider buildHttpProvider(ChainSpecification specWithoutInnerSearchers, ProviderReader providerReader, FederationOptions federationOptions) {
-        ensureEmpty(specWithoutInnerSearchers.componentId, providerReader.clusterName);
-
-        Provider httpProvider = buildEmptyHttpProvider(specWithoutInnerSearchers, providerReader, federationOptions);
-
-        httpProvider.addInnerComponent(new com.yahoo.vespa.model.container.search.searchchain.HttpProviderSearcher(
-                new ChainedComponentModel(
-                        com.yahoo.search.searchchain.model.federation.HttpProviderSpec.toBundleInstantiationSpecification(com.yahoo.search.searchchain.model.federation.HttpProviderSpec.Type.valueOf(providerReader.type)),
-                        Dependencies.emptyDependencies())));
-
-        return httpProvider;
-    }
-
-    // TODO: Remove on Vespa 7
-    @SuppressWarnings("deprecation")
-    private Provider buildEmptyHttpProvider(ChainSpecification specWithoutInnerSearchers, ProviderReader providerReader, FederationOptions federationOptions) {
-        ensureEmpty(specWithoutInnerSearchers.componentId, providerReader.clusterName);
-
-        return new HttpProvider(specWithoutInnerSearchers,
-                federationOptions,
-                new com.yahoo.search.searchchain.model.federation.HttpProviderSpec(
-                        providerReader.cacheWeight,
-                        providerReader.path,
-                        toHttpProviderNodes(providerReader.nodes),
-                        providerReader.certificateApplicationId,
-                        providerReader.certificateTtl,
-                        providerReader.certificateRetryWait,
-                        toHttpProviderNode(providerReader.certificateProxy),
-                        providerReader.cacheSizeMB,
-                        connectionParameters(providerReader)));
-    }
-
-    // TODO: Remove on Vespa 7
-    @SuppressWarnings("deprecation")
-    private com.yahoo.search.searchchain.model.federation.HttpProviderSpec.Node toHttpProviderNode(Node node) {
-        if (node == null) return null;
-        return new com.yahoo.search.searchchain.model.federation.HttpProviderSpec.Node(node.host, node.port);
-    }
-
-    @SuppressWarnings("deprecation")
-    private List<com.yahoo.search.searchchain.model.federation.HttpProviderSpec.Node> toHttpProviderNodes(List<Node> nodes) {
-        if (nodes == null) return null;
-        return nodes.stream().map(node -> toHttpProviderNode(node)).collect(Collectors.toList());
-    }
-
-    // TODO: Remove on Vespa 7
-    @SuppressWarnings("deprecation")
-    private com.yahoo.search.searchchain.model.federation.HttpProviderSpec.ConnectionParameters connectionParameters(ProviderReader providerReader) {
-        return new com.yahoo.search.searchchain.model.federation.HttpProviderSpec.ConnectionParameters(
-                providerReader.readTimeout,
-                providerReader.connectionTimeout,
-                providerReader.connectionPoolTimeout,
-                providerReader.retries);
-    }
-
     private void ensureEmpty(ComponentId componentId, Object... objects) {
         for (Object object : objects) {
             if (object != null) {
@@ -313,10 +251,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
 
         @Override
         public String toString() {
-            return "Node{" +
-                   "host='" + host + '\'' +
-                   ", port=" + port +
-                   '}';
+            return "Node{" + "host='" + host + '\'' + ", port=" + port + '}';
         }
     }
 

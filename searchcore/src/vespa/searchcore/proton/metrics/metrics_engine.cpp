@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attribute_metrics.h"
+#include "documentdb_tagged_metrics.h"
 #include "metrics_engine.h"
-#include "attribute_metrics_collection.h"
-#include "documentdb_metrics_collection.h"
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 
@@ -13,7 +13,6 @@ namespace proton {
 
 MetricsEngine::MetricsEngine()
     : _root(),
-      _legacyRoot(),
       _manager(std::make_unique<metrics::MetricManager>()),
       _metrics_producer(*_manager)
 { }
@@ -26,7 +25,6 @@ MetricsEngine::start(const config::ConfigUri &)
     {
         metrics::MetricLockGuard guard(_manager->getMetricLock());
         _manager->registerMetric(guard, _root);
-        _manager->registerMetric(guard, _legacyRoot);
     }
 
     // Storage doesnt snapshot unset metrics to save memory. Currently
@@ -56,112 +54,31 @@ void
 MetricsEngine::addExternalMetrics(metrics::Metric &child)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    _legacyRoot.registerMetric(child);
+    _root.registerMetric(child);
 }
 
 void
 MetricsEngine::removeExternalMetrics(metrics::Metric &child)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    _legacyRoot.unregisterMetric(child);
+    _root.unregisterMetric(child);
+}
+
+void
+MetricsEngine::addDocumentDBMetrics(DocumentDBTaggedMetrics &child)
+{
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
+    _root.registerMetric(child);
+}
+
+void
+MetricsEngine::removeDocumentDBMetrics(DocumentDBTaggedMetrics &child)
+{
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
+    _root.unregisterMetric(child);
 }
 
 namespace {
-
-void
-addLegacyDocumentDBMetrics(LegacyProtonMetrics &legacyRoot,
-                           LegacyDocumentDBMetrics &metrics)
-{
-    legacyRoot.docTypes.registerMetric(metrics);
-    // cannot use sum of sum due to metric clone issues
-    legacyRoot.memoryUsage.addMetricToSum(metrics.index.memoryUsage);
-    legacyRoot.memoryUsage.addMetricToSum(metrics.attributes.memoryUsage);
-    legacyRoot.memoryUsage.addMetricToSum(metrics.docstore.memoryUsage);
-    legacyRoot.diskUsage.addMetricToSum(metrics.index.diskUsage);
-    legacyRoot.docsInMemory.addMetricToSum(metrics.index.docsInMemory);
-    legacyRoot.numDocs.addMetricToSum(metrics.numDocs);
-    legacyRoot.numActiveDocs.addMetricToSum(metrics.numActiveDocs);
-    legacyRoot.numIndexedDocs.addMetricToSum(metrics.numIndexedDocs);
-    legacyRoot.numStoredDocs.addMetricToSum(metrics.numStoredDocs);
-    legacyRoot.numRemovedDocs.addMetricToSum(metrics.numRemovedDocs);
-}
-
-void
-removeLegacyDocumentDBMetrics(LegacyProtonMetrics &legacyRoot,
-                              LegacyDocumentDBMetrics &metrics)
-{
-    legacyRoot.docTypes.unregisterMetric(metrics);
-    // cannot use sum of sum due to metric clone issues
-    legacyRoot.memoryUsage.removeMetricFromSum(metrics.index.memoryUsage);
-    legacyRoot.memoryUsage.removeMetricFromSum(metrics.attributes.memoryUsage);
-    legacyRoot.memoryUsage.removeMetricFromSum(metrics.docstore.memoryUsage);
-    legacyRoot.diskUsage.removeMetricFromSum(metrics.index.diskUsage);
-    legacyRoot.docsInMemory.removeMetricFromSum(metrics.index.docsInMemory);
-    legacyRoot.numDocs.removeMetricFromSum(metrics.numDocs);
-    legacyRoot.numActiveDocs.removeMetricFromSum(metrics.numActiveDocs);
-    legacyRoot.numIndexedDocs.removeMetricFromSum(metrics.numIndexedDocs);
-    legacyRoot.numStoredDocs.removeMetricFromSum(metrics.numStoredDocs);
-    legacyRoot.numRemovedDocs.removeMetricFromSum(metrics.numRemovedDocs);
-}
-
-}
-
-void
-MetricsEngine::addDocumentDBMetrics(DocumentDBMetricsCollection &child)
-{
-    metrics::MetricLockGuard guard(_manager->getMetricLock());
-    addLegacyDocumentDBMetrics(_legacyRoot, child.getLegacyMetrics());
-
-    _root.registerMetric(child.getTaggedMetrics());
-}
-
-void
-MetricsEngine::removeDocumentDBMetrics(DocumentDBMetricsCollection &child)
-{
-    metrics::MetricLockGuard guard(_manager->getMetricLock());
-    removeLegacyDocumentDBMetrics(_legacyRoot, child.getLegacyMetrics());
-
-    _root.unregisterMetric(child.getTaggedMetrics());
-}
-
-namespace {
-
-void
-doAddAttribute(LegacyAttributeMetrics &attributes,
-               const std::string &name)
-{
-    LegacyAttributeMetrics::List::Entry *entry = attributes.list.add(name);
-    if (entry != nullptr) {
-        LOG(debug, "doAddAttribute(): name='%s', attributes=%p",
-                name.c_str(), (void*)&attributes);
-        attributes.list.registerMetric(*entry);
-    } else {
-        LOG(warning, "multiple attributes have the same name: '%s'", name.c_str());
-    }
-}
-
-void
-doRemoveAttribute(LegacyAttributeMetrics &attributes,
-                  const std::string &name)
-{
-    LegacyAttributeMetrics::List::Entry::UP entry = attributes.list.remove(name);
-    if (entry.get() != 0) {
-        LOG(debug, "doRemoveAttribute(): name='%s', attributes=%p",
-                name.c_str(), (void*)&attributes);
-        attributes.list.unregisterMetric(*entry);
-    } else {
-        LOG(debug, "Could not remove attribute with name '%s', not found", name.c_str());
-    }
-}
-
-void
-doCleanAttributes(LegacyAttributeMetrics &attributes)
-{
-    std::vector<LegacyAttributeMetrics::List::Entry::UP> entries = attributes.list.release();
-    for (size_t i = 0; i < entries.size(); ++i) {
-        attributes.list.unregisterMetric(*entries[i]);
-    }
-}
 
 void
 doAddAttribute(AttributeMetrics &attributes, const std::string &attrName)
@@ -197,41 +114,26 @@ doCleanAttributes(AttributeMetrics &attributes)
 }
 
 void
-MetricsEngine::addAttribute(const AttributeMetricsCollection &subAttributes,
-                            LegacyAttributeMetrics *totalAttributes,
+MetricsEngine::addAttribute(AttributeMetrics &subAttributes,
                             const std::string &name)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doAddAttribute(subAttributes.getMetrics(), name);
-    doAddAttribute(subAttributes.getLegacyMetrics(), name);
-    if (totalAttributes != NULL) {
-        doAddAttribute(*totalAttributes, name);
-    }
+    doAddAttribute(subAttributes, name);
 }
 
 void
-MetricsEngine::removeAttribute(const AttributeMetricsCollection &subAttributes,
-                               LegacyAttributeMetrics *totalAttributes,
+MetricsEngine::removeAttribute(AttributeMetrics &subAttributes,
                                const std::string &name)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doRemoveAttribute(subAttributes.getMetrics(), name);
-    doRemoveAttribute(subAttributes.getLegacyMetrics(), name);
-    if (totalAttributes != NULL) {
-        doRemoveAttribute(*totalAttributes, name);
-    }
+    doRemoveAttribute(subAttributes, name);
 }
 
 void
-MetricsEngine::cleanAttributes(const AttributeMetricsCollection &subAttributes,
-                               LegacyAttributeMetrics *totalAttributes)
+MetricsEngine::cleanAttributes(AttributeMetrics &subAttributes)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doCleanAttributes(subAttributes.getMetrics());
-    doCleanAttributes(subAttributes.getLegacyMetrics());
-    if (totalAttributes != NULL) {
-        doCleanAttributes(*totalAttributes);
-    }
+    doCleanAttributes(subAttributes);
 }
 
 namespace {
@@ -263,18 +165,17 @@ cleanRankProfilesIn(MatchingMetricsType &matchingMetrics)
 }
 
 void
-MetricsEngine::addRankProfile(DocumentDBMetricsCollection &owner, const std::string &name, size_t numDocIdPartitions) {
+MetricsEngine::addRankProfile(DocumentDBTaggedMetrics &owner, const std::string &name, size_t numDocIdPartitions)
+{
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    size_t adjustedNumDocIdPartitions = std::min(numDocIdPartitions, owner.getLegacyMetrics()._maxNumThreads);
-    addRankProfileTo(owner.getTaggedMetrics().matching, name, adjustedNumDocIdPartitions);
-    addRankProfileTo(owner.getLegacyMetrics().matching, name, adjustedNumDocIdPartitions);
+    size_t adjustedNumDocIdPartitions = std::min(numDocIdPartitions, owner.maxNumThreads);
+    addRankProfileTo(owner.matching, name, adjustedNumDocIdPartitions);
 }
 
 void
-MetricsEngine::cleanRankProfiles(DocumentDBMetricsCollection &owner) {
+MetricsEngine::cleanRankProfiles(DocumentDBTaggedMetrics &owner) {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    cleanRankProfilesIn(owner.getTaggedMetrics().matching);
-    cleanRankProfilesIn(owner.getLegacyMetrics().matching);
+    cleanRankProfilesIn(owner.matching);
 }
 
 void
@@ -283,4 +184,4 @@ MetricsEngine::stop()
     _manager->stop();
 }
 
-} // namespace proton
+}

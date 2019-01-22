@@ -26,7 +26,7 @@
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
-#include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
+#include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
@@ -66,7 +66,7 @@ class DocumentDB : public DocumentDBConfigOwner,
 {
 private:
     class MetricsUpdateHook : public metrics::UpdateHook {
-        DocumentDBMetricsCollection _metrics;
+        DocumentDBTaggedMetrics _metrics;
         DocumentDB &_db;
     public:
         MetricsUpdateHook(DocumentDB &s, const std::string &doc_type, size_t maxNumThreads)
@@ -74,7 +74,7 @@ private:
               _metrics(doc_type, maxNumThreads),
               _db(s) {}
         void updateMetrics(const MetricLockGuard & ) override { _db.updateMetrics(_metrics); }
-        DocumentDBMetricsCollection &getMetrics() { return _metrics; }
+        DocumentDBTaggedMetrics &getMetrics() { return _metrics; }
     };
 
     struct DocumentStoreCacheStats {
@@ -289,11 +289,11 @@ public:
     void close();
 
     /**
-     * Obtain the metrics collection for this document db.
+     * Obtain the metrics for this document db.
      *
      * @return document db metrics
      **/
-    DocumentDBMetricsCollection &getMetricsCollection() { return _metricsHook.getMetrics(); }
+    DocumentDBTaggedMetrics &getMetrics() { return _metricsHook.getMetrics(); }
 
     /**
      * Obtain the metrics update hook for this document db.
@@ -424,7 +424,7 @@ public:
      * the metric manager). Do not call this function in multiple
      * threads at once.
      **/
-    void updateMetrics(DocumentDBMetricsCollection &metrics);
+    void updateMetrics(DocumentDBTaggedMetrics &metrics);
 
     /**
      * Implement search::transactionlog::SyncProxy API.

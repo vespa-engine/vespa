@@ -266,15 +266,10 @@ public class DocumentTypeManager {
     }
 
     final public Document createDocument(GrowableByteBuffer buf) {
-        DocumentDeserializer data = DocumentDeserializerFactory.create42(this, buf);
+        DocumentDeserializer data = DocumentDeserializerFactory.create6(this, buf);
         return new Document(data);
     }
     public Document createDocument(DocumentDeserializer data) {
-        return new Document(data);
-    }
-
-    public Document createDocument(GrowableByteBuffer header, GrowableByteBuffer body) {
-        DocumentDeserializer data = DocumentDeserializerFactory.create42(this, header, body);
         return new Document(data);
     }
 

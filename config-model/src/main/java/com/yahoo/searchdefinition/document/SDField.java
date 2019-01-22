@@ -83,9 +83,6 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     /** The explicitly index settings on this field */
     private Map<String, Index> indices = new java.util.LinkedHashMap<>();
 
-    /** True if body or header is set explicitly for this field */
-    private boolean headerOrBodyDefined = false;
-
     private boolean idOverride = false;
 
     /** Struct fields defined in this field */
@@ -426,7 +423,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     /** Parse an indexing expression which will use the simple linguistics implementatino suitable for testing */
     @SuppressWarnings("deprecation")
     public void parseIndexingScript(String script) {
-        parseIndexingScript(script, new SimpleLinguistics(false));
+        parseIndexingScript(script, new SimpleLinguistics());
     }
 
     public void parseIndexingScript(String script, Linguistics linguistics) {
@@ -767,15 +764,6 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     @Override
     public List<String> getQueryCommands() {
         return queryCommands;
-    }
-
-
-    public boolean isHeaderOrBodyDefined() {
-        return headerOrBodyDefined;
-    }
-
-    public void setHeaderOrBodyDefined(boolean headerOrBodySetExplicitly) {
-        this.headerOrBodyDefined = headerOrBodySetExplicitly;
     }
 
     /**

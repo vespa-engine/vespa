@@ -13,7 +13,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
-#include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
+#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/document_reprocessing_handler.h>
 #include <vespa/searchcore/proton/reprocessing/reprocess_documents_task.h>
@@ -94,8 +94,7 @@ FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResult)
         attrMgrResult->getAttributeListAll(list);
         for (const auto &attr : list) {
             const AttributeVector &v = *attr;
-            _metricsWireService.addAttribute(_subAttributeMetrics, _totalAttributeMetrics,
-                    v.getName());
+            _metricsWireService.addAttribute(_subAttributeMetrics, v.getName());
         }
     }
     _initAttrMgr = attrMgrResult;
@@ -175,11 +174,11 @@ FastAccessDocSubDB::reconfigureAttributeMetrics(const proton::IAttributeManager 
     }
     for (const auto &attrName : toAdd) {
         LOG(debug, "reconfigureAttributeMetrics(): addAttribute='%s'", attrName.c_str());
-        _metricsWireService.addAttribute(_subAttributeMetrics, _totalAttributeMetrics, attrName);
+        _metricsWireService.addAttribute(_subAttributeMetrics, attrName);
     }
     for (const auto &attrName : toRemove) {
         LOG(debug, "reconfigureAttributeMetrics(): removeAttribute='%s'", attrName.c_str());
-        _metricsWireService.removeAttribute(_subAttributeMetrics, _totalAttributeMetrics, attrName);
+        _metricsWireService.removeAttribute(_subAttributeMetrics, attrName);
     }
 }
 
@@ -203,7 +202,6 @@ FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
       _initAttrMgr(),
       _fastAccessFeedView(),
       _subAttributeMetrics(ctx._subAttributeMetrics),
-      _totalAttributeMetrics(ctx._totalAttributeMetrics),
       _addMetrics(cfg._addMetrics),
       _metricsWireService(ctx._metricsWireService),
       _docIdLimit(0)

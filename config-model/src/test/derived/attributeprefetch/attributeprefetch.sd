@@ -3,81 +3,63 @@ search prefetch {
   document prefetch {
     field singlebyte type byte {
       indexing: attribute
-      attribute: prefetch
     }
     field multibyte type array<byte> {
       indexing: attribute
-      attribute: prefetch
     }
     field wsbyte type weightedset<byte> {
       indexing: attribute
-      attribute: prefetch
     }
     field singleint type int {
       indexing: attribute
-      attribute: prefetch
     }
     field multiint type array<int> {
       indexing: attribute
-      attribute: prefetch
     }
     field wsint type weightedset<int> {
       indexing: attribute
-      attribute: prefetch
     }
     field singlelong type long {
       indexing: attribute
-      attribute: prefetch
     }
     field multilong type array<long> {
       indexing: attribute
-      attribute: prefetch
     }
     field wslong type weightedset<long> {
       indexing: attribute
-      attribute: prefetch
     }
     field singlefloat type float {
       indexing: attribute
-      attribute: prefetch
     }
     field multifloat type array<float> {
       indexing: attribute
-      attribute: prefetch
     }
     field wsfloat type weightedset<float> {
       indexing: attribute
-      attribute: prefetch
     }
     field singledouble type double {
       indexing: attribute
-      attribute: prefetch
     }
     field multidouble type array<double> {
       indexing: attribute
-      attribute: prefetch
     }
     field wsdouble type weightedset<double> {
       indexing: attribute
-      attribute: prefetch
     }
     field singlestring type string {
       indexing: attribute
-      attribute: prefetch
       match {
         token
       }
     }
     field multistring type array<string> {
       indexing: attribute
-      attribute: prefetch
       match {
         token
       }
     }
     field wsstring type weightedset<string> {
       indexing: attribute
-      attribute: prefetch
       match {
         token
       }

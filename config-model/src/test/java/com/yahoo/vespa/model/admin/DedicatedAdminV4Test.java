@@ -53,19 +53,12 @@ public class DedicatedAdminV4Test {
                 "  <admin version='4.0'>" +
                 "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
                 "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
-                "    <yamas systemname='vespa.routing' interval='60' />" +
+                "    <monitoring systemname='vespa.routing' interval='60' />" +
                 "    <metrics>" +
                 "     <consumer id='slingstone'>" +
                 "        <metric id='foobar.count' display-name='foobar'/>" +
                 "     </consumer>" +
                 "    </metrics>" +
-                "    <metric-consumers>" +
-                "      <consumer name='yamas'>" +
-                "        <metric name='upstreams_generated' />" +
-                "        <metric name='upstreams_nginx_reloads' />" +
-                "        <metric name='nginx.upstreams.down.last' output-name='nginx.upstreams.down'/>" +
-                "      </consumer>" +
-                "    </metric-consumers>" +
                 "    <identity>" +
                 "        <domain>mydomain</domain>" +
                 "        <service>myservice</service>" +
@@ -90,13 +83,6 @@ public class DedicatedAdminV4Test {
         Metric metric = consumer.getMetrics().get("foobar.count");
         assertNotNull(metric);
         assertEquals("foobar", metric.outputName);
-
-        consumer = model.getAdmin().getLegacyUserMetricsConsumers().get(VESPA_CONSUMER_ID);
-        assertNotNull(consumer);
-        assertEquals(3, consumer.getMetrics().size());
-        metric = consumer.getMetrics().get("nginx.upstreams.down.last");
-        assertNotNull(metric);
-        assertEquals("nginx.upstreams.down", metric.outputName);
     }
 
     @Test

@@ -4,7 +4,6 @@ vespa_add_library(searchcore_proton_metrics STATIC
     attribute_metrics.cpp
     content_proton_metrics.cpp
     documentdb_job_trackers.cpp
-    documentdb_metrics_collection.cpp
     documentdb_tagged_metrics.cpp
     executor_metrics.cpp
     executor_threading_service_metrics.cpp
@@ -13,10 +12,6 @@ vespa_add_library(searchcore_proton_metrics STATIC
     job_tracker.cpp
     job_tracked_flush_target.cpp
     job_tracked_flush_task.cpp
-    legacy_attribute_metrics.cpp
-    legacy_documentdb_metrics.cpp
-    legacy_proton_metrics.cpp
-    legacy_sessionmanager_metrics.cpp
     memory_usage_metrics.cpp
     metrics_engine.cpp
     resource_usage_metrics.cpp

@@ -609,17 +609,14 @@ public class FilesApplicationPackage implements ApplicationPackage {
     /**
      * Reads a ranking expression from file to a string and returns it.
      *
-     * @param name the name of the file to return, either absolute or
+     * @param name the name of the file to return,
      *             relative to the search definition directory in the application package
      * @return the content of a ranking expression file
      * @throws IllegalArgumentException if the file was not found or could not be read
      */
-    // TODO: A note on absolute paths: We don't want to support this and it should be removed on 6.0
-    //       Currently one system test (basicmlr) depends on it.
     @Override
     public Reader getRankingExpression(String name) {
         try {
-            File file = expressionFileNameToFile(name);
             return IOUtils.createReader(expressionFileNameToFile(name), "utf-8");
         }
         catch (IOException e) {
@@ -629,8 +626,9 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     private File expressionFileNameToFile(String name) {
         File expressionFile = new File(name);
-        if (expressionFile.isAbsolute()) return expressionFile;
-
+        if (expressionFile.isAbsolute()) {
+            throw new IllegalArgumentException("Absolute path to ranking expression file is not allowed: " + name);
+        }
         File sdDir = new File(appDir, ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
         return new File(sdDir, name);
     }

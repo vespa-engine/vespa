@@ -210,12 +210,9 @@
       "public abstract com.yahoo.language.process.Segmenter getSegmenter()",
       "public abstract com.yahoo.language.detect.Detector getDetector()",
       "public abstract com.yahoo.language.process.GramSplitter getGramSplitter()",
-      "public abstract com.yahoo.language.process.CharacterClasses getCharacterClasses()",
-      "public abstract com.yahoo.collections.Tuple2 getVersion(com.yahoo.language.Linguistics$Component)"
+      "public abstract com.yahoo.language.process.CharacterClasses getCharacterClasses()"
     ],
-    "fields": [
-      "public static final com.yahoo.language.Linguistics SIMPLE"
-    ]
+    "fields": []
   },
   "com.yahoo.language.LinguisticsCase": {
     "superClass": "java.lang.Object",
@@ -460,9 +457,7 @@
     ],
     "methods": [
       "public static com.yahoo.language.process.StemMode[] values()",
-      "public static com.yahoo.language.process.StemMode valueOf(java.lang.String)",
-      "public int getValue()",
-      "public static com.yahoo.language.process.StemMode valueOf(int)"
+      "public static com.yahoo.language.process.StemMode valueOf(java.lang.String)"
     ],
     "fields": [
       "public static final enum com.yahoo.language.process.StemMode NONE",

@@ -1108,13 +1108,13 @@ Test::requireThatPositionsAreUsed()
     EXPECT_EQUAL(1u, rep->docsums[0].docid);
     EXPECT_EQUAL(gid1, rep->docsums[0].gid);
     EXPECT_TRUE(assertSlime("{sp2:'1047758'"
-                            ",sp2x:'<position x=\"1002\" y=\"1003\" latlong=\"N0.001003;E0.001002\" />'"
+                            ",sp2x:{x:1002, y:1003, latlong:'N0.001003;E0.001002'}"
                             ",ap2:[1047806,1048322]"
-                            ",ap2x:'<position x=\"1006\" y=\"1007\" latlong=\"N0.001007;E0.001006\" />"
-                                   "<position x=\"1008\" y=\"1009\" latlong=\"N0.001009;E0.001008\" />'"
+                            ",ap2x:[{x:1006, y:1007, latlong:'N0.001007;E0.001006'},"
+                                   "{x:1008, y:1009, latlong:'N0.001009;E0.001008'}]"
                             ",wp2:[{item:1048370,weight:43},{item:1048382,weight:44}]"
-                            ",wp2x:'<position x=\"1012\" y=\"1013\" latlong=\"N0.001013;E0.001012\" />"
-                                   "<position x=\"1014\" y=\"1015\" latlong=\"N0.001015;E0.001014\" />'}",
+                            ",wp2x:[{ x:1012, y:1013, latlong:'N0.001013;E0.001012'},"
+                                   "{ x:1014, y:1015, latlong:'N0.001015;E0.001014'}]}",
                             *rep, 0, false));
 }
 

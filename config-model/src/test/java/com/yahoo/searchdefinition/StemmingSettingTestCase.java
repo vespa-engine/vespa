@@ -42,10 +42,10 @@ public class StemmingSettingTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void requireThatStemmingIsDefaultShortest() throws IOException, ParseException {
+    public void requireThatStemmingIsDefaultBest() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/stemmingdefault.sd");
         assertNull(search.getConcreteField("my_str").getStemming());
-        assertEquals(Stemming.SHORTEST, search.getConcreteField("my_str").getStemming(search));
+        assertEquals(Stemming.BEST, search.getConcreteField("my_str").getStemming(search));
     }
 
 }

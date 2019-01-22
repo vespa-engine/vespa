@@ -3,7 +3,7 @@ package com.yahoo.search.query.context;
 
 import com.yahoo.processing.execution.Execution;
 import com.yahoo.search.Query;
-import com.yahoo.search.rendering.DefaultRenderer;
+import com.yahoo.search.rendering.XmlRenderer;
 import com.yahoo.text.XMLWriter;
 import com.yahoo.yolean.trace.TraceNode;
 
@@ -88,7 +88,7 @@ public class QueryContext implements Cloneable {
             XMLWriter xmlWriter=XMLWriter.from(writer);
             xmlWriter.openTag("meta").attribute("type",ID);
             TraceNode traceRoot=owner.getModel().getExecution().trace().traceNode().root();
-            traceRoot.accept(new DefaultRenderer.RenderingVisitor(xmlWriter,owner.getStartTime()));
+            traceRoot.accept(new XmlRenderer.RenderingVisitor(xmlWriter, owner.getStartTime()));
             xmlWriter.closeTag();
         }
         return true;

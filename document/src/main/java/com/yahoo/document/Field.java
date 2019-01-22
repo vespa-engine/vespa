@@ -187,7 +187,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      * @param type The new type of the field.
      * @deprecated do not use
      */
-    @Deprecated // TODO: Remove on Vespa 8
+    @Deprecated // todo - refactor SD processing to avoid needing this
     public void setDataType(DataType type) {
         dataType = type;
         fieldId = calculateIdV7(null);

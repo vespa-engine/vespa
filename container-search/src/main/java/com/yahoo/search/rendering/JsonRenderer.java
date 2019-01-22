@@ -18,6 +18,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.lang.MutableBoolean;
+import com.yahoo.prelude.hitfield.HitField;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution.Trace;
 import com.yahoo.processing.rendering.AsynchronousSectionedRenderer;
@@ -473,7 +474,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         generator.writeNumberField(RELEVANCE, hit.getRelevance().getScore());
 
-        if (hit.types().size() > 0) { // TODO: Remove types rendering on Vespa 7
+        if (hit.types().size() > 0) {
             generator.writeArrayFieldStart(TYPES);
             for (String t : hit.types()) {
                 generator.writeString(t);

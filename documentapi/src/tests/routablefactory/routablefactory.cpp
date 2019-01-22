@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/routablefactories52.h>
+#include <vespa/documentapi/messagebus/routablefactories60.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
@@ -48,7 +48,7 @@ public:
     }
 };
 
-class MyMessageFactory : public RoutableFactories52::DocumentMessageFactory {
+class MyMessageFactory : public RoutableFactories60::DocumentMessageFactory {
 protected:
     DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override {
         (void)buf;
@@ -62,7 +62,7 @@ protected:
     }
 };
 
-class MyReplyFactory : public RoutableFactories52::DocumentReplyFactory {
+class MyReplyFactory : public RoutableFactories60::DocumentReplyFactory {
 protected:
     DocumentReply::UP doDecode(document::ByteBuffer &buf) const override {
         (void)buf;

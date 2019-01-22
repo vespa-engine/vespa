@@ -10,16 +10,16 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * <p>This class represents a single node in a tree of <tt>TraceNodes</tt>. The trace forms a tree where there is a
- * branch for each parallel execution, and a node within such a branch for each traced event. As each <tt>TraceNode</tt>
+ * <p>This class represents a single node in a tree of <code>TraceNodes</code>. The trace forms a tree where there is a
+ * branch for each parallel execution, and a node within such a branch for each traced event. As each <code>TraceNode</code>
  * may contain a payload of any type, the trace tree can be used to exchange any thread-safe state between producers and
  * consumers in different threads, whether or not the shape of the trace tree is relevant to the particular
  * information.</p>
  * <p>This class uses a {@link ThreadRobustList} for its children. That list allows multiple threads to inspect the
- * hierarchy of a <tt>TraceNode</tt> tree while there are other threads concurrently modifying it, without incurring the
- * cost of memory synchronization. The only caveat being that for each <tt>TraceNode</tt> there can never be more than
- * exactly one writer thread. If multiple threads need to mutate a single <tt>TraceNode</tt>, then the writer threads
- * need to synchronize their access on the <tt>TraceNode</tt>.</p>
+ * hierarchy of a <code>TraceNode</code> tree while there are other threads concurrently modifying it, without incurring the
+ * cost of memory synchronization. The only caveat being that for each <code>TraceNode</code> there can never be more than
+ * exactly one writer thread. If multiple threads need to mutate a single <code>TraceNode</code>, then the writer threads
+ * need to synchronize their access on the <code>TraceNode</code>.</p>
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @author bratseth
@@ -35,7 +35,7 @@ public class TraceNode {
     /**
      * <p>Creates a new instance of this class.</p>
      *
-     * @param payload   the payload to assign to this, may be <tt>null</tt>
+     * @param payload   the payload to assign to this, may be <code>null</code>
      * @param timestamp the timestamp to assign to this
      */
     public TraceNode(Object payload, long timestamp) {
@@ -44,11 +44,11 @@ public class TraceNode {
     }
 
     /**
-     * <p>Adds another <tt>TraceNode</tt> as a child to this.</p>
+     * <p>Adds another <code>TraceNode</code> as a child to this.</p>
      *
      * @param child the TraceNode to add
      * @return this, to allow chaining
-     * @throws IllegalArgumentException if <tt>child</tt> is not a root TraceNode
+     * @throws IllegalArgumentException if <code>child</code> is not a root TraceNode
      * @see #isRoot()
      */
     public TraceNode add(TraceNode child) {
@@ -64,12 +64,12 @@ public class TraceNode {
     }
 
     /**
-     * <p>Returns a read-only iterable of all {@link #payload() payloads} that are instances of <tt>payloadType</tt>,
-     * in all its decendants. The payload of <em>this</em> <tt>TraceNode</tt> is ignored.</p>
+     * <p>Returns a read-only iterable of all {@link #payload() payloads} that are instances of <code>payloadType</code>,
+     * in all its decendants. The payload of <em>this</em> <code>TraceNode</code> is ignored.</p>
      * <p>The payloads are retrieved in depth-first, prefix order.</p>
      *
      * @param payloadType the type of payloads to retrieve
-     * @return the payloads, never <tt>null</tt>
+     * @return the payloads, never <code>null</code>
      */
     public <PAYLOADTYPE> Iterable<PAYLOADTYPE> descendants(final Class<PAYLOADTYPE> payloadType) {
         if (children == null) {
@@ -85,7 +85,7 @@ public class TraceNode {
     }
 
     /**
-     * <p>Returns the payload of this <tt>TraceNode</tt>, or null if none.</p>
+     * <p>Returns the payload of this <code>TraceNode</code>, or null if none.</p>
      *
      * @return the payload
      */
@@ -94,7 +94,7 @@ public class TraceNode {
     }
 
     /**
-     * <p>Returns the timestamp of this <tt>TraceNode</tt>.</p>
+     * <p>Returns the timestamp of this <code>TraceNode</code>.</p>
      *
      * @return the timestamp
      */
@@ -103,7 +103,7 @@ public class TraceNode {
     }
 
     /**
-     * <p>Returns the parent <tt>TraceNode</tt> of this.</p>
+     * <p>Returns the parent <code>TraceNode</code> of this.</p>
      *
      * @return the parent
      */
@@ -112,7 +112,7 @@ public class TraceNode {
     }
 
     /**
-     * <p>Returns the child <tt>TraceNodes</tt> of this.</p>
+     * <p>Returns the child <code>TraceNodes</code> of this.</p>
      *
      * @return the children
      */
@@ -124,16 +124,16 @@ public class TraceNode {
     }
 
     /**
-     * <p>Returns whether or not this <tt>TraceNode</tt> is a root node (i.e. it has no parent).</p>
+     * <p>Returns whether or not this <code>TraceNode</code> is a root node (i.e. it has no parent).</p>
      *
-     * @return <tt>true</tt> if {@link #parent()} returns <tt>null</tt>
+     * @return <code>true</code> if {@link #parent()} returns <code>null</code>
      */
     public boolean isRoot() {
         return parent == null;
     }
 
     /**
-     * <p>Returns the root <tt>TraceNode</tt> of the tree that this <tt>TraceNode</tt> belongs to.</p>
+     * <p>Returns the root <code>TraceNode</code> of the tree that this <code>TraceNode</code> belongs to.</p>
      *
      * @return the root
      */
@@ -146,7 +146,7 @@ public class TraceNode {
     }
 
     /**
-     * <p>Visits this <tt>TraceNode</tt> and all of its descendants in depth-first, prefix order.</p>
+     * <p>Visits this <code>TraceNode</code> and all of its descendants in depth-first, prefix order.</p>
      *
      * @param visitor The visitor to accept.
      * @return The <code>visitor</code> parameter.

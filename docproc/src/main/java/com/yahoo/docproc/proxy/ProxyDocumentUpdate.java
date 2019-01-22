@@ -11,7 +11,6 @@ import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.document.update.FieldUpdate;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,7 +18,6 @@ import java.util.Map;
  * 
  * @author vegardh
  */
-// TODO Vespa 7 Remove all deprecated methods
 public class ProxyDocumentUpdate extends DocumentUpdate implements DocumentOperationWrapper {
 
     private DocumentUpdate docU;
@@ -47,13 +45,6 @@ public class ProxyDocumentUpdate extends DocumentUpdate implements DocumentOpera
     }
 
     @Override
-    @Deprecated
-    @SuppressWarnings( "deprecation" )
-    public FieldUpdate getFieldUpdate(int index) {
-        return docU.getFieldUpdate(index);
-    }
-
-    @Override
     public FieldUpdate getFieldUpdate(String fieldName) {
         String mapped = fieldMap.get(fieldName);
         if (mapped==null) {
@@ -63,12 +54,6 @@ public class ProxyDocumentUpdate extends DocumentUpdate implements DocumentOpera
         return docU.getFieldUpdate(mapped);
     }
 
-    @Override
-    @Deprecated
-    @SuppressWarnings( "deprecation" )
-    public List<FieldUpdate> getFieldUpdates() {
-        return docU.getFieldUpdates();
-    }
     @Override
     public Collection<FieldUpdate> fieldUpdates() {
         return docU.fieldUpdates();

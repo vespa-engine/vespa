@@ -30,7 +30,7 @@ public class SerializationTestCase {
     @Test
     public void testAddSerialization() {
         FieldUpdate update = FieldUpdate.createAdd(field, new StringFieldValue("value1"));
-        DocumentSerializer buffer = DocumentSerializerFactory.create42();
+        DocumentSerializer buffer = DocumentSerializerFactory.create6();
         update.serialize(buffer);
 
         buffer.getBuf().rewind();
@@ -41,18 +41,18 @@ public class SerializationTestCase {
             fos.close();
         } catch (Exception e) {}
 
-        FieldUpdate deserializedUpdate = new FieldUpdate(DocumentDeserializerFactory.create42(new DocumentTypeManager(), buffer.getBuf()), documentType, Document.SERIALIZED_VERSION);
+        FieldUpdate deserializedUpdate = new FieldUpdate(DocumentDeserializerFactory.create6(new DocumentTypeManager(), buffer.getBuf()), documentType, Document.SERIALIZED_VERSION);
         assertEquals("'field1' [add value1 1]", deserializedUpdate.toString());
     }
 
     @Test
     public void testClearSerialization() {
         FieldUpdate update = FieldUpdate.createClear(field);
-        DocumentSerializer buffer = DocumentSerializerFactory.create42();
+        DocumentSerializer buffer = DocumentSerializerFactory.create6();
         update.serialize(buffer);
 
         buffer.getBuf().rewind();
-        FieldUpdate deserializedUpdate = new FieldUpdate(DocumentDeserializerFactory.create42(new DocumentTypeManager(), buffer.getBuf()), documentType, Document.SERIALIZED_VERSION);
+        FieldUpdate deserializedUpdate = new FieldUpdate(DocumentDeserializerFactory.create6(new DocumentTypeManager(), buffer.getBuf()), documentType, Document.SERIALIZED_VERSION);
 
         assertEquals("'field1' [clear]", deserializedUpdate.toString());
     }

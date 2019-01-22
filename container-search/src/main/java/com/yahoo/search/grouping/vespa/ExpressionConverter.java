@@ -85,7 +85,6 @@ import com.yahoo.search.grouping.request.XorAggregator;
 import com.yahoo.search.grouping.request.XorBitFunction;
 import com.yahoo.search.grouping.request.XorFunction;
 import com.yahoo.search.grouping.request.YearFunction;
-import com.yahoo.search.grouping.request.YmumValue;
 import com.yahoo.search.grouping.request.ZCurveXFunction;
 import com.yahoo.search.grouping.request.ZCurveYFunction;
 import com.yahoo.searchlib.aggregation.AggregationResult;
@@ -115,7 +114,6 @@ import com.yahoo.searchlib.expression.FloatBucketResultNode;
 import com.yahoo.searchlib.expression.FloatBucketResultNodeVector;
 import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.GetDocIdNamespaceSpecificFunctionNode;
-import com.yahoo.searchlib.expression.GetYMUMChecksumFunctionNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNodeVector;
 import com.yahoo.searchlib.expression.IntegerResultNode;
@@ -521,9 +519,6 @@ class ExpressionConverter {
         if (exp instanceof XorBitFunction) {
             return new XorBitFunctionNode().setNumBits(((XorBitFunction)exp).getNumBits())
                                            .addArg(toExpressionNode(((XorBitFunction)exp).getArg(0)));
-        }
-        if (exp instanceof YmumValue) {
-            return new GetYMUMChecksumFunctionNode();
         }
         throw new UnsupportedOperationException("Can not convert '" + exp + "' of class " + exp.getClass().getName() +
                                                 " to an expression.");

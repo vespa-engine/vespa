@@ -2,8 +2,7 @@
 namespace=container
 
 ### All params must be flagged as 'restart' because this config is manually
-### retrieved by ConfiguredApplication.start to init the rpc server in
-### com.yahoo.container.Server.
+### retrieved by ConfiguredApplication.start to init the rpc server
 
 ## filedistributor rpc configuration
 filedistributor.configid reference default="" restart
@@ -19,10 +18,6 @@ rpc.host string default="" restart
 
 ## The id this service should register itself with in slobrok
 rpc.slobrokId string default="" restart
-
-## Whether to obtain coverage reports by default. This can be overridden with
-## the 'reportcoverage' HTTP parameter.
-coveragereports bool default=false restart
 
 ## A unique identifier string for this QRS. The only guarantee given is
 ## this string will be unique for every QRS in a Vespa application.

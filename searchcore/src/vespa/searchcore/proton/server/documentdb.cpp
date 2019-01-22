@@ -20,7 +20,6 @@
 #include <vespa/searchcore/proton/feedoperation/noopoperation.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
-#include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
@@ -155,7 +154,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _writeFilter(),
       _feedHandler(_writeService, tlsSpec, docTypeName, _state, *this, _writeFilter, *this, tlsDirectWriter),
       _subDBs(*this, *this, _feedHandler, _docTypeName, _writeService, warmupExecutor,
-              sharedExecutor, fileHeaderContext, metricsWireService, getMetricsCollection(),
+              sharedExecutor, fileHeaderContext, metricsWireService, getMetrics(),
               queryLimiter, clock, _configMutex, _baseDir, makeSubDBConfig(protonCfg), hwInfo),
       _maintenanceController(_writeService.master(), sharedExecutor, _docTypeName),
       _visibility(_feedHandler, _writeService, _feedView),
@@ -547,12 +546,9 @@ DocumentDB::close()
     stopMaintenance();
 
     // The attributes in the ready sub db is also the total set of attributes.
-    DocumentDBTaggedMetrics &metrics = getMetricsCollection().getTaggedMetrics();
-    LegacyDocumentDBMetrics &legacyMetrics = getMetricsCollection().getLegacyMetrics();
-    AttributeMetricsCollection ready(metrics.ready.attributes, legacyMetrics.ready.attributes);
-    AttributeMetricsCollection notReady(metrics.notReady.attributes, legacyMetrics.notReady.attributes);
-    _metricsWireService.cleanAttributes(ready, &legacyMetrics.attributes);
-    _metricsWireService.cleanAttributes(notReady, nullptr);
+    DocumentDBTaggedMetrics &metrics = getMetrics();
+    _metricsWireService.cleanAttributes(metrics.ready.attributes);
+    _metricsWireService.cleanAttributes(metrics.notReady.attributes);
     _writeService.sync();
     masterExecute([this] () { closeSubDBs(); } );
     _writeService.sync();
@@ -1030,7 +1026,7 @@ DocumentDB::notifyAllBucketsChanged()
 }
 
 void
-DocumentDB::updateMetrics(DocumentDBMetricsCollection &metrics)
+DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics)
 {
     if (_state.getState() < DDBState::State::REPLAY_TRANSACTION_LOG) {
         return;

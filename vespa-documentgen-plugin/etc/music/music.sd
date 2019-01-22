@@ -7,33 +7,25 @@ search music {
 
     field title type string {
       indexing: summary | index   # How this field should be indexed
-      # index-to: title, default    # Create two indexes
       weight: 75 # Ranking importancy of this field, used by the built in nativeRank feature
-      header
     }
 
     field artist type string {
       indexing: summary | attribute | index
-      # index-to: artist, default
-
       weight: 25
-      header
     }
 
     field year type int {
       indexing: summary | attribute
-      header
     }
 
     # Increase query
     field popularity type int {
       indexing: summary | attribute
-      body
     }
 
     field url type uri {
       indexing: summary | index
-      header
     }
 
   }

@@ -41,7 +41,7 @@ public class VespaMetricSet {
 
         metrics.add(new Metric("sentinel.restarts.count"));
         metrics.add(new Metric("sentinel.totalRestarts.last"));
-        metrics.add(new Metric("sentinel.uptime.last", "sentinel.uptime"));
+        metrics.add(new Metric("sentinel.uptime.last"));
 
         metrics.add(new Metric("sentinel.running.count"));
         metrics.add(new Metric("sentinel.running.last"));
@@ -51,28 +51,28 @@ public class VespaMetricSet {
 
     private static Set<Metric> getOtherMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
-        metrics.add(new Metric("slobrok.heartbeats.failed.count", "slobrok.heartbeats.failed"));
-        metrics.add(new Metric("logd.processed.lines.count", "logd.processed.lines"));
+        metrics.add(new Metric("slobrok.heartbeats.failed.count"));
+        metrics.add(new Metric("logd.processed.lines.count"));
         return metrics;
     }
 
     private static Set<Metric> getConfigServerMetrics() {
         Set<Metric> metrics =new LinkedHashSet<>();
 
-        metrics.add(new Metric("configserver.requests.count", "configserver.requests"));
-        metrics.add(new Metric("configserver.failedRequests.count", "configserver.failedRequests"));
-        metrics.add(new Metric("configserver.latency.average", "configserver.latency"));
-        metrics.add(new Metric("configserver.cacheConfigElems.last", "configserver.cacheConfigElems"));
-        metrics.add(new Metric("configserver.cacheChecksumElems.last", "configserver.cacheChecksumElems"));
-        metrics.add(new Metric("configserver.hosts.last", "configserver.hosts"));
-        metrics.add(new Metric("configserver.delayedResponses.count", "configserver.delayedResponses"));
-        metrics.add(new Metric("configserver.sessionChangeErrors.count", "configserver.sessionChangeErrors"));
+        metrics.add(new Metric("configserver.requests.count"));
+        metrics.add(new Metric("configserver.failedRequests.count"));
+        metrics.add(new Metric("configserver.latency.average"));
+        metrics.add(new Metric("configserver.cacheConfigElems.last"));
+        metrics.add(new Metric("configserver.cacheChecksumElems.last"));
+        metrics.add(new Metric("configserver.hosts.last"));
+        metrics.add(new Metric("configserver.delayedResponses.count"));
+        metrics.add(new Metric("configserver.sessionChangeErrors.count"));
 
-        metrics.add(new Metric("configserver.zkZNodes.last", "configserver.zkZNodes"));
-        metrics.add(new Metric("configserver.zkAvgLatency.last", "configserver.zkAvgLatency"));
-        metrics.add(new Metric("configserver.zkMaxLatency.last", "configserver.zkMaxLatency"));
-        metrics.add(new Metric("configserver.zkConnections.last", "configserver.zkConnections"));
-        metrics.add(new Metric("configserver.zkOutstandingRequests.last", "configserver.zkOutstandingRequests"));
+        metrics.add(new Metric("configserver.zkZNodes.last"));
+        metrics.add(new Metric("configserver.zkAvgLatency.last"));
+        metrics.add(new Metric("configserver.zkMaxLatency.last"));
+        metrics.add(new Metric("configserver.zkConnections.last"));
+        metrics.add(new Metric("configserver.zkOutstandingRequests.last"));
 
         return metrics;
     }
@@ -80,7 +80,7 @@ public class VespaMetricSet {
     private static Set<Metric> getContainerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric("handled.requests.count", "handled.requests"));
+        metrics.add(new Metric("handled.requests.count"));
         metrics.add(new Metric("handled.latency.average"));
         metrics.add(new Metric("handled.latency.max"));
 
@@ -126,7 +126,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.deactivated_containers.total.last"));
         metrics.add(new Metric("jdisc.deactivated_containers.with_retained_refs.last"));
 
-        metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last", "athenz-tenant-cert.expiry.seconds"));
+        metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last"));
 
         metrics.add(new Metric("jdisc.http.request.prematurely_closed.rate"));
 
@@ -154,7 +154,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("cluster-controller.retired.count.last"));
         metrics.add(new Metric("cluster-controller.stopping.count.last"));
         metrics.add(new Metric("cluster-controller.up.count.last"));
-        metrics.add(new Metric("cluster-controller.cluster-state-change.count", "content.cluster-controller.cluster-state-change.count"));
+        metrics.add(new Metric("cluster-controller.cluster-state-change.count"));
 
         metrics.add(new Metric("cluster-controller.is-master.last"));
         // TODO(hakonhall): Update this name once persistent "count" metrics has been implemented.
@@ -168,7 +168,7 @@ public class VespaMetricSet {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         // per chain
-        metrics.add(new Metric("documents_processed.rate", "documents_processed"));
+        metrics.add(new Metric("documents_processed.rate"));
 
         return metrics;
     }
@@ -176,40 +176,40 @@ public class VespaMetricSet {
     private static Set<Metric> getQrserverMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric("peak_qps.max", "peak_qps"));
-        metrics.add(new Metric("search_connections.average", "search_connections"));
-        metrics.add(new Metric("active_queries.average", "active_queries"));
+        metrics.add(new Metric("peak_qps.max"));
+        metrics.add(new Metric("search_connections.average"));
+        metrics.add(new Metric("active_queries.average"));
         metrics.add(new Metric("feed.latency.average"));
-        metrics.add(new Metric("queries.rate", "queries"));
+        metrics.add(new Metric("queries.rate"));
         metrics.add(new Metric("query_container_latency.average"));
-        metrics.add(new Metric("query_latency.average", "mean_query_latency"));
-        metrics.add(new Metric("query_latency.max", "max_query_latency"));
-        metrics.add(new Metric("query_latency.95percentile", "95p_query_latency"));
-        metrics.add(new Metric("query_latency.99percentile", "99p_query_latency"));
-        metrics.add(new Metric("failed_queries.rate", "failed_queries"));
-        metrics.add(new Metric("degraded_queries.rate", "degraded_queries"));
-        metrics.add(new Metric("hits_per_query.average", "hits_per_query"));
+        metrics.add(new Metric("query_latency.average"));
+        metrics.add(new Metric("query_latency.max"));
+        metrics.add(new Metric("query_latency.95percentile"));
+        metrics.add(new Metric("query_latency.99percentile"));
+        metrics.add(new Metric("failed_queries.rate"));
+        metrics.add(new Metric("degraded_queries.rate"));
+        metrics.add(new Metric("hits_per_query.average"));
         metrics.add(new Metric("documents_covered.count"));
         metrics.add(new Metric("documents_total.count"));
 
-        metrics.add(new Metric("totalhits_per_query.average", "totalhits_per_query"));
-        metrics.add(new Metric("empty_results.rate", "empty_results"));
+        metrics.add(new Metric("totalhits_per_query.average"));
+        metrics.add(new Metric("empty_results.rate"));
         metrics.add(new Metric("requestsOverQuota.rate"));
         metrics.add(new Metric("requestsOverQuota.count"));
 
         // Errors from qrserver
-        metrics.add(new Metric("error.timeout.rate","error.timeout"));
-        metrics.add(new Metric("error.backends_oos.rate","error.backends_oos"));
-        metrics.add(new Metric("error.plugin_failure.rate","error.plugin_failure"));
-        metrics.add(new Metric("error.backend_communication_error.rate","error.backend_communication_error"));
-        metrics.add(new Metric("error.empty_document_summaries.rate","error.empty_document_summaries"));
-        metrics.add(new Metric("error.invalid_query_parameter.rate","error.invalid_query_parameter"));
-        metrics.add(new Metric("error.internal_server_error.rate", "error.internal_server_error"));
-        metrics.add(new Metric("error.misconfigured_server.rate","error.misconfigured_server"));
-        metrics.add(new Metric("error.invalid_query_transformation.rate","error.invalid_query_transformation"));
-        metrics.add(new Metric("error.result_with_errors.rate","error.result_with_errors"));
-        metrics.add(new Metric("error.unspecified.rate","error.unspecified"));
-        metrics.add(new Metric("error.unhandled_exception.rate","error.unhandled_exception"));
+        metrics.add(new Metric("error.timeout.rate"));
+        metrics.add(new Metric("error.backends_oos.rate"));
+        metrics.add(new Metric("error.plugin_failure.rate"));
+        metrics.add(new Metric("error.backend_communication_error.rate"));
+        metrics.add(new Metric("error.empty_document_summaries.rate"));
+        metrics.add(new Metric("error.invalid_query_parameter.rate"));
+        metrics.add(new Metric("error.internal_server_error.rate"));
+        metrics.add(new Metric("error.misconfigured_server.rate"));
+        metrics.add(new Metric("error.invalid_query_transformation.rate"));
+        metrics.add(new Metric("error.result_with_errors.rate"));
+        metrics.add(new Metric("error.unspecified.rate"));
+        metrics.add(new Metric("error.unhandled_exception.rate"));
 
         return metrics;
     }
@@ -217,18 +217,18 @@ public class VespaMetricSet {
     private static Set<Metric> getSearchNodeMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric("proton.numstoreddocs.last", "documents_total"));
-        metrics.add(new Metric("proton.numindexeddocs.last", "documents_ready"));
-        metrics.add(new Metric("proton.numactivedocs.last", "documents_active"));
-        metrics.add(new Metric("proton.numremoveddocs.last", "documents_removed"));
+        metrics.add(new Metric("content.proton.documentdb.documents.total.last"));
+        metrics.add(new Metric("content.proton.documentdb.documents.ready.last"));
+        metrics.add(new Metric("content.proton.documentdb.documents.active.last"));
+        metrics.add(new Metric("content.proton.documentdb.documents.removed.last"));
 
-        metrics.add(new Metric("proton.docsinmemory.last", "documents_inmemory"));
-        metrics.add(new Metric("proton.diskusage.last", "diskusage"));
-        metrics.add(new Metric("proton.memoryusage.max", "content.proton.memoryusage.max"));
-        metrics.add(new Metric("proton.transport.query.count.rate", "query_requests"));
-        metrics.add(new Metric("proton.docsum.docs.rate", "document_requests"));
-        metrics.add(new Metric("proton.docsum.latency.average", "content.proton.transport.docsum.latency.average"));
-        metrics.add(new Metric("proton.transport.query.latency.average", "query_latency"));
+        metrics.add(new Metric("content.proton.documentdb.index.docs_in_memory.last"));
+        metrics.add(new Metric("content.proton.documentdb.disk_usage.last"));
+        metrics.add(new Metric("content.proton.documentdb.memory_usage.allocated_bytes.max"));
+        metrics.add(new Metric("content.proton.transport.query.count.rate"));
+        metrics.add(new Metric("content.proton.docsum.docs.rate"));
+        metrics.add(new Metric("content.proton.docsum.latency.average"));
+        metrics.add(new Metric("content.proton.transport.query.latency.average"));
 
         // jobs
         metrics.add(new Metric("content.proton.documentdb.job.total.average"));
@@ -343,10 +343,10 @@ public class VespaMetricSet {
     private static Set<Metric> getStorageMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric("vds.datastored.alldisks.docs.average","docs"));
-        metrics.add(new Metric("vds.datastored.alldisks.bytes.average","bytes"));
-        metrics.add(new Metric("vds.visitor.allthreads.averagevisitorlifetime.sum.average","visitorlifetime"));
-        metrics.add(new Metric("vds.visitor.allthreads.averagequeuewait.sum.average","visitorqueuewait"));
+        metrics.add(new Metric("vds.datastored.alldisks.docs.average"));
+        metrics.add(new Metric("vds.datastored.alldisks.bytes.average"));
+        metrics.add(new Metric("vds.visitor.allthreads.averagevisitorlifetime.sum.average"));
+        metrics.add(new Metric("vds.visitor.allthreads.averagequeuewait.sum.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.put.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.get.sum.count.rate"));
@@ -354,12 +354,12 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.createiterator.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.visit.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_location.sum.count.rate"));
-        metrics.add(new Metric("vds.filestor.alldisks.queuesize.average","diskqueuesize"));
-        metrics.add(new Metric("vds.filestor.alldisks.averagequeuewait.sum.average","diskqueuewait"));
+        metrics.add(new Metric("vds.filestor.alldisks.queuesize.average"));
+        metrics.add(new Metric("vds.filestor.alldisks.averagequeuewait.sum.average"));
 
         metrics.add(new Metric("vds.visitor.allthreads.queuesize.count.average"));
         metrics.add(new Metric("vds.visitor.allthreads.completed.sum.average"));
-        metrics.add(new Metric("vds.visitor.allthreads.created.sum.rate","visit"));
+        metrics.add(new Metric("vds.visitor.allthreads.created.sum.rate"));
         metrics.add(new Metric("vds.visitor.allthreads.averagemessagesendtime.sum.average"));
         metrics.add(new Metric("vds.visitor.allthreads.averageprocessingtime.sum.average"));
 
@@ -397,18 +397,18 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.idealstate.buckets_toomanycopies.average"));
         metrics.add(new Metric("vds.idealstate.buckets.average"));
         metrics.add(new Metric("vds.idealstate.buckets_notrusted.average"));
-        metrics.add(new Metric("vds.idealstate.delete_bucket.done_ok.rate","deleteok"));
-        metrics.add(new Metric("vds.idealstate.delete_bucket.done_failed.rate","deletefailed"));
-        metrics.add(new Metric("vds.idealstate.delete_bucket.pending.average","deletepending"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.done_ok.rate","mergeok"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.done_failed.rate","mergefailed"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.pending.average","mergepending"));
-        metrics.add(new Metric("vds.idealstate.split_bucket.done_ok.rate","splitok"));
-        metrics.add(new Metric("vds.idealstate.split_bucket.done_failed.rate","splitfailed"));
-        metrics.add(new Metric("vds.idealstate.split_bucket.pending.average","splitpending"));
-        metrics.add(new Metric("vds.idealstate.join_bucket.done_ok.rate","joinok"));
-        metrics.add(new Metric("vds.idealstate.join_bucket.done_failed.rate","joinfailed"));
-        metrics.add(new Metric("vds.idealstate.join_bucket.pending.average","joinpending"));
+        metrics.add(new Metric("vds.idealstate.delete_bucket.done_ok.rate"));
+        metrics.add(new Metric("vds.idealstate.delete_bucket.done_failed.rate"));
+        metrics.add(new Metric("vds.idealstate.delete_bucket.pending.average"));
+        metrics.add(new Metric("vds.idealstate.merge_bucket.done_ok.rate"));
+        metrics.add(new Metric("vds.idealstate.merge_bucket.done_failed.rate"));
+        metrics.add(new Metric("vds.idealstate.merge_bucket.pending.average"));
+        metrics.add(new Metric("vds.idealstate.split_bucket.done_ok.rate"));
+        metrics.add(new Metric("vds.idealstate.split_bucket.done_failed.rate"));
+        metrics.add(new Metric("vds.idealstate.split_bucket.pending.average"));
+        metrics.add(new Metric("vds.idealstate.join_bucket.done_ok.rate"));
+        metrics.add(new Metric("vds.idealstate.join_bucket.done_failed.rate"));
+        metrics.add(new Metric("vds.idealstate.join_bucket.pending.average"));
         metrics.add(new Metric("vds.idealstate.garbage_collection.done_ok.rate"));
         metrics.add(new Metric("vds.idealstate.garbage_collection.done_failed.rate"));
         metrics.add(new Metric("vds.idealstate.garbage_collection.pending.average"));

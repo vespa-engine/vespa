@@ -4,7 +4,6 @@ package com.yahoo.prelude.fastsearch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.data.access.Inspector;
-import com.yahoo.container.search.LegacyEmulationConfig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,8 +40,7 @@ public class DocsumDefinition {
         this.fieldNameToIndex = fieldNameToIndexBuilder.build();
     }
 
-    // TODO: Remove LegacyEmulationConfig (the config, not just the usage) on Vespa 7
-    DocsumDefinition(DocumentdbInfoConfig.Documentdb.Summaryclass config, LegacyEmulationConfig emulConfig) {
+    DocsumDefinition(DocumentdbInfoConfig.Documentdb.Summaryclass config) {
         this.name = config.name();
 
         List<DocsumField> fieldsBuilder = new ArrayList<>();
@@ -51,7 +49,7 @@ public class DocsumDefinition {
         for (DocumentdbInfoConfig.Documentdb.Summaryclass.Fields field : config.fields()) {
             // no, don't switch the order of the two next lines :)
             fieldNameToIndexBuilder.put(field.name(), fieldsBuilder.size());
-            fieldsBuilder.add(DocsumField.create(field.name(), field.type(), emulConfig));
+            fieldsBuilder.add(DocsumField.create(field.name(), field.type()));
             if (field.dynamic())
                 dynamic = true;
         }

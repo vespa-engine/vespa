@@ -10,37 +10,24 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.ssl.CustomSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
-import com.yahoo.vespa.model.container.http.ssl.LegacySslProvider;
+import com.yahoo.vespa.model.container.http.ssl.DummySslProvider;
 import org.w3c.dom.Element;
 
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Einar M R Rosenvinge
  * @author mortent
  */
 public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ConnectorFactory>  {
-    private static final Logger log = Logger.getLogger(JettyConnectorBuilder.class.getName());
 
     @Override
     protected ConnectorFactory doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element serverSpec) {
         String name = XmlHelper.getIdString(serverSpec);
         int port = HttpBuilder.readPort(serverSpec, deployState.isHosted(), deployState.getDeployLogger());
 
-        Element legacyServerConfig = XML.getChild(serverSpec, "config");
-        if (legacyServerConfig != null) {
-            String configName = legacyServerConfig.getAttribute("name");
-            if (configName.equals("container.jdisc.config.http-server")) {
-                deployState.getDeployLogger().log(Level.WARNING, "The config 'container.jdisc.config.http-server' is deprecated and will be removed in a later version of Vespa."
-                        + " Please use 'jdisc.http.connector' instead, see http://docs.vespa.ai/documentation/jdisc/http-server-and-filters.html#configuring-jetty-server");
-            } else {
-                legacyServerConfig = null;
-            }
-        }
         SimpleComponent sslProviderComponent = getSslConfigComponents(name, serverSpec);
-        return new ConnectorFactory(name, port, legacyServerConfig, sslProviderComponent);
+        return new ConnectorFactory(name, port, sslProviderComponent);
     }
 
     SimpleComponent getSslConfigComponents(String serverName, Element serverSpec) {
@@ -63,7 +50,7 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
             String bundle = sslProviderConfigurator.getAttribute("bundle");
             return new CustomSslProvider(serverName, className, bundle);
         } else {
-            return new LegacySslProvider(serverName);
+            return new DummySslProvider(serverName);
         }
     }
 }

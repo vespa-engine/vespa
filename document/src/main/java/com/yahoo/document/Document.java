@@ -137,7 +137,7 @@ public class Document extends StructuredFieldValue {
     }
 
     public int getSerializedSize() throws SerializationException {
-        DocumentSerializer data = DocumentSerializerFactory.create42(new GrowableByteBuffer(64 * 1024, 2.0f));
+        DocumentSerializer data = DocumentSerializerFactory.create6(new GrowableByteBuffer(64 * 1024, 2.0f));
         data.write(this);
         return data.getBuf().position();
     }
@@ -149,7 +149,7 @@ public class Document extends StructuredFieldValue {
     public final int getApproxSize() { return 4096; }
 
     public void serialize(OutputStream out) throws SerializationException {
-        DocumentSerializer writer = DocumentSerializerFactory.create42(new GrowableByteBuffer(64 * 1024, 2.0f));
+        DocumentSerializer writer = DocumentSerializerFactory.create6(new GrowableByteBuffer(64 * 1024, 2.0f));
         writer.write(this);
         GrowableByteBuffer data = writer.getBuf();
         byte[] array;
@@ -343,38 +343,6 @@ public class Document extends StructuredFieldValue {
 
     public void onSerialize(Serializer data) throws SerializationException {
         serialize((DocumentWriter)data);
-    }
-
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    public void serializeHeader(Serializer data) throws SerializationException {
-        if (data instanceof DocumentWriter) {
-            if (data instanceof com.yahoo.document.serialization.VespaDocumentSerializer42) {
-                ((com.yahoo.document.serialization.VespaDocumentSerializer42)data).setHeaderOnly(true);
-            }
-            serialize((DocumentWriter)data);
-        } else if (data instanceof BufferSerializer) {
-            serialize(DocumentSerializerFactory.create42(((BufferSerializer) data).getBuf(), true));
-        } else {
-            DocumentSerializer fw = DocumentSerializerFactory.create42(new GrowableByteBuffer(), true);
-            serialize(fw);
-            data.put(null, fw.getBuf().getByteBuffer());
-        }
-    }
-
-    @Deprecated
-    public void serializeBody(Serializer data) throws SerializationException {
-        if (getBody().getFieldCount() > 0) {
-            if (data instanceof FieldWriter) {
-                getBody().serialize(new Field("body", getBody().getDataType()), (FieldWriter) data);
-            } else if (data instanceof BufferSerializer) {
-                getBody().serialize(new Field("body", getBody().getDataType()), DocumentSerializerFactory.create42(((BufferSerializer) data).getBuf()));
-            } else {
-                DocumentSerializer fw = DocumentSerializerFactory.create42(new GrowableByteBuffer());
-                getBody().serialize(new Field("body", getBody().getDataType()), fw);
-                data.put(null, fw.getBuf().getByteBuffer());
-            }
-        }
     }
 
     @Override

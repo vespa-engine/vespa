@@ -8,12 +8,12 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
-        <version>6-SNAPSHOT</version>
+        <version>7-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>container-dependencies-enforcer</artifactId>
-    <version>6-SNAPSHOT</version>
+    <version>7-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <dependencies>
@@ -90,7 +90,6 @@
                                                 <include>com.sun.activation:javax.activation:[1.2.0]:jar:provided</include>
                                                 <include>com.sun.xml.bind:jaxb-core:[${jaxb.version}]:jar:provided</include>
                                                 <include>com.sun.xml.bind:jaxb-impl:[${jaxb.version}]:jar:provided</include>
-                                                <include>commons-codec:commons-codec:[1.4]:jar:provided</include>
                                                 <include>commons-daemon:commons-daemon:[1.0.3]:jar:provided</include>
                                                 <include>commons-logging:commons-logging:[1.1.1]:jar:provided</include>
                                                 <include>javax.annotation:javax.annotation-api:[${javax.annotation-api.version}]:jar:provided</include>
@@ -104,8 +103,6 @@
                                                 <include>org.apache.felix:org.apache.felix.framework:[${felix.version}]:jar:provided</include>
                                                 <include>org.apache.felix:org.apache.felix.log:[1.0.1]:jar:provided</include>
                                                 <include>org.apache.felix:org.apache.felix.main:[${felix.version}]:jar:provided</include>
-                                                <include>org.apache.httpcomponents:httpclient:[${apache.httpclient.version}]:jar:provided</include>
-                                                <include>org.apache.httpcomponents:httpcore:[${apache.httpcore.version}]:jar:provided</include>
                                                 <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:provided</include>
                                                 <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:provided</include>
                                                 <include>org.eclipse.jetty:jetty-http:[${jetty.version}]:jar:provided</include>

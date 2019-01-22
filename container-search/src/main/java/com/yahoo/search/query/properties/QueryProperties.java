@@ -29,12 +29,6 @@ import java.util.Map;
  */
 public class QueryProperties extends Properties {
 
-    /** @deprecated use Query.nativeProperties */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public static final CompoundName[] PER_SOURCE_QUERY_PROPERTIES =
-            Query.nativeProperties.toArray(new CompoundName[] {});
-
     private Query query;
     private final CompiledQueryProfileRegistry profileRegistry;
 
@@ -119,7 +113,6 @@ public class QueryProperties extends Properties {
         else if (key.size()==2 && key.first().equals(Presentation.PRESENTATION)) {
             if (key.last().equals(Presentation.BOLDING)) return query.getPresentation().getBolding();
             if (key.last().equals(Presentation.SUMMARY)) return query.getPresentation().getSummary();
-            if (key.last().equals(Presentation.REPORT_COVERAGE)) return true; // TODO: Remove this line on Vespa 7
             if (key.last().equals(Presentation.FORMAT)) return query.getPresentation().getFormat();
             if (key.last().equals(Presentation.TIMING)) return query.getPresentation().getTiming();
             if (key.last().equals(Presentation.SUMMARY_FIELDS)) return query.getPresentation().getSummaryFields();
@@ -217,9 +210,9 @@ public class QueryProperties extends Properties {
                 }
                 else if (key.size() == 3 && key.get(1).equals(Ranking.SOFTTIMEOUT)) {
                     SoftTimeout soft = ranking.getSoftTimeout();
-                    if (key.last().equals(SoftTimeout.ENABLE)) soft.setEnable(asBoolean(value, false));
-                    if (key.last().equals(SoftTimeout.FACTOR)) soft.setFactor(asDouble(value, 0.50));
-                    if (key.last().equals(SoftTimeout.TAILCOST)) soft.setTailcost(asDouble(value, 0.10));
+                    if (key.last().equals(SoftTimeout.ENABLE)) soft.setEnable(asBoolean(value, true));
+                    if (key.last().equals(SoftTimeout.FACTOR)) soft.setFactor(asDouble(value, null));
+                    if (key.last().equals(SoftTimeout.TAILCOST)) soft.setTailcost(asDouble(value, null));
                 }
                 else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
                     Matching matching = ranking.getMatching();
@@ -249,7 +242,7 @@ public class QueryProperties extends Properties {
                     query.getPresentation().setTiming(asBoolean(value, true));
                 else if (key.last().equals(Presentation.SUMMARY_FIELDS))
                     query.getPresentation().setSummaryFields(asString(value,""));
-                else if ( ! key.last().equals(Presentation.REPORT_COVERAGE)) // TODO: Change this line to "else" on Vespa 7
+                else
                     throwIllegalParameter(key.last(), Presentation.PRESENTATION);
             }
             else if (key.size()==2 && key.first().equals(Select.SELECT)) {

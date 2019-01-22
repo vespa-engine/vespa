@@ -3,6 +3,7 @@
 #include "docsumwriter.h"
 #include "docsumstate.h"
 #include "docsum_field_writer_state.h"
+#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
@@ -78,8 +79,14 @@ DynamicDocsumWriter::resolveInputClass(ResolveClassInfo &rci, uint32_t id) const
     }
 }
 
-static void convertEntry(GetDocsumsState *state, const ResConfigEntry *resCfg, const ResEntry *entry,
-                         Inserter &inserter, Slime &slime)
+constexpr uint32_t default_32bits_int = search::attribute::getUndefined<int32_t>();
+constexpr uint64_t default_64bits_int = search::attribute::getUndefined<int64_t>();
+
+static void convertEntry(GetDocsumsState *state,
+                         const ResConfigEntry *resCfg,
+                         const ResEntry *entry,
+                         Inserter &inserter,
+                         Slime &slime)
 {
     using vespalib::slime::BinaryFormat;
     const char *ptr;
@@ -90,30 +97,40 @@ static void convertEntry(GetDocsumsState *state, const ResConfigEntry *resCfg, c
     case RES_INT:
     case RES_SHORT:
     case RES_BYTE:
-        inserter.insertLong(entry->_intval);
+        if (entry->_intval != default_32bits_int) {
+            inserter.insertLong(entry->_intval);
+        }
         break;
     case RES_BOOL:
         inserter.insertBool(entry->_intval != 0);
         break;
     case RES_FLOAT:
     case RES_DOUBLE:
-        inserter.insertDouble(entry->_doubleval);
+        if (! std::isnan(entry->_doubleval)) {
+            inserter.insertDouble(entry->_doubleval);
+        }
         break;
     case RES_INT64:
-        inserter.insertLong(entry->_int64val);
+        if (entry->_int64val != default_64bits_int) {
+            inserter.insertLong(entry->_int64val);
+        }
         break;
     case RES_STRING:
     case RES_LONG_STRING:
     case RES_FEATUREDATA:
     case RES_XMLSTRING:
         entry->_resolve_field(&ptr, &len, &state->_docSumFieldSpace);
-        inserter.insertString(Memory(ptr, len));
+        if (len != 0) {
+            inserter.insertString(Memory(ptr, len));
+        }
         break;
     case RES_DATA:
     case RES_TENSOR:
     case RES_LONG_DATA:
         entry->_resolve_field(&ptr, &len, &state->_docSumFieldSpace);
-        inserter.insertData(Memory(ptr, len));
+        if (len != 0) {
+            inserter.insertData(Memory(ptr, len));
+        }
         break;
     case RES_JSONSTRING:
         entry->_resolve_field(&ptr, &len, &state->_docSumFieldSpace);
@@ -162,10 +179,10 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
             const Memory field_name(outCfg->_bindname.data(), outCfg->_bindname.size());
             ObjectInserter inserter(docsum, field_name);
             if (writer != nullptr) {
-                //TODO: Need to add test for writer->isDefaultValue
-                writer->insertField(docid, &gres, state, outCfg->_type, inserter);
+                if (! writer->isDefaultValue(docid, state)) {
+                    writer->insertField(docid, &gres, state, outCfg->_type, inserter);
+                }
             } else {
-                //TODO: Need to add similar test as writer->isDefaultValue
                 if (rci.inputClass == rci.outputClass) {
                     convertEntry(state, outCfg, gres.GetEntry(i), inserter, slime);
                 } else {
