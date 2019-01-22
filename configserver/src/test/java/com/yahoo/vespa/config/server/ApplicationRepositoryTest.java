@@ -143,12 +143,6 @@ public class ApplicationRepositoryTest {
         wireMock.stop();
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void getLogsNoContainerOnLogServerHostShouldThrowException() {
-        deployApp(testApp);
-        applicationRepository.getLogs(applicationId(), "");
-    }
-
     @Test
     public void deleteUnusedTenants() {
         // Set clock to epoch plus hour, as mock curator will always return epoch as creation time
