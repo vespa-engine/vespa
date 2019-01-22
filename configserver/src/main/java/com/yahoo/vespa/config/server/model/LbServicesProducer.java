@@ -71,7 +71,8 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         for (HostInfo hostInfo : app.getModel().getHosts()) {
             final Optional<ServiceInfo> container = hostInfo.getServices().stream().filter(
                     serviceInfo -> serviceInfo.getServiceType().equals("container") ||
-                            serviceInfo.getServiceType().equals("qrserver")).
+                                   serviceInfo.getServiceType().equals("docprocservice") ||
+                                   serviceInfo.getServiceType().equals("qrserver")).
                     findAny();
             if (container.isPresent()) {
                 activeRotation |= Boolean.valueOf(container.get().getProperty("activeRotation").orElse("false"));
