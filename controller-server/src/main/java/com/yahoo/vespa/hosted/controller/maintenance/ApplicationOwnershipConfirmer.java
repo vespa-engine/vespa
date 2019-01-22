@@ -51,11 +51,11 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                        .filter(application -> application.createdAt().isBefore(controller().clock().instant().minus(Duration.ofDays(90))))
                        .forEach(application -> {
                            try {
-                               Tenant tenant = ownerOf(application.id());
+                               Tenant tenant = tenantOf(application.id());
                                Optional<IssueId> ourIssueId = application.ownershipIssueId();
                                Contact contact = tenant.contact().orElseThrow(RuntimeException::new);
-                               User asignee = tenant instanceof UserTenant ? userFor(tenant) : null;
-                               ourIssueId = ownershipIssues.confirmOwnership(ourIssueId, application.id(), asignee, contact);
+                               User assignee = determineAssignee(tenant, application);
+                               ourIssueId = ownershipIssues.confirmOwnership(ourIssueId, application.id(), assignee, contact);
                                ourIssueId.ifPresent(issueId -> store(issueId, application.id()));
                            }
                            catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
@@ -71,7 +71,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
             application.ownershipIssueId().ifPresent(issueId -> {
                 try {
                     Optional<Contact> contact = Optional.of(application.id())
-                            .map(this::ownerOf)
+                            .map(this::tenantOf)
                             .filter(t -> t instanceof AthenzTenant)
                             .flatMap(Tenant::contact);
                      ownershipIssues.ensureResponse(issueId, contact);
@@ -98,7 +98,13 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                 });
     }
 
-    private Tenant ownerOf(ApplicationId applicationId) {
+    private User determineAssignee(Tenant tenant, Application application) {
+        return application.owner().orElse(
+                tenant instanceof UserTenant ? userFor(tenant) : null
+        );
+    }
+
+    private Tenant tenantOf(ApplicationId applicationId) {
         return controller().tenants().tenant(applicationId.tenant())
                 .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
     }
