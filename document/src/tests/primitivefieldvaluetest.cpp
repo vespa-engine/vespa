@@ -18,12 +18,14 @@ struct PrimitiveFieldValueTest : public CppUnit::TestFixture {
     void testRaw();
     void testNumerics();
     void testFloatDoubleCasts();
+    void testBool();
 
     CPPUNIT_TEST_SUITE(PrimitiveFieldValueTest);
     CPPUNIT_TEST(testLiterals);
     CPPUNIT_TEST(testRaw);
     CPPUNIT_TEST(testNumerics);
     CPPUNIT_TEST(testFloatDoubleCasts);
+    CPPUNIT_TEST(testBool);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -322,6 +324,41 @@ PrimitiveFieldValueTest::testFloatDoubleCasts()
 {
     float inf(std::numeric_limits<float>::infinity());
     CPPUNIT_ASSERT_EQUAL(inf, static_cast<float>(static_cast<double>(inf)));
+}
+
+void
+PrimitiveFieldValueTest::testBool()
+{
+    BoolFieldValue v;
+    CPPUNIT_ASSERT( ! v.getValue() );
+
+    v = BoolFieldValue(true);
+    CPPUNIT_ASSERT(v.getValue());
+
+    v = 0;
+    CPPUNIT_ASSERT( ! v.getValue());
+    v = 1;
+    CPPUNIT_ASSERT(v.getValue());
+
+    v = 0L;
+    CPPUNIT_ASSERT( ! v.getValue());
+    v = 1L;
+    CPPUNIT_ASSERT(v.getValue());
+
+    v = 0.0f;
+    CPPUNIT_ASSERT( ! v.getValue());
+    v = 1.0f;
+    CPPUNIT_ASSERT(v.getValue());
+
+    v = 0.0;
+    CPPUNIT_ASSERT( ! v.getValue());
+    v = 1.0;
+    CPPUNIT_ASSERT(v.getValue());
+
+    v = vespalib::stringref("true");
+    CPPUNIT_ASSERT(v.getValue());
+    v = vespalib::stringref("something not true");
+    CPPUNIT_ASSERT( ! v.getValue());
 }
 
 void
