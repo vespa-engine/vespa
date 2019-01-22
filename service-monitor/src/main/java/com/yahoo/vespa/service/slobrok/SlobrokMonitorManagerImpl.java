@@ -138,7 +138,6 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
 
             case "qrserver":
             case "container":
-            case "docprocservice":
             case "container-clustercontroller":
                 return Optional.of("vespa/service/" + configId.s());
 
