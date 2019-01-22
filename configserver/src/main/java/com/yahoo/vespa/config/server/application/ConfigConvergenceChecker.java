@@ -46,7 +46,6 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     private final static Set<String> serviceTypesToCheck = new HashSet<>(Arrays.asList(
             "container",
             "qrserver",
-            "docprocservice",
             "searchnode",
             "storagenode",
             "distributor"
