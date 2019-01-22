@@ -221,10 +221,6 @@ public class Container extends AbstractService implements
                 myServiceType = "qrserver";
                 return myServiceType;
             }
-            if (cluster.getSearch() == null && cluster.getDocproc() != null) {
-                myServiceType = "docprocservice";
-                return myServiceType;
-            }
         }
         myServiceType = super.getServiceType();
         return myServiceType;
