@@ -2,11 +2,8 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/searchlib/common/feature.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the necessary config to pass from the jaro winkler distance blueprint to the executor.
@@ -68,5 +65,4 @@ private:
     JaroWinklerDistanceConfig _config; // The config for this blueprint.
 };
 
-}}
-
+}

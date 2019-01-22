@@ -3,10 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 class ItemRawScoreExecutor : public fef::FeatureExecutor
 {
@@ -61,6 +59,4 @@ public:
     static HandleVector resolve(const fef::IQueryEnvironment &env, const vespalib::string &label);
 };
 
-} // namespace features
-} // namespace search
-
+}

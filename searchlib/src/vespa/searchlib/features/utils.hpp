@@ -6,9 +6,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-namespace search {
-namespace features {
-namespace util {
+namespace search::features::util {
 
 template <typename T>
 T strToNum(vespalib::stringref str)
@@ -22,7 +20,5 @@ T strToNum(vespalib::stringref str)
     return retval;
 }
 
-} // namespace util
-} // namespace features
-} // namespace search
+}
 

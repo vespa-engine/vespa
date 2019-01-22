@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/util/rand48.h>
 
 namespace search::features {

@@ -6,8 +6,7 @@
 #include "queryterm.h"
 #include "termdistancecalculator.h"
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * This struct contains parameters used by the executor.
@@ -98,7 +97,4 @@ public:
     const NativeProximityParams & getParams() const { return _params; }
 };
 
-
-} // namespace features
-} // namespace search
-
+}

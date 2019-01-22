@@ -4,18 +4,14 @@
 
 #include "utils.h"
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/attribute/multivalue.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-namespace search {
-namespace fef {
-class Property;
-}
+namespace search::fef { class Property; }
 
-namespace features {
+namespace search::features {
 
 namespace dotproduct {
 
@@ -246,7 +242,7 @@ public:
     SparseDotProductByContentFillExecutor(const attribute::IAttributeVector * attribute,
                                           const V & queryVector,
                                           const IV & queryIndexes);
-    ~SparseDotProductByContentFillExecutor();
+    ~SparseDotProductByContentFillExecutor() override;
 private:
     size_t getAttributeValues(uint32_t docid, const AT * & values) final override;
 
@@ -258,7 +254,6 @@ private:
 }
 
 }
-
 
 /**
  * Implements the blueprint for the foreach executor.
@@ -272,7 +267,7 @@ private:
 
 public:
     DotProductBlueprint();
-    ~DotProductBlueprint();
+    ~DotProductBlueprint() override;
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;
 
@@ -281,10 +276,6 @@ public:
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
     void prepareSharedState(const fef::IQueryEnvironment & queryEnv, fef::IObjectStore & objectStore) const override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
-
 };
 
-
-} // namespace features
-} // namespace search
-
+}

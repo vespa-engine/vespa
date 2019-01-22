@@ -1,20 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "text_similarity_feature.h"
+#include <vespa/searchlib/fef/itermdata.h>
+#include <vespa/searchlib/fef/featurenamebuilder.h>
 
-namespace search {
+namespace search::features {
 
 using CollectionType = fef::FieldInfo::CollectionType;
-
-namespace features {
 
 namespace {
 
 struct Term {
-    search::fef::TermFieldHandle handle;
+    fef::TermFieldHandle handle;
     int                          weight;
     int                          index;
-    Term(search::fef::TermFieldHandle handle_in, int weight_in, int index_in)
+    Term(fef::TermFieldHandle handle_in, int weight_in, int index_in)
         : handle(handle_in), weight(weight_in), index(index_in) {}
 };
 
@@ -74,7 +74,7 @@ struct State {
 
 //-----------------------------------------------------------------------------
 
-TextSimilarityExecutor::TextSimilarityExecutor(const search::fef::IQueryEnvironment &env,
+TextSimilarityExecutor::TextSimilarityExecutor(const fef::IQueryEnvironment &env,
                                                uint32_t field_id)
     : _handles(),
       _weights(),
@@ -84,11 +84,11 @@ TextSimilarityExecutor::TextSimilarityExecutor(const search::fef::IQueryEnvironm
 {
     std::vector<Term> terms;
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
-        const search::fef::ITermData *termData = env.getTerm(i);
+        const fef::ITermData *termData = env.getTerm(i);
         if (termData->getWeight().percent() != 0) { // only consider query terms with contribution
-            typedef search::fef::ITermFieldRangeAdapter FRA;
+            typedef fef::ITermFieldRangeAdapter FRA;
             for (FRA iter(*termData); iter.valid(); iter.next()) {
-                const search::fef::ITermFieldData &tfd = iter.get();
+                const fef::ITermFieldData &tfd = iter.get();
                 if (tfd.getFieldId() == field_id) {
                     int term_weight = termData->getWeight().percent();
                     _total_term_weight += term_weight;
@@ -175,14 +175,14 @@ TextSimilarityBlueprint::TextSimilarityBlueprint()
     : Blueprint("textSimilarity"), _field_id(fef::IllegalHandle) {}
 
 void
-TextSimilarityBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                           search::fef::IDumpFeatureVisitor &visitor) const
+TextSimilarityBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
+                                           fef::IDumpFeatureVisitor &visitor) const
 {
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
-        const search::fef::FieldInfo &field = *env.getField(i);
-        if (field.type() == search::fef::FieldType::INDEX) {
+        const fef::FieldInfo &field = *env.getField(i);
+        if (field.type() == fef::FieldType::INDEX) {
             if (!field.isFilter() && field.collection() == CollectionType::SINGLE) {
-                search::fef::FeatureNameBuilder fnb;
+                fef::FeatureNameBuilder fnb;
                 fnb.baseName(getBaseName()).parameter(field.name());
                 visitor.visitDumpFeature(fnb.output(score_output).buildName());
                 visitor.visitDumpFeature(fnb.output(proximity_output).buildName());
@@ -194,17 +194,17 @@ TextSimilarityBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment 
     }
 }
 
-search::fef::Blueprint::UP
+fef::Blueprint::UP
 TextSimilarityBlueprint::createInstance() const
 {
     return Blueprint::UP(new TextSimilarityBlueprint());
 }
 
 bool
-TextSimilarityBlueprint::setup(const search::fef::IIndexEnvironment &env,
-                               const search::fef::ParameterList &params)
+TextSimilarityBlueprint::setup(const fef::IIndexEnvironment &env,
+                               const fef::ParameterList &params)
 {
-    const search::fef::FieldInfo *field = params[0].asField();
+    const fef::FieldInfo *field = params[0].asField();
     _field_id = field->id();
     describeOutput(score_output, "default normalized combination of other outputs");
     describeOutput(proximity_output, "normalized match proximity score");
@@ -215,13 +215,12 @@ TextSimilarityBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::FeatureExecutor &
-TextSimilarityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
+fef::FeatureExecutor &
+TextSimilarityBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     return stash.create<TextSimilarityExecutor>(env, _field_id);
 }
 
 //-----------------------------------------------------------------------------
 
-} // namespace features
-} // namespace search
+}

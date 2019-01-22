@@ -16,9 +16,7 @@
 LOG_SETUP(".features.utils");
 using namespace search::fef;
 
-namespace search {
-namespace features {
-namespace util {
+namespace search::features::util {
 
 feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env, uint32_t termId, feature_t fallback)
 {
@@ -152,6 +150,4 @@ getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string
     return 0;
 }
 
-} // namespace util
-} // namespace features
-} // namespace search
+}

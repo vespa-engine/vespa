@@ -2,11 +2,9 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the executor for the documentage feature outputting the
@@ -42,5 +40,3 @@ public:
 };
 
 }
-}
-

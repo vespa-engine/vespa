@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Utility for parsing a string representation of a weighted set
@@ -24,5 +23,4 @@ public:
     static void parse(const vespalib::string &input, OutputType &output);
 };
 
-} // namespace features
-} // namespace search
+}

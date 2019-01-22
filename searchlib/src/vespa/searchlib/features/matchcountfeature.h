@@ -3,10 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the executor for the matchCount feature for index and
@@ -18,7 +16,7 @@ private:
     std::vector<fef::TermFieldHandle> _handles;
     const fef::MatchData             *_md;
 
-    virtual void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     MatchCountExecutor(uint32_t fieldId, const fef::IQueryEnvironment &env);
@@ -54,6 +52,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-} // namespace features
-} // namespace search
-
+}

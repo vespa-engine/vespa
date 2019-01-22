@@ -9,8 +9,7 @@
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <memory>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Feature executor that returns a constant tensor.
@@ -24,8 +23,8 @@ public:
     ConstantTensorExecutor(vespalib::eval::Value::UP tensor)
         : _tensor(std::move(tensor))
     {}
-    virtual bool isPure() override { return true; }
-    virtual void execute(uint32_t) override {
+    bool isPure() override { return true; }
+    void execute(uint32_t) override {
         outputs().set_object(0, *_tensor);
     }
     static fef::FeatureExecutor &create(std::unique_ptr<vespalib::eval::Tensor> tensor, vespalib::Stash &stash) {
@@ -41,5 +40,4 @@ public:
     }
 };
 
-} // namespace features
-} // namespace search
+}

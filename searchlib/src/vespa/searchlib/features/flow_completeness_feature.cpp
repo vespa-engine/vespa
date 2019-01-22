@@ -1,17 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "flow_completeness_feature.h"
+#include <vespa/searchlib/fef/itermdata.h>
+#include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".features.flowcompleteness");
 
-namespace search {
-namespace features {
+namespace search::features {
 
 //-----------------------------------------------------------------------------
 
-FlowCompletenessExecutor::FlowCompletenessExecutor(const search::fef::IQueryEnvironment &env,
+FlowCompletenessExecutor::FlowCompletenessExecutor(const fef::IQueryEnvironment &env,
                                                    const FlowCompletenessParams &params)
     : _params(params),
       _terms(),
@@ -20,13 +23,13 @@ FlowCompletenessExecutor::FlowCompletenessExecutor(const search::fef::IQueryEnvi
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         LOG(spam, "consider term %u", i);
-        const search::fef::ITermData *termData = env.getTerm(i);
+        const fef::ITermData *termData = env.getTerm(i);
         LOG(spam, "term %u weight %u", i, termData->getWeight().percent());
         if (termData->getWeight().percent() != 0) { // only consider query terms with contribution
-            typedef search::fef::ITermFieldRangeAdapter FRA;
+            typedef fef::ITermFieldRangeAdapter FRA;
             uint32_t j = 0;
             for (FRA iter(*termData); iter.valid(); iter.next()) {
-                const search::fef::ITermFieldData &tfd = iter.get();
+                const fef::ITermFieldData &tfd = iter.get();
                 LOG(spam, "term %u field data %u for field id %u (my field id %u)",
                     i, j++, tfd.getFieldId(), _params.fieldId);
                 if (tfd.getFieldId() == _params.fieldId) {
@@ -184,7 +187,7 @@ FlowCompletenessExecutor::execute(uint32_t)
 {
     assert(_queue.empty());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        const search::fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms[i].termHandle);
+        const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms[i].termHandle);
         Item item(i, tfmd->begin(), tfmd->end());
         LOG(spam, "found tfmd item with %zu positions", (item.end - item.pos));
         if (item.pos != item.end) {
@@ -255,15 +258,15 @@ FlowCompletenessBlueprint::FlowCompletenessBlueprint()
 }
 
 void
-FlowCompletenessBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                             search::fef::IDumpFeatureVisitor &visitor) const
+FlowCompletenessBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
+                                             fef::IDumpFeatureVisitor &visitor) const
 {
 #ifdef notyet
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
-        const search::fef::FieldInfo &field = *env.getField(i);
-        if (field.type() == search::fef::FieldType::INDEX) {
+        const fef::FieldInfo &field = *env.getField(i);
+        if (field.type() == fef::FieldType::INDEX) {
             if (!field.isFilter()) {
-                search::fef::FeatureNameBuilder fnb;
+                fef::FeatureNameBuilder fnb;
                 fnb.baseName(getBaseName()).parameter(field.name());
                 for (size_t out = 0; out < _output.size(); ++out) {
                     visitor.visitDumpFeature(fnb.output(_output[out]).buildName());
@@ -277,25 +280,25 @@ FlowCompletenessBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironmen
 #endif
 }
 
-search::fef::Blueprint::UP
+fef::Blueprint::UP
 FlowCompletenessBlueprint::createInstance() const
 {
     return Blueprint::UP(new FlowCompletenessBlueprint());
 }
 
 bool
-FlowCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
-                                 const search::fef::ParameterList &params)
+FlowCompletenessBlueprint::setup(const fef::IIndexEnvironment &env,
+                                 const fef::ParameterList &params)
 {
-    const search::fef::FieldInfo *field = params[0].asField();
+    const fef::FieldInfo *field = params[0].asField();
 
     _params.fieldId = field->id();
-    const search::fef::Properties &lst = env.getProperties();
-    search::fef::Property obj = lst.lookup(getName(), "fieldCompletenessImportance");
+    const fef::Properties &lst = env.getProperties();
+    fef::Property obj = lst.lookup(getName(), "fieldCompletenessImportance");
     if (obj.found()) {
         _params.fieldCompletenessImportance = vespalib::locale::c::atof(obj.get().c_str());
     }
-    _params.fieldWeight = search::fef::indexproperties::FieldWeight::lookup(lst, field->name());
+    _params.fieldWeight = fef::indexproperties::FieldWeight::lookup(lst, field->name());
 
     describeOutput(_output[0], "combined completeness for best scored element");
     describeOutput(_output[1], "best scored element completeness");
@@ -307,13 +310,12 @@ FlowCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::FeatureExecutor &
-FlowCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
+fef::FeatureExecutor &
+FlowCompletenessBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     return stash.create<FlowCompletenessExecutor>(env, _params);
 }
 
 //-----------------------------------------------------------------------------
 
-} // namespace features
-} // namespace search
+}

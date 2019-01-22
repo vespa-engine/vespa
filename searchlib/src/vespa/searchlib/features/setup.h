@@ -4,8 +4,7 @@
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/iblueprintregistry.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Adds prototypes for all features in this library to the given registry.
@@ -14,6 +13,4 @@ namespace features {
  **/
 void setup_search_features(fef::IBlueprintRegistry & registry);
 
-} // namespace features
-} // namespace search
-
+}

@@ -3,11 +3,9 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/eval/eval/value_type.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the blueprint for the attribute executor.
@@ -32,6 +30,4 @@ public:
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
 };
 
-
-} // namespace features
-} // namespace search
+}

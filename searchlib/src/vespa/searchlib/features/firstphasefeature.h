@@ -4,8 +4,7 @@
 
 #include <vespa/searchlib/fef/blueprint.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the executor outputting the first phase ranking.
@@ -33,6 +32,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-
-} // namespace features
-} // namespace search
+}

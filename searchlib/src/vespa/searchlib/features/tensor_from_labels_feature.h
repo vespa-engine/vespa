@@ -4,8 +4,7 @@
 
 #include "tensor_factory_blueprint.h"
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Blueprint for a rank feature that creates a tensor from an array
@@ -18,18 +17,16 @@ class TensorFromLabelsBlueprint : public TensorFactoryBlueprint
 {
 public:
     TensorFromLabelsBlueprint();
-    virtual search::fef::Blueprint::UP createInstance() const override {
+    fef::Blueprint::UP createInstance() const override {
         return Blueprint::UP(new TensorFromLabelsBlueprint());
     }
-    virtual search::fef::ParameterDescriptions getDescriptions() const override {
-        return search::fef::ParameterDescriptions().
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().
             desc().string().
             desc().string().string();
     }
-    virtual bool setup(const search::fef::IIndexEnvironment &env,
-                       const search::fef::ParameterList &params) override;
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-} // namespace features
-} // namespace search
+}

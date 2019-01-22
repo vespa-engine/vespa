@@ -5,8 +5,7 @@
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/eval/eval/value_type.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the blueprint for the query feature.
@@ -34,6 +33,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-} // namespace features
-} // namespace search
-
+}
