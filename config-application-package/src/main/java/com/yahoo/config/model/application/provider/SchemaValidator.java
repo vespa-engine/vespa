@@ -16,15 +16,20 @@ import org.xml.sax.SAXParseException;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.LineNumberReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.logging.Level;
 
 /**
  * Validates xml files against a schema.
+ * Note: Tested by SchemaValidatorTest in config-model module, since
+ * needed schema files are in that module
  *
  * @author Tony Vaagenes
  */
 public class SchemaValidator {
+    private static final int linesOfContextForErrors = 3;
 
     private final CustomErrorHandler errorHandler = new CustomErrorHandler();
     private final ValidationDriver driver;
@@ -59,7 +64,8 @@ public class SchemaValidator {
     }
 
     public void validate(InputSource inputSource, String fileName)  throws IOException {
-        errorHandler.fileName = (fileName == null ? " input" : fileName);
+        errorHandler.fileName = (fileName == null ? "input" : fileName);
+        errorHandler.reader = inputSource.getCharacterStream();
         try {
             if ( ! driver.validate(inputSource)) {
                 // Shouldn't happen, error handler should have thrown
@@ -68,8 +74,7 @@ public class SchemaValidator {
         } catch (SAXException e) {
             // This should never happen, as it is handled by the ErrorHandler
             // installed for the driver.
-            throw new IllegalArgumentException(
-                    "XML error in " + (fileName == null ? " input" : fileName) + ": " + Exceptions.toMessageString(e));
+            throw new IllegalArgumentException("XML error in " + errorHandler.fileName + ": " + Exceptions.toMessageString(e));
         }
     }
 
@@ -81,6 +86,7 @@ public class SchemaValidator {
 
     private class CustomErrorHandler implements ErrorHandler {
         volatile String fileName;
+        volatile Reader reader;
 
         public void warning(SAXParseException e) {
             deployLogger.log(Level.WARNING, message(e));
@@ -97,8 +103,33 @@ public class SchemaValidator {
         private String message(SAXParseException e) {
             return "XML error in " + fileName + ": " +
                     Exceptions.toMessageString(e)
-                    + " [" + e.getLineNumber() + ":" + e.getColumnNumber() + "]";
+                    + " [" + e.getLineNumber() + ":" + e.getColumnNumber() + "]" +
+                    ", input:\n" + getErrorContext(e.getLineNumber());
         }
+
+        private String getErrorContext(int lineNumberWithError) {
+            if (!(reader instanceof StringReader)) return "";
+
+            int fromLine = Math.max(0, lineNumberWithError - linesOfContextForErrors);
+            int toLine = lineNumberWithError + linesOfContextForErrors;
+
+            LineNumberReader r = new LineNumberReader(reader);
+            StringBuilder sb = new StringBuilder();
+            String line;
+            try {
+                reader.reset();
+                while ((line = r.readLine()) != null) {
+                    int lineNumber = r.getLineNumber();
+                    if (lineNumber >= fromLine && lineNumber <= toLine)
+                        sb.append(lineNumber).append(":").append(line).append("\n");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return sb.toString();
+        }
+
     }
 
 }

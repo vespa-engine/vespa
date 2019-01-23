@@ -3,69 +3,87 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
 import com.yahoo.vespa.config.VespaVersion;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
 
 /**
  * @author hmusum
- * @since 5.1.9
  */
 public class SchemaValidatorTest {
 
-    private static final String okServices = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-            "<services>" +
-            "  <config name=\"standard\">" +
-            "    <basicStruct>" +
-            "      <stringVal>default</stringVal>" +
-            "    </basicStruct>" +
-            "  </config> " +
-            "  <admin version=\"2.0\">" +
-            "    <adminserver hostalias=\"node1\" />" +
-            "  </admin>" +
-            "</services>";
+    private static final String okServices = "<?xml version='1.0' encoding='utf-8' ?>\n" +
+            "<services>\n" +
+            "  <config name='standard'>\n" +
+            "    <basicStruct>\n" +
+            "      <stringVal>default</stringVal>\n" +
+            "    </basicStruct>\n" +
+            "  </config>\n" +
+            "  <admin version='2.0'>\n" +
+            "    <adminserver hostalias='node1' />\n" +
+            "  </admin>\n" +
+            "</services>\n";
 
-    private static final String badServices = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-            "<services>" +
-            "  <config name=\"standard\">" +
-            "    <basicStruct>" +
-            "      <stringVal>default</stringVal>" +
-            "    </basicStruct>" +
-            "  </config> " +
-            "  <admin version=\"2.0\">" +
-            "    <adminserver hostalias=\"node1\"" +
-            "  </admin>" +
-            "</services>";
+    // Typo in closing end tag for <config> (<confih>)
+    private static final String invalidServices = "<?xml version='1.0' encoding='utf-8' ?>\n" +
+            "<services>\n" +
+            "  <config name='standard'>\n" +
+            "    <basicStruct>\n" +
+            "      <stringVal>default</stringVal>\n" +
+            "    </basicStruct>\n" +
+            "  </confih>\n" +
+            "  <admin version='2.0'>\n" +
+            "    <adminserver hostalias='node1'>\n" +
+            "  </admin>\n" +
+            "</services>\n";
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void testXMLParse() throws SAXException, IOException {
+    public void testXMLParse() throws IOException {
         SchemaValidator validator = createValidator();
         validator.validate(new InputSource(new StringReader(okServices)), "services.xml");
     }
 
-    @Test(expected = RuntimeException.class)
-    public void testXMLParseError() throws SAXException, IOException {
+    @Test
+    public void testXMLParseError() throws IOException {
         SchemaValidator validator = createValidator();
-        validator.validate(new InputSource(new StringReader(badServices)), "services.xml");
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectMessage(expectedErrorMessage("services.xml"));
+        validator.validate(new InputSource(new StringReader(invalidServices)), "services.xml");
     }
 
     @Test
-    public void testXMLParseWithReader() throws SAXException, IOException {
+    public void testXMLParseWithReader() throws IOException {
         SchemaValidator validator = createValidator();
         validator.validate(new StringReader(okServices));
     }
 
-    @Test(expected = RuntimeException.class)
-    public void testXMLParseErrorWithReader() throws SAXException, IOException {
+    @Test
+    public void testXMLParseErrorWithReader() throws IOException {
         SchemaValidator validator = createValidator();
-        validator.validate(new StringReader(badServices));
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectMessage(expectedErrorMessage("input"));
+        validator.validate(new StringReader(invalidServices));
     }
 
-    private SchemaValidator createValidator() throws IOException {
+    private SchemaValidator createValidator() {
         return new SchemaValidators(new Version(VespaVersion.major)).servicesXmlValidator();
+    }
+
+    private String expectedErrorMessage(String input) {
+        return "XML error in " + input + ": The element type \"config\" must be terminated by the matching end-tag \"</config>\". [7:5], input:\n" +
+                "4:    <basicStruct>\n" +
+                "5:      <stringVal>default</stringVal>\n" +
+                "6:    </basicStruct>\n" +
+                "7:  </confih>\n" +
+                "8:  <admin version='2.0'>\n" +
+                "9:    <adminserver hostalias='node1'>\n" +
+                "10:  </admin>\n";
     }
 }
