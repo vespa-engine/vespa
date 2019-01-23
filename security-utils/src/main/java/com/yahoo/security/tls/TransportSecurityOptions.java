@@ -13,6 +13,8 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -27,12 +29,14 @@ public class TransportSecurityOptions {
     private final Path certificatesFile;
     private final Path caCertificatesFile;
     private final AuthorizedPeers authorizedPeers;
+    private final List<String> acceptedCiphers;
 
     private TransportSecurityOptions(Builder builder) {
         this.privateKeyFile = builder.privateKeyFile;
         this.certificatesFile = builder.certificatesFile;
         this.caCertificatesFile = builder.caCertificatesFile;
         this.authorizedPeers = builder.authorizedPeers;
+        this.acceptedCiphers = builder.acceptedCiphers;
     }
 
     public Optional<Path> getPrivateKeyFile() {
@@ -50,6 +54,8 @@ public class TransportSecurityOptions {
     public Optional<AuthorizedPeers> getAuthorizedPeers() {
         return Optional.ofNullable(authorizedPeers);
     }
+
+    public List<String> getAcceptedCiphers() { return acceptedCiphers; }
 
     public static TransportSecurityOptions fromJsonFile(Path file) {
         try (InputStream in = Files.newInputStream(file)) {
@@ -83,6 +89,7 @@ public class TransportSecurityOptions {
         private Path certificatesFile;
         private Path caCertificatesFile;
         private AuthorizedPeers authorizedPeers;
+        private List<String> acceptedCiphers = new ArrayList<>();
 
         public Builder() {}
 
@@ -102,6 +109,11 @@ public class TransportSecurityOptions {
             return this;
         }
 
+        public Builder withAcceptedCiphers(List<String> acceptedCiphers) {
+            this.acceptedCiphers = acceptedCiphers;
+            return this;
+        }
+
         public TransportSecurityOptions build() {
             return new TransportSecurityOptions(this);
         }
@@ -114,6 +126,7 @@ public class TransportSecurityOptions {
                 ", certificatesFile=" + certificatesFile +
                 ", caCertificatesFile=" + caCertificatesFile +
                 ", authorizedPeers=" + authorizedPeers +
+                ", acceptedCiphers=" + acceptedCiphers +
                 '}';
     }
 
@@ -125,11 +138,12 @@ public class TransportSecurityOptions {
         return Objects.equals(privateKeyFile, that.privateKeyFile) &&
                 Objects.equals(certificatesFile, that.certificatesFile) &&
                 Objects.equals(caCertificatesFile, that.caCertificatesFile) &&
-                Objects.equals(authorizedPeers, that.authorizedPeers);
+                Objects.equals(authorizedPeers, that.authorizedPeers) &&
+                Objects.equals(acceptedCiphers, that.acceptedCiphers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(privateKeyFile, certificatesFile, caCertificatesFile, authorizedPeers);
+        return Objects.hash(privateKeyFile, certificatesFile, caCertificatesFile, authorizedPeers, acceptedCiphers);
     }
 }

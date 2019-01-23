@@ -17,6 +17,7 @@ import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.util.List;
 
 import static com.yahoo.security.KeyAlgorithm.RSA;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
@@ -49,7 +50,7 @@ class CryptoUtils {
                                             Field.CN, new HostGlobPattern("dummy"))))));
 
     static TlsContext createTestTlsContext() {
-        return new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE);
+        return new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE, List.of());
     }
 
 }

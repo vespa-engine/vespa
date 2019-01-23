@@ -70,6 +70,12 @@ public class TransportSecurityOptionsJsonSerializer {
             }
             builder.withAuthorizedPeers(new AuthorizedPeers(toPeerPolicies(authorizedPeersEntity)));
         }
+        if (entity.acceptedCiphers != null) {
+            if (entity.acceptedCiphers.isEmpty()) {
+                throw new IllegalArgumentException("'accepted-ciphers' cannot be empty");
+            }
+            builder.withAcceptedCiphers(entity.acceptedCiphers);
+        }
         return builder.build();
     }
 
@@ -145,6 +151,9 @@ public class TransportSecurityOptionsJsonSerializer {
                 entity.authorizedPeers.add(authorizedPeer);
             }
         });
+        if (!options.getAcceptedCiphers().isEmpty()) {
+            entity.acceptedCiphers = options.getAcceptedCiphers();
+        }
         return entity;
     }
 
