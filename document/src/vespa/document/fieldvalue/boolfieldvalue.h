@@ -41,11 +41,11 @@ public:
     double getAsDouble() const override;
     vespalib::string getAsString() const override;
 
-    FieldValue& operator=(vespalib::stringref) override;
-    FieldValue& operator=(int32_t) override;
-    FieldValue& operator=(int64_t) override;
-    FieldValue& operator=(float) override;
-    FieldValue& operator=(double) override;
+    BoolFieldValue& operator=(vespalib::stringref) override;
+    BoolFieldValue& operator=(int32_t) override;
+    BoolFieldValue& operator=(int64_t) override;
+    BoolFieldValue& operator=(float) override;
+    BoolFieldValue& operator=(double) override;
 
     DECLARE_IDENTIFIABLE(BoolFieldValue);
 };
