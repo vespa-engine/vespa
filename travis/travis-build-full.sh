@@ -14,7 +14,7 @@ ccache --set-config=compression=true
 ccache --print-config
 
 cd ${SOURCE_DIR}
-sh ./bootstrap.sh java
+env VESPA_MAVEN_EXTRA_OPTS="--no-snapshot-updates --batch-mode --threads ${NUM_THREADS}" sh ./bootstrap.sh java
 mvn -V install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS}
 bash ${SOURCE_DIR}/bootstrap-cmake.sh ${SOURCE_DIR}
 make -j ${NUM_THREADS}
