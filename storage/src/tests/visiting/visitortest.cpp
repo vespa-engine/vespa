@@ -16,8 +16,10 @@
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/common/exceptions.h>
 #include <thread>
+#include <sys/stat.h>
 
 using namespace std::chrono_literals;
 using document::test::makeBucketSpace;
@@ -185,10 +187,10 @@ VisitorTest::initializeTest(const TestParams& params)
 
     std::string rootFolder = getRootFolder(config);
 
-    system(vespalib::make_string("chmod 755 %s 2>/dev/null", rootFolder.c_str()).c_str());
-    system(vespalib::make_string("rm -rf %s* 2>/dev/null", rootFolder.c_str()).c_str());
-    assert(system(vespalib::make_string("mkdir -p %s/disks/d0", rootFolder.c_str()).c_str()) == 0);
-    assert(system(vespalib::make_string("mkdir -p %s/disks/d1", rootFolder.c_str()).c_str()) == 0);
+    ::chmod(rootFolder.c_str(), 0755);
+    vespalib::rmdir(rootFolder, true);
+    vespalib::mkdir(vespalib::make_string("%s/disks/d0", rootFolder.c_str()), true);
+    vespalib::mkdir(vespalib::make_string("%s/disks/d1", rootFolder.c_str()), true);
 
     try {
         _messageSessionFactory.reset(
