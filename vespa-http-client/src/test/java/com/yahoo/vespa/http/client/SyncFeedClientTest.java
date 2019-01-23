@@ -65,15 +65,23 @@ public class SyncFeedClientTest {
                                          "        \"title\": \"Title 3\"" +
                                          "    }" +
                                          "}"));
+        operations.add(new SyncOperation("id::test::3", // Another operation for the same document
+                                         "{" +
+                                         "    \"put\": \"id::test::3\"," +
+                                         "    \"fields\": {" +
+                                         "        \"title\": \"Title 4\"" +
+                                         "    }" +
+                                         "}"));
 
         SyncResult result = feedClient.stream(operations);
 
         assertTrue(result.isSuccess());
-        assertEquals(3, result.results().size());
+        assertEquals(4, result.results().size());
         assertNull(result.exception());
         assertEquals("id::test::1", result.results().get(0).getDocumentId());
         assertEquals("id::test::2", result.results().get(1).getDocumentId());
         assertEquals("id::test::3", result.results().get(2).getDocumentId());
+        assertEquals("id::test::3", result.results().get(3).getDocumentId());
     }
 
 }

@@ -209,8 +209,8 @@ public class XmlFeedReaderTest {
         }
 
         @Override
-        public void stream(String documentId, CharSequence documentData, Object context) {
-            documentIds.add(documentId.toString());
+        public void stream(String documentId, String operationId, CharSequence documentData, Object context) {
+            documentIds.add(documentId);
             datas.add(documentData);
             contexts.add(context);
         }
@@ -256,4 +256,5 @@ public class XmlFeedReaderTest {
     @Test public void testAposData() throws Exception {
         verifyNoTransformationOfXml(feedResource4);
     }
+
 }

@@ -28,7 +28,9 @@ public interface FeedClient extends AutoCloseable {
      * @param documentId the document id of the document.
      * @param documentData the document data as JSON or XML (as specified when using the factory to create the API)
      */
-    void stream(String documentId, CharSequence documentData);
+    default void stream(String documentId, CharSequence documentData) {
+        stream(documentId, documentData, null);
+    }
 
     /**
      * Streams a document to cluster(s). If the pipeline and buffers are full, this call will be blocking.
@@ -39,8 +41,23 @@ public interface FeedClient extends AutoCloseable {
      * @param documentData the document data as JSON or XML (as specified when using the factory to create the API)
      * @param context a context object which will be accessible in the result of the callback, or null if none
      */
-    void stream(String documentId, CharSequence documentData, Object context);
+    default void stream(String documentId, CharSequence documentData, Object context) {
+        stream(documentId, null, documentData, context);
+    }
 
+    /**
+     * Streams a document to cluster(s). If the pipeline and buffers are full, this call will be blocking.
+     * Documents might time out before they are sent. Failed documents are not retried.
+     * Don't call stream() after close is called.
+     *
+     * @param documentId the document id of the document.
+     * @param operationId the id to use for this operation, or null to let the client decide an operation id.
+     *                    This id must be unique for every operation. Passing the operation id allows clients
+     *                    to prepare to receive a response for it before issuing the operation to the client.
+     * @param documentData the document data as JSON or XML (as specified when using the factory to create the API)
+     * @param context a context object which will be accessible in the result of the callback, or null if none
+     */
+    void stream(String documentId, String operationId, CharSequence documentData, Object context);
 
     /**
      * This callback is executed when new results are arriving or an error occur.
