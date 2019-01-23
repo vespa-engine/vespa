@@ -124,13 +124,15 @@ std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
     auto authorized_peers = parse_authorized_peers(root["authorized-peers"]);
     auto accepted_ciphers = parse_accepted_ciphers(root["accepted-ciphers"]);
 
-    return std::make_unique<TransportSecurityOptions>(
+    auto options = std::make_unique<TransportSecurityOptions>(
             TransportSecurityOptions::Builder()
                 .ca_certs_pem(ca_certs)
                 .cert_chain_pem(certs)
                 .private_key_pem(priv_key)
                 .authorized_peers(std::move(authorized_peers))
                 .accepted_ciphers(std::move(accepted_ciphers)));
+    secure_memzero(&priv_key[0], priv_key.size());
+    return options;
 }
 
 } // anon ns

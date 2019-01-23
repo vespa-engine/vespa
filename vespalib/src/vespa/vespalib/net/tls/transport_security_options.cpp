@@ -36,11 +36,18 @@ TransportSecurityOptions::TransportSecurityOptions(vespalib::string ca_certs_pem
 {
 }
 
+void secure_memzero(void* buf, size_t size) noexcept {
+    OPENSSL_cleanse(buf, size);
+}
+
 TransportSecurityOptions::Builder::Builder() = default;
-TransportSecurityOptions::Builder::~Builder() = default;
+
+TransportSecurityOptions::Builder::~Builder() {
+    secure_memzero(&_private_key_pem[0], _private_key_pem.size());
+}
 
 TransportSecurityOptions::~TransportSecurityOptions() {
-    OPENSSL_cleanse(&_private_key_pem[0], _private_key_pem.size());
+    secure_memzero(&_private_key_pem[0], _private_key_pem.size());
 }
 
 } // vespalib::net::tls

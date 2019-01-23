@@ -61,4 +61,9 @@ public:
     const std::vector<vespalib::string>& accepted_ciphers() const noexcept { return _accepted_ciphers; }
 };
 
+// Zeroes out `size` bytes in `buf` in a way that shall never be optimized
+// away by an eager compiler.
+// TODO move to own crypto utility library
+void secure_memzero(void* buf, size_t size) noexcept;
+
 } // vespalib::net::tls
