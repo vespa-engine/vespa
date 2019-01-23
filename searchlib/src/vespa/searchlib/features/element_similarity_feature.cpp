@@ -60,7 +60,8 @@ struct SumAggregator : Aggregator {
     double get() const override { return value; }
 };
 
-Aggregator::UP create_aggregator(const vespalib::string &name) {
+Aggregator::UP
+create_aggregator(const vespalib::string &name) {
     if (name == "max") {
         return Aggregator::UP(new MaxAggregator());
     }
@@ -196,7 +197,8 @@ struct State {
 
 //-----------------------------------------------------------------------------
 
-class ElementSimilarityExecutor : public fef::FeatureExecutor {
+class ElementSimilarityExecutor : public fef::FeatureExecutor
+{
 private:
     typedef fef::TermFieldMatchData::PositionsIterator ITR;
 
@@ -378,7 +380,8 @@ ElementSimilarityBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
         const fef::FieldInfo &field = *env.getField(i);
         if ((field.type() == fef::FieldType::INDEX) &&
             (field.collection() != CollectionType::SINGLE) &&
-            (!field.isFilter())) {
+            (!field.isFilter()))
+        {
             fef::FeatureNameBuilder fnb;
             fnb.baseName(getBaseName()).parameter(field.name());
             auto outputs = get_outputs(env.getProperties(), fnb.buildName());
@@ -391,7 +394,8 @@ ElementSimilarityBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
 }
 
 bool
-ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) {
+ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params)
+{
     const fef::FieldInfo *field = params[0].asField();
     _field_id = field->id();
     fef::FeatureNameBuilder fnb;
@@ -427,7 +431,8 @@ ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env, const fef::
 }
 
 fef::FeatureExecutor &
-ElementSimilarityBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const {
+ElementSimilarityBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
+{
     std::vector<OutputSpec> output_specs;
     for (const auto &output: _outputs) {
         output_specs.emplace_back(output->compile_token->get().get_function<5>(),
