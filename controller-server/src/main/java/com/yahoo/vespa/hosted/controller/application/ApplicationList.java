@@ -166,7 +166,7 @@ public class ApplicationList {
      * @param defaultMajorVersion the default major version to assume for applications not specifying one
      */
     public ApplicationList allowMajorVersion(int targetMajorVersion, int defaultMajorVersion) {
-        return listOf(list.stream().filter(a -> a.majorVersion().orElse(a.deploymentSpec().majorVersion().orElse(defaultMajorVersion))
+        return listOf(list.stream().filter(a -> a.deploymentSpec().majorVersion().orElse(a.majorVersion().orElse(defaultMajorVersion))
                                            >= targetMajorVersion));
     }
 

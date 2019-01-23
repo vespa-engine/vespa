@@ -153,9 +153,8 @@ public class Application {
     }
 
     /**
-     * Overrides the preferred major version for this application.
-     * This overrides the major version set in the deployment spec (if any) and the major version the system
-     * wants to use.
+     * Overrides the system major version for this application. This override takes effect if the deployment
+     * spec does not specify a major version.
      */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
