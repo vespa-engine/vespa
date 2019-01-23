@@ -58,6 +58,7 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.yolean.Exceptions;
 
@@ -67,8 +68,10 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -277,7 +280,9 @@ public class ApplicationController {
             ApplicationVersion applicationVersion;
             ApplicationPackage applicationPackage;
             if (canDeployDirectly) {
-                platformVersion = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
+                platformVersion = options.vespaVersion.map(Version::new).orElse(application.get().deploymentSpec().majorVersion()
+                                                                                           .flatMap(this::lastCompatibleVersion)
+                                                                                           .orElse(controller.systemVersion()));
                 applicationVersion = applicationVersionFromDeployer.orElse(ApplicationVersion.unknown);
                 applicationPackage = applicationPackageFromDeployer.orElseThrow(
                         () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
@@ -725,6 +730,14 @@ public class ApplicationController {
                                   }
                               }
                           });
+    }
+
+    /** Returns the latest known version within the given major. */
+    private Optional<Version> lastCompatibleVersion(int targetMajorVersion) {
+        return controller.versionStatus().versions().stream()
+                         .map(VespaVersion::versionNumber)
+                         .filter(version -> version.getMajor() == targetMajorVersion)
+                         .max(naturalOrder());
     }
 
     private boolean isUserDeployment(Optional<AthenzIdentity> identity) {
