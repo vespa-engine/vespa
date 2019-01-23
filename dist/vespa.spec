@@ -156,11 +156,12 @@ source %{_devtoolset_enable} || true
 source %{_rhmaven35_enable} || true
 %endif
 
+export PATH="/usr/lib/jvm/java-11-openjdk/bin:$PATH"
 export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
 export FACTORY_VESPA_VERSION=%{version}
 
 sh bootstrap.sh java
-mvn --batch-mode -nsu -T 1  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+mvn --batch-mode -nsu -T 1C  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-11-openjdk \
        -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \
