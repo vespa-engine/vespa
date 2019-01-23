@@ -17,7 +17,6 @@ import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,12 +57,6 @@ public class ControllerSslContextFactoryProvider extends AbstractComponent imple
     /** Create a SslContextFactory backed by an in-memory key and trust store */
     private SslContextFactory createSslContextFactory(int port) {
         SslContextFactory factory = new SslContextFactory();
-        // TODO Remove cipher exclusions on Vespa 7 (require ciphers with forward secrecy)
-        // Do not exclude TLS_RSA_* ciphers
-        String[] excludedCiphers = Arrays.stream(factory.getExcludeCipherSuites())
-                                         .filter(cipherPattern -> !cipherPattern.equals("^TLS_RSA_.*$"))
-                                         .toArray(String[]::new);
-        factory.setExcludeCipherSuites(excludedCiphers);
         if (port != 443) {
             factory.setWantClientAuth(true);
         }
