@@ -203,7 +203,7 @@ public class RestApi extends LoggingRequestHandler {
         try {
             create = parseBoolean(CREATE_PARAMETER_NAME, request);
         } catch (IllegalArgumentException e) {
-            return Response.createErrorResponse(403, "Non valid value for 'create' parameter, must be empty, true, or " +
+            return Response.createErrorResponse(400, "Non valid value for 'create' parameter, must be empty, true, or " +
                     "false: " + request.getProperty(CREATE_PARAMETER_NAME), RestUri.apiErrorCodes.INVALID_CREATE_VALUE);
         }
         String condition = request.getProperty(CONDITION_PARAMETER_NAME);
@@ -282,7 +282,7 @@ public class RestApi extends LoggingRequestHandler {
     }
 
     private static HttpResponse createInvalidParameterResponse(String parameter, String explanation) {
-        return Response.createErrorResponse(403, String.format("Invalid '%s' value. %s", parameter, explanation), RestUri.apiErrorCodes.UNSPECIFIED);
+        return Response.createErrorResponse(400, String.format("Invalid '%s' value. %s", parameter, explanation), RestUri.apiErrorCodes.UNSPECIFIED);
     }
 
     static class BadRequestParameterException extends IllegalArgumentException {
