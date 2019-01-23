@@ -84,8 +84,8 @@ public class JsonReaderTest {
         }
 
         @Override
-        public void stream(String documentId, String operationId, CharSequence documentData, Object context) {
-            documentIds.add(documentId);
+        public void stream(String documentId, CharSequence documentData, Object context) {
+            documentIds.add(documentId.toString());
             datas.add(documentData);
             contexts.add(context);
         }

@@ -45,12 +45,17 @@ public class FeedClientImpl implements FeedClient {
     }
 
     @Override
-    public void stream(String documentId, String operationId, CharSequence documentData, Object context) {
+    public void stream(String documentId, CharSequence documentData) {
+        stream(documentId, documentData, null);
+    }
+
+    @Override
+    public void stream(String documentId, CharSequence documentData, Object context) {
         CharsetEncoder charsetEncoder = StandardCharsets.UTF_8.newEncoder();
         charsetEncoder.onMalformedInput(CodingErrorAction.REPORT);
         charsetEncoder.onUnmappableCharacter(CodingErrorAction.REPORT);
 
-        Document document = new Document(documentId, operationId, documentData, context);
+        Document document = new Document(documentId, documentData, context);
         operationProcessor.sendDocument(document);
     }
 

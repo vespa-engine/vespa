@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Unit test that test documentation code.
- *
  * @author dybis
  */
 public class ExampleUsageFeedClientTest {
@@ -46,7 +45,7 @@ public class ExampleUsageFeedClientTest {
 
     // Example usage of FeedClient
     public static void exampleCode(String hostNameA, int portServerA, String hostNameB, int portServerB) {
-        boolean useSsl = false;
+        final boolean useSsl = false;
         final SessionParams sessionParams = new SessionParams.Builder()
                 .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create(hostNameA, portServerA, useSsl)).build())
                 .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create(hostNameB, portServerB, useSsl)).build())
@@ -55,8 +54,8 @@ public class ExampleUsageFeedClientTest {
                         .build())
                 .build();
 
-        AtomicInteger resultsReceived = new AtomicInteger(0);
-        AtomicInteger errorsReceived = new AtomicInteger(0);
+        final AtomicInteger resultsReceived = new AtomicInteger(0);
+        final AtomicInteger errorsReceived = new AtomicInteger(0);
 
         FeedClient feedClient = FeedClientFactory.create(sessionParams, new FeedClient.ResultCallback() {
             @Override
@@ -73,13 +72,15 @@ public class ExampleUsageFeedClientTest {
             }
         });
         int sentCounter = 0;
-        List<String> docIds = Arrays.asList("1", "2", "3", "4");
+        final List<String> docIds = Arrays.asList("1", "2", "3", "4");
         for (final String docId : docIds) {
             CharSequence docData = generateDocument(docId);
             feedClient.stream(docId, docData, docId);
             sentCounter++;
+            System.out.println("Sent " + sentCounter + " received results from " + resultsReceived.get());
         }
         feedClient.close();
+        System.out.println("Finished, got " + errorsReceived.get()
+                + " errors from " + resultsReceived.get() + " results, sent " + sentCounter + " documents.");
     }
-
 }

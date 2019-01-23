@@ -3450,9 +3450,8 @@
       "abstract"
     ],
     "methods": [
-      "public void stream(java.lang.String, java.lang.CharSequence)",
-      "public void stream(java.lang.String, java.lang.CharSequence, java.lang.Object)",
-      "public abstract void stream(java.lang.String, java.lang.String, java.lang.CharSequence, java.lang.Object)",
+      "public abstract void stream(java.lang.String, java.lang.CharSequence)",
+      "public abstract void stream(java.lang.String, java.lang.CharSequence, java.lang.Object)",
       "public abstract void close()",
       "public abstract java.lang.String getStatsAsJson()",
       "public static void feedJson(java.io.InputStream, com.yahoo.vespa.http.client.FeedClient, java.util.concurrent.atomic.AtomicInteger)",
@@ -3556,7 +3555,6 @@
     "methods": [
       "public void <init>(com.yahoo.vespa.http.client.core.Document, java.util.Collection, java.lang.StringBuilder)",
       "public java.lang.String getDocumentId()",
-      "public java.lang.String getOperationId()",
       "public java.lang.CharSequence getDocumentDataAsCharSequence()",
       "public java.lang.Object getContext()",
       "public boolean isSuccess()",

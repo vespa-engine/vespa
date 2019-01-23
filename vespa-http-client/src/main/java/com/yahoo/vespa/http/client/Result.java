@@ -18,6 +18,7 @@ import java.util.List;
  *
  * @author Einar M R Rosenvinge
  */
+// This should be an interface, but in order to be binary compatible during refactoring we made it abstract.
 public class Result {
 
     public enum ResultType {
@@ -43,20 +44,28 @@ public class Result {
         this.localTrace = localTrace == null ? null : localTrace.toString();
     }
 
-    /** Returns the document id that this result is for */
+
+    /**
+     * Returns the document ID that this Result is for.
+     *
+     * @return the document ID that this Result is for.
+     */
     public String getDocumentId() {
         return document.getDocumentId();
     }
 
-    /** Returns the id of the operation this is the result of */
-    public String getOperationId() { return document.getOperationId(); }
-
-    /** Returns the document data */
+    /**
+     * Returns the document data.
+     * @return data as bytebuffer.
+     */
     public CharSequence getDocumentDataAsCharSequence() {
         return document.getDataAsString();
     }
 
-    /** Returns the context of the object if any */
+    /**
+     * Returns the context of the object if any.
+     * @return context.
+     */
     public Object getContext() {
         return document.getContext();
     }
@@ -64,6 +73,8 @@ public class Result {
     /**
      * Returns true if the operation(s) was successful. If at least one {@link Detail}
      * in {@link #getDetails()} is unsuccessful, this will return false.
+     *
+     * @return true if the operation was successful.
      */
     public boolean isSuccess() {
         return success;
@@ -73,7 +84,6 @@ public class Result {
 
     /**
      * Checks if operation has been set up with local tracing.
-     *
      * @return true if operation has local trace.
      */
     public boolean hasLocalTrace() {
