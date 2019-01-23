@@ -280,9 +280,9 @@ public class ApplicationController {
             ApplicationVersion applicationVersion;
             ApplicationPackage applicationPackage;
             if (canDeployDirectly) {
-                platformVersion = options.vespaVersion.map(Version::new).orElse(curator.readTargetMajorVersion()
-                                                                                       .flatMap(this::lastCompatibleVersion)
-                                                                                       .orElse(controller.systemVersion()));
+                platformVersion = options.vespaVersion.map(Version::new).orElse(application.get().deploymentSpec().majorVersion()
+                                                                                           .flatMap(this::lastCompatibleVersion)
+                                                                                           .orElse(controller.systemVersion()));
                 applicationVersion = applicationVersionFromDeployer.orElse(ApplicationVersion.unknown);
                 applicationPackage = applicationPackageFromDeployer.orElseThrow(
                         () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
