@@ -119,7 +119,7 @@ public class RestApiTest {
         HttpPost httpPost = new HttpPost(request.getUri());
         StringEntity entity = new StringEntity("", ContentType.create("application/json"));
         httpPost.setEntity(entity);
-        assertHttp400ResponseContains(httpPost, "Could not read document, no document?");
+        assertHttp400ResponseContains(doRest(httpPost), "Could not read document, no document?");
     }
 
     String update_test_uri = "/document/v1/namespace/testdocument/docid/c";
@@ -197,7 +197,7 @@ public class RestApiTest {
         HttpPut httpPut = new HttpPut(request.getUri());
         StringEntity entity = new StringEntity(update_test_doc, ContentType.create("application/json"));
         httpPut.setEntity(entity);
-        assertHttp400ResponseContains(httpPut, "Non valid value for 'create' parameter, must be empty, true, or false: batman");
+        assertHttp400ResponseContains(doRest(httpPut), "Non valid value for 'create' parameter, must be empty, true, or false: batman");
     }
 
     // Get logs through some hackish fetch method. Logs is something the mocked backend write.
@@ -291,7 +291,7 @@ public class RestApiTest {
     public void get_fieldset_parameter_is_propagated() throws IOException {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/bar?fieldSet=foo,baz", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
-        assertHttp200ResponseContains(get, "\"fieldset\":\"foo,baz\"");
+        assertHttp200ResponseContains(doRest(get), "\"fieldset\":\"foo,baz\"");
     }
 
     String visit_test_uri = "/document/v1/namespace/document-type/docid/?continuation=abc";
@@ -339,8 +339,7 @@ public class RestApiTest {
 
     private void doTestRootPathNotAccepted(Function<Request, HttpRequestBase> methodOpFactory) {
         Response response = performV1RestCall("", "", methodOpFactory);
-        assertThat(response.code, is(400));
-        assertThat(response.body, containsString("Root /document/v1/ requests only supported for HTTP GET"));
+        assertHttp400ResponseContains(response, "Root /document/v1/ requests only supported for HTTP GET");
     }
 
     @Test
@@ -360,8 +359,7 @@ public class RestApiTest {
 
     private void assertResultingDocumentSelection(String suffix, String expected) {
         Response response = performV1GetRestCall(suffix);
-        assertThat(response.code, is(200));
-        assertThat(response.body, containsString(String.format("doc selection: '%s'", expected)));
+        assertHttp200ResponseContains(response, String.format("doc selection: '%s'", expected));
     }
 
     @Test
@@ -382,8 +380,7 @@ public class RestApiTest {
 
     private void assertNumericIdFailsParsing(String id) {
         Response response = performV1GetRestCall(String.format("number/%s", encoded(id)));
-        assertThat(response.code, is(400));
-        assertThat(response.body, containsString("Failed to parse numeric part of selection URI"));
+        assertHttp400ResponseContains(response, "Failed to parse numeric part of selection URI");
     }
 
     @Test
@@ -397,8 +394,7 @@ public class RestApiTest {
     @Test
     public void non_text_group_string_character_returns_error() {
         Response response = performV1GetRestCall(String.format("group/%s", encoded("\u001f")));
-        assertThat(response.code, is(400));
-        assertThat(response.body, containsString("Failed to parse group part of selection URI; contains invalid text code point U001F"));
+        assertHttp400ResponseContains(response, "Failed to parse group part of selection URI; contains invalid text code point U001F");
     }
 
     @Test
@@ -425,8 +421,7 @@ public class RestApiTest {
 
     private void assertDocumentSelectionFailsParsing(String expression) {
         Response response = performV1GetRestCall(String.format("number/1234?selection=%s", encoded(expression)));
-        assertThat(response.code, is(400));
-        assertThat(response.body, containsString("Failed to parse expression given in 'selection' parameter. Must be a complete and valid sub-expression."));
+        assertHttp400ResponseContains(response, "Failed to parse expression given in 'selection' parameter. Must be a complete and valid sub-expression.");
     }
 
     // Make sure that typoing the selection parameter doesn't corrupt the entire selection expression
@@ -442,90 +437,88 @@ public class RestApiTest {
     public void wanted_document_count_returned_parameter_is_propagated() {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?wantedDocumentCount=321", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
-        assertHttp200ResponseContains(get, "min docs returned: 321");
+        assertHttp200ResponseContains(doRest(get), "min docs returned: 321");
     }
 
     @Test
     public void invalid_wanted_document_count_parameter_returns_error_response() {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?wantedDocumentCount=aardvark", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
-        assertHttp400ResponseContains(get, "Invalid 'wantedDocumentCount' value. Expected positive integer");
+        assertHttp400ResponseContains(doRest(get), "Invalid 'wantedDocumentCount' value. Expected positive integer");
     }
 
     @Test
     public void negative_document_count_parameter_returns_error_response() {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?wantedDocumentCount=-1", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
-        assertHttp400ResponseContains(get, "Invalid 'wantedDocumentCount' value. Expected positive integer");
+        assertHttp400ResponseContains(doRest(get), "Invalid 'wantedDocumentCount' value. Expected positive integer");
     }
 
     @Test
     public void visit_fieldset_parameter_is_propagated() {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?fieldSet=foo,baz", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
-        assertHttp200ResponseContains(get, "field set: 'foo,baz'");
+        assertHttp200ResponseContains(doRest(get), "field set: 'foo,baz'");
     }
 
     @Test
     public void visit_concurrency_parameter_is_propagated() {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?concurrency=42", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
-        assertHttp200ResponseContains(get, "concurrency: 42");
+        assertHttp200ResponseContains(doRest(get), "concurrency: 42");
     }
 
     @Test
     public void root_api_visit_cluster_parameter_is_propagated() {
         Request request = new Request(String.format("http://localhost:%s/document/v1/?cluster=vaffel", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
-        assertHttp200ResponseContains(get, "cluster: 'vaffel'");
+        assertHttp200ResponseContains(doRest(get), "cluster: 'vaffel'");
     }
 
     @Test
     public void root_api_visit_selection_parameter_is_propagated() {
         Request request = new Request(String.format("http://localhost:%s/document/v1/?cluster=foo&selection=yoshi", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
-        assertHttp200ResponseContains(get, "doc selection: 'yoshi'");
+        assertHttp200ResponseContains(doRest(get), "doc selection: 'yoshi'");
     }
 
     @Test
     public void root_api_visit_bucket_space_parameter_is_propagated() {
         Request request = new Request(String.format("http://localhost:%s/document/v1/?cluster=foo&bucketSpace=global", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
-        assertHttp200ResponseContains(get, "bucket space: 'global'");
+        assertHttp200ResponseContains(doRest(get), "bucket space: 'global'");
     }
 
     @Test
     public void invalid_visit_concurrency_parameter_returns_error_response() {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?concurrency=badgers", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
-        assertHttp400ResponseContains(get, "Invalid 'concurrency' value. Expected positive integer");
+        assertHttp400ResponseContains(doRest(get), "Invalid 'concurrency' value. Expected positive integer");
     }
 
-    private void assertHttpResponseContains(HttpRequestBase request, int expectedStatusCode, String expectedSubstring) {
-        Response response;
-        try {
-            response = doRest(request);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    private void assertHttpResponseContains(Response response, int expectedStatusCode, String expectedSubstring) {
         assertThat(response.code, is(expectedStatusCode));
         assertThat(response.body, containsString(expectedSubstring));
     }
 
-    private void assertHttp200ResponseContains(HttpRequestBase request, String expectedSubstring) {
-        assertHttpResponseContains(request, 200, expectedSubstring);
+    private void assertHttp200ResponseContains(Response response, String expectedSubstring) {
+        assertHttpResponseContains(response, 200, expectedSubstring);
     }
 
-    private void assertHttp400ResponseContains(HttpRequestBase request, String expectedSubstring) {
-        assertHttpResponseContains(request, 400, expectedSubstring);
+    private void assertHttp400ResponseContains(Response response, String expectedSubstring) {
+        assertHttpResponseContains(response, 400, expectedSubstring);
     }
 
-    private Response doRest(HttpRequestBase request) throws IOException {
+    private Response doRest(HttpRequestBase request) {
         HttpClient client = HttpClientBuilder.create().build();
-        HttpResponse response = client.execute(request);
-        assertThat(response.getEntity().getContentType().getValue().toString(), startsWith("application/json;"));
-        HttpEntity entity = response.getEntity();
-        return new Response(response.getStatusLine().getStatusCode(), EntityUtils.toString(entity));
+        try {
+            HttpResponse response = client.execute(request);
+            assertThat(response.getEntity().getContentType().getValue().toString(), startsWith("application/json;"));
+            HttpEntity entity = response.getEntity();
+            return new Response(response.getStatusLine().getStatusCode(), EntityUtils.toString(entity));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private String getFirstListenPort() {
