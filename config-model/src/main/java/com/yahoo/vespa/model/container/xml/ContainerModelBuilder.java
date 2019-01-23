@@ -21,7 +21,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -95,6 +94,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
      * Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
      */
     private static final String HOSTED_VESPA_STATUS_FILE_INSTALL_SETTING = "cloudconfig_server__tenant_vip_status_file";
+    private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     public enum Networking { disable, enable }
 
@@ -484,12 +484,26 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
+            String environmentVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT));
+            if (environmentVars != null && !environmentVars.isEmpty()) {
+                cluster.setEnvironmentVars(environmentVars);
+            }
             applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
             if (useCpuSocketAffinity(nodesElement))
                 AbstractService.distributeCpuSocketAffinity(nodes);
 
             cluster.addContainers(nodes);
         }
+    }
+
+    private static String getEnvironmentVariables(Element environmentVariables) {
+        StringBuilder sb = new StringBuilder();
+        if (environmentVariables != null) {
+            for (Element var: XML.getChildren(environmentVariables)) {
+                sb.append(var.getNodeName()).append('=').append(var.getTextContent()).append(' ');
+            }
+        }
+        return sb.toString();
     }
     
     private List<Container> createNodes(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
