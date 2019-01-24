@@ -82,7 +82,7 @@ public class ControllerMaintenance extends AbstractComponent {
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepositoryClient, Clock.systemUTC(), selfHostedCostConfig);
-        loadbalancerMaintainer = new LoadBalancerMaintainer(controller, Duration.ofMinutes(5), jobControl, nameService);
+        loadbalancerMaintainer = new LoadBalancerMaintainer(controller, Duration.ofMinutes(5), jobControl, nameService, curator);
     }
 
     public Upgrader upgrader() { return upgrader; }

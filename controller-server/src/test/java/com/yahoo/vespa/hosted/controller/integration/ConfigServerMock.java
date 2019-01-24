@@ -180,6 +180,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         this.loadBalancers.put(new DeploymentId(applicationId, zoneId), loadBalancers);
     }
 
+    public void removeLoadBalancers(DeploymentId deployment) {
+        this.loadBalancers.remove(deployment);
+    }
+
     @Override
     public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames,
                                        Set<String> rotationNames, byte[] content) {

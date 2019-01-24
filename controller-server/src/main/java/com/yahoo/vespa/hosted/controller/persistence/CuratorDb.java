@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
+import com.yahoo.vespa.hosted.controller.loadbalancer.LoadBalancerName;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -81,6 +82,7 @@ public class CuratorDb {
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
+    private final LoadBalancerNameSerializer loadBalancerNameSerializer = new LoadBalancerNameSerializer();
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -174,6 +176,9 @@ public class CuratorDb {
         return lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
     }
 
+    public Lock lockLoadBalancerNames() {
+        return lock(lockRoot.append("loadBalancerNames"), defaultLockTimeout);
+    }
     // -------------- Helpers ------------------------------------------
 
     /** Try locking with a low timeout, meaning it is OK to fail lock acquisition.
@@ -455,6 +460,16 @@ public class CuratorDb {
         curator.set(openStackServerPoolPath(), data);
     }
 
+    // -------------- Load balancer names -------------------------------------
+
+    public void writeLoadBalancerNames(Map<ApplicationId, List<LoadBalancerName>> loadBalancerNames) {
+        curator.set(loadBalancerNamePath(), asJson(loadBalancerNameSerializer.toSlime(loadBalancerNames)));
+    }
+
+    public Map<ApplicationId, List<LoadBalancerName>> readLoadBalancerNames() {
+        return readSlime(loadBalancerNamePath()).map(loadBalancerNameSerializer::fromSlime).orElseGet(Collections::emptyMap);
+    }
+
     // -------------- Paths ---------------------------------------------------
 
     private Path lockPath(TenantName tenant) {
@@ -528,6 +543,10 @@ public class CuratorDb {
 
     private static Path versionStatusPath() {
         return root.append("versionStatus");
+    }
+
+    private static Path loadBalancerNamePath() {
+        return root.append("loadBalancerNames");
     }
 
     private static Path provisionStatePath() {
