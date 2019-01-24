@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.benchmark;
 
 import com.yahoo.collections.Tuple2;
@@ -7,6 +7,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
+import com.yahoo.jrt.TransportMetrics;
 import com.yahoo.system.CommandLineParser;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
@@ -37,7 +38,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>
  * Log messages from a run will have a # first in the line, the end result will not.
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class LoadTester {
 
@@ -130,6 +131,7 @@ public class LoadTester {
         sb.append((metrics.maxLatency)).append(",");
         sb.append((metrics.failedRequests));
         sb.append("\n");
+        sb.append('#').append(TransportMetrics.getInstance().snapshot().toString()).append('\n');
         System.out.println(sb.toString());
     }
 
