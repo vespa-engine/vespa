@@ -1,7 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.data.access.simple;
 
-import com.yahoo.data.access.*;
+import com.yahoo.data.access.ArrayTraverser;
+import com.yahoo.data.access.Inspectable;
+import com.yahoo.data.access.Inspector;
+import com.yahoo.data.access.ObjectTraverser;
 
 /**
  * Encodes json from an inspectable object.

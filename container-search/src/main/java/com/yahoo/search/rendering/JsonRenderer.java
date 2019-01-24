@@ -776,6 +776,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         private void renderFieldContents(Object field) throws IOException {
             if (field == null) {
                 generator.writeNull();
+            } else if (field instanceof Boolean) {
+                generator.writeBoolean((Boolean)field);
             } else if (field instanceof Number) {
                 renderNumberField((Number) field);
             } else if (field instanceof TreeNode) {
