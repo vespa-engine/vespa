@@ -6,12 +6,14 @@ import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -51,6 +53,7 @@ public class CommandLine {
 
     private boolean redirectStderrToStdoutInsteadOfDiscard = true;
     private boolean executeSilentlyCalled = false;
+    private Optional<Path> outputFile = Optional.empty();
     private Charset outputEncoding = StandardCharsets.UTF_8;
     private Duration timeout = DEFAULT_TIMEOUT;
     private long maxOutputBytes = DEFAULT_MAX_OUTPUT_BYTES;
@@ -198,6 +201,16 @@ public class CommandLine {
     }
 
     /**
+     * By default, the output of the command is piped to a temporary file, which is deleted
+     * when execution ends. This method will cause output to be piped to the given path
+     * instead, and the file will not be removed.
+     */
+    public CommandLine setOutputFile(Path outputFile) {
+        this.outputFile = Optional.of(outputFile);
+        return this;
+    }
+
+    /**
      * By default, the command will be gracefully killed after DEFAULT_TIMEOUT. This method
      * overrides that default.
      */
@@ -235,6 +248,7 @@ public class CommandLine {
     // Accessor fields necessary for classes in this package. Could be public if necessary.
     boolean getRedirectStderrToStdoutInsteadOfDiscard() { return redirectStderrToStdoutInsteadOfDiscard; }
     Predicate<Integer> getSuccessfulExitCodePredicate() { return successfulExitCodePredicate; }
+    Optional<Path> getOutputFile() { return outputFile; }
     Charset getOutputEncoding() { return outputEncoding; }
     Duration getTimeout() { return timeout; }
     long getMaxOutputBytes() { return maxOutputBytes; }

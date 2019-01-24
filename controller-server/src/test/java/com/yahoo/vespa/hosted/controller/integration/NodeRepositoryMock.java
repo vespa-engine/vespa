@@ -12,11 +12,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -91,6 +93,16 @@ public class NodeRepositoryMock implements NodeRepository {
                                             node.rebootGeneration(),
                                             node.wantedRebootGeneration()))
                       .forEach(node -> putByHostname(zone, node));
+    }
+
+    @Override
+    public void requestFirmwareCheck(ZoneId zone) {
+        ;
+    }
+
+    @Override
+    public void cancelFirmwareCheck(ZoneId zone) {
+        ;
     }
 
     public void doUpgrade(DeploymentId deployment, Optional<HostName> hostName, Version version) {

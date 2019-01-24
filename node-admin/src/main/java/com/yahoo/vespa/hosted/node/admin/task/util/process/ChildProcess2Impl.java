@@ -89,7 +89,8 @@ public class ChildProcess2Impl implements ChildProcess2 {
     @Override
     public void close() {
         try {
-            Files.delete(outputPath);
+            if ( ! commandLine.getOutputFile().isPresent())
+                Files.delete(outputPath);
         } catch (Throwable t) {
             logger.log(LogLevel.WARNING, "Failed to delete " + outputPath, t);
         }

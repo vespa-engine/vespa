@@ -111,6 +111,22 @@ public class OsApiTest extends ControllerContainerTest {
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.4.1\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade cloud 'cloud1' to version 7.4.1\"}", 400);
 
+        // Request firmware checks in all zones.
+        assertResponse(new Request("http://localhost:8080/os/v1/firmware/", "", Request.Method.POST),
+                       "{\"message\":\"Requested firmware checks in prod.us-east-3, prod.us-west-1, prod.eu-west-1.\"}", 200);
+
+        // Cancel firmware checks in all prod zones.
+        assertResponse(new Request("http://localhost:8080/os/v1/firmware/prod/", "", Request.Method.DELETE),
+                       "{\"message\":\"Cancelled firmware checks in prod.us-east-3, prod.us-west-1, prod.eu-west-1.\"}", 200);
+
+        // Request firmware checks in prod.us-east-3.
+        assertResponse(new Request("http://localhost:8080/os/v1/firmware/prod/us-east-3", "", Request.Method.POST),
+                       "{\"message\":\"Requested firmware checks in prod.us-east-3.\"}", 200);
+
+        // Error: Cancel firmware checks in an empty set of zones.
+        assertResponse(new Request("http://localhost:8080/os/v1/firmware/dev/", "", Request.Method.DELETE),
+                       "{\"error-code\":\"NOT_FOUND\",\"message\":\"No zones at path '/os/v1/firmware/dev'\"}", 404);
+
     }
 
     private void upgradeAndUpdateStatus() {

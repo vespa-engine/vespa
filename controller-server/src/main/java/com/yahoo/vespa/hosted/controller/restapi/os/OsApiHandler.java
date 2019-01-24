@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.controller.restapi.os;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -13,7 +15,10 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
+import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.yolean.Exceptions;
@@ -21,8 +26,12 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * This implements the /os/v1 API which provides operators with information about, and scheduling of OS upgrades for
@@ -45,6 +54,8 @@ public class OsApiHandler extends LoggingRequestHandler {
         try {
             switch (request.getMethod()) {
                 case GET: return get(request);
+                case POST: return post(request);
+                case DELETE: return delete(request);
                 case PATCH: return patch(request);
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
             }
@@ -66,6 +77,55 @@ public class OsApiHandler extends LoggingRequestHandler {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/os/v1/")) return new SlimeJsonResponse(osVersions());
         return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse post(HttpRequest request) {
+        Path path = new Path(request.getUri().getPath());
+        if (path.matches("/os/v1/firmware/")) return requestFirmwareCheckResponse(path);
+        if (path.matches("/os/v1/firmware/{environment}/")) return requestFirmwareCheckResponse(path);
+        if (path.matches("/os/v1/firmware/{environment}/{region}/")) return requestFirmwareCheckResponse(path);
+        return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse delete(HttpRequest request) {
+        Path path = new Path(request.getUri().getPath());
+        if (path.matches("/os/v1/firmware/")) return cancelFirmwareCheckResponse(path);
+        if (path.matches("/os/v1/firmware/{environment}/")) return cancelFirmwareCheckResponse(path);
+        if (path.matches("/os/v1/firmware/{environment}/{region}/")) return cancelFirmwareCheckResponse(path);
+        return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse requestFirmwareCheckResponse(Path path) {
+        List<ZoneId> zones = zonesAt(path);
+        if (zones.isEmpty())
+            return ErrorResponse.notFoundError("No zones at " + path);
+
+        StringJoiner response = new StringJoiner(", ", "Requested firmware checks in ", ".");
+        for (ZoneId zone : zones) {
+            controller.configServer().nodeRepository().requestFirmwareCheck(zone);
+            response.add(zone.value());
+        }
+        return new MessageResponse(response.toString());
+    }
+
+    private HttpResponse cancelFirmwareCheckResponse(Path path) {
+        List<ZoneId> zones = zonesAt(path);
+        if (zones.isEmpty())
+            return ErrorResponse.notFoundError("No zones at " + path);
+
+        StringJoiner response = new StringJoiner(", ", "Cancelled firmware checks in ", ".");
+        for (ZoneId zone : zones) {
+            controller.configServer().nodeRepository().cancelFirmwareCheck(zone);
+            response.add(zone.value());
+        }
+        return new MessageResponse(response.toString());
+    }
+
+    private List<ZoneId> zonesAt(Path path) {
+        ZoneList zones = controller.zoneRegistry().zones().controllerUpgraded();
+        if (path.get("region") != null) zones = zones.in(RegionName.from(path.get("region")));
+        if (path.get("environment") != null) zones = zones.in(Environment.from(path.get("environment")));
+        return zones.ids();
     }
 
     private Slime setOsVersion(HttpRequest request) {

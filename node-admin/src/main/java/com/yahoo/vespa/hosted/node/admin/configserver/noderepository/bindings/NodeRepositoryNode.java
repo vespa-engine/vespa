@@ -48,6 +48,10 @@ public class NodeRepositoryNode {
     public String currentOsVersion;
     @JsonProperty("wantedOsVersion")
     public String wantedOsVersion;
+    @JsonProperty("currentFirmwareCheck")
+    public Long currentFirmwareCheck;
+    @JsonProperty("wantedFirmwareCheck")
+    public Long wantedFirmwareCheck;
     @JsonProperty("failCount")
     public Integer failCount;
     @JsonProperty("fastDisk")
@@ -103,6 +107,8 @@ public class NodeRepositoryNode {
                 ", wantedVespaVersion='" + wantedVespaVersion + '\'' +
                 ", currentOsVersion='" + currentOsVersion + '\'' +
                 ", wantedOsVersion='" + wantedOsVersion + '\'' +
+                ", currentFirmwareCheck='" + currentFirmwareCheck + '\'' +
+                ", wantedFirmwareCheck='" + wantedFirmwareCheck + '\'' +
                 ", failCount=" + failCount +
                 ", fastDisk=" + fastDisk +
                 ", bandwidth=" + bandwidth +
