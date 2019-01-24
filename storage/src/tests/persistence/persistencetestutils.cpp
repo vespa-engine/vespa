@@ -9,6 +9,7 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -25,9 +26,9 @@ namespace {
     vdstestlib::DirConfig initialize(uint32_t numDisks, const std::string & rootOfRoot) {
         vdstestlib::DirConfig config(getStandardConfig(true, rootOfRoot));
         std::string rootFolder = getRootFolder(config);
-        system(vespalib::make_string("rm -rf %s", rootFolder.c_str()).c_str());
+        vespalib::rmdir(rootFolder, true);
         for (uint32_t i = 0; i < numDisks; i++) {
-            system(vespalib::make_string("mkdir -p %s/disks/d%d", rootFolder.c_str(), i).c_str());
+            vespalib::mkdir(vespalib::make_string("%s/disks/d%d", rootFolder.c_str(), i), true);
         }
         return config;
     }
