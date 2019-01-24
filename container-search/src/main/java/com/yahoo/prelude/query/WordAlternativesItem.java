@@ -159,7 +159,7 @@ public class WordAlternativesItem extends TermItem {
     @Override
     public void encodeThis(ByteBuffer target) {
         super.encodeThis(target);
-        IntegerCompressor.putCompressedPositiveNumber(getNumWords(), target);
+        IntegerCompressor.putCompressedPositiveNumber(alternatives.size(), target);
         for (Alternative a : alternatives) {
             Item p = new PureWeightedString(a.word, (int) (getWeight() * a.exactness + 0.5));
             p.setFilter(isFilter());
