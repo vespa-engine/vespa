@@ -13,17 +13,14 @@ import java.nio.channels.SocketChannel;
 public class NullCryptoSocket implements CryptoSocket {
     private final boolean isServer;
     private SocketChannel channel;
-    private TransportMetrics metrics;
-    public NullCryptoSocket(TransportMetrics metrics, SocketChannel channel, boolean isServer) { this.metrics = metrics; this.channel = channel; this.isServer = isServer; }
+    private final TransportMetrics metrics = TransportMetrics.getInstance();
+    public NullCryptoSocket(SocketChannel channel, boolean isServer) { this.channel = channel; this.isServer = isServer; }
     @Override public SocketChannel channel() { return channel; }
     @Override public HandshakeResult handshake() throws IOException {
-        if (metrics != null) {
-            if (isServer) {
-                metrics.incrementServerUnencryptedConnectionsEstablished();
-            } else {
-                metrics.incrementClientUnencryptedConnectionsEstablished();
-            }
-            metrics = null;
+        if (isServer) {
+            metrics.incrementServerUnencryptedConnectionsEstablished();
+        } else {
+            metrics.incrementClientUnencryptedConnectionsEstablished();
         }
         return HandshakeResult.DONE;
     }

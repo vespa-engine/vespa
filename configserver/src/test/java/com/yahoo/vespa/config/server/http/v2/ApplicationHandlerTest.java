@@ -21,7 +21,6 @@ import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.StaticResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.config.server.SimpleJrtFactory;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -79,8 +78,7 @@ public class ApplicationHandlerTest {
         applicationRepository = new ApplicationRepository(tenantRepository,
                                                           provisioner,
                                                           orchestrator,
-                                                          Clock.systemUTC(),
-                                                          new SimpleJrtFactory());
+                                                          Clock.systemUTC());
         listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
                                                               tenantRepository,
                                                               Zone.defaultZone());
@@ -167,8 +165,7 @@ public class ApplicationHandlerTest {
                                                                                 new ConfigConvergenceChecker(stateApiFactory),
                                                                                 mockHttpProxy,
                                                                                 new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                                                                new OrchestratorMock(),
-                                                                                new SimpleJrtFactory());
+                                                                                new OrchestratorMock());
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
         when(mockHttpProxy.get(any(), eq(host), eq("container-clustercontroller"), eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));

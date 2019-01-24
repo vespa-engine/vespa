@@ -56,13 +56,12 @@ public class MaybeTlsCryptoSocket implements CryptoSocket {
 
     private class MyCryptoSocket extends NullCryptoSocket {
 
-        private final TransportMetrics metrics;
+        private final TransportMetrics metrics = TransportMetrics.getInstance();
         private TlsCryptoEngine factory;
         private Buffer buffer;
 
-        MyCryptoSocket(TransportMetrics metrics, SocketChannel channel, TlsCryptoEngine factory, boolean isServer) {
-            super(metrics, channel, isServer);
-            this.metrics = metrics;
+        MyCryptoSocket(SocketChannel channel, TlsCryptoEngine factory, boolean isServer) {
+            super(channel, isServer);
             this.factory = factory;
             this.buffer = new Buffer(4096);
         }
@@ -81,7 +80,7 @@ public class MaybeTlsCryptoSocket implements CryptoSocket {
                     data[i] = src.get(i);
                 }
                 if (looksLikeTlsToMe(data)) {
-                    TlsCryptoSocket tlsSocket = factory.createCryptoSocket(metrics, channel(), true);
+                    TlsCryptoSocket tlsSocket = factory.createCryptoSocket(channel(), true);
                     tlsSocket.injectReadData(buffer);
                     socket = tlsSocket;
                     return socket.handshake();
@@ -117,8 +116,8 @@ public class MaybeTlsCryptoSocket implements CryptoSocket {
         }
     }
 
-    public MaybeTlsCryptoSocket(TransportMetrics metrics, SocketChannel channel, TlsCryptoEngine factory, boolean isServer) {
-        this.socket = new MyCryptoSocket(metrics, channel, factory, isServer);
+    public MaybeTlsCryptoSocket(SocketChannel channel, TlsCryptoEngine factory, boolean isServer) {
+        this.socket = new MyCryptoSocket(channel, factory, isServer);
     }
 
     @Override public SocketChannel channel() { return socket.channel(); }

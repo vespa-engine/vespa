@@ -10,7 +10,6 @@ import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.config.server.SimpleJrtFactory;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import org.junit.Rule;
 import org.junit.Test;
@@ -186,7 +185,6 @@ public class FileDistributionStatusTest {
 
         // host status per host to be returned in getHostStatus()
         MockStatus(Set<HostStatus> status) {
-            super(new SimpleJrtFactory());
             status.forEach(s -> statuses.put(s.hostname(), s));
         }
 

@@ -4,14 +4,12 @@ package com.yahoo.vespa.config.server.rpc;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.component.Version;
-import com.yahoo.container.jdisc.jrt.JrtFactory;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
-import com.yahoo.vespa.config.server.SimpleJrtFactory;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 
@@ -38,16 +36,16 @@ public class MockRpc extends RpcServer {
     public volatile JRTServerConfigRequest latestRequest = null;
 
 
-    public MockRpc(int port, boolean createDefaultTenant, boolean pretendToHaveLoadedAnyApplication, File tempDir, JrtFactory jrtFactory) {
-        super(createConfig(port), null, Metrics.createTestMetrics(),
-              new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(tempDir, jrtFactory), jrtFactory);
+    public MockRpc(int port, boolean createDefaultTenant, boolean pretendToHaveLoadedAnyApplication, File tempDir) {
+        super(createConfig(port), null, Metrics.createTestMetrics(), 
+              new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(tempDir));
         if (createDefaultTenant) {
             onTenantCreate(TenantName.from("default"), new MockTenantProvider(pretendToHaveLoadedAnyApplication));
         }
     }
 
     public MockRpc(int port, boolean createDefaultTenant, File tempDir) {
-        this(port, createDefaultTenant, true, tempDir, new SimpleJrtFactory());
+        this(port, createDefaultTenant, true, tempDir);
     }
 
     public MockRpc(int port, File tempDir) {

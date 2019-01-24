@@ -31,7 +31,7 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     private enum HandshakeState { NOT_STARTED, NEED_READ, NEED_WRITE, COMPLETED }
 
-    private final TransportMetrics metrics;
+    private final TransportMetrics metrics = TransportMetrics.getInstance();
     private final SocketChannel channel;
     private final SSLEngine sslEngine;
     private final Buffer wrapBuffer;
@@ -42,8 +42,7 @@ public class TlsCryptoSocket implements CryptoSocket {
     private HandshakeState handshakeState;
     private AuthorizationResult authorizationResult;
 
-    public TlsCryptoSocket(TransportMetrics metrics, SocketChannel channel, SSLEngine sslEngine) {
-        this.metrics = metrics;
+    public TlsCryptoSocket(SocketChannel channel, SSLEngine sslEngine) {
         this.channel = channel;
         this.sslEngine = sslEngine;
         SSLSession nullSession = sslEngine.getSession();
