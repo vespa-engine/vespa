@@ -461,6 +461,18 @@ const data_t* Automaton::PackedAutomaton::lookup(const char *input) const
 }
 
 // }}}
+
+namespace {
+
+void checkWrite(int fd, const void *buf, size_t len, bool &success) {
+    ssize_t writeRes = ::write(fd, buf, len);
+    if (writeRes != static_cast<ssize_t>(len)) {
+        success = false;
+    }
+}
+
+}
+
 // {{{ Automaton::PackedAutomaton::write()
 
 bool Automaton::PackedAutomaton::write(const char *filename, uint32_t serial)
@@ -492,19 +504,32 @@ bool Automaton::PackedAutomaton::write(const char *filename, uint32_t serial)
     header._checksum += Checksum::compute(_perf_hash,header._size*sizeof(hash_t));
   }
 
-  ::write(fd,&header,sizeof(header));
-  ::write(fd,_symbol,header._size*(sizeof(symbol_t)));
-  ::write(fd,_packed_idx,header._size*(sizeof(state_t)));
-  ::write(fd,_blob,_blob_used);
+  bool success = true;
+  checkWrite(fd,&header,sizeof(header), success);
+  checkWrite(fd,_symbol,header._size*(sizeof(symbol_t)), success);
+  checkWrite(fd,_packed_idx,header._size*(sizeof(state_t)), success);
+  checkWrite(fd,_blob,_blob_used, success);
   if(header._has_perfect_hash){
-    ::write(fd,_perf_hash,header._size*(sizeof(hash_t)));
+      checkWrite(fd,_perf_hash,header._size*(sizeof(hash_t)), success);
   }
   close(fd);
 
-  return true;
+  return success;
 }
 
 // }}}
+
+namespace {
+
+void checkRead(int fd, void *buf, size_t len, bool &success) {
+    ssize_t readRes = ::read(fd, buf, len);
+    if (readRes != static_cast<ssize_t>(len)) {
+        success = false;
+    }
+}
+
+}
+
 // {{{ Automaton::PackedAutomaton::read()
 
 bool Automaton::PackedAutomaton::read(const char *filename)
@@ -534,22 +559,23 @@ bool Automaton::PackedAutomaton::read(const char *filename)
 
   _symbol = (symbol_t*)malloc(_packed_size*sizeof(symbol_t));
   assert(_symbol!=NULL);
-  ::read(fd,_symbol,_packed_size*(sizeof(symbol_t)));
+  bool success = true;
+  checkRead(fd,_symbol,_packed_size*(sizeof(symbol_t)), success);
   _packed_idx = (state_t*)malloc(_packed_size*sizeof(state_t));
   assert(_packed_idx!=NULL);
-  ::read(fd,_packed_idx,_packed_size*(sizeof(state_t)));
+  checkRead(fd,_packed_idx,_packed_size*(sizeof(state_t)), success);
   _blob = (data_t*)malloc(_blob_used);
   assert(_blob!=NULL);
-  ::read(fd,_blob,_blob_used);
+  checkRead(fd,_blob,_blob_used, success);
   if(header._has_perfect_hash){
     _perf_hash = (hash_t*)malloc(_packed_size*sizeof(hash_t));
     assert(_perf_hash!=NULL);
-    ::read(fd,_perf_hash,_packed_size*(sizeof(hash_t)));
+    checkRead(fd,_perf_hash,_packed_size*(sizeof(hash_t)), success);
   }
 
   ::close(fd);
 
-  return true;
+  return success;
 }
 
 // }}}
