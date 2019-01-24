@@ -29,9 +29,9 @@ import com.yahoo.vespa.hosted.provision.monitoring.MetricsReporterTest;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub;
 import com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker;
@@ -85,7 +85,7 @@ public class NodeFailTester {
         curator = new MockCurator();
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
                 new DockerImage("docker-registry.domain.tld:8080/dist/vespa"), true);
-        provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, new LoadBalancerServiceMock());
+        provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, new MockProvisionServiceProvider());
         hostLivenessTracker = new TestHostLivenessTracker(clock);
         orchestrator = new OrchestratorMock();
         this.configserverConfig = configserverConfig;

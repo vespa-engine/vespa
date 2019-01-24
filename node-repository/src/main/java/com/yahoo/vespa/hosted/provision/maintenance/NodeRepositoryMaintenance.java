@@ -12,12 +12,12 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetireIPv4OnlyNodes;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicyList;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareCount;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
@@ -51,7 +51,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final NodeRetirer nodeRetirer;
     private final MetricsReporter metricsReporter;
     private final InfrastructureProvisioner infrastructureProvisioner;
-    private final LoadBalancerExpirer loadBalancerExpirer;
+    private final Optional<LoadBalancerExpirer> loadBalancerExpirer;
 
     private final JobControl jobControl;
     private final InfrastructureVersions infrastructureVersions;
@@ -62,16 +62,16 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig,
                                      DuperModelInfraApi duperModelInfraApi,
-                                     LoadBalancerService loadBalancerService) {
+                                     ProvisionServiceProvider provisionServiceProvider) {
         this(nodeRepository, deployer, provisioner, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
-                orchestrator, metric, configserverConfig, duperModelInfraApi, loadBalancerService);
+                orchestrator, metric, configserverConfig, duperModelInfraApi, provisionServiceProvider);
     }
 
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Provisioner provisioner,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig, DuperModelInfraApi duperModelInfraApi,
-                                     LoadBalancerService loadBalancerService) {
+                                     ProvisionServiceProvider provisionServiceProvider) {
         DefaultTimes defaults = new DefaultTimes(zone);
         jobControl = new JobControl(nodeRepository.database());
         infrastructureVersions = new InfrastructureVersions(nodeRepository.database());
@@ -88,7 +88,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval), jobControl);
         metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
         infrastructureProvisioner = new InfrastructureProvisioner(provisioner, nodeRepository, infrastructureVersions, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval), jobControl, duperModelInfraApi);
-        loadBalancerExpirer = new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expiry").orElse(defaults.loadBalancerExpiry), jobControl, loadBalancerService);
+        loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService().map(lbService ->
+                new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expiry").orElse(defaults.loadBalancerExpiry), jobControl, lbService));
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintain();
@@ -114,7 +115,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         provisionedExpirer.deconstruct();
         metricsReporter.deconstruct();
         infrastructureProvisioner.deconstruct();
-        loadBalancerExpirer.deconstruct();
+        loadBalancerExpirer.ifPresent(LoadBalancerExpirer::deconstruct);
     }
 
     public JobControl jobControl() { return jobControl; }
