@@ -69,13 +69,13 @@ TEST_MT_F("run vbench", 2, Servers()) {
         EXPECT_TRUE(SlaveProc::run(strfmt("sed 's/_LOCAL_PORT_/%d/' vbench.cfg.template > vbench.cfg", f1.portal->listen_port()).c_str()));
         EXPECT_TRUE(SlaveProc::run("../../apps/vbench/vbench_app run vbench.cfg 2> vbench.out", out));
         fprintf(stderr, "null crypto: %s\n", out.c_str());
-        EXPECT_EQUAL(f1.my_get.cnt, 144u);
+        EXPECT_GREATER(f1.my_get.cnt, 10u);
     } else {
         std::string tls_out;
         EXPECT_TRUE(SlaveProc::run(strfmt("sed 's/_LOCAL_PORT_/%d/' vbench.tls.cfg.template > vbench.tls.cfg", f1.tls_portal->listen_port()).c_str()));
         EXPECT_TRUE(SlaveProc::run("../../apps/vbench/vbench_app run vbench.tls.cfg 2> vbench.tls.out", tls_out));
         fprintf(stderr, "tls crypto: %s\n", tls_out.c_str());
-        EXPECT_EQUAL(f1.my_tls_get.cnt, 144u);
+        EXPECT_GREATER(f1.my_tls_get.cnt, 10u);
     }
 }
 
