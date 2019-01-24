@@ -82,4 +82,30 @@ BoolFieldValue::getAsString() const {
     return _value ? "true" : "false";
 }
 
+BoolFieldValue&
+BoolFieldValue::operator=(vespalib::stringref v) {
+    _value = (v == "true");
+    return *this;
+}
+BoolFieldValue&
+BoolFieldValue::operator=(int32_t v) {
+    _value = (v != 0);
+    return *this;
+}
+BoolFieldValue&
+BoolFieldValue::operator=(int64_t v) {
+    _value = (v != 0);
+    return *this;
+}
+BoolFieldValue&
+BoolFieldValue::operator=(float v) {
+    _value = (v != 0);
+    return *this;
+}
+BoolFieldValue&
+BoolFieldValue::operator=(double v) {
+    _value = (v != 0);
+    return *this;
+}
+
 }  // namespace document
