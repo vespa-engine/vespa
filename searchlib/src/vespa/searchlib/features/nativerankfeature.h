@@ -3,12 +3,10 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/searchlib/fef/table.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * This struct contains parameters used by the nativeRank executor.
@@ -116,6 +114,4 @@ public:
     static bool useTableNormalization(const fef::IIndexEnvironment & env);
 };
 
-
-} // namespace features
-} // namespace search
+}

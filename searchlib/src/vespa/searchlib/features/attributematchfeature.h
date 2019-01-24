@@ -2,13 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/searchlib/common/feature.h>
 #include "queryterm.h"
+#include <vespa/searchlib/fef/blueprint.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 struct AttributeMatchParams {
     AttributeMatchParams() :
@@ -74,7 +71,7 @@ private:
 
     Computer _cmp;
 
-    virtual void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     /**
@@ -106,7 +103,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-
-} // namespace features
-} // namespace search
-
+}

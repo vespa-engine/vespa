@@ -7,8 +7,7 @@
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/fef/symmetrictable.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * This struct contains parameters used by the executor.
@@ -101,6 +100,4 @@ public:
     const NativeAttributeMatchParams & getParams() const { return _params; }
 };
 
-
-} // namespace features
-} // namespace search
+}

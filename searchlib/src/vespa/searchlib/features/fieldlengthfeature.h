@@ -2,10 +2,8 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the executor for field length.
@@ -15,7 +13,7 @@ private:
     std::vector<fef::TermFieldHandle> _fieldHandles;
     const fef::MatchData             *_md;
 
-    virtual void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     /**
@@ -48,5 +46,4 @@ public:
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
 };
 
-}}
-
+}

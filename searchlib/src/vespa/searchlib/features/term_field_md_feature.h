@@ -3,13 +3,11 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/fef/table.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/itermfielddata.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the executor for looking at term field match data
@@ -43,6 +41,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment & env, vespalib::Stash &stash) const override;
 };
 
-
-} // namespace features
-} // namespace search
+}

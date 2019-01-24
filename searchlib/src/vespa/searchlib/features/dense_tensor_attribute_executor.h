@@ -6,9 +6,8 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 
-namespace search {
-namespace tensor { class ITensorAttribute; }
-namespace features {
+namespace search::tensor { class ITensorAttribute; }
+namespace search::features {
 
 /**
  * Executor for extracting dense tensors from an underlying dense tensor attribute
@@ -25,5 +24,4 @@ public:
     void execute(uint32_t docId) override;
 };
 
-} // namespace features
-} // namespace search
+}

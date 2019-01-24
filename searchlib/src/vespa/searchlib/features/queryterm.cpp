@@ -6,8 +6,7 @@
 using namespace search::fef;
 using search::feature_t;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 QueryTerm::QueryTerm() :
     _termData(NULL),
@@ -45,5 +44,4 @@ QueryTermFactory::create(const IQueryEnvironment & env,
 }
 
 
-} // namespace features
-} // namespace search
+}

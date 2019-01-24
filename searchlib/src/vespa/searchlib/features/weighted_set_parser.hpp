@@ -5,8 +5,7 @@
 #include "weighted_set_parser.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 template <typename OutputType>
 void
@@ -44,5 +43,4 @@ WeightedSetParser::parse(const vespalib::string &input, OutputType &output)
     }
 }
 
-} // namespace features
-} // namespace search
+}

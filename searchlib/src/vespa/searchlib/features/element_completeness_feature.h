@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/fef.h>
+#include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/vespalib/util/priority_queue.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 //-----------------------------------------------------------------------------
 
@@ -117,8 +116,4 @@ public:
     const ElementCompletenessParams &getParams() const { return _params; }
 };
 
-//-----------------------------------------------------------------------------
-
-} // namespace features
-} // namespace search
-
+}

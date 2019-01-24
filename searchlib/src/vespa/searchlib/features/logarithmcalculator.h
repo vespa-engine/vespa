@@ -5,8 +5,7 @@
 #include <vespa/searchlib/common/feature.h>
 #include <cmath>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * This class is used to calculate a logarithmic-shaped function that goes from 1 to 0.
@@ -57,6 +56,4 @@ public:
     }
 };
 
-} // namespace features
-} // namespace search
-
+}

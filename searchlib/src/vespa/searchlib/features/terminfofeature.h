@@ -3,10 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 class TermInfoBlueprint : public fef::Blueprint
 {
@@ -24,6 +22,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
 };
 
-} // namespace features
-} // namespace search
-
+}

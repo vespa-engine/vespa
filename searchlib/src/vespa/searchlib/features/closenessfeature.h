@@ -4,10 +4,8 @@
 
 #include "logarithmcalculator.h"
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the executor for the closeness feature.
@@ -44,6 +42,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-
-} // namespace features
-} // namespace search
+}

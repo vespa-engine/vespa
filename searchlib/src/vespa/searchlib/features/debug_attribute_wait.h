@@ -2,13 +2,10 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/searchlib/fef/fef.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 //-----------------------------------------------------------------------------
 
@@ -33,8 +30,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-//-----------------------------------------------------------------------------
-
-} // namespace features
-} // namespace search
-
+}

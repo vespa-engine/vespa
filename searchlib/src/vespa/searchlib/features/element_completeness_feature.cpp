@@ -1,13 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "element_completeness_feature.h"
+#include <vespa/searchlib/fef/itermdata.h>
+#include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/locale/c.h>
 
 namespace search::features {
 
 //-----------------------------------------------------------------------------
 
-ElementCompletenessExecutor::ElementCompletenessExecutor(const search::fef::IQueryEnvironment &env,
+ElementCompletenessExecutor::ElementCompletenessExecutor(const fef::IQueryEnvironment &env,
                                                          const ElementCompletenessParams &params)
     : _params(params),
       _terms(),
@@ -16,11 +19,11 @@ ElementCompletenessExecutor::ElementCompletenessExecutor(const search::fef::IQue
       _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
-        const search::fef::ITermData *termData = env.getTerm(i);
+        const fef::ITermData *termData = env.getTerm(i);
         if (termData->getWeight().percent() != 0) { // only consider query terms with contribution
-            typedef search::fef::ITermFieldRangeAdapter FRA;
+            typedef fef::ITermFieldRangeAdapter FRA;
             for (FRA iter(*termData); iter.valid(); iter.next()) {
-                const search::fef::ITermFieldData &tfd = iter.get();
+                const fef::ITermFieldData &tfd = iter.get();
                 if (tfd.getFieldId() == _params.fieldId) {
                     int termWeight = termData->getWeight().percent();
                     _sumTermWeight += termWeight;
@@ -36,7 +39,7 @@ ElementCompletenessExecutor::execute(uint32_t docId)
 {
     assert(_queue.empty());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        const search::fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms[i].termHandle);
+        const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms[i].termHandle);
         if (tfmd->getDocId() == docId) {
             Item item(i, tfmd->begin(), tfmd->end());
             if (item.pos != item.end) {
@@ -92,14 +95,14 @@ ElementCompletenessBlueprint::ElementCompletenessBlueprint()
 }
 
 void
-ElementCompletenessBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                                search::fef::IDumpFeatureVisitor &visitor) const
+ElementCompletenessBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
+                                                fef::IDumpFeatureVisitor &visitor) const
 {
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
-        const search::fef::FieldInfo &field = *env.getField(i);
-        if (field.type() == search::fef::FieldType::INDEX) {
+        const fef::FieldInfo &field = *env.getField(i);
+        if (field.type() == fef::FieldType::INDEX) {
             if (!field.isFilter()) {
-                search::fef::FeatureNameBuilder fnb;
+                fef::FeatureNameBuilder fnb;
                 fnb.baseName(getBaseName()).parameter(field.name());
                 for (size_t out = 0; out < _output.size(); ++out) {
                     visitor.visitDumpFeature(fnb.output(_output[out]).buildName());
@@ -109,21 +112,21 @@ ElementCompletenessBlueprint::visitDumpFeatures(const search::fef::IIndexEnviron
     }
 }
 
-search::fef::Blueprint::UP
+fef::Blueprint::UP
 ElementCompletenessBlueprint::createInstance() const
 {
     return Blueprint::UP(new ElementCompletenessBlueprint());
 }
 
 bool
-ElementCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
-                                    const search::fef::ParameterList &params)
+ElementCompletenessBlueprint::setup(const fef::IIndexEnvironment &env,
+                                    const fef::ParameterList &params)
 {
-    const search::fef::FieldInfo *field = params[0].asField();
+    const fef::FieldInfo *field = params[0].asField();
 
     _params.fieldId = field->id();
-    const search::fef::Properties &lst = env.getProperties();
-    search::fef::Property obj = lst.lookup(getName(), "fieldCompletenessImportance");
+    const fef::Properties &lst = env.getProperties();
+    fef::Property obj = lst.lookup(getName(), "fieldCompletenessImportance");
     if (obj.found()) {
         _params.fieldCompletenessImportance = vespalib::locale::c::atof(obj.get().c_str());
     }
@@ -135,8 +138,8 @@ ElementCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::FeatureExecutor &
-ElementCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
+fef::FeatureExecutor &
+ElementCompletenessBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     return stash.create<ElementCompletenessExecutor>(env, _params);
 }

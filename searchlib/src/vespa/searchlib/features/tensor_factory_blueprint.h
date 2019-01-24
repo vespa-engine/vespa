@@ -5,13 +5,12 @@
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Factory class for tensor rank features.
  */
-class TensorFactoryBlueprint : public search::fef::Blueprint
+class TensorFactoryBlueprint : public fef::Blueprint
 {
 protected:
     static vespalib::string ATTRIBUTE_SOURCE;
@@ -26,9 +25,8 @@ protected:
     ~TensorFactoryBlueprint();
 
 public:
-    void visitDumpFeatures(const search::fef::IIndexEnvironment &,
-                           search::fef::IDumpFeatureVisitor &) const override {}
+    void visitDumpFeatures(const fef::IIndexEnvironment &,
+                           fef::IDumpFeatureVisitor &) const override {}
 };
 
-} // namespace features
-} // namespace search
+}

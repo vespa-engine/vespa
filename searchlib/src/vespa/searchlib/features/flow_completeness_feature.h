@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/fef.h>
+#include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/vespalib/util/priority_queue.h>
 
 namespace search::features {

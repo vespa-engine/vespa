@@ -3,13 +3,11 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/eval/tensor/default_tensor.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Feature executor that extracts the content from an attribute vector
@@ -52,5 +50,4 @@ TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
     outputs().set_object(0, *_tensor);
 }
 
-} // namespace features
-} // namespace search
+}

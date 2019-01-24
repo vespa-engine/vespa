@@ -3,12 +3,10 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/fef/table.h>
 #include "termdistancecalculator.h"
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * This struct contains parameters used by the executor.
@@ -59,6 +57,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-
-} // namespace features
-} // namespace search
+}

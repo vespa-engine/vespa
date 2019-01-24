@@ -1,10 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/searchlib/common/feature.h>
+#include <vespa/searchcommon/attribute/attributecontent.h>
 
 namespace search::features {
 

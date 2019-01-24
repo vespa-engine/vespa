@@ -6,8 +6,7 @@
 #include "queryterm.h"
 #include <vespa/fastos/dynamiclibrary.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * This struct contains parameters used by the executor.
@@ -114,7 +113,4 @@ public:
     const NativeFieldMatchParams & getParams() const { return _params; }
 };
 
-
-} // namespace features
-} // namespace search
-
+}

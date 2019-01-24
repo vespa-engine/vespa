@@ -54,15 +54,14 @@
 #include "valuefeature.h"
 #include "constant_feature.h"
 
-#include <vespa/searchlib/features/max_reduce_prod_join_replacer.h>
+#include "max_reduce_prod_join_replacer.h"
 #include <vespa/searchlib/features/rankingexpression/expression_replacer.h>
 
 using search::fef::Blueprint;
 using search::features::rankingexpression::ListExpressionReplacer;
 using search::features::MaxReduceProdJoinReplacer;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 void setup_search_features(fef::IBlueprintRegistry & registry)
 {
@@ -127,5 +126,4 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<RankingExpressionBlueprint>(std::move(replacers)));
 }
 
-} // namespace features
-} // namespace search
+}

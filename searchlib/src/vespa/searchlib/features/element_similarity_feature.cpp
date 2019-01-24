@@ -1,17 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "element_similarity_feature.h"
+#include <vespa/searchlib/fef/itermdata.h>
+#include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/searchlib/fef/properties.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.elementsimilarity");
 
-namespace search {
+namespace search::features {
 
 using CollectionType = fef::FieldInfo::CollectionType;
-
-namespace features {
 
 namespace {
 
@@ -29,6 +30,7 @@ struct Aggregator {
 struct MaxAggregator : Aggregator {
     size_t count;
     double value;
+
     MaxAggregator() : count(0), value(0.0) {}
     UP create() const override { return UP(new MaxAggregator()); }
     void clear() override { count = 0; value = 0.0; }
@@ -39,15 +41,18 @@ struct MaxAggregator : Aggregator {
 struct AvgAggregator : Aggregator {
     size_t count;
     double value;
+
     AvgAggregator() : count(0), value(0.0) {}
+
     UP create() const override { return UP(new AvgAggregator()); }
     void clear() override { count = 0; value = 0.0; }
-    void add(double v) override { ++count; value += v; }
-    double get() const override { return (count == 0) ? 0.0 : (value/count); }
+    void add(double v) override { ++count;value += v; }
+    double get() const override { return (count == 0) ? 0.0 : (value / count); }
 };
 
 struct SumAggregator : Aggregator {
     double value;
+
     SumAggregator() : value(0.0) {}
     UP create() const override { return UP(new SumAggregator()); }
     void clear() override { value = 0.0; }
@@ -55,7 +60,8 @@ struct SumAggregator : Aggregator {
     double get() const override { return value; }
 };
 
-Aggregator::UP create_aggregator(const vespalib::string &name) {
+Aggregator::UP
+create_aggregator(const vespalib::string &name) {
     if (name == "max") {
         return Aggregator::UP(new MaxAggregator());
     }
@@ -71,6 +77,7 @@ Aggregator::UP create_aggregator(const vespalib::string &name) {
 //-----------------------------------------------------------------------------
 
 typedef double (*function_5)(double, double, double, double, double);
+
 typedef std::pair<function_5, Aggregator::UP> OutputSpec;
 
 //-----------------------------------------------------------------------------
@@ -78,19 +85,25 @@ typedef std::pair<function_5, Aggregator::UP> OutputSpec;
 struct VectorizedQueryTerms {
     struct Term {
         fef::TermFieldHandle handle;
-        int                          weight;
-        int                          index;
+        int weight;
+        int index;
+
         Term(fef::TermFieldHandle handle_in, int weight_in, int index_in)
-            : handle(handle_in), weight(weight_in), index(index_in) {}
+            : handle(handle_in), weight(weight_in), index(index_in)
+        {}
     };
 
     std::vector<fef::TermFieldHandle> handles;
-    std::vector<int>                  weights;
-    int                               total_weight;
+    std::vector<int> weights;
+    int              total_weight;
 
     VectorizedQueryTerms(const VectorizedQueryTerms &) = delete;
+
     VectorizedQueryTerms(VectorizedQueryTerms &&rhs)
-        : handles(std::move(rhs.handles)), weights(std::move(rhs.weights)), total_weight(rhs.total_weight) {}
+        : handles(std::move(rhs.handles)), weights(std::move(rhs.weights)),
+          total_weight(rhs.total_weight)
+    {}
+
     VectorizedQueryTerms(const fef::IQueryEnvironment &env, uint32_t field_id)
         : handles(), weights(), total_weight(0)
     {
@@ -104,13 +117,12 @@ struct VectorizedQueryTerms {
                     if (tfd.getFieldId() == field_id) {
                         int term_weight = termData->getWeight().percent();
                         total_weight += term_weight;
-                        terms.push_back(Term(tfd.getHandle(), term_weight,
-                                        termData->getTermIndex()));
+                        terms.push_back(Term(tfd.getHandle(), term_weight, termData->getTermIndex()));
                     }
                 }
             }
         }
-        std::sort(terms.begin(), terms.end(), [](const Term &a, const Term &b){ return (a.index < b.index); });
+        std::sort(terms.begin(), terms.end(), [](const Term &a, const Term &b) { return (a.index < b.index); });
         handles.reserve(terms.size());
         weights.reserve(terms.size());
         for (size_t i = 0; i < terms.size(); ++i) {
@@ -118,21 +130,22 @@ struct VectorizedQueryTerms {
             weights.push_back(terms[i].weight);
         }
     }
+
     ~VectorizedQueryTerms();
 };
 
-VectorizedQueryTerms::~VectorizedQueryTerms() { }
+VectorizedQueryTerms::~VectorizedQueryTerms() = default;
 
 //-----------------------------------------------------------------------------
 
 struct State {
-    uint32_t  element_length;
-    uint32_t  matched_terms;
-    int       sum_term_weight;
-    uint32_t  last_pos;
-    double    sum_proximity_score;
-    uint32_t  last_idx;
-    uint32_t  num_in_order;
+    uint32_t element_length;
+    uint32_t matched_terms;
+    int      sum_term_weight;
+    uint32_t last_pos;
+    double   sum_proximity_score;
+    uint32_t last_idx;
+    uint32_t num_in_order;
 
     double proximity;
     double order;
@@ -148,10 +161,11 @@ struct State {
           last_idx(first_idx), num_in_order(0),
           proximity(0.0), order(0.0),
           query_coverage(0.0), field_coverage(0.0),
-          element_weight(element_weight_in) {}
+          element_weight(element_weight_in)
+    {}
 
     double proximity_score(uint32_t dist) {
-        return (dist > 8) ? 0 : (1.0 - (((dist-1)/8.0) * ((dist-1)/8.0)));
+        return (dist > 8) ? 0 : (1.0 - (((dist - 1) / 8.0) * ((dist - 1) / 8.0)));
     }
 
     bool want_match(uint32_t pos) {
@@ -162,7 +176,7 @@ struct State {
         sum_proximity_score += proximity_score(pos - last_pos);
         num_in_order += (idx > last_idx) ? 1 : 0;
         last_pos = pos;
-        last_idx = idx;        
+        last_idx = idx;
         ++matched_terms;
         sum_term_weight += weight;
     }
@@ -190,24 +204,28 @@ private:
 
     struct CmpPosition {
         ITR *pos;
+
         CmpPosition(ITR *pos_in) : pos(pos_in) {}
+
         bool operator()(uint16_t a, uint16_t b) {
             return (pos[a]->getPosition() == pos[b]->getPosition())
-                ? (a < b)
-                : (pos[a]->getPosition() < pos[b]->getPosition());
+                   ? (a < b)
+                   : (pos[a]->getPosition() < pos[b]->getPosition());
         }
     };
 
     struct CmpElement {
         ITR *pos;
+
         CmpElement(ITR *pos_in) : pos(pos_in) {}
+
         bool operator()(uint16_t a, uint16_t b) {
             return pos[a]->getElementId() < pos[b]->getElementId();
         }
     };
 
     typedef vespalib::PriorityQueue<uint16_t, CmpPosition> PositionQueue;
-    typedef vespalib::PriorityQueue<uint16_t, CmpElement>  ElementQueue;
+    typedef vespalib::PriorityQueue<uint16_t, CmpElement> ElementQueue;
 
     VectorizedQueryTerms    _terms;
     std::vector<ITR>        _pos;
@@ -215,7 +233,7 @@ private:
     PositionQueue           _position_queue;
     ElementQueue            _element_queue;
     std::vector<OutputSpec> _outputs;
-    const fef::MatchData *_md;
+    const fef::MatchData   *_md;
 
 public:
     ElementSimilarityExecutor(VectorizedQueryTerms &&terms, std::vector<OutputSpec> &&outputs_in)
@@ -226,7 +244,7 @@ public:
           _element_queue(CmpElement(&_pos[0])),
           _outputs(std::move(outputs_in)),
           _md(nullptr)
-    {}
+    { }
 
     bool isPure() override { return _terms.handles.empty(); }
 
@@ -235,9 +253,7 @@ public:
     }
 
     void requeue_term(uint16_t term, uint32_t element) {
-        while (_pos[term] != _end[term] &&
-               _pos[term]->getElementId() == element)
-        {
+        while (_pos[term] != _end[term] && (_pos[term]->getElementId() == element)) {
             ++_pos[term];
         }
         if (_pos[term] != _end[term]) {
@@ -276,10 +292,8 @@ public:
             while (!_position_queue.empty()) {
                 uint16_t item = _position_queue.front();
                 if (state.want_match(_pos[item]->getPosition())) {
-                    state.addMatch(_pos[item]->getPosition(),
-                                   _terms.weights[item],
-                                   item);
-                    requeue_term(_position_queue.front(), elementId);                    
+                    state.addMatch(_pos[item]->getPosition(), _terms.weights[item], item);
+                    requeue_term(_position_queue.front(), elementId);
                     _position_queue.pop_front();
                 } else {
                     ++_pos[item];
@@ -293,8 +307,8 @@ public:
             state.calculate_scores(_terms.handles.size(), _terms.total_weight);
             for (auto &output: _outputs) {
                 output.second->add(output.first(state.proximity, state.order,
-                                state.query_coverage, state.field_coverage,
-                                state.element_weight));
+                                                state.query_coverage, state.field_coverage,
+                                                state.element_weight));
             }
         }
         for (size_t i = 0; i < _outputs.size(); ++i) {
@@ -305,18 +319,20 @@ public:
 
 //-----------------------------------------------------------------------------
 
-std::vector<std::pair<vespalib::string, vespalib::string> > extract_properties(const fef::Properties &props,
-        const vespalib::string &ns, const vespalib::string &first_name, const vespalib::string &first_default)
+std::vector<std::pair<vespalib::string, vespalib::string> >
+extract_properties(const fef::Properties &props, const vespalib::string &ns,
+                   const vespalib::string &first_name, const vespalib::string &first_default)
 {
     struct MyVisitor : fef::IPropertiesVisitor {
         const vespalib::string &first_name;
         std::vector<std::pair<vespalib::string, vespalib::string> > &result;
+
         MyVisitor(const vespalib::string &first_name_in,
                   std::vector<std::pair<vespalib::string, vespalib::string> > &result_in)
-            : first_name(first_name_in), result(result_in) {}
-        virtual void visitProperty(const fef::Property::Value &key,
-                                   const fef::Property &values) override
-        {
+            : first_name(first_name_in), result(result_in)
+        {}
+
+        void visitProperty(const fef::Property::Value &key, const fef::Property &values) override {
             if (key != first_name) {
                 result.emplace_back(key, values.get());
             }
@@ -329,9 +345,8 @@ std::vector<std::pair<vespalib::string, vespalib::string> > extract_properties(c
     return result;
 }
 
-std::vector<std::pair<vespalib::string, vespalib::string> > get_outputs(const fef::Properties &props,
-        const vespalib::string &feature)
-{
+std::vector<std::pair<vespalib::string, vespalib::string> >
+get_outputs(const fef::Properties &props, const vespalib::string &feature) {
     return extract_properties(props, feature + ".output", "default", "max((0.35*p+0.15*o+0.30*q+0.20*f)*w)");
 }
 
@@ -340,20 +355,22 @@ std::vector<std::pair<vespalib::string, vespalib::string> > get_outputs(const fe
 //-----------------------------------------------------------------------------
 
 struct ElementSimilarityBlueprint::OutputContext {
-    vespalib::eval::CompileCache::Token::UP compile_token;    
+    vespalib::eval::CompileCache::Token::UP compile_token;
     Aggregator::UP aggregator_factory;
-    OutputContext(const vespalib::eval::Function &function,
-                  Aggregator::UP aggregator)
+
+    OutputContext(const vespalib::eval::Function &function, Aggregator::UP aggregator)
         : compile_token(vespalib::eval::CompileCache::compile(function, vespalib::eval::PassParams::SEPARATE)),
-          aggregator_factory(std::move(aggregator)) {}
+          aggregator_factory(std::move(aggregator))
+    {}
 };
 
 //-----------------------------------------------------------------------------
 
 ElementSimilarityBlueprint::ElementSimilarityBlueprint()
-    : Blueprint("elementSimilarity"), _field_id(fef::IllegalHandle), _outputs() {}
+    : Blueprint("elementSimilarity"), _field_id(fef::IllegalHandle), _outputs()
+{}
 
-ElementSimilarityBlueprint::~ElementSimilarityBlueprint() {}
+ElementSimilarityBlueprint::~ElementSimilarityBlueprint() = default;
 
 void
 ElementSimilarityBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
@@ -363,7 +380,7 @@ ElementSimilarityBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
         const fef::FieldInfo &field = *env.getField(i);
         if ((field.type() == fef::FieldType::INDEX) &&
             (field.collection() != CollectionType::SINGLE) &&
-            ( ! field.isFilter()))
+            (!field.isFilter()))
         {
             fef::FeatureNameBuilder fnb;
             fnb.baseName(getBaseName()).parameter(field.name());
@@ -377,8 +394,7 @@ ElementSimilarityBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
 }
 
 bool
-ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env,
-                                  const fef::ParameterList &params)
+ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params)
 {
     const fef::FieldInfo *field = params[0].asField();
     _field_id = field->id();
@@ -391,7 +407,8 @@ ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env,
         vespalib::string expr;
         vespalib::string error;
         if (!vespalib::eval::Function::unwrap(entry.second, aggr_name, expr, error)) {
-            LOG(warning, "'%s': could not extract aggregator and expression for output '%s' from config value '%s' (%s)",
+            LOG(warning,
+                "'%s': could not extract aggregator and expression for output '%s' from config value '%s' (%s)",
                 fnb.buildName().c_str(), entry.first.c_str(), entry.second.c_str(), error.c_str());
             return false;
         }
@@ -400,7 +417,7 @@ ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env,
             LOG(warning, "'%s': unknown aggregator '%s'", fnb.buildName().c_str(), aggr_name.c_str());
             return false;
         }
-        std::vector<vespalib::string> args({"p","o","q","f","w"});
+        std::vector<vespalib::string> args({"p", "o", "q", "f", "w"});
         vespalib::eval::Function function = vespalib::eval::Function::parse(args, expr);
         if (function.has_error()) {
             LOG(warning, "'%s': per-element expression parse error: %s",
@@ -424,7 +441,4 @@ ElementSimilarityBlueprint::createExecutor(const fef::IQueryEnvironment &env, ve
     return stash.create<ElementSimilarityExecutor>(VectorizedQueryTerms(env, _field_id), std::move(output_specs));
 }
 
-//-----------------------------------------------------------------------------
-
-} // namespace features
-} // namespace search
+}

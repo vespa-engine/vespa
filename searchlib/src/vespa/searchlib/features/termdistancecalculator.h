@@ -4,14 +4,12 @@
 
 #include "queryterm.h"
 
-namespace search {
-
-namespace fef {
+namespace search::fef {
     class TermFieldMatchData;
     class MatchData;
 }
 
-namespace features {
+namespace search::features {
 
 /**
  * This class is used to calculate the minimal forward and reverse term distance
@@ -82,5 +80,4 @@ public:
                     const fef::MatchData & match, uint32_t docId, Result & r);
 };
 
-} // namespace features
-} // namespace search
+}

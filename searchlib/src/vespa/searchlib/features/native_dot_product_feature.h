@@ -3,12 +3,10 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/query/weight.h>
 #include <algorithm>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 class NativeDotProductExecutor : public fef::FeatureExecutor
 {
@@ -44,6 +42,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-} // namespace features
-} // namespace search
-
+}

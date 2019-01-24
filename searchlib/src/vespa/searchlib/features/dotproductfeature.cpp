@@ -64,9 +64,9 @@ DotProductExecutor<Vector, Buffer>::execute(uint32_t docId)
     outputs().set_number(0, val);
 }
 
-StringVector::StringVector() { }
+StringVector::StringVector() = default;
 
-StringVector::~StringVector() { }
+StringVector::~StringVector() = default;
 
 }
 
@@ -81,7 +81,7 @@ DotProductExecutorBase<BaseType>::DotProductExecutorBase(const V & queryVector)
 }
 
 template <typename BaseType>
-DotProductExecutorBase<BaseType>::~DotProductExecutorBase() { }
+DotProductExecutorBase<BaseType>::~DotProductExecutorBase() = default;
 
 template <typename BaseType>
 void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {

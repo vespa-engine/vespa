@@ -8,9 +8,8 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/eval/tensor/default_tensor.h>
 
-namespace search {
-namespace tensor { class ITensorAttribute; }
-namespace features {
+namespace search::tensor { class ITensorAttribute; }
+namespace search::features {
 
 class TensorAttributeExecutor : public fef::FeatureExecutor
 {
@@ -24,5 +23,4 @@ public:
     void execute(uint32_t docId) override;
 };
 
-} // namespace features
-} // namespace search
+}

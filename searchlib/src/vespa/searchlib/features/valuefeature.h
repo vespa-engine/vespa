@@ -3,12 +3,9 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/searchlib/common/feature.h>
 #include <vector>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 class ValueExecutor : public fef::FeatureExecutor
 {
@@ -51,6 +48,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
 };
 
-} // namespace features
-} // namespace search
-
+}
