@@ -85,6 +85,7 @@ public class OperationHandlerImplTest {
         try {
             OperationHandlerImpl.resolveClusterDef(Optional.of("wrong"), clusterDef);
         } catch(RestApiException e) {
+            assertThat(e.getResponse().getStatus(), is(400));
             String errorMsg = renderRestApiExceptionAsString(e);
             assertThat(errorMsg, is("{\"errors\":[{\"description\":" +
                     "\"MISSING_CLUSTER Your vespa cluster contains the content clusters foo2 (configId2), foo (configId)," +
