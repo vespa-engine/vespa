@@ -170,7 +170,7 @@ public class Transport {
             this.fatalHandler = fatalHandler; // NB: this must be set first
         }
         this.cryptoEngine = cryptoEngine;
-        thread    = new Thread(new Run(), "<transport>");
+        thread    = new Thread(new Run(), "<jrt-transport>");
         queue     = new Queue();
         myQueue   = new Queue();
         connector = new Connector(this);
