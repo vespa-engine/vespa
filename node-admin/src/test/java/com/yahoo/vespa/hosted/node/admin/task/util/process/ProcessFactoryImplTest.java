@@ -1,15 +1,24 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileAttributes;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.time.TestTimer;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.Set;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,4 +54,35 @@ public class ProcessFactoryImplTest {
 
         assertFalse(Files.exists(outputPath));
     }
+
+    @Test
+    public void testSpawnWithPersistentOutputFile() {
+
+        class TemporaryFile implements AutoCloseable {
+            Path path;
+            TemporaryFile() {
+                String outputFileName = ProcessFactoryImplTest.class.getSimpleName() + "-temporary-test-file.out";
+                FileAttribute<Set<PosixFilePermission>> fileAttribute = PosixFilePermissions.asFileAttribute(
+                        PosixFilePermissions.fromString("rw-------"));
+                path = uncheck(() -> Files.createTempFile(outputFileName, ".out", fileAttribute));
+            }
+            @Override public void close() { uncheck(() -> Files.deleteIfExists(path)); }
+        }
+
+        try (TemporaryFile outputPath = new TemporaryFile()) {
+            CommandLine commandLine = mock(CommandLine.class);
+            when(commandLine.getArguments()).thenReturn(Arrays.asList("program"));
+            when(commandLine.programName()).thenReturn("program");
+            when(commandLine.getOutputFile()).thenReturn(Optional.of(outputPath.path));
+            try (ChildProcess2Impl child = processFactory.spawn(commandLine)) {
+                assertEquals(outputPath.path, child.getOutputPath());
+                assertTrue(Files.exists(outputPath.path));
+                assertEquals("rw-------", new UnixPath(outputPath.path).getPermissions());
+            }
+
+            assertTrue(Files.exists(outputPath.path));
+        }
+
+    }
+
 }

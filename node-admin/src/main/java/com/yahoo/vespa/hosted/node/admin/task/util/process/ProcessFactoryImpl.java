@@ -48,7 +48,7 @@ public class ProcessFactoryImpl implements ProcessFactory {
             processBuilder.redirectError(ProcessBuilder.Redirect.to(DEV_NULL));
         }
 
-        // The output is redirected to a temporary file because:
+        // The output is redirected to a file (temporary or user-defined) because:
         //  - We could read continuously from process.getInputStream, but that may block
         //    indefinitely with a faulty program.
         //  - If we don't read continuously from process.getInputStream, then because
@@ -60,27 +60,36 @@ public class ProcessFactoryImpl implements ProcessFactory {
         // has the benefit of allowing for inspection of the file during execution, and
         // allowing the inspection of the file if it e.g. gets too large to hold in-memory.
 
-        String temporaryFilePrefix =
-                ProcessFactoryImpl.class.getSimpleName() + "-" + commandLine.programName() + "-";
-
         FileAttribute<Set<PosixFilePermission>> fileAttribute = PosixFilePermissions.asFileAttribute(
                 PosixFilePermissions.fromString("rw-------"));
 
-        Path temporaryFile = uncheck(() -> Files.createTempFile(
-                temporaryFilePrefix,
-                ".out",
-                fileAttribute));
+        Path outputFile = commandLine.getOutputFile()
+                                     .map(file -> {
+                                         uncheck(() -> Files.deleteIfExists(file));
+                                         uncheck(() -> Files.createFile(file, fileAttribute));
+                                         return file;
+                                     })
+                                     .orElseGet(() -> {
+                                         String temporaryFilePrefix =
+                                                 ProcessFactoryImpl.class.getSimpleName() + "-" + commandLine.programName() + "-";
+
+                                         return uncheck(() -> Files.createTempFile(
+                                                 temporaryFilePrefix,
+                                                 ".out",
+                                                 fileAttribute));
+                                     });
 
         try {
-            processBuilder.redirectOutput(temporaryFile.toFile());
+            processBuilder.redirectOutput(outputFile.toFile());
             ProcessApi2 process = processStarter.start(processBuilder);
-            return new ChildProcess2Impl(commandLine, process, temporaryFile, timer);
+            return new ChildProcess2Impl(commandLine, process, outputFile, timer);
         } catch (RuntimeException | Error throwable) {
             try {
-                Files.delete(temporaryFile);
+                if ( ! commandLine.getOutputFile().isPresent())
+                    Files.delete(outputFile);
             } catch (IOException ioException) {
                 logger.log(LogLevel.WARNING, "Failed to delete temporary file at " +
-                        temporaryFile, ioException);
+                                             outputFile, ioException);
             }
             throw throwable;
         }
