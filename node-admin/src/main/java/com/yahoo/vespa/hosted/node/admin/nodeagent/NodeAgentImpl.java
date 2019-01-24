@@ -325,6 +325,15 @@ public class NodeAgentImpl implements NodeAgent {
                     currentRebootGeneration, node.getWantedRebootGeneration()));
         }
 
+        // Even though memory can be easily changed with docker update, we need to restart the container
+        // for proton to pick up the change. If/when proton could detect available memory correctly (rather than reading
+        // VESPA_TOTAL_MEMORY_MB env. variable set in DockerOperation), it would be enough with a services restart
+        ContainerResources wantedContainerResources = getContainerResources(node);
+        if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
+            return Optional.of("Container should be running with different memory allocation, wanted: " +
+                    wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
+        }
+
         if (containerState == STARTING) return Optional.of("Container failed to start");
         return Optional.empty();
     }
@@ -358,22 +367,24 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void updateContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
-        double cpuCap = context.node().getOwner()
-                .map(NodeSpec.Owner::asApplicationId)
-                .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
-                .orElse(containerCpuCap)
-                .value() * context.node().getMinCpuCores();
-
-        ContainerResources wantedContainerResources = ContainerResources.from(
-                cpuCap, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb());
-
-        if (wantedContainerResources.equals(existingContainer.resources)) return;
-        context.log(logger, "Container should be running with different resource allocation, wanted: %s, current: %s",
-                wantedContainerResources, existingContainer.resources);
+        ContainerResources wantedContainerResources = getContainerResources(context.node());
+        if (wantedContainerResources.equalsCpu(existingContainer.resources)) return;
+        context.log(logger, "Container should be running with different CPU allocation, wanted: %s, current: %s",
+                wantedContainerResources.toStringCpu(), existingContainer.resources.toStringCpu());
 
         orchestratorSuspendNode(context);
 
         dockerOperations.updateContainer(context, wantedContainerResources);
+    }
+
+    private ContainerResources getContainerResources(NodeSpec node) {
+        double cpuCap = node.getOwner()
+                .map(NodeSpec.Owner::asApplicationId)
+                .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
+                .orElse(containerCpuCap)
+                .value() * node.getMinCpuCores();
+
+        return ContainerResources.from(cpuCap, node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
     }
 
 

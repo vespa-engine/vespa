@@ -65,14 +65,23 @@ public class ContainerResources {
         return memoryBytes;
     }
 
+
+    /** Returns true iff the memory component(s) of between <code>this</code> and <code>other</code> are equal */
+    public boolean equalsMemory(ContainerResources other) {
+        return memoryBytes == other.memoryBytes;
+    }
+
+    /** Returns true iff the CPU component(s) of between <code>this</code> and <code>other</code> are equal */
+    public boolean equalsCpu(ContainerResources other) {
+        return Math.abs(other.cpus - cpus) < 0.0001 && cpuShares == other.cpuShares;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ContainerResources that = (ContainerResources) o;
-        return Math.abs(that.cpus - cpus) < 0.0001 &&
-                cpuShares == that.cpuShares &&
-                memoryBytes == that.memoryBytes;
+        return equalsMemory(that) && equalsCpu(that);
     }
 
     @Override
@@ -80,10 +89,20 @@ public class ContainerResources {
         return Objects.hash(cpus, cpuShares, memoryBytes);
     }
 
+
+    /** Returns only the memory component(s) of {@link #toString()} */
+    public String toStringMemory() {
+        return (memoryBytes > 0 ? memoryBytes + "B" : "unlimited") + " memory";
+    }
+
+    /** Returns only the CPU component(s) of {@link #toString()} */
+    public String toStringCpu() {
+        return (cpus > 0 ? cpus : "unlimited") +" CPUs, " +
+                (cpuShares > 0 ? cpuShares : "unlimited") + " CPU Shares";
+    }
+
     @Override
     public String toString() {
-        return (cpus > 0 ? cpus : "unlimited") +" CPUs, " +
-                (cpuShares > 0 ? cpuShares : "unlimited") + " CPU Shares, " +
-                (memoryBytes > 0 ? memoryBytes + "B" : "unlimited") + " memory";
+        return toStringCpu() + ", " + toStringMemory();
     }
 }

@@ -162,6 +162,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         containerResources.ifPresent(cr -> hostConfig
                 .withCpuShares(cr.cpuShares())
                 .withMemory(cr.memoryBytes())
+                // MemorySwap is the total amount of memory and swap, if MemorySwap == Memory, then container has no access swap
                 .withMemorySwap(cr.memoryBytes())
                 .withCpuPeriod(cr.cpuQuota() > 0 ? cr.cpuPeriod() : null)
                 .withCpuQuota(cr.cpuQuota() > 0 ? cr.cpuQuota() : null));
