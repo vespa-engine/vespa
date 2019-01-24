@@ -8,12 +8,14 @@
 #include "maintenancecontroller.h"
 #include "searchabledocsubdb.h"
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
 using proton::matching::SessionManager;
 using search::GrowStrategy;
 using search::SerialNum;
 using search::index::Schema;
 using searchcorespi::IFlushTarget;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 
@@ -109,10 +111,26 @@ DocumentSubDBCollection::DocumentSubDBCollection(
 
 DocumentSubDBCollection::~DocumentSubDBCollection()
 {
-    for (auto subDb : _subDBs) {
-        delete subDb;
+    size_t numCores = std::max(1u, std::thread::hardware_concurrency());
+    vespalib::ThreadStackExecutor closePool(std::min(_subDBs.size(), numCores), 0x20000);
+    while (!_subDBs.empty()) {
+        closePool.execute(makeLambdaTask([subDB=_subDBs.back()]() { delete subDB; }));
+        _subDBs.pop_back();
     }
+    closePool.sync();
+
     _bucketDB.reset();
+
+    RetrieversSP retrievers = _retrievers.get();
+    _retrievers.clear();
+    if (retrievers) {
+        while (!retrievers->empty()) {
+            auto retriever = std::move(retrievers->back());
+            retrievers->pop_back();
+            closePool.execute(makeLambdaTask([r = std::move(retriever)]() mutable { r.reset(); }));
+        }
+    }
+    closePool.sync();
 }
 
 void
