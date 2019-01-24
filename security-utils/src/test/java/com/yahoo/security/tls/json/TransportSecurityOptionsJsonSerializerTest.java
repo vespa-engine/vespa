@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.CN;
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_DNS;
@@ -64,6 +65,7 @@ public class TransportSecurityOptionsJsonSerializerTest {
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
                 .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
                 .withCaCertificates(Paths.get("my_cas.pem"))
+                .withAcceptedCiphers(List.of("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384" , "TLS_AES_256_GCM_SHA384"))
                 .build();
         File outputFile = tempDirectory.newFile();
         try (OutputStream out = Files.newOutputStream(outputFile.toPath())) {

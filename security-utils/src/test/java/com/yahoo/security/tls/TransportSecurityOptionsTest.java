@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -20,6 +21,7 @@ public class TransportSecurityOptionsTest {
     private static final TransportSecurityOptions OPTIONS = new TransportSecurityOptions.Builder()
             .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
             .withCaCertificates(Paths.get("my_cas.pem"))
+            .withAcceptedCiphers(List.of("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384" , "TLS_AES_256_GCM_SHA384"))
             .build();
 
     @Test

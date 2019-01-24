@@ -14,7 +14,7 @@ class Closer {
         }
     }
 
-    private Thread      thread = new Thread(new Run(), "<closer>");
+    private Thread      thread = new Thread(new Run(), "<jrt-closer>");
     private Transport   parent;
     private ThreadQueue closeQueue = new ThreadQueue();
 

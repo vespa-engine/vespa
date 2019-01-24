@@ -18,8 +18,8 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 
-import static com.yahoo.security.KeyAlgorithm.RSA;
-import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
+import static com.yahoo.security.KeyAlgorithm.EC;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.security.X509CertificateBuilder.generateRandomSerialNumber;
 import static java.time.Instant.EPOCH;
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -29,13 +29,12 @@ import static java.util.Collections.singletonList;
 /**
  * @author bjorncs
  */
-// TODO Use EC. Java/JSSE is currently unable to find compatible ciphers when using elliptic curve crypto from BouncyCastle
 class CryptoUtils {
 
-    static final KeyPair keyPair = KeyUtils.generateKeypair(RSA);
+    static final KeyPair keyPair = KeyUtils.generateKeypair(EC);
 
     static final X509Certificate certificate = X509CertificateBuilder
-            .fromKeypair(keyPair, new X500Principal("CN=dummy"), EPOCH, Instant.now().plus(1, DAYS), SHA256_WITH_RSA, generateRandomSerialNumber())
+            .fromKeypair(keyPair, new X500Principal("CN=dummy"), EPOCH, Instant.now().plus(1, DAYS), SHA256_WITH_ECDSA, generateRandomSerialNumber())
             .build();
 
     static final AuthorizedPeers authorizedPeers = new AuthorizedPeers(
@@ -49,7 +48,7 @@ class CryptoUtils {
                                             Field.CN, new HostGlobPattern("dummy"))))));
 
     static TlsContext createTestTlsContext() {
-        return new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE);
+        return new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE, DefaultTlsContext.ALLOWED_CIPHER_SUITES);
     }
 
 }

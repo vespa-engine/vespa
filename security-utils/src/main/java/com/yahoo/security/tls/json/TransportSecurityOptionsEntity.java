@@ -19,6 +19,7 @@ class TransportSecurityOptionsEntity {
 
     @JsonProperty("files") Files files;
     @JsonProperty("authorized-peers") @JsonInclude(NON_EMPTY) List<AuthorizedPeer> authorizedPeers;
+    @JsonProperty("accepted-ciphers") @JsonInclude(NON_EMPTY) List<String> acceptedCiphers;
 
     static class Files {
         @JsonProperty("private-key") String privateKeyFile;

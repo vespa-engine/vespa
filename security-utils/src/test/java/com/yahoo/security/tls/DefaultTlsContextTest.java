@@ -15,9 +15,10 @@ import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.util.List;
 
-import static com.yahoo.security.KeyAlgorithm.RSA;
-import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
+import static com.yahoo.security.KeyAlgorithm.EC;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.security.X509CertificateBuilder.generateRandomSerialNumber;
 import static java.time.Instant.EPOCH;
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -32,10 +33,10 @@ public class DefaultTlsContextTest {
 
     @Test
     public void can_create_sslcontext_from_credentials() {
-        KeyPair keyPair = KeyUtils.generateKeypair(RSA);
+        KeyPair keyPair = KeyUtils.generateKeypair(EC);
 
         X509Certificate certificate = X509CertificateBuilder
-                .fromKeypair(keyPair, new X500Principal("CN=dummy"), EPOCH, Instant.now().plus(1, DAYS), SHA256_WITH_RSA, generateRandomSerialNumber())
+                .fromKeypair(keyPair, new X500Principal("CN=dummy"), EPOCH, Instant.now().plus(1, DAYS), SHA256_WITH_ECDSA, generateRandomSerialNumber())
                 .build();
 
         AuthorizedPeers authorizedPeers = new AuthorizedPeers(
@@ -46,7 +47,7 @@ public class DefaultTlsContextTest {
                                 singletonList(new RequiredPeerCredential(RequiredPeerCredential.Field.CN, new HostGlobPattern("dummy"))))));
 
         DefaultTlsContext tlsContext =
-                new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE);
+                new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE, List.of());
 
         SSLEngine sslEngine = tlsContext.createSslEngine();
         assertThat(sslEngine).isNotNull();

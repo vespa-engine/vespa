@@ -14,7 +14,7 @@ class Connector {
         }
     }
 
-    private Thread      thread = new Thread(new Run(), "<connector>");
+    private Thread      thread = new Thread(new Run(), "<jrt-connector>");
     private Transport   parent;
     private ThreadQueue connectQueue = new ThreadQueue();
     private boolean     done = false;

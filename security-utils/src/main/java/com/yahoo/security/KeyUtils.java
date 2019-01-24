@@ -46,6 +46,9 @@ public class KeyUtils {
             if (keySize != -1) {
                 keyGen.initialize(keySize);
             }
+            if (algorithm.getSpec().isPresent()) {
+                keyGen.initialize(algorithm.getSpec().get());
+            }
             return keyGen.genKeyPair();
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);

@@ -30,7 +30,7 @@ public class Acceptor {
 
     private final static Logger log = Logger.getLogger(Acceptor.class.getName());
 
-    private final Thread         thread = new Thread(new Run(), "<acceptor>");
+    private final Thread         thread = new Thread(new Run(), "<jrt-acceptor>");
     private final CountDownLatch shutdownGate = new CountDownLatch(1);
     private final Transport      parent;
     private final Supervisor     owner;
