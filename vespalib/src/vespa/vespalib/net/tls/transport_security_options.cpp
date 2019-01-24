@@ -6,11 +6,12 @@
 
 namespace vespalib::net::tls {
 
-TransportSecurityOptions::TransportSecurityOptions(Builder builder)
-    : _ca_certs_pem(std::move(builder._ca_certs_pem)),
-      _cert_chain_pem(std::move(builder._cert_chain_pem)),
-      _private_key_pem(std::move(builder._private_key_pem)),
-      _authorized_peers(std::move(builder._authorized_peers))
+TransportSecurityOptions::TransportSecurityOptions(Params params)
+    : _ca_certs_pem(std::move(params._ca_certs_pem)),
+      _cert_chain_pem(std::move(params._cert_chain_pem)),
+      _private_key_pem(std::move(params._private_key_pem)),
+      _authorized_peers(std::move(params._authorized_peers)),
+      _accepted_ciphers(std::move(params._accepted_ciphers))
 {
 }
 
@@ -35,8 +36,18 @@ TransportSecurityOptions::TransportSecurityOptions(vespalib::string ca_certs_pem
 {
 }
 
+void secure_memzero(void* buf, size_t size) noexcept {
+    OPENSSL_cleanse(buf, size);
+}
+
+TransportSecurityOptions::Params::Params() = default;
+
+TransportSecurityOptions::Params::~Params() {
+    secure_memzero(&_private_key_pem[0], _private_key_pem.size());
+}
+
 TransportSecurityOptions::~TransportSecurityOptions() {
-    OPENSSL_cleanse(&_private_key_pem[0], _private_key_pem.size());
+    secure_memzero(&_private_key_pem[0], _private_key_pem.size());
 }
 
 } // vespalib::net::tls

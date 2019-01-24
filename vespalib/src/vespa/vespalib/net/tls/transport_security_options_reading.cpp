@@ -94,6 +94,17 @@ AuthorizedPeers parse_authorized_peers(const Inspector& authorized_peers) {
     return AuthorizedPeers(std::move(policies));
 }
 
+std::vector<vespalib::string> parse_accepted_ciphers(const Inspector& accepted_ciphers) {
+    if (!accepted_ciphers.valid()) {
+        return {};
+    }
+    std::vector<vespalib::string> ciphers;
+    for (size_t i = 0; i < accepted_ciphers.children(); ++i) {
+        ciphers.emplace_back(accepted_ciphers[i].asString().make_string());
+    }
+    return ciphers;
+}
+
 std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
     Slime root;
     auto parsed = slime::JsonFormat::decode(input, root);
@@ -111,9 +122,17 @@ std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
     auto certs    = load_file_referenced_by_field(files, "certificates");
     auto priv_key = load_file_referenced_by_field(files, "private-key");
     auto authorized_peers = parse_authorized_peers(root["authorized-peers"]);
+    auto accepted_ciphers = parse_accepted_ciphers(root["accepted-ciphers"]);
 
-    return std::make_unique<TransportSecurityOptions>(std::move(ca_certs), std::move(certs),
-                                                      std::move(priv_key), std::move(authorized_peers));
+    auto options = std::make_unique<TransportSecurityOptions>(
+            TransportSecurityOptions::Params()
+                .ca_certs_pem(ca_certs)
+                .cert_chain_pem(certs)
+                .private_key_pem(priv_key)
+                .authorized_peers(std::move(authorized_peers))
+                .accepted_ciphers(std::move(accepted_ciphers)));
+    secure_memzero(&priv_key[0], priv_key.size());
+    return options;
 }
 
 } // anon ns

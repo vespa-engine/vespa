@@ -1,4 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "iana_cipher_map.h"
 #include "openssl_typedefs.h"
 #include "openssl_tls_context_impl.h"
 #include <vespa/vespalib/net/tls/crypto_exception.h>
@@ -210,8 +211,13 @@ OpenSslTlsContextImpl::OpenSslTlsContextImpl(
     disable_renegotiation();
     enforce_peer_certificate_verification();
     set_ssl_ctx_self_reference();
-    // TODO set accepted cipher suites!
-    // TODO `--> If not set in options, use Modern spec from https://wiki.mozilla.org/Security/Server_Side_TLS
+    if (!ts_opts.accepted_ciphers().empty()) {
+        // Due to how we resolve provided ciphers, this implicitly provides an
+        // _intersection_ between our default cipher suite and the configured one.
+        set_accepted_cipher_suites(ts_opts.accepted_ciphers());
+    } else {
+        set_accepted_cipher_suites(modern_iana_cipher_suites());
+    }
 }
 
 OpenSslTlsContextImpl::~OpenSslTlsContextImpl() {
@@ -467,6 +473,33 @@ void OpenSslTlsContextImpl::enforce_peer_certificate_verification() {
 
 void OpenSslTlsContextImpl::set_ssl_ctx_self_reference() {
     SSL_CTX_set_app_data(_ctx.get(), this);
+}
+
+void OpenSslTlsContextImpl::set_accepted_cipher_suites(const std::vector<vespalib::string>& ciphers) {
+    vespalib::string openssl_ciphers;
+    size_t bad_ciphers = 0;
+    for (const auto& iana_cipher : ciphers) {
+        auto our_cipher = iana_cipher_suite_to_openssl(iana_cipher);
+        if (our_cipher) {
+            if (!openssl_ciphers.empty()) {
+                openssl_ciphers += ':';
+            }
+            openssl_ciphers += our_cipher;
+        } else {
+            LOG(warning, "Unsupported cipher: '%s' (bad name or unknown IANA -> OpenSSL mapping)", iana_cipher.c_str());
+            ++bad_ciphers;
+        }
+    }
+    if (bad_ciphers > 0) {
+        LOG(warning, "A total of %zu configured cipher names were not added to the set of allowed TLS ciphers. "
+                     "Vespa only supports TLS ciphers with forward secrecy and AEAD properties", bad_ciphers);
+    }
+    if (openssl_ciphers.empty()) {
+        throw CryptoException("Configured cipher suite does not contain any supported ciphers");
+    }
+    if (::SSL_CTX_set_cipher_list(_ctx.get(), openssl_ciphers.c_str()) != 1) {
+        throw CryptoException("SSL_CTX_set_cipher_list failed; no provided ciphers could be used");
+    }
 }
 
 }

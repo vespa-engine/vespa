@@ -13,22 +13,31 @@ class TransportSecurityOptions {
     vespalib::string _cert_chain_pem;
     vespalib::string _private_key_pem;
     AuthorizedPeers  _authorized_peers;
+    std::vector<vespalib::string> _accepted_ciphers;
 public:
     TransportSecurityOptions() = default;
 
-    struct Builder {
+    struct Params {
         vespalib::string _ca_certs_pem;
         vespalib::string _cert_chain_pem;
         vespalib::string _private_key_pem;
         AuthorizedPeers  _authorized_peers;
+        std::vector<vespalib::string> _accepted_ciphers;
 
-        Builder& ca_certs_pem(vespalib::stringref pem) { _ca_certs_pem = pem; return *this; }
-        Builder& cert_chain_pem(vespalib::stringref pem) { _cert_chain_pem = pem; return *this; }
-        Builder& private_key_pem(vespalib::stringref pem) { _private_key_pem = pem; return *this; }
-        Builder& authorized_peers(AuthorizedPeers auth) { _authorized_peers = std::move(auth); return *this; }
+        Params();
+        ~Params();
+
+        Params& ca_certs_pem(vespalib::stringref pem) { _ca_certs_pem = pem; return *this; }
+        Params& cert_chain_pem(vespalib::stringref pem) { _cert_chain_pem = pem; return *this; }
+        Params& private_key_pem(vespalib::stringref pem) { _private_key_pem = pem; return *this; }
+        Params& authorized_peers(AuthorizedPeers auth) { _authorized_peers = std::move(auth); return *this; }
+        Params& accepted_ciphers(std::vector<vespalib::string> ciphers) {
+            _accepted_ciphers = std::move(ciphers);
+            return *this;
+        }
     };
 
-    explicit TransportSecurityOptions(Builder builder);
+    explicit TransportSecurityOptions(Params params);
 
     TransportSecurityOptions(vespalib::string ca_certs_pem,
                              vespalib::string cert_chain_pem,
@@ -49,6 +58,12 @@ public:
     TransportSecurityOptions copy_without_private_key() const {
         return TransportSecurityOptions(_ca_certs_pem, _cert_chain_pem, "", _authorized_peers);
     }
+    const std::vector<vespalib::string>& accepted_ciphers() const noexcept { return _accepted_ciphers; }
 };
+
+// Zeroes out `size` bytes in `buf` in a way that shall never be optimized
+// away by an eager compiler.
+// TODO move to own crypto utility library
+void secure_memzero(void* buf, size_t size) noexcept;
 
 } // vespalib::net::tls
