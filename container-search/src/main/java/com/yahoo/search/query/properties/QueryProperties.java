@@ -53,6 +53,7 @@ public class QueryProperties extends Properties {
             if (key.last().equals(Model.FILTER)) return model.getFilter();
             if (key.last().equals(Model.DEFAULT_INDEX)) return model.getDefaultIndex();
             if (key.last().equals(Model.LANGUAGE)) return model.getLanguage();
+            if (key.last().equals(Model.LOCALE)) return model.getLocale();
             if (key.last().equals(Model.ENCODING)) return model.getEncoding();
             if (key.last().equals(Model.SOURCES)) return model.getSources();
             if (key.last().equals(Model.SEARCH_PATH)) return model.getSearchPath();
@@ -154,6 +155,8 @@ public class QueryProperties extends Properties {
                     model.setDefaultIndex(asString(value, ""));
                 else if (key.last().equals(Model.LANGUAGE))
                     model.setLanguage(asString(value, ""));
+                else if (key.last().equals(Model.LOCALE))
+                    model.setLocale(asString(value, ""));
                 else if (key.last().equals(Model.ENCODING))
                     model.setEncoding(asString(value,""));
                 else if (key.last().equals(Model.SEARCH_PATH))
