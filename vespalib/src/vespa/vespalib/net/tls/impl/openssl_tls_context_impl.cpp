@@ -478,7 +478,7 @@ void OpenSslTlsContextImpl::set_ssl_ctx_self_reference() {
 void OpenSslTlsContextImpl::set_accepted_cipher_suites(const std::vector<vespalib::string>& ciphers) {
     vespalib::string openssl_ciphers;
     size_t bad_ciphers = 0;
-    for (auto& iana_cipher : ciphers) {
+    for (const auto& iana_cipher : ciphers) {
         auto our_cipher = iana_cipher_suite_to_openssl(iana_cipher);
         if (our_cipher) {
             if (!openssl_ciphers.empty()) {
