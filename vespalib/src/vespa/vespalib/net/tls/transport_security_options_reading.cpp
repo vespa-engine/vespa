@@ -94,7 +94,7 @@ AuthorizedPeers parse_authorized_peers(const Inspector& authorized_peers) {
     return AuthorizedPeers(std::move(policies));
 }
 
-std::vector<vespalib::string> parse_accepted_ciphers(const Cursor& accepted_ciphers) {
+std::vector<vespalib::string> parse_accepted_ciphers(const Inspector& accepted_ciphers) {
     if (!accepted_ciphers.valid()) {
         return {};
     }
@@ -125,7 +125,7 @@ std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
     auto accepted_ciphers = parse_accepted_ciphers(root["accepted-ciphers"]);
 
     auto options = std::make_unique<TransportSecurityOptions>(
-            TransportSecurityOptions::Builder()
+            TransportSecurityOptions::Params()
                 .ca_certs_pem(ca_certs)
                 .cert_chain_pem(certs)
                 .private_key_pem(priv_key)

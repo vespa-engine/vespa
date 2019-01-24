@@ -34,17 +34,17 @@ const CipherMapType& modern_cipher_suites_iana_to_openssl() {
 
 } // anon ns
 
-const char* iana_cipher_to_openssl_cipher(vespalib::stringref iana_name) {
+const char* iana_cipher_suite_to_openssl(vespalib::stringref iana_name) {
     const auto& ciphers = modern_cipher_suites_iana_to_openssl();
     auto iter = ciphers.find(iana_name);
     return ((iter != ciphers.end()) ? iter->second.data() : nullptr);
 }
 
-std::vector<vespalib::string> modern_iana_cipher_suite() {
+std::vector<vespalib::string> modern_iana_cipher_suites() {
     const auto& ciphers = modern_cipher_suites_iana_to_openssl();
     std::vector<vespalib::string> iana_cipher_names;
     iana_cipher_names.reserve(ciphers.size());
-    for (auto& cipher : ciphers) {
+    for (const auto& cipher : ciphers) {
         iana_cipher_names.emplace_back(cipher.first);
     }
     return iana_cipher_names;

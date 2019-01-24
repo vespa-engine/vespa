@@ -17,27 +17,27 @@ class TransportSecurityOptions {
 public:
     TransportSecurityOptions() = default;
 
-    struct Builder {
+    struct Params {
         vespalib::string _ca_certs_pem;
         vespalib::string _cert_chain_pem;
         vespalib::string _private_key_pem;
         AuthorizedPeers  _authorized_peers;
         std::vector<vespalib::string> _accepted_ciphers;
 
-        Builder();
-        ~Builder();
+        Params();
+        ~Params();
 
-        Builder& ca_certs_pem(vespalib::stringref pem) { _ca_certs_pem = pem; return *this; }
-        Builder& cert_chain_pem(vespalib::stringref pem) { _cert_chain_pem = pem; return *this; }
-        Builder& private_key_pem(vespalib::stringref pem) { _private_key_pem = pem; return *this; }
-        Builder& authorized_peers(AuthorizedPeers auth) { _authorized_peers = std::move(auth); return *this; }
-        Builder& accepted_ciphers(std::vector<vespalib::string> ciphers) {
+        Params& ca_certs_pem(vespalib::stringref pem) { _ca_certs_pem = pem; return *this; }
+        Params& cert_chain_pem(vespalib::stringref pem) { _cert_chain_pem = pem; return *this; }
+        Params& private_key_pem(vespalib::stringref pem) { _private_key_pem = pem; return *this; }
+        Params& authorized_peers(AuthorizedPeers auth) { _authorized_peers = std::move(auth); return *this; }
+        Params& accepted_ciphers(std::vector<vespalib::string> ciphers) {
             _accepted_ciphers = std::move(ciphers);
             return *this;
         }
     };
 
-    explicit TransportSecurityOptions(Builder builder);
+    explicit TransportSecurityOptions(Params params);
 
     TransportSecurityOptions(vespalib::string ca_certs_pem,
                              vespalib::string cert_chain_pem,

@@ -214,9 +214,9 @@ OpenSslTlsContextImpl::OpenSslTlsContextImpl(
     if (!ts_opts.accepted_ciphers().empty()) {
         // Due to how we resolve provided ciphers, this implicitly provides an
         // _intersection_ between our default cipher suite and the configured one.
-        set_accepted_cipher_suite(ts_opts.accepted_ciphers());
+        set_accepted_cipher_suites(ts_opts.accepted_ciphers());
     } else {
-        set_accepted_cipher_suite(modern_iana_cipher_suite());
+        set_accepted_cipher_suites(modern_iana_cipher_suites());
     }
 }
 
@@ -475,11 +475,11 @@ void OpenSslTlsContextImpl::set_ssl_ctx_self_reference() {
     SSL_CTX_set_app_data(_ctx.get(), this);
 }
 
-void OpenSslTlsContextImpl::set_accepted_cipher_suite(const std::vector<vespalib::string>& ciphers) {
+void OpenSslTlsContextImpl::set_accepted_cipher_suites(const std::vector<vespalib::string>& ciphers) {
     vespalib::string openssl_ciphers;
     size_t bad_ciphers = 0;
     for (auto& iana_cipher : ciphers) {
-        auto our_cipher = iana_cipher_to_openssl_cipher(iana_cipher);
+        auto our_cipher = iana_cipher_suite_to_openssl(iana_cipher);
         if (our_cipher) {
             if (!openssl_ciphers.empty()) {
                 openssl_ciphers += ':';
