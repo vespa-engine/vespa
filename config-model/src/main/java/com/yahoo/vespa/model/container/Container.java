@@ -36,7 +36,6 @@ import java.util.Optional;
 import static com.yahoo.container.QrConfig.Filedistributor;
 import static com.yahoo.container.QrConfig.Rpc;
 
-
 /**
  * @author gjoranv
  * @author Einar M R Rosenvinge

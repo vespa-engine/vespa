@@ -501,7 +501,7 @@ public enum Language {
         }
     }
 
-    private Language(String code) {
+    Language(String code) {
         this.code = code;
     }
 

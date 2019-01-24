@@ -2,7 +2,6 @@
 package com.yahoo.search.query.profile.test;
 
 import com.yahoo.processing.request.Properties;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;

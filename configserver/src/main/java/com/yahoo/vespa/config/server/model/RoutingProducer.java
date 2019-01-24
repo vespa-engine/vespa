@@ -18,6 +18,7 @@ import java.util.Set;
  * @author Christian Andersen
  */
 public class RoutingProducer implements RoutingConfig.Producer {
+
     static final ApplicationName ROUTING_APPLICATION = ApplicationName.from("routing");
 
     private final Map<TenantName, Set<ApplicationInfo>> models;

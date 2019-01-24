@@ -52,7 +52,7 @@ public class QueryProfileTestCase {
     /** Tests cloning, with wrappers used in production in place */
     @Test
     public void testCloning() {
-        QueryProfile classProfile=new QueryProfile("test");
+        QueryProfile classProfile = new QueryProfile("test");
         classProfile.set("a","aValue", null);
         classProfile.set("b",3, null);
 
@@ -68,7 +68,7 @@ public class QueryProfileTestCase {
 
     @Test
     public void testFreezing() {
-        QueryProfile profile=new QueryProfile("test");
+        QueryProfile profile = new QueryProfile("test");
         profile.set("a","a-value", null);
         profile.set("b.c","b.c-value", null);
         profile.set("d.e.f","d.e.f-value", null);
@@ -101,12 +101,12 @@ public class QueryProfileTestCase {
 
     @Test
     public void testGetSubObjects() {
-        QueryProfile barn=new QueryProfile("barn");
-        QueryProfile mor=new QueryProfile("mor");
-        QueryProfile far=new QueryProfile("far");
-        QueryProfile mormor=new QueryProfile("mormor");
-        QueryProfile morfar=new QueryProfile("morfar");
-        QueryProfile farfar=new QueryProfile("farfar");
+        QueryProfile barn = new QueryProfile("barn");
+        QueryProfile mor = new QueryProfile("mor");
+        QueryProfile far = new QueryProfile("far");
+        QueryProfile mormor = new QueryProfile("mormor");
+        QueryProfile morfar = new QueryProfile("morfar");
+        QueryProfile farfar = new QueryProfile("farfar");
         mor.addInherited(mormor);
         mor.addInherited(morfar);
         far.addInherited(farfar);
@@ -127,12 +127,12 @@ public class QueryProfileTestCase {
 
     @Test
     public void testInheritance() {
-        QueryProfile barn=new QueryProfile("barn");
-        QueryProfile mor=new QueryProfile("mor");
-        QueryProfile far=new QueryProfile("far");
-        QueryProfile mormor=new QueryProfile("mormor");
-        QueryProfile morfar=new QueryProfile("morfar");
-        QueryProfile farfar=new QueryProfile("farfar");
+        QueryProfile barn = new QueryProfile("barn");
+        QueryProfile mor = new QueryProfile("mor");
+        QueryProfile far = new QueryProfile("far");
+        QueryProfile mormor = new QueryProfile("mormor");
+        QueryProfile morfar = new QueryProfile("morfar");
+        QueryProfile farfar = new QueryProfile("farfar");
         barn.addInherited(mor);
         barn.addInherited(far);
         mor.addInherited(mormor);
@@ -175,12 +175,12 @@ public class QueryProfileTestCase {
 
     @Test
     public void testInheritance2Level() {
-        QueryProfile barn=new QueryProfile("barn");
-        QueryProfile mor=new QueryProfile("mor");
-        QueryProfile far=new QueryProfile("far");
-        QueryProfile mormor=new QueryProfile("mormor");
-        QueryProfile morfar=new QueryProfile("morfar");
-        QueryProfile farfar=new QueryProfile("farfar");
+        QueryProfile barn = new QueryProfile("barn");
+        QueryProfile mor = new QueryProfile("mor");
+        QueryProfile far = new QueryProfile("far");
+        QueryProfile mormor = new QueryProfile("mormor");
+        QueryProfile morfar = new QueryProfile("morfar");
+        QueryProfile farfar = new QueryProfile("farfar");
         barn.addInherited(mor);
         barn.addInherited(far);
         mor.addInherited(mormor);
@@ -223,12 +223,12 @@ public class QueryProfileTestCase {
 
     @Test
     public void testInheritance3Level() {
-        QueryProfile barn=new QueryProfile("barn");
-        QueryProfile mor=new QueryProfile("mor");
-        QueryProfile far=new QueryProfile("far");
-        QueryProfile mormor=new QueryProfile("mormor");
-        QueryProfile morfar=new QueryProfile("morfar");
-        QueryProfile farfar=new QueryProfile("farfar");
+        QueryProfile barn = new QueryProfile("barn");
+        QueryProfile mor = new QueryProfile("mor");
+        QueryProfile far = new QueryProfile("far");
+        QueryProfile mormor = new QueryProfile("mormor");
+        QueryProfile morfar = new QueryProfile("morfar");
+        QueryProfile farfar = new QueryProfile("farfar");
         barn.addInherited(mor);
         barn.addInherited(far);
         mor.addInherited(mormor);
@@ -271,12 +271,12 @@ public class QueryProfileTestCase {
 
     @Test
     public void testListProperties() {
-        QueryProfile barn=new QueryProfile("barn");
-        QueryProfile mor=new QueryProfile("mor");
-        QueryProfile far=new QueryProfile("far");
-        QueryProfile mormor=new QueryProfile("mormor");
-        QueryProfile morfar=new QueryProfile("morfar");
-        QueryProfile farfar=new QueryProfile("farfar");
+        QueryProfile barn = new QueryProfile("barn");
+        QueryProfile mor = new QueryProfile("mor");
+        QueryProfile far = new QueryProfile("far");
+        QueryProfile mormor = new QueryProfile("mormor");
+        QueryProfile morfar = new QueryProfile("morfar");
+        QueryProfile farfar = new QueryProfile("farfar");
         barn.addInherited(mor);
         barn.addInherited(far);
         mor.addInherited(mormor);
@@ -325,26 +325,26 @@ public class QueryProfileTestCase {
     /** Tests that dots are followed when setting overridability */
     @Test
     public void testInstanceOverridable() {
-        QueryProfile profile=new QueryProfile("root/unoverridableIndex");
+        QueryProfile profile = new QueryProfile("root/unoverridableIndex");
         profile.set("model.defaultIndex","default", null);
-        profile.setOverridable("model.defaultIndex",false,null);
+        profile.setOverridable("model.defaultIndex", false,null);
 
         assertFalse(profile.isDeclaredOverridable("model.defaultIndex",null).booleanValue());
 
         // Parameters should be ignored
         Query query = new Query(HttpRequest.createTestRequest("?model.defaultIndex=title", Method.GET), profile.compile(null));
-        assertEquals("default",query.getModel().getDefaultIndex());
+        assertEquals("default", query.getModel().getDefaultIndex());
 
         // Parameters should be ignored
         query = new Query(HttpRequest.createTestRequest("?model.defaultIndex=title&model.language=de", Method.GET), profile.compile(null));
-        assertEquals("default",query.getModel().getDefaultIndex());
-        assertEquals("de",query.getModel().getLanguage().languageCode());
+        assertEquals("default", query.getModel().getDefaultIndex());
+        assertEquals("de", query.getModel().getLanguage().languageCode());
     }
 
     /** Tests that dots are followed when setting overridability...also with variants */
     @Test
     public void testInstanceOverridableWithVariants() {
-        QueryProfile profile=new QueryProfile("root/unoverridableIndex");
+        QueryProfile profile = new QueryProfile("root/unoverridableIndex");
         profile.setDimensions(new String[] {"x"});
         profile.set("model.defaultIndex","default", null);
         profile.setOverridable("model.defaultIndex",false,null);
@@ -353,12 +353,12 @@ public class QueryProfileTestCase {
 
         // Parameters should be ignored
         Query query = new Query(HttpRequest.createTestRequest("?x=x1&model.defaultIndex=title", Method.GET), profile.compile(null));
-        assertEquals("default",query.getModel().getDefaultIndex());
+        assertEquals("default", query.getModel().getDefaultIndex());
 
         // Parameters should be ignored
         query = new Query(HttpRequest.createTestRequest("?x=x1&model.default-index=title&model.language=de", Method.GET), profile.compile(null));
-        assertEquals("default",query.getModel().getDefaultIndex());
-        assertEquals("de",query.getModel().getLanguage().languageCode());
+        assertEquals("default", query.getModel().getDefaultIndex());
+        assertEquals("de", query.getModel().getLanguage().languageCode());
     }
 
     @Test
@@ -371,7 +371,7 @@ public class QueryProfileTestCase {
         assertFalse(profile.isDeclaredOverridable("a",null));
 
         Query query = new Query(HttpRequest.createTestRequest("?x=x1&a=overridden", Method.GET), profile.compile(null));
-        assertEquals("original",query.properties().get("a"));
+        assertEquals("original", query.properties().get("a"));
     }
 
     @Test
@@ -390,12 +390,12 @@ public class QueryProfileTestCase {
     /** Tests having both an explicit reference and an override */
     @Test
     public void testExplicitReferenceOverride() {
-        QueryProfile a1=new QueryProfile("a1");
+        QueryProfile a1 = new QueryProfile("a1");
         a1.set("b","a1.b", null);
-        QueryProfile profile=new QueryProfile("test");
+        QueryProfile profile = new QueryProfile("test");
         profile.set("a",a1, null);
         profile.set("a.b","a.b", null);
-        assertEquals("a.b",profile.compile(null).get("a.b"));
+        assertEquals("a.b", profile.compile(null).get("a.b"));
     }
 
     @Test
@@ -411,7 +411,7 @@ public class QueryProfileTestCase {
 
     @Test
     public void testSettingNonLeaf2() {
-        QueryProfile p=new QueryProfile("test");
+        QueryProfile p = new QueryProfile("test");
         p.set("a.b","a.b-value", null);
         p.set("a","a-value", null);
 
@@ -422,7 +422,7 @@ public class QueryProfileTestCase {
 
     @Test
     public void testSettingNonLeaf3a() {
-        QueryProfile p=new QueryProfile("test");
+        QueryProfile p = new QueryProfile("test");
         p.setDimensions(new String[] {"x"});
         p.set("a.b","a.b-value", null);
         p.set("a","a-value",new String[] {"x1"}, null);
@@ -437,7 +437,7 @@ public class QueryProfileTestCase {
 
     @Test
     public void testSettingNonLeaf3b() {
-        QueryProfile p=new QueryProfile("test");
+        QueryProfile p = new QueryProfile("test");
         p.setDimensions(new String[] {"x"});
         p.set("a","a-value",new String[] {"x1"}, null);
         p.set("a.b","a.b-value", null);
@@ -452,7 +452,7 @@ public class QueryProfileTestCase {
 
     @Test
     public void testSettingNonLeaf4a() {
-        QueryProfile p=new QueryProfile("test");
+        QueryProfile p = new QueryProfile("test");
         p.setDimensions(new String[] {"x"});
         p.set("a.b","a.b-value",new String[] {"x1"}, null);
         p.set("a","a-value", null);
@@ -466,7 +466,7 @@ public class QueryProfileTestCase {
     }
 
     public void testSettingNonLeaf4b() {
-        QueryProfile p=new QueryProfile("test");
+        QueryProfile p = new QueryProfile("test");
         p.setDimensions(new String[] {"x"});
         p.set("a","a-value", (QueryProfileRegistry)null);
         p.set("a.b","a.b-value",new String[] {"x1"}, null);
@@ -481,7 +481,7 @@ public class QueryProfileTestCase {
 
     @Test
     public void testSettingNonLeaf5() {
-        QueryProfile p=new QueryProfile("test");
+        QueryProfile p = new QueryProfile("test");
         p.setDimensions(new String[] {"x"});
         p.set("a.b","a.b-value",new String[] {"x1"}, null);
         p.set("a","a-value",new String[] {"x1"}, null);
@@ -496,7 +496,7 @@ public class QueryProfileTestCase {
 
     @Test
     public void testListingWithNonLeafs() {
-        QueryProfile p=new QueryProfile("test");
+        QueryProfile p = new QueryProfile("test");
         p.set("a","a-value", null);
         p.set("a.b","a.b-value", null);
         Map<String,Object> values = p.compile(null).listValues("a");
@@ -589,7 +589,7 @@ public class QueryProfileTestCase {
                                                           "clustering.enable=true&clustering.timeline.bucketspec=-" +
                                                           "7d/3h&clustering.timeline.tophit=false&clustering.timeli" +
                                                           "ne=true", Method.GET), p.compile(null));
-        assertEquals(true, q.properties().getBoolean("clustering.timeline", false));
+        assertTrue(q.properties().getBoolean("clustering.timeline", false));
     }
 
 }

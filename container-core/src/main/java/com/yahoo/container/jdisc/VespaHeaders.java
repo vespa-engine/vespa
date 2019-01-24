@@ -71,7 +71,7 @@ public final class VespaHeaders {
      */
     public static void benchmarkOutput(HeaderFields responseHeaders, boolean benchmarkCoverage,
                                        Timing t, HitCounts c, int errorCount, Coverage coverage) {
-        final long renderStartTime = System.currentTimeMillis();
+        long renderStartTime = System.currentTimeMillis();
         if (c != null) {
             // Fill inn response getHeaders
             responseHeaders.add(BenchmarkingHeaders.NUM_HITS, String.valueOf(c.getRetrievedHitCount()));
