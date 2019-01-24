@@ -102,17 +102,42 @@ asciistream & asciistream::operator = (const asciistream & rhs)
     return *this;
 }
 
-void asciistream::swap(asciistream & rhs)
+asciistream::asciistream(asciistream && rhs) noexcept
+    : asciistream()
+{
+    swap(rhs);
+}
+
+asciistream & asciistream::operator = (asciistream && rhs) noexcept
+{
+    if (this != &rhs) {
+        swap(rhs);
+    }
+    return *this;
+}
+
+void asciistream::swap(asciistream & rhs) noexcept
 {
     std::swap(_rPos, rhs._rPos);
+    // If read-only, _wbuf is empty and _rbuf is set
+    // If ever written to, _rbuf == _wbuf
+    const bool lhs_read_only = (_rbuf.data() != _wbuf.data());
+    const bool rhs_read_only = (rhs._rbuf.data() != rhs._wbuf.data());
     std::swap(_wbuf, rhs._wbuf);
+    std::swap(_rbuf, rhs._rbuf);
+    if (!lhs_read_only) {
+        rhs._rbuf = rhs._wbuf;
+    }
+    if (!rhs_read_only) {
+        _rbuf = _wbuf;
+    }
+
     std::swap(_base, rhs._base);
     std::swap(_floatSpec, rhs._floatSpec);
     std::swap(_floatModifier, rhs._floatModifier);
     std::swap(_width, rhs._width);
     std::swap(_precision, rhs._precision);
     std::swap(_fill, rhs._fill);
-    _rbuf = _wbuf;
 }
 
 namespace {
