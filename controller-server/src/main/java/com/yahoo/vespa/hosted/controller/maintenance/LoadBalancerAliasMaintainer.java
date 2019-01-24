@@ -95,11 +95,15 @@ public class LoadBalancerAliasMaintainer extends Maintainer {
         HostName alias = HostName.from(LoadBalancerAlias.createAlias(loadBalancer.cluster(), application, zone));
         RecordName name = RecordName.from(alias.value());
         RecordData data = RecordData.fqdn(loadBalancer.hostname().value());
-        Optional<Record> existingRecord = nameService.findRecord(Record.Type.CNAME, name);
+        List<Record> existingRecords = nameService.findRecords(Record.Type.CNAME, name);
+        if (existingRecords.size() > 1) {
+            throw new IllegalStateException("Found more than 1 CNAME record for " + name.asString() + ": " + existingRecords);
+        }
+        Optional<Record> record = existingRecords.stream().findFirst();
         RecordId id;
-        if(existingRecord.isPresent()) {
-            id = existingRecord.get().id();
-            nameService.updateRecord(existingRecord.get().id(), data);
+        if (record.isPresent()) {
+            id = record.get().id();
+            nameService.updateRecord(id, data);
         } else {
             id = nameService.createCname(name, data);
         }

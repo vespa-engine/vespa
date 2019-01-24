@@ -56,12 +56,7 @@ public class Record {
 
     @Override
     public String toString() {
-        return "Record{" +
-               "id=" + id +
-               ", type=" + type +
-               ", name='" + name + '\'' +
-               ", data='" + data + '\'' +
-               '}';
+        return String.format("%s: %s %s -> %s", id, type, name, data);
     }
 
     @Override
