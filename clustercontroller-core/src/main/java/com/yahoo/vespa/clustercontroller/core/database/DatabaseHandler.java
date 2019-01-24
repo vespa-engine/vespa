@@ -5,12 +5,11 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
-import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
+import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.Timer;
-import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 import org.apache.zookeeper.KeeperException;
@@ -395,7 +394,9 @@ public class DatabaseHandler {
         Map<Node, NodeState> wantedStates = currentlyStored.wantedStates;
         if (wantedStates == null) {
             if (usingZooKeeper()) {
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to retrieve wanted states from ZooKeeper. Assuming UP for all nodes.");
+                // We get here if the ZooKeeper client has lost the connection to ZooKeeper.
+                // TODO: Should instead fail the tick until connected!?
+                log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Failed to retrieve wanted states from ZooKeeper. Assuming UP for all nodes.");
             }
             wantedStates = new TreeMap<>();
         }
