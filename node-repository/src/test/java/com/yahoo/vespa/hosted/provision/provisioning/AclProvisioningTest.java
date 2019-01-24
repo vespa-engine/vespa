@@ -10,6 +10,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,13 +22,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester.createConfig;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author mpolden
@@ -52,15 +54,24 @@ public class AclProvisioningTest {
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
 
         // Allocate 2 nodes
-        List<Node> activeNodes = allocateNodes(2);
+        ApplicationId application = tester.makeApplicationId();
+        List<Node> activeNodes = deploy(application, 2);
         assertEquals(2, activeNodes.size());
 
         // Get trusted nodes for the first active node
         Node node = activeNodes.get(0);
-        List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
+        Supplier<List<NodeAcl>> nodeAcls = () -> tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes is active nodes in same application, proxy nodes and config servers
-        assertAcls(Arrays.asList(activeNodes, proxyNodes, configServers, dockerHost), nodeAcls);
+        assertAcls(Arrays.asList(activeNodes, proxyNodes, configServers, dockerHost), nodeAcls.get());
+
+        // Allocate load balancer
+        tester.nodeRepository().flags().setEnabled(FlagId.exclusiveLoadBalancer, application, true);
+        deploy(application, 2);
+
+        // Load balancer networks are added to ACLs
+        assertAcls(Arrays.asList(activeNodes, proxyNodes, configServers, dockerHost),
+                   ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"), nodeAcls.get());
     }
 
     @Test
@@ -72,7 +83,7 @@ public class AclProvisioningTest {
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
 
         // Allocate 2 nodes to an application
-        allocateNodes(2);
+        deploy(2);
 
         // Get trusted nodes for a ready tenant node
         Node node = tester.nodeRepository().getNodes(NodeType.tenant, Node.State.ready).get(0);
@@ -92,7 +103,7 @@ public class AclProvisioningTest {
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
 
         // Allocate 2 nodes
-        allocateNodes(4);
+        deploy(4);
         List<Node> tenantNodes = tester.nodeRepository().getNodes(NodeType.tenant);
 
         // Get trusted nodes for the first config server
@@ -114,7 +125,7 @@ public class AclProvisioningTest {
 
         // Deploy zone application
         ApplicationId zoneApplication = tester.makeApplicationId();
-        allocateNodes(Capacity.fromRequiredNodeType(NodeType.proxy), zoneApplication);
+        deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.proxy));
 
         // Get trusted nodes for first proxy node
         List<Node> proxyNodes = tester.nodeRepository().getNodes(zoneApplication);
@@ -156,12 +167,22 @@ public class AclProvisioningTest {
 
         // Allocate
         ApplicationId controllerApplication = tester.makeApplicationId();
-        List<Node> controllers = allocateNodes(Capacity.fromRequiredNodeType(NodeType.controller), controllerApplication);
+        List<Node> controllers = deploy(controllerApplication, Capacity.fromRequiredNodeType(NodeType.controller));
 
         // Controllers and hosts all trust each other
         List<NodeAcl> controllerAcls = tester.nodeRepository().getNodeAcls(controllers.get(0), false);
         assertAcls(Collections.singletonList(controllers), controllerAcls);
         assertEquals(ImmutableSet.of(22, 4443, 443), controllerAcls.get(0).trustedPorts());
+    }
+
+    @Test
+    public void trusted_nodes_for_application_with_load_balancer() {
+        // Populate repo
+        tester.makeReadyNodes(10, "default");
+
+        // Allocate 2 nodes
+        List<Node> activeNodes = deploy(2);
+        assertEquals(2, activeNodes.size());
     }
 
     @Test
@@ -178,16 +199,20 @@ public class AclProvisioningTest {
         assertEquals(singleton("127.0.1.3"), trustedNodes.next().ipAddresses());
     }
 
-    private List<Node> allocateNodes(int nodeCount) {
-        return allocateNodes(Capacity.fromNodeCount(nodeCount), tester.makeApplicationId());
+    private List<Node> deploy(int nodeCount) {
+        return deploy(tester.makeApplicationId(), nodeCount);
     }
 
-    private List<Node> allocateNodes(Capacity capacity, ApplicationId applicationId) {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
+    private List<Node> deploy(ApplicationId application, int nodeCount) {
+        return deploy(application, Capacity.fromNodeCount(nodeCount));
+    }
+
+    private List<Node> deploy(ApplicationId application, Capacity capacity) {
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
                                                   Version.fromString("6.42"), false);
-        List<HostSpec> prepared = tester.prepare(applicationId, cluster, capacity, 1);
-        tester.activate(applicationId, new HashSet<>(prepared));
-        return tester.getNodes(applicationId, Node.State.active).asList();
+        List<HostSpec> prepared = tester.prepare(application, cluster, capacity, 1);
+        tester.activate(application, new HashSet<>(prepared));
+        return tester.getNodes(application, Node.State.active).asList();
     }
 
     private static void assertAcls(List<List<Node>> expected, NodeAcl actual) {
@@ -195,6 +220,10 @@ public class AclProvisioningTest {
     }
 
     private static void assertAcls(List<List<Node>> expectedNodes, List<NodeAcl> actual) {
+        assertAcls(expectedNodes, emptySet(), actual);
+    }
+
+    private static void assertAcls(List<List<Node>> expectedNodes, Set<String> expectedNetworks, List<NodeAcl> actual) {
         Set<Node> expectedTrustedNodes = expectedNodes.stream()
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
@@ -206,6 +235,6 @@ public class AclProvisioningTest {
         Set<String> actualTrustedNetworks = actual.stream()
                 .flatMap(acl -> acl.trustedNetworks().stream())
                 .collect(Collectors.toSet());
-        assertTrue("No networks are trusted", actualTrustedNetworks.isEmpty());
+        assertEquals(expectedNetworks, actualTrustedNetworks);
     }
 }

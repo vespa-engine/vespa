@@ -25,7 +25,6 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -454,12 +453,6 @@ public class CuratorDatabaseClient {
                               .map(Optional::get)
                               .collect(collectingAndThen(toMap(LoadBalancer::id, Function.identity()),
                                                          Collections::unmodifiableMap));
-    }
-
-    public List<LoadBalancer> readLoadBalancers(ApplicationId application) {
-        return readLoadBalancers().values().stream()
-                                  .filter(lb -> lb.id().application().equals(application))
-                                  .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
     public Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {

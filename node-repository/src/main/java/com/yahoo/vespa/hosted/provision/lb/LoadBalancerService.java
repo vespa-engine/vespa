@@ -4,7 +4,9 @@ package com.yahoo.vespa.hosted.provision.lb;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A managed load balance service.
@@ -14,7 +16,16 @@ import java.util.List;
 public interface LoadBalancerService {
 
     /** Create a load balancer for given application cluster. Implementations are expected to be idempotent */
-    LoadBalancer create(ApplicationId application, ClusterSpec.Id cluster, List<Real> reals);
+    // TODO: Remove once removed from all implementations
+    default LoadBalancer create(ApplicationId application, ClusterSpec.Id cluster, List<Real> reals) {
+        return create(application, cluster, new HashSet<>(reals));
+    }
+
+    /** Create a load balancer for given application cluster. Implementations are expected to be idempotent */
+    // TODO: Remove default implementation once implemented everywhere
+    default LoadBalancer create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals) {
+        throw new UnsupportedOperationException();
+    }
 
     /** Permanently remove load balancer with given ID */
     void remove(LoadBalancerId loadBalancer);

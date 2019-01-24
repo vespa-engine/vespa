@@ -16,6 +16,8 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.flag.Flags;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -35,7 +37,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -173,6 +175,11 @@ public class NodeRepository extends AbstractComponent {
         return new NodeList(getNodes());
     }
 
+    /** Returns a filterable list of all load balancers in this repository */
+    public LoadBalancerList loadBalancers() {
+        return new LoadBalancerList(database().readLoadBalancers().values());
+    }
+
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return db.getNodes(id, inState); }
     public List<Node> getInactive() { return db.getNodes(Node.State.inactive); }
     public List<Node> getFailed() { return db.getNodes(Node.State.failed); }
@@ -180,14 +187,21 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Returns the ACL for the node (trusted nodes, networks and ports)
      */
-    private NodeAcl getNodeAcl(Node node, NodeList candidates) {
+    private NodeAcl getNodeAcl(Node node, NodeList candidates, LoadBalancerList loadBalancers) {
         Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
-        Set<Integer> trustedPorts = new HashSet<>();
+        Set<Integer> trustedPorts = new LinkedHashSet<>();
+        Set<String> trustedNetworks = new LinkedHashSet<>();
 
         // For all cases below, trust:
         // - nodes in same application
+        // - load balancers allocated to application
         // - ssh
-        node.allocation().ifPresent(allocation -> trustedNodes.addAll(candidates.owner(allocation.owner()).asList()));
+        node.allocation().ifPresent(allocation -> {
+            trustedNodes.addAll(candidates.owner(allocation.owner()).asList());
+            loadBalancers.owner(allocation.owner()).asList().stream()
+                         .map(LoadBalancer::networks)
+                         .forEach(trustedNetworks::addAll);
+        });
         trustedPorts.add(22);
 
         switch (node.type()) {
@@ -241,7 +255,7 @@ public class NodeRepository extends AbstractComponent {
                                 node.hostname(), node.type()));
         }
 
-        return new NodeAcl(node, trustedNodes, Collections.emptySet(), trustedPorts);
+        return new NodeAcl(node, trustedNodes, trustedNetworks, trustedPorts);
     }
 
     /**
@@ -253,13 +267,13 @@ public class NodeRepository extends AbstractComponent {
      */
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
         NodeList candidates = list();
+        LoadBalancerList loadBalancers = loadBalancers();
         if (children) {
             return candidates.childrenOf(node).asList().stream()
-                             .map(childNode -> getNodeAcl(childNode, candidates))
+                             .map(childNode -> getNodeAcl(childNode, candidates, loadBalancers))
                              .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
-        } else {
-            return Collections.singletonList(getNodeAcl(node, candidates));
         }
+        return Collections.singletonList(getNodeAcl(node, candidates, loadBalancers));
     }
 
     public NodeFlavors getAvailableFlavors() {

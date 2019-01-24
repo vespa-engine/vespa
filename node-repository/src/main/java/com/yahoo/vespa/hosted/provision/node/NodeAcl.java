@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.node;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -20,10 +21,10 @@ public class NodeAcl {
     private final Set<Integer> trustedPorts;
 
     public NodeAcl(Node node, Set<Node> trustedNodes, Set<String> trustedNetworks, Set<Integer> trustedPorts) {
-        this.node = node;
-        this.trustedNodes = ImmutableSet.copyOf(trustedNodes);
-        this.trustedNetworks = ImmutableSet.copyOf(trustedNetworks);
-        this.trustedPorts = ImmutableSet.copyOf(trustedPorts);
+        this.node = Objects.requireNonNull(node, "node must be non-null");
+        this.trustedNodes = ImmutableSet.copyOf(Objects.requireNonNull(trustedNodes, "trustedNodes must be non-null"));
+        this.trustedNetworks = ImmutableSet.copyOf(Objects.requireNonNull(trustedNetworks, "trustedNetworks must be non-null"));
+        this.trustedPorts = ImmutableSet.copyOf(Objects.requireNonNull(trustedPorts, "trustedPorts must be non-null"));
     }
 
     public Node node() {
@@ -41,4 +42,5 @@ public class NodeAcl {
     public Set<Integer> trustedPorts() {
         return trustedPorts;
     }
+
 }
