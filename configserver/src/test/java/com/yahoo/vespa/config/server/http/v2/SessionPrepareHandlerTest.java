@@ -404,6 +404,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                                      null,
                                      null,
                                      new HostRegistry<>(),
+                                     null,
                                      null));
             this.exception = exception;
         }

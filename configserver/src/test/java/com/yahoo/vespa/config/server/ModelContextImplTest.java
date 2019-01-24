@@ -10,7 +10,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
-
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -20,6 +20,7 @@ import java.util.Set;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -32,6 +33,7 @@ public class ModelContextImplTest {
 
         final Rotation rotation = new Rotation("this.is.a.mock.rotation");
         final Set<Rotation> rotations = Collections.singleton(rotation);
+        final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
         ModelContext context = new ModelContextImpl(
                 MockApplicationPackage.createEmpty(),
@@ -53,7 +55,7 @@ public class ModelContextImplTest {
                         rotations,
                         false,
                         false,
-                        false),
+                        flagSource),
                 Optional.empty(),
                 new Version(6), 
                 new Version(6));
@@ -66,7 +68,7 @@ public class ModelContextImplTest {
         assertThat(context.properties().applicationId(), is(ApplicationId.defaultId()));
         assertTrue(context.properties().configServerSpecs().isEmpty());
         assertTrue(context.properties().multitenant());
-        assertTrue(context.properties().zone() instanceof Zone);
+        assertNotNull(context.properties().zone());
         assertFalse(context.properties().hostedVespa());
         assertThat(context.properties().rotations(), equalTo(rotations));
         assertThat(context.properties().isFirstTimeDeployment(), equalTo(false));

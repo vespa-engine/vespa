@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.session;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -15,7 +16,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.Rotation;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.log.LogLevel;
@@ -32,6 +32,7 @@ import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -63,6 +64,7 @@ public class SessionPreparer {
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Curator curator;
     private final Zone zone;
+    private final FlagSource flagSource;
 
     @Inject
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
@@ -72,7 +74,8 @@ public class SessionPreparer {
                            ConfigserverConfig configserverConfig,
                            ConfigDefinitionRepo configDefinitionRepo,
                            Curator curator,
-                           Zone zone) {
+                           Zone zone,
+                           FlagSource flagSource) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.fileDistributionFactory = fileDistributionFactory;
         this.hostProvisionerProvider = hostProvisionerProvider;
@@ -81,6 +84,7 @@ public class SessionPreparer {
         this.configDefinitionRepo = configDefinitionRepo;
         this.curator = curator;
         this.zone = zone;
+        this.flagSource = flagSource;
     }
 
     /**
@@ -162,7 +166,7 @@ public class SessionPreparer {
                                                               rotationsSet,
                                                               params.isBootstrap(),
                                                               ! currentActiveApplicationSet.isPresent(),
-                                                              configserverConfig.useDedicatedNodeForLogserver());
+                                                              context.getFlagSource());
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
