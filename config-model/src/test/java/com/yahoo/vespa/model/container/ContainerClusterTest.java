@@ -5,8 +5,8 @@ import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -60,7 +60,7 @@ public class ContainerClusterTest {
 
     @Test
     public void requreThatWeCanGetTheZoneConfig() {
-        DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(true).build())
+        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true))
                                                      .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
                                                      .build();
         MockRoot root = new MockRoot("foo", state);
@@ -89,11 +89,11 @@ public class ContainerClusterTest {
         return createContainerCluster(root, isCombinedCluster, memoryPercentage, Optional.empty());
     }
     private MockRoot createRoot(boolean isHosted) {
-        DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build();
+        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(isHosted)).build();
         return new MockRoot("foo", state);
     }
     private MockRoot createRoot(boolean isHosted, Zone zone) {
-        DeployState state = new DeployState.Builder().zone(zone).properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build();
+        DeployState state = new DeployState.Builder().zone(zone).properties(new TestProperties().setHostedVespa(isHosted)).build();
         return new MockRoot("foo", state);
     }
     private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster,
@@ -252,7 +252,7 @@ public class ContainerClusterTest {
 
     @Test
     public void requireThatRoutingProviderIsDisabledForNonHosted() {
-        DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(false).build()).build();
+        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(false)).build();
         MockRoot root = new MockRoot("foo", state);
         ContainerCluster cluster = new ContainerCluster(root, "container0", "container1", state);
         RoutingProviderConfig.Builder builder = new RoutingProviderConfig.Builder();

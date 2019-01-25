@@ -6,8 +6,8 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.model.VespaModel;
@@ -50,10 +50,9 @@ public class StaticProvisionerTest {
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(app)
                 .modelHostProvisioner(provisioner)
-                .properties(new DeployProperties.Builder()
-                        .multitenant(true)
-                        .hostedVespa(true)
-                        .build())
+                .properties(new TestProperties()
+                        .setMultitenant(true)
+                        .setHostedVespa(true))
                 .build();
         return new VespaModel(new NullConfigModelRegistry(), deployState);
     }

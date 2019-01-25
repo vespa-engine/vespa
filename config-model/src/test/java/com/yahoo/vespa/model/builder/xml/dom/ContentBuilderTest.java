@@ -4,25 +4,28 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.deploy.DeployProperties;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.vespa.config.search.core.PartitionsConfig;
-import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.config.GenericConfig;
+import com.yahoo.vespa.config.search.core.PartitionsConfig;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
-import com.yahoo.vespa.model.search.*;
+import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.Dispatch;
+import com.yahoo.vespa.model.search.IndexedSearchCluster;
+import com.yahoo.vespa.model.search.SearchNode;
+import com.yahoo.vespa.model.search.StreamingSearchCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,7 +36,13 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author baldersheim
@@ -797,10 +806,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                     "</content>" +
                     "</services>";
 
-            DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(
-                    new DeployProperties.Builder()
-                            .hostedVespa(true)
-                            .build());
+            DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true));
             VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                                                                     .withServices(hostedXml)
                                                                     .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)

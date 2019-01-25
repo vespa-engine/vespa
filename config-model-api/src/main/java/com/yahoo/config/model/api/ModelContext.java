@@ -39,6 +39,7 @@ public interface ModelContext {
     /** The Vespa version we want nodes to become */
     Version wantedNodeVespaVersion();
 
+    /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
     interface Properties {
         boolean multitenant();
         ApplicationId applicationId();

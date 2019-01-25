@@ -37,7 +37,7 @@ public class ComponentValidator extends Validator {
     @Override
     public void validate(VespaModel model, DeployState deployState) {
         ApplicationPackage app = deployState.getApplicationPackage();
-        for (ComponentInfo info : app.getComponentsInfo(deployState.getProperties().vespaVersion())) {
+        for (ComponentInfo info : app.getComponentsInfo(deployState.getVespaVersion())) {
             try {
                 this.jarFile = new JarFile(app.getFileReference(Path.fromString(info.getPathRelativeToAppDir())));
             } catch (ZipException e) {

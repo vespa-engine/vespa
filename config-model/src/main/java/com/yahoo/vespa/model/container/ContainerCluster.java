@@ -350,7 +350,7 @@ public final class ContainerCluster
     }
 
     private void addAndSendApplicationBundles(DeployState deployState) {
-        for (ComponentInfo component : deployState.getApplicationPackage().getComponentsInfo(deployState.getProperties().vespaVersion())) {
+        for (ComponentInfo component : deployState.getApplicationPackage().getComponentsInfo(deployState.getVespaVersion())) {
             FileReference reference = FileSender.sendFileToServices(component.getPathRelativeToAppDir(), containers);
             applicationBundles.add(reference);
         }

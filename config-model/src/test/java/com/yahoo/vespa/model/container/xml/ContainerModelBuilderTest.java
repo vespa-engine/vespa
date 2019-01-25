@@ -7,8 +7,8 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -112,9 +112,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
                 .zone(new Zone(SystemName.cd, Environment.dev, RegionName.from("here")))
-                .properties(new DeployProperties.Builder()
-                        .hostedVespa(isHosted)
-                        .build())
+                .properties(new TestProperties().setHostedVespa(isHosted))
                 .build());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         model.getConfig(qrStartBuilder, "jdisc/container.0");
@@ -142,9 +140,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
                 .zone(zone)
-                .properties(new DeployProperties.Builder()
-                        .hostedVespa(isHosted)
-                        .build())
+                .properties(new TestProperties().setHostedVespa(isHosted))
                 .build());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         model.getConfig(qrStartBuilder, "jdisc/container.0");
@@ -212,9 +208,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
-                .properties(new DeployProperties.Builder()
-                        .hostedVespa(true)
-                        .build())
+                .properties(new TestProperties().setHostedVespa(true))
                 .build());
         assertFalse(logger.msgs.isEmpty());
         assertThat(logger.msgs.get(0).getSecond(), containsString(String.format("You cannot set port to anything else than %d", Container.BASEPORT)));
@@ -609,10 +603,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .modelHostProvisioner(new InMemoryProvisioner(true, "host1.yahoo.com", "host2.yahoo.com"))
                 .applicationPackage(applicationPackage)
-                .properties(new DeployProperties.Builder()
-                        .multitenant(true)
-                        .hostedVespa(true)
-                        .build())
+                .properties(new TestProperties()
+                        .setMultitenant(true)
+                        .setHostedVespa(true))
                 .build());
         assertEquals(1, model.getHostSystem().getHosts().size());
     }
@@ -643,9 +636,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
-                .properties(new DeployProperties.Builder()
-                        .hostedVespa(true)
-                        .build())
+                .properties(new TestProperties().setHostedVespa(true))
                 .build());
 
         AbstractConfigProducerRoot modelRoot = model.getRoot();
@@ -673,7 +664,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
-                .properties(new DeployProperties.Builder().build())
+                .properties(new TestProperties())
                 .build());
 
         String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model

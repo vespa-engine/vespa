@@ -2,16 +2,18 @@
 package com.yahoo.config.model.deploy;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
+import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.HostProvisioner;
-import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
@@ -28,7 +30,6 @@ import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.documentmodel.DocumentModel;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRuleBuilder;
@@ -63,7 +64,8 @@ public class DeployState implements ConfigDefinitionStore {
     private final Optional<ConfigDefinitionRepo> configDefinitionRepo;
     private final Optional<ApplicationPackage> permanentApplicationPackage;
     private final Optional<Model> previousModel;
-    private final DeployProperties properties;
+    private final ModelContext.Properties properties;
+    private final Version vespaVersion;
     private final Set<Rotation> rotations;
     private final Zone zone;
     private final QueryProfiles queryProfiles;
@@ -88,7 +90,8 @@ public class DeployState implements ConfigDefinitionStore {
                         FileRegistry fileRegistry,
                         DeployLogger deployLogger,
                         Optional<HostProvisioner> hostProvisioner,
-                        DeployProperties properties,
+                        ModelContext.Properties properties,
+                        Version vespaVersion,
                         Optional<ApplicationPackage> permanentApplicationPackage,
                         Optional<ConfigDefinitionRepo> configDefinitionRepo,
                         java.util.Optional<Model> previousModel,
@@ -104,6 +107,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.rankProfileRegistry = rankProfileRegistry;
         this.applicationPackage = applicationPackage;
         this.properties = properties;
+        this.vespaVersion = vespaVersion;
         this.previousModel = previousModel;
         this.provisioner = hostProvisioner.orElse(getDefaultModelHostProvisioner(applicationPackage));
         this.searchDefinitions = searchDocumentModel.getSearchDefinitions();
@@ -210,7 +214,9 @@ public class DeployState implements ConfigDefinitionStore {
         return permanentApplicationPackage;
     }
 
-    public DeployProperties getProperties() { return properties; }
+    public ModelContext.Properties getProperties() { return properties; }
+
+    public Version getVespaVersion() { return vespaVersion; }
 
     public Optional<Model> getPreviousModel() { return previousModel; }
 
@@ -243,7 +249,8 @@ public class DeployState implements ConfigDefinitionStore {
         private DeployLogger logger = new BaseDeployLogger();
         private Optional<HostProvisioner> hostProvisioner = Optional.empty();
         private Optional<ApplicationPackage> permanentApplicationPackage = Optional.empty();
-        private DeployProperties properties = new DeployProperties.Builder().build();
+        private ModelContext.Properties properties = new TestProperties();
+        private Version version = new Version(1, 0, 0);
         private Optional<ConfigDefinitionRepo> configDefinitionRepo = Optional.empty();
         private Optional<Model> previousModel = Optional.empty();
         private Set<Rotation> rotations = new HashSet<>();
@@ -277,8 +284,13 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public Builder properties(DeployProperties properties) {
+        public Builder properties(ModelContext.Properties properties) {
             this.properties = properties;
+            return this;
+        }
+
+        public Builder vespaVersion(Version version) {
+            this.version = version;
             return this;
         }
 
@@ -333,6 +345,7 @@ public class DeployState implements ConfigDefinitionStore {
                                    logger,
                                    hostProvisioner,
                                    properties,
+                                   version,
                                    permanentApplicationPackage,
                                    configDefinitionRepo,
                                    previousModel,

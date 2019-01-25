@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.google.inject.Inject;
+import com.yahoo.component.Version;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
@@ -10,7 +12,6 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigModelPlugin;
 import com.yahoo.config.model.api.HostProvisioner;
-import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -18,13 +19,10 @@ import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
-
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -137,7 +135,8 @@ public class VespaModelFactory implements ModelFactory {
             .configDefinitionRepo(modelContext.configDefinitionRepo())
             .fileRegistry(modelContext.getFileRegistry())
             .permanentApplicationPackage(modelContext.permanentApplicationPackage())
-            .properties(createDeployProperties(modelContext.properties()))
+            .properties(modelContext.properties())
+            .vespaVersion(version())
             .modelHostProvisioner(createHostProvisioner(modelContext))
             .rotations(modelContext.properties().rotations())
             .modelImporters(modelImporters)
@@ -146,22 +145,6 @@ public class VespaModelFactory implements ModelFactory {
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion());
         modelContext.previousModel().ifPresent(builder::previousModel);
         return builder.build(validationParameters);
-    }
-
-    private DeployProperties createDeployProperties(ModelContext.Properties properties) {
-        return new DeployProperties.Builder()
-                .applicationId(properties.applicationId())
-                .configServerSpecs(properties.configServerSpecs())
-                .loadBalancerName(properties.loadBalancerName())
-                .ztsUrl(properties.ztsUrl())
-                .athenzDnsSuffix(properties.athenzDnsSuffix())
-                .multitenant(properties.multitenant())
-                .hostedVespa(properties.hostedVespa())
-                .vespaVersion(version())
-                .isBootstrap(properties.isBootstrap())
-                .isFirstTimeDeployment(properties.isFirstTimeDeployment())
-                .useDedicatedNodeForLogserver(properties.useDedicatedNodeForLogserver())
-                .build();
     }
 
     private static HostProvisioner createHostProvisioner(ModelContext modelContext) {

@@ -12,14 +12,14 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.net.HostName;
@@ -279,10 +279,9 @@ public class VespaModelTestCase {
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .modelHostProvisioner(new InMemoryProvisioner(true, "host1.yahoo.com"))
-                .properties(new DeployProperties.Builder()
-                        .configServerSpecs(Arrays.asList(new Configserver.Spec("cfghost", 1234, 1235, 1236)))
-                        .multitenant(true)
-                        .build())
+                .properties(new TestProperties()
+                        .setConfigServerSpecs(Arrays.asList(new Configserver.Spec("cfghost", 1234, 1235, 1236)))
+                        .setMultitenant(true))
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         AllocatedHosts info = model.allocatedHosts();
