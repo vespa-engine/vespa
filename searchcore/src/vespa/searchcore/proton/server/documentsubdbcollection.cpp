@@ -54,7 +54,8 @@ DocumentSubDBCollection::DocumentSubDBCollection(
       _retrievers(),
       _reprocessingRunner(),
       _bucketDB(),
-      _bucketDBHandler()
+      _bucketDBHandler(),
+      _hwInfo(hwInfo)
 {
     _bucketDB = std::make_shared<BucketDBOwner>();
     _bucketDBHandler = std::make_unique<bucketdb::BucketDBHandler>(*_bucketDB);
@@ -93,8 +94,8 @@ DocumentSubDBCollection::DocumentSubDBCollection(
 
 DocumentSubDBCollection::~DocumentSubDBCollection()
 {
-    size_t numCores = std::max(1u, std::thread::hardware_concurrency());
-    vespalib::ThreadStackExecutor closePool(std::min(_subDBs.size(), numCores), 0x20000);
+    size_t numThreads = std::min(_subDBs.size(), static_cast<size_t>(_hwInfo.cpu().cores()));
+    vespalib::ThreadStackExecutor closePool(numThreads, 0x20000);
     while (!_subDBs.empty()) {
         closePool.execute(makeLambdaTask([subDB=_subDBs.back()]() { delete subDB; }));
         _subDBs.pop_back();

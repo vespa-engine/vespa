@@ -3,6 +3,7 @@
 
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/varholder.h>
@@ -90,6 +91,7 @@ private:
     ReprocessingRunner _reprocessingRunner;
     std::shared_ptr<BucketDBOwner> _bucketDB;
     std::unique_ptr<bucketdb::BucketDBHandler> _bucketDBHandler;
+    HwInfo _hwInfo;
 
 public:
     DocumentSubDBCollection(
