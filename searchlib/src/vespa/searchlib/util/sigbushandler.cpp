@@ -45,7 +45,7 @@ mystderr(const char *msg) noexcept
     while (*p != '\0') {
         ++p;
     }
-    write(STDERR_FILENO, msg, static_cast<size_t>(p - msg));
+    [[maybe_unused]] auto writeRes = write(STDERR_FILENO, msg, static_cast<size_t>(p - msg));
 }
 
 }

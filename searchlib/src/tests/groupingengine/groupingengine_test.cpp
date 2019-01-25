@@ -1936,7 +1936,9 @@ Test::testGroupingEngineFromRequest()
 
 //-----------------------------------------------------------------------------
 
-struct RunDiff { ~RunDiff() { system("diff -u lhs.out rhs.out > diff.txt"); }};
+struct RunDiff { ~RunDiff() {
+    [[maybe_unused]] int system_result = system("diff -u lhs.out rhs.out > diff.txt");
+}};
 
 //-----------------------------------------------------------------------------
 
