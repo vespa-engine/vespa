@@ -181,7 +181,7 @@ public class MetricsReporterTest {
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
-        assertFalse("Change deployed", tester.controller().applications().require(app.id()).change().isPresent());
+        assertFalse("Change deployed", tester.controller().applications().require(app.id()).change().hasTargets());
 
         // New versions is released and upgrade fails in test environments
         Version version = Version.fromString("7.1");
@@ -201,7 +201,7 @@ public class MetricsReporterTest {
 
         // Upgrade eventually succeeds
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
-        assertFalse("Upgrade deployed", tester.controller().applications().require(app.id()).change().isPresent());
+        assertFalse("Upgrade deployed", tester.controller().applications().require(app.id()).change().hasTargets());
         reporter.maintain();
         assertEquals(0, getDeploymentsFailingUpgrade(app));
     }

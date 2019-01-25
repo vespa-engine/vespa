@@ -161,7 +161,7 @@ public class InternalDeploymentTester {
         assertTrue(tester.configServer().nodeRepository()
                          .list(JobType.productionUsEast3.zone(tester.controller().system()), appId).stream()
                          .allMatch(node -> node.currentVersion().equals(version)));
-        assertFalse(app().change().isPresent());
+        assertFalse(app().change().hasTargets());
     }
 
     /**

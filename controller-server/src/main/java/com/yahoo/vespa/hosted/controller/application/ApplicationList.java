@@ -84,12 +84,12 @@ public class ApplicationList {
 
     /** Returns the subset of applications which have changes left to deploy; blocked, or deploying */
     public ApplicationList withChanges() {
-        return listOf(list.stream().filter(application -> application.change().isPresent() || application.outstandingChange().isPresent()));
+        return listOf(list.stream().filter(application -> application.change().hasTargets() || application.outstandingChange().hasTargets()));
     }
 
     /** Returns the subset of applications which are currently not deploying a change */
     public ApplicationList notDeploying() {
-        return listOf(list.stream().filter(application -> ! application.change().isPresent()));
+        return listOf(list.stream().filter(application -> ! application.change().hasTargets()));
     }
 
     /** Returns the subset of applications which currently does not have any failing jobs */

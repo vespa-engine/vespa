@@ -50,8 +50,13 @@ public final class Change {
     }
 
     /** Returns whether a change should currently be deployed */
-    public boolean isPresent() {
+    public boolean hasTargets() {
         return platform.isPresent() || application.isPresent();
+    }
+
+    /** Returns whether this is the empty change. */
+    public boolean isEmpty() {
+        return ! hasTargets() && ! pinned;
     }
 
     /** Returns the platform version carried by this. */
