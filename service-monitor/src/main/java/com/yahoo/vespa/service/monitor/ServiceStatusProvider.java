@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 
 /**
@@ -19,9 +20,9 @@ public interface ServiceStatusProvider {
      * service status provider does does not monitor the service status for
      * the particular application, cluster, service type, and config id.
      */
-    ServiceStatus getStatus(ApplicationId applicationId,
-                            ClusterId clusterId,
-                            ServiceType serviceType,
-                            ConfigId configId);
+    ServiceStatusInfo getStatus(ApplicationId applicationId,
+                                ClusterId clusterId,
+                                ServiceType serviceType,
+                                ConfigId configId);
 
 }

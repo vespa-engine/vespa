@@ -4,6 +4,7 @@ package com.yahoo.vespa.service.health;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import com.yahoo.vespa.service.model.ServiceId;
 import com.yahoo.vespa.service.monitor.ConfigserverUtil;
@@ -47,9 +48,9 @@ public class ApplicationHealthMonitorTest {
         verify(endpoint1, times(1)).startMonitoring();
         verify(endpoint2, times(1)).startMonitoring();
 
-        when(monitor1.getStatus()).thenReturn(ServiceStatus.UP);
-        when(monitor2.getStatus()).thenReturn(ServiceStatus.DOWN);
-        when(monitor3.getStatus()).thenReturn(ServiceStatus.UP);
+        when(monitor1.getStatus()).thenReturn(new ServiceStatusInfo(ServiceStatus.UP));
+        when(monitor2.getStatus()).thenReturn(new ServiceStatusInfo(ServiceStatus.DOWN));
+        when(monitor3.getStatus()).thenReturn(new ServiceStatusInfo(ServiceStatus.UP));
 
         assertEquals(ServiceStatus.UP, getStatus(applicationMonitor, "cfg1"));
         assertEquals(ServiceStatus.DOWN, getStatus(applicationMonitor, "cfg2"));
@@ -94,6 +95,7 @@ public class ApplicationHealthMonitorTest {
                 configServerApplication.getApplicationId(),
                 configServerApplication.getClusterId(),
                 configServerApplication.getServiceType(),
-                configServerApplication.configIdFor(HostName.from(hostname)));
+                configServerApplication.configIdFor(HostName.from(hostname)))
+                .serviceStatus();
     }
 }

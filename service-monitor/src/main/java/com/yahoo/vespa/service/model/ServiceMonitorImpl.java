@@ -21,12 +21,10 @@ public class ServiceMonitorImpl implements ServiceMonitor {
 
     @Inject
     public ServiceMonitorImpl(DuperModelManager duperModelManager,
-                              SlobrokMonitorManagerImpl slobrokMonitorManager,
-                              HealthMonitorManager healthMonitorManager,
+                              UnionMonitorManager monitorManager,
                               Metric metric,
                               Timer timer,
                               Zone zone) {
-        UnionMonitorManager monitorManager = new UnionMonitorManager(slobrokMonitorManager, healthMonitorManager);
         duperModelManager.registerListener(monitorManager);
 
         ServiceModelProvider uncachedServiceModelProvider = new ServiceModelProvider(

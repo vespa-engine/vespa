@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
-import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.executor.Cancellable;
 import com.yahoo.vespa.service.executor.RunletExecutor;
 
@@ -22,8 +22,8 @@ class StateV1HealthMonitor implements HealthMonitor {
     }
 
     @Override
-    public ServiceStatus getStatus() {
-        return updater.getLatestHealthInfo().toServiceStatus();
+    public ServiceStatusInfo getStatus() {
+        return updater.getServiceStatusInfo();
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import com.yahoo.vespa.service.duper.ControllerHostApplication;
 import com.yahoo.vespa.service.duper.DuperModelManager;
@@ -62,7 +63,7 @@ public class HealthMonitorManagerTest {
                 ZoneApplication.getApplicationId(),
                 ZoneApplication.getNodeAdminClusterId(),
                 ZoneApplication.getNodeAdminServiceType(),
-                new ConfigId("config-id-1"));
+                new ConfigId("config-id-1")).serviceStatus();
         assertEquals(ServiceStatus.UP, status);
     }
 
@@ -91,7 +92,7 @@ public class HealthMonitorManagerTest {
         verify(monitorFactory, times(isMonitored ? 1 : 0)).create(zoneApplicationInfo.getApplicationId());
         verify(monitor, times(isMonitored ? 1 : 0)).monitor(any());
 
-        when(monitor.getStatus(any(), any(), any(), any())).thenReturn(ServiceStatus.DOWN);
+        when(monitor.getStatus(any(), any(), any(), any())).thenReturn(new ServiceStatusInfo(ServiceStatus.DOWN));
         verifyNodeAdminGetStatus(0);
         if (isMonitored) {
             assertEquals(ServiceStatus.DOWN, getNodeAdminStatus());
@@ -127,7 +128,7 @@ public class HealthMonitorManagerTest {
                 ZoneApplication.getApplicationId(),
                 ZoneApplication.getNodeAdminClusterId(),
                 ZoneApplication.getNodeAdminServiceType(),
-                new ConfigId("foo"));
+                new ConfigId("foo")).serviceStatus();
     }
 
     private ServiceStatus getRoutingStatus() {
@@ -135,7 +136,7 @@ public class HealthMonitorManagerTest {
                 ZoneApplication.getApplicationId(),
                 ZoneApplication.getRoutingClusterId(),
                 ZoneApplication.getRoutingServiceType(),
-                new ConfigId("bar"));
+                new ConfigId("bar")).serviceStatus();
     }
 
     @Test
@@ -149,7 +150,7 @@ public class HealthMonitorManagerTest {
         manager.applicationActivated(proxyHostApplicationInfo);
         verify(monitorFactory, times(1)).create(proxyHostApplicationInfo.getApplicationId());
 
-        when(monitor.getStatus(any(), any(), any(), any())).thenReturn(ServiceStatus.UP);
+        when(monitor.getStatus(any(), any(), any(), any())).thenReturn(new ServiceStatusInfo(ServiceStatus.UP));
         assertStatus(ServiceStatus.UP, 1, proxyHostApplication, "proxyhost1");
 
         ControllerHostApplication controllerHostApplication = new ControllerHostApplication();
@@ -168,7 +169,7 @@ public class HealthMonitorManagerTest {
                 infraApplication.getApplicationId(),
                 infraApplication.getClusterId(),
                 infraApplication.getServiceType(),
-                infraApplication.configIdFor(HostName.from(hostname)));
+                infraApplication.configIdFor(HostName.from(hostname))).serviceStatus();
 
         assertEquals(expected, actual);
 

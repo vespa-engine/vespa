@@ -9,13 +9,15 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.InstanceLookupService;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.restapi.wire.SlobrokEntryResponse;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.StatusService;
+import com.yahoo.vespa.service.manager.MonitorManager;
+import com.yahoo.vespa.service.manager.UnionMonitorManager;
 import com.yahoo.vespa.service.monitor.SlobrokApi;
 
 import javax.inject.Inject;
@@ -50,15 +52,18 @@ public class InstanceResource {
 
     private final StatusService statusService;
     private final SlobrokApi slobrokApi;
+    private final MonitorManager rootManager;
     private final InstanceLookupService instanceLookupService;
 
     @Inject
     public InstanceResource(@Component InstanceLookupService instanceLookupService,
                             @Component StatusService statusService,
-                            @Component SlobrokApi slobrokApi) {
+                            @Component SlobrokApi slobrokApi,
+                            @Component UnionMonitorManager rootManager) {
         this.instanceLookupService = instanceLookupService;
         this.statusService = statusService;
         this.slobrokApi = slobrokApi;
+        this.rootManager = rootManager;
     }
 
     @GET
@@ -104,9 +109,9 @@ public class InstanceResource {
     }
 
     @GET
-    @Path("/{instanceId}/serviceStatus")
+    @Path("/{instanceId}/serviceStatusInfo")
     @Produces(MediaType.APPLICATION_JSON)
-    public ServiceStatus getServiceStatus(
+    public ServiceStatusInfo getServiceStatus(
             @PathParam("instanceId") String instanceId,
             @QueryParam("clusterId") String clusterIdString,
             @QueryParam("serviceType") String serviceTypeString,
@@ -130,7 +135,7 @@ public class InstanceResource {
         ServiceType serviceType = new ServiceType(serviceTypeString);
         ConfigId configId = new ConfigId(configIdString);
 
-        return slobrokApi.getStatus(applicationId, clusterId, serviceType, configId);
+        return rootManager.getStatus(applicationId, clusterId, serviceType, configId);
     }
 
     static ApplicationInstanceReference parseInstanceId(String instanceIdString) {
