@@ -70,21 +70,21 @@ public class DocumentDatabaseTestCase {
             retval.append("/>\n");
         }
         retval.append("   </documents>\n");
-        retval.append("" +
-                      "<engine>\n" +
-                "<proton>\n" +
-                "<tuning>\n" +
-                "<searchnode>\n" +
+        retval.append(
+                "    <engine>\n" +
+                "      <proton>\n" +
+                "        <tuning>\n" +
+                "          <searchnode>\n" +
                 xmlTuning +
-                "</searchnode>\n" +
-                "</tuning\n>" +
-                "</proton\n>" +
-                "</engine\n>" +
-                      "   <nodes>\n" +
-                      "      <node hostalias='node0' distribution-key='0'/>\n" +
-                      "   </nodes>\n" +
-                      "</content>\n" +
-                      "</services>\n");
+                "          </searchnode>\n" +
+                "        </tuning\n>" +
+                "      </proton\n>" +
+                "    </engine\n>" +
+                "    <nodes>\n" +
+                "      <node hostalias='node0' distribution-key='0'/>\n" +
+                "    </nodes>\n" +
+                "  </content>\n" +
+                "</services>\n");
         return retval.toString();
     }
 
@@ -160,6 +160,20 @@ public class DocumentDatabaseTestCase {
         for (int i = 0; i < local.size(); i++) {
             assertEquals(local.get(i), proton.documentdb(i).feeding().concurrency(), SMALL);
         }
+    }
+
+    @Test
+    public void requireThatModeIsSet() {
+        VespaModel model = createModel(Arrays.asList(new Pair("a", "index"), new Pair("b", "streaming"), new Pair("c", "store-only")), "");
+        ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
+        ProtonConfig proton = getProtonCfg(contentSearchCluster);
+        assertEquals(3, proton.documentdb().size());
+        assertEquals(ProtonConfig.Documentdb.Mode.Enum.INDEX, proton.documentdb(0).mode());
+        assertEquals("a", proton.documentdb(0).inputdoctypename());
+        assertEquals(ProtonConfig.Documentdb.Mode.Enum.STREAMING, proton.documentdb(1).mode());
+        assertEquals("b", proton.documentdb(1).inputdoctypename());
+        assertEquals(ProtonConfig.Documentdb.Mode.Enum.STORE_ONLY, proton.documentdb(2).mode());
+        assertEquals("c", proton.documentdb(2).inputdoctypename());
     }
 
     private void verifyInitialDocumentCount(List<Pair<String, String>> nameAndModes, String xmlTuning, long global, List<Long> local) {

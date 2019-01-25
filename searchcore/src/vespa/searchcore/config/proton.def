@@ -284,6 +284,8 @@ summary.read.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restar
 
 ## The name of the input document type
 documentdb[].inputdoctypename string
+## The type of the documentdb
+documentdb[].mode enum {INDEX, STREAMING, STORE_ONLY} default=INDEX
 ## The configid used to subscribe to config for this database.
 documentdb[].configid string
 ## How many seconds is allowed from document is received to it is visible in the index.
@@ -303,18 +305,18 @@ documentdb[].global bool default=false
 documentdb[].feeding.concurrency double default=0.2
 
 ## Minimum initial size for any per document tables.
-documentdb[].allocation.initialnumdocs long default=1024 restart
+documentdb[].allocation.initialnumdocs long default=1024
 ## Grow factor for any per document tables.
-documentdb[].allocation.growfactor double default=0.2 restart
+documentdb[].allocation.growfactor double default=0.2
 ## Constant added when growing any per document tables.
-documentdb[].allocation.growbias int default=1 restart
+documentdb[].allocation.growbias int default=1
 
 ## The number of documents to amortize memory spike cost over
-documentdb[].allocation.amortizecount int default=10000 restart
+documentdb[].allocation.amortizecount int default=10000
 
 ## The grow factor used when allocating buffers in the array store
 ## used in multi-value attribute vectors to store underlying values.
-documentdb[].allocation.multivaluegrowfactor double default=0.2 restart
+documentdb[].allocation.multivaluegrowfactor double default=0.2
 
 ## The interval of when periodic tasks should be run
 periodic.interval double default=3600.0

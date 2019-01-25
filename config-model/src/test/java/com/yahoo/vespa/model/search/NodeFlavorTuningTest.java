@@ -1,12 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static com.yahoo.vespa.model.search.NodeFlavorTuning.MB;
 import static com.yahoo.vespa.model.search.NodeFlavorTuning.GB;
 
@@ -25,6 +30,29 @@ public class NodeFlavorTuningTest {
     public void require_that_hwinfo_memory_size_is_set() {
         ProtonConfig cfg = configFromMemorySetting(24);
         assertEquals(24 * GB, cfg.hwinfo().memory().size());
+    }
+
+    private ProtonConfig getProtonMemoryConfig(List<Pair<String, String>> sdAndMode, int gb) {
+        ProtonConfig.Builder builder = new ProtonConfig.Builder();
+        for (Pair<String, String> sdMode : sdAndMode) {
+            builder.documentdb.add(new ProtonConfig.Documentdb.Builder()
+                                   .inputdoctypename(sdMode.getFirst())
+                                   .configid("some/config/id/" + sdMode.getFirst())
+                                   .mode(ProtonConfig.Documentdb.Mode.Enum.valueOf(sdMode.getSecond())));
+        }
+        return configFromMemorySetting(gb, builder);
+    }
+    @Test
+    public void require_that_initial_is_dependent_of_mode() {
+        ProtonConfig cfg = getProtonMemoryConfig(Arrays.asList(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")), 24);
+        assertEquals(1024, cfg.grow().initial());
+        assertEquals(3, cfg.documentdb().size());
+        assertEquals(1024, cfg.documentdb(0).allocation().initialnumdocs());
+        assertEquals("a", cfg.documentdb(0).inputdoctypename());
+        assertEquals(644245094L, cfg.documentdb(1).allocation().initialnumdocs());
+        assertEquals("b", cfg.documentdb(1).inputdoctypename());
+        assertEquals(644245094L, cfg.documentdb(2).allocation().initialnumdocs());
+        assertEquals("c", cfg.documentdb(2).inputdoctypename());
     }
 
     @Test
@@ -143,6 +171,10 @@ public class NodeFlavorTuningTest {
         return getConfig(new FlavorsConfig.Flavor.Builder().
                 minMainMemoryAvailableGb(memoryGb));
     }
+    private static ProtonConfig configFromMemorySetting(int memoryGb, ProtonConfig.Builder builder) {
+        return getConfig(new FlavorsConfig.Flavor.Builder().
+                minMainMemoryAvailableGb(memoryGb), builder);
+    }
 
     private static ProtonConfig configFromNumCoresSetting(double numCores) {
         return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores));
@@ -154,9 +186,16 @@ public class NodeFlavorTuningTest {
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder) {
+        getConfig(flavorBuilder, new ProtonConfig.Builder());
         flavorBuilder.name("my_flavor");
         NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)));
         ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        tuning.getConfig(protonBuilder);
+        return new ProtonConfig(protonBuilder);
+    }
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder) {
+        flavorBuilder.name("my_flavor");
+        NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)));
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }

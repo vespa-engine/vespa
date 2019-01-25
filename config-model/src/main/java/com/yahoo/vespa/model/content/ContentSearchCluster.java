@@ -321,15 +321,23 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                 hasAnyNonIndexedCluster = true;
                 ddbB.inputdoctypename(type.getFullName().getName())
                     .configid(ssc.get().getDocumentDBConfigId())
+                        .mode(ProtonConfig.Documentdb.Mode.Enum.STREAMING)
                     .feeding.concurrency(0.0);
             } else if (hasIndexedCluster()) {
-                getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
-                if (tuning != null && tuning.searchNode != null && tuning.searchNode.feeding != null) {
-                    ddbB.feeding.concurrency(tuning.searchNode.feeding.concurrency/2);
+                if (getIndexed().hasDocumentDB(type.getFullName().getName())) {
+                    getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
+                    if (tuning != null && tuning.searchNode != null && tuning.searchNode.feeding != null) {
+                        ddbB.feeding.concurrency(tuning.searchNode.feeding.concurrency / 2);
+                    }
+                } else {
+                    hasAnyNonIndexedCluster = true;
+                    ddbB.feeding.concurrency(0.0);
+                    ddbB.mode(ProtonConfig.Documentdb.Mode.Enum.STORE_ONLY);
                 }
             } else {
                 hasAnyNonIndexedCluster = true;
                 ddbB.feeding.concurrency(0.0);
+                ddbB.mode(ProtonConfig.Documentdb.Mode.Enum.STORE_ONLY);
             }
             if (globalDocType) {
                 ddbB.visibilitydelay(0.0);

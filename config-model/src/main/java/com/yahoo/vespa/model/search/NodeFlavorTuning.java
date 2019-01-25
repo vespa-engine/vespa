@@ -31,6 +31,17 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         tuneSummaryReadIo(builder.summary.read);
         tuneSummaryCache(builder.summary.cache);
         tuneSearchReadIo(builder.search.mmap);
+        for (ProtonConfig.Documentdb.Builder dbb : builder.documentdb) {
+            getConfig(dbb);
+        }
+    }
+
+    private void getConfig(ProtonConfig.Documentdb.Builder builder) {
+        ProtonConfig.Documentdb dbCfg = builder.build();
+        if (dbCfg.mode() != ProtonConfig.Documentdb.Mode.Enum.INDEX) {
+            long numDocs = (long)nodeFlavor.getMinMainMemoryAvailableGb()*GB/40L;
+            builder.allocation.initialnumdocs(numDocs);
+        }
     }
 
     private void tuneSummaryCache(ProtonConfig.Summary.Cache.Builder builder) {
