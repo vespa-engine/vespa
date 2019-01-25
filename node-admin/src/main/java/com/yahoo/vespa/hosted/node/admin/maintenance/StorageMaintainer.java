@@ -264,6 +264,7 @@ public class StorageMaintainer {
         attributes.put("environment", context.zoneId().environment().value());
         attributes.put("flavor", context.node().getFlavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
+        attributes.put("cpu_microcode_version", getMicrocodeVersion(context));
 
         container.map(c -> c.image).ifPresent(image -> attributes.put("docker_image", image.asString()));
         context.node().getParentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
@@ -289,5 +290,22 @@ public class StorageMaintainer {
         new UnixPath(containerLogsInArchiveDir).createParents();
         new UnixPath(containerLogsOnHost).moveIfExists(containerLogsInArchiveDir);
         new UnixPath(context.pathOnHostFromPathInNode("/")).deleteRecursively();
+    }
+
+    private String getMicrocodeVersion(NodeAgentContext context) {
+        String output = terminal.newCommandLine(context)
+                .add("grep", "microcode", "/proc/cpuinfo")
+                .setTimeout(Duration.ofSeconds(60))
+                .executeSilently()
+                .getOutputLinesStream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No microcode information found in /proc/cpuinfo"));
+
+        String[] results = output.split(":");
+        if (results.length != 2) {
+            throw new RuntimeException("Result from detect microcode command not as expected: " + output);
+        }
+
+        return results[1].trim();
     }
 }
