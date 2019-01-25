@@ -25,11 +25,12 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
@@ -92,7 +93,9 @@ public class ProvisioningTester {
             this.orchestrator = mock(Orchestrator.class);
             doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
             this.loadBalancerService = new LoadBalancerServiceMock();
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, loadBalancerService);
+            ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(
+                    loadBalancerService, null);
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, provisionServiceProvider);
             this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
             this.provisionLogger = new NullProvisionLogger();
         }

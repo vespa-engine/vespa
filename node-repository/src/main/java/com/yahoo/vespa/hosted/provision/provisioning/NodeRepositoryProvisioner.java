@@ -20,7 +20,6 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.flag.FlagId;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 
@@ -28,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,7 +48,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private final Zone zone;
     private final Preparer preparer;
     private final Activator activator;
-    private final LoadBalancerProvisioner loadBalancerProvisioner;
+    private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
 
     int getSpareCapacityProd() {
         return SPARE_CAPACITY_PROD;
@@ -56,7 +56,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone,
-                                     LoadBalancerService loadBalancerService) {
+                                     ProvisionServiceProvider provisionServiceProvider) {
         this.nodeRepository = nodeRepository;
         this.capacityPolicies = new CapacityPolicies(zone, flavors);
         this.zone = zone;
@@ -64,7 +64,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
                 ? SPARE_CAPACITY_PROD
                 : SPARE_CAPACITY_NONPROD);
         this.activator = new Activator(nodeRepository);
-        this.loadBalancerProvisioner = new LoadBalancerProvisioner(nodeRepository, loadBalancerService);
+        this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService().map(lbService ->
+                new LoadBalancerProvisioner(nodeRepository, lbService));
     }
 
     /**
@@ -112,7 +113,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         transaction.onCommitted(() -> {
             if (nodeRepository.flags().get(FlagId.exclusiveLoadBalancer).isEnabled(application)) {
                 try {
-                    loadBalancerProvisioner.provision(application);
+                    loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.provision(application));
                 } catch (Exception e) {
                     log.log(LogLevel.ERROR, "Failed to provision load balancer for application " +
                                             application.toShortString(), e);
@@ -129,7 +130,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     @Override
     public void remove(NestedTransaction transaction, ApplicationId application) {
         nodeRepository.deactivate(application, transaction);
-        loadBalancerProvisioner.deactivate(application, transaction);
+        loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(application, transaction));
     }
 
     private List<HostSpec> asSortedHosts(List<Node> nodes) {

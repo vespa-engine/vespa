@@ -26,9 +26,9 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -123,7 +123,7 @@ public class OperatorChangeApplicationMaintainerTest {
         Fixture(Zone zone, NodeRepository nodeRepository, NodeFlavors flavors, Curator curator) {
             this.nodeRepository = nodeRepository;
             this.curator = curator;
-            this.provisioner =  new NodeRepositoryProvisioner(nodeRepository, flavors, zone, new LoadBalancerServiceMock());
+            this.provisioner =  new NodeRepositoryProvisioner(nodeRepository, flavors, zone, new MockProvisionServiceProvider());
         }
 
         void activate() {
