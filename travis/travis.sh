@@ -10,7 +10,7 @@ function bell() {
   done
 }
 
-DOCKER_IMAGE=vespaengine/vespa-dev:vespa7-java11
+DOCKER_IMAGE=vespaengine/vespa-dev:latest
 
 bell &
 docker run --rm -v ${HOME}/.m2:/root/.m2 -v ${HOME}/.ccache:/root/.ccache -v $(pwd):/source \
