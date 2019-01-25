@@ -1,8 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.yolean.Exceptions;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -17,6 +19,7 @@ public class HealthInfo {
     private final Optional<Exception> exception;
     private final OptionalInt httpStatusCode;
     private final Optional<String> healthStatusCode;
+    private final Instant time;
 
     static HealthInfo fromException(Exception exception) {
         return new HealthInfo(Optional.of(exception), OptionalInt.empty(), Optional.empty());
@@ -30,18 +33,39 @@ public class HealthInfo {
         return new HealthInfo(Optional.empty(), OptionalInt.empty(), Optional.of(healthStatusCode));
     }
 
-    private HealthInfo(Optional<Exception> exception, OptionalInt httpStatusCode, Optional<String> healthStatusCode) {
+    static HealthInfo empty() {
+        return new HealthInfo(Optional.empty(), OptionalInt.empty(), Optional.empty());
+    }
+
+    private HealthInfo(Optional<Exception> exception,
+                       OptionalInt httpStatusCode,
+                       Optional<String> healthStatusCode) {
         this.exception = exception;
         this.httpStatusCode = httpStatusCode;
         this.healthStatusCode = healthStatusCode;
+        this.time = Instant.now();
     }
 
     public boolean isHealthy() {
         return healthStatusCode.map(UP_STATUS_CODE::equals).orElse(false);
     }
 
-    public Optional<String> getErrorDescription() {
-        return isHealthy() ? Optional.empty() : Optional.of(toString());
+    public ServiceStatus toServiceStatus() {
+        // Bootstrapping ServiceStatus: To avoid thundering herd problem at startup,
+        // the clients will not fetch the health immediately. What should the ServiceStatus
+        // be before the first health has been fetched?
+        //
+        // NOT_CHECKED: Logically the right thing, but if an Orchestrator gets a suspend request
+        // in this window, and another service within the cluster is down, it ends up allowing
+        // suspension when it shouldn't have done so.
+        //
+        // DOWN: Only safe initial value, possibly except if the first initial delay is long,
+        // as that could indicate it has been down for too long.
+        return isHealthy() ? ServiceStatus.UP : ServiceStatus.DOWN;
+    }
+
+    public Instant time() {
+        return time;
     }
 
     @Override

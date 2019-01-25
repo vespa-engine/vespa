@@ -3,7 +3,6 @@ package com.yahoo.vespa.service.manager;
 
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
-import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.health.HealthMonitorManager;
 import com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl;
@@ -35,12 +34,12 @@ public class UnionMonitorManagerTest {
     private void testWith(ServiceStatus healthStatus,
                           ServiceStatus slobrokStatus,
                           ServiceStatus expectedStatus) {
-        when(healthMonitorManager.getStatus(any(), any(), any(), any())).thenReturn(new ServiceStatusInfo(healthStatus));
-        when(slobrokMonitorManager.getStatus(any(), any(), any(), any())).thenReturn(new ServiceStatusInfo(slobrokStatus));
+        when(healthMonitorManager.getStatus(any(), any(), any(), any())).thenReturn(healthStatus);
+        when(slobrokMonitorManager.getStatus(any(), any(), any(), any())).thenReturn(slobrokStatus);
         ServiceStatus status = manager.getStatus(
                 ZoneApplication.getApplicationId(),
                 ZoneApplication.getNodeAdminClusterId(),
-                ZoneApplication.getNodeAdminServiceType(), new ConfigId("config-id")).serviceStatus();
+                ZoneApplication.getNodeAdminServiceType(), new ConfigId("config-id"));
         assertSame(expectedStatus, status);
     }
 }

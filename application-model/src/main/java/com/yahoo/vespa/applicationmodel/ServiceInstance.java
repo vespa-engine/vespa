@@ -14,17 +14,13 @@ public class ServiceInstance {
 
     private final ConfigId configId;
     private final HostName hostName;
-    private final ServiceStatusInfo serviceStatusInfo;
+    private final ServiceStatus serviceStatus;
     private Optional<ServiceCluster> serviceCluster = Optional.empty();
 
     public ServiceInstance(ConfigId configId, HostName hostName, ServiceStatus serviceStatus) {
-        this(configId, hostName, new ServiceStatusInfo(serviceStatus));
-    }
-
-    public ServiceInstance(ConfigId configId, HostName hostName, ServiceStatusInfo serviceStatusInfo) {
         this.configId = configId;
         this.hostName = hostName;
-        this.serviceStatusInfo = serviceStatusInfo;
+        this.serviceStatus = serviceStatus;
     }
 
     @JsonProperty("configId")
@@ -37,13 +33,9 @@ public class ServiceInstance {
         return hostName;
     }
 
+    @JsonProperty("serviceStatus")
     public ServiceStatus serviceStatus() {
-        return serviceStatusInfo.serviceStatus();
-    }
-
-    @JsonProperty("serviceStatusInfo")
-    public ServiceStatusInfo serviceStatusInfo() {
-        return serviceStatusInfo;
+        return serviceStatus;
     }
 
     @JsonIgnore
@@ -58,11 +50,10 @@ public class ServiceInstance {
 
     @Override
     public String toString() {
-        // serviceCluster omitted to avoid recursion
         return "ServiceInstance{" +
                 "configId=" + configId +
                 ", hostName=" + hostName +
-                ", serviceStatus=" + serviceStatusInfo +
+                ", serviceStatus=" + serviceStatus +
                 '}';
     }
 
@@ -71,15 +62,13 @@ public class ServiceInstance {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ServiceInstance that = (ServiceInstance) o;
-        // serviceCluster omitted to avoid recursion
         return Objects.equals(configId, that.configId) &&
                 Objects.equals(hostName, that.hostName) &&
-                serviceStatusInfo == that.serviceStatusInfo;
+                serviceStatus == that.serviceStatus;
     }
 
     @Override
     public int hashCode() {
-        // serviceCluster omitted to avoid recursion
-        return Objects.hash(configId, hostName, serviceStatusInfo);
+        return Objects.hash(configId, hostName, serviceStatus);
     }
 }

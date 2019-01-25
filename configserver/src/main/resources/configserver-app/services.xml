@@ -64,7 +64,6 @@
     <preprocess:include file='controller/container.xml' required='false' />
     <component id="com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.health.HealthMonitorManager" bundle="service-monitor" />
-    <component id="com.yahoo.vespa.service.manager.UnionMonitorManager" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.model.ServiceMonitorImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.duper.DuperModelManager" bundle="service-monitor" />
     <component id="com.yahoo.vespa.orchestrator.ServiceMonitorInstanceLookupService" bundle="orchestrator" />

@@ -16,19 +16,20 @@ public class StateV1HealthMonitorTest {
     @Test
     public void downThenUpThenDown() throws Exception {
         StateV1HealthClient client = mock(StateV1HealthClient.class);
+        when(client.get()).thenReturn(HealthInfo.empty());
 
         StateV1HealthUpdater updater = new StateV1HealthUpdater(client);
         RunletExecutor executor = new RunletExecutorImpl(2);
         try (StateV1HealthMonitor monitor = new StateV1HealthMonitor(updater, executor, Duration.ofMillis(10))) {
-            assertEquals(ServiceStatus.NOT_CHECKED, monitor.getStatus().serviceStatus());
+            assertEquals(ServiceStatus.DOWN, monitor.getStatus());
 
             when(client.get()).thenReturn(HealthInfo.fromHealthStatusCode(HealthInfo.UP_STATUS_CODE));
-            while (monitor.getStatus().serviceStatus() != ServiceStatus.UP) {
+            while (monitor.getStatus() != ServiceStatus.UP) {
                 try { Thread.sleep(2); } catch (InterruptedException ignored) { }
             }
 
             when(client.get()).thenReturn(HealthInfo.fromException(new IllegalStateException("foo")));
-            while (monitor.getStatus().serviceStatus() != ServiceStatus.DOWN) {
+            while (monitor.getStatus() != ServiceStatus.DOWN) {
                 try { Thread.sleep(2); } catch (InterruptedException ignored) { }
             }
         }

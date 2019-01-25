@@ -9,7 +9,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
-import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.service.duper.DuperModelManager;
 import com.yahoo.vespa.service.manager.MonitorManager;
@@ -85,26 +84,27 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
     }
 
     @Override
-    public ServiceStatusInfo getStatus(ApplicationId applicationId,
-                                       ClusterId clusterId,
-                                       ServiceType serviceType,
-                                       ConfigId configId) {
+    public ServiceStatus getStatus(ApplicationId applicationId,
+                                   ClusterId clusterId,
+                                   ServiceType serviceType,
+                                   ConfigId configId) {
         if (!wouldMonitor(applicationId)) {
-            return new ServiceStatusInfo(ServiceStatus.NOT_CHECKED);
+            return ServiceStatus.NOT_CHECKED;
         }
 
         Optional<String> slobrokServiceName = findSlobrokServiceName(serviceType, configId);
         if (slobrokServiceName.isPresent()) {
             synchronized (monitor) {
                 SlobrokMonitor slobrokMonitor = slobrokMonitors.get(applicationId);
-                if (slobrokMonitor != null && slobrokMonitor.registeredInSlobrok(slobrokServiceName.get())) {
-                    return new ServiceStatusInfo(ServiceStatus.UP);
+                if (slobrokMonitor != null &&
+                        slobrokMonitor.registeredInSlobrok(slobrokServiceName.get())) {
+                    return ServiceStatus.UP;
                 } else {
-                    return new ServiceStatusInfo(ServiceStatus.DOWN);
+                    return ServiceStatus.DOWN;
                 }
             }
         } else {
-            return new ServiceStatusInfo(ServiceStatus.NOT_CHECKED);
+            return ServiceStatus.NOT_CHECKED;
         }
     }
 

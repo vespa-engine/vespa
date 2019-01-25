@@ -2,7 +2,6 @@
 package com.yahoo.vespa.service.health;
 
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
-import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -16,7 +15,7 @@ import java.net.URL;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -32,7 +31,7 @@ public class StateV1HealthUpdaterTest {
 
     @Test
     public void successfulRequestResponse() throws IOException {
-        ServiceStatusInfo info = getServiceStatusInfoFromJsonResponse("{\n" +
+        HealthInfo info = getHealthInfoFromJsonResponse("{\n" +
                 "    \"metrics\": {\n" +
                 "        \"snapshot\": {\n" +
                 "            \"from\": 1.528789829249E9,\n" +
@@ -42,13 +41,13 @@ public class StateV1HealthUpdaterTest {
                 "    \"status\": {\"code\": \"up\"},\n" +
                 "    \"time\": 1528789889364\n" +
                 "}");
-        assertEquals(ServiceStatus.UP, info.serviceStatus());
-        assertNull(info.errorOrNull());
+        assertTrue(info.isHealthy());
+        assertEquals(ServiceStatus.UP, info.toServiceStatus());
     }
 
     @Test
     public void notUpResponse() throws IOException {
-        ServiceStatusInfo info = getServiceStatusInfoFromJsonResponse("{\n" +
+        HealthInfo info = getHealthInfoFromJsonResponse("{\n" +
                 "    \"metrics\": {\n" +
                 "        \"snapshot\": {\n" +
                 "            \"from\": 1.528789829249E9,\n" +
@@ -58,13 +57,14 @@ public class StateV1HealthUpdaterTest {
                 "    \"status\": {\"code\": \"initializing\"},\n" +
                 "    \"time\": 1528789889364\n" +
                 "}");
-        assertEquals(ServiceStatus.DOWN, info.serviceStatus());
-        assertEquals("Bad health status code 'initializing'", info.errorOrNull());
+        assertFalse(info.isHealthy());
+        assertEquals(ServiceStatus.DOWN, info.toServiceStatus());
+        assertEquals("Bad health status code 'initializing'", info.toString());
     }
 
     @Test
     public void noCodeInResponse() throws IOException {
-        ServiceStatusInfo info = getServiceStatusInfoFromJsonResponse("{\n" +
+        HealthInfo info = getHealthInfoFromJsonResponse("{\n" +
                 "    \"metrics\": {\n" +
                 "        \"snapshot\": {\n" +
                 "            \"from\": 1.528789829249E9,\n" +
@@ -74,13 +74,14 @@ public class StateV1HealthUpdaterTest {
                 "    \"status\": {\"foo\": \"bar\"},\n" +
                 "    \"time\": 1528789889364\n" +
                 "}");
-        assertEquals(ServiceStatus.DOWN, info.serviceStatus());
-        assertEquals("Bad health status code 'down'", info.errorOrNull());
+        assertFalse(info.isHealthy());
+        assertEquals(ServiceStatus.DOWN, info.toServiceStatus());
+        assertEquals("Bad health status code 'down'", info.toString());
     }
 
     @Test
     public void noStatusInResponse() throws IOException {
-        ServiceStatusInfo info = getServiceStatusInfoFromJsonResponse("{\n" +
+        HealthInfo info = getHealthInfoFromJsonResponse("{\n" +
                 "    \"metrics\": {\n" +
                 "        \"snapshot\": {\n" +
                 "            \"from\": 1.528789829249E9,\n" +
@@ -89,18 +90,20 @@ public class StateV1HealthUpdaterTest {
                 "    },\n" +
                 "    \"time\": 1528789889364\n" +
                 "}");
-        assertEquals(ServiceStatus.DOWN, info.serviceStatus());
-        assertEquals("Bad health status code 'down'", info.errorOrNull());
+        assertFalse(info.isHealthy());
+        assertEquals(ServiceStatus.DOWN, info.toServiceStatus());
+        assertEquals("Bad health status code 'down'", info.toString());
     }
 
     @Test
     public void badJson() throws IOException {
-        ServiceStatusInfo info = getServiceStatusInfoFromJsonResponse("} foo bar");
-        assertEquals(ServiceStatus.DOWN, info.serviceStatus());
-        assertTrue(info.errorOrNull().startsWith("Exception: Unexpected close marker '}': "));
+        HealthInfo info = getHealthInfoFromJsonResponse("} foo bar");
+        assertFalse(info.isHealthy());
+        assertEquals(ServiceStatus.DOWN, info.toServiceStatus());
+        assertTrue(info.toString().startsWith("Exception: Unexpected close marker '}': "));
     }
 
-    private ServiceStatusInfo getServiceStatusInfoFromJsonResponse(String content)
+    private HealthInfo getHealthInfoFromJsonResponse(String content)
             throws IOException {
         CloseableHttpClient client = mock(CloseableHttpClient.class);
 
@@ -118,7 +121,7 @@ public class StateV1HealthUpdaterTest {
         try (StateV1HealthUpdater updater = makeUpdater(client, entry -> content)) {
             when(httpEntity.getContentLength()).thenReturn((long) content.length());
             updater.run();
-            return updater.getServiceStatusInfo();
+            return updater.getLatestHealthInfo();
         }
     }
 
@@ -130,9 +133,10 @@ public class StateV1HealthUpdaterTest {
 
         try (StateV1HealthUpdater updater = makeUpdater(client, entry -> "")) {
             updater.run();
-            ServiceStatusInfo info = updater.getServiceStatusInfo();
-            assertEquals(ServiceStatus.DOWN, info.serviceStatus());
-            assertEquals("Exception: exception string", info.errorOrNull());
+            HealthInfo info = updater.getLatestHealthInfo();
+            assertFalse(info.isHealthy());
+            assertEquals(ServiceStatus.DOWN, info.toServiceStatus());
+            assertEquals("Exception: exception string", info.toString());
         }
     }
 
@@ -156,9 +160,10 @@ public class StateV1HealthUpdaterTest {
         try (HealthUpdater updater = makeUpdater(client, entry -> content)) {
             when(httpEntity.getContentLength()).thenReturn((long) content.length());
             updater.run();
-            ServiceStatusInfo info = updater.getServiceStatusInfo();
-            assertEquals(ServiceStatus.DOWN, info.serviceStatus());
-            assertEquals("Bad HTTP response status code 500", info.errorOrNull());
+            HealthInfo info = updater.getLatestHealthInfo();
+            assertFalse(info.isHealthy());
+            assertEquals(ServiceStatus.DOWN, info.toServiceStatus());
+            assertEquals("Bad HTTP response status code 500", info.toString());
         }
     }
 

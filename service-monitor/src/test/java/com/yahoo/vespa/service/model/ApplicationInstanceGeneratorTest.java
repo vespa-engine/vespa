@@ -6,7 +6,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
-import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 import org.junit.Test;
@@ -35,7 +34,7 @@ public class ApplicationInstanceGeneratorTest {
 
     @Test
     public void toApplicationInstance() {
-        when(statusProvider.getStatus(any(), any(), any(), any())).thenReturn(new ServiceStatusInfo(ServiceStatus.NOT_CHECKED));
+        when(statusProvider.getStatus(any(), any(), any(), any())).thenReturn(ServiceStatus.NOT_CHECKED);
         Zone zone = mock(Zone.class);
         ApplicationInfo configServer = configServerApplication.makeApplicationInfo(
                 configServerList.stream().map(HostName::from).collect(Collectors.toList()));

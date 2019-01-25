@@ -66,7 +66,7 @@ public class StateV1HealthModelTest {
         Cancellable cancellable = mock(Cancellable.class);
         when(executor.scheduleWithFixedDelay(any(), any())).thenReturn(cancellable);
         try (HealthMonitor healthMonitor = endpoint1.startMonitoring()) {
-            assertEquals(ServiceStatus.NOT_CHECKED, healthMonitor.getStatus().serviceStatus());
+            assertEquals(ServiceStatus.DOWN, healthMonitor.getStatus());
         }
     }
 

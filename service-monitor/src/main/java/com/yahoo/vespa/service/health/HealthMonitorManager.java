@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
-import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -98,20 +97,20 @@ public class HealthMonitorManager implements MonitorManager {
     }
 
     @Override
-    public ServiceStatusInfo getStatus(ApplicationId applicationId,
-                                       ClusterId clusterId,
-                                       ServiceType serviceType,
-                                       ConfigId configId) {
+    public ServiceStatus getStatus(ApplicationId applicationId,
+                                   ClusterId clusterId,
+                                   ServiceType serviceType,
+                                   ConfigId configId) {
         ApplicationHealthMonitor monitor = healthMonitors.get(applicationId);
 
         if (!monitorTenantHostHealth && ZoneApplication.isNodeAdminService(applicationId, clusterId, serviceType)) {
             // Legacy: The zone app is not health monitored (monitor == null), but the node-admin cluster's services
             // are hard-coded to be UP
-            return new ServiceStatusInfo(ServiceStatus.UP);
+            return ServiceStatus.UP;
         }
 
         if (monitor == null) {
-            return new ServiceStatusInfo(ServiceStatus.NOT_CHECKED);
+            return ServiceStatus.NOT_CHECKED;
         }
 
         if (monitorTenantHostHealth && applicationId.equals(ZoneApplication.getApplicationId())) {
@@ -121,7 +120,7 @@ public class HealthMonitorManager implements MonitorManager {
             if (ZoneApplication.isNodeAdminService(applicationId, clusterId, serviceType)) {
                 return monitor.getStatus(applicationId, clusterId, serviceType, configId);
             } else {
-                return new ServiceStatusInfo(ServiceStatus.NOT_CHECKED);
+                return ServiceStatus.NOT_CHECKED;
             }
         }
 

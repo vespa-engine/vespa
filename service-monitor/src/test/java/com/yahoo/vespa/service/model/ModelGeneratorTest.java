@@ -11,7 +11,6 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
-import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ConfigserverUtil;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
@@ -44,7 +43,7 @@ public class ModelGeneratorTest {
 
         SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
         when(slobrokMonitorManager.getStatus(any(), any(), any(), any()))
-                .thenReturn(new ServiceStatusInfo(ServiceStatus.UP));
+                .thenReturn(ServiceStatus.UP);
 
         ServiceModel serviceModel =
                 modelGenerator.toServiceModel(

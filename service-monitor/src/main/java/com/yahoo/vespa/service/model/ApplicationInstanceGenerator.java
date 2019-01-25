@@ -14,7 +14,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceClusterKey;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
-import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
@@ -99,8 +99,11 @@ public class ApplicationInstanceGenerator {
             HostName hostName,
             ServiceStatusProvider serviceStatusProvider) {
         ConfigId configId = toConfigId(serviceInfo);
-        ServiceType serviceType = toServiceType(serviceInfo);
-        ServiceStatusInfo status = serviceStatusProvider.getStatus(applicationId, clusterId, serviceType, configId);
+
+        ServiceStatus status = serviceStatusProvider.getStatus(
+                applicationId,
+                clusterId,
+                toServiceType(serviceInfo), configId);
 
         return new ServiceInstance(configId, hostName, status);
     }

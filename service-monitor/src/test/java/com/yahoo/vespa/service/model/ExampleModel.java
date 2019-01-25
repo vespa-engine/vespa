@@ -32,9 +32,8 @@ public class ExampleModel {
     static final String TENANT = "tenant";
     static final String APPLICATION_NAME = "application";
     public static final String INSTANCE_NAME = "default";
-    public static final ApplicationId APPLICATION_ID = ApplicationId.from(TENANT, APPLICATION_NAME, INSTANCE_NAME);
 
-    public static SuperModel createExampleSuperModelWithOneRpcPort(String hostname, int rpcPort) {
+    static SuperModel createExampleSuperModelWithOneRpcPort(String hostname, int rpcPort) {
         List<String> hosts = Stream.of(hostname).collect(Collectors.toList());
 
         ApplicationInfo applicationInfo = ExampleModel
