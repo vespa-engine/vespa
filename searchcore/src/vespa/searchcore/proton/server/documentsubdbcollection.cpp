@@ -8,12 +8,14 @@
 #include "maintenancecontroller.h"
 #include "searchabledocsubdb.h"
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
 using proton::matching::SessionManager;
 using search::GrowStrategy;
 using search::SerialNum;
 using search::index::Schema;
 using searchcorespi::IFlushTarget;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 
@@ -52,7 +54,8 @@ DocumentSubDBCollection::DocumentSubDBCollection(
       _retrievers(),
       _reprocessingRunner(),
       _bucketDB(),
-      _bucketDBHandler()
+      _bucketDBHandler(),
+      _hwInfo(hwInfo)
 {
     _bucketDB = std::make_shared<BucketDBOwner>();
     _bucketDBHandler = std::make_unique<bucketdb::BucketDBHandler>(*_bucketDB);
@@ -60,59 +63,57 @@ DocumentSubDBCollection::DocumentSubDBCollection(
     StoreOnlyDocSubDB::Context context(owner, tlSyncer, getSerialNum, fileHeaderContext, writeService,
                                        sharedExecutor, _bucketDB, *_bucketDBHandler, metrics, configMutex, hwInfo);
     _subDBs.push_back
-        (new SearchableDocSubDB
-            (SearchableDocSubDB::Config(FastAccessDocSubDB::Config
-                (StoreOnlyDocSubDB::Config(docTypeName,
-                        "0.ready",
-                        baseDir,
-                        cfg.getReadyGrowth(),
-                        cfg.getFixedAttributeTotalSkew(),
-                        _readySubDbId,
-                        SubDbType::READY),
-                        true,
-                        true,
-                        false),
-                        cfg.getNumSearchThreads()),
-                SearchableDocSubDB::Context(FastAccessDocSubDB::Context
-                        (context,
-                         metrics.ready.attributes,
-                         metricsWireService),
-                         queryLimiter,
-                         clock,
-                         warmupExecutor)));
+        (new SearchableDocSubDB(
+                SearchableDocSubDB::Config(
+                    FastAccessDocSubDB::Config(
+                            StoreOnlyDocSubDB::Config(docTypeName, "0.ready", baseDir,
+                                    cfg.getReadyGrowth(), cfg.getFixedAttributeTotalSkew(),
+                                    _readySubDbId, SubDbType::READY),
+                            true, true, false),
+                    cfg.getNumSearchThreads()),
+                SearchableDocSubDB::Context(
+                        FastAccessDocSubDB::Context(context, metrics.ready.attributes, metricsWireService),
+                        queryLimiter, clock, warmupExecutor)));
+
     _subDBs.push_back
-        (new StoreOnlyDocSubDB(StoreOnlyDocSubDB::Config(docTypeName,
-                                                     "1.removed",
-                                                     baseDir,
-                                                     cfg.getRemovedGrowth(),
-                                                     cfg.getFixedAttributeTotalSkew(),
-                                                     _remSubDbId,
-                                                     SubDbType::REMOVED),
-                             context));
+        (new StoreOnlyDocSubDB(
+                StoreOnlyDocSubDB::Config(docTypeName, "1.removed", baseDir, cfg.getRemovedGrowth(),
+                        cfg.getFixedAttributeTotalSkew(), _remSubDbId, SubDbType::REMOVED),
+                context));
+
     _subDBs.push_back
-        (new FastAccessDocSubDB(FastAccessDocSubDB::Config
-                (StoreOnlyDocSubDB::Config(docTypeName,
-                        "2.notready",
-                        baseDir,
-                        cfg.getNotReadyGrowth(),
-                        cfg.getFixedAttributeTotalSkew(),
-                        _notReadySubDbId,
-                        SubDbType::NOTREADY),
-                        true,
-                        true,
-                        true),
-                FastAccessDocSubDB::Context(context,
-                        metrics.notReady.attributes,
-                        metricsWireService)));
+        (new FastAccessDocSubDB(
+                FastAccessDocSubDB::Config(
+                        StoreOnlyDocSubDB::Config(docTypeName, "2.notready", baseDir,
+                                cfg.getNotReadyGrowth(), cfg.getFixedAttributeTotalSkew(),
+                                _notReadySubDbId, SubDbType::NOTREADY),
+                        true, true, true),
+                FastAccessDocSubDB::Context(context, metrics.notReady.attributes, metricsWireService)));
 }
 
 
 DocumentSubDBCollection::~DocumentSubDBCollection()
 {
-    for (auto subDb : _subDBs) {
-        delete subDb;
+    size_t numThreads = std::min(_subDBs.size(), static_cast<size_t>(_hwInfo.cpu().cores()));
+    vespalib::ThreadStackExecutor closePool(numThreads, 0x20000);
+    while (!_subDBs.empty()) {
+        closePool.execute(makeLambdaTask([subDB=_subDBs.back()]() { delete subDB; }));
+        _subDBs.pop_back();
     }
+    closePool.sync();
+
     _bucketDB.reset();
+
+    RetrieversSP retrievers = _retrievers.get();
+    _retrievers.clear();
+    if (retrievers) {
+        while (!retrievers->empty()) {
+            auto retriever = std::move(retrievers->back());
+            retrievers->pop_back();
+            closePool.execute(makeLambdaTask([r = std::move(retriever)]() mutable { r.reset(); }));
+        }
+    }
+    closePool.sync();
 }
 
 void

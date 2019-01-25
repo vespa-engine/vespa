@@ -121,9 +121,7 @@ HwInfoSampler::HwInfoSampler(const vespalib::string &path,
           HwInfo::Cpu(sampleCpuCores(config)));
 }
 
-HwInfoSampler::~HwInfoSampler()
-{
-}
+HwInfoSampler::~HwInfoSampler() = default;
 
 void
 HwInfoSampler::setup(const HwInfo::Disk &disk, const HwInfo::Memory &memory, const HwInfo::Cpu &cpu)

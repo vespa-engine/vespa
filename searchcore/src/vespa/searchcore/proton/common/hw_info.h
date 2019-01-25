@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstdint>
+#include <algorithm>
 
 namespace proton {
 
@@ -41,7 +42,7 @@ public:
     private:
         uint32_t _cores;
     public:
-        Cpu(uint32_t cores_) : _cores(cores_) {}
+        Cpu(uint32_t cores_) : _cores(std::max(1u, cores_)) { }
         uint32_t cores() const { return _cores; }
         bool operator == (const Cpu & rhs) const { return _cores == rhs._cores; }
     };
@@ -55,7 +56,7 @@ public:
     HwInfo()
         : _disk(0, false, false),
           _memory(0),
-          _cpu(0)
+          _cpu(1)
     {
     }
 
