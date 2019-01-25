@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
+import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.SlobroksConfig.Slobrok;
 import com.yahoo.cloud.config.log.LogdConfig;
-import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.config.provision.ApplicationId;
@@ -154,13 +154,12 @@ public class AdminTestCase {
     public void testTenantAndAppInSentinelConfig() {
         DeployState state = new DeployState.Builder()
                 .zone(new Zone(Environment.dev, RegionName.from("baz")))
-                .properties(new DeployProperties.Builder()
-                                    .applicationId(new ApplicationId.Builder()
-                                                           .tenant("quux")
-                                                           .applicationName("foo")
-                                                           .instanceName("bim")
-                                                           .build())
-                                    .build())
+                .properties(new TestProperties()
+                        .setApplicationId(new ApplicationId.Builder()
+                                .tenant("quux")
+                                .applicationName("foo")
+                                .instanceName("bim")
+                                .build()))
                 .build();
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();
@@ -281,12 +280,11 @@ public class AdminTestCase {
         DeployState state = new DeployState.Builder()
                 .zone(new Zone(Environment.dev, RegionName.from("baz")))
                 .properties(
-                        new DeployProperties.Builder().
-                                applicationId(new ApplicationId.Builder().
+                        new TestProperties().
+                                setApplicationId(new ApplicationId.Builder().
                                         tenant("quux").
                                         applicationName("foo").instanceName("bim")
-                                                      .build())
-                                .build())
+                                                      .build()))
                 .build();
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();

@@ -131,7 +131,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useDedicatedNodeForLogserver;
 
         public Properties(ApplicationId applicationId,
-                          boolean multitenant,
+                          boolean multitenantFromConfig,
                           List<ConfigServerSpec> configServerSpecs,
                           HostName loadBalancerName,
                           URI ztsUrl,
@@ -143,7 +143,7 @@ public class ModelContextImpl implements ModelContext {
                           boolean isFirstTimeDeployment,
                           FlagSource flagSource) {
             this.applicationId = applicationId;
-            this.multitenant = multitenant;
+            this.multitenant = multitenantFromConfig || hostedVespa || Boolean.getBoolean("multitenant");
             this.configServerSpecs = configServerSpecs;
             this.loadBalancerName = loadBalancerName;
             this.ztsUrl = ztsUrl;
@@ -153,10 +153,8 @@ public class ModelContextImpl implements ModelContext {
             this.rotations = rotations;
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
-            this.useDedicatedNodeForLogserver = Flags.USE_DEDICATED_NODE_FOR_LOGSERVER
-                    .bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
-                    .value();
+            this.useDedicatedNodeForLogserver = Flags.USE_DEDICATED_NODE_FOR_LOGSERVER.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override

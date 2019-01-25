@@ -2,11 +2,11 @@
 package com.yahoo.config.model.admin;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.config.model.ApplicationConfigProducerRoot;
-import com.yahoo.config.model.deploy.DeployProperties;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.deploy.DeployState;
@@ -18,7 +18,8 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Config model adaptor of the Admin class.
@@ -77,7 +78,7 @@ public class AdminModel extends ConfigModel {
         @Override
         public void doBuild(AdminModel model, Element adminElement, ConfigModelContext modelContext) {
             AbstractConfigProducer parent = modelContext.getParentProducer();
-            DeployProperties properties = modelContext.getDeployState().getProperties();
+            ModelContext.Properties properties = modelContext.getDeployState().getProperties();
             DomAdminV2Builder domBuilder = new DomAdminV2Builder(modelContext.getApplicationType(),
                                                                  modelContext.getDeployState().getFileRegistry(),
                                                                  properties.multitenant(),
@@ -106,7 +107,7 @@ public class AdminModel extends ConfigModel {
         @Override
         public void doBuild(AdminModel model, Element adminElement, ConfigModelContext modelContext) {
             AbstractConfigProducer parent = modelContext.getParentProducer();
-            DeployProperties properties = modelContext.getDeployState().getProperties();
+            ModelContext.Properties properties = modelContext.getDeployState().getProperties();
             DomAdminV4Builder domBuilder = new DomAdminV4Builder(modelContext,
                                                                  properties.multitenant(),
                                                                  properties.configServerSpecs(),

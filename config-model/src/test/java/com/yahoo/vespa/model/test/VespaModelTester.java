@@ -2,13 +2,12 @@
 package com.yahoo.vespa.model.test;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -134,11 +133,11 @@ public class VespaModelTester {
                                       new InMemoryProvisioner(hostsByFlavor, failOnOutOfCapacity, startIndexForClusters, retiredHostNames) :
                                       new SingleNodeProvisioner();
 
-        DeployProperties properties = new DeployProperties.Builder()
-                .hostedVespa(hosted)
-                .applicationId(applicationId)
-                .useDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
-                .build();
+        TestProperties properties = new TestProperties()
+                .setMultitenant(true)
+                .setHostedVespa(hosted)
+                .setApplicationId(applicationId)
+                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
 
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(appPkg)

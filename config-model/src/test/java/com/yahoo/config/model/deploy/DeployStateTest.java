@@ -2,9 +2,9 @@
 package com.yahoo.config.model.deploy;
 
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -23,13 +23,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * @author Ulf Lilleengen
@@ -69,7 +67,7 @@ public class DeployStateTest {
         ApplicationId customId = new ApplicationId.Builder()
                                  .tenant("bar")
                                  .applicationName("foo").instanceName("quux").build();
-        DeployProperties properties = new DeployProperties.Builder().applicationId(customId).build();
+        ModelContext.Properties properties = new TestProperties().setApplicationId(customId);
         builder.properties(properties);
         state = builder.build();
         assertThat(state.getProperties().applicationId(), is(customId));

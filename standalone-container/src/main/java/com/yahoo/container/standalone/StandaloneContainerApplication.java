@@ -242,7 +242,7 @@ public class StandaloneContainerApplication implements Application {
 
         VespaModel root = VespaModel.createIncomplete(deployState);
         ApplicationConfigProducerRoot vespaRoot = new ApplicationConfigProducerRoot(root, "vespa", deployState.getDocumentModel(),
-                deployState.getProperties().vespaVersion(), deployState.getProperties().applicationId());
+                deployState.getVespaVersion(), deployState.getProperties().applicationId());
 
         Element spec = containerRootElement(applicationPackage);
         ContainerModel containerModel = newContainerModelBuilder(networkingOption).build(deployState, root, configModelRepo, vespaRoot, spec);

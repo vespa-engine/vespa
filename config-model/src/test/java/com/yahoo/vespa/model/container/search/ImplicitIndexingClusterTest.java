@@ -1,8 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
-import com.yahoo.config.model.deploy.DeployProperties;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
@@ -49,7 +50,7 @@ public class ImplicitIndexingClusterTest {
             "</http>\n";
 
     private static VespaModel buildMultiTenantVespaModel(String servicesXml) {
-        DeployProperties properties = new DeployProperties.Builder().multitenant(true).hostedVespa(true).build();
+        ModelContext.Properties properties = new TestProperties().setMultitenant(true).setHostedVespa(true);
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
                 .properties(properties)
                 .modelHostProvisioner(new InMemoryProvisioner(true, "host1.yahoo.com", "host2.yahoo.com", "host3.yahoo.com"));

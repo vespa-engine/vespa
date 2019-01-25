@@ -3,10 +3,10 @@ package com.yahoo.vespa.model.admin;
 
 import com.yahoo.cloud.config.LogforwarderConfig;
 import com.yahoo.cloud.config.SentinelConfig;
-import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.deploy.DeployProperties;
+import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -27,7 +27,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -188,9 +190,7 @@ public class DedicatedAdminV4Test {
 
         VespaModel model = createModel(hosts, services, new DeployState.Builder()
                 .zone(new Zone(SystemName.cd, Environment.dev, RegionName.defaultName()))
-                .properties(new DeployProperties.Builder()
-                                    .hostedVespa(true)
-                                    .build()));
+                .properties(new TestProperties().setHostedVespa(true)));
         assertEquals(1, model.getHosts().size());
         // Should create a container on the same node as logserver
         assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver", "container");

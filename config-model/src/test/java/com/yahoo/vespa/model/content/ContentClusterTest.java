@@ -1,21 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
-import com.yahoo.vespa.config.content.StorFilestorConfig;
-import com.yahoo.vespa.config.content.core.StorServerConfig;
+import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import com.yahoo.metrics.MetricsmanagerConfig;
+import com.yahoo.vespa.config.content.StorFilestorConfig;
+import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
+import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -36,7 +36,13 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.test.PatternMatcher.matchesPattern;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ContentClusterTest extends ContentBaseTest {
 
@@ -768,7 +774,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
     private static ContentCluster createOneNodeCluster(String clusterXml, boolean isHostedVespa) throws Exception {
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
-                .properties(new DeployProperties.Builder().hostedVespa(isHostedVespa).build());
+                .properties(new TestProperties().setHostedVespa(isHostedVespa));
         MockRoot root = ContentClusterUtils.createMockRoot(Collections.emptyList(), deployStateBuilder);
         ContentCluster cluster = ContentClusterUtils.createCluster(clusterXml, root);
         root.freezeModelTopology();
@@ -866,9 +872,7 @@ public class ContentClusterTest extends ContentBaseTest {
     private ContentCluster createWithZone(String clusterXml, Zone zone) throws Exception {
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
                 .zone(zone)
-                .properties(new DeployProperties.Builder()
-                                    .hostedVespa(true)
-                                    .build());
+                .properties(new TestProperties().setHostedVespa(true));
         List<String> searchDefinitions = SearchDefinitionBuilder.createSearchDefinitions("test");
         MockRoot root = ContentClusterUtils.createMockRoot(searchDefinitions, deployStateBuilder);
         ContentCluster cluster = ContentClusterUtils.createCluster(clusterXml, root);

@@ -3,6 +3,7 @@ package com.yahoo.config.model;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.VespaModel;
@@ -26,7 +27,8 @@ public final class ConfigModelContext {
 
     private ConfigModelContext(ApplicationType applicationType,
                                DeployState deployState,
-                               VespaModel vespaModel, ConfigModelRepoAdder configModelRepoAdder,
+                               VespaModel vespaModel,
+                               ConfigModelRepoAdder configModelRepoAdder,
                                AbstractConfigProducer parent,
                                String producerId) {
         this.applicationType = applicationType;
@@ -44,6 +46,7 @@ public final class ConfigModelContext {
     public DeployState getDeployState() { return deployState; }
     public ApplicationType getApplicationType() { return applicationType; }
     public VespaModel vespaModel() { return vespaModel; }
+    public ModelContext.Properties properties() { return deployState.getProperties(); }
 
     /** Returns write access to the config model repo, or null (only) if this is improperly initialized during testing */
     public ConfigModelRepoAdder getConfigModelRepoAdder() { return configModelRepoAdder; }

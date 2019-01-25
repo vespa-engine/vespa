@@ -6,8 +6,8 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.Model;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
@@ -23,7 +23,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -91,8 +90,7 @@ public class LbServicesProducerTest {
         final Zone zone = new Zone(Environment.prod, regionName);
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()
                                                                                 .zone(zone)
-                                                                                .properties(new DeployProperties.Builder().build())
-                                                                                .zone(zone));
+                                                                                .properties(new TestProperties()));
         return getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
     }
 

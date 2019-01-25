@@ -4,13 +4,10 @@ package com.yahoo.config.model.provision;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostInfo;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.core.ApplicationMetadataConfig;
@@ -1619,7 +1616,7 @@ public class ModelProvisioningTest {
         VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(hosts, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
         DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).
-                properties((new DeployProperties.Builder()).multitenant(multitenant).build()).
+                properties((new TestProperties()).setMultitenant(multitenant)).
                 build();
         return modelCreatorWithMockPkg.create(false, deployState);
     }
@@ -1816,9 +1813,8 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.useDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
         tester.addHosts(numberOfHosts);
-        Zone zone = new Zone(SystemName.cd, Environment.dev, RegionName.defaultName());
 
-        VespaModel model = tester.createModel(zone, services, true);
+        VespaModel model = tester.createModel(Zone.defaultZone(), services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         Admin admin = model.getAdmin();

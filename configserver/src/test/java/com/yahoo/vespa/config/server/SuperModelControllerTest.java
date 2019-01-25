@@ -6,8 +6,8 @@ import com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -162,7 +162,7 @@ public class SuperModelControllerTest {
     private DeployState createDeployState(File applicationPackage, ApplicationId applicationId) {
         return new DeployState.Builder()
                 .applicationPackage(FilesApplicationPackage.fromFile(applicationPackage))
-                .properties(new DeployProperties.Builder().applicationId(applicationId).build())
+                .properties(new TestProperties().setApplicationId(applicationId))
                 .build();
     }
 

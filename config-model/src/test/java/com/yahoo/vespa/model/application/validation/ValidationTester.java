@@ -5,20 +5,21 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import static com.yahoo.config.model.test.MockApplicationPackage.MUSIC_SEARCHDEFINITION;
-import static com.yahoo.config.model.test.MockApplicationPackage.BOOK_SEARCHDEFINITION;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import static com.yahoo.config.model.test.MockApplicationPackage.BOOK_SEARCHDEFINITION;
+import static com.yahoo.config.model.test.MockApplicationPackage.MUSIC_SEARCHDEFINITION;
 
 /**
  * @author bratseth
@@ -55,7 +56,7 @@ public class ValidationTester {
         VespaModelCreatorWithMockPkg newModelCreator = new VespaModelCreatorWithMockPkg(newApp);
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
                                                              .applicationPackage(newApp)
-                                                             .properties(new DeployProperties.Builder().hostedVespa(true).build())
+                                                             .properties(new TestProperties().setHostedVespa(true))
                                                              .modelHostProvisioner(new InMemoryProvisioner(nodeCount))
                                                              .now(now);
         if (previousModel != null)

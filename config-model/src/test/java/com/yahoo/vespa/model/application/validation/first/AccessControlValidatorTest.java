@@ -3,8 +3,8 @@ package com.yahoo.vespa.model.application.validation.first;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -141,9 +141,7 @@ public class AccessControlValidatorTest  {
         DeployState.Builder builder = new DeployState.Builder()
                 .applicationPackage(app)
                 .zone(new Zone(Environment.prod, RegionName.from("foo")) )
-                .properties(new DeployProperties.Builder()
-                                    .hostedVespa(true)
-                                    .build());
+                .properties(new TestProperties().setHostedVespa(true));
         final DeployState deployState = builder.build();
 
         assertTrue("Test must emulate a hosted deployment.", deployState.isHosted());
