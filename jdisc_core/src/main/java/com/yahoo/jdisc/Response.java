@@ -26,8 +26,8 @@ import java.util.Map;
 public class Response {
 
     /**
-     * <p>This interface acts as a namespace for the built-in status codes of the jDISC core. These are identical to the
-     * common HTTP status codes (see <a href="http://www.rfc-editor.org/rfc/rfc2616.txt">RFC2616</a>).</p>
+     * This interface acts as a namespace for the built-in status codes of the jDISC core. These are identical to the
+     * common HTTP status codes (see <a href="http://www.rfc-editor.org/rfc/rfc2616.txt">RFC2616</a>).
      */
     public interface Status {
 
@@ -88,9 +88,7 @@ public class Response {
         int LOCKED = 423;
         int FAILED_DEPENDENCY = 424;
 
-        /**
-         * <p>5xx: Server Error - The server failed to fulfill an apparently valid request.</p>
-         */
+        /** 5xx: Server Error - The server failed to fulfill an apparently valid request. */
         int INTERNAL_SERVER_ERROR = 500;
         int NOT_IMPLEMENTED = 501;
         int BAD_GATEWAY = 502;
@@ -106,7 +104,7 @@ public class Response {
     private int status;
 
     /**
-     * <p>Creates a new instance of this class.</p>
+     * Creates a new instance of this class.
      *
      * @param status The status code to assign to this.
      */
@@ -115,7 +113,7 @@ public class Response {
     }
 
     /**
-     * <p>Creates a new instance of this class.</p>
+     * Creates a new instance of this class.
      *
      * @param status The status code to assign to this.
      * @param error  The error to assign to this.
@@ -217,4 +215,5 @@ public class Response {
     public static void dispatchTimeout(ResponseHandler handler) {
         ResponseDispatch.newInstance(Status.GATEWAY_TIMEOUT).dispatch(handler);
     }
+
 }

@@ -22,7 +22,7 @@ public class SearchResponse {
     // Remove (the empty) summary feature field if not requested.
     static void removeEmptySummaryFeatureFields(Result result) {
         // TODO: Move to some searcher in Vespa backend search chains
-        if (!result.hits().getQuery().getRanking().getListFeatures())
+        if ( ! result.hits().getQuery().getRanking().getListFeatures())
             for (Iterator<Hit> i = result.hits().unorderedIterator(); i.hasNext();)
                 i.next().removeField(Hit.RANKFEATURES_FIELD);
     }
@@ -42,7 +42,7 @@ public class SearchResponse {
     }
 
     static boolean isSuccess(Result r) {
-        if (r.hits().getErrorHit()==null) return true;
+        if (r.hits().getErrorHit() == null) return true;
         for (Hit hit : r.hits())
             if ( ! hit.isMeta()) return true; // contains data : success
         return false;

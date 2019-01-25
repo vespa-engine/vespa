@@ -60,18 +60,16 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         ab.activeRotation(getActiveRotation(app));
         app.getModel().getHosts().stream()
                 .sorted((a, b) -> a.getHostname().compareTo(b.getHostname()))
-                .forEach(hostInfo -> {
-            ab.hosts(hostInfo.getHostname(), getHostsConfig(hostInfo));
-        });
+                .forEach(hostInfo -> ab.hosts(hostInfo.getHostname(), getHostsConfig(hostInfo)));
         return ab;
     }
 
     private boolean getActiveRotation(ApplicationInfo app) {
         boolean activeRotation = false;
         for (HostInfo hostInfo : app.getModel().getHosts()) {
-            final Optional<ServiceInfo> container = hostInfo.getServices().stream().filter(
+            Optional<ServiceInfo> container = hostInfo.getServices().stream().filter(
                     serviceInfo -> serviceInfo.getServiceType().equals("container") ||
-                            serviceInfo.getServiceType().equals("qrserver")).
+                                   serviceInfo.getServiceType().equals("qrserver")).
                     findAny();
             if (container.isPresent()) {
                 activeRotation |= Boolean.valueOf(container.get().getProperty("activeRotation").orElse("false"));
@@ -91,7 +89,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     }
 
     private LbServicesConfig.Tenants.Applications.Hosts.Services.Builder getServiceConfig(ServiceInfo serviceInfo) {
-        final List<String> endpointAliases = Stream.of(serviceInfo.getProperty("endpointaliases").orElse("").split(",")).
+        List<String> endpointAliases = Stream.of(serviceInfo.getProperty("endpointaliases").orElse("").split(",")).
                 filter(prop -> !"".equals(prop)).collect(Collectors.toList());
         endpointAliases.addAll(Stream.of(serviceInfo.getProperty("rotations").orElse("").split(",")).filter(prop -> !"".equals(prop)).collect(Collectors.toList()));
         Collections.sort(endpointAliases);

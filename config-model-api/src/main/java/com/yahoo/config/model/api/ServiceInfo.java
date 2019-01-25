@@ -12,6 +12,7 @@ import java.util.Collection;
  * @author Ulf Lilleengen
  */
 public class ServiceInfo {
+
     private final String serviceName;
     private final String serviceType;
     private final Collection<PortInfo> ports;
@@ -83,4 +84,5 @@ public class ServiceInfo {
         result = 31 * result + hostName.hashCode();
         return result;
     }
+
 }
