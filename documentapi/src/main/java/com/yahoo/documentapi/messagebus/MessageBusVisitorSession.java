@@ -186,6 +186,7 @@ public class MessageBusVisitorSession implements VisitorSession {
     }
 
     public static class MessageBusSenderFactory implements SenderFactory {
+
         private final MessageBus messageBus;
 
         public MessageBusSenderFactory(MessageBus messageBus) {

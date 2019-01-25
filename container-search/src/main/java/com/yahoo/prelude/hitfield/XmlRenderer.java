@@ -146,8 +146,7 @@ public class XmlRenderer {
             indent(nestingLevel);
         }
 
-        private void renderWeightedSet(Inspector seq, int nestingLevel, boolean nestedarray)
-        {
+        private void renderWeightedSet(Inspector seq, int nestingLevel, boolean nestedarray) {
             int limit = seq.entryCount();
             renderTarget.append('\n');
             for (int i = 0; i < limit; ++i) {

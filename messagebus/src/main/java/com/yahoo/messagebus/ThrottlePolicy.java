@@ -14,23 +14,24 @@ public interface ThrottlePolicy {
     /**
      * Returns whether or not the given message can be sent according to the current state of this policy.
      *
-     * @param msg          The message to evaluate.
-     * @param pendingCount The current number of pending messages.
-     * @return True to send the message.
+     * @param message      the message to evaluate
+     * @param pendingCount the current number of pending messages
+     * @return true to send the message
      */
-    public boolean canSend(Message msg, int pendingCount);
+    boolean canSend(Message message, int pendingCount);
 
     /**
      * This method is called once for every message that was accepted by {@link #canSend(Message, int)} and sent.
      *
-     * @param msg The message beint sent.
+     * @param message the message being sent
      */
-    public void processMessage(Message msg);
+    void processMessage(Message message);
 
     /**
      * This method is called once for every reply that is received.
      *
-     * @param reply The reply received.
+     * @param reply the reply received
      */
-    public void processReply(Reply reply);
+    void processReply(Reply reply);
+
 }

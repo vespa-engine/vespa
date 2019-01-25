@@ -2,7 +2,7 @@
 package com.yahoo.messagebus;
 
 /**
- * This is an implementatin of the {@link ThrottlePolicy} that offers static limits to the amount of pending data a
+ * This is an implementation of the {@link ThrottlePolicy} that offers static limits to the amount of pending data a
  * {@link SourceSession} is allowed to have. You may choose to set a limit to the total number of pending messages (by
  * way of {@link #setMaxPendingCount(int)}), the total size of pending messages (by way of {@link
  * #setMaxPendingSize(long)}), or some combination thereof.
@@ -17,7 +17,8 @@ public class StaticThrottlePolicy implements ThrottlePolicy {
     private long maxPendingSize = 0;
     private long pendingSize = 0;
 
-    public boolean canSend(Message msg, int pendingCount) {
+    @Override
+    public boolean canSend(Message message, int pendingCount) {
         if (maxPendingCount > 0 && pendingCount >= maxPendingCount) {
             return false;
         }
@@ -27,12 +28,14 @@ public class StaticThrottlePolicy implements ThrottlePolicy {
         return true;
     }
 
-    public void processMessage(Message msg) {
-        int size = msg.getApproxSize();
-        msg.setContext(size);
+    @Override
+    public void processMessage(Message message) {
+        int size = message.getApproxSize();
+        message.setContext(size);
         pendingSize += size;
     }
 
+    @Override
     public void processReply(Reply reply) {
         int size = (Integer)reply.getContext();
         pendingSize -= size;
@@ -41,7 +44,7 @@ public class StaticThrottlePolicy implements ThrottlePolicy {
     /**
      * Returns the maximum number of pending messages allowed.
      *
-     * @return The max limit.
+     * @return the max limit
      */
     public int getMaxPendingCount() {
         return maxPendingCount;
@@ -50,8 +53,8 @@ public class StaticThrottlePolicy implements ThrottlePolicy {
     /**
      * Sets the maximum number of pending messages allowed.
      *
-     * @param maxCount The max count.
-     * @return This, to allow chaining.
+     * @param maxCount The max count
+     * @return this, to allow chaining
      */
     public StaticThrottlePolicy setMaxPendingCount(int maxCount) {
         maxPendingCount = maxCount;
