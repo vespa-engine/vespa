@@ -50,6 +50,7 @@ void testSkipBufferOnDebug(const std::string& file, uint64_t & timer)
     if (result != expected) {
         std::cerr << "Failed "
                   << "testSkipBufferOnDebug\n";
+        [[maybe_unused]] int system_result =
         system(("diff -u " + file
                     + " bufferedlogskiptest.skipped.log").c_str());
         exit(EXIT_FAILURE);

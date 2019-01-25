@@ -90,7 +90,12 @@ void
 PidFile::writePid()
 {
     if (_fd < 0) abort();
-    ftruncate(_fd, (off_t)0);
+    int didtruncate = ftruncate(_fd, (off_t)0);
+    if (didtruncate != 0) {
+        fprintf(stderr, "could not truncate pid file %s: %s\n",
+                _pidfile, strerror(errno));
+        exit(1);
+    }
     char buf[100];
     sprintf(buf, "%d\n", getpid());
     int l = strlen(buf);
@@ -110,9 +115,9 @@ PidFile::readPid()
     if (pf == NULL) return 0;
     char buf[100];
     strcpy(buf, "0");
-    fgets(buf, 100, pf);
+    char *fgetsres = fgets(buf, 100, pf);
     fclose(pf);
-    return atoi(buf);
+    return ((fgetsres != nullptr) ? atoi(buf) : 0);
 }
 
 bool

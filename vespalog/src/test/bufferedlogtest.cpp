@@ -95,6 +95,7 @@ void testThatEntriesWithHighCountIsKept(const std::string& file, uint64_t& timer
 
     if (result != expected) {
         std::cerr << "Failed testThatEntriesWithHighCountIsKept\n";
+        [[maybe_unused]] int systemResult =
         system(("diff -u " + file + " bufferedlogtest.highcountkept.log")
                 .c_str());
         exit(EXIT_FAILURE);
@@ -130,6 +131,7 @@ void testThatEntriesWithHighCountsAreEventuallyRemoved(
     if (result != expected) {
         std::cerr << "Failed "
                   << "testThatEntriesWithHighCountsAreEventuallyRemoved\n";
+        [[maybe_unused]] int systemResult =
         system(("diff -u " + file + " bufferedlogtest.highcountexpire.log")
                 .c_str());
         exit(EXIT_FAILURE);
@@ -164,6 +166,7 @@ void testThatEntriesExpire(
     if (result != expected) {
         std::cerr << "Failed "
                   << "testThatEntriesExpire\n";
+        [[maybe_unused]] int systemResult =
         system(("diff -u " + file + " bufferedlogtest.expire.log").c_str());
         exit(EXIT_FAILURE);
     }
@@ -232,6 +235,7 @@ void testThatHighCountEntriesDontStarveOthers(
     if (result != expected) {
         std::cerr << "Failed "
                   << "testThatHighCountEntriesDontStarveOthers\n";
+        [[maybe_unused]] int systemResult =
         system(("diff -u " + file + " bufferedlogtest.nostarve.log").c_str());
         exit(EXIT_FAILURE);
     }
@@ -263,6 +267,7 @@ void testNoTokenMatchAcrossComponents(const std::string& file,
     if (result != expected) {
         std::cerr << "Failed "
                   << "testNoTokenMatchAcrossComponents\n";
+        [[maybe_unused]] int systemResult =
         system(("diff -u " + file
                     + " bufferedlogtest.tokenacrossloggers.log").c_str());
         exit(EXIT_FAILURE);
@@ -291,6 +296,7 @@ void testLogLocationAsToken(const std::string& file, uint64_t& timer)
     if (result != expected) {
         std::cerr << "Failed "
                   << "testLogLocationAsToken\n";
+        [[maybe_unused]] int systemResult =
         system(("diff -u " + file
                     + " bufferedlogtest.locationastoken.log").c_str());
         exit(EXIT_FAILURE);
@@ -319,6 +325,7 @@ void testLogMessageAsToken(const std::string& file, uint64_t& timer)
     if (result != expected) {
         std::cerr << "Failed "
                   << "testLogMessageAsToken\n";
+        [[maybe_unused]] int systemResult =
         system(("diff -u " + file
                     + " bufferedlogtest.messageastoken.log").c_str());
         exit(EXIT_FAILURE);
@@ -353,6 +360,7 @@ void testNonBufferedLoggerTriggersBufferedLogTrim(const std::string& file,
     if (result != expected) {
         std::cerr << "Failed "
                   << "testNonBufferedLoggerTriggersBufferedLogTrim\n";
+        [[maybe_unused]] int systemResult =
         system(("diff -u " + file
                     + " bufferedlogtest.trimcache.log").c_str());
         exit(EXIT_FAILURE);
