@@ -459,7 +459,7 @@ public class NodeAgentImpl implements NodeAgent {
 
                 scheduleDownLoadIfNeeded(node);
                 if (isDownloadingImage()) {
-                    context.log(logger, LogLevel.DEBUG, "Waiting for image to download " + imageBeingDownloaded.asString());
+                    context.log(logger, "Waiting for image to download " + imageBeingDownloaded.asString());
                     return;
                 }
                 container = removeContainerIfNeededUpdateContainerState(context, container);
