@@ -471,6 +471,7 @@ IndexMaintainer::doneInitFlush(FlushArgs *args, IMemoryIndex::SP *new_index)
             // XXX: Overflow issue in source selector
             _current_index_id = getNewAbsoluteId() - _last_fusion_id;
             assert(_current_index_id < ISourceSelector::SOURCE_LIMIT);
+            _selector->setDefaultSource(_current_index_id);
             _source_selector_changes = 0;
         }
         _current_index = *new_index;
@@ -747,6 +748,7 @@ IndexMaintainer::doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex)
             // XXX: Overflow issue in source selector
             _current_index_id = getNewAbsoluteId() - _last_fusion_id;
             assert(_current_index_id < ISourceSelector::SOURCE_LIMIT);
+            _selector->setDefaultSource(_current_index_id);
             // Extra index to flush next time flushing is performed
             _frozenMemoryIndexes.emplace_back(args._oldIndex, freezeSerialNum, std::move(saveInfo), oldAbsoluteId);
         }
@@ -849,7 +851,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
         _lastFlushTime = search::FileKit::getModificationTime(latest_index_dir);
         _current_serial_num = _flush_serial_num;
         const string selector = IndexDiskLayout::getSelectorFileName(latest_index_dir);
-        _selector.reset(FixedSourceSelector::load(selector).release());
+        _selector.reset(FixedSourceSelector::load(selector, _next_id - 1).release());
     } else {
         _flush_serial_num = 0;
         _selector.reset(new FixedSourceSelector(0, "sourceselector", 1));
@@ -866,6 +868,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
     _current_index = operations.createMemoryIndex(_schema, _current_serial_num);
     _current_index_id = getNewAbsoluteId() - _last_fusion_id;
     assert(_current_index_id < ISourceSelector::SOURCE_LIMIT);
+    _selector->setDefaultSource(_current_index_id);
     ISearchableIndexCollection::UP sourceList(loadDiskIndexes(spec, ISearchableIndexCollection::UP(new IndexCollection(_selector))));
     LOG(debug, "Index manager created with flushed serial num %" PRIu64, _flush_serial_num);
     sourceList->append(_current_index_id, _current_index);

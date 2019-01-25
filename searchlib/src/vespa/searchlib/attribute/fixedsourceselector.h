@@ -33,7 +33,7 @@ public:
     ~FixedSourceSelector();
 
     FixedSourceSelector::UP cloneAndSubtract(const vespalib::string & attrBaseFileName, uint32_t diff);
-    static FixedSourceSelector::UP load(const vespalib::string & baseFileName);
+    static FixedSourceSelector::UP load(const vespalib::string & baseFileName, uint32_t currentId);
 
     // Inherit doc from ISourceSelector
     void setSource(uint32_t docId, queryeval::Source source) final override;

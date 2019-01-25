@@ -56,6 +56,7 @@ protected:
 public:
     void setBaseId(uint32_t baseId) { _baseId = baseId; }
     uint32_t      getBaseId() const { return _baseId; }
+    void setDefaultSource(Source source);
     Source getDefaultSource() const { return _defaultSource; }
     /**
      * Set the source to be used for a given document.
