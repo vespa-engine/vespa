@@ -285,6 +285,32 @@ documentdb[].configid string
 documentdb[].visibilitydelay double default=0.0
 ## Whether this document type is globally distributed or not.
 documentdb[].global bool default=false
+## A number between 0.0 and 1.0 that specifies the concurrency when handling feed operations.
+## When set to 1.0 all cores on the cpu is utilized.
+##
+## 3 thread pools used for various aspect of feeding are configured based on this setting:
+##   1) Writing changes to attribute fields
+##   2) Inverting index fields
+##   3) Writing changes to index fields
+##
+## The number of threads in each of pools is calculated as:
+##   max(ceil((hwinfo.cpu.cores * feeding.concurrency)/3), indexing.threads)
+feeding.concurrency double default = 0.2 restart
+documentdb[].feeding.concurrency default=0.2
+
+## Minimum initial size for any per document tables.
+documentdb[].allocation.initialnumdocs long default=1024 restart
+## Grow factor for any per document tables.
+documentdb[].allocation.growfactor double default=0.2 restart
+## Constant added when growing any per document tables.
+documentdb[].allocation.growbias int default=1 restart
+
+## The number of documents to amortize memory spike cost over
+documentdb[].allocation.amortizecount int default=10000 restart
+
+## The grow factor used when allocating buffers in the array store
+## used in multi-value attribute vectors to store underlying values.
+documentdb[].allocation.multivaluegrowfactor double default=0.2 restart
 
 ## The interval of when periodic tasks should be run
 periodic.interval double default=3600.0
