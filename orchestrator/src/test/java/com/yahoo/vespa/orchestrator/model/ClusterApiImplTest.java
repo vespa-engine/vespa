@@ -52,9 +52,12 @@ public class ClusterApiImplTest {
 
         assertEquals("{ clusterId=cluster, serviceType=service-type }", clusterApi.clusterInfo());
         assertFalse(clusterApi.isStorageCluster());
-        assertEquals("[ServiceInstance{configId=service-2, hostName=host2, serviceStatus=DOWN}, "
-                        + "ServiceInstance{configId=service-3, hostName=host3, serviceStatus=UP}, "
-                        + "ServiceInstance{configId=service-4, hostName=host4, serviceStatus=DOWN}]",
+        assertEquals("[ServiceInstance{configId=service-2, hostName=host2, serviceStatus=" +
+                        "ServiceStatusInfo{status=DOWN, since=Optional.empty, lastChecked=Optional.empty}}, "
+                        + "ServiceInstance{configId=service-3, hostName=host3, serviceStatus=" +
+                        "ServiceStatusInfo{status=UP, since=Optional.empty, lastChecked=Optional.empty}}, "
+                        + "ServiceInstance{configId=service-4, hostName=host4, serviceStatus=" +
+                        "ServiceStatusInfo{status=DOWN, since=Optional.empty, lastChecked=Optional.empty}}]",
                 clusterApi.servicesDownAndNotInGroupDescription());
         assertEquals("[host3, host4]",
                 clusterApi.nodesAllowedToBeDownNotInGroupDescription());

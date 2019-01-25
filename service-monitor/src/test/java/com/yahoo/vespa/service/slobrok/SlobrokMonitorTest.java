@@ -2,12 +2,14 @@
 package com.yahoo.vespa.service.slobrok;
 
 import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.vespa.service.model.ExampleModel;
 import org.junit.Test;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class SlobrokMonitorTest {
     private final SlobrokList slobrokList = mock(SlobrokList.class);
@@ -24,14 +26,13 @@ public class SlobrokMonitorTest {
 
     @Test
     public void testUpdateSlobrokList2() {
-        /*
         final String hostname = "hostname";
         final int port = 1;
 
         SuperModel superModel = ExampleModel.createExampleSuperModelWithOneRpcPort(hostname, port);
-        slobrokMonitor.updateSlobrokList(superModel.getApplicationInfo());
+        slobrokMonitor.updateSlobrokList(superModel.getApplicationInfo(ExampleModel.APPLICATION_ID).get());
 
         String[] expectedSpecs = new String[] {"tcp/" + hostname + ":" + port};
-        verify(slobrokList).setup(expectedSpecs); */
+        verify(slobrokList).setup(expectedSpecs);
     }
 }

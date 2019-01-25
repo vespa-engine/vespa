@@ -79,7 +79,7 @@ public class SlobrokMonitorManagerImplTest {
         return slobrokMonitorManager.getStatus(
                 application.getApplicationId(),
                 clusterId,
-                new ServiceType(serviceType), new ConfigId("config.id"));
+                new ServiceType(serviceType), new ConfigId("config.id")).serviceStatus();
     }
 
     @Test

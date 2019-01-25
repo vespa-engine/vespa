@@ -7,8 +7,10 @@ import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.restapi.wire.SlobrokEntryResponse;
+import com.yahoo.vespa.service.manager.UnionMonitorManager;
 import com.yahoo.vespa.service.monitor.SlobrokApi;
 import org.junit.Test;
 
@@ -31,10 +33,12 @@ public class InstanceResourceTest {
     private static final ClusterId CLUSTER_ID = new ClusterId("cluster-id");
 
     private final SlobrokApi slobrokApi = mock(SlobrokApi.class);
+    private final UnionMonitorManager rootManager = mock(UnionMonitorManager.class);
     private final InstanceResource resource = new InstanceResource(
             null,
             null,
-            slobrokApi);
+            slobrokApi,
+            rootManager);
 
     @Test
     public void testGetSlobrokEntries() throws Exception {
@@ -47,18 +51,18 @@ public class InstanceResourceTest {
     }
 
     @Test
-    public void testGetServiceStatus() {
+    public void testGetServiceStatusInfo() {
         ServiceType serviceType = new ServiceType("serviceType");
         ConfigId configId = new ConfigId("configId");
         ServiceStatus serviceStatus = ServiceStatus.UP;
-        when(slobrokApi.getStatus(APPLICATION_ID, CLUSTER_ID, serviceType, configId))
-                .thenReturn(serviceStatus);
+        when(rootManager.getStatus(APPLICATION_ID, CLUSTER_ID, serviceType, configId))
+                .thenReturn(new ServiceStatusInfo(serviceStatus));
         ServiceStatus actualServiceStatus = resource.getServiceStatus(
                 APPLICATION_INSTANCE_REFERENCE,
                 CLUSTER_ID.s(),
                 serviceType.s(),
-                configId.s());
-        verify(slobrokApi).getStatus(APPLICATION_ID, CLUSTER_ID, serviceType, configId);
+                configId.s()).serviceStatus();
+        verify(rootManager).getStatus(APPLICATION_ID, CLUSTER_ID, serviceType, configId);
         assertEquals(serviceStatus, actualServiceStatus);
     }
 
