@@ -62,50 +62,32 @@ DocumentSubDBCollection::DocumentSubDBCollection(
     StoreOnlyDocSubDB::Context context(owner, tlSyncer, getSerialNum, fileHeaderContext, writeService,
                                        sharedExecutor, _bucketDB, *_bucketDBHandler, metrics, configMutex, hwInfo);
     _subDBs.push_back
-        (new SearchableDocSubDB
-            (SearchableDocSubDB::Config(FastAccessDocSubDB::Config
-                (StoreOnlyDocSubDB::Config(docTypeName,
-                        "0.ready",
-                        baseDir,
-                        cfg.getReadyGrowth(),
-                        cfg.getFixedAttributeTotalSkew(),
-                        _readySubDbId,
-                        SubDbType::READY),
-                        true,
-                        true,
-                        false),
-                        cfg.getNumSearchThreads()),
-                SearchableDocSubDB::Context(FastAccessDocSubDB::Context
-                        (context,
-                         metrics.ready.attributes,
-                         metricsWireService),
-                         queryLimiter,
-                         clock,
-                         warmupExecutor)));
+        (new SearchableDocSubDB(
+                SearchableDocSubDB::Config(
+                    FastAccessDocSubDB::Config(
+                            StoreOnlyDocSubDB::Config(docTypeName, "0.ready", baseDir,
+                                    cfg.getReadyGrowth(), cfg.getFixedAttributeTotalSkew(),
+                                    _readySubDbId, SubDbType::READY),
+                            true, true, false),
+                    cfg.getNumSearchThreads()),
+                SearchableDocSubDB::Context(
+                        FastAccessDocSubDB::Context(context, metrics.ready.attributes, metricsWireService),
+                        queryLimiter, clock, warmupExecutor)));
+
     _subDBs.push_back
-        (new StoreOnlyDocSubDB(StoreOnlyDocSubDB::Config(docTypeName,
-                                                     "1.removed",
-                                                     baseDir,
-                                                     cfg.getRemovedGrowth(),
-                                                     cfg.getFixedAttributeTotalSkew(),
-                                                     _remSubDbId,
-                                                     SubDbType::REMOVED),
-                             context));
+        (new StoreOnlyDocSubDB(
+                StoreOnlyDocSubDB::Config(docTypeName, "1.removed", baseDir, cfg.getRemovedGrowth(),
+                        cfg.getFixedAttributeTotalSkew(), _remSubDbId, SubDbType::REMOVED),
+                context));
+
     _subDBs.push_back
-        (new FastAccessDocSubDB(FastAccessDocSubDB::Config
-                (StoreOnlyDocSubDB::Config(docTypeName,
-                        "2.notready",
-                        baseDir,
-                        cfg.getNotReadyGrowth(),
-                        cfg.getFixedAttributeTotalSkew(),
-                        _notReadySubDbId,
-                        SubDbType::NOTREADY),
-                        true,
-                        true,
-                        true),
-                FastAccessDocSubDB::Context(context,
-                        metrics.notReady.attributes,
-                        metricsWireService)));
+        (new FastAccessDocSubDB(
+                FastAccessDocSubDB::Config(
+                        StoreOnlyDocSubDB::Config(docTypeName, "2.notready", baseDir,
+                                cfg.getNotReadyGrowth(), cfg.getFixedAttributeTotalSkew(),
+                                _notReadySubDbId, SubDbType::NOTREADY),
+                        true, true, true),
+                FastAccessDocSubDB::Context(context, metrics.notReady.attributes, metricsWireService)));
 }
 
 
