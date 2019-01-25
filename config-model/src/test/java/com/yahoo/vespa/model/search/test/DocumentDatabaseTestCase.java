@@ -123,34 +123,34 @@ public class DocumentDatabaseTestCase {
 
     @Test
     public void requireThatConcurrencyIsReflectedCorrectlyForDefault() {
-        verifyDefaultConcurrency("index", "", 0.2, 0.2);
-        verifyDefaultConcurrency("streaming", "", 0.4, 0.0);
-        verifyDefaultConcurrency("store-only", "", 0.4, 0.0);
+        verifyConcurrency("index", "", 0.2, 0.2);
+        verifyConcurrency("streaming", "", 0.4, 0.0);
+        verifyConcurrency("store-only", "", 0.4, 0.0);
     }
     @Test
     public void requireThatMixedModeConcurrencyIsReflectedCorrectlyForDefault() {
-        verifyDefaultConcurrency(Arrays.asList(new Pair("a", "index"), new Pair("b", "streaming")), "", 0.4, Arrays.asList(0.2, 0.0));
+        verifyConcurrency(Arrays.asList(new Pair("a", "index"), new Pair("b", "streaming")), "", 0.4, Arrays.asList(0.2, 0.0));
     }
     @Test
     public void requireThatMixedModeConcurrencyIsReflected() {
         String feedTuning = "<feeding>" +
                 "  <concurrency>0.7</concurrency>" +
                 "</feeding>\n";
-        verifyDefaultConcurrency(Arrays.asList(new Pair("a", "index"), new Pair("b", "streaming")), feedTuning, 0.7, Arrays.asList(0.35, 0.0));
+        verifyConcurrency(Arrays.asList(new Pair("a", "index"), new Pair("b", "streaming")), feedTuning, 0.7, Arrays.asList(0.35, 0.0));
     }
     @Test
     public void requireThatConcurrencyIsReflected() {
         String feedTuning = "<feeding>" +
                             "  <concurrency>0.7</concurrency>" +
                             "</feeding>\n";
-        verifyDefaultConcurrency("index", feedTuning, 0.35, 0.35);
-        verifyDefaultConcurrency("streaming", feedTuning, 0.7, 0.0);
-        verifyDefaultConcurrency("store-only", feedTuning, 0.7, 0.0);
+        verifyConcurrency("index", feedTuning, 0.35, 0.35);
+        verifyConcurrency("streaming", feedTuning, 0.7, 0.0);
+        verifyConcurrency("store-only", feedTuning, 0.7, 0.0);
     }
-    private void verifyDefaultConcurrency(String mode, String xmlTuning, double global, double local) {
-        verifyDefaultConcurrency(Arrays.asList(new Pair<>("a", mode)), xmlTuning, global, Arrays.asList(local));
+    private void verifyConcurrency(String mode, String xmlTuning, double global, double local) {
+        verifyConcurrency(Arrays.asList(new Pair<>("a", mode)), xmlTuning, global, Arrays.asList(local));
     }
-    private void verifyDefaultConcurrency(List<Pair<String, String>> nameAndModes, String xmlTuning, double global, List<Double> local) {
+    private void verifyConcurrency(List<Pair<String, String>> nameAndModes, String xmlTuning, double global, List<Double> local) {
         assertEquals(nameAndModes.size(), local.size());
         VespaModel model = createModel(nameAndModes, xmlTuning);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
@@ -160,6 +160,34 @@ public class DocumentDatabaseTestCase {
         for (int i = 0; i < local.size(); i++) {
             assertEquals(local.get(i), proton.documentdb(i).feeding().concurrency(), SMALL);
         }
+    }
+
+    private void verifyInitialDocumentCount(List<Pair<String, String>> nameAndModes, String xmlTuning, long global, List<Long> local) {
+        assertEquals(nameAndModes.size(), local.size());
+        VespaModel model = createModel(nameAndModes, xmlTuning);
+        ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
+        ProtonConfig proton = getProtonCfg(contentSearchCluster);
+        assertEquals(global, proton.grow().initial());
+        assertEquals(local.size(), proton.documentdb().size());
+        for (int i = 0; i < local.size(); i++) {
+            assertEquals(local.get(i).longValue(), proton.documentdb(i).allocation().initialnumdocs());
+        }
+    }
+
+    @Test
+    public void requireThatMixedModeInitialDocumentCountIsReflectedCorrectlyForDefault() {
+        final long DEFAULT = 1024L;
+        verifyInitialDocumentCount(Arrays.asList(new Pair("a", "index"), new Pair("b", "streaming")),
+                "", DEFAULT, Arrays.asList(DEFAULT, DEFAULT));
+    }
+    @Test
+    public void requireThatMixedModeInitialDocumentCountIsReflected() {
+        final long INITIAL = 1000000000L;
+        String feedTuning = "<resizing>" +
+                "  <initialdocumentcount>1000000000</initialdocumentcount>" +
+                "</resizing>\n";
+        verifyInitialDocumentCount(Arrays.asList(new Pair("a", "index"), new Pair("b", "streaming")),
+                feedTuning, INITIAL, Arrays.asList(INITIAL, INITIAL));
     }
 
     private void assertDocTypeConfig(VespaModel model, String configId, String indexField, String attributeField) {
