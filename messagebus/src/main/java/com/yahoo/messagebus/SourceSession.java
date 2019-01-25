@@ -112,11 +112,11 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
      * } while (!result.isAccepted());
      * </code>
      *
-     * @param msg the message to send
+     * @param message the message to send
      * @return the result of <i>initiating</i> sending of this message
      */
-    public Result send(Message msg) {
-        return sendInternal(updateTiming(msg));
+    public Result send(Message message) {
+        return sendInternal(updateTiming(message));
     }
 
     private Message updateTiming(Message msg) {
@@ -127,29 +127,29 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
         return msg;
     }
 
-    private Result sendInternal(Message msg) {
+    private Result sendInternal(Message message) {
         synchronized (lock) {
             if (closed) {
                 return new Result(ErrorCode.SEND_QUEUE_CLOSED,
                                   "Source session is closed.");
             }
-            if (throttlePolicy != null && ! throttlePolicy.canSend(msg, pendingCount)) {
+            if (throttlePolicy != null && ! throttlePolicy.canSend(message, pendingCount)) {
                 return new Result(ErrorCode.SEND_QUEUE_FULL,
                                   "Too much pending data (" + pendingCount + " messages).");
             }
-            msg.pushHandler(replyHandler);
+            message.pushHandler(replyHandler);
             if (throttlePolicy != null) {
-                throttlePolicy.processMessage(msg);
+                throttlePolicy.processMessage(message);
             }
             ++pendingCount;
         }
-        if (msg.getTrace().shouldTrace(TraceLevel.COMPONENT)) {
-            msg.getTrace().trace(TraceLevel.COMPONENT,
-                                 "Source session accepted a " + msg.getApproxSize() + " byte message. " +
+        if (message.getTrace().shouldTrace(TraceLevel.COMPONENT)) {
+            message.getTrace().trace(TraceLevel.COMPONENT,
+                                 "Source session accepted a " + message.getApproxSize() + " byte message. " +
                                  pendingCount + " message(s) now pending.");
         }
-        msg.pushHandler(this);
-        sequencer.handleMessage(msg);
+        message.pushHandler(this);
+        sequencer.handleMessage(message);
         return Result.ACCEPTED;
     }
 

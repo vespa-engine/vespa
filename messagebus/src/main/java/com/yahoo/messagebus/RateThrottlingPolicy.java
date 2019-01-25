@@ -35,8 +35,8 @@ public class RateThrottlingPolicy extends StaticThrottlePolicy {
         currentPeriod = timer.milliTime() / PERIOD;
     }
 
-    public boolean canSend(Message msg, int pendingCount) {
-        if (!super.canSend(msg, pendingCount)) {
+    public boolean canSend(Message message, int pendingCount) {
+        if (!super.canSend(message, pendingCount)) {
             return false;
         }
 

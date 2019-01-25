@@ -36,8 +36,8 @@ import java.util.logging.Logger;
 /**
  * Class to encapsulate access to slobrok sessions.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar Rosenvinge</a>
+ * @author Steinar Knutsen
+ * @author Einar Rosenvinge
  */
 public final class SessionCache extends AbstractComponent {
 
@@ -68,10 +68,10 @@ public final class SessionCache extends AbstractComponent {
     private final Map<SourceSessionKey, SharedSourceSession> sources = new HashMap<>();
     private final SourceSessionCreator sourcesCreator = new SourceSessionCreator();
 
-    public SessionCache(final String messagebusConfigId, final String slobrokConfigId, final String identity,
-                        final String containerMbusConfigId, final String documentManagerConfigId,
-                        final String loadTypeConfigId,
-                        final DocumentTypeManager documentTypeManager) {
+    public SessionCache(String messagebusConfigId, String slobrokConfigId, String identity,
+                        String containerMbusConfigId, String documentManagerConfigId,
+                        String loadTypeConfigId,
+                        DocumentTypeManager documentTypeManager) {
         this.messagebusConfigId = messagebusConfigId;
         this.slobrokConfigId = slobrokConfigId;
         this.identity = identity;
@@ -102,12 +102,12 @@ public final class SessionCache extends AbstractComponent {
         return messageBus != null;
     }
 
-    private static SharedMessageBus createSharedMessageBus(final ContainerMbusConfig mbusConfig,
-                                                           final String slobrokConfigId, final String identity,
+    private static SharedMessageBus createSharedMessageBus(ContainerMbusConfig mbusConfig,
+                                                           String slobrokConfigId, String identity,
                                                            Protocol protocol) {
-        final MessageBusParams mbusParams = new MessageBusParams().addProtocol(protocol);
+        MessageBusParams mbusParams = new MessageBusParams().addProtocol(protocol);
 
-        final int maxPendingSize = DocumentUtil
+        int maxPendingSize = DocumentUtil
                 .calculateMaxPendingSize(mbusConfig.maxConcurrentFactor(), mbusConfig.documentExpansionFactor(),
                         mbusConfig.containerCoreMemory());
         logSystemInfo(mbusConfig, maxPendingSize);
@@ -115,7 +115,7 @@ public final class SessionCache extends AbstractComponent {
         mbusParams.setMaxPendingCount(mbusConfig.maxpendingcount());
         mbusParams.setMaxPendingSize(maxPendingSize);
 
-        final RPCNetworkParams netParams = new RPCNetworkParams()
+        RPCNetworkParams netParams = new RPCNetworkParams()
                 .setSlobrokConfigId(slobrokConfigId)
                 .setIdentity(new Identity(identity))
                 .setListenPort(mbusConfig.port());
@@ -164,16 +164,17 @@ public final class SessionCache extends AbstractComponent {
     }
 
     private abstract class SessionCreator<PARAMS, KEY, SESSION extends SharedResource> {
+
         abstract SESSION create(PARAMS p);
 
         abstract KEY buildKey(PARAMS p);
 
         abstract void logReuse(SESSION session);
 
-        ReferencedResource<SESSION> retain(final Object lock, final Map<KEY, SESSION> registry, final PARAMS p) {
+        ReferencedResource<SESSION> retain(Object lock, Map<KEY, SESSION> registry, PARAMS p) {
             SESSION session;
             ResourceReference sessionReference;
-            final KEY key = buildKey(p);
+            KEY key = buildKey(p);
             // this lock is held for a horribly long time, but I see no way of
             // making it slimmer
             synchronized (lock) {
@@ -194,7 +195,7 @@ public final class SessionCache extends AbstractComponent {
             return new ReferencedResource<>(session, sessionReference);
         }
 
-        SESSION createAndStore(final Map<KEY, SESSION> registry, final PARAMS p, final KEY key) {
+        SESSION createAndStore(Map<KEY, SESSION> registry, PARAMS p, KEY key) {
             SESSION session = create(p);
             registry.put(key, session);
             return session;
@@ -204,34 +205,36 @@ public final class SessionCache extends AbstractComponent {
 
     private class DestinationSessionCreator
             extends SessionCreator<DestinationSessionParams, String, SharedDestinationSession> {
+
         @Override
-        SharedDestinationSession create(final DestinationSessionParams p) {
+        SharedDestinationSession create(DestinationSessionParams p) {
             log.log(LogLevel.DEBUG, "Creating new destination session " + p.getName() + "");
             return messageBus.newDestinationSession(p);
         }
 
         @Override
-        String buildKey(final DestinationSessionParams p) {
+        String buildKey(DestinationSessionParams p) {
             return p.getName();
         }
 
         @Override
-        void logReuse(final SharedDestinationSession session) {
+        void logReuse(SharedDestinationSession session) {
             log.log(LogLevel.DEBUG, "Reusing destination session " + session.name() + "");
         }
+
     }
 
     private class SourceSessionCreator
             extends SessionCreator<SourceSessionParams, SourceSessionKey, SharedSourceSession> {
 
         @Override
-        SharedSourceSession create(final SourceSessionParams p) {
+        SharedSourceSession create(SourceSessionParams p) {
             log.log(LogLevel.DEBUG, "Creating new source session.");
             return messageBus.newSourceSession(p);
         }
 
         @Override
-        SourceSessionKey buildKey(final SourceSessionParams p) {
+        SourceSessionKey buildKey(SourceSessionParams p) {
             return new SourceSessionKey(p);
         }
 
@@ -245,31 +248,33 @@ public final class SessionCache extends AbstractComponent {
             extends SessionCreator<IntermediateSessionParams, String, SharedIntermediateSession> {
 
         @Override
-        SharedIntermediateSession create(final IntermediateSessionParams p) {
+        SharedIntermediateSession create(IntermediateSessionParams p) {
             log.log(LogLevel.DEBUG, "Creating new intermediate session " + p.getName() + "");
             return messageBus.newIntermediateSession(p);
         }
 
         @Override
-        String buildKey(final IntermediateSessionParams p) {
+        String buildKey(IntermediateSessionParams p) {
             return p.getName();
         }
 
         @Override
-        void logReuse(final SharedIntermediateSession session) {
+        void logReuse(SharedIntermediateSession session) {
             log.log(LogLevel.DEBUG, "Reusing intermediate session " + session.name() + "");
         }
     }
 
     static class ThrottlePolicySignature {
+
         @Override
         public int hashCode() {
             return getClass().hashCode();
         }
+
     }
 
-    static class StaticThrottlePolicySignature extends
-            ThrottlePolicySignature {
+    static class StaticThrottlePolicySignature extends ThrottlePolicySignature {
+
         private final int maxPendingCount;
         private final long maxPendingSize;
 
@@ -280,7 +285,7 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         public int hashCode() {
-            final int prime = 31;
+            int prime = 31;
             int result = super.hashCode();
             result = prime * result + maxPendingCount;
             result = prime * result
@@ -308,8 +313,8 @@ public final class SessionCache extends AbstractComponent {
 
     }
 
-    static class DynamicThrottlePolicySignature extends
-            ThrottlePolicySignature {
+    static class DynamicThrottlePolicySignature extends ThrottlePolicySignature {
+
         private final int maxPending;
         private final double maxWindowSize;
         private final double minWindowSize;
@@ -326,7 +331,7 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         public int hashCode() {
-            final int prime = 31;
+            int prime = 31;
             int result = super.hashCode();
             result = prime * result + maxPending;
             long temp;
@@ -342,31 +347,28 @@ public final class SessionCache extends AbstractComponent {
         }
 
         @Override
-        public boolean equals(final Object obj) {
+        public boolean equals(Object obj) {
             if (this == obj) {
                 return true;
             }
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            final DynamicThrottlePolicySignature other = (DynamicThrottlePolicySignature) obj;
+            DynamicThrottlePolicySignature other = (DynamicThrottlePolicySignature) obj;
             if (maxPending != other.maxPending) {
                 return false;
             }
-            if (Double.doubleToLongBits(maxWindowSize) != Double
-                    .doubleToLongBits(other.maxWindowSize)) {
+            if (Double.doubleToLongBits(maxWindowSize) != Double.doubleToLongBits(other.maxWindowSize)) {
                 return false;
             }
             if (Double.doubleToLongBits(minWindowSize) != Double
                     .doubleToLongBits(other.minWindowSize)) {
                 return false;
             }
-            if (Double.doubleToLongBits(windowSizeBackoff) != Double
-                    .doubleToLongBits(other.windowSizeBackoff)) {
+            if (Double.doubleToLongBits(windowSizeBackoff) != Double.doubleToLongBits(other.windowSizeBackoff)) {
                 return false;
             }
-            if (Double.doubleToLongBits(windowSizeIncrement) != Double
-                    .doubleToLongBits(other.windowSizeIncrement)) {
+            if (Double.doubleToLongBits(windowSizeIncrement) != Double.doubleToLongBits(other.windowSizeIncrement)) {
                 return false;
             }
             return true;
@@ -374,8 +376,8 @@ public final class SessionCache extends AbstractComponent {
 
     }
 
-    static class UnknownThrottlePolicySignature extends
-            ThrottlePolicySignature {
+    static class UnknownThrottlePolicySignature extends ThrottlePolicySignature {
+
         private final ThrottlePolicy policy;
 
         UnknownThrottlePolicySignature(final ThrottlePolicy policy) {
@@ -383,7 +385,7 @@ public final class SessionCache extends AbstractComponent {
         }
 
         @Override
-        public boolean equals(final Object other) {
+        public boolean equals(Object other) {
             if (other == null) {
                 return false;
             }
@@ -395,23 +397,21 @@ public final class SessionCache extends AbstractComponent {
     }
 
     static class SourceSessionKey {
+
         private final double timeout;
         private final ThrottlePolicySignature policy;
 
-        SourceSessionKey(final SourceSessionParams p) {
+        SourceSessionKey(SourceSessionParams p) {
             timeout = p.getTimeout();
             policy = createSignature(p.getThrottlePolicy());
         }
 
-        private static ThrottlePolicySignature createSignature(
-                final ThrottlePolicy policy) {
-            final Class<?> policyClass = policy.getClass();
+        private static ThrottlePolicySignature createSignature(ThrottlePolicy policy) {
+            Class<?> policyClass = policy.getClass();
             if (policyClass == DynamicThrottlePolicy.class) {
-                return new DynamicThrottlePolicySignature(
-                        (DynamicThrottlePolicy) policy);
+                return new DynamicThrottlePolicySignature((DynamicThrottlePolicy) policy);
             } else if (policyClass == StaticThrottlePolicy.class) {
-                return new StaticThrottlePolicySignature(
-                        (StaticThrottlePolicy) policy);
+                return new StaticThrottlePolicySignature((StaticThrottlePolicy) policy);
             } else {
                 return new UnknownThrottlePolicySignature(policy);
             }
@@ -427,10 +427,9 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         public int hashCode() {
-            final int prime = 31;
+            int prime = 31;
             int result = 1;
-            result = prime * result
-                    + ((policy == null) ? 0 : policy.hashCode());
+            result = prime * result + ((policy == null) ? 0 : policy.hashCode());
             long temp;
             temp = Double.doubleToLongBits(timeout);
             result = prime * result + (int) (temp ^ (temp >>> 32));
@@ -438,7 +437,7 @@ public final class SessionCache extends AbstractComponent {
         }
 
         @Override
-        public boolean equals(final Object obj) {
+        public boolean equals(Object obj) {
             if (this == obj) {
                 return true;
             }
@@ -448,7 +447,7 @@ public final class SessionCache extends AbstractComponent {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            final SourceSessionKey other = (SourceSessionKey) obj;
+            SourceSessionKey other = (SourceSessionKey) obj;
             if (policy == null) {
                 if (other.policy != null) {
                     return false;
@@ -456,11 +455,11 @@ public final class SessionCache extends AbstractComponent {
             } else if (!policy.equals(other.policy)) {
                 return false;
             }
-            if (Double.doubleToLongBits(timeout) != Double
-                    .doubleToLongBits(other.timeout)) {
+            if (Double.doubleToLongBits(timeout) != Double.doubleToLongBits(other.timeout)) {
                 return false;
             }
             return true;
         }
     }
+
 }

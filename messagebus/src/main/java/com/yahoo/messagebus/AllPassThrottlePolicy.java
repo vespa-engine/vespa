@@ -3,10 +3,11 @@ package com.yahoo.messagebus;
 
 /**
  * This is an implementation of the {@link ThrottlePolicy} that passes all requests (no real throttling).
+ *
  * @author dybis
  */
-public class AllPassThrottlePolicy implements ThrottlePolicy
-{
+public class AllPassThrottlePolicy implements ThrottlePolicy {
+
     @Override
     public boolean canSend(Message msg, int pendingCount) {
         return true;
@@ -19,4 +20,5 @@ public class AllPassThrottlePolicy implements ThrottlePolicy
     @Override
     public void processReply(Reply reply) {
     }
+
 }

@@ -24,7 +24,7 @@ public class SourceSessionParams {
     /**
      * Implements the copy constructor.
      *
-     * @param params The object to copy.
+     * @param params the object to copy
      */
     public SourceSessionParams(SourceSessionParams params) {
         throttlePolicy = params.throttlePolicy;
@@ -32,11 +32,7 @@ public class SourceSessionParams {
         replyHandler = params.replyHandler;
     }
 
-    /**
-     * Returns the policy to use for throttling output.
-     *
-     * @return The policy.
-     */
+    /** Returns the policy to use for throttling output. */
     public ThrottlePolicy getThrottlePolicy() {
         return throttlePolicy;
     }
@@ -45,7 +41,7 @@ public class SourceSessionParams {
      * Sets the policy to use for throttling output.
      *
      * @param throttlePolicy The policy to set.
-     * @return This, to allow chaining.
+     * @return this, to allow chaining
      */
     public SourceSessionParams setThrottlePolicy(ThrottlePolicy throttlePolicy) {
         this.throttlePolicy = throttlePolicy;
@@ -55,7 +51,7 @@ public class SourceSessionParams {
     /**
      * Returns the number of seconds a message can spend trying to succeed.
      *
-     * @return The timeout in seconds.
+     * @return the timeout in seconds
      */
     public double getTimeout() {
         return timeout;
@@ -66,7 +62,7 @@ public class SourceSessionParams {
      * for any message bus operation.
      *
      * @param timeout The numer of seconds allowed.
-     * @return This, to allow chaining.
+     * @return this, to allow chaining
      */
     public SourceSessionParams setTimeout(double timeout) {
         this.timeout = timeout;
@@ -76,7 +72,7 @@ public class SourceSessionParams {
     /**
      * Returns whether or not a reply handler has been assigned to this.
      *
-     * @return True if a handler is set.
+     * @return true if a handler is set
      */
     boolean hasReplyHandler() {
         return replyHandler != null;
@@ -85,7 +81,7 @@ public class SourceSessionParams {
     /**
      * Returns the handler to receive incoming replies.
      *
-     * @return The handler.
+     * @return the handler
      */
     public ReplyHandler getReplyHandler() {
         return replyHandler;
@@ -95,10 +91,11 @@ public class SourceSessionParams {
      * Sets the handler to recive incoming replies.
      *
      * @param handler The handler to set.
-     * @return This, to allow chaining.
+     * @return this, to allow chaining
      */
     public SourceSessionParams setReplyHandler(ReplyHandler handler) {
         replyHandler = handler;
         return this;
     }
+
 }

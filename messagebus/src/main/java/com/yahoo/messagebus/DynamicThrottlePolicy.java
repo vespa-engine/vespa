@@ -7,7 +7,7 @@ import com.yahoo.log.LogLevel;
 import java.util.logging.Logger;
 
 /**
- * This is an implementatin of the {@link ThrottlePolicy} that offers dynamic limits to the number of pending messages a
+ * This is an implementation of the {@link ThrottlePolicy} that offers dynamic limits to the number of pending messages a
  * {@link SourceSession} is allowed to have.
  *
  * <b>NOTE:</b> By context, "pending" is refering to the number of sent messages that have not been replied to yet.
@@ -44,7 +44,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     /**
      * Constructs a new instance of this class using the given clock to calculate efficiency.
      *
-     * @param timer The timer to use.
+     * @param timer the timer to use
      */
     public DynamicThrottlePolicy(Timer timer) {
         this.timer = timer;
@@ -64,8 +64,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     }
 
     @Override
-    public boolean canSend(Message msg, int pendingCount) {
-        if (!super.canSend(msg, pendingCount)) {
+    public boolean canSend(Message message, int pendingCount) {
+        if ( ! super.canSend(message, pendingCount)) {
              return false;
         }
         long time = timer.milliTime();
@@ -78,8 +78,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     }
 
     @Override
-    public void processMessage(Message msg) {
-        super.processMessage(msg);
+    public void processMessage(Message message) {
+        super.processMessage(message);
         if (++numSent < windowSize * resizeRate) {
             return;
         }
@@ -126,7 +126,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     @Override
     public void processReply(Reply reply) {
         super.processReply(reply);
-        if (!reply.hasErrors()) {
+        if ( ! reply.hasErrors()) {
             ++numOk;
         }
     }
@@ -136,8 +136,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      * the correlation between throughput and window size. The algorithm will increase the window size until efficiency
      * drops below the efficiency of the local maxima times this value.
      *
-     * @param efficiencyThreshold The limit to set.
-     * @return This, to allow chaining.
+     * @param efficiencyThreshold the limit to set
+     * @return this, to allow chaining
      * @see #setWindowSizeBackOff(double)
      */
     public DynamicThrottlePolicy setEfficiencyThreshold(double efficiencyThreshold) {
@@ -148,8 +148,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     /**
      * Sets the step size used when increasing window size.
      *
-     * @param windowSizeIncrement The step size to set.
-     * @return This, to allow chaining.
+     * @param windowSizeIncrement the step size to set
+     * @return this, to allow chaining
      */
     public DynamicThrottlePolicy setWindowSizeIncrement(double windowSizeIncrement) {
         this.windowSizeIncrement = windowSizeIncrement;
@@ -161,8 +161,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      * A value of 1 means that there is no back off from the local maxima, and means that the algorithm will fail to
      * reduce window size to something lower than a previous maxima. This value is capped to the [0, 1] range.
      *
-     * @param windowSizeBackOff The back off to set.
-     * @return This, to allow chaining.
+     * @param windowSizeBackOff the back off to set
+     * @return this, to allow chaining
      */
     public DynamicThrottlePolicy setWindowSizeBackOff(double windowSizeBackOff) {
         this.windowSizeBackOff = Math.max(0, Math.min(1, windowSizeBackOff));
@@ -173,8 +173,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      * Sets the rate at which the window size is updated. The larger the value, the less responsive the resizing
      * becomes. However, the smaller the value, the less accurate the measurements become.
      *
-     * @param resizeRate The rate to set.
-     * @return This, to allow chaining.
+     * @param resizeRate the rate to set
+     * @return this, to allow chaining
      */
     public DynamicThrottlePolicy setResizeRate(double resizeRate) {
         this.resizeRate = resizeRate;
@@ -186,8 +186,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      * will be allocated to this clients. Resources are shared between clients
      * proportiannally to their weights.
      *
-     * @param weight The weight to set.
-     * @return This, to allow chaining.
+     * @param weight the weight to set
+     * @return this, to allow chaining
      */
     public DynamicThrottlePolicy setWeight(double weight) {
         this.weight = weight;
@@ -198,8 +198,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      * Sets the maximium number of pending operations allowed at any time, in
      * order to avoid using too much resources.
      *
-     * @param max The max to set.
-     * @return This, to allow chaining.
+     * @param max the max to set
+     * @return this, to allow chaining
      */
     public DynamicThrottlePolicy setMaxWindowSize(double max) {
         this.maxWindowSize = max;
@@ -209,7 +209,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     /**
      * Get the maximum number of pending operations allowed at any time.
      *
-     * @return The maximum number of operations.
+     * @return the maximum number of operations
      */
     public double getMaxWindowSize() {
         return maxWindowSize;
@@ -220,8 +220,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      * Sets the minimium number of pending operations allowed at any time, in
      * order to keep a level of performance.
      *
-     * @param min The min to set.
-     * @return This, to allow chaining.
+     * @param min the min to set
+     * @return this, to allow chaining
      */
     public DynamicThrottlePolicy setMinWindowSize(double min) {
         this.minWindowSize = min;
@@ -231,7 +231,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     /**
      * Get the minimum number of pending operations allowed at any time.
      *
-     * @return The minimum number of operations.
+     * @return the minimum number of operations
      */
     public double getMinWindowSize() {
         return minWindowSize;
@@ -247,7 +247,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     /**
      * Returns the maximum number of pending messages allowed.
      *
-     * @return The max limit.
+     * @return the max limit
      */
     public int getMaxPendingCount() {
         return (int)windowSize;
