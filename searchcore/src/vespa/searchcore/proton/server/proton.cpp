@@ -29,6 +29,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/searchlib/engine/transportserver.h>
@@ -44,6 +45,7 @@ using document::DocumentTypeRepo;
 using vespalib::FileHeader;
 using vespalib::IllegalStateException;
 using vespalib::Slime;
+using vespalib::makeLambdaTask;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
 
@@ -112,7 +114,7 @@ Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const Proton &proton_, 
     assert(!_hostName.empty());
 }
 
-Proton::ProtonFileHeaderContext::~ProtonFileHeaderContext() { }
+Proton::ProtonFileHeaderContext::~ProtonFileHeaderContext() = default;
 
 void
 Proton::ProtonFileHeaderContext::addTags(vespalib::GenericHeader &header,
@@ -432,10 +434,9 @@ Proton::~Proton()
     if (_fs4Server) {
         _fs4Server->shutDown();
     }
-    while (!_documentDBMap.empty()) {
-        const DocTypeName docTypeName(_documentDBMap.begin()->first);
-        removeDocumentDB(docTypeName);
-    }
+    size_t numCores = _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getHwInfo().cpu().cores();
+    vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000);
+    closeDocumentDBs(closePool);
     _documentDBMap.clear();
     _persistenceEngine.reset();
     _tls.reset();
@@ -443,6 +444,20 @@ Proton::~Proton()
     _sharedExecutor.reset();
     _clock.stop();
     LOG(debug, "Explicit destructor done");
+}
+
+void
+Proton::closeDocumentDBs(vespalib::ThreadStackExecutorBase & executor) {
+    // Need to extract names first as _documentDBMap is modified while removing.
+    std::vector<DocTypeName> docTypes;
+    docTypes.reserve(_documentDBMap.size());
+    for (const auto & entry : _documentDBMap) {
+        docTypes.push_back(entry.first);
+    }
+    for (const auto & docTypeName : docTypes) {
+        executor.execute(makeLambdaTask([this, docTypeName]() { removeDocumentDB(docTypeName); }));
+    }
+    executor.sync();
 }
 
 size_t Proton::getNumDocs() const

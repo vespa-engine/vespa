@@ -154,6 +154,7 @@ private:
     BootstrapConfig::SP getActiveConfigSnapshot() const;
     std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override;
     bool updateNodeUp(BucketSpace bucketSpace, bool nodeUpInBucketSpace);
+    void closeDocumentDBs(vespalib::ThreadStackExecutorBase & executor);
 public:
     typedef std::unique_ptr<Proton> UP;
     typedef std::shared_ptr<Proton> SP;
