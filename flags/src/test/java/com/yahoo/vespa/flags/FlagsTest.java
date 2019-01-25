@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -87,6 +89,12 @@ public class FlagsTest {
     }
 
     @Test
+    public void testList() {
+        testGeneric(Flags.defineListFlag("list-id", Collections.singletonList("a"), "desc", "mod"),
+                Collections.singletonList("a"), Arrays.asList("a", "b", "c"));
+    }
+
+    @Test
     public void testJacksonClass() {
         ExampleJacksonClass defaultInstance = new ExampleJacksonClass();
         ExampleJacksonClass instance = new ExampleJacksonClass();
@@ -98,14 +106,15 @@ public class FlagsTest {
                 defaultInstance, instance);
     }
 
-    private <T> void testGeneric(UnboundFlag<?, ?, ?> unboundFlag, T defaultValue, T value) {
+    private <T> void testGeneric(UnboundFlag<T, ?, ?> unboundFlag, T defaultValue, T value) {
         FlagSource source = mock(FlagSource.class);
-        Flag<?, ?> flag = unboundFlag.bindTo(source);
+        Flag<T, ?> flag = unboundFlag.bindTo(source);
 
-        when(source.fetch(any(), any())).thenReturn(Optional.empty());
+        when(source.fetch(any(), any()))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(flag.serializer().serialize(value)));
+
         assertThat(flag.boxedValue(), equalTo(defaultValue));
-
-        when(source.fetch(any(), any())).thenReturn(Optional.of(JsonNodeRawFlag.fromJacksonClass(value)));
         assertThat(flag.boxedValue(), equalTo(value));
 
         assertTrue(Flags.getFlag(unboundFlag.id()).isPresent());

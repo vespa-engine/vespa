@@ -4,6 +4,7 @@ package com.yahoo.vespa.flags;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -52,10 +53,11 @@ public class Flags {
             "Whether to enable Nessus.", "Takes effect on next host admin tick",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag ENABLE_CPU_TEMPERATURE_TASK = defineFeatureFlag(
-            "enable-cputemptask", true,
-            "Whether to enable CPU temperature task", "Takes effect on next host admin tick",
-            HOSTNAME);
+    public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
+            "disabled-host-admin-tasks", Collections.emptyList(),
+            "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
+            "Takes effect on next host admin tick",
+            HOSTNAME, NODE_TYPE);
 
     public static final UnboundBooleanFlag USE_DEDICATED_NODE_FOR_LOGSERVER = defineFeatureFlag(
             "use-dedicated-node-for-logserver", false,
@@ -116,6 +118,12 @@ public class Flags {
                                                               String modificationEffect, FetchVector.Dimension... dimensions) {
         return define((id2, defaultValue2, vector2) -> new UnboundJacksonFlag<>(id2, defaultValue2, vector2, jacksonClass),
                 flagId, defaultValue, description, modificationEffect, dimensions);
+    }
+
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static <T> UnboundListFlag<T> defineListFlag(String flagId, List<T> defaultValue, String description,
+                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
+        return define(UnboundListFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
     }
 
     @FunctionalInterface
