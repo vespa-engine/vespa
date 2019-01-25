@@ -880,9 +880,31 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             applicationPackage = Optional.of(controller.applications().getApplicationPackage(controller.applications().require(applicationId), applicationVersion.get()));
         }
 
+
+        boolean deployDirectly = deployOptions.field("deployDirectly").asBool();
+        Optional<Version> vespaVersion = optional("vespaVersion", deployOptions).map(Version::new);
+
+        if(deployDirectly && !applicationPackage.isPresent() && !applicationVersion.isPresent() && !vespaVersion.isPresent()) {
+            // Redeploy the existing deployment with the same versions.
+            Optional<Deployment> deployment = controller.applications().get(applicationId)
+                    .map(Application::deployments)
+                    .flatMap(deployments -> Optional.ofNullable(deployments.get(zone)));
+
+            if(!deployment.isPresent())
+                throw new IllegalArgumentException("Can't redeploy application, no deployment currently exist");
+
+            ApplicationVersion version = deployment.get().applicationVersion();
+            if(version.isUnknown())
+                throw new IllegalArgumentException("Can't redeploy application, application version is unknown");
+
+            applicationVersion = Optional.of(version);
+            vespaVersion = Optional.of(deployment.get().version());
+            applicationPackage = Optional.of(controller.applications().getApplicationPackage(controller.applications().require(applicationId), applicationVersion.get()));
+        }
+
         // TODO: get rid of the json object
-        DeployOptions deployOptionsJsonClass = new DeployOptions(deployOptions.field("deployDirectly").asBool(),
-                                                                 optional("vespaVersion", deployOptions).map(Version::new),
+        DeployOptions deployOptionsJsonClass = new DeployOptions(deployDirectly,
+                                                                 vespaVersion,
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
                                                                  deployOptions.field("deployCurrentVersion").asBool());
         ActivateResult result = controller.applications().deploy(applicationId,

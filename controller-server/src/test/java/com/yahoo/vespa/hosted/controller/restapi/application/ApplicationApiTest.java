@@ -1131,6 +1131,43 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("deploy-result.json"));
     }
 
+    @Test
+    public void redeployment_succeeds_when_not_specifying_versions_or_application_package() {
+        // Setup
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
+        tester.computeVersionStatus();
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), com.yahoo.config.provision.AthenzService.from("service"))
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+        long screwdriverProjectId = 123;
+        ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
+
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+
+        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1");
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
+
+        // Allow systemtest to succeed by notifying completion of system test
+        controllerTester.jobCompletion(JobType.component)
+                .application(application.id())
+                .projectId(screwdriverProjectId)
+                .uploadArtifact(applicationPackage)
+                .submit();
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
+                        .data(createApplicationDeployData(applicationPackage, false))
+                        .screwdriverIdentity(screwdriverId),
+                new File("deploy-result.json"));
+
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
+                        .data(createApplicationDeployData(Optional.empty(), true))
+                        .userIdentity(HOSTED_VESPA_OPERATOR),
+                new File("deploy-result.json"));
+    }
+
 
     @Test
     public void testJobStatusReporting() {
