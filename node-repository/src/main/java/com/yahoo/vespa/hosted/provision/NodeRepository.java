@@ -69,7 +69,7 @@ import java.util.stream.Stream;
  * @author bratseth
  */
 // Node state transitions:
-// 1) (new) - > provisioned -> dirty -> ready -> reserved -> active -> inactive -> dirty -> ready
+// 1) (new) - > provisioned -> (dirty ->) ready -> reserved -> active -> inactive -> dirty -> ready
 // 2) inactive -> reserved | parked
 // 3) reserved -> dirty
 // 3) * -> failed | parked -> dirty | active | (removed)
@@ -339,8 +339,8 @@ public class NodeRepository extends AbstractComponent {
         try (Mutex lock = lockUnallocated()) {
             List<Node> nodesWithResetFields = nodes.stream()
                     .map(node -> {
-                        if (node.state() != Node.State.dirty)
-                            throw new IllegalArgumentException("Can not set " + node + " ready. It is not dirty.");
+                        if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
+                            throw new IllegalArgumentException("Can not set " + node + " ready. It is not provisioned or dirty.");
                         return node.with(node.status().withWantToRetire(false).withWantToDeprovision(false));
                     })
                     .collect(Collectors.toList());

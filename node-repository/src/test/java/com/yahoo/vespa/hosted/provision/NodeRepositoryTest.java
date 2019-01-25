@@ -51,7 +51,6 @@ public class NodeRepositoryTest {
             // Expected
         }
 
-        tester.nodeRepository().dirtyRecursively("host1", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().setReady("host1", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().removeRecursively("host1");
     }
