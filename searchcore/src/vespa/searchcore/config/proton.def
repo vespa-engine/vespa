@@ -186,19 +186,24 @@ distribution.redundancy long default=1
 distribution.searchablecopies long default=1
 
 ## Minimum initial size for any per document tables.
+## Deprecated -> Use documentdb.allocation.xxx
 grow.initial long default=1024 restart
 
 ## Grow factor in percent for any per document tables.
+## Deprecated -> Use documentdb.allocation.xxx
 grow.factor int default=20 restart
 
 ## Constant added when growing any per document tables.
+## Deprecated -> Use documentdb.allocation.xxx
 grow.add int default=1 restart
 
 ## The number of documents to amortize memory spike cost over
+## Deprecated -> Use documentdb.allocation.xxx
 grow.numdocs int default=10000 restart
 
 ## The grow factor used when allocating buffers in the array store
 ## used in multi-value attribute vectors to store underlying values.
+## Deprecated -> Use documentdb.allocation.xxx
 grow.multivalueallocfactor double default=0.2 restart
 
 ## Control cache size in bytes.
@@ -457,6 +462,7 @@ hwinfo.cpu.cores int default = 0 restart
 ##   max(ceil(hwinfo.cpu.cores * feeding.concurrency), summary.log.numthreads)
 ## The number of threads in each of pools 2-4 is calculated as:
 ##   max(ceil((hwinfo.cpu.cores * feeding.concurrency)/3), indexing.threads)
+## Deprecated -> Use documentdb.feeding.concurrency
 feeding.concurrency double default = 0.2 restart
 
 ## Adjustment to resource limit when determining if maintenance jobs can run.
