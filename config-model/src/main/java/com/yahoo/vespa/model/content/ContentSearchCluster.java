@@ -306,6 +306,8 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         double visibilityDelay = hasIndexedCluster() ? getIndexed().getVisibilityDelay() : 0.0;
+        builder.feeding.concurrency(0.2);
+        boolean hasAnyNonIndexedCluster = false;
         for (NewDocumentType type : TopologicalDocumentTypeSorter.sort(documentDefinitions.values())) {
             ProtonConfig.Documentdb.Builder ddbB = new ProtonConfig.Documentdb.Builder();
             String docTypeName = type.getFullName().getName();
@@ -316,9 +318,18 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                 .global(globalDocType);
             Optional<StreamingSearchCluster> ssc = findStreamingCluster(docTypeName);
             if (ssc.isPresent()) {
-                ddbB.inputdoctypename(type.getFullName().getName()).configid(ssc.get().getDocumentDBConfigId());
+                hasAnyNonIndexedCluster = true;
+                ddbB.inputdoctypename(type.getFullName().getName())
+                    .configid(ssc.get().getDocumentDBConfigId())
+                    .feeding.concurrency(0.0);
             } else if (hasIndexedCluster()) {
                 getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
+                if (tuning != null && tuning.searchNode != null && tuning.searchNode.feeding != null) {
+                    ddbB.feeding.concurrency(tuning.searchNode.feeding.concurrency/2);
+                }
+            } else {
+                hasAnyNonIndexedCluster = true;
+                ddbB.feeding.concurrency(0.0);
             }
             if (globalDocType) {
                 ddbB.visibilitydelay(0.0);
@@ -338,6 +349,9 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         }
         if (redundancy != null) {
             redundancy.getConfig(builder);
+        }
+        if (hasAnyNonIndexedCluster) {
+            builder.feeding.concurrency(builder.feeding.build().concurrency() * 2);
         }
     }
 

@@ -295,8 +295,7 @@ documentdb[].global bool default=false
 ##
 ## The number of threads in each of pools is calculated as:
 ##   max(ceil((hwinfo.cpu.cores * feeding.concurrency)/3), indexing.threads)
-feeding.concurrency double default = 0.2 restart
-documentdb[].feeding.concurrency default=0.2
+documentdb[].feeding.concurrency double default=0.2
 
 ## Minimum initial size for any per document tables.
 documentdb[].allocation.initialnumdocs long default=1024 restart

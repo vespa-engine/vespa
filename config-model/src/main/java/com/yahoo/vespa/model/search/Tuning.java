@@ -134,6 +134,9 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             public void getConfig(ProtonConfig.Builder builder) {
                 if (initialDocumentCount!=null) {
                     builder.grow.initial(initialDocumentCount);
+                    for (ProtonConfig.Documentdb.Builder db : builder.documentdb) {
+                        db.allocation.initialnumdocs(initialDocumentCount);
+                    }
                 }
             }
 
@@ -338,7 +341,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
                 if (concurrency != null) {
-                    builder.feeding.concurrency(concurrency);
+                    builder.feeding.concurrency(concurrency/2);
                 }
             }
         }
