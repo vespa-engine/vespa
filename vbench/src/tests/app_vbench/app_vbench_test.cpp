@@ -61,6 +61,9 @@ struct Servers {
         write_file("certs.pem", tls_opts.cert_chain_pem());
         write_file("test.key", tls_opts.private_key_pem());
     }
+    ~Servers() {
+        write_file("test.key", "garbage\n");
+    }
 };
 
 TEST_MT_F("run vbench", 2, Servers()) {
