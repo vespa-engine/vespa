@@ -34,7 +34,7 @@
       "name": "JobRunner"
     },
     {
-      "name": "LoadBalancerMaintainer"
+      "name": "LoadBalancerAliasMaintainer"
     },
     {
       "name": "MetricsReporter"

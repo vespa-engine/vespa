@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
-import com.yahoo.vespa.hosted.controller.loadbalancer.LoadBalancerName;
+import com.yahoo.vespa.hosted.controller.application.LoadBalancerAlias;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -72,6 +72,7 @@ public class CuratorDb {
     private static final Path applicationRoot = root.append("applications");
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
+    private static final Path loadBalancerAliasesRoot = root.append("loadBalancerAliases");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
@@ -82,7 +83,7 @@ public class CuratorDb {
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
-    private final LoadBalancerNameSerializer loadBalancerNameSerializer = new LoadBalancerNameSerializer();
+    private final LoadBalancerAliasSerializer loadBalancerAliasSerializer = new LoadBalancerAliasSerializer();
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -176,8 +177,8 @@ public class CuratorDb {
         return lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
     }
 
-    public Lock lockLoadBalancerNames() {
-        return lock(lockRoot.append("loadBalancerNames"), defaultLockTimeout);
+    public Lock lockLoadBalancerAliases() {
+        return lock(lockRoot.append("loadBalancerAliases"), defaultLockTimeout);
     }
     // -------------- Helpers ------------------------------------------
 
@@ -460,14 +461,22 @@ public class CuratorDb {
         curator.set(openStackServerPoolPath(), data);
     }
 
-    // -------------- Load balancer names -------------------------------------
+    // -------------- Load balancer aliases------------------------------------
 
-    public void writeLoadBalancerNames(Map<ApplicationId, List<LoadBalancerName>> loadBalancerNames) {
-        curator.set(loadBalancerNamePath(), asJson(loadBalancerNameSerializer.toSlime(loadBalancerNames)));
+    public void writeLoadBalancerAliases(ApplicationId application, Set<LoadBalancerAlias> aliases) {
+        curator.set(loadBalancerAliasPath(application), asJson(loadBalancerAliasSerializer.toSlime(aliases)));
     }
 
-    public Map<ApplicationId, List<LoadBalancerName>> readLoadBalancerNames() {
-        return readSlime(loadBalancerNamePath()).map(loadBalancerNameSerializer::fromSlime).orElseGet(Collections::emptyMap);
+    public Set<LoadBalancerAlias> readLoadBalancerAliases() {
+        return curator.getChildren(loadBalancerAliasesRoot).stream()
+                      .map(ApplicationId::fromSerializedForm)
+                      .flatMap(application -> readLoadBalancerAliases(application).stream())
+                      .collect(Collectors.toUnmodifiableSet());
+    }
+
+    public Set<LoadBalancerAlias> readLoadBalancerAliases(ApplicationId application) {
+        return readSlime(loadBalancerAliasPath(application)).map(slime -> loadBalancerAliasSerializer.fromSlime(application, slime))
+                                                            .orElseGet(Collections::emptySet);
     }
 
     // -------------- Paths ---------------------------------------------------
@@ -545,8 +554,8 @@ public class CuratorDb {
         return root.append("versionStatus");
     }
 
-    private static Path loadBalancerNamePath() {
-        return root.append("loadBalancerNames");
+    private static Path loadBalancerAliasPath(ApplicationId application) {
+        return loadBalancerAliasesRoot.append(application.serializedForm());
     }
 
     private static Path provisionStatePath() {

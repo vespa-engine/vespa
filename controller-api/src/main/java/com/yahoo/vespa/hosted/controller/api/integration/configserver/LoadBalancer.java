@@ -7,12 +7,15 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 
+import java.util.Objects;
+
 /**
- *  A load balancer
+ *  Represents an exclusive load balancer, assigned to an application's cluster.
  *
  * @author mortent
  */
 public class LoadBalancer {
+
     private final String id;
     private final TenantId tenant;
     private final ApplicationId application;
@@ -21,12 +24,12 @@ public class LoadBalancer {
     private final HostName hostname;
 
     public LoadBalancer(String id, TenantId tenant, ApplicationId application, InstanceId instance, ClusterSpec.Id cluster, HostName hostname) {
-        this.id = id;
-        this.tenant = tenant;
-        this.application = application;
-        this.instance = instance;
-        this.cluster = cluster;
-        this.hostname = hostname;
+        this.id = Objects.requireNonNull(id, "id must be non-null");
+        this.tenant = Objects.requireNonNull(tenant, "tenant must be non-null");
+        this.application = Objects.requireNonNull(application, "application must be non-null");
+        this.instance = Objects.requireNonNull(instance, "instance must be non-null");
+        this.cluster = Objects.requireNonNull(cluster, "cluster must be non-null");
+        this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
     }
 
     public String id() {
@@ -52,4 +55,5 @@ public class LoadBalancer {
     public HostName hostname() {
         return hostname;
     }
+
 }
