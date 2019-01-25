@@ -4934,6 +4934,7 @@
       "public static final java.lang.String FILTER",
       "public static final java.lang.String DEFAULT_INDEX",
       "public static final java.lang.String LANGUAGE",
+      "public static final java.lang.String LOCALE",
       "public static final java.lang.String ENCODING",
       "public static final java.lang.String SOURCES",
       "public static final java.lang.String SEARCH_PATH",

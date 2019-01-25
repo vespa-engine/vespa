@@ -21,10 +21,8 @@ import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.QueryException;
-import com.yahoo.prelude.query.RangeItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.request.CompoundName;
@@ -41,7 +39,6 @@ import com.yahoo.yolean.Exceptions;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -102,7 +99,7 @@ public class QueryTestCase {
     // TODO: YQL work in progress (jon)
     @Ignore
     @Test
-    public void testSimpleProgramParameterAlias() throws UnsupportedEncodingException {
+    public void testSimpleProgramParameterAlias() {
         Query q = new Query(httpEncode("/sdfsd.html?yql=select * from source where myfield contains(word);"));
         assertEquals("", q.getModel().getQueryTree().toString());
     }
@@ -300,11 +297,29 @@ public class QueryTestCase {
     }
 
     @Test
-    public void testQueryProfileSubstitution() {
+    public void testQueryProfileSubstitution1() {
         QueryProfile profile = new QueryProfile("myProfile");
         profile.set("myField", "Profile: %{queryProfile}", null);
         Query q = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
         assertEquals("Profile: myProfile", q.properties().get("myField"));
+    }
+
+    @Test
+    public void testQueryProfileSubstitution2() {
+        QueryProfile profile = new QueryProfile("myProfile");
+        profile.set("model.language", "en-US", null);
+        profile.set("myField", "Language: %{lang}", null);
+        Query q = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
+        assertEquals("Language: ENGLISH", q.properties().get("myField"));
+    }
+
+    @Test
+    public void testQueryProfileSubstitution3() {
+        QueryProfile profile = new QueryProfile("myProfile");
+        profile.set("model.locale", "en-US", null);
+        profile.set("myField", "Language: %{lang}, locale: %{locale}", null);
+        Query q = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
+        assertEquals("Language: ENGLISH, locale: en_US", q.properties().get("myField"));
     }
 
     @Test

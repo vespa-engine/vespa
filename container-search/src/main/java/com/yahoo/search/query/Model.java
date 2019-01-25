@@ -46,6 +46,7 @@ public class Model implements Cloneable {
     public static final String FILTER = "filter";
     public static final String DEFAULT_INDEX = "defaultIndex";
     public static final String LANGUAGE = "language";
+    public static final String LOCALE = "locale";
     public static final String ENCODING = "encoding";
     public static final String SOURCES = "sources";
     public static final String SEARCH_PATH = "searchPath";
@@ -61,6 +62,7 @@ public class Model implements Cloneable {
         argumentType.addField(new FieldDescription(FILTER, "string","filter"));
         argumentType.addField(new FieldDescription(DEFAULT_INDEX, "string", "default-index"));
         argumentType.addField(new FieldDescription(LANGUAGE, "string", "language lang"));
+        argumentType.addField(new FieldDescription(LOCALE, "string", "locale"));
         argumentType.addField(new FieldDescription(ENCODING, "string", "encoding"));
         argumentType.addField(new FieldDescription(SOURCES, "string", "sources search"));
         argumentType.addField(new FieldDescription(SEARCH_PATH, "string", "searchpath"));
@@ -72,7 +74,7 @@ public class Model implements Cloneable {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     /** The name of the query property used for generating hit count estimate queries. */
-    public static final CompoundName ESTIMATE = new CompoundName("hitcountestimate"); // TODO:Cleanup
+    public static final CompoundName ESTIMATE = new CompoundName("hitcountestimate"); // TODO: Cleanup
 
     private String encoding = null;
     private String queryString = "";
