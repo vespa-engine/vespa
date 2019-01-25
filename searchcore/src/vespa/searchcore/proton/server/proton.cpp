@@ -434,7 +434,7 @@ Proton::~Proton()
     if (_fs4Server) {
         _fs4Server->shutDown();
     }
-    size_t numCores = std::max(1u, _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getHwInfo().cpu().cores());
+    size_t numCores = _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getHwInfo().cpu().cores();
     vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000);
     closeDocumentDBs(closePool);
     _documentDBMap.clear();
