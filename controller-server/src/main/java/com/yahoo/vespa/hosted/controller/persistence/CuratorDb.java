@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
+import com.yahoo.vespa.hosted.controller.application.LoadBalancerAlias;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -71,6 +72,7 @@ public class CuratorDb {
     private static final Path applicationRoot = root.append("applications");
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
+    private static final Path loadBalancerAliasesRoot = root.append("loadBalancerAliases");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
@@ -81,6 +83,7 @@ public class CuratorDb {
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
+    private final LoadBalancerAliasSerializer loadBalancerAliasSerializer = new LoadBalancerAliasSerializer();
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -174,6 +177,9 @@ public class CuratorDb {
         return lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
     }
 
+    public Lock lockLoadBalancerAliases() {
+        return lock(lockRoot.append("loadBalancerAliases"), defaultLockTimeout);
+    }
     // -------------- Helpers ------------------------------------------
 
     /** Try locking with a low timeout, meaning it is OK to fail lock acquisition.
@@ -455,6 +461,24 @@ public class CuratorDb {
         curator.set(openStackServerPoolPath(), data);
     }
 
+    // -------------- Load balancer aliases------------------------------------
+
+    public void writeLoadBalancerAliases(ApplicationId application, Set<LoadBalancerAlias> aliases) {
+        curator.set(loadBalancerAliasPath(application), asJson(loadBalancerAliasSerializer.toSlime(aliases)));
+    }
+
+    public Set<LoadBalancerAlias> readLoadBalancerAliases() {
+        return curator.getChildren(loadBalancerAliasesRoot).stream()
+                      .map(ApplicationId::fromSerializedForm)
+                      .flatMap(application -> readLoadBalancerAliases(application).stream())
+                      .collect(Collectors.toUnmodifiableSet());
+    }
+
+    public Set<LoadBalancerAlias> readLoadBalancerAliases(ApplicationId application) {
+        return readSlime(loadBalancerAliasPath(application)).map(slime -> loadBalancerAliasSerializer.fromSlime(application, slime))
+                                                            .orElseGet(Collections::emptySet);
+    }
+
     // -------------- Paths ---------------------------------------------------
 
     private Path lockPath(TenantName tenant) {
@@ -528,6 +552,10 @@ public class CuratorDb {
 
     private static Path versionStatusPath() {
         return root.append("versionStatus");
+    }
+
+    private static Path loadBalancerAliasPath(ApplicationId application) {
+        return loadBalancerAliasesRoot.append(application.serializedForm());
     }
 
     private static Path provisionStatePath() {

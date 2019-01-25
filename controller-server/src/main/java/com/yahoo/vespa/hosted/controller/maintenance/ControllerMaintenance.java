@@ -52,6 +52,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final JobRunner jobRunner;
     private final ContactInformationMaintainer contactInformationMaintainer;
     private final CostReportMaintainer costReportMaintainer;
+    private final LoadBalancerAliasMaintainer loadBalancerAliasMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
@@ -81,6 +82,7 @@ public class ControllerMaintenance extends AbstractComponent {
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepositoryClient, Clock.systemUTC(), selfHostedCostConfig);
+        loadBalancerAliasMaintainer = new LoadBalancerAliasMaintainer(controller, Duration.ofMinutes(5), jobControl, nameService, curator);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -108,6 +110,7 @@ public class ControllerMaintenance extends AbstractComponent {
         jobRunner.deconstruct();
         contactInformationMaintainer.deconstruct();
         costReportMaintainer.deconstruct();
+        loadBalancerAliasMaintainer.deconstruct();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
