@@ -114,7 +114,7 @@ Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const Proton &proton_, 
     assert(!_hostName.empty());
 }
 
-Proton::ProtonFileHeaderContext::~ProtonFileHeaderContext() { }
+Proton::ProtonFileHeaderContext::~ProtonFileHeaderContext() = default;
 
 void
 Proton::ProtonFileHeaderContext::addTags(vespalib::GenericHeader &header,
@@ -434,7 +434,7 @@ Proton::~Proton()
     if (_fs4Server) {
         _fs4Server->shutDown();
     }
-    size_t numCores = std::max(1u, std::thread::hardware_concurrency());
+    size_t numCores = std::max(1u, _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getHwInfo().cpu().cores());
     vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000);
     closeDocumentDBs(closePool);
     _documentDBMap.clear();
