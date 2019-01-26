@@ -572,6 +572,15 @@ public class MockCurator extends Curator {
             return childData;
         }
 
+        @Override
+        public ChildData getCurrentData(Path fullPath) {
+            if (!fullPath.getParentPath().equals(path)) {
+                throw new IllegalArgumentException("Path '" + fullPath + "' is not a child path of '" + path + "'");
+            }
+
+            return getData(fullPath).map(bytes -> new ChildData(fullPath.getAbsolute(), null, bytes)).orElse(null);
+        }
+
         private void collectData(Node parent, Path parentPath, List<ChildData> data) {
             for (Node child : parent.children().values()) {
                 Path childPath = parentPath.append(child.name());

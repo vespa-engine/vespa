@@ -358,6 +358,9 @@ public class Curator implements AutoCloseable {
 
         List<ChildData> getCurrentData();
 
+        /** Returns the ChildData, or null if it does not exist. */
+        ChildData getCurrentData(Path absolutePath);
+
         void close();
 
     }

@@ -7,10 +7,15 @@ import com.yahoo.vespa.configserver.flags.FlagsDb;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
+import org.apache.curator.framework.recipes.cache.ChildData;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author hakonhall
@@ -19,15 +24,21 @@ public class FlagsDbImpl implements FlagsDb {
     private static final Path ROOT_PATH = Path.fromString("/flags/v1");
 
     private final Curator curator;
+    private final Curator.DirectoryCache cache;
 
     @Inject
     public FlagsDbImpl(Curator curator) {
         this.curator = curator;
+        curator.create(ROOT_PATH);
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        this.cache = curator.createDirectoryCache(ROOT_PATH.toString(), true, false, executorService);
     }
 
     @Override
     public Optional<FlagData> getValue(FlagId flagId) {
-        return curator.getData(getZkPathFor(flagId)).map(FlagData::deserializeUtf8Json);
+        return Optional.ofNullable(cache.getCurrentData(getZkPathFor(flagId)))
+                .map(ChildData::getData)
+                .map(FlagData::deserializeUtf8Json);
     }
 
     @Override
@@ -37,12 +48,11 @@ public class FlagsDbImpl implements FlagsDb {
 
     @Override
     public Map<FlagId, FlagData> getAllFlags() {
-        Map<FlagId, FlagData> flags = new HashMap<>();
-        for (String flagId : curator.getChildren(ROOT_PATH)) {
-            FlagId id = new FlagId(flagId);
-            getValue(id).ifPresent(data -> flags.put(id, data));
-        }
-        return flags;
+        List<ChildData> dataList = cache.getCurrentData();
+        return dataList.stream()
+                .map(ChildData::getData)
+                .map(FlagData::deserializeUtf8Json)
+                .collect(Collectors.toMap(FlagData::id, Function.identity()));
     }
 
     @Override

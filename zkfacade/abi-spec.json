@@ -36,6 +36,7 @@
       "public abstract void start()",
       "public abstract void addListener(org.apache.curator.framework.recipes.cache.PathChildrenCacheListener)",
       "public abstract java.util.List getCurrentData()",
+      "public abstract org.apache.curator.framework.recipes.cache.ChildData getCurrentData(com.yahoo.path.Path)",
       "public abstract void close()"
     ],
     "fields": []
