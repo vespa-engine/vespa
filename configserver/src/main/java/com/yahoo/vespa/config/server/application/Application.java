@@ -25,9 +25,9 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FileFlagSource;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 
 import java.util.Objects;
 import java.util.Set;
@@ -53,7 +53,7 @@ public class Application implements ModelResult {
 
     public Application(Model model, ServerCache cache, long appGeneration, boolean internalRedeploy,
                        Version vespaVersion, MetricUpdater metricUpdater, ApplicationId app) {
-        this(model, cache, appGeneration, internalRedeploy, vespaVersion, metricUpdater, app, new FileFlagSource());
+        this(model, cache, appGeneration, internalRedeploy, vespaVersion, metricUpdater, app, new InMemoryFlagSource());
     }
 
     public Application(Model model, ServerCache cache, long appGeneration, boolean internalRedeploy,

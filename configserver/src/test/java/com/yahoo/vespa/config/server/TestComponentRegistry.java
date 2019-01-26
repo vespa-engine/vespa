@@ -18,10 +18,9 @@ import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRequestHandlerTest;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
-import com.yahoo.vespa.flags.FileFlagSource;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
@@ -200,7 +199,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB;}
     @Override
-    public FlagSource getFlagSource() { return new FileFlagSource(); }
+    public FlagSource getFlagSource() { return new InMemoryFlagSource(); }
 
     public FileDistributionFactory getFileDistributionFactory() { return fileDistributionFactory; }
 
