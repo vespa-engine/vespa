@@ -2,9 +2,12 @@
 package com.yahoo.vespa.configserver.flags;
 
 import com.google.inject.Inject;
+import com.yahoo.vespa.configserver.flags.db.BootstrapFlagSource;
 import com.yahoo.vespa.configserver.flags.db.ZooKeeperFlagSource;
-import com.yahoo.vespa.flags.FileFlagSource;
 import com.yahoo.vespa.flags.OrderedFlagSource;
+
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 
 /**
  * @author hakonhall
@@ -12,6 +15,10 @@ import com.yahoo.vespa.flags.OrderedFlagSource;
 public class ConfigServerFlagSource extends OrderedFlagSource {
     @Inject
     public ConfigServerFlagSource(FlagsDb flagsDb) {
-        super(new FileFlagSource(), new ZooKeeperFlagSource(flagsDb));
+        this(FileSystems.getDefault(), flagsDb);
+    }
+
+    ConfigServerFlagSource(FileSystem fileSystem, FlagsDb flagsDb) {
+        super(new BootstrapFlagSource(fileSystem), new ZooKeeperFlagSource(flagsDb));
     }
 }

@@ -14,11 +14,12 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
-import com.yahoo.vespa.config.server.session.*;
-import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.config.server.session.SessionPreparer;
+import com.yahoo.vespa.config.server.session.SessionTest;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.FileFlagSource;
+import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
 import org.junit.Rule;
@@ -75,7 +76,7 @@ public class InjectedGlobalComponentRegistryTest {
         globalComponentRegistry =
                 new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, sessionPreparer, rpcServer, configserverConfig,
                                                     generationCounter, defRepo, permanentApplicationPackage, hostRegistries, hostProvisionerProvider, zone,
-                                                    new ConfigServerDB(configserverConfig), new FileFlagSource());
+                                                    new ConfigServerDB(configserverConfig), new InMemoryFlagSource());
     }
 
     @Test
