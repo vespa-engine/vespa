@@ -115,7 +115,7 @@ public class CuratorDb {
 
     // -------------- Locks ---------------------------------------------------
 
-    /** Create a reentrant lock */
+    /** Creates a reentrant lock */
     private Lock lock(Path path, Duration timeout) {
         Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator));
         lock.acquire(timeout);
@@ -127,7 +127,10 @@ public class CuratorDb {
     }
 
     public Lock lock(ApplicationId id) {
-        return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
+        // Timeout should be higher than a deployment takes, since there might be deployments wanting
+        // to run in parallel, too low timeout in that case has been seen to lead to deployments not
+        // getting the lock before it times out
+        return lock(lockPath(id), defaultLockTimeout.multipliedBy(4));
     }
 
     public Lock lock(ApplicationId id, JobType type) {
