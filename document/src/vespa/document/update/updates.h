@@ -10,4 +10,5 @@
 #include "clearvalueupdate.h"
 #include "mapvalueupdate.h"
 #include "removevalueupdate.h"
+#include "tensormodifyupdate.h"
 
