@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
+import com.yahoo.path.Path;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
@@ -41,6 +42,11 @@ class PathChildrenCacheWrapper implements Curator.DirectoryCache {
     @Override
     public List<ChildData> getCurrentData() {
         return wrapped.getCurrentData();
+    }
+
+    @Override
+    public ChildData getCurrentData(Path absolutePath) {
+        return wrapped.getCurrentData(absolutePath.getAbsolute());
     }
 
     @Override
