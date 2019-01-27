@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import com.yahoo.yolean.system.CatchSigTerm;
+import com.yahoo.yolean.system.CatchSignals;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,7 +41,7 @@ public class StandaloneMain {
             System.out.println("debug\tInitializing application without privileges.");
             loader.init(bundleLocation, false);
             loader.start();
-            setupSigTermHandler();
+            setupSignalHandlers();
             waitForShutdown();
             System.out.println("debug\tTrying to shutdown in a controlled manner.");
             log.log(Level.INFO, "JDisc shutting down");
@@ -59,8 +59,8 @@ public class StandaloneMain {
     }
 
     private final AtomicBoolean signalCaught = new AtomicBoolean(false);
-    private void setupSigTermHandler() {
-        CatchSigTerm.setup(signalCaught); // catch termination signal
+    private void setupSignalHandlers() {
+        CatchSignals.setup(signalCaught);
     }
     private void waitForShutdown() {
         synchronized (signalCaught) {
