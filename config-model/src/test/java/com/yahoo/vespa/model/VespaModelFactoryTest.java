@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.MockModelContext;
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
@@ -13,29 +12,20 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.ValidationParameters;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.config.provision.Rotation;
-import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
@@ -163,66 +153,7 @@ public class VespaModelFactoryTest {
 
             @Override
             public Properties properties() {
-                return new Properties() {
-                    @Override
-                    public boolean multitenant() {
-                        return true;
-                    }
-
-                    @Override
-                    public boolean hostedVespa() {
-                        return true;
-                    }
-
-                    @Override
-                    public Zone zone() {
-                        return Zone.defaultZone();
-                    }
-
-                    @Override
-                    public Set<Rotation> rotations() {
-                        return new HashSet<>();
-                    }
-
-                    @Override
-                    public ApplicationId applicationId() {
-                        return ApplicationId.from(TenantName.from("hosted-vespa"),
-                                                  ApplicationName.from("routing"),
-                                                  InstanceName.defaultName());
-                    }
-
-                    @Override
-                    public List<ConfigServerSpec> configServerSpecs() {
-                        return Collections.emptyList();
-                    }
-
-                    @Override
-                    public HostName loadBalancerName() {
-                        return null;
-                    }
-
-                    @Override
-                    public URI ztsUrl() {
-                        return null;
-                    }
-
-                    @Override
-                    public String athenzDnsSuffix() {
-                        return null;
-                    }
-
-                    @Override
-                    public boolean isBootstrap() { return false; }
-
-                    @Override
-                    public boolean isFirstTimeDeployment() { return false; }
-
-                    @Override
-                    public boolean useDedicatedNodeForLogserver() { return false; }
-
-                    @Override
-                    public boolean useFdispatchByDefault() { return true; }
-                };
+                return new TestProperties();
             }
         };
     }
