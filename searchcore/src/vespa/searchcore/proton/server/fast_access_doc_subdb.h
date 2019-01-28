@@ -45,10 +45,10 @@ public:
     struct Context
     {
         const StoreOnlyDocSubDB::Context _storeOnlyCtx;
-        const AttributeMetrics          &_subAttributeMetrics;
+        AttributeMetrics                &_subAttributeMetrics;
         MetricsWireService              &_metricsWireService;
         Context(const StoreOnlyDocSubDB::Context &storeOnlyCtx,
-                const AttributeMetrics &subAttributeMetrics,
+                AttributeMetrics &subAttributeMetrics,
                 MetricsWireService &metricsWireService)
         : _storeOnlyCtx(storeOnlyCtx),
           _subAttributeMetrics(subAttributeMetrics),
@@ -64,7 +64,7 @@ private:
     const bool                    _fastAccessAttributesOnly;
     AttributeManager::SP          _initAttrMgr;
     Configurer::FeedViewVarHolder _fastAccessFeedView;
-    AttributeMetrics              _subAttributeMetrics;
+    AttributeMetrics             &_subAttributeMetrics;
 
     std::shared_ptr<initializer::InitializerTask>
     createAttributeManagerInitializer(const DocumentDBConfig &configSnapshot,
