@@ -1,8 +1,40 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "vbench.h"
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 
 namespace vbench {
+
+namespace {
+
+using IllArg = vespalib::IllegalArgumentException;
+
+string maybe_load(const vespalib::slime::Inspector &file_ref) {
+    if (file_ref.valid()) {
+        string file_name = file_ref.asString().make_string();
+        vespalib::MappedFileInput file(file_name);
+        if (file.valid()) {
+            return string(file.get().data, file.get().size);
+        } else {
+            throw IllArg(strfmt("could not load file: '%s'", file_name.c_str()));
+        }
+    }
+    return "";
+}
+
+CryptoEngine::SP setup_crypto(const vespalib::slime::Inspector &tls) {
+    if (!tls.valid()) {
+        return std::make_shared<vespalib::NullCryptoEngine>();
+    }
+    vespalib::net::tls::TransportSecurityOptions
+        tls_opts(maybe_load(tls["ca-certificates"]),
+                 maybe_load(tls["certificates"]),
+                 maybe_load(tls["private-key"]));
+    return std::make_shared<vespalib::TlsCryptoEngine>(tls_opts);
+}
+
+} // namespace vbench::<unnamed>
 
 VBench::VBench(const vespalib::Slime &cfg)
     : _factory(),
@@ -11,6 +43,7 @@ VBench::VBench(const vespalib::Slime &cfg)
       _inputs(),
       _taint()
 {
+    CryptoEngine::SP crypto = setup_crypto(cfg.get()["tls"]);
     _analyzers.push_back(Analyzer::UP(new RequestSink()));
     vespalib::slime::Inspector &analyzers = cfg.get()["analyze"];
     for (size_t i = analyzers.children(); i-- > 0; ) {
@@ -19,7 +52,8 @@ VBench::VBench(const vespalib::Slime &cfg)
             _analyzers.push_back(Analyzer::UP(obj.release()));
         }
     }
-    _scheduler.reset(new RequestScheduler(*_analyzers.back(),
+    _scheduler.reset(new RequestScheduler(crypto,
+                                          *_analyzers.back(),
                                           cfg.get()["http_threads"].asLong()));
     vespalib::slime::Inspector &inputs = cfg.get()["inputs"];
     for (size_t i = inputs.children(); i-- > 0; ) {

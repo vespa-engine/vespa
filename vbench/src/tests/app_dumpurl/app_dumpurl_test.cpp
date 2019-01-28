@@ -2,12 +2,15 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vbench/test/all.h>
 #include <vespa/vespalib/util/slaveproc.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 using namespace vbench;
 using vespalib::SlaveProc;
 
 using InputReader = vespalib::InputReader;
 using OutputWriter = vespalib::OutputWriter;
+
+auto null_crypto = std::make_shared<vespalib::NullCryptoEngine>();
 
 bool endsWith(const Memory &mem, const string &str) {
     return (mem.size < str.size()) ? false
@@ -34,7 +37,7 @@ TEST("dumpurl usage") {
 
 TEST_MT_F("run dumpurl", 2, ServerSocket()) {
     if (thread_id == 0) {
-        Stream::UP stream = f1.accept();
+        Stream::UP stream = f1.accept(*null_crypto);
         SimpleBuffer ignore;
         readUntil(*stream, ignore, "\r\n\r\n");
         OutputWriter out(*stream, 256);

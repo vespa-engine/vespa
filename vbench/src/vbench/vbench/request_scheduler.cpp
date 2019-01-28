@@ -22,14 +22,14 @@ RequestScheduler::run()
     }
 }
 
-RequestScheduler::RequestScheduler(Handler<Request> &next, size_t numWorkers)
+RequestScheduler::RequestScheduler(CryptoEngine::SP crypto, Handler<Request> &next, size_t numWorkers)
     : _timer(),
       _proxy(next),
       _queue(10.0, 0.020),
       _droppedTagger(_proxy),
       _dispatcher(_droppedTagger),
       _thread(*this),
-      _connectionPool(_timer),
+      _connectionPool(std::move(crypto), _timer),
       _workers()
 {
     for (size_t i = 0; i < numWorkers; ++i) {
@@ -63,7 +63,6 @@ RequestScheduler &
 RequestScheduler::stop()
 {
     _queue.close();
-    _thread.stop();
     return *this;
 }
 

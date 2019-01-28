@@ -2,17 +2,20 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vbench/test/all.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 using namespace vbench;
 using vespalib::CountDownLatch;
 
+auto null_crypto = std::make_shared<vespalib::NullCryptoEngine>();
+
 TEST_MT_F("http connection pool", 2, ServerSocket()) {
     if (thread_id == 0) {
-        for (; f1.accept().get() != 0; ) {}
+        for (; f1.accept(*null_crypto).get() != 0; ) {}
     } else {
         Timer timer;
         HttpConnection::UP conn;
-        HttpConnectionPool pool(timer);
+        HttpConnectionPool pool(null_crypto, timer);
         conn = pool.getConnection(ServerSpec("localhost", f1.port()));
         EXPECT_TRUE(conn.get() != 0);
         pool.putConnection(std::move(conn));
@@ -28,11 +31,11 @@ TEST_MT_F("http connection pool", 2, ServerSocket()) {
     }
 }
 
-TEST_MT_FFFF("stress http connection pool", 256, ServerSocket(), Timer(), HttpConnectionPool(f2),
+TEST_MT_FFFF("stress http connection pool", 256, ServerSocket(), Timer(), HttpConnectionPool(null_crypto, f2),
              CountDownLatch(num_threads-2))
 {
     if (thread_id == 0) {
-        for (; f1.accept().get() != 0; ) {}
+        for (; f1.accept(*null_crypto).get() != 0; ) {}
     } else {
         while (f2.sample() < 5.0) {
             HttpConnection::UP conn = f3.getConnection(ServerSpec("localhost", f1.port()));

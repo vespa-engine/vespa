@@ -23,7 +23,7 @@ private:
 public:
     typedef std::unique_ptr<HttpConnection> UP;
 
-    HttpConnection(const ServerSpec &server);
+    HttpConnection(CryptoEngine &crypto, const ServerSpec &server);
     bool fresh() const { return (_lastUsed < 0); }
     const ServerSpec &server() const { return _server; }
     Stream &stream() { return _socket; }

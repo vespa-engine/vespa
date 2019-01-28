@@ -1,0 +1,30 @@
+{
+    http_threads: 32,
+    inputs: [
+        {
+            source: { type: 'RequestGenerator', file: '@CMAKE_CURRENT_SOURCE_DIR@/input.txt' },
+            prepare: [
+                { type: 'ServerTagger', host: 'localhost', port:_LOCAL_PORT_ },
+                { type: 'QpsTagger', qps: 10 }
+            ]
+        },
+        {
+            source: { type: 'RequestGenerator', file: '@CMAKE_CURRENT_SOURCE_DIR@/input.txt' },
+            prepare: [
+                { type: 'ServerTagger', host: 'localhost', port:_LOCAL_PORT_ },
+                { type: 'QpsTagger', qps: 10 }
+            ]
+        }
+    ],
+    analyze: [
+        { type: 'IgnoreBefore', time: 1.0 },
+        { type: 'QpsAnalyzer' },
+        { type: 'LatencyAnalyzer' },
+        { type: 'RequestDumper' }
+    ],
+    tls: {
+        ca-certificates: 'ca_certs.pem',
+        certificates:    'certs.pem',
+        private-key:     'test.key'
+    }
+}

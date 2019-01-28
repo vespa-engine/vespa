@@ -180,11 +180,11 @@ HttpClient::readContent()
 }
 
 bool
-HttpClient::perform()
+HttpClient::perform(CryptoEngine &crypto)
 {
     writeRequest();
     if (!_conn->fresh() && (_conn->stream().obtain().size == 0)) {
-        _conn.reset(new HttpConnection(_conn->server()));
+        _conn.reset(new HttpConnection(crypto, _conn->server()));
         writeRequest();
     }
     return (readStatus() && readHeaders() && readContent());

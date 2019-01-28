@@ -58,7 +58,7 @@ TimeQueue<T>::extract(double time, std::vector<std::unique_ptr<T> > &list, doubl
     }
     guard.broadcast();
     delay = _queue.empty() ? _tick : (_queue.front().time - time);
-    return (!_closed || !_queue.empty());
+    return (!_closed || !_queue.empty() || !list.empty());
 }
 
 } // namespace vbench

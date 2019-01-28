@@ -34,7 +34,7 @@ private:
     void run() override;
 public:
     typedef std::unique_ptr<RequestScheduler> UP;
-    RequestScheduler(Handler<Request> &next, size_t numWorkers);
+    RequestScheduler(CryptoEngine::SP crypto, Handler<Request> &next, size_t numWorkers);
     void abort();
     void handle(Request::UP request) override;
     void start() override;

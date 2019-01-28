@@ -4,9 +4,9 @@
 
 namespace vbench {
 
-HttpConnection::HttpConnection(const ServerSpec &s)
+HttpConnection::HttpConnection(CryptoEngine &crypto, const ServerSpec &s)
     : _server(s),
-      _socket(s.host, s.port),
+      _socket(crypto, s.host, s.port),
       _lastUsed(-1000.0)
 {
 }

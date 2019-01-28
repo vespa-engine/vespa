@@ -1,13 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vbench/test/all.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 using namespace vbench;
 
+auto null_crypto = std::make_shared<vespalib::NullCryptoEngine>();
+
 TEST("http connection") {
     ServerSocket serverSocket;
-    HttpConnection client(ServerSpec("localhost", serverSocket.port()));
-    Stream::UP server = serverSocket.accept();
+    HttpConnection client(*null_crypto, ServerSpec("localhost", serverSocket.port()));
+    Stream::UP server = serverSocket.accept(*null_crypto);
     EXPECT_TRUE(client.fresh());
     EXPECT_EQUAL("localhost", client.server().host);
     EXPECT_FALSE(client.mayReuse(0.1)); // still fresh
