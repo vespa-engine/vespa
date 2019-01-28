@@ -208,16 +208,16 @@ StorageServerTest::setUp()
 {
     threadPool.reset(new FastOS_ThreadPool(128 * 1024));
     docMan.reset(new document::TestDocMan);
-    system("chmod -R 755 vdsroot");
-    system("rm -rf vdsroot*");
+    [[maybe_unused]] int systemResult = system("chmod -R 755 vdsroot");
+    systemResult = system("rm -rf vdsroot*");
     slobrok.reset(new mbus::Slobrok);
     distConfig.reset(new vdstestlib::DirConfig(getStandardConfig(false)));
     storConfig.reset(new vdstestlib::DirConfig(getStandardConfig(true)));
     addSlobrokConfig(*distConfig, *slobrok);
     addSlobrokConfig(*storConfig, *slobrok);
     storConfig->getConfig("stor-filestor").set("fail_disk_after_error_count", "1");
-    system("mkdir -p vdsroot/disks/d0");
-    system("mkdir -p vdsroot.distributor");
+    systemResult = system("mkdir -p vdsroot/disks/d0");
+    systemResult = system("mkdir -p vdsroot.distributor");
     slobrokMirror.reset(new SlobrokMirror(slobrok->config()));
 }
 
@@ -534,8 +534,8 @@ StorageServerTest::testShutdownAfterDiskFailure_Stress()
     CPPUNIT_ASSERT(!storServer->attemptedStopped());
     loadGiver.notifyStartingShutdown();
     LOG(info, "\n\nREMOVING PERMISSIONS\n\n");
-    system("chmod 000 vdsroot/disks/d0/*.0");
-    system("ls -ld vdsroot/disks/d0/* > permissions");
+    [[maybe_unused]] int systemResult = system("chmod 000 vdsroot/disks/d0/*.0");
+    systemResult = system("ls -ld vdsroot/disks/d0/* > permissions");
 
     for (uint32_t i=0; i<6000; ++i) {
         //storServer->getMemFileCache().clear();
