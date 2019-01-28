@@ -78,8 +78,7 @@ public class LoadBalancerAlias {
                                            ignorePartIfDefault(applicationId.instance().value()),
                                            applicationId.application().value(),
                                            applicationId.tenant().value(),
-                                           zoneId.value(),
-                                           "vespa.oath.cloud"
+                                           zoneId.value() + "." + "vespa.oath.cloud"
         );
         return parts.stream()
                     .filter(s -> !Strings.isNullOrEmpty((s)))

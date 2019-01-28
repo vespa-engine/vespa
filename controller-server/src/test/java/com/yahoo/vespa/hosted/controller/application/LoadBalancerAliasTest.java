@@ -18,12 +18,12 @@ public class LoadBalancerAliasTest {
     public void test_endpoint_names() {
         ZoneId zoneId = ZoneId.from("prod", "us-north-1");
         ApplicationId withInstanceName = ApplicationId.from("tenant", "application", "instance");
-        testAlias("instance--application--tenant--prod.us-north-1--vespa.oath.cloud", "default", withInstanceName, zoneId);
-        testAlias("cluster--instance--application--tenant--prod.us-north-1--vespa.oath.cloud", "cluster", withInstanceName, zoneId);
+        testAlias("instance--application--tenant--prod.us-north-1.vespa.oath.cloud", "default", withInstanceName, zoneId);
+        testAlias("cluster--instance--application--tenant--prod.us-north-1.vespa.oath.cloud", "cluster", withInstanceName, zoneId);
 
         ApplicationId withDefaultInstance = ApplicationId.from("tenant", "application", "default");
-        testAlias("application--tenant--prod.us-north-1--vespa.oath.cloud", "default", withDefaultInstance, zoneId);
-        testAlias("cluster--application--tenant--prod.us-north-1--vespa.oath.cloud", "cluster", withDefaultInstance, zoneId);
+        testAlias("application--tenant--prod.us-north-1.vespa.oath.cloud", "default", withDefaultInstance, zoneId);
+        testAlias("cluster--application--tenant--prod.us-north-1.vespa.oath.cloud", "cluster", withDefaultInstance, zoneId);
     }
 
     private void testAlias(String expected, String clusterName, ApplicationId applicationId, ZoneId zoneId) {
