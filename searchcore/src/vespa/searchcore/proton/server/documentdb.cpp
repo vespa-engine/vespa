@@ -68,20 +68,20 @@ namespace proton {
 namespace {
 constexpr uint32_t indexing_thread_stack_size = 128 * 1024;
 
+using Allocation = ProtonConfig::Documentdb::Allocation;
 GrowStrategy
-makeGrowStrategy(uint32_t docsInitialCapacity, const ProtonConfig::Grow &growCfg)
+makeGrowStrategy(uint32_t docsInitialCapacity, const Allocation &allocCfg)
 {
-    return GrowStrategy(docsInitialCapacity, growCfg.factor, growCfg.add, growCfg.multivalueallocfactor);
+    return GrowStrategy(docsInitialCapacity, allocCfg.growfactor, allocCfg.growbias, allocCfg.multivaluegrowfactor);
 }
 
 DocumentSubDBCollection::Config
-makeSubDBConfig(const ProtonConfig & protonCfg) {
-    const ProtonConfig::Grow & growCfg = protonCfg.grow;
-    const ProtonConfig::Distribution & distCfg = protonCfg.distribution;
-    GrowStrategy searchableGrowth = makeGrowStrategy(growCfg.initial * distCfg.searchablecopies, growCfg);
-    GrowStrategy removedGrowth = makeGrowStrategy(std::max(1024l, growCfg.initial/100), growCfg);
-    GrowStrategy notReadyGrowth = makeGrowStrategy(growCfg.initial * (distCfg.redundancy - distCfg.searchablecopies), growCfg);
-    return DocumentSubDBCollection::Config(searchableGrowth, notReadyGrowth, removedGrowth, growCfg.numdocs, protonCfg.numsearcherthreads);
+makeSubDBConfig(const ProtonConfig::Distribution & distCfg, const Allocation & allocCfg, size_t numSearcherThreads) {
+    size_t initialNumDocs(allocCfg.initialnumdocs);
+    GrowStrategy searchableGrowth = makeGrowStrategy(initialNumDocs * distCfg.searchablecopies, allocCfg);
+    GrowStrategy removedGrowth = makeGrowStrategy(std::max(1024ul, initialNumDocs/100), allocCfg);
+    GrowStrategy notReadyGrowth = makeGrowStrategy(initialNumDocs * (distCfg.redundancy - distCfg.searchablecopies), allocCfg);
+    return DocumentSubDBCollection::Config(searchableGrowth, notReadyGrowth, removedGrowth, allocCfg.amortizecount, numSearcherThreads);
 }
 
 index::IndexConfig
@@ -155,7 +155,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _bucketHandler(_writeService.master()),
       _indexCfg(makeIndexConfig(protonCfg.index)),
       _config_store(std::move(config_store)),
-      _sessionManager(new matching::SessionManager(protonCfg.grouping.sessionmanager.maxentries)),
+      _sessionManager(std::make_shared<matching::SessionManager>(protonCfg.grouping.sessionmanager.maxentries)),
       _metricsWireService(metricsWireService),
       _metricsHook(*this, _docTypeName.getName(), protonCfg.numthreadspersearch),
       _feedView(),
@@ -166,9 +166,12 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _dmUsageForwarder(_writeService.master()),
       _writeFilter(),
       _feedHandler(_writeService, tlsSpec, docTypeName, _state, *this, _writeFilter, *this, tlsDirectWriter),
-      _subDBs(*this, *this, _feedHandler, _docTypeName, _writeService, warmupExecutor,
-              sharedExecutor, fileHeaderContext, metricsWireService, getMetrics(),
-              queryLimiter, clock, _configMutex, _baseDir, makeSubDBConfig(protonCfg), hwInfo),
+      _subDBs(*this, *this, _feedHandler, _docTypeName, _writeService, warmupExecutor, sharedExecutor, fileHeaderContext,
+              metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
+              makeSubDBConfig(protonCfg.distribution,
+                              findDocumentDB(protonCfg.documentdb, docTypeName.getName())->allocation,
+                              protonCfg.numsearcherthreads),
+              hwInfo),
       _maintenanceController(_writeService.master(), sharedExecutor, _docTypeName),
       _visibility(_feedHandler, _writeService, _feedView),
       _lidSpaceCompactionHandlers(),
