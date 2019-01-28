@@ -45,7 +45,6 @@ public class NodeFlavorTuningTest {
     @Test
     public void require_that_initial_numdocs_is_dependent_of_mode() {
         ProtonConfig cfg = getProtonMemoryConfig(Arrays.asList(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")), 24);
-        assertEquals(1024, cfg.grow().initial());
         assertEquals(3, cfg.documentdb().size());
         assertEquals(1024, cfg.documentdb(0).allocation().initialnumdocs());
         assertEquals("a", cfg.documentdb(0).inputdoctypename());

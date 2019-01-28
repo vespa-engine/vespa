@@ -178,7 +178,6 @@ public class DocumentDatabaseTestCase {
         VespaModel model = createModel(nameAndModes, xmlTuning);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         ProtonConfig proton = getProtonCfg(contentSearchCluster);
-        assertEquals(global, proton.grow().initial());
         assertEquals(local.size(), proton.documentdb().size());
         for (int i = 0; i < local.size(); i++) {
             assertEquals(local.get(i).longValue(), proton.documentdb(i).allocation().initialnumdocs());
