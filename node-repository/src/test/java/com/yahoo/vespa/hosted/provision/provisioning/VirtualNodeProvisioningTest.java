@@ -49,10 +49,10 @@ public class VirtualNodeProvisioningTest {
 
     @Test
     public void distinct_parent_host_for_each_node_in_a_cluster() {
-        tester.makeReadyVirtualNodes(2, flavor, "parentHost1");
-        tester.makeReadyVirtualNodes(2, flavor, "parentHost2");
-        tester.makeReadyVirtualNodes(2, flavor, "parentHost3");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost4");
+        tester.makeReadyVirtualDockerNodes(2, flavor, "parentHost1");
+        tester.makeReadyVirtualDockerNodes(2, flavor, "parentHost2");
+        tester.makeReadyVirtualDockerNodes(2, flavor, "parentHost3");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost4");
 
         final int containerNodeCount = 4;
         final int contentNodeCount = 3;
@@ -88,7 +88,7 @@ public class VirtualNodeProvisioningTest {
         // Allowed to use same parent host for several nodes in same cluster in dev
         {
             tester = new ProvisioningTester(new Zone(Environment.dev, RegionName.from("us-east")));
-            tester.makeReadyVirtualNodes(4, "default", "parentHost1");
+            tester.makeReadyVirtualDockerNodes(4, "default", "parentHost1");
 
             List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
             List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);
@@ -101,7 +101,7 @@ public class VirtualNodeProvisioningTest {
         // Allowed to use same parent host for several nodes in same cluster in CD (even if prod env)
         {
             tester = new ProvisioningTester(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east")));
-            tester.makeReadyVirtualNodes(4, flavor, "parentHost1");
+            tester.makeReadyVirtualDockerNodes(4, flavor, "parentHost1");
 
             List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
             List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);
@@ -113,12 +113,12 @@ public class VirtualNodeProvisioningTest {
 
     @Test
     public void will_retire_clashing_active() {
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost1");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost2");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost3");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost4");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost5");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost6");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost1");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost2");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost3");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost4");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost5");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost6");
 
         int containerNodeCount = 2;
         int contentNodeCount = 2;
@@ -146,10 +146,10 @@ public class VirtualNodeProvisioningTest {
 
     @Test
     public void fail_when_all_hosts_become_clashing() {
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost1");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost2");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost3");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost4");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost1");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost2");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost3");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost4");
 
         int containerNodeCount = 2;
         int contentNodeCount = 2;
@@ -177,8 +177,8 @@ public class VirtualNodeProvisioningTest {
 
     @Test(expected = OutOfCapacityException.class)
     public void fail_when_too_few_distinct_parent_hosts() {
-        tester.makeReadyVirtualNodes(2, flavor, "parentHost1");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost2");
+        tester.makeReadyVirtualDockerNodes(2, flavor, "parentHost1");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost2");
 
         int contentNodeCount = 3;
         List<HostSpec> hosts = prepare(contentClusterSpec, contentNodeCount, 1);
@@ -190,9 +190,9 @@ public class VirtualNodeProvisioningTest {
 
     @Test
     public void incomplete_parent_hosts_has_distinct_distribution() {
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost1");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost2");
-        tester.makeReadyVirtualNodes(1, flavor, Optional.empty());
+        tester.makeReadyVirtualDockerNode(1, flavor, "parentHost1");
+        tester.makeReadyVirtualDockerNode(1, flavor, "parentHost2");
+        tester.makeReadyVirtualNodes(1, flavor);
 
         final int contentNodeCount = 3;
         final int groups = 1;
@@ -200,15 +200,15 @@ public class VirtualNodeProvisioningTest {
         activate(contentHosts);
         assertEquals(3, getNodes(applicationId).size());
 
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost1");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost2");
+        tester.makeReadyVirtualDockerNode(2, flavor, "parentHost1");
+        tester.makeReadyVirtualDockerNode(2, flavor, "parentHost2");
 
         assertEquals(contentHosts, prepare(contentClusterSpec, contentNodeCount, groups));
     }
 
     @Test
     public void indistinct_distribution_with_known_ready_nodes() {
-        tester.makeReadyVirtualNodes(3, flavor, Optional.empty());
+        tester.makeReadyVirtualNodes(3, flavor);
 
         final int contentNodeCount = 3;
         final int groups = 1;
@@ -225,8 +225,8 @@ public class VirtualNodeProvisioningTest {
         nodes = getNodes(applicationId);
         assertEquals(3, nodes.stream().filter(n -> n.parentHostname().isPresent()).count());
 
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost1");
-        tester.makeReadyVirtualNodes(2, flavor, "parentHost2");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost1");
+        tester.makeReadyVirtualDockerNodes(2, flavor, "parentHost2");
 
         OutOfCapacityException expectedException = null;
         try {
@@ -239,7 +239,7 @@ public class VirtualNodeProvisioningTest {
 
     @Test
     public void unknown_distribution_with_known_ready_nodes() {
-        tester.makeReadyVirtualNodes(3, flavor, Optional.empty());
+        tester.makeReadyVirtualNodes(3, flavor);
 
         final int contentNodeCount = 3;
         final int groups = 1;
@@ -247,15 +247,15 @@ public class VirtualNodeProvisioningTest {
         activate(contentHosts);
         assertEquals(3, getNodes(applicationId).size());
 
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost1");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost2");
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost3");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost1");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost2");
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost3");
         assertEquals(contentHosts, prepare(contentClusterSpec, contentNodeCount, groups));
     }
 
     @Test
     public void unknown_distribution_with_known_and_unknown_ready_nodes() {
-        tester.makeReadyVirtualNodes(3, flavor, Optional.empty());
+        tester.makeReadyVirtualNodes(3, flavor);
 
         final int contentNodeCount = 3;
         final int groups = 1;
@@ -263,8 +263,8 @@ public class VirtualNodeProvisioningTest {
         activate(contentHosts);
         assertEquals(3, getNodes(applicationId).size());
 
-        tester.makeReadyVirtualNodes(1, flavor, "parentHost1");
-        tester.makeReadyVirtualNodes(1, flavor, Optional.empty());
+        tester.makeReadyVirtualDockerNodes(1, flavor, "parentHost1");
+        tester.makeReadyVirtualNodes(1, flavor);
         assertEquals(contentHosts, prepare(contentClusterSpec, contentNodeCount, groups));
     }
 
