@@ -89,6 +89,8 @@ makeIndexConfig(const ProtonConfig::Index & cfg) {
     return index::IndexConfig(WarmupConfig(cfg.warmup.time, cfg.warmup.unpack), cfg.maxflushed, cfg.cache.size);
 }
 
+ProtonConfig::Documentdb _G_defaultProtonDocumentDBConfig;
+
 const ProtonConfig::Documentdb *
 findDocumentDB(const ProtonConfig::DocumentdbVector & documentDBs, const vespalib::string & docType) {
     for (const auto & dbCfg : documentDBs) {
@@ -96,7 +98,7 @@ findDocumentDB(const ProtonConfig::DocumentdbVector & documentDBs, const vespali
             return & dbCfg;
         }
     }
-    return nullptr;
+    return &_G_defaultProtonDocumentDBConfig;
 }
 
 }
