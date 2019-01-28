@@ -155,6 +155,19 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
+    public void requireThatWeCanParseRemovedDBTag() {
+        Tuning t = createTuning(parseXml("<removed-db>", "<prune>",
+                "<age>19388</age>",
+                "<interval>193</interval>",
+                "</prune>", "</removed-db>"));
+        assertEquals(19388, t.searchNode.removedDB.prune.age, DELTA);
+        assertEquals(193, t.searchNode.removedDB.prune.interval, DELTA);
+        String cfg = getProtonCfg(t);
+        assertThat(cfg, containsString("pruneremoveddocumentsinterval 193"));
+        assertThat(cfg, containsString("pruneremoveddocumentsage 19388"));
+    }
+
+    @Test
     public void requireThatWeCanParseAttributeTag() {
         Tuning t = createTuning(parseXml("<attribute>", "<io>",
                 "<write>directio</write>",

@@ -91,6 +91,26 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             }
         }
 
+        public static class RemovedDB implements ProtonConfig.Producer {
+
+            public static class Prune implements ProtonConfig.Producer {
+                public Double age = null;
+                public Double interval = null;
+
+                @Override
+                public void getConfig(ProtonConfig.Builder builder) {
+                    if (age != null) builder.pruneremoveddocumentsage(age);
+                    if (interval != null) builder.pruneremoveddocumentsinterval(interval);
+                }
+            }
+
+            public Prune prune;
+            @Override
+            public void getConfig(ProtonConfig.Builder builder) {
+                if (prune != null) prune.getConfig(builder);
+            }
+        }
+
         public static class FlushStrategy implements ProtonConfig.Producer {
             public Long totalMaxMemoryGain = null;
             public Double totalDiskBloatFactor = null;
@@ -356,6 +376,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
         public Summary summary = null;
         public Initialize initialize = null;
         public Feeding feeding = null;
+        public RemovedDB removedDB = null;
 
         @Override
         public void getConfig(ProtonConfig.Builder builder) {
@@ -367,6 +388,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             if (summary != null) summary.getConfig(builder);
             if (initialize != null) initialize.getConfig(builder);
             if (feeding != null) feeding.getConfig(builder);
+            if (removedDB != null) removedDB.getConfig(builder);
         }
     }
 
