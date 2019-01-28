@@ -28,8 +28,11 @@ int main(int /*argc*/, char ** /*argv*/)
                   S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     char out[6];
     sprintf(out, "%d\n", portno);
-    write(fd, out, sizeof(out));
+    ssize_t writeRes = write(fd, out, sizeof(out));
     close(fd);
+    if (writeRes != sizeof(out)) {
+        error("ERROR: could not write port number");
+    }
     sockaddr_storage cli_addr;
     socklen_t clilen = sizeof(cli_addr);
     int newsockfd = accept(handle.get(),
