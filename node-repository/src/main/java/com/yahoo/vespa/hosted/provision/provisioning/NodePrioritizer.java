@@ -146,7 +146,7 @@ public class NodePrioritizer {
             Node newNode = Node.createDockerNode(allocation.get().addresses(),
                                                  Collections.emptySet(),
                                                  allocation.get().hostname(),
-                                                 Optional.of(node.hostname()),
+                                                 node.hostname(),
                                                  getFlavor(requestedNodes),
                                                  NodeType.tenant);
             PrioritizableNode nodePri = toNodePriority(newNode, false, true);

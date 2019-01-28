@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -45,37 +46,29 @@ public final class Node {
     private Optional<Allocation> allocation;
 
     /** Temporary method until we can merge it with the other create method */
-    public static Node createDockerNode(Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
-        return new Node("fake-" + hostname, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.reserved,
-                        Optional.empty(), History.empty(), type);
+    public static Node createDockerNode(Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, String parentHostname, Flavor flavor, NodeType type) {
+        return new Builder("fake-" + hostname, ipAddresses, hostname, flavor, type)
+                .withIpAddressPool(ipAddressPool)
+                .withParentHostname(parentHostname)
+                .withState(State.reserved)
+                .build();
     }
 
-    /** Creates a node in the initial state (reserved for docker containers, provisioned otherwise) */
+    /** Creates a node in the initial state (provisioned) */
     public static Node create(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
-        return new Node(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
-                        Optional.empty(), History.empty(), type);
+        return new Builder(openStackId, ipAddresses, hostname, flavor, type)
+                .withIpAddressPool(ipAddressPool)
+                .withParentHostname(parentHostname)
+                .build();
     }
 
-    /** Do not use. Construct nodes by calling {@link NodeRepository#createNode} */
-    private Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
-                 Flavor flavor, Status status, State state, Allocation allocation, History history, NodeType type) {
-        this(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type);
-    }
-
+    /**
+     * Creates a node with all fields specified, necessary for serialization code.
+     *
+     * Others should use the {@code create} methods to create nodes, or the Builder to modify nodes.
+     */
     public Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
-                Flavor flavor, Status status, State state, Optional<Allocation> allocation,
-                History history, NodeType type) {
-        Objects.requireNonNull(id, "A node must have an ID");
-        requireNonEmpty(ipAddresses, "A node must have at least one valid IP address");
-        requireNonEmptyString(hostname, "A node must have a hostname");
-        requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
-        Objects.requireNonNull(flavor, "A node must have a flavor");
-        Objects.requireNonNull(status, "A node must have a status");
-        Objects.requireNonNull(state, "A null node state is not permitted");
-        Objects.requireNonNull(allocation, "A null node allocation is not permitted");
-        Objects.requireNonNull(history, "A null node history is not permitted");
-        Objects.requireNonNull(type, "A null node type is not permitted");
-
+                Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type) {
         this.ipAddresses = ImmutableSet.copyOf(ipAddresses);
         this.ipAddressPool = new IP.AddressPool(this, ipAddressPool);
         this.hostname = hostname;
@@ -87,6 +80,116 @@ public final class Node {
         this.allocation = allocation;
         this.history = history;
         this.type = type;
+    }
+
+    /** Helper for creating and mutating node objects. */
+    private static class Builder {
+        private final String hostname;
+
+        // Required but mutable fields
+        private String id;
+        private NodeType type;
+        private Flavor flavor;
+        private Set<String> ipAddresses;
+
+        private Set<String> ipAddressPool = Collections.emptySet();
+        private Optional<String> parentHostname = Optional.empty();
+        private Status status = Status.initial();
+        private State state = State.provisioned;
+        private History history = History.empty();
+        private Optional<Allocation> allocation = Optional.empty();
+
+        /** Creates a builder fairly well suited for a newly provisioned node (but see {@code create} and {@code createDockerNode}). */
+        private Builder(String id, Set<String> ipAddresses, String hostname, Flavor flavor, NodeType type) {
+            this.id = id;
+            this.ipAddresses = ipAddresses;
+            this.hostname = hostname;
+            this.flavor = flavor;
+            this.type = type;
+        }
+
+        private Builder(Node node) {
+            this(node.id, node.ipAddresses, node.hostname, node.flavor, node.type);
+            withIpAddressPool(node.ipAddressPool.asSet());
+            node.parentHostname.ifPresent(this::withParentHostname);
+            withStatus(node.status);
+            withState(node.state);
+            withHistory(node.history);
+            node.allocation.ifPresent(this::withAllocation);
+        }
+
+        public Builder withId(String id) {
+            Objects.requireNonNull(id, "A null id is not permitted");
+            this.id = id;
+            return this;
+        }
+
+        public Builder withType(NodeType nodeType) {
+            Objects.requireNonNull(nodeType, "A null type is not permitted");
+            this.type = nodeType;
+            return this;
+        }
+
+        public Builder withFlavor(Flavor flavor) {
+            Objects.requireNonNull(id, "A null flavor is not permitted");
+            this.flavor = flavor;
+            return this;
+        }
+
+        public Builder withIpAddresses(Set<String> ipAddresses) {
+            Objects.requireNonNull(ipAddresses, "A null ipAddresses is not permitted");
+            this.ipAddresses = ipAddresses;
+            return this;
+        }
+
+        public Builder withIpAddressPool(Set<String> ipAddressPool) {
+            Objects.requireNonNull(ipAddressPool, "ipAddressPool must be non-null");
+            this.ipAddressPool = ipAddressPool;
+            return this;
+        }
+
+        public Builder withParentHostname(String parentHostname) {
+            requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
+            this.parentHostname = Optional.of(parentHostname);
+            return this;
+        }
+
+        public Builder withParentHostname(Optional<String> parentHostname) {
+            parentHostname.ifPresent(this::withParentHostname);
+            return this;
+        }
+
+        public Builder withStatus(Status status) {
+            Objects.requireNonNull(status, "A node must have a status");
+            this.status = status;
+            return this;
+        }
+
+        public Builder withState(State state) {
+            Objects.requireNonNull(state, "A null node state is not permitted");
+            this.state = state;
+            return this;
+        }
+
+        public Builder withHistory(History history) {
+            Objects.requireNonNull(history, "A null node history is not permitted");
+            this.history = history;
+            return this;
+        }
+
+        public Builder withHistoryEvent(History.Event.Type type, Agent agent, Instant at) {
+            return withHistory(history.with(new History.Event(type, agent, at)));
+        }
+
+        public Builder withAllocation(Allocation allocation) {
+            Objects.requireNonNull(allocation, "A null node allocation is not permitted");
+            this.allocation = Optional.of(allocation);
+            return this;
+        }
+
+        public Node build() {
+            return new Node(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        }
     }
 
     /** Returns the IP addresses of this node */
@@ -129,6 +232,15 @@ public final class Node {
     /** Returns the current allocation of this, if any */
     public Optional<Allocation> allocation() { return allocation; }
 
+    /** Returns the current allocation when it must exist, or throw exception there is not allocation. */
+    private Allocation requireAllocation(String message) {
+        final Optional<Allocation> allocation = this.allocation;
+        if ( ! allocation.isPresent())
+            throw new IllegalStateException(message + " for  " + hostname() + ": The node is unallocated");
+
+        return allocation.get();
+    }
+
     /** Returns a history of the last events happening to this node */
     public History history() { return history; }
 
@@ -138,10 +250,12 @@ public final class Node {
      */
     public Node withWantToRetire(boolean wantToRetire, Instant at) {
         if (wantToRetire == status.wantToRetire()) return this;
-        return with(status.withWantToRetire(wantToRetire))
+        return new Builder(this)
+                .withStatus(status.withWantToRetire(wantToRetire))
                 // Also update history when we un-wantToRetire so the OperatorChangeApplicationMaintainer picks it
                 // up quickly
-                .with(history.with(new History.Event(History.Event.Type.wantToRetire, Agent.operator, at)));
+                .withHistoryEvent(History.Event.Type.wantToRetire, Agent.operator, at)
+                .build();
     }
 
     /**
@@ -149,9 +263,12 @@ public final class Node {
      * If the node was already retired it is returned as-is.
      */
     public Node retire(Agent agent, Instant retiredAt) {
-        if (allocation().get().membership().retired()) return this;
-        return with(allocation.get().retire())
-               .with(history.with(new History.Event(History.Event.Type.retired, agent, retiredAt)));
+        Allocation allocation = requireAllocation("Cannot retire");
+        if (allocation.membership().retired()) return this;
+        return new Builder(this)
+                .withAllocation(allocation.retire())
+                .withHistoryEvent(History.Event.Type.retired, agent, retiredAt)
+                .build();
     }
 
     /** Returns a copy of this node which is retired */
@@ -164,58 +281,56 @@ public final class Node {
 
     /** Returns a copy of this node which is not retired */
     public Node unretire() {
-        return with(allocation.get().unretire());
+        return with(requireAllocation("Cannot unretire").unretire());
     }
 
     /** Returns a copy of this with the restart generation set to generation */
     public Node withRestart(Generation generation) {
-        final Optional<Allocation> allocation = this.allocation;
-        if ( ! allocation.isPresent())
-            throw new IllegalArgumentException("Cannot set restart generation for  " + hostname() + ": The node is unallocated");
-
-        return with(allocation.get().withRestart(generation));
+        Allocation allocation = requireAllocation("Cannot set restart generation");
+        return new Builder(this).withAllocation(allocation.withRestart(generation)).build();
     }
 
     /** Returns a node with the status assigned to the given value */
     public Node with(Status status) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Builder(this).withStatus(status).build();
     }
 
     /** Returns a node with the type assigned to the given value */
     public Node with(NodeType type) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Builder(this).withType(type).build();
     }
 
     /** Returns a node with the flavor assigned to the given value */
     public Node with(Flavor flavor) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Builder(this).withFlavor(flavor).build();
     }
 
     /** Returns a copy of this with the reboot generation set to generation */
     public Node withReboot(Generation generation) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status.withReboot(generation), state,
-                        allocation, history, type);
+        return new Builder(this).withStatus(status.withReboot(generation)).build();
     }
 
     /** Returns a copy of this with the openStackId set */
     public Node withOpenStackId(String openStackId) {
-        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Builder(this).withId(openStackId).build();
     }
 
     /** Returns a copy of this with a history record saying it was detected to be down at this instant */
     public Node downAt(Instant instant) {
-        return with(history.with(new History.Event(History.Event.Type.down, Agent.system, instant)));
+        return new Builder(this).withHistoryEvent(History.Event.Type.down, Agent.system, instant).build();
     }
 
     /** Returns a copy of this with any history record saying it has been detected down removed */
     public Node up() {
-        return with(history.without(History.Event.Type.down));
+        return new Builder(this).withHistory(history.without(History.Event.Type.down)).build();
     }
 
     /** Returns a copy of this with allocation set as specified. <code>node.state</code> is *not* changed. */
     public Node allocate(ApplicationId owner, ClusterMembership membership, Instant at) {
-        return this.with(new Allocation(owner, membership, new Generation(0, 0), false))
-                   .with(history.with(new History.Event(History.Event.Type.reserved, Agent.application, at)));
+        return new Builder(this)
+                .withAllocation(new Allocation(owner, membership, new Generation(0, 0), false))
+                .withHistoryEvent(History.Event.Type.reserved, Agent.application, at)
+                .build();
     }
 
     /**
@@ -223,39 +338,36 @@ public final class Node {
      * Do not use this to allocate a node.
      */
     public Node with(Allocation allocation) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Builder(this).withAllocation(allocation).build();
     }
 
     /** Returns a copy of this node with the IP addresses set to the given value. */
     public Node withIpAddresses(Set<String> ipAddresses) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state,
-                        allocation, history, type);
+        return new Builder(this).withIpAddresses(ipAddresses).build();
     }
 
     /** Returns a copy of this node with IP address pool set to the given value. */
     public Node withIpAddressPool(Set<String> ipAddressPool) {
-        return new Node(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state,
-                        allocation, history, type);
+        return new Builder(this).withIpAddressPool(ipAddressPool).build();
     }
 
     /** Returns a copy of this node with the parent hostname assigned to the given value. */
     public Node withParentHostname(String parentHostname) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, Optional.of(parentHostname), flavor, status, state,
-                        allocation, history, type);
+        return new Builder(this).withParentHostname(parentHostname).build();
     }
 
     /** Returns a copy of this node with the current reboot generation set to the given number at the given instant */
     public Node withCurrentRebootGeneration(long generation, Instant instant) {
-        Status newStatus = status().withReboot(status().reboot().withCurrent(generation));
-        History newHistory = history();
+        Builder builder = new Builder(this)
+                .withStatus(status().withReboot(status().reboot().withCurrent(generation)));
         if (generation > status().reboot().current())
-            newHistory = history.with(new History.Event(History.Event.Type.rebooted, Agent.system, instant));
-        return this.with(newStatus).with(newHistory);
+            builder.withHistoryEvent(History.Event.Type.rebooted, Agent.system, instant);
+        return builder.build();
     }
 
     /** Returns a copy of this node with the given history. */
     public Node with(History history) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Builder(this).withHistory(history).build();
     }
 
     private static void requireNonEmptyString(Optional<String> value, String message) {

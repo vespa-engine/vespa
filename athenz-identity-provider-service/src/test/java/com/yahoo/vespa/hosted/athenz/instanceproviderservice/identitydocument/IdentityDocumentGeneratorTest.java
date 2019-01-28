@@ -66,7 +66,7 @@ public class IdentityDocumentGeneratorTest {
         Node containerNode = Node.createDockerNode(ImmutableSet.of("::1"),
                                                    new HashSet<>(),
                                                    containerHostname,
-                                                   Optional.of(parentHostname),
+                                                   parentHostname,
                                                    new MockNodeFlavors().getFlavorOrThrow("default"),
                                                    NodeType.tenant)
                 .with(allocation);

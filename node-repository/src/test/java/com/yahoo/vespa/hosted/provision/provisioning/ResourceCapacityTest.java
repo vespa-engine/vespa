@@ -5,8 +5,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.Status;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -86,8 +84,7 @@ public class ResourceCapacityTest {
     }
 
     private Node node(Flavor flavor) {
-        return new Node("fake",Collections.singleton("127.0.0.1"),
-                Collections.emptySet(), "hostA", Optional.empty(), flavor, Status.initial(),
-                Node.State.ready, Optional.empty(),  History.empty(), NodeType.host);
+        return Node.create("fake", Collections.singleton("127.0.0.1"), Collections.emptySet(), "hostA",
+                Optional.empty(), flavor, NodeType.host);
     }
 }
