@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeType;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.collectingAndThen;
@@ -29,42 +30,53 @@ public class NodeList {
 
     /** Returns the subset of nodes which are retired */
     public NodeList retired() {
-        return new NodeList(nodes.stream().filter(node -> node.allocation().get().membership().retired()).collect(Collectors.toList()));
+        return filter(node -> node.allocation().get().membership().retired());
     }
 
     /** Returns the subset of nodes which are not retired */
     public NodeList nonretired() {
-        return new NodeList(nodes.stream().filter(node -> ! node.allocation().get().membership().retired()).collect(Collectors.toList()));
+        return filter(node -> ! node.allocation().get().membership().retired());
     }
 
     /** Returns the subset of nodes of the given flavor */
     public NodeList flavor(String flavor) {
-        return new NodeList(nodes.stream().filter(node -> node.flavor().name().equals(flavor)).collect(Collectors.toList()));
+        return filter(node -> node.flavor().name().equals(flavor));
     }
 
     /** Returns the subset of nodes which does not have the given flavor */
     public NodeList notFlavor(String flavor) {
-        return new NodeList(nodes.stream().filter(node ->  ! node.flavor().name().equals(flavor)).collect(Collectors.toList()));
+        return filter(node ->  ! node.flavor().name().equals(flavor));
     }
 
     /** Returns the subset of nodes assigned to the given cluster type */
     public NodeList type(ClusterSpec.Type type) {
-        return new NodeList(nodes.stream().filter(node -> node.allocation().get().membership().cluster().type().equals(type)).collect(Collectors.toList()));
+        return filter(node -> node.allocation().get().membership().cluster().type().equals(type));
     }
 
     /** Returns the subset of nodes owned by the given application */
     public NodeList owner(ApplicationId application) {
-        return nodes.stream()
-                    .filter(node -> node.allocation().map(a -> a.owner().equals(application)).orElse(false))
-                    .collect(collectingAndThen(Collectors.toList(), NodeList::new));
+        return filter(node -> node.allocation().map(a -> a.owner().equals(application)).orElse(false));
     }
 
     /** Returns the subset of nodes matching the given node type */
     public NodeList nodeType(NodeType nodeType) {
-        return nodes.stream()
-                    .filter(node -> node.type() == nodeType)
-                    .collect(collectingAndThen(Collectors.toList(), NodeList::new));
+        return filter(node -> node.type() == nodeType);
     }
+
+    /** Returns the subset of nodes that are parents */
+    public NodeList parents() {
+        return filter(n -> n.parentHostname().isEmpty());
+    }
+
+    /** Returns the child nodes of the given parent node */
+    public NodeList childrenOf(String hostname) {
+        return filter(n -> n.parentHostname().map(hostname::equals).orElse(false));
+    }
+
+    public NodeList childrenOf(Node parent) {
+        return childrenOf(parent.hostname());
+    }
+
 
     /** Returns the parent nodes of the given child nodes */
     public NodeList parentsOf(Collection<Node> children) {
@@ -78,29 +90,13 @@ public class NodeList {
                        .collect(collectingAndThen(Collectors.toList(), NodeList::new));
     }
 
-    /** Returns the subset of nodes that are parents */
-    public NodeList parents() {
-        return nodes.stream()
-                    .filter(n -> !n.parentHostname().isPresent())
-                    .collect(collectingAndThen(Collectors.toList(), NodeList::new));
-    }
-
-    /** Returns the child nodes of the given parent node */
-    public NodeList childrenOf(String hostname) {
-        return nodes.stream()
-                    .filter(n -> n.parentHostname()
-                                  .map(hostName -> hostName.equals(hostname))
-                                  .orElse(false))
-                    .collect(collectingAndThen(Collectors.toList(), NodeList::new));
-    }
-
-    public NodeList childrenOf(Node parent) {
-        return childrenOf(parent.hostname());
-    }
-
     public int size() { return nodes.size(); }
 
     /** Returns the immutable list of nodes in this */
     public List<Node> asList() { return nodes; }
+
+    private NodeList filter(Predicate<Node> predicate) {
+        return nodes.stream().filter(predicate).collect(collectingAndThen(Collectors.toList(), NodeList::new));
+    }
 
 }
