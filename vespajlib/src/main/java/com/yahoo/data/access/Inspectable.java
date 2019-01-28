@@ -7,6 +7,8 @@ package com.yahoo.data.access;
  * impractical to implement the Inspector interface directly.
  **/
 public interface Inspectable {
-    /** get an Inspector exposing this object's structured data. */
-    public Inspector inspect();
+
+    /** Returns an Inspector exposing this object's structured data. */
+    Inspector inspect();
+
 }
