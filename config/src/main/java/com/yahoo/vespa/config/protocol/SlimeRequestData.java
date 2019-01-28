@@ -26,7 +26,6 @@ class SlimeRequestData {
     private static final String REQUEST_CLIENT_CONFIGID = "configId";
     private static final String REQUEST_CLIENT_HOSTNAME = "clientHostname";
     private static final String REQUEST_CURRENT_GENERATION = "currentGeneration";
-    private static final String REQUEST_WANTED_GENERATION = "wantedGeneration";
     private static final String REQUEST_CONFIG_MD5 = "configMD5";
     private static final String REQUEST_TRACE = "trace";
     private static final String REQUEST_TIMEOUT = "timeout";
@@ -73,10 +72,6 @@ class SlimeRequestData {
         return getRequestField(REQUEST_CLIENT_HOSTNAME).asString();
     }
 
-    long getWantedGeneration() {
-        return getRequestField(REQUEST_WANTED_GENERATION).asLong();
-    }
-
     long getTimeout() {
         return getRequestField(REQUEST_TIMEOUT).asLong();
     }
@@ -110,7 +105,6 @@ class SlimeRequestData {
         defSchema.serialize(request.setArray(REQUEST_DEF_CONTENT));
         request.setString(REQUEST_CONFIG_MD5, configMd5);
         request.setLong(REQUEST_CURRENT_GENERATION, generation);
-        request.setLong(REQUEST_WANTED_GENERATION, 0L); // TODO: Remove when latest version in use is 6.328.19
         request.setLong(REQUEST_TIMEOUT, timeout);
         request.setString(REQUEST_COMPRESSION_TYPE, compressionType.name());
         vespaVersion.ifPresent(version -> request.setString(REQUEST_VESPA_VERSION, version.toString()));

@@ -79,11 +79,6 @@ abstract class SlimeServerConfigRequest implements JRTServerConfigRequest {
     }
 
     @Override
-    public long getWantedGeneration() {
-        return requestData.getWantedGeneration();
-    }
-
-    @Override
     public String getClientHostName() {
         return requestData.getClientHostName();
     }

@@ -94,11 +94,6 @@ public abstract class SlimeClientConfigRequest implements JRTClientConfigRequest
     }
 
     @Override
-    public long getWantedGeneration() {
-        return requestData.getWantedGeneration();
-    }
-
-    @Override
     public Request getRequest() {
         return request;
     }

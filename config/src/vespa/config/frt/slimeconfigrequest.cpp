@@ -23,7 +23,6 @@ SlimeConfigRequest::SlimeConfigRequest(Connection * connection,
                                        const ConfigKey & key,
                                        const vespalib::string & configMd5,
                                        int64_t currentGeneration,
-                                       int64_t wantedGeneration,
                                        const vespalib::string & hostName,
                                        int64_t serverTimeout,
                                        const Trace & trace,
@@ -34,7 +33,7 @@ SlimeConfigRequest::SlimeConfigRequest(Connection * connection,
     : FRTConfigRequest(connection, key),
       _data()
 {
-    populateSlimeRequest(key, configMd5, currentGeneration, wantedGeneration, hostName, serverTimeout, trace, vespaVersion, protocolVersion, compressionType);
+    populateSlimeRequest(key, configMd5, currentGeneration, hostName, serverTimeout, trace, vespaVersion, protocolVersion, compressionType);
     _request->SetMethodName(methodName.c_str());
     _parameters.AddString(createJsonFromSlime(_data).c_str());
 }
@@ -50,7 +49,6 @@ void
 SlimeConfigRequest::populateSlimeRequest(const ConfigKey & key,
                                          const vespalib::string & configMd5,
                                          int64_t currentGeneration,
-                                         int64_t wantedGeneration,
                                          const vespalib::string & hostName,
                                          int64_t serverTimeout,
                                          const Trace & trace,
@@ -69,7 +67,6 @@ SlimeConfigRequest::populateSlimeRequest(const ConfigKey & key,
     root.setString(REQUEST_CLIENT_HOSTNAME, Memory(hostName));
     root.setString(REQUEST_CONFIG_MD5, Memory(configMd5));
     root.setLong(REQUEST_CURRENT_GENERATION, currentGeneration);
-    root.setLong(REQUEST_WANTED_GENERATION, wantedGeneration);
     root.setLong(REQUEST_TIMEOUT, serverTimeout);
     trace.serialize(root.setObject(REQUEST_TRACE));
     root.setString(REQUEST_COMPRESSION_TYPE, Memory(compressionTypeToString(compressionType)));

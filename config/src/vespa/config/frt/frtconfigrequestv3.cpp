@@ -13,13 +13,12 @@ FRTConfigRequestV3::FRTConfigRequestV3(Connection * connection,
                                        const ConfigKey & key,
                                        const vespalib::string & configMd5,
                                        int64_t currentGeneration,
-                                       int64_t wantedGeneration,
                                        const vespalib::string & hostName,
                                        int64_t serverTimeout,
                                        const Trace & trace,
                                        const VespaVersion & vespaVersion,
                                        const CompressionType & compressionType)
-    : SlimeConfigRequest(connection, key, configMd5, currentGeneration, wantedGeneration, hostName, serverTimeout, trace, vespaVersion, 3, compressionType, "config.v3.getConfig")
+    : SlimeConfigRequest(connection, key, configMd5, currentGeneration, hostName, serverTimeout, trace, vespaVersion, 3, compressionType, "config.v3.getConfig")
 {
 }
 
