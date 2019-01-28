@@ -9,7 +9,7 @@ import com.yahoo.prelude.hitfield.JSONString;
 /**
  * A hit field containing JSON structured data
  */
-public class StructDataField extends JSONField {
+public class StructDataField extends DocsumField {
 
     public StructDataField(String name) {
         super(name);
@@ -22,10 +22,17 @@ public class StructDataField extends JSONField {
 
     @Override
     public Object convert(Inspector value) {
-        if (value.type() == Type.STRING) {
-            return super.convert(value);
-        }
+        if (value.type() == Type.STRING)
+            return convertString(value);
         return new StructuredData(value);
+    }
+
+    private Object convertString(Inspector value) {
+        if (value.valid()) {
+            return new JSONString(value);
+        } else {
+            return new JSONString("");
+        }
     }
 
 }
