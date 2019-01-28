@@ -55,8 +55,11 @@ findroot () {
 }
 
 findhost () {
+    if [ "${VESPA_HOSTNAME}" = "" ] && type -t vespa-detect-hostname > /dev/null; then
+	VESPA_HOSTNAME=$(vespa-detect-hostname)
+    fi
     if [ "${VESPA_HOSTNAME}" = "" ]; then
-        VESPA_HOSTNAME=$(vespa-detect-hostname || hostname -f || hostname || echo "localhost") || exit 1
+        VESPA_HOSTNAME=$(hostname -f || hostname || echo "localhost") || exit 1
     fi
     validate="${VESPA_HOME}/bin/vespa-validate-hostname"
     if [ -f "$validate" ]; then
@@ -107,6 +110,12 @@ then
 fi
 
 not_a_configserver () {
+    if [ "$VESPA_CONFIGSERVERS" == localhost ]; then
+	# vepsa-print-default is a binary that prints VESPA_CONFIGSERVERS
+	# (split) if set
+	return 1
+    fi
+
     for hn in $(vespa-print-default configservers); do
         if [ "$hn" = localhost ] || [ "$hn" = "${VESPA_HOSTNAME}" ]; then
             return 1
@@ -124,26 +133,30 @@ fi
 fixlimits
 checkjava
 
-ZOOKEEPER_LOG_FILE="${VESPA_HOME}/logs/vespa/zookeeper.configserver.log"
+logDir="${VESPA_HOME}/logs/vespa"
+fixddir "$logDir"
+ZOOKEEPER_LOG_FILE="$logDir/zookeeper.configserver.log"
 rm -f $ZOOKEEPER_LOG_FILE*lck
 
 # common setup
-export VESPA_LOG_TARGET=file:${VESPA_HOME}/logs/vespa/vespa.log
+export VESPA_LOG_TARGET="file:$logDir/vespa.log"
 export VESPA_LOG_CONTROL_DIR="${VESPA_HOME}/var/db/vespa/logcontrol"
 export VESPA_LOG_CONTROL_FILE="${VESPA_HOME}/var/db/vespa/logcontrol/configserver.logcontrol"
 export VESPA_SERVICE_NAME=configserver
-export LD_LIBRARY_PATH=${VESPA_HOME}/lib64
 
-#Does not need fast allocation
-export MALLOC_ARENA_MAX=1
+fixddir "$VESPA_LOG_CONTROL_DIR"
 
-vespa-run-as-vespa-user ${VESPA_HOME}/libexec/vespa/start-logd
+if [ "$VESPA_HOSTNAME" != localhost ]; then
+    vespa-run-as-vespa-user ${VESPA_HOME}/libexec/vespa/start-logd
+fi
 
 # stuff for the configserver process:
 
 appdir="${VESPA_HOME}/conf/configserver-app"
-pidfile="${VESPA_HOME}/var/run/configserver.pid"
-cfpfile="${VESPA_HOME}/var/jdisc_core/configserver.properties"
+piddir="${VESPA_HOME}/var/run"
+pidfile="$piddir/configserver.pid"
+cfpdir="${VESPA_HOME}/var/jdisc_core"
+cfpfile="$cfpdir/configserver.properties"
 bundlecachedir="${VESPA_HOME}/var/vespa/bundlecache/configserver"
 
 export JAVAVM_LD_PRELOAD=
@@ -159,12 +172,37 @@ baseuserargs="$vespa_base__jvmargs_configserver"
 serveruserargs="$cloudconfig_server__jvmargs"
 jvmargs="$baseuserargs $serveruserargs"
 
-export LD_PRELOAD=${VESPA_HOME}/lib64/vespa/malloc/libvespamalloc.so
+if [ "$VESPA_HOSTNAME" == localhost ]; then
+    # TODO: test unprivileged?
+    if [ "$VESPA_USER" != "$USER" ]; then
+	echo "Running unprivileged localhost config server must be done as yourself"
+	exit 1
+    fi
+    fixddir "$piddir"
+    function vespa_runserver {
+	# Start in foreground to make it much easier to avoid orphaned config
+	# servers when developing on local machine.
+	exec "$@"
+	# "$@" &
+	# local pid="$!"
+	# echo "$pid" > "$pidfile"
+    }
+    COMMAND=(vespa_runserver)
+else
+    export LD_LIBRARY_PATH=${VESPA_HOME}/lib64
+    #Does not need fast allocation
+    export MALLOC_ARENA_MAX=1
 
+    export LD_PRELOAD=${VESPA_HOME}/lib64/vespa/malloc/libvespamalloc.so
+    COMMAND=(vespa-run-as-vespa-user vespa-runserver -s configserver -r 30 -p $pidfile --)
+
+fi
+
+fixddir $cfpdir
 printenv > $cfpfile
 fixddir $bundlecachedir
 
-vespa-run-as-vespa-user vespa-runserver -s configserver -r 30 -p $pidfile -- \
+"${COMMAND[@]}" \
 	java \
 	-Xms128m -Xmx2048m \
         -XX:+PreserveFramePointer \
@@ -190,6 +228,6 @@ vespa-run-as-vespa-user vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	-Djdisc.logger.level=ALL \
 	-Djdisc.logger.tag=jdisc/configserver \
 	-Dfile.encoding=UTF-8 \
-	-Dzookeeperlogfile=${VESPA_HOME}/logs/vespa/zookeeper.configserver.log \
+	-Dzookeeperlogfile="$ZOOKEEPER_LOG_FILE" \
 	-cp "$CP" \
 	com.yahoo.jdisc.core.StandaloneMain standalone-container-jar-with-dependencies.jar

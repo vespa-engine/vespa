@@ -23,7 +23,7 @@ consider_fallback () {
         : $1 already has value $oldvariablevalue
     elif [ -z "${2}" ]; then
         : proposed value "${2}" is empty
-    elif [ `expr match "$2" ".*'"` != 0 ]; then
+    elif [[ "$2" =~ "'" ]]; then
         : proposed value "${2}" contains a single-quote
     else
         eval "${1}='${2}'"
@@ -160,6 +160,7 @@ fixlimits () {
     if [ "${VESPA_UNPRIVILEGED}" = yes ]; then
 	return 0
     fi
+
     # number of open files:
     if varhasvalue file_descriptor_limit; then
        ulimit -n ${file_descriptor_limit} || exit 1
