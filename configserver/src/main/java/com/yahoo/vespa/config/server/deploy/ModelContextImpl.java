@@ -40,7 +40,7 @@ public class ModelContextImpl implements ModelContext {
     private final Optional<HostProvisioner> hostProvisioner;
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
-    
+
     /** The version of Vespa we are building a model for */
     private final Version modelVespaVersion;
 
@@ -86,9 +86,9 @@ public class ModelContextImpl implements ModelContext {
     @Override
     public Optional<ApplicationPackage> permanentApplicationPackage() { return permanentApplicationPackage; }
 
-    /** 
-     * Returns the host provisioner to use, or empty to use the default provisioner, 
-     * creating hosts from the application package defined hosts 
+    /**
+     * Returns the host provisioner to use, or empty to use the default provisioner,
+     * creating hosts from the application package defined hosts
      */
     // TODO: Don't allow empty here but create the right provisioner when this is set up instead
     @Override
@@ -129,6 +129,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
         private final boolean useDedicatedNodeForLogserver;
+        private final boolean useFdispatchByDefault;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -154,6 +155,8 @@ public class ModelContextImpl implements ModelContext {
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
             this.useDedicatedNodeForLogserver = Flags.USE_DEDICATED_NODE_FOR_LOGSERVER.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.useFdispatchByDefault = Flags.USE_FDISPATCH_BY_DEFAULT.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
@@ -196,6 +199,9 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
+
+        @Override
+        public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
     }
 
 }

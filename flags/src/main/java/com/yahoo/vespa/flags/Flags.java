@@ -83,6 +83,12 @@ public class Flags {
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
+    public static final UnboundBooleanFlag USE_FDISPATCH_BY_DEFAULT = defineFeatureFlag(
+            "use-fdispatch-by-default", true,
+            "Should fdispatch be used as the default instead of the java dispatcher",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

@@ -137,7 +137,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                                                String clusterName, ContentSearchCluster search) {
             List<ModelElement> indexedDefs = getIndexedSearchDefinitions(clusterElem);
             if (!indexedDefs.isEmpty()) {
-                IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0);
+                IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0, deployState);
                 isc.setRoutingSelector(clusterElem.childAsString("documents.selection"));
 
                 Double visibilityDelay = clusterElem.childAsDouble("engine.proton.visibility-delay");

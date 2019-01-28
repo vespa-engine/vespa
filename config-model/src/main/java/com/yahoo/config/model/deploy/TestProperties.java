@@ -35,6 +35,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean isBootstrap = false;
     private boolean isFirstTimeDeployment = false;
     private boolean useDedicatedNodeForLogserver = false;
+    private boolean useFdispatchByDefault = true;
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -48,6 +49,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean isBootstrap() { return isBootstrap; }
     @Override public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
+    @Override public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
 
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
