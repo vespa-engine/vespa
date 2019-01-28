@@ -255,7 +255,7 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "<concurrency>0.7</concurrency>",
                 "</feeding>"));
         assertEquals(0.7, t.searchNode.feeding.concurrency.doubleValue(), DELTA);
-        assertThat(getProtonCfg(t), containsString("feeding.concurrency 0.7"));
+        assertThat(getProtonCfg(t), containsString("feeding.concurrency 0.35"));
     }
 
 }

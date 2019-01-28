@@ -309,6 +309,14 @@ public class IndexedSearchCluster extends SearchCluster
     public List<DocumentDatabase> getDocumentDbs() {
         return documentDbs;
     }
+    public boolean hasDocumentDB(String name) {
+        for (DocumentDatabase db : documentDbs) {
+            if (db.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public void setSearchCoverage(SearchCoverage searchCoverage) {
         this.searchCoverage = searchCoverage;

@@ -25,7 +25,10 @@ public class DocType {
         return (global ? "<document mode='" + mode + "' type='" + type + "' global='true'/>" :
                 "<document mode='" + mode + "' type='" + type + "'/>");
     }
+    public String getType() { return type; }
 
+    public static DocType create(String type, String mode) { return new DocType(type, mode, false); }
+    public static DocType createGlobal(String type, String mode) { return new DocType(type, mode, true); }
     public static DocType storeOnly(String type) {
         return new DocType(type, "store-only", false);
     }

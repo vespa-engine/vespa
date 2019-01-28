@@ -186,19 +186,24 @@ distribution.redundancy long default=1
 distribution.searchablecopies long default=1
 
 ## Minimum initial size for any per document tables.
+## Deprecated -> Use documentdb.allocation.xxx
 grow.initial long default=1024 restart
 
 ## Grow factor in percent for any per document tables.
+## Deprecated -> Use documentdb.allocation.xxx
 grow.factor int default=20 restart
 
 ## Constant added when growing any per document tables.
+## Deprecated -> Use documentdb.allocation.xxx
 grow.add int default=1 restart
 
 ## The number of documents to amortize memory spike cost over
+## Deprecated -> Use documentdb.allocation.xxx
 grow.numdocs int default=10000 restart
 
 ## The grow factor used when allocating buffers in the array store
 ## used in multi-value attribute vectors to store underlying values.
+## Deprecated -> Use documentdb.allocation.xxx
 grow.multivalueallocfactor double default=0.2 restart
 
 ## Control cache size in bytes.
@@ -279,12 +284,39 @@ summary.read.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restar
 
 ## The name of the input document type
 documentdb[].inputdoctypename string
+## The type of the documentdb
+documentdb[].mode enum {INDEX, STREAMING, STORE_ONLY} default=INDEX
 ## The configid used to subscribe to config for this database.
 documentdb[].configid string
 ## How many seconds is allowed from document is received to it is visible in the index.
 documentdb[].visibilitydelay double default=0.0
 ## Whether this document type is globally distributed or not.
 documentdb[].global bool default=false
+## A number between 0.0 and 1.0 that specifies the concurrency when handling feed operations.
+## When set to 1.0 all cores on the cpu is utilized.
+##
+## 3 thread pools used for various aspect of feeding are configured based on this setting:
+##   1) Writing changes to attribute fields
+##   2) Inverting index fields
+##   3) Writing changes to index fields
+##
+## The number of threads in each of pools is calculated as:
+##   max(ceil((hwinfo.cpu.cores * feeding.concurrency)/3), indexing.threads)
+documentdb[].feeding.concurrency double default=0.2
+
+## Minimum initial size for any per document tables.
+documentdb[].allocation.initialnumdocs long default=1024
+## Grow factor for any per document tables.
+documentdb[].allocation.growfactor double default=0.2
+## Constant added when growing any per document tables.
+documentdb[].allocation.growbias int default=1
+
+## The number of documents to amortize memory spike cost over
+documentdb[].allocation.amortizecount int default=10000
+
+## The grow factor used when allocating buffers in the array store
+## used in multi-value attribute vectors to store underlying values.
+documentdb[].allocation.multivaluegrowfactor double default=0.2
 
 ## The interval of when periodic tasks should be run
 periodic.interval double default=3600.0
@@ -432,6 +464,7 @@ hwinfo.cpu.cores int default = 0 restart
 ##   max(ceil(hwinfo.cpu.cores * feeding.concurrency), summary.log.numthreads)
 ## The number of threads in each of pools 2-4 is calculated as:
 ##   max(ceil((hwinfo.cpu.cores * feeding.concurrency)/3), indexing.threads)
+## Deprecated -> Use documentdb.feeding.concurrency
 feeding.concurrency double default = 0.2 restart
 
 ## Adjustment to resource limit when determining if maintenance jobs can run.

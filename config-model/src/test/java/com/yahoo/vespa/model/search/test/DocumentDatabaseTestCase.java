@@ -12,13 +12,14 @@ import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
+import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Map;
@@ -31,6 +32,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class DocumentDatabaseTestCase {
 
+    private static final double SMALL = 0.00000000000001;
+
     private String vespaHosts = "<?xml version='1.0' encoding='utf-8' ?>" +
             "<hosts>  " +
             "  <host name='foo'>" +
@@ -38,7 +41,14 @@ public class DocumentDatabaseTestCase {
             "  </host>" +
             "</hosts>";
 
-    private String createVespaServices(List<String> sdNames, String mode) {
+    private String createVespaServices(List<String> sds, String mode) {
+        List<DocType> nameAndModes = new ArrayList<>(sds.size());
+        for (String sd : sds) {
+            nameAndModes.add(DocType.create(sd, mode));
+        }
+        return createVespaServicesXml(nameAndModes, "");
+    }
+    private String createVespaServicesXml(List<DocType> nameAndModes, String xmlTuning) {
         StringBuilder retval = new StringBuilder();
         retval.append("" +
                       "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -54,18 +64,22 @@ public class DocumentDatabaseTestCase {
                       "</container>\n" +
                       "<content version='1.0' id='test'>\n" +
                       "   <redundancy>1</redundancy>\n");
-        retval.append("   <documents>\n");
-        for (String sdName : sdNames) {
-            retval.append("").append("      <document type='").append(sdName).append("' mode='").append(mode).append("'");
-            retval.append("/>\n");
-        }
-        retval.append("   </documents>\n");
-        retval.append("" +
-                      "   <nodes>\n" +
-                      "      <node hostalias='node0' distribution-key='0'/>\n" +
-                      "   </nodes>\n" +
-                      "</content>\n" +
-                      "</services>\n");
+        retval.append(DocType.listToXml(nameAndModes));
+        retval.append(
+                "    <engine>\n" +
+                "      <proton>\n" +
+                "        <tuning>\n" +
+                "          <searchnode>\n" +
+                xmlTuning +
+                "          </searchnode>\n" +
+                "        </tuning\n>" +
+                "      </proton\n>" +
+                "    </engine\n>" +
+                "    <nodes>\n" +
+                "      <node hostalias='node0' distribution-key='0'/>\n" +
+                "    </nodes>\n" +
+                "  </content>\n" +
+                "</services>\n");
         return retval.toString();
     }
 
@@ -91,6 +105,100 @@ public class DocumentDatabaseTestCase {
     @Test
     public void requireThatWeCanHaveOneSDForIndexedMode() throws IOException, SAXException, ParseException {
         assertSingleSD("index");
+    }
+
+    private VespaModel createModel(List<DocType> nameAndModes, String xmlTuning) {
+        List<String> sds = new ArrayList<>(nameAndModes.size());
+        for (DocType nameAndMode : nameAndModes) {
+            sds.add(nameAndMode.getType());
+        }
+        return new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServicesXml(nameAndModes, xmlTuning),
+                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+    }
+
+    @Test
+    public void requireThatConcurrencyIsReflectedCorrectlyForDefault() {
+        verifyConcurrency("index", "", 0.2, 0.2);
+        verifyConcurrency("streaming", "", 0.4, 0.0);
+        verifyConcurrency("store-only", "", 0.4, 0.0);
+    }
+    @Test
+    public void requireThatMixedModeConcurrencyIsReflectedCorrectlyForDefault() {
+        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 0.4, Arrays.asList(0.2, 0.0));
+    }
+    @Test
+    public void requireThatMixedModeConcurrencyIsReflected() {
+        String feedTuning = "<feeding>" +
+                "  <concurrency>0.7</concurrency>" +
+                "</feeding>\n";
+        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), feedTuning, 0.7, Arrays.asList(0.35, 0.0));
+    }
+    @Test
+    public void requireThatConcurrencyIsReflected() {
+        String feedTuning = "<feeding>" +
+                            "  <concurrency>0.7</concurrency>" +
+                            "</feeding>\n";
+        verifyConcurrency("index", feedTuning, 0.35, 0.35);
+        verifyConcurrency("streaming", feedTuning, 0.7, 0.0);
+        verifyConcurrency("store-only", feedTuning, 0.7, 0.0);
+    }
+    private void verifyConcurrency(String mode, String xmlTuning, double global, double local) {
+        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local));
+    }
+    private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double global, List<Double> local) {
+        assertEquals(nameAndModes.size(), local.size());
+        VespaModel model = createModel(nameAndModes, xmlTuning);
+        ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
+        ProtonConfig proton = getProtonCfg(contentSearchCluster);
+        assertEquals(global, proton.feeding().concurrency(), SMALL);
+        assertEquals(local.size(), proton.documentdb().size());
+        for (int i = 0; i < local.size(); i++) {
+            assertEquals(local.get(i), proton.documentdb(i).feeding().concurrency(), SMALL);
+        }
+    }
+
+    @Test
+    public void requireThatModeIsSet() {
+        VespaModel model = createModel(Arrays.asList(DocType.create("a", "index"),
+                                                     DocType.create("b", "streaming"),
+                                                     DocType.create("c", "store-only")), "");
+        ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
+        ProtonConfig proton = getProtonCfg(contentSearchCluster);
+        assertEquals(3, proton.documentdb().size());
+        assertEquals(ProtonConfig.Documentdb.Mode.Enum.INDEX, proton.documentdb(0).mode());
+        assertEquals("a", proton.documentdb(0).inputdoctypename());
+        assertEquals(ProtonConfig.Documentdb.Mode.Enum.STREAMING, proton.documentdb(1).mode());
+        assertEquals("b", proton.documentdb(1).inputdoctypename());
+        assertEquals(ProtonConfig.Documentdb.Mode.Enum.STORE_ONLY, proton.documentdb(2).mode());
+        assertEquals("c", proton.documentdb(2).inputdoctypename());
+    }
+
+    private void verifyInitialDocumentCount(List<DocType> nameAndModes, String xmlTuning, long global, List<Long> local) {
+        assertEquals(nameAndModes.size(), local.size());
+        VespaModel model = createModel(nameAndModes, xmlTuning);
+        ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
+        ProtonConfig proton = getProtonCfg(contentSearchCluster);
+        assertEquals(global, proton.grow().initial());
+        assertEquals(local.size(), proton.documentdb().size());
+        for (int i = 0; i < local.size(); i++) {
+            assertEquals(local.get(i).longValue(), proton.documentdb(i).allocation().initialnumdocs());
+        }
+    }
+
+    @Test
+    public void requireThatMixedModeInitialDocumentCountIsReflectedCorrectlyForDefault() {
+        final long DEFAULT = 1024L;
+        verifyInitialDocumentCount(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")),
+                "", DEFAULT, Arrays.asList(DEFAULT, DEFAULT));
+    }
+    @Test
+    public void requireThatMixedModeInitialDocumentCountIsReflected() {
+        final long INITIAL = 1000000000L;
+        String feedTuning = "<resizing>" +
+                "  <initialdocumentcount>1000000000</initialdocumentcount>" +
+                "</resizing>\n";
+        verifyInitialDocumentCount(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")),
+                feedTuning, INITIAL, Arrays.asList(INITIAL, INITIAL));
     }
 
     private void assertDocTypeConfig(VespaModel model, String configId, String indexField, String attributeField) {
