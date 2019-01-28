@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This moves nodes from dirty to failed if they have been in dirty too long

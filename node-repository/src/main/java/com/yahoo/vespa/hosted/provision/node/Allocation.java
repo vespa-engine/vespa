@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.node;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.vespa.hosted.provision.Node;
 
 /**
  * The allocation of a node
