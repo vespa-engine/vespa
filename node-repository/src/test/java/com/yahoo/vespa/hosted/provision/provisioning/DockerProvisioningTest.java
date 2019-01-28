@@ -9,6 +9,8 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ParentHostNotReadyException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -65,6 +67,42 @@ public class DockerProvisioningTest {
         assertEquals(nodeCount, upgradedNodes.size());
         assertEquals(dockerFlavor, upgradedNodes.asList().get(0).flavor().canonicalName());
         assertEquals(hosts, upgradedHosts);
+    }
+
+    @Test
+    public void refuses_to_activate_on_non_active_host() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+
+        ApplicationId zoneApplication = tester.makeApplicationId();
+        List<Node> parents = tester.makeReadyVirtualDockerHosts(10, "large");
+        for (Node parent : parents)
+            tester.makeReadyVirtualDockerNodes(1, dockerFlavor, parent.hostname());
+
+        ApplicationId application1 = tester.makeApplicationId();
+        Version wantedVespaVersion = Version.fromString("6.39");
+        int nodeCount = 7;
+        List<HostSpec> nodes = tester.prepare(application1,
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                nodeCount, 1, dockerFlavor);
+        try {
+            tester.activate(application1, new HashSet<>(nodes));
+            fail("Expected the allocation to fail due to parent hosts not being active yet");
+        } catch (ParentHostNotReadyException ignored) { }
+
+        // Activate the zone-app, thereby allocating the parents
+        List<HostSpec> hosts = tester.prepare(zoneApplication,
+                ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("zone-app"), wantedVespaVersion, false),
+                Capacity.fromRequiredNodeType(NodeType.host), 1);
+        tester.activate(zoneApplication, hosts);
+
+        // Try allocating tenants again
+        nodes = tester.prepare(application1,
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                nodeCount, 1, dockerFlavor);
+        tester.activate(application1, new HashSet<>(nodes));
+
+        NodeList activeNodes = tester.getNodes(application1, Node.State.active);
+        assertEquals(nodeCount, activeNodes.size());
     }
 
     /** Exclusive app first, then non-exclusive: Should give the same result as below */

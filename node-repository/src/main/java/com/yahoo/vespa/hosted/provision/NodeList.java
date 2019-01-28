@@ -77,6 +77,10 @@ public class NodeList {
         return childrenOf(parent.hostname());
     }
 
+    /** Returns the subset of nodes that are in a given state */
+    public NodeList state(Node.State state) {
+        return filter(node -> node.state() == state);
+    }
 
     /** Returns the parent nodes of the given child nodes */
     public NodeList parentsOf(Collection<Node> children) {

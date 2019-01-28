@@ -50,6 +50,8 @@ public class AclProvisioningTest {
         // Populate repo
         tester.makeReadyNodes(10, "default");
         List<Node> dockerHost = tester.makeReadyNodes(1, "default", NodeType.host);
+        ApplicationId zoneApplication = tester.makeApplicationId();
+        deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.host));
         tester.makeReadyVirtualDockerNodes(1, "default", dockerHost.get(0).hostname());
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
 
