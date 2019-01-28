@@ -157,14 +157,28 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                         builder.indexing.read.io(ProtonConfig.Indexing.Read.Io.Enum.valueOf(read.name));
                     }
                 }
+            }
+            public static class Warmup implements ProtonConfig.Producer {
+                public double time = 0;
+                public boolean unpack = false;
+
+                @Override
+                public void getConfig(ProtonConfig.Builder builder) {
+                    if (time > 0) {
+                        builder.index.warmup.time(time);
+                        builder.index.warmup.unpack(unpack);
+                    }
+                }
 
             }
 
             public Io io;
+            public Warmup warmup;
 
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
                 if (io != null) io.getConfig(builder);
+                if (warmup != null) warmup.getConfig(builder);
             }
         }
 

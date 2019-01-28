@@ -168,6 +168,16 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                         io.search = Tuning.SearchNode.IoType.fromString(asString(e2));
                     }
                 }
+            } else if (equals("warmup", e)) {
+                sn.index.warmup = new Tuning.SearchNode.Index.Warmup();
+                Tuning.SearchNode.Index.Warmup warmup = sn.index.warmup;
+                for (Element e2 : XML.getChildren(e)) {
+                    if (equals("time", e2)) {
+                        warmup.time = Double.valueOf(asString(e2));
+                    } else if (equals("unpack", e2)) {
+                        warmup.unpack = Boolean.valueOf(asString(e2));
+                    }
+                }
             }
         }
     }
