@@ -86,7 +86,7 @@ class JobControllerApiHandlerHelper {
 
         Map<JobType, Run> running = steps.jobs().stream()
                                          .map(type -> controller.jobController().last(id, type))
-                                         .filter(Optional::isPresent).map(Optional::get)
+                                         .flatMap(Optional::stream)
                                          .filter(run -> ! run.hasEnded())
                                          .collect(toMap(run -> run.id().type(),
                                                         run -> run));

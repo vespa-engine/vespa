@@ -39,9 +39,7 @@ import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,7 +58,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
     private static final Logger log = Logger.getLogger(ConfigServerRestExecutorImpl.class.getName());
 
     private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(10);
-    private static final Set<String> HEADERS_TO_COPY = new HashSet<>(Arrays.asList("X-HTTP-Method-Override", "Content-Type"));
+    private static final Set<String> HEADERS_TO_COPY = Set.of("X-HTTP-Method-Override", "Content-Type");
 
     private final ZoneRegistry zoneRegistry;
     private final ServiceIdentityProvider sslContextProvider;

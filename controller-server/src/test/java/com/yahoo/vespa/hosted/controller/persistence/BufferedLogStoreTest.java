@@ -2,17 +2,18 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
-import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -42,23 +43,23 @@ public class BufferedLogStoreTest {
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), -1));
 
         logs.append(id.application(), id.type(), Step.deployReal, Collections.singletonList(entry));
-        assertEquals(Arrays.asList(entry0),
+        assertEquals(List.of(entry0),
                      logs.readActive(id.application(), id.type(), -1).get(Step.deployReal));
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), 0));
 
         logs.append(id.application(), id.type(), Step.deployReal, Collections.singletonList(entry));
-        assertEquals(Arrays.asList(entry0, entry1),
+        assertEquals(List.of(entry0, entry1),
                      logs.readActive(id.application(), id.type(), -1).get(Step.deployReal));
-        assertEquals(Arrays.asList(entry1),
+        assertEquals(List.of(entry1),
                      logs.readActive(id.application(), id.type(), 0).get(Step.deployReal));
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), 1));
 
         logs.append(id.application(), id.type(), Step.deployReal, Collections.singletonList(entry));
-        assertEquals(Arrays.asList(entry0, entry1, entry2),
+        assertEquals(List.of(entry0, entry1, entry2),
                      logs.readActive(id.application(), id.type(), -1).get(Step.deployReal));
-        assertEquals(Arrays.asList(entry1, entry2),
+        assertEquals(List.of(entry1, entry2),
                      logs.readActive(id.application(), id.type(), 0).get(Step.deployReal));
-        assertEquals(Arrays.asList(entry2),
+        assertEquals(List.of(entry2),
                      logs.readActive(id.application(), id.type(), 1).get(Step.deployReal));
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), 2));
 
@@ -72,11 +73,11 @@ public class BufferedLogStoreTest {
         assertArrayEquals(new long[]{}, buffer.getLogChunkIds(id.application(), id.type()).toArray());
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), -1));
 
-        assertEquals(Arrays.asList(entry0, entry1, entry2),
+        assertEquals(List.of(entry0, entry1, entry2),
                      logs.readFinished(id, -1).get().get(Step.deployReal));
-        assertEquals(Arrays.asList(entry1, entry2),
+        assertEquals(List.of(entry1, entry2),
                      logs.readFinished(id, 0).get().get(Step.deployReal));
-        assertEquals(Arrays.asList(entry2),
+        assertEquals(List.of(entry2),
                      logs.readFinished(id, 1).get().get(Step.deployReal));
         assertEquals(Collections.emptyList(), logs.readFinished(id, 2).get().get(Step.deployReal));
     }

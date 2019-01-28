@@ -8,16 +8,15 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -30,7 +29,7 @@ public class ZoneApiTest extends ControllerContainerTest {
 
     private static final AthenzIdentity HOSTED_VESPA_OPERATOR = AthenzUser.fromUserId("johnoperator");
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/zone/v2/responses/";
-    private static final List<ZoneId> zones = Arrays.asList(
+    private static final List<ZoneId> zones = List.of(
             ZoneId.from(Environment.prod, RegionName.from("us-north-1")),
             ZoneId.from(Environment.dev, RegionName.from("us-north-2")),
             ZoneId.from(Environment.test, RegionName.from("us-north-3")),
@@ -52,7 +51,7 @@ public class ZoneApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void test_requests() throws Exception {
+    public void test_requests() {
         // GET /zone/v2
         tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/zone/v2"),
                                                 new File("root.json"));
@@ -111,7 +110,7 @@ public class ZoneApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void test_invalid_requests() throws Exception {
+    public void test_invalid_requests() {
         // POST /zone/v2/prod/us-north-34/nodes/v2
         tester.containerTester().assertResponse(hostedOperatorRequest("http://localhost:8080/zone/v2/prod/us-north-42/nodes/v2",
                                                             new byte[0], Method.POST),

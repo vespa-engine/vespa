@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,17 +30,17 @@ public class MemoryNameService implements NameService {
     }
 
     @Override
-    public Optional<Record> findRecord(Record.Type type, RecordName name) {
+    public List<Record> findRecords(Record.Type type, RecordName name) {
         return records.values().stream()
-                .filter(record -> record.type() == type && record.name().equals(name))
-                .findFirst();
+                      .filter(record -> record.type() == type && record.name().equals(name))
+                      .collect(Collectors.toUnmodifiableList());
     }
 
     @Override
-    public List<Record> findRecord(Record.Type type, RecordData data) {
+    public List<Record> findRecords(Record.Type type, RecordData data) {
         return records.values().stream()
-                .filter(record -> record.type() == type && record.data().equals(data))
-                .collect(Collectors.toList());
+                      .filter(record -> record.type() == type && record.data().equals(data))
+                      .collect(Collectors.toUnmodifiableList());
     }
 
     @Override

@@ -189,7 +189,7 @@ public class JobController {
         return copyOf(applications().stream()
                                     .flatMap(id -> Stream.of(JobType.values())
                                                          .map(type -> last(id, type))
-                                                         .filter(Optional::isPresent).map(Optional::get)
+                                                         .flatMap(Optional::stream)
                                                          .filter(run -> ! run.hasEnded()))
                                     .iterator());
     }
@@ -340,7 +340,7 @@ public class JobController {
         return badges.overview(id,
                                steps.jobs().stream()
                                     .map(type -> last(id, type))
-                                    .filter(Optional::isPresent).map(Optional::get)
+                                    .flatMap(Optional::stream)
                                     .collect(toList()));
     }
 

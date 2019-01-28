@@ -45,7 +45,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -646,7 +645,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         private void log(String... messages) {
-            log(Arrays.asList(messages));
+            log(List.of(messages));
         }
 
         private void log(List<String> messages) {

@@ -16,7 +16,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -60,12 +59,12 @@ public class OsUpgraderTest {
         );
 
         // Bootstrap system
-        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4, zone5),
+        tester.configServer().bootstrap(List.of(zone1, zone2, zone3, zone4, zone5),
                                         singletonList(SystemApplication.zone),
                                         Optional.of(NodeType.host));
 
         // Add system applications that exist in a real system, but are currently not upgraded
-        tester.configServer().addNodes(Arrays.asList(zone1, zone2, zone3, zone4, zone5),
+        tester.configServer().addNodes(List.of(zone1, zone2, zone3, zone4, zone5),
                                        Collections.singletonList(SystemApplication.configServer),
                                        Optional.empty());
 

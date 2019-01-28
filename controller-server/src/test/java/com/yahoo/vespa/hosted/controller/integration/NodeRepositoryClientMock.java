@@ -10,8 +10,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepo
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * @author bjorncs
@@ -37,14 +37,14 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
     public NodeList listNodes(ZoneId zone, boolean recursive) {
         NodeRepositoryNode nodeA = createNodeA();
         NodeRepositoryNode nodeB = createNodeB();
-        return new NodeList(Arrays.asList(nodeA, nodeB));
+        return new NodeList(List.of(nodeA, nodeB));
     }
 
     @Override
     public NodeList listNodes(ZoneId zone, String tenant, String applicationId, String instance) {
         NodeRepositoryNode nodeA = createNodeA();
         NodeRepositoryNode nodeB = createNodeB();
-        return new NodeList(Arrays.asList(nodeA, nodeB));
+        return new NodeList(List.of(nodeA, nodeB));
     }
 
     private static NodeRepositoryNode createNodeA() {

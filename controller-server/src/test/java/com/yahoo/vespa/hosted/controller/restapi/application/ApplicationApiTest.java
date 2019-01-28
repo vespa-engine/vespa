@@ -71,7 +71,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1485,13 +1484,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void updateContactInformation() {
-        Contact contact = new Contact(URI.create("www.contacts.tld/1234"), URI.create("www.properties.tld/1234"), URI.create("www.issues.tld/1234"), Arrays.asList(Arrays.asList("alice"), Arrays.asList("bob")), "queue", Optional.empty());
+        Contact contact = new Contact(URI.create("www.contacts.tld/1234"), URI.create("www.properties.tld/1234"), URI.create("www.issues.tld/1234"), List.of(List.of("alice"), List.of("bob")), "queue", Optional.empty());
         tester.controller().tenants().lockIfPresent(TenantName.from("tenant2"), lockedTenant -> tester.controller().tenants().store(lockedTenant.with(contact)));
     }
 
     private void registerContact(long propertyId) {
         PropertyId p = new PropertyId(String.valueOf(propertyId));
-        contactRetriever().addContact(p, new Contact(URI.create("www.issues.tld/" + p.id()), URI.create("www.contacts.tld/" + p.id()), URI.create("www.properties.tld/" + p.id()), Arrays.asList(Collections.singletonList("alice"),
+        contactRetriever().addContact(p, new Contact(URI.create("www.issues.tld/" + p.id()), URI.create("www.contacts.tld/" + p.id()), URI.create("www.properties.tld/" + p.id()), List.of(Collections.singletonList("alice"),
                 Collections.singletonList("bob")), "queue", Optional.empty()));
     }
 

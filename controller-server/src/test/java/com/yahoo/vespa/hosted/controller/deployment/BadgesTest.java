@@ -12,9 +12,9 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
@@ -55,12 +55,12 @@ public class BadgesTest {
                                 "/" + systemTest.jobName() + ";" + Badges.blue +
                                 "/%20;" + Badges.blue + ";s%7B" + Badges.white + "%7D" +
                                 "/%20;" + Badges.purple + ";s%7B" + Badges.white + "%7D"),
-                     badges.historic(id, Optional.of(success), Arrays.asList(success, running)));
+                     badges.historic(id, Optional.of(success), List.of(success, running)));
 
         assertEquals(URI.create("https://badges.tld/api/tenant.application;" + Badges.dark +
                                 "/" + systemTest.jobName() + ";" + Badges.purple +
                                 "/" + stagingTest.jobName() + ";" + Badges.red),
-                     badges.overview(id, Arrays.asList(running, failure)));
+                     badges.overview(id, List.of(running, failure)));
     }
 
 }

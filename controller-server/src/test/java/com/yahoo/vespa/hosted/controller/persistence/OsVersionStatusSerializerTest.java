@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -28,11 +27,11 @@ public class OsVersionStatusSerializerTest {
         Version version2 = Version.fromString("7.2");
         Map<OsVersion, List<OsVersionStatus.Node>> versions = new TreeMap<>();
 
-        versions.put(new OsVersion(version1, CloudName.defaultName()), Arrays.asList(
+        versions.put(new OsVersion(version1, CloudName.defaultName()), List.of(
                 new OsVersionStatus.Node(HostName.from("node1"), version1, Environment.prod, RegionName.from("us-west")),
                 new OsVersionStatus.Node(HostName.from("node2"), version1, Environment.prod, RegionName.from("us-east"))
         ));
-        versions.put(new OsVersion(version2, CloudName.defaultName()), Arrays.asList(
+        versions.put(new OsVersion(version2, CloudName.defaultName()), List.of(
                 new OsVersionStatus.Node(HostName.from("node3"), version2, Environment.prod, RegionName.from("us-west")),
                 new OsVersionStatus.Node(HostName.from("node4"), version2, Environment.prod, RegionName.from("us-east"))
 

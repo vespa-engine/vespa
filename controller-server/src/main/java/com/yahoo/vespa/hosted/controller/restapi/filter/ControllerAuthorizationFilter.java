@@ -17,8 +17,8 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
-import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -30,7 +30,6 @@ import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.WebApplicationException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -52,7 +51,7 @@ import static com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities.SC
 @Provides("ControllerAuthorizationFilter")
 public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
-    private static final List<Method> WHITELISTED_METHODS = Arrays.asList(GET, OPTIONS, HEAD);
+    private static final List<Method> WHITELISTED_METHODS = List.of(GET, OPTIONS, HEAD);
 
     private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 

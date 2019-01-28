@@ -30,10 +30,10 @@ public class VersionStatusSerializerTest {
         DeploymentStatistics statistics = new DeploymentStatistics(
                 Version.fromString("5.0"),
                 Collections.singletonList(ApplicationId.from("tenant1", "failing1", "default")),
-                Arrays.asList(ApplicationId.from("tenant2", "success1", "default"),
-                              ApplicationId.from("tenant2", "success2", "default")),
-                Arrays.asList(ApplicationId.from("tenant1", "failing1", "default"),
-                              ApplicationId.from("tenant2", "success2", "default"))
+                List.of(ApplicationId.from("tenant2", "success1", "default"),
+                        ApplicationId.from("tenant2", "success2", "default")),
+                List.of(ApplicationId.from("tenant1", "failing1", "default"),
+                        ApplicationId.from("tenant2", "success2", "default"))
         );
         vespaVersions.add(new VespaVersion(statistics, "dead", Instant.now(), false, false,
                                            asHostnames("cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));

@@ -29,7 +29,6 @@ import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,7 +83,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     public void bootstrap(List<ZoneId> zones, SystemApplication... applications) {
-        bootstrap(zones, Arrays.asList(applications), Optional.empty());
+        bootstrap(zones, List.of(applications), Optional.empty());
     }
 
     public void bootstrap(List<ZoneId> zones, List<SystemApplication> applications, Optional<NodeType> type) {
@@ -215,7 +214,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                 info.time  = 2;
                 info.message = "The info";
 
-                return Arrays.asList(warning, info);
+                return List.of(warning, info);
             }
 
             @Override

@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -80,15 +79,15 @@ public class MetricsReporter extends Maintainer {
             query += " AND hosted_system:" + system;
         }
         PartialNodeResult nodeResult = chefClient.partialSearchNodes(query,
-                Arrays.asList(
+                List.of(
                         AttributeMapping.simpleMapping("fqdn"),
                         AttributeMapping.simpleMapping("ohai_time"),
-                        AttributeMapping.deepMapping("tenant", Arrays.asList("hosted", "owner", "tenant")),
-                        AttributeMapping.deepMapping("application", Arrays.asList("hosted", "owner", "application")),
-                        AttributeMapping.deepMapping("instance", Arrays.asList("hosted", "owner", "instance")),
-                        AttributeMapping.deepMapping("environment", Arrays.asList("hosted", "environment")),
-                        AttributeMapping.deepMapping("region", Arrays.asList("hosted", "region")),
-                        AttributeMapping.deepMapping("system", Arrays.asList("hosted", "system"))
+                        AttributeMapping.deepMapping("tenant", List.of("hosted", "owner", "tenant")),
+                        AttributeMapping.deepMapping("application", List.of("hosted", "owner", "application")),
+                        AttributeMapping.deepMapping("instance", List.of("hosted", "owner", "instance")),
+                        AttributeMapping.deepMapping("environment", List.of("hosted", "environment")),
+                        AttributeMapping.deepMapping("region", List.of("hosted", "region")),
+                        AttributeMapping.deepMapping("system", List.of("hosted", "system"))
                 ));
 
         // The above search will return a correct list if the system is CD. However for main, it will

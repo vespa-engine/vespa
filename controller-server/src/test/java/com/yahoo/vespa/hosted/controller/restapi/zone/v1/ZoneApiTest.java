@@ -3,15 +3,14 @@ package com.yahoo.vespa.hosted.controller.restapi.zone.v1;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -20,7 +19,7 @@ import java.util.List;
 public class ZoneApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/zone/v1/responses/";
-    private static final List<ZoneId> zones = Arrays.asList(
+    private static final List<ZoneId> zones = List.of(
             ZoneId.from(Environment.prod, RegionName.from("us-north-1")),
             ZoneId.from(Environment.dev, RegionName.from("us-north-2")),
             ZoneId.from(Environment.test, RegionName.from("us-north-3")),
@@ -39,7 +38,7 @@ public class ZoneApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void test_requests() throws Exception {
+    public void test_requests() {
         // GET /zone/v1
         tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/zone/v1"),
                                                 new File("root.json"));
@@ -54,7 +53,7 @@ public class ZoneApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void test_invalid_requests() throws Exception {
+    public void test_invalid_requests() {
         // GET /zone/v1/environment/prod/default: No default region
         tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/zone/v1/environment/prod/default"),
                                                 new File("no-default-region.json"),
