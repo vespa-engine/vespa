@@ -89,6 +89,16 @@ makeIndexConfig(const ProtonConfig::Index & cfg) {
     return index::IndexConfig(WarmupConfig(cfg.warmup.time, cfg.warmup.unpack), cfg.maxflushed, cfg.cache.size);
 }
 
+const ProtonConfig::Documentdb *
+findDocumentDB(const ProtonConfig::DocumentdbVector & documentDBs, const vespalib::string & docType) {
+    for (const auto & dbCfg : documentDBs) {
+        if (dbCfg.inputdoctypename == docType) {
+            return & dbCfg;
+        }
+    }
+    return nullptr;
+}
+
 }
 
 template <typename FunctionType>
@@ -124,7 +134,10 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _bucketSpace(bucketSpace),
       _baseDir(baseDir + "/" + _docTypeName.toString()),
       // Only one thread per executor, or performDropFeedView() will fail.
-      _writeServiceConfig(ThreadingServiceConfig::make(protonCfg, hwInfo.cpu())),
+      _writeServiceConfig(
+              ThreadingServiceConfig::make(protonCfg,
+                      findDocumentDB(protonCfg.documentdb, docTypeName.getName())->feeding.concurrency,
+                      hwInfo.cpu())),
       _writeService(_writeServiceConfig.indexingThreads(),
                     indexing_thread_stack_size,
                     _writeServiceConfig.defaultTaskLimit()),
@@ -165,8 +178,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
 {
     assert(configSnapshot);
 
-    LOG(debug, "DocumentDB(%s): Creating database in directory '%s'",
-        _docTypeName.toString().c_str(), _baseDir.c_str());
+    LOG(debug, "DocumentDB(%s): Creating database in directory '%s'", _docTypeName.toString().c_str(), _baseDir.c_str());
 
     _feedHandler.init(_config_store->getOldestSerialNum());
     _feedHandler.setBucketDBHandler(&_subDBs.getBucketDBHandler());

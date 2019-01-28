@@ -20,13 +20,10 @@ private:
     uint32_t _semiUnboundTaskLimit;
 
 private:
-    ThreadingServiceConfig(uint32_t indexingThreads_,
-                           uint32_t defaultTaskLimit_,
-                           uint32_t semiUnboundTaskLimit_);
+    ThreadingServiceConfig(uint32_t indexingThreads_, uint32_t defaultTaskLimit_, uint32_t semiUnboundTaskLimit_);
 
 public:
-    static ThreadingServiceConfig make(const ProtonConfig &cfg,
-                                       const HwInfo::Cpu &cpuInfo);
+    static ThreadingServiceConfig make(const ProtonConfig &cfg, double concurrency, const HwInfo::Cpu &cpuInfo);
 
     uint32_t indexingThreads() const { return _indexingThreads; }
     uint32_t defaultTaskLimit() const { return _defaultTaskLimit; }
