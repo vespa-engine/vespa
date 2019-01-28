@@ -210,6 +210,9 @@
       <node hostalias="host1">
         <server-port id="myServer" port="4090" />
       </node>
+      <environment-variables>
+        <TEST_VAR>7</TEST_VAR>
+      </environment-variables>
     </nodes>
   </jdisc>
 
