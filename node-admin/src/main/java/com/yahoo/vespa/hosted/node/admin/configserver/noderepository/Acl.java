@@ -32,9 +32,9 @@ public class Acl {
      * @param trustedNetworks Networks (in CIDR notation) to trust
      */
     public Acl(Set<Integer> trustedPorts, Set<Node> trustedNodes, Set<String> trustedNetworks) {
-        this.trustedNodes = Set.copyOf(Objects.requireNonNull(trustedNodes, "trustedNodes must be non-null"));
-        this.trustedPorts = Set.copyOf(Objects.requireNonNull(trustedPorts, "trustedPorts must be non-null"));
-        this.trustedNetworks = Set.copyOf(Objects.requireNonNull(trustedNetworks, "trustedNetworks must be non-null"));
+        this.trustedNodes = copyOfNullable(trustedNodes);
+        this.trustedPorts = copyOfNullable(trustedPorts);
+        this.trustedNetworks = copyOfNullable(trustedNetworks);
     }
 
     public Acl(Set<Integer> trustedPorts, Set<Node> trustedNodes) {
@@ -128,6 +128,13 @@ public class Acl {
         return addresses.stream()
                         .filter(version::match)
                         .collect(Collectors.toUnmodifiableSet());
+    }
+
+    private static <T> Set<T> copyOfNullable(Set<T> set) {
+        if (set == null) {
+            return Collections.emptySet();
+        }
+        return Set.copyOf(set);
     }
 
     public static class Node {
