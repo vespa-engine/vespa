@@ -32,6 +32,7 @@ public class FlagsDbImpl implements FlagsDb {
         curator.create(ROOT_PATH);
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         this.cache = curator.createDirectoryCache(ROOT_PATH.getAbsolute(), true, false, executorService);
+        cache.start();
     }
 
     @Override
