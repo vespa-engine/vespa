@@ -22,7 +22,7 @@ public class IPTablesEditorTest {
 
     @Test
     public void filter_set_wanted_rules() {
-        Acl acl = new Acl.Builder().withTrustedPorts(22).withTrustedNode("hostname", "3001::1").build();
+        Acl acl = new Acl.Builder().withTrustedPorts(22).withTrustedNode(new Acl.Node("hostname", "3001::1")).build();
         FilterTableLineEditor filterLineEditor = FilterTableLineEditor.from(acl, IPVersion.IPv6);
 
         String currentFilterTable = "-P INPUT ACCEPT\n" +

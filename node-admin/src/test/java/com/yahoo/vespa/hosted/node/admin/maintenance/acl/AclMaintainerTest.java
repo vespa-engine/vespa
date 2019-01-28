@@ -227,7 +227,7 @@ public class AclMaintainerTest {
                 .forEach(aclBuilder::withTrustedPorts);
 
         Arrays.stream(addresses)
-                .forEach(address -> aclBuilder.withTrustedNode("hostname", address));
+                .forEach(address -> aclBuilder.withTrustedNode(new Acl.Node("hostname", address)));
 
         Map<String, Acl> map = new HashMap<>();
         map.put(containerHostname, aclBuilder.build());

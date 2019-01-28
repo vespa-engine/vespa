@@ -1,8 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.network;
 
+import com.google.common.net.InetAddresses;
+
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Strong type IPv4 and IPv6 with common executables for ip related commands.
@@ -13,6 +17,8 @@ public enum IPVersion {
 
     IPv6(6, "ip6tables", "ip -6", "ipv6-icmp", "/128", "icmp6-port-unreachable", "ip6tables-restore"),
     IPv4(4, "iptables", "ip", "icmp", "/32", "icmp-port-unreachable", "iptables-restore");
+
+    private static Pattern cidrNotationPattern = Pattern.compile("/\\d+$");
 
     IPVersion(int version, String iptablesCmd, String ipCmd,
               String icmpProtocol, String singleHostCidr, String icmpPortUnreachable,
@@ -59,7 +65,20 @@ public enum IPVersion {
         return this == IPVersion.get(address);
     }
 
+    public boolean match(String address) {
+        return this == IPVersion.get(address);
+    }
+
+    public static IPVersion get(String address) {
+        Matcher matcher = cidrNotationPattern.matcher(address);
+        if (matcher.find()) {
+            address = matcher.replaceFirst("");
+        }
+        return get(InetAddresses.forString(address));
+    }
+
     public static IPVersion get(InetAddress address) {
         return address instanceof Inet4Address ? IPv4 : IPv6;
     }
+
 }
