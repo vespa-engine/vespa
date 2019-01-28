@@ -16,6 +16,9 @@ maxNodesDownPerGroup int default=0
 # Distribution policy for group selection
 distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ROUNDROBIN
 
+# Should fdispatch be used as the default dispatcher
+useFdispatchByDefault bool default=true
+
 # Is multi-level dispatch configured for this cluster
 useMultilevelDispatch bool default=false
 

@@ -36,7 +36,6 @@ import java.util.Set;
  * @author ollvir
  */
 public class Dispatcher extends AbstractComponent {
-    private static final boolean INTERNAL_BY_DEFAULT = false;
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
 
     /** If enabled, this internal dispatcher will be preferred over fdispatch whenever possible */
@@ -48,6 +47,7 @@ public class Dispatcher extends AbstractComponent {
     private final LoadBalancer loadBalancer;
     private final RpcResourcePool rpcResourcePool;
     private final boolean multilevelDispatch;
+    private final boolean internalDispatchByDefault;
 
     public Dispatcher(String clusterId, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
         this(new SearchCluster(clusterId, dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus), dispatchConfig);
@@ -59,6 +59,7 @@ public class Dispatcher extends AbstractComponent {
                 dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
         this.rpcResourcePool = new RpcResourcePool(dispatchConfig);
         this.multilevelDispatch = dispatchConfig.useMultilevelDispatch();
+        this.internalDispatchByDefault = !dispatchConfig.useFdispatchByDefault();
     }
 
     /** Returns the search cluster this dispatches to */
@@ -77,7 +78,7 @@ public class Dispatcher extends AbstractComponent {
         if (rpcInvoker.isPresent()) {
             return rpcInvoker;
         }
-        if (result.getQuery().properties().getBoolean(dispatchInternal, INTERNAL_BY_DEFAULT)) {
+        if (result.getQuery().properties().getBoolean(dispatchInternal, internalDispatchByDefault)) {
             Optional<FillInvoker> fs4Invoker = fs4InvokerFactory.getFillInvoker(result);
             if (fs4Invoker.isPresent()) {
                 return fs4Invoker;
@@ -87,7 +88,7 @@ public class Dispatcher extends AbstractComponent {
     }
 
     public Optional<SearchInvoker> getSearchInvoker(Query query, FS4InvokerFactory fs4InvokerFactory) {
-        if (multilevelDispatch || ! query.properties().getBoolean(dispatchInternal, INTERNAL_BY_DEFAULT)) {
+        if (multilevelDispatch || ! query.properties().getBoolean(dispatchInternal, internalDispatchByDefault)) {
             return Optional.empty();
         }
 

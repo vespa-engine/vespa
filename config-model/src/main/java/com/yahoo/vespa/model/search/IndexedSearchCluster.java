@@ -106,6 +106,7 @@ public class IndexedSearchCluster extends SearchCluster
     private final SimpleConfigProducer dispatchParent;
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
+    private final boolean useFdispatchByDefault;
     private List<SearchNode> searchNodes = new ArrayList<>();
 
     /**
@@ -118,11 +119,12 @@ public class IndexedSearchCluster extends SearchCluster
         return routingSelector;
     }
 
-    public IndexedSearchCluster(AbstractConfigProducer parent, String clusterName, int index) {
+    public IndexedSearchCluster(AbstractConfigProducer parent, String clusterName, int index, DeployState deployState) {
         super(parent, clusterName, index);
         unionCfg = new UnionConfiguration(this, documentDbs);
         dispatchParent = new SimpleConfigProducer(this, "dispatchers");
         rootDispatch =  new DispatchGroup(this);
+        useFdispatchByDefault = deployState.getProperties().useFdispatchByDefault();
     }
 
     @Override
@@ -422,6 +424,7 @@ public class IndexedSearchCluster extends SearchCluster
         }
         builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
         builder.useMultilevelDispatch(useMultilevelDispatchSetup());
+        builder.useFdispatchByDefault(useFdispatchByDefault);
         builder.useLocalNode(tuning.dispatch.useLocalNode);
         builder.searchableCopies(rootDispatch.getSearchableCopies());
         if (searchCoverage != null) {

@@ -32,10 +32,10 @@ public interface ModelContext {
     FileRegistry getFileRegistry();
     Properties properties();
     default Optional<File> appDir() { return Optional.empty();}
-    
+
     /** The Vespa version this model is built for */
     Version modelVespaVersion();
-    
+
     /** The Vespa version we want nodes to become */
     Version wantedNodeVespaVersion();
 
@@ -53,6 +53,7 @@ public interface ModelContext {
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
         boolean useDedicatedNodeForLogserver();
+        boolean useFdispatchByDefault();
     }
 
 }

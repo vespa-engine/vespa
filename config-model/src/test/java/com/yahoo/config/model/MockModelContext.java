@@ -75,7 +75,7 @@ public class MockModelContext implements ModelContext {
     public FileRegistry getFileRegistry() {
         return new MockFileRegistry();
     }
-    
+
     @Override
     public Version modelVespaVersion() { return new Version(6); }
 
@@ -136,6 +136,9 @@ public class MockModelContext implements ModelContext {
 
             @Override
             public boolean useDedicatedNodeForLogserver() { return false; }
-        };
+
+            @Override
+            public boolean useFdispatchByDefault() { return true; }
+};
     }
 }

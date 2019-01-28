@@ -219,6 +219,9 @@ public class VespaModelFactoryTest {
 
                     @Override
                     public boolean useDedicatedNodeForLogserver() { return false; }
+
+                    @Override
+                    public boolean useFdispatchByDefault() { return true; }
                 };
             }
         };
