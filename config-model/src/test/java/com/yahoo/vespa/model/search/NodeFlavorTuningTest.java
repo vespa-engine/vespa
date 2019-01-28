@@ -43,7 +43,7 @@ public class NodeFlavorTuningTest {
         return configFromMemorySetting(gb, builder);
     }
     @Test
-    public void require_that_initial_is_dependent_of_mode() {
+    public void require_that_initial_numdocs_is_dependent_of_mode() {
         ProtonConfig cfg = getProtonMemoryConfig(Arrays.asList(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")), 24);
         assertEquals(1024, cfg.grow().initial());
         assertEquals(3, cfg.documentdb().size());
