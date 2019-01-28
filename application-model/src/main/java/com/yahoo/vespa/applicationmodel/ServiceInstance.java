@@ -37,8 +37,6 @@ public class ServiceInstance {
         return hostName;
     }
 
-    // For backwards compatibility, remove once all clients use serviceStatusInfo (convergence checker)
-    @JsonProperty("serviceStatus")
     public ServiceStatus serviceStatus() {
         return serviceStatusInfo.serviceStatus();
     }
