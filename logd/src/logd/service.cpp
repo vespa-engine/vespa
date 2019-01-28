@@ -131,7 +131,11 @@ Services::dumpState(int fildesc)
             }
             if (pos < 1000) {
                 buf[pos-1]='\n';
-                write(fildesc, buf, pos);
+                ssize_t writeRes = write(fildesc, buf, pos);
+                if (writeRes != pos) {
+                    LOG(warning, "Write failed, res=%zd, should be %d: %s",
+                        writeRes, pos, strerror(errno));
+                }
             } else {
                 LOG(warning, "buffer to small to dumpstate[%s, %s]", service, key);
             }
