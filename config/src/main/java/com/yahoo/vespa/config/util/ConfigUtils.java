@@ -15,6 +15,7 @@ import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,9 +29,9 @@ public class ConfigUtils {
     private static final Pattern doublePattern = Pattern.compile(".*double.*range.*");
     private static final Pattern spaceBeforeCommaPatter = Pattern.compile("\\s,");
     public static final String intFormattedMax = new DecimalFormat("#.#").format(0x7fffffff);
-    public static final String intFormattedMin = new DecimalFormat("#.#").format(-0x80000000);
+    public static final String intFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-0x80000000);
     public static final String doubleFormattedMax = new DecimalFormat("#.#").format(1e308);
-    public static final String doubleFormattedMin = new DecimalFormat("#.#").format(-1e308);
+    public static final String doubleFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-1e308);
 
     /**
      * Computes Md5 hash of a list of strings. The only change to input lines before
