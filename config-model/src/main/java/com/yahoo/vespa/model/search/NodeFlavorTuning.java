@@ -39,7 +39,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     private void getConfig(ProtonConfig.Documentdb.Builder builder) {
         ProtonConfig.Documentdb dbCfg = builder.build();
         if (dbCfg.mode() != ProtonConfig.Documentdb.Mode.Enum.INDEX) {
-            long numDocs = (long)nodeFlavor.getMinMainMemoryAvailableGb()*GB/40L;
+            long numDocs = (long)nodeFlavor.getMinMainMemoryAvailableGb()*GB/64L;
             builder.allocation.initialnumdocs(numDocs);
         }
     }
