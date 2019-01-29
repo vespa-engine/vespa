@@ -3,9 +3,10 @@
 #include "tensormodifyupdate.h"
 #include <vespa/document/base/field.h>
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/util/serializableexceptions.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -15,7 +16,6 @@
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
-using vespalib::tensor::TypedBinaryFormat;
 using vespalib::tensor::Tensor;
 using vespalib::make_string;
 
@@ -35,7 +35,7 @@ TensorModifyUpdate::TensorModifyUpdate(const TensorModifyUpdate &rhs)
 {
 }
 
-TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<vespalib::tensor::Tensor> &&operand)
+TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> &&operand)
     : _operation(operation),
       _operand(std::move(operand))
 {
@@ -47,7 +47,7 @@ TensorModifyUpdate &
 TensorModifyUpdate::operator=(const TensorModifyUpdate &rhs)
 {
     _operation = rhs._operation;
-    _operand = rhs._operand->clone();
+    _operand.reset(rhs._operand->clone());
     return *this;
 }
 
@@ -69,7 +69,7 @@ TensorModifyUpdate::operator==(const ValueUpdate &other) const
     if (_operation != o._operation) {
         return false;
     }
-    if (!_operand->equals(*o._operand)) {
+    if (*_operand != *o._operand) {
         return false;
     }
     return true;
@@ -119,7 +119,7 @@ TensorModifyUpdate::print(std::ostream& out, bool verbose, const std::string& in
 }
 
 void
-TensorModifyUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostream & stream)
+TensorModifyUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &type, nbostream & stream)
 {
     uint8_t op;
     stream >> op;
@@ -129,8 +129,17 @@ TensorModifyUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostr
         throw DeserializeException(msg.str(), VESPA_STRLOC);
     }
     _operation = static_cast<Operation>(op);
-    auto tensor = TypedBinaryFormat::deserialize(stream);
-    _operand = std::move(tensor);
+    auto operand = type.createFieldValue();
+    if (operand->inherits(TensorFieldValue::classId)) {
+        _operand.reset(static_cast<TensorFieldValue *>(operand.release()));
+    } else {
+        std::string err = make_string(
+                "Expected tensor field value, got a \"%s\" field "
+                "value.", operand->getClass().name());
+        throw IllegalStateException(err, VESPA_STRLOC);
+    }
+    VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
+    deserializer.read(*_operand);
 }
 
 TensorModifyUpdate*
