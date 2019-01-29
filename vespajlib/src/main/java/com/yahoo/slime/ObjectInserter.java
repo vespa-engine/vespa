@@ -7,7 +7,7 @@ import java.util.Optional;
  * Helper class for inserting values into an ObjectValue.
  * For justification read Inserter documentation.
  **/
-final class ObjectInserter implements Inserter {
+public final class ObjectInserter implements Inserter {
     private Cursor target;
     private int symbol;
     private Optional<String> symbolName = Optional.empty();

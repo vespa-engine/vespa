@@ -5,7 +5,7 @@ package com.yahoo.slime;
  * Helper class for inserting values into an ArrayValue.
  * For justification read Inserter documentation.
  **/
-final class ArrayInserter implements Inserter {
+public final class ArrayInserter implements Inserter {
     private Cursor target;
     public final ArrayInserter adjust(Cursor c) {
         target = c;
