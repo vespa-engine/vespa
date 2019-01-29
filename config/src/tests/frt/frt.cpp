@@ -270,12 +270,11 @@ TEST("require that v3 request is correctly initialized") {
     ConfigKey key = ConfigKey::create<MyConfig>("foobi");
     vespalib::string md5 = "mymd5";
     int64_t currentGeneration = 3;
-    int64_t wantedGeneration = 4;
     vespalib::string hostName = "myhost";
     int64_t timeout = 3000;
     Trace traceIn(3);
     traceIn.trace(2, "Hei");
-    FRTConfigRequestV3 v3req(&conn, key, md5, currentGeneration, wantedGeneration, hostName,
+    FRTConfigRequestV3 v3req(&conn, key, md5, currentGeneration, hostName,
                              timeout, traceIn, VespaVersion::fromString("1.2.3"), CompressionType::LZ4);
     ASSERT_TRUE(v3req.verifyState(ConfigState(md5, 3, false)));
     ASSERT_FALSE(v3req.verifyState(ConfigState(md5, 2, false)));
@@ -298,7 +297,6 @@ TEST("require that v3 request is correctly initialized") {
     EXPECT_EQUAL(key.getConfigId(), root[REQUEST_CLIENT_CONFIGID].asString().make_string());
     EXPECT_EQUAL(hostName, root[REQUEST_CLIENT_HOSTNAME].asString().make_string());
     EXPECT_EQUAL(currentGeneration, root[REQUEST_CURRENT_GENERATION].asLong());
-    EXPECT_EQUAL(wantedGeneration, root[REQUEST_WANTED_GENERATION].asLong());
     EXPECT_EQUAL(md5, root[REQUEST_CONFIG_MD5].asString().make_string());
     EXPECT_EQUAL(timeout, root[REQUEST_TIMEOUT].asLong());
     EXPECT_EQUAL("LZ4", root[REQUEST_COMPRESSION_TYPE].asString().make_string());

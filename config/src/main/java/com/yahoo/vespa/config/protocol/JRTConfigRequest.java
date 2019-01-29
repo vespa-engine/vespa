@@ -86,13 +86,6 @@ public interface JRTConfigRequest {
     long getProtocolVersion();
 
     /**
-     * Get the wanted generation for this request.
-     *
-     * @return a generation that client would like.
-     */
-    long getWantedGeneration();
-
-    /**
      * Get the host name of the client that is requesting config.
      * @return hostname of the client.
      */
