@@ -80,26 +80,30 @@ class Activator {
     private static void validateParentHosts(ApplicationId application, NodeList nodes, List<Node> potentialChildren) {
         Set<String> parentHostnames = potentialChildren.stream()
                 .map(Node::parentHostname)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .collect(Collectors.toSet());
 
         Map<String, Node> parentsByHostname = nodes.asList().stream()
                 .filter(node -> parentHostnames.contains(node.hostname()))
                 .collect(Collectors.toMap(Node::hostname, Function.identity()));
 
-        List<String> errors = potentialChildren.stream()
-                .map(child -> child.parentHostname()
+        List<Node> unavailableChildren = potentialChildren.stream()
+                .filter(child -> child.parentHostname()
                         .map(parentsByHostname::get)
-                        .filter(parent -> parent.state() != Node.State.active)
-                        .map(parent -> String.format("Refusing to activate %s: Its parent (%s) is not active (is %s).",
-                                child.hostname(), parent.hostname(), parent.state())))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                        .map(parent -> parent.state() != Node.State.active)
+                        .orElse(false))
                 .collect(Collectors.toList());
 
-        if (!errors.isEmpty())
-            throw new ParentHostNotReadyException("Activation of " + application + " failed: " + String.join(" ", errors));
+        if (!unavailableChildren.isEmpty()) {
+            String detailedError = unavailableChildren.stream()
+                    .map(child -> child.parentHostname()
+                            .map(parentsByHostname::get)
+                            .map(parent -> String.format("Refusing to activate %s: Its parent (%s) is not active (is %s).",
+                                    child.hostname(), parent.hostname(), parent.state())))
+                    .flatMap(Optional::stream)
+                    .collect(Collectors.joining(" "));
+            throw new ParentHostNotReadyException("Activation of " + application + " failed: " + detailedError);
+        }
     }
 
     private List<Node> retainHostsInList(Set<String> hosts, List<Node> nodes) {
