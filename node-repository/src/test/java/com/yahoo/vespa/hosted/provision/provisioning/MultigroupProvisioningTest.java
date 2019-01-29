@@ -166,7 +166,7 @@ public class MultigroupProvisioningTest {
 
         // Check invariants for all nodes
         Set<Integer> allIndexes = new HashSet<>();
-        for (Node node : tester.getNodes(application, Node.State.active).asList()) {
+        for (Node node : tester.getNodes(application, Node.State.active)) {
             // Node indexes must be unique
             int index = node.allocation().get().membership().index();
             assertFalse("Node indexes are unique", allIndexes.contains(index));
@@ -178,7 +178,7 @@ public class MultigroupProvisioningTest {
         // Count unretired nodes and groups of the requested flavor
         Set<Integer> indexes = new HashSet<>();
         Map<ClusterSpec.Group, Integer> nonretiredGroups = new HashMap<>();
-        for (Node node : tester.getNodes(application, Node.State.active).nonretired().flavor(flavor).asList()) {
+        for (Node node : tester.getNodes(application, Node.State.active).nonretired().flavor(flavor)) {
             indexes.add(node.allocation().get().membership().index());
 
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
@@ -193,7 +193,7 @@ public class MultigroupProvisioningTest {
             assertEquals("Group size", (long)nodeCount / wantedGroups, (long)groupSize);
 
         Map<ClusterSpec.Group, Integer> allGroups = new HashMap<>();
-        for (Node node : tester.getNodes(application, Node.State.active).flavor(flavor).asList()) {
+        for (Node node : tester.getNodes(application, Node.State.active).flavor(flavor)) {
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
             allGroups.put(group, nonretiredGroups.getOrDefault(group, 0) + 1);
         }

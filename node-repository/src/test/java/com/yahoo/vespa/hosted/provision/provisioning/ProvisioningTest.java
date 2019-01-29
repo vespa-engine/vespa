@@ -279,8 +279,8 @@ public class ProvisioningTest {
         SystemState state2 = prepare(application1, 2, 2, 4, 4, "dockerSmall", tester);
         tester.activate(application1, state2.allHosts);
 
-        assertEquals(12, tester.getNodes(application1, Node.State.active).asList().size());
-        for (Node node : tester.getNodes(application1, Node.State.active).asList())
+        assertEquals(12, tester.getNodes(application1, Node.State.active).size());
+        for (Node node : tester.getNodes(application1, Node.State.active))
             assertEquals("Node changed flavor in place", "dockerSmall", node.flavor().name());
         assertEquals("No nodes are retired",
                      0, tester.getNodes(application1, Node.State.active).retired().size());
