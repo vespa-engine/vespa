@@ -396,7 +396,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      */
     private void setFrom(String prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
         prefix = prefix + getPrefix(arguments);
-        System.out.println("Setting properties under " + prefix);
         for (FieldDescription field : arguments.fields().values()) {
             String fullName = prefix + field.getName();
             if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
