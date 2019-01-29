@@ -22,11 +22,10 @@ struct Fixture {
         builder.indexing.threads = baseLineIndexingThreads;
         builder.indexing.tasklimit = 500;
         builder.indexing.semiunboundtasklimit = 50000;
-        builder.feeding.concurrency = 0.5;
         return builder;
     }
     ThreadingServiceConfig make(uint32_t cpuCores) {
-        return ThreadingServiceConfig::make(cfg, HwInfo::Cpu(cpuCores));
+        return ThreadingServiceConfig::make(cfg, 0.5, HwInfo::Cpu(cpuCores));
     }
     void assertIndexingThreads(uint32_t expIndexingThreads, uint32_t cpuCores) {
         EXPECT_EQUAL(expIndexingThreads, make(cpuCores).indexingThreads());
