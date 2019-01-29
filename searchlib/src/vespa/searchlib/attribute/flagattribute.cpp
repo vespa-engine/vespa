@@ -108,7 +108,7 @@ bool FlagAttributeT<B>::onLoad()
 {
     for (size_t i(0), m(_bitVectors.size()); i < m; i++) {
         _bitVectorStore[i].reset();
-        _bitVectors[i] = NULL;
+        _bitVectors[i] = nullptr;
     }
     _bitVectorSize = 0;
     return B::onLoad();
@@ -125,7 +125,7 @@ void FlagAttributeT<B>::setNewValues(DocId doc, const std::vector<typename B::WT
         typename B::WType value = values[i];
         uint32_t offset = getOffset(value);
         BitVector * bv = _bitVectors[offset];
-        if (bv == NULL) {
+        if (bv == nullptr) {
             assert(_bitVectorSize >= this->getNumDocs());
             _bitVectorStore[offset] = BitVector::create(_bitVectorSize);
             _bitVectors[offset] = _bitVectorStore[offset].get();
@@ -143,7 +143,7 @@ FlagAttributeT<B>::setNewBVValue(DocId doc, typename B::WType::ValueType value)
 {
     uint32_t offset = getOffset(value);
     BitVector * bv = _bitVectors[offset];
-    if (bv == NULL) {
+    if (bv == nullptr) {
         assert(_bitVectorSize >= this->getNumDocs());
             _bitVectorStore[offset] = BitVector::create(_bitVectorSize);
         _bitVectors[offset] = _bitVectorStore[offset].get();
@@ -195,7 +195,7 @@ FlagAttributeT<B>::ensureGuardBit()
 {
     for (uint32_t i = 0; i < _bitVectors.size(); ++i) {
         BitVector * bv = _bitVectors[i];
-        if (bv != NULL) {
+        if (bv != nullptr) {
             ensureGuardBit(*bv);
         }
     }
@@ -207,7 +207,7 @@ FlagAttributeT<B>::clearGuardBit(DocId doc)
 {
     for (uint32_t i = 0; i < _bitVectors.size(); ++i) {
         BitVector * bv = _bitVectors[i];
-        if (bv != NULL) {
+        if (bv != nullptr) {
             bv->clearBit(doc); // clear guard bit and start using this doc id
         }
     }
@@ -218,10 +218,10 @@ void
 FlagAttributeT<B>::resizeBitVectors(uint32_t neededSize)
 {
     const GrowStrategy & gs = this->getConfig().getGrowStrategy();
-    uint32_t newSize = neededSize + (neededSize * gs.getDocsGrowPercent() / 100) + gs.getDocsGrowDelta();
+    uint32_t newSize = neededSize + (neededSize * gs.getDocsGrowFactor()) + gs.getDocsGrowDelta();
     for (uint32_t i = 0; i < _bitVectors.size(); ++i) {
         BitVector * bv = _bitVectors[i];
-        if (bv != NULL) {
+        if (bv != nullptr) {
             vespalib::GenerationHeldBase::UP hold(bv->grow(newSize));
             ensureGuardBit(*bv);
             _bitVectorHolder.hold(std::move(hold));
@@ -249,18 +249,16 @@ FlagAttributeT<B>::SearchContext::SearchContext(QueryTermSimple::UP qTerm, const
 
 template <typename B>
 SearchIterator::UP
-FlagAttributeT<B>::SearchContext::createIterator(fef::TermFieldMatchData *
-                                                 matchData,
-                                                 bool strict)
+FlagAttributeT<B>::SearchContext::createIterator(fef::TermFieldMatchData * matchData, bool strict)
 {
     if (valid()) {
         if (_low == _high) {
             const Attribute & attr(static_cast<const Attribute &>(attribute()));
             const BitVector * bv(attr.getBitVector(_low));
-            if (bv != NULL) {
+            if (bv != nullptr) {
                 return BitVectorIterator::create(bv, attr.getCommittedDocIdLimit(), *matchData, strict);
             } else {
-                return SearchIterator::UP(new queryeval::EmptySearch());
+                return std::make_unique<queryeval::EmptySearch>();
             }
         } else {
             SearchIterator::UP flagIterator(
@@ -270,7 +268,7 @@ FlagAttributeT<B>::SearchContext::createIterator(fef::TermFieldMatchData *
             return flagIterator;
         }
     } else {
-        return SearchIterator::UP(new queryeval::EmptySearch());
+        return std::make_unique<queryeval::EmptySearch>();
     }
 }
 
