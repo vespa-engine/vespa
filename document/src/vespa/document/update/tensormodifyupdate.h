@@ -13,26 +13,26 @@ namespace document {
 class TensorModifyUpdate : public ValueUpdate {
 public:
     /** Declare all types of tensor modify updates. */
-    enum class Operator { // Operation to be applied to matching tensor cells
+    enum class Operation { // Operation to be applied to matching tensor cells
         REPLACE = 0,
         ADD     = 1,
         MUL     = 2,
-        MAX_NUM_OPERATORS = 3
+        MAX_NUM_OPERATIONS = 3
     };
 private:
-    Operator _operator;
+    Operation _operation;
     std::unique_ptr<vespalib::tensor::Tensor> _operand;
 
     TensorModifyUpdate();
     TensorModifyUpdate(const TensorModifyUpdate &rhs);
     ACCEPT_UPDATE_VISITOR;
 public:
-    TensorModifyUpdate(Operator op, std::unique_ptr<vespalib::tensor::Tensor> &&operand);
+    TensorModifyUpdate(Operation operation, std::unique_ptr<vespalib::tensor::Tensor> &&operand);
     ~TensorModifyUpdate() override;
     TensorModifyUpdate &operator=(const TensorModifyUpdate &rhs);
     TensorModifyUpdate &operator=(TensorModifyUpdate &&rhs);
     bool operator==(const ValueUpdate &other) const override;
-    Operator getOperator() const { return _operator; }
+    Operation getOperation() const { return _operation; }
     const vespalib::tensor::Tensor &getOperand() const { return *_operand; }
     void checkCompatibility(const Field &field) const override;
     bool applyTo(FieldValue &value) const override;

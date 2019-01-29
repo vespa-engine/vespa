@@ -24,19 +24,19 @@ namespace document {
 IMPLEMENT_IDENTIFIABLE(TensorModifyUpdate, ValueUpdate);
 
 TensorModifyUpdate::TensorModifyUpdate()
-    : _operator(Operator::MAX_NUM_OPERATORS),
+    : _operation(Operation::MAX_NUM_OPERATIONS),
       _operand()
 {
 }
 
 TensorModifyUpdate::TensorModifyUpdate(const TensorModifyUpdate &rhs)
-    : _operator(rhs._operator),
+    : _operation(rhs._operation),
       _operand(rhs._operand->clone())
 {
 }
 
-TensorModifyUpdate::TensorModifyUpdate(Operator op, std::unique_ptr<vespalib::tensor::Tensor> &&operand)
-    : _operator(op),
+TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<vespalib::tensor::Tensor> &&operand)
+    : _operation(operation),
       _operand(std::move(operand))
 {
 }
@@ -46,7 +46,7 @@ TensorModifyUpdate::~TensorModifyUpdate() = default;
 TensorModifyUpdate &
 TensorModifyUpdate::operator=(const TensorModifyUpdate &rhs)
 {
-    _operator = rhs._operator;
+    _operation = rhs._operation;
     _operand = rhs._operand->clone();
     return *this;
 }
@@ -54,7 +54,7 @@ TensorModifyUpdate::operator=(const TensorModifyUpdate &rhs)
 TensorModifyUpdate &
 TensorModifyUpdate::operator=(TensorModifyUpdate &&rhs)
 {
-    _operator = rhs._operator;
+    _operation = rhs._operation;
     _operand = std::move(rhs._operand);
     return *this;
 }
@@ -66,7 +66,7 @@ TensorModifyUpdate::operator==(const ValueUpdate &other) const
         return false;
     }
     const TensorModifyUpdate& o(static_cast<const TensorModifyUpdate&>(other));
-    if (_operator != o._operator) {
+    if (_operation != o._operation) {
         return false;
     }
     if (!_operand->equals(*o._operand)) {
@@ -92,7 +92,7 @@ TensorModifyUpdate::applyTo(FieldValue& value) const
     if (value.inherits(TensorFieldValue::classId)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         auto &oldTensor = tensorFieldValue.getAsTensorPtr();
-        // TODO: Apply operator with operand
+        // TODO: Apply operation with operand
         auto newTensor = oldTensor->clone();
         tensorFieldValue = std::move(newTensor);
     } else {
@@ -123,12 +123,12 @@ TensorModifyUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostr
 {
     uint8_t op;
     stream >> op;
-    if (op >= static_cast<uint8_t>(Operator::MAX_NUM_OPERATORS)) {
+    if (op >= static_cast<uint8_t>(Operation::MAX_NUM_OPERATIONS)) {
         vespalib::asciistream msg;
         msg << "Unrecognized tensor modify update operation " << static_cast<uint32_t>(op);
         throw DeserializeException(msg.str(), VESPA_STRLOC);
     }
-    _operator = static_cast<Operator>(op);
+    _operation = static_cast<Operation>(op);
     auto tensor = TypedBinaryFormat::deserialize(stream);
     _operand = std::move(tensor);
 }

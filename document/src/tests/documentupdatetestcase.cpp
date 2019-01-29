@@ -178,7 +178,7 @@ FieldValue::UP createTensorFieldValueWith2Cells() {
 
 std::unique_ptr<TensorModifyUpdate> createTensorModifyUpdate() {
     auto tensor = createTensor({ {{{"x", "8"}, {"y", "9"}}, 2} }, {"x", "y"});
-    auto update = std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operator::REPLACE, std::move(tensor));
+    auto update = std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::REPLACE, std::move(tensor));
     return update;
 }
 
