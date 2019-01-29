@@ -69,6 +69,17 @@ public final class Node {
      */
     public Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type) {
+        Objects.requireNonNull(id, "A node must have an ID");
+        requireNonEmpty(ipAddresses, "A node must have at least one valid IP address");
+        requireNonEmptyString(hostname, "A node must have a hostname");
+        requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
+        Objects.requireNonNull(flavor, "A node must have a flavor");
+        Objects.requireNonNull(status, "A node must have a status");
+        Objects.requireNonNull(state, "A null node state is not permitted");
+        Objects.requireNonNull(allocation, "A null node allocation is not permitted");
+        Objects.requireNonNull(history, "A null node history is not permitted");
+        Objects.requireNonNull(type, "A null node type is not permitted");
+
         this.ipAddresses = ImmutableSet.copyOf(ipAddresses);
         this.ipAddressPool = new IP.AddressPool(this, ipAddressPool);
         this.hostname = hostname;
@@ -119,37 +130,31 @@ public final class Node {
         }
 
         public Builder withId(String id) {
-            Objects.requireNonNull(id, "A null id is not permitted");
             this.id = id;
             return this;
         }
 
         public Builder withType(NodeType nodeType) {
-            Objects.requireNonNull(nodeType, "A null type is not permitted");
             this.type = nodeType;
             return this;
         }
 
         public Builder withFlavor(Flavor flavor) {
-            Objects.requireNonNull(id, "A null flavor is not permitted");
             this.flavor = flavor;
             return this;
         }
 
         public Builder withIpAddresses(Set<String> ipAddresses) {
-            Objects.requireNonNull(ipAddresses, "A null ipAddresses is not permitted");
             this.ipAddresses = ipAddresses;
             return this;
         }
 
         public Builder withIpAddressPool(Set<String> ipAddressPool) {
-            Objects.requireNonNull(ipAddressPool, "ipAddressPool must be non-null");
             this.ipAddressPool = ipAddressPool;
             return this;
         }
 
         public Builder withParentHostname(String parentHostname) {
-            requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
             this.parentHostname = Optional.of(parentHostname);
             return this;
         }
@@ -160,19 +165,16 @@ public final class Node {
         }
 
         public Builder withStatus(Status status) {
-            Objects.requireNonNull(status, "A node must have a status");
             this.status = status;
             return this;
         }
 
         public Builder withState(State state) {
-            Objects.requireNonNull(state, "A null node state is not permitted");
             this.state = state;
             return this;
         }
 
         public Builder withHistory(History history) {
-            Objects.requireNonNull(history, "A null node history is not permitted");
             this.history = history;
             return this;
         }
@@ -182,7 +184,6 @@ public final class Node {
         }
 
         public Builder withAllocation(Allocation allocation) {
-            Objects.requireNonNull(allocation, "A null node allocation is not permitted");
             this.allocation = Optional.of(allocation);
             return this;
         }
