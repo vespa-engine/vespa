@@ -15,7 +15,7 @@ class JrtMetrics {
 
     private final TransportMetrics transportMetrics = TransportMetrics.getInstance();
     private final Metric metric;
-    private Snapshot previousSnapshot = transportMetrics.snapshot();
+    private Snapshot previousSnapshot = Snapshot.EMPTY;
 
     JrtMetrics(Metric metric) {
         this.metric = metric;
