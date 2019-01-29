@@ -352,6 +352,12 @@ Tuning = element tuning {
       }? &
       element feeding {
          element concurrency { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }?
+      }? &
+      element removed-db {
+         element prune {
+            element age { xsd:double { minInclusive = "0.0" } }? &
+            element interval { xsd:double { minInclusive = "60.0" } }?
+         }?
       }?
    }?
 }
