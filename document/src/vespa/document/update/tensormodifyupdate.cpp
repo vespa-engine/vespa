@@ -1,4 +1,4 @@
-// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensormodifyupdate.h"
 #include <vespa/document/base/field.h>
@@ -62,10 +62,16 @@ TensorModifyUpdate::operator=(TensorModifyUpdate &&rhs)
 bool
 TensorModifyUpdate::operator==(const ValueUpdate &other) const
 {
-    if (other.getClass().id() != TensorModifyUpdate::classId) return false;
+    if (other.getClass().id() != TensorModifyUpdate::classId) {
+        return false;
+    }
     const TensorModifyUpdate& o(static_cast<const TensorModifyUpdate&>(other));
-    if (_operator != o._operator) return false;
-    if (!_operand->equals(*o._operand)) return false;
+    if (_operator != o._operator) {
+        return false;
+    }
+    if (!_operand->equals(*o._operand)) {
+        return false;
+    }
     return true;
 }
 
