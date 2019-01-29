@@ -114,7 +114,7 @@ public class OsUpgraderTest {
         osUpgrader.maintain();
         assertWanted(version1, SystemApplication.zone, zone1, zone2, zone3, zone4);
         statusUpdater.maintain();
-        assertTrue("All nodes on target version", tester.controller().osVersionStatus().nodeVersionsIn(cloud).stream()
+        assertTrue("All nodes on target version", tester.controller().osVersionStatus().nodesIn(cloud).stream()
                                                         .allMatch(node -> node.version().equals(version1)));
     }
 
