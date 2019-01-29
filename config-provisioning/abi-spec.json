@@ -523,7 +523,7 @@
     ],
     "fields": []
   },
-  "com.yahoo.config.provision.ParentHostNotReadyException": {
+  "com.yahoo.config.provision.ParentHostUnavailableException": {
     "superClass": "java.lang.RuntimeException",
     "interfaces": [],
     "attributes": [

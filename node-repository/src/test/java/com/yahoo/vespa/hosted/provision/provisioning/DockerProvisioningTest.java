@@ -10,7 +10,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ParentHostNotReadyException;
+import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -87,7 +87,7 @@ public class DockerProvisioningTest {
         try {
             tester.activate(application1, new HashSet<>(nodes));
             fail("Expected the allocation to fail due to parent hosts not being active yet");
-        } catch (ParentHostNotReadyException ignored) { }
+        } catch (ParentHostUnavailableException ignored) { }
 
         // Activate the zone-app, thereby allocating the parents
         List<HostSpec> hosts = tester.prepare(zoneApplication,

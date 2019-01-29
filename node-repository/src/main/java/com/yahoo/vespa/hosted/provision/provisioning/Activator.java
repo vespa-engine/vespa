@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.ParentHostNotReadyException;
+import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -102,7 +102,7 @@ class Activator {
                                     child.hostname(), parent.hostname(), parent.state())))
                     .flatMap(Optional::stream)
                     .collect(Collectors.joining(" "));
-            throw new ParentHostNotReadyException("Activation of " + application + " failed: " + detailedError);
+            throw new ParentHostUnavailableException("Activation of " + application + " failed: " + detailedError);
         }
     }
 

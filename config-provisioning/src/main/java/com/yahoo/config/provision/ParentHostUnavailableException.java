@@ -9,9 +9,9 @@ package com.yahoo.config.provision;
  * @author freva
  *
  */
-public class ParentHostNotReadyException extends RuntimeException {
+public class ParentHostUnavailableException extends RuntimeException {
 
-    public ParentHostNotReadyException(String message) {
+    public ParentHostUnavailableException(String message) {
         super(message);
     }
 
