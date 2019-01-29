@@ -118,13 +118,13 @@ public class DocumentDatabaseTestCase {
 
     @Test
     public void requireThatConcurrencyIsReflectedCorrectlyForDefault() {
-        verifyConcurrency("index", "", 0.2, 0.2);
-        verifyConcurrency("streaming", "", 0.4, 0.0);
-        verifyConcurrency("store-only", "", 0.4, 0.0);
+        verifyConcurrency("index", "", 0.25, 0.25);
+        verifyConcurrency("streaming", "", 0.5, 0.0);
+        verifyConcurrency("store-only", "", 0.5, 0.0);
     }
     @Test
     public void requireThatMixedModeConcurrencyIsReflectedCorrectlyForDefault() {
-        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 0.4, Arrays.asList(0.2, 0.0));
+        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 0.5, Arrays.asList(0.25, 0.0));
     }
     @Test
     public void requireThatMixedModeConcurrencyIsReflected() {
