@@ -318,7 +318,11 @@ Tuning = element tuning {
             element write { TuningIoOptionsLight }? &
             element read { TuningIoOptionsLight }? &
             element search { TuningIoOptionsFull }?
-         }
+         }? &
+         element warmup { 
+            element time { xsd:double { minInclusive = "0.0" } }? &
+            element unpack { xsd:boolean }?
+         }?
       }? &
       element attribute {
          element io {

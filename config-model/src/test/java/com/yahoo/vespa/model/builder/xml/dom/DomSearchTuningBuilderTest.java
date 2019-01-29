@@ -17,6 +17,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author geirst
@@ -145,13 +146,22 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "<write>directio</write>",
                 "<read>normal</read>",
                 "<search>mmap</search>",
-                "</io>", "</index>"));
+                "</io>",
+                "<warmup>" +
+                "<time>178</time>",
+                "<unpack>true</unpack>",
+                "</warmup>",
+                "</index>"));
         assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.index.io.write);
         assertEquals(Tuning.SearchNode.IoType.NORMAL, t.searchNode.index.io.read);
         assertEquals(Tuning.SearchNode.IoType.MMAP, t.searchNode.index.io.search);
+        assertEquals(178, t.searchNode.index.warmup.time, DELTA);
+        assertTrue(t.searchNode.index.warmup.unpack);
         String cfg = getProtonCfg(t);
         assertThat(cfg, containsString("indexing.write.io DIRECTIO"));
         assertThat(cfg, containsString("indexing.read.io NORMAL"));
+        assertThat(cfg, containsString("index.warmup.time 178"));
+        assertThat(cfg, containsString("index.warmup.unpack true"));
     }
 
     @Test
