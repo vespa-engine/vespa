@@ -436,8 +436,10 @@ DynamicTeaserDFW::insertField(uint32_t docid, GeneralResult *gres, GetDocsumsSta
                               vespalib::slime::Inserter &target)
 {
     vespalib::string teaser = makeDynamicTeaser(docid, gres, state);
-    vespalib::Memory value(teaser.c_str(), teaser.size());
-    target.insertString(value);
+    if (teaser.length() > 0) {
+        vespalib::Memory value(teaser.c_str(), teaser.size());
+        target.insertString(value);
+    }
 }
 
 }
