@@ -311,7 +311,8 @@ Tuning = element tuning {
          }?
       }? &
       element resizing {
-         element initialdocumentcount { xsd:nonNegativeInteger }?
+         element initialdocumentcount { xsd:nonNegativeInteger }? &
+         element amortizecount { xsd:nonNegativeInteger }?
       }? &
       element index {
          element io {

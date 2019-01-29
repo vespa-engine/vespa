@@ -1,14 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
-
-import java.util.logging.Level;
 
 /**
  * Builder for the tuning config for a search cluster.
@@ -168,6 +165,8 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         for (Element e : XML.getChildren(spec)) {
             if (equals("initialdocumentcount", e)) {
                 sn.resizing.initialDocumentCount = asInt(e);
+            } else if (equals("amortizecount", e)) {
+                sn.resizing.amortizeCount = asInt(e);
             }
         }
     }

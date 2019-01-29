@@ -149,6 +149,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
         public static class Resizing implements ProtonConfig.Producer {
             public Integer initialDocumentCount = null;
+            public Integer amortizeCount = null;
 
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
@@ -156,6 +157,11 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                     builder.grow.initial(initialDocumentCount);
                     for (ProtonConfig.Documentdb.Builder db : builder.documentdb) {
                         db.allocation.initialnumdocs(initialDocumentCount);
+                    }
+                }
+                if (amortizeCount !=null) {
+                    for (ProtonConfig.Documentdb.Builder db : builder.documentdb) {
+                        db.allocation.amortizecount(amortizeCount);
                     }
                 }
             }
