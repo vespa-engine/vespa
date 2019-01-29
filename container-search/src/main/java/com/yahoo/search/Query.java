@@ -386,32 +386,32 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * one of its dependent objects. This will ensure the appropriate setters are called on this and all
      * dependent objects for the appropriate subset of the given property values
      */
-    private void setFieldsFrom(Properties properties, Map<String,String> context) {
-        setFrom(properties,Query.getArgumentType(), context);
-        setFrom(properties,Model.getArgumentType(), context);
-        setFrom(properties,Presentation.getArgumentType(), context);
-        setFrom(properties,Ranking.getArgumentType(), context);
-        setFrom(properties, Select.getArgumentType(), context);
+    private void setFieldsFrom(Properties properties, Map<String, String> context) {
+        setFrom("", properties, Query.getArgumentType(), context);
     }
 
     /**
      * For each field in the given query profile type, take the corresponding value from originalProperties
-     * (if any) set it to properties().
+     * (if any) set it to properties(), recursively.
      */
-    private void setFrom(Properties originalProperties,QueryProfileType arguments,Map<String,String> context) {
-        String prefix = getPrefix(arguments);
+    private void setFrom(String prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
+        prefix = prefix + getPrefix(arguments);
         for (FieldDescription field : arguments.fields().values()) {
             String fullName = prefix + field.getName();
-            if (field.getType() == FieldType.genericQueryProfileType) {
-                for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName,context).entrySet()) {
+            if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
+                for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName, context).entrySet()) {
                     try {
                         properties().set(fullName + "." + entry.getKey(), entry.getValue(), context);
                     } catch (IllegalArgumentException e) {
                         throw new QueryException("Invalid request parameter", e);
                     }
                 }
-            } else {
-                Object value = originalProperties.get(fullName,context);
+            }
+            else if (field.getType() instanceof QueryProfileFieldType) { // Nested arguments
+                setFrom(prefix, originalProperties, ((QueryProfileFieldType)field.getType()).getQueryProfileType(), context);
+            }
+            else {
+                Object value = originalProperties.get(fullName, context);
                 if (value != null) {
                     try {
                         properties().set(fullName, value, context);
