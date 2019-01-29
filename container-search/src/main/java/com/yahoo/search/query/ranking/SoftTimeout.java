@@ -30,8 +30,9 @@ public class SoftTimeout implements Cloneable {
         argumentType = new QueryProfileType(Ranking.SOFTTIMEOUT);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
-        argumentType.addField(new FieldDescription(TAILCOST, "double"));
         argumentType.addField(new FieldDescription(ENABLE, "boolean"));
+        argumentType.addField(new FieldDescription(FACTOR, "double"));
+        argumentType.addField(new FieldDescription(TAILCOST, "double"));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
@@ -40,7 +41,9 @@ public class SoftTimeout implements Cloneable {
     private Double factor = null;
     private Double tailcost = null;
 
-    public void setEnable(boolean enable) { this.enabled = enable; }
+    public void setEnable(boolean enable) {
+        this.enabled = enable;
+    }
 
     public Boolean getEnable() { return enabled; }
 

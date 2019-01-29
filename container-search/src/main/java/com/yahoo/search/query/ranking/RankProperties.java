@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class RankProperties implements Cloneable {
 
-    private Map<String, List<Object>> properties = new LinkedHashMap<>();
+    private Map<String, List<Object>> properties;
 
     public RankProperties() {
         this(new LinkedHashMap<>());
