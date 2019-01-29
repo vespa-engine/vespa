@@ -131,4 +131,11 @@ public interface Inspector {
      */
     Inspector field(String name);
 
+    /**
+     * Tests whether this is equal to Inspector.
+     *
+     * @param that inspector.
+     * @return true if they are equal.
+     */
+    boolean equalTo(Inspector that);
 }
