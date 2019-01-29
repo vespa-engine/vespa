@@ -5,10 +5,12 @@ package com.yahoo.prelude.hitfield;
  * Represents an element of a hit property which is markup for
  * separating dynamic snippets.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class SeparatorFieldPart extends MarkupFieldPart {
+
     public SeparatorFieldPart(String content) {
         super(content);
     }
+
 }

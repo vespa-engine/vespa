@@ -505,12 +505,7 @@ public class FastHit extends Hit {
         }
 
         Object getField(String name) {
-            // TODO: When emulConfig is removed, change the below to use type.convert(name, data.field(name))
-            DocsumField fieldType = type.getField(name);
-            if (fieldType == null) return null;
-            Inspector fieldValue = data.field(name);
-            if ( ! fieldValue.valid()) return null;
-            return fieldType.convert(fieldValue);
+            return type.convert(name, data.field(name));
         }
 
         void forEachField(BiConsumer<String, Object> consumer) {

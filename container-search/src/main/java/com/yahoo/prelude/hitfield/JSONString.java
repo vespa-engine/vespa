@@ -23,7 +23,6 @@ import java.util.Iterator;
  */
 public class JSONString implements Inspectable {
 
-    private static final long serialVersionUID = -3929383619752472712L;
     private Inspector value;
     private String content;
     private boolean didInitContent = false;
@@ -270,6 +269,7 @@ public class JSONString implements Inspectable {
     }
 
     private static class StructureFieldRenderer extends FieldRenderer {
+
         @Override
         public void render(StringBuilder renderTarget, Object value, int nestingLevel) {
             renderStructure(renderTarget, (JSONObject) value, nestingLevel);
@@ -294,9 +294,11 @@ public class JSONString implements Inspectable {
             indent(renderTarget, nestingLevel);
             renderTarget.append(closing);
         }
+
     }
 
     private static class NumberFieldRenderer extends FieldRenderer {
+
         @Override
         public void render(StringBuilder renderTarget, Object value, int nestingLevel) {
             renderNumber(renderTarget, (Number) value);
@@ -310,9 +312,11 @@ public class JSONString implements Inspectable {
         public void closeTag(StringBuilder renderTarget, int nestingLevel, String closing) {
             renderTarget.append(closing);
         }
+
     }
 
     private static class StringFieldRenderer extends FieldRenderer {
+
         @Override
         public void render(StringBuilder renderTarget, Object value, int nestingLevel) {
             renderString(renderTarget, (String) value);
@@ -326,9 +330,11 @@ public class JSONString implements Inspectable {
         public void closeTag(StringBuilder renderTarget, int nestingLevel, String closing) {
             renderTarget.append(closing);
         }
+
     }
 
     private static class ArrayFieldRenderer extends FieldRenderer {
+
         protected static FieldRenderer structureFieldRenderer = new StructureFieldRenderer();
         protected static FieldRenderer stringFieldRenderer = new StringFieldRenderer();
         protected static FieldRenderer numberFieldRenderer = new NumberFieldRenderer();
@@ -400,14 +406,13 @@ public class JSONString implements Inspectable {
             }
             renderTarget.append('\n');
             for (int i = 0; i < limit; ++i) {
-                JSONArray value;
                 Object name;
                 Number weight;
 
                 try {
-                    value = seq.getJSONArray(i);
-                    name = value.get(0);
-                    weight = (Number) value.get(1);
+                    JSONArray arrayValue = seq.getJSONArray(i);
+                    name = arrayValue.get(0);
+                    weight = (Number)arrayValue.get(1);
 
                 } catch (JSONException e) {
                     continue;
