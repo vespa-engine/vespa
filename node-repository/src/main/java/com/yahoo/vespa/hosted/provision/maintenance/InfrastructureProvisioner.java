@@ -17,9 +17,7 @@ import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -38,7 +36,6 @@ public class InfrastructureProvisioner extends Maintainer {
     private final Provisioner provisioner;
     private final InfrastructureVersions infrastructureVersions;
     private final DuperModelInfraApi duperModel;
-    private final Map<ApplicationId, Version> lastActivations = new HashMap<>();
 
     public InfrastructureProvisioner(Provisioner provisioner, NodeRepository nodeRepository,
                                      InfrastructureVersions infrastructureVersions, Duration interval, JobControl jobControl,

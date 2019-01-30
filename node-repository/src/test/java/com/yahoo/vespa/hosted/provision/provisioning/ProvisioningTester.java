@@ -335,38 +335,43 @@ public class ProvisioningTester {
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
-    /** Creates a set of virtual docker nodes on a single docker host */
-    public List<Node> makeReadyDockerNodes(int n, String flavor, String dockerHostId) {
-        return makeReadyVirtualNodes(n, flavor, Optional.of(dockerHostId));
+    /** Creates a set of virtual docker hosts */
+    public List<Node> makeReadyVirtualDockerHosts(int n, String flavor) {
+        return makeReadyVirtualNodes(n, 1, flavor, Optional.empty(),
+                i -> "dockerHost" + i, NodeType.host);
+    }
+
+    /** Creates a set of virtual docker nodes on a single docker host starting with index 1 and increasing */
+    public List<Node> makeReadyVirtualDockerNodes(int n, String flavor, String dockerHostId) {
+        return makeReadyVirtualNodes(n, 1, flavor, Optional.of(dockerHostId),
+                i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
+    }
+
+    /** Creates a single of virtual docker node on a single parent host */
+    public List<Node> makeReadyVirtualDockerNode(int index, String flavor, String dockerHostId) {
+        return makeReadyVirtualNodes(1, index, flavor, Optional.of(dockerHostId),
+                i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
+    }
+
+    /** Creates a set of virtual nodes without a parent host */
+    public List<Node> makeReadyVirtualNodes(int n, String flavor) {
+        return makeReadyVirtualNodes(n, 0, flavor, Optional.empty(),
+                i -> UUID.randomUUID().toString(), NodeType.tenant);
     }
 
     /** Creates a set of virtual nodes on a single parent host */
-    public List<Node> makeReadyVirtualNodes(int n, String flavor, Optional<String> parentHostId) {
-        return makeReadyVirtualNodes(n, 0, flavor, parentHostId, index -> UUID.randomUUID().toString());
-    }
-
-    /** Creates a set of virtual nodes on a single parent host */
-    public List<Node> makeReadyVirtualNode(int index, String flavor, String parentHostId) {
-        return makeReadyVirtualNodes(1, index, flavor, Optional.of(parentHostId), i -> String.format("node%03d", i));
-    }
-
-    /** Creates a set of virtual nodes on a single parent host */
-    public List<Node> makeReadyVirtualNodes(int count, int startIndex, String flavor, Optional<String> parentHostId,
-                                     Function<Integer, String> nodeNamer) {
+    private List<Node> makeReadyVirtualNodes(int count, int startIndex, String flavor, Optional<String> parentHostId,
+                                             Function<Integer, String> nodeNamer, NodeType nodeType) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
             String hostname = nodeNamer.apply(i);
             nodes.add(nodeRepository.createNode("openstack-id", hostname, parentHostId,
-                                                nodeFlavors.getFlavorOrThrow(flavor), NodeType.tenant));
+                                                nodeFlavors.getFlavorOrThrow(flavor), nodeType));
         }
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
         return nodes;
-    }
-
-    public List<Node> makeReadyVirtualNodes(int n, String flavor, String parentHostId) {
-        return makeReadyVirtualNodes(n, flavor, Optional.of(parentHostId));
     }
 
     /** Returns the hosts from the input list which are not retired */

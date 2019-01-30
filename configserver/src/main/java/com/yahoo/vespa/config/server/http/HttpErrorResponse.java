@@ -42,7 +42,8 @@ public class HttpErrorResponse extends HttpResponse {
         NOT_FOUND,
         OUT_OF_CAPACITY,
         REQUEST_TIMEOUT,
-        UNKNOWN_VESPA_VERSION
+        UNKNOWN_VESPA_VERSION,
+        PARENT_HOST_NOT_READY
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
@@ -83,6 +84,10 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpErrorResponse applicationLockFailure(String msg) {
         return new HttpErrorResponse(INTERNAL_SERVER_ERROR, errorCodes.APPLICATION_LOCK_FAILURE.name(), msg);
+    }
+
+    public static HttpErrorResponse parentHostNotReady(String msg) {
+        return new HttpErrorResponse(BAD_REQUEST, errorCodes.PARENT_HOST_NOT_READY.name(), msg);
     }
 
     @Override

@@ -4,16 +4,12 @@ package com.yahoo.vespa.hosted.provision.node.filter;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.util.Collections;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 

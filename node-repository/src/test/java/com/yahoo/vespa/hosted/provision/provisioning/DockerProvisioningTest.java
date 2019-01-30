@@ -9,6 +9,8 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -42,7 +44,7 @@ public class DockerProvisioningTest {
         ApplicationId application1 = tester.makeApplicationId();
 
         for (int i = 1; i < 10; i++)
-            tester.makeReadyDockerNodes(1, dockerFlavor, "dockerHost" + i);
+            tester.makeReadyVirtualDockerNodes(1, dockerFlavor, "dockerHost" + i);
 
         Version wantedVespaVersion = Version.fromString("6.39");
         int nodeCount = 7;
@@ -67,18 +69,54 @@ public class DockerProvisioningTest {
         assertEquals(hosts, upgradedHosts);
     }
 
+    @Test
+    public void refuses_to_activate_on_non_active_host() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+
+        ApplicationId zoneApplication = tester.makeApplicationId();
+        List<Node> parents = tester.makeReadyVirtualDockerHosts(10, "large");
+        for (Node parent : parents)
+            tester.makeReadyVirtualDockerNodes(1, dockerFlavor, parent.hostname());
+
+        ApplicationId application1 = tester.makeApplicationId();
+        Version wantedVespaVersion = Version.fromString("6.39");
+        int nodeCount = 7;
+        List<HostSpec> nodes = tester.prepare(application1,
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                nodeCount, 1, dockerFlavor);
+        try {
+            tester.activate(application1, new HashSet<>(nodes));
+            fail("Expected the allocation to fail due to parent hosts not being active yet");
+        } catch (ParentHostUnavailableException ignored) { }
+
+        // Activate the zone-app, thereby allocating the parents
+        List<HostSpec> hosts = tester.prepare(zoneApplication,
+                ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("zone-app"), wantedVespaVersion, false),
+                Capacity.fromRequiredNodeType(NodeType.host), 1);
+        tester.activate(zoneApplication, hosts);
+
+        // Try allocating tenants again
+        nodes = tester.prepare(application1,
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                nodeCount, 1, dockerFlavor);
+        tester.activate(application1, new HashSet<>(nodes));
+
+        NodeList activeNodes = tester.getNodes(application1, Node.State.active);
+        assertEquals(nodeCount, activeNodes.size());
+    }
+
     /** Exclusive app first, then non-exclusive: Should give the same result as below */
     @Test
     public void docker_application_deployment_with_exclusive_app_first() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
         for (int i = 1; i <= 4; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host1");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host1");
         for (int i = 5; i <= 8; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host2");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host2");
         for (int i = 9; i <= 12; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host3");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host3");
         for (int i = 13; i <= 16; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host4");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host4");
 
         ApplicationId application1 = tester.makeApplicationId();
         prepareAndActivate(application1, 2, true, tester);
@@ -95,13 +133,13 @@ public class DockerProvisioningTest {
     public void docker_application_deployment_with_exclusive_app_last() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
         for (int i = 1; i <= 4; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host1");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host1");
         for (int i = 5; i <= 8; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host2");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host2");
         for (int i = 9; i <= 12; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host3");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host3");
         for (int i = 13; i <= 16; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host4");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host4");
 
         ApplicationId application1 = tester.makeApplicationId();
         prepareAndActivate(application1, 2, false, tester);
@@ -118,13 +156,13 @@ public class DockerProvisioningTest {
     public void docker_application_deployment_change_to_exclusive_and_back() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
         for (int i = 1; i <= 4; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host1");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host1");
         for (int i = 5; i <= 8; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host2");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host2");
         for (int i = 9; i <= 12; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host3");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host3");
         for (int i = 13; i <= 16; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host4");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host4");
 
         ApplicationId application1 = tester.makeApplicationId();
         prepareAndActivate(application1, 2, false, tester);
@@ -147,13 +185,13 @@ public class DockerProvisioningTest {
     public void docker_application_deployment_with_exclusive_app_causing_allocation_failure() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
         for (int i = 1; i <= 4; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host1");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host1");
         for (int i = 5; i <= 8; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host2");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host2");
         for (int i = 9; i <= 12; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host3");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host3");
         for (int i = 13; i <= 16; i++)
-            tester.makeReadyVirtualNode(i, dockerFlavor, "host4");
+            tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host4");
 
         ApplicationId application1 = tester.makeApplicationId();
         prepareAndActivate(application1, 2, true, tester);
@@ -180,7 +218,7 @@ public class DockerProvisioningTest {
     public void get_specified_flavor_not_default_flavor_for_docker() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.test, RegionName.from("corp-us-east-1")));
         ApplicationId application1 = tester.makeApplicationId();
-        tester.makeReadyDockerNodes(1, dockerFlavor, "dockerHost");
+        tester.makeReadyVirtualDockerNodes(1, dockerFlavor, "dockerHost");
 
         List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false), 1, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(hosts));

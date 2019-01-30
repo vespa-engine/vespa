@@ -47,6 +47,11 @@ import static org.junit.Assert.assertEquals;
  */
 public class FailedExpirerTest {
 
+    private static final ApplicationId tenantHostApplicationId = ApplicationId.from("vespa", "zone-app", "default");
+    private static final ClusterSpec tenantHostApplicationClusterSpec =  ClusterSpec.request(
+            ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"), false);
+    private static final Capacity tenantHostApplicationCapacity = Capacity.fromRequiredNodeType(NodeType.host);
+
     @Test
     public void ensure_failed_nodes_are_deallocated_in_test_quickly() {
         FailureScenario scenario = new FailureScenario(SystemName.main, Environment.test)
@@ -128,6 +133,8 @@ public class FailedExpirerTest {
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent1")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent2")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent3")
+                .setReady("parent1", "parent2", "parent3")
+                .allocate(tenantHostApplicationId, tenantHostApplicationClusterSpec, tenantHostApplicationCapacity)
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node1", "parent1")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node2", "parent2")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node3", "parent3")
@@ -149,6 +156,8 @@ public class FailedExpirerTest {
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent1")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent2")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent3")
+                .setReady("parent1", "parent2", "parent3")
+                .allocate(tenantHostApplicationId, tenantHostApplicationClusterSpec, tenantHostApplicationCapacity)
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node1", "parent1")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node2", "parent2")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node3", "parent3")
@@ -170,6 +179,8 @@ public class FailedExpirerTest {
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent1")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent2")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent3")
+                .setReady("parent1", "parent2", "parent3")
+                .allocate(tenantHostApplicationId, tenantHostApplicationClusterSpec, tenantHostApplicationCapacity)
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node1", "parent1")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node2", "parent2")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node3", "parent3")
@@ -265,7 +276,7 @@ public class FailedExpirerTest {
         }
 
         public FailureScenario withNode(NodeType type, Flavor flavor, String hostname) {
-            return withNode(type, flavor, hostname,null);
+            return withNode(type, flavor, hostname, null);
         }
 
         public FailureScenario withNode(String hostname) {
@@ -309,11 +320,12 @@ public class FailedExpirerTest {
                                                           ClusterSpec.Id.from("test"),
                                                           Version.fromString("6.42"),
                                                           false);
-            List<HostSpec> preparedNodes = provisioner.prepare(applicationId,
-                                                               clusterSpec,
-                                                               Capacity.fromNodeCount(hostname.length, Optional.of(flavor.name()),
-                                                                                      false, true),
-                                1, null);
+            Capacity capacity = Capacity.fromNodeCount(hostname.length, Optional.of(flavor.name()), false, true);
+            return allocate(applicationId, clusterSpec, capacity);
+        }
+
+        public FailureScenario allocate(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity capacity) {
+            List<HostSpec> preparedNodes = provisioner.prepare(applicationId, clusterSpec, capacity, 1, null);
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
             provisioner.activate(transaction, applicationId, new HashSet<>(preparedNodes));
             transaction.commit();
