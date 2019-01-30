@@ -43,6 +43,6 @@ public class Generation {
     }
 
     /** Returns the initial generation (0, 0) */
-    public static Generation inital() { return new Generation(0, 0); }
+    public static Generation initial() { return new Generation(0, 0); }
 
 }

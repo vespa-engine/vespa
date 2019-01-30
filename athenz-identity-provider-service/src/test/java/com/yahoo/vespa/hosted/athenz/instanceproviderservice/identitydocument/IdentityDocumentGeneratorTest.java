@@ -54,7 +54,7 @@ public class IdentityDocumentGeneratorTest {
                 TenantName.from("tenant"), ApplicationName.from("application"), InstanceName.from("default"));
         Allocation allocation = new Allocation(appid,
                                                ClusterMembership.from("container/default/0/0", Version.fromString("1.2.3")),
-                                               Generation.inital(),
+                                               Generation.initial(),
                                                false);
         Node parentNode = Node.create("ostkid",
                                       ImmutableSet.of("127.0.0.1"),
