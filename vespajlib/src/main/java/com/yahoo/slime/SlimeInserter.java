@@ -7,10 +7,16 @@ package com.yahoo.slime;
  **/
 public final class SlimeInserter implements Inserter {
     private Slime target;
+
+    public SlimeInserter(Slime target) {
+        adjust(target);
+    }
+
     public final SlimeInserter adjust(Slime slime) {
         target = slime;
         return this;
     }
+
     public final Cursor insertNIX()                { return target.setNix(); }
     public final Cursor insertBOOL(boolean value)  { return target.setBool(value); }
     public final Cursor insertLONG(long value)     { return target.setLong(value); }

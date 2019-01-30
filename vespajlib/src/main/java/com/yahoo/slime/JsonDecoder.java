@@ -15,9 +15,9 @@ public class JsonDecoder {
     private BufferedInput in;
     private byte c;
 
-    private final SlimeInserter slimeInserter = new SlimeInserter();
-    private final ArrayInserter arrayInserter = new ArrayInserter();
-    private final ObjectInserter objectInserter = new ObjectInserter();
+    private final SlimeInserter slimeInserter = new SlimeInserter(null);
+    private final ArrayInserter arrayInserter = new ArrayInserter(null);
+    private final ObjectInserter objectInserter = new ObjectInserter(null, null);
     private final ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
     private static final byte[] TRUE = {'t', 'r', 'u', 'e'};

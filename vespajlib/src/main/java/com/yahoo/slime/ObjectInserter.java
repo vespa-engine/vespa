@@ -8,8 +8,6 @@ public final class ObjectInserter implements Inserter {
     private Cursor target;
     private String key;
 
-    public ObjectInserter() {}
-
     public ObjectInserter(Cursor c, String key) {
         adjust(c, key);
     }

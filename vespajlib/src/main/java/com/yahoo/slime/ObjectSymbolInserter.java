@@ -9,8 +9,6 @@ public final class ObjectSymbolInserter implements Inserter {
     private Cursor target;
     private int symbol;
 
-    public ObjectSymbolInserter() {}
-
     public ObjectSymbolInserter(Cursor cursor, int sym) {
         adjust(cursor, sym);
     }

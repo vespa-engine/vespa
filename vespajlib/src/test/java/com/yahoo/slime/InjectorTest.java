@@ -62,12 +62,6 @@ public class InjectorTest {
         injector.inject(inspector, inserter);
     }
 
-    private Inserter slimeInserter(Slime slime) {
-        var inserter = new SlimeInserter();
-        inserter.adjust(slime);
-        return inserter;
-    }
-
     private void assertEqualTo(Slime left, Slime right) {
         assertTrue("'" + left + "' not equal to '" + right + "'", left.equalTo(right));
     }
@@ -80,15 +74,15 @@ public class InjectorTest {
     public void injectIntoSlime() {
         assertTrue(f1.empty.get().valid()); // explicit nix
 
-        inject(f1.empty.get(), slimeInserter(f2.slime1));
-        inject(f1.nixValue.get(), slimeInserter(f2.slime2));
-        inject(f1.boolValue.get(), slimeInserter(f2.slime3));
-        inject(f1.longValue.get(), slimeInserter(f2.slime4));
-        inject(f1.doubleValue.get(), slimeInserter(f2.slime5));
-        inject(f1.stringValue.get(), slimeInserter(f2.slime6));
-        inject(f1.dataValue.get(), slimeInserter(f2.slime7));
-        inject(f1.arrayValue.get(), slimeInserter(f2.slime8));
-        inject(f1.objectValue.get(), slimeInserter(f2.slime9));
+        inject(f1.empty.get(), new SlimeInserter(f2.slime1));
+        inject(f1.nixValue.get(), new SlimeInserter(f2.slime2));
+        inject(f1.boolValue.get(), new SlimeInserter(f2.slime3));
+        inject(f1.longValue.get(), new SlimeInserter(f2.slime4));
+        inject(f1.doubleValue.get(), new SlimeInserter(f2.slime5));
+        inject(f1.stringValue.get(), new SlimeInserter(f2.slime6));
+        inject(f1.dataValue.get(), new SlimeInserter(f2.slime7));
+        inject(f1.arrayValue.get(), new SlimeInserter(f2.slime8));
+        inject(f1.objectValue.get(), new SlimeInserter(f2.slime9));
 
         assertEquals(f1.empty.get().toString(), f2.slime1.get().toString());
         assertEquals(f1.nixValue.get().toString(), f2.slime2.get().toString());
@@ -152,7 +146,7 @@ public class InjectorTest {
 
     @Test
     public void invalidInjectionIsIgnored() {
-        inject(f1.arrayValue.get(), slimeInserter(f2.slime1));
+        inject(f1.arrayValue.get(), new SlimeInserter(f2.slime1));
         assertEquals(3, f2.slime1.get().entries());
         inject(f1.longValue.get(), new ArrayInserter(f2.slime1.get()));
         assertEquals(4, f2.slime1.get().entries());
