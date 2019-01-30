@@ -18,7 +18,7 @@ public class VespaDocumentSerializerHead extends VespaDocumentSerializer6 {
     @Override
     public void write(TensorModifyUpdate update) {
         putByte(null, (byte) update.getOperation().id);
-        update.getTensor().serialize(this);
+        update.getValue().serialize(this);
     }
 
 }

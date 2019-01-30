@@ -23,12 +23,8 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
 
 
     public Operation getOperation() { return operation; }
-    public TensorFieldValue getTensor() { return tensor; }
 
-    /** Returns the tensor */
     public TensorFieldValue getValue() { return tensor; }
-
-    /** Sets the tensor */
     public void setValue(TensorFieldValue value) { tensor = value; }
 
 
@@ -100,13 +96,7 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
             this.name = name;
         }
 
-        /**
-         * Returns the operator with the specified ID.
-         *
-         * @param id the ID to search for
-         * @return the Operator with the specified ID, or null if it does not exist.
-         */
-        public static Operation getID(int id) {
+        public static Operation getOperation(int id) {
             for (Operation operation : Operation.values()) {
                 if (operation.id == id) {
                     return operation;

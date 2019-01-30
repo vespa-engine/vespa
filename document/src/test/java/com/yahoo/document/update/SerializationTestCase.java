@@ -87,7 +87,15 @@ public class SerializationTestCase {
         update.addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.REPLACE, tensor));
         GrowableByteBuffer buffer = serializeUpdate(update);
         FieldUpdate deserializedUpdate = deserializeUpdate(buffer);
-        assertEquals("'tensorfield' [tensormodify replace TensorFieldValue {\n    classId: 1\n}\n]", deserializedUpdate.toString());
+        assertEquals("tensorfield", deserializedUpdate.getField().getName());
+        assertEquals(1, deserializedUpdate.getValueUpdates().size());
+        ValueUpdate valueUpdate = deserializedUpdate.getValueUpdate(0);
+        if (!(valueUpdate instanceof TensorModifyUpdate)) {
+            throw new IllegalStateException("Expected tensorModifyUpdate");
+        }
+        TensorModifyUpdate tensorModifyUpdate = (TensorModifyUpdate) valueUpdate;
+        assertEquals(TensorModifyUpdate.Operation.REPLACE, tensorModifyUpdate.getOperation());
+        assertEquals(tensor, tensorModifyUpdate.getValue());
         assertEquals(update, deserializedUpdate);
     }
 }

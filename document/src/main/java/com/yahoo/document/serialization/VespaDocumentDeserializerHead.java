@@ -24,7 +24,7 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
     @Override
     protected ValueUpdate readTensorModifyUpdate(DataType type) {
         byte operationId = getByte(null);
-        TensorModifyUpdate.Operation operation = TensorModifyUpdate.Operation.getID(operationId);
+        TensorModifyUpdate.Operation operation = TensorModifyUpdate.Operation.getOperation(operationId);
         if (operation == null) {
             throw new DeserializationException("Unknown operation id " + operationId + " for tensor modify update");
         }
@@ -32,8 +32,8 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
         if (!(fieldValue instanceof TensorFieldValue)) {
             throw new DeserializationException("Expected tensor field value, got " + type);
         }
-        TensorFieldValue operand = (TensorFieldValue) fieldValue;
-        operand.deserialize(this);
-        return new TensorModifyUpdate(operation, operand);
+        TensorFieldValue tensor = (TensorFieldValue) fieldValue;
+        tensor.deserialize(this);
+        return new TensorModifyUpdate(operation, tensor);
     }
 }
