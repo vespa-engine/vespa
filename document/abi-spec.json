@@ -4492,7 +4492,8 @@
       "public abstract void write(com.yahoo.document.update.ArithmeticValueUpdate)",
       "public abstract void write(com.yahoo.document.update.AssignValueUpdate, com.yahoo.document.DataType)",
       "public abstract void write(com.yahoo.document.update.RemoveValueUpdate, com.yahoo.document.DataType)",
-      "public abstract void write(com.yahoo.document.update.ClearValueUpdate, com.yahoo.document.DataType)"
+      "public abstract void write(com.yahoo.document.update.ClearValueUpdate, com.yahoo.document.DataType)",
+      "public abstract void write(com.yahoo.document.update.TensorModifyUpdate)"
     ],
     "fields": []
   },
@@ -4745,7 +4746,8 @@
       "public void read(com.yahoo.document.annotation.Annotation)",
       "public void read(com.yahoo.document.annotation.Span)",
       "public void read(com.yahoo.document.annotation.SpanList)",
-      "public void read(com.yahoo.document.annotation.AlternateSpanList)"
+      "public void read(com.yahoo.document.annotation.AlternateSpanList)",
+      "protected com.yahoo.document.update.ValueUpdate readTensorModifyUpdate(com.yahoo.document.DataType)"
     ],
     "fields": []
   },
@@ -4756,7 +4758,8 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.document.DocumentTypeManager, com.yahoo.io.GrowableByteBuffer)"
+      "public void <init>(com.yahoo.document.DocumentTypeManager, com.yahoo.io.GrowableByteBuffer)",
+      "protected com.yahoo.document.update.ValueUpdate readTensorModifyUpdate(com.yahoo.document.DataType)"
     ],
     "fields": []
   },
@@ -4806,6 +4809,7 @@
       "public void write(com.yahoo.document.update.AssignValueUpdate, com.yahoo.document.DataType)",
       "public void write(com.yahoo.document.update.RemoveValueUpdate, com.yahoo.document.DataType)",
       "public void write(com.yahoo.document.update.ClearValueUpdate, com.yahoo.document.DataType)",
+      "public void write(com.yahoo.document.update.TensorModifyUpdate)",
       "public static long getSerializedSize(com.yahoo.document.Document)"
     ],
     "fields": []
@@ -4859,6 +4863,7 @@
       "public void write(com.yahoo.document.update.AssignValueUpdate, com.yahoo.document.DataType)",
       "public void write(com.yahoo.document.update.RemoveValueUpdate, com.yahoo.document.DataType)",
       "public void write(com.yahoo.document.update.ClearValueUpdate, com.yahoo.document.DataType)",
+      "public void write(com.yahoo.document.update.TensorModifyUpdate)",
       "public static long getSerializedSize(com.yahoo.document.Document)"
     ],
     "fields": []
@@ -4870,7 +4875,8 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.io.GrowableByteBuffer)"
+      "public void <init>(com.yahoo.io.GrowableByteBuffer)",
+      "public void write(com.yahoo.document.update.TensorModifyUpdate)"
     ],
     "fields": []
   },
@@ -5175,6 +5181,52 @@
       "protected com.yahoo.document.datatypes.FieldValue value"
     ]
   },
+  "com.yahoo.document.update.TensorModifyUpdate$Operation": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.document.update.TensorModifyUpdate$Operation[] values()",
+      "public static com.yahoo.document.update.TensorModifyUpdate$Operation valueOf(java.lang.String)",
+      "public static com.yahoo.document.update.TensorModifyUpdate$Operation getOperation(int)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.document.update.TensorModifyUpdate$Operation REPLACE",
+      "public static final enum com.yahoo.document.update.TensorModifyUpdate$Operation ADD",
+      "public static final enum com.yahoo.document.update.TensorModifyUpdate$Operation MUL",
+      "public final int id",
+      "public final java.lang.String name"
+    ]
+  },
+  "com.yahoo.document.update.TensorModifyUpdate": {
+    "superClass": "com.yahoo.document.update.ValueUpdate",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.document.update.TensorModifyUpdate$Operation, com.yahoo.document.datatypes.TensorFieldValue)",
+      "public com.yahoo.document.update.TensorModifyUpdate$Operation getOperation()",
+      "public com.yahoo.document.datatypes.TensorFieldValue getValue()",
+      "public void setValue(com.yahoo.document.datatypes.TensorFieldValue)",
+      "public com.yahoo.document.datatypes.FieldValue applyTo(com.yahoo.document.datatypes.FieldValue)",
+      "protected void checkCompatibility(com.yahoo.document.DataType)",
+      "public void serialize(com.yahoo.document.serialization.DocumentUpdateWriter, com.yahoo.document.DataType)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "public bridge synthetic void setValue(com.yahoo.document.datatypes.FieldValue)",
+      "public bridge synthetic com.yahoo.document.datatypes.FieldValue getValue()"
+    ],
+    "fields": [
+      "protected com.yahoo.document.update.TensorModifyUpdate$Operation operation",
+      "protected com.yahoo.document.datatypes.TensorFieldValue tensor"
+    ]
+  },
   "com.yahoo.document.update.ValueUpdate$ValueUpdateClassID": {
     "superClass": "java.lang.Enum",
     "interfaces": [],
@@ -5195,6 +5247,7 @@
       "public static final enum com.yahoo.document.update.ValueUpdate$ValueUpdateClassID CLEAR",
       "public static final enum com.yahoo.document.update.ValueUpdate$ValueUpdateClassID MAP",
       "public static final enum com.yahoo.document.update.ValueUpdate$ValueUpdateClassID REMOVE",
+      "public static final enum com.yahoo.document.update.ValueUpdate$ValueUpdateClassID TENSORMODIFY",
       "public final int id",
       "public final java.lang.String name"
     ]

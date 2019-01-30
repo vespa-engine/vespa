@@ -342,7 +342,8 @@ public abstract class ValueUpdate<T extends FieldValue> {
         ASSIGN(27, "assign"),
         CLEAR(28, "clear"),
         MAP(29, "map"),
-        REMOVE(30, "remove");
+        REMOVE(30, "remove"),
+        TENSORMODIFY(100, "tensormodify");
 
         public final int id;
         public final String name;
