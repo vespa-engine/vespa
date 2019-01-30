@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import org.junit.Test;
 
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -15,7 +14,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.3
  */
 public class HostRegistryTest {
     @Test
@@ -71,9 +69,9 @@ public class HostRegistryTest {
         HostRegistry<String> reg = new HostRegistry<>();
         List<String> hosts = new ArrayList<>(Arrays.asList("foo.com", "bar.com", "baz.com"));
         reg.update("fookey", hosts);
-        assertThat(reg.getCurrentHosts("fookey").size(), is(3));
+        assertThat(reg.getHostsForKey("fookey").size(), is(3));
         hosts.remove(2);
-        assertThat(reg.getCurrentHosts("fookey").size(), is(3));
+        assertThat(reg.getHostsForKey("fookey").size(), is(3));
     }
 
     @Test
