@@ -70,7 +70,6 @@ public final class Node {
     public Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type) {
         Objects.requireNonNull(id, "A node must have an ID");
-        requireNonEmpty(ipAddresses, "A node must have at least one valid IP address");
         requireNonEmptyString(hostname, "A node must have a hostname");
         requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
         Objects.requireNonNull(flavor, "A node must have a flavor");
@@ -79,6 +78,9 @@ public final class Node {
         Objects.requireNonNull(allocation, "A null node allocation is not permitted");
         Objects.requireNonNull(history, "A null node history is not permitted");
         Objects.requireNonNull(type, "A null node type is not permitted");
+
+        if (state == State.active)
+            requireNonEmpty(ipAddresses, "An active node must have at least one valid IP address");
 
         this.ipAddresses = ImmutableSet.copyOf(ipAddresses);
         this.ipAddressPool = new IP.AddressPool(this, ipAddressPool);
