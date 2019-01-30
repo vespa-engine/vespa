@@ -115,7 +115,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::update(const MatchingStats &stats)
     docsMatched.inc(stats.docsMatched());
     docsRanked.inc(stats.docsRanked());
     docsReRanked.inc(stats.docsReRanked());
-    queriesSoftDoomed.inc(stats.softDoomed());
+    softDoomedQueries.inc(stats.softDoomed());
     softDoomFactor.set(stats.softDoomFactor());
     queries.inc(stats.queries());
     queryCollateralTime.addValueBatch(stats.queryCollateralTimeAvg(), stats.queryCollateralTimeCount(),
@@ -130,7 +130,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
       docsRanked("docs_ranked", {}, "Number of documents ranked (first phase)", this),
       docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
       queries("queries", {}, "Number of queries executed", this),
-      queriesSoftDoomed("queries_soft_doomed", {}, "Number of queries hitting the soft timeout", this),
+      softDoomedQueries("queries_soft_doomed", {}, "Number of queries hitting the soft timeout", this),
       softDoomFactor("soft_doom_factor", {}, "Factor used to compute soft-timeout", this),
       queryCollateralTime("query_collateral_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
       queryLatency("query_latency", {}, "Total average latency (sec) when matching and ranking a query", this)
@@ -148,6 +148,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
       docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
       queries("queries", {}, "Number of queries executed", this),
       limitedQueries("limited_queries", {}, "Number of queries limited in match phase", this),
+      softDoomedQueries("queries_soft_doomed", {}, "Number of queries hitting the soft timeout", this),
       matchTime("match_time", {}, "Average time (sec) for matching a query (1st phase)", this),
       groupingTime("grouping_time", {}, "Average time (sec) spent on grouping", this),
       rerankTime("rerank_time", {}, "Average time (sec) spent on 2nd phase ranking", this),
@@ -193,6 +194,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
     docsReRanked.inc(stats.docsReRanked());
     queries.inc(stats.queries());
     limitedQueries.inc(stats.limited_queries());
+    softDoomedQueries.inc(stats.softDoomed());
     matchTime.addValueBatch(stats.matchTimeAvg(), stats.matchTimeCount(),
                             stats.matchTimeMin(), stats.matchTimeMax());
     groupingTime.addValueBatch(stats.groupingTimeAvg(), stats.groupingTimeCount(),

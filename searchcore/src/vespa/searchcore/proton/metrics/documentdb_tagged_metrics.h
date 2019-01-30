@@ -114,7 +114,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         metrics::LongCountMetric docsRanked;
         metrics::LongCountMetric docsReRanked;
         metrics::LongCountMetric queries;
-        metrics::LongCountMetric queriesSoftDoomed;
+        metrics::LongCountMetric softDoomedQueries;
         metrics::DoubleValueMetric softDoomFactor;
         metrics::DoubleAverageMetric queryCollateralTime;
         metrics::DoubleAverageMetric queryLatency;
@@ -140,6 +140,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::LongCountMetric     docsReRanked;
             metrics::LongCountMetric     queries;
             metrics::LongCountMetric     limitedQueries;
+            metrics::LongCountMetric     softDoomedQueries;
             metrics::DoubleAverageMetric matchTime;
             metrics::DoubleAverageMetric groupingTime;
             metrics::DoubleAverageMetric rerankTime;
