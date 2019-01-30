@@ -5197,7 +5197,7 @@
     "fields": [
       "public static final enum com.yahoo.document.update.TensorModifyUpdate$Operation REPLACE",
       "public static final enum com.yahoo.document.update.TensorModifyUpdate$Operation ADD",
-      "public static final enum com.yahoo.document.update.TensorModifyUpdate$Operation MUL",
+      "public static final enum com.yahoo.document.update.TensorModifyUpdate$Operation MULTIPLY",
       "public final int id",
       "public final java.lang.String name"
     ]

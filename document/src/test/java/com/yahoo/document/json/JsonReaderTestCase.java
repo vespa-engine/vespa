@@ -43,6 +43,7 @@ import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
+import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.IndexedTensor;
@@ -1268,6 +1269,78 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_modify_update_with_replace_operation() {
+        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.REPLACE, "mappedtensorfield",
+                inputJson("{",
+                        "  'operation': 'replace',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_modify_update_with_add_operation() {
+        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.ADD, "mappedtensorfield",
+                inputJson("{",
+                        "  'operation': 'add',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_modify_update_with_multiply_operation() {
+        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.MULTIPLY, "mappedtensorfield",
+                inputJson("{",
+                        "  'operation': 'multiply',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_modify_update_on_non_tensor_field_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("A modify update can only be applied to tensor fields. Field 'something' is of type 'string'");
+        JsonReader reader = createReader(inputJson("{ 'update': 'id:unittest:smoke::doc1',",
+                "  'fields': {",
+                "    'something': {",
+                "      'modify': {} }}}"));
+        reader.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::doc1");
+    }
+
+    @Test
+    public void tensor_modify_update_with_unknown_operation_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Unknown operation 'unknown' in modify update for field 'mappedtensorfield'");
+        createTensorModifyUpdate(inputJson("{",
+                "  'operation': 'unknown',",
+                "  'cells': [",
+                "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"), "mappedtensorfield");
+    }
+
+    @Test
+    public void tensor_modify_update_without_operation_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Modify update for field 'mappedtensorfield' does not contain an operation");
+        createTensorModifyUpdate(inputJson("{",
+                "  'cells': [] }"), "mappedtensorfield");
+    }
+
+    @Test
+    public void tensor_modify_update_without_cells_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Modify update for field 'mappedtensorfield' does not contain tensor cells");
+        createTensorModifyUpdate(inputJson("{",
+                "  'operation': 'replace' }"), "mappedtensorfield");
+    }
+
+    @Test
+    public void tensor_modify_update_with_unknown_content_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Unknown JSON string 'unknown' in modify update for field 'mappedtensorfield'");
+        createTensorModifyUpdate(inputJson("{",
+                "  'unknown': 'here' }"), "mappedtensorfield");
+    }
+
+    @Test
     public void require_that_parser_propagates_datatype_parser_errors_predicate() {
         assertParserErrorMatches(
                 "Error in document 'id:unittest:testpredicate::0' - could not parse field 'boolean' of type 'predicate': " +
@@ -1384,6 +1457,33 @@ public class JsonReaderTestCase {
         AssignValueUpdate assignUpdate = (AssignValueUpdate) getTensorField(update).getValueUpdate(0);
         TensorFieldValue fieldValue = (TensorFieldValue) assignUpdate.getValue();
         assertEquals(Tensor.from(expectedTensor), fieldValue.getTensor().get());
+    }
+
+    private DocumentUpdate createTensorModifyUpdate(String modifyJson, String tensorFieldName) {
+        JsonReader reader = createReader(inputJson("[",
+                "{ 'update': '" + TENSOR_DOC_ID + "',",
+                "  'fields': {",
+                "    '" + tensorFieldName + "': {",
+                "      'modify': " + modifyJson + " }}}]"));
+        return (DocumentUpdate) reader.next();
+    }
+
+    private void assertTensorModifyUpdate(String expectedTensor, TensorModifyUpdate.Operation expectedOperation,
+                                          String tensorFieldName, String modifyJson) {
+        assertTensorModifyUpdate(expectedTensor, expectedOperation, tensorFieldName,
+                createTensorModifyUpdate(modifyJson, tensorFieldName));
+    }
+
+    private static void assertTensorModifyUpdate(String expectedTensor, TensorModifyUpdate.Operation expectedOperation,
+                                                 String tensorFieldName, DocumentUpdate update) {
+        assertEquals("testtensor", update.getId().getDocType());
+        assertEquals(TENSOR_DOC_ID, update.getId().toString());
+        assertEquals(1, update.fieldUpdates().size());
+        FieldUpdate fieldUpdate = update.getFieldUpdate(tensorFieldName);
+        assertEquals(1, fieldUpdate.size());
+        TensorModifyUpdate modifyUpdate = (TensorModifyUpdate) fieldUpdate.getValueUpdate(0);
+        assertEquals(expectedOperation, modifyUpdate.getOperation());
+        assertEquals(Tensor.from(expectedTensor), modifyUpdate.getValue().getTensor().get());
     }
 
     private static FieldUpdate getTensorField(DocumentUpdate update) {

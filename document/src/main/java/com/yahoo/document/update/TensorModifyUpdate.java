@@ -80,7 +80,7 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
         /**
          * Multiply values from matching update tensor cells with target tensor cells.
          */
-        MUL(2, "multiply");
+        MULTIPLY(2, "multiply");
 
         /**
          * The numeric ID of the operator, used for serialization.

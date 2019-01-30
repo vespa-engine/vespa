@@ -30,6 +30,8 @@ import static com.yahoo.document.json.readers.MapReader.UPDATE_MATCH;
 import static com.yahoo.document.json.readers.MapReader.createMapUpdate;
 import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_ASSIGN;
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleUpdate;
+import static com.yahoo.document.json.readers.TensorModifyUpdateReader.UPDATE_MODIFY;
+import static com.yahoo.document.json.readers.TensorModifyUpdateReader.createModifyUpdate;
 
 /**
  * @author freva
@@ -121,6 +123,9 @@ public class VespaJsonDocumentReader {
                     break;
                 case UPDATE_MATCH:
                     fieldUpdate.addValueUpdate(createMapUpdate(buffer, field));
+                    break;
+                case UPDATE_MODIFY:
+                    fieldUpdate.addValueUpdate(createModifyUpdate(buffer, field));
                     break;
                 default:
                     String action = buffer.currentName();
