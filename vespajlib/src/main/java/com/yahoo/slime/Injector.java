@@ -25,17 +25,29 @@ public class Injector {
     }
 
     private void injectValue(Inserter inserter, Inspector inspector, Inspector guard) {
-        switch (inspector.type()) {
-            case NIX:    inserter.insertNIX(); break;
-            case BOOL:   inserter.insertBOOL(inspector.asBool()); break;
-            case LONG:   inserter.insertLONG(inspector.asLong()); break;
-            case DOUBLE: inserter.insertDOUBLE(inspector.asDouble()); break;
-            case STRING: inserter.insertSTRING(inspector.asString()); break;
-            case DATA:   inserter.insertDATA(inspector.asData()); break;
-            case ARRAY:  injectArray(inserter, inspector, guard); break;
-            case OBJECT: injectObject(inserter, inspector, guard); break;
-            default:     throw new IllegalArgumentException("Unknown type " + inspector.type());
-        }
+        inspector.accept(new Visitor() {
+            @Override public void visitInvalid()           { }
+            @Override public void visitNix()               { inserter.insertNIX(); }
+            @Override public void visitBool(boolean bit)   { inserter.insertBOOL(bit); }
+            @Override public void visitLong(long l)        { inserter.insertLONG(l); }
+            @Override public void visitDouble(double d)    { inserter.insertDOUBLE(d); }
+            @Override public void visitString(String str)  { inserter.insertSTRING(str); }
+            @Override public void visitString(byte[] utf8) { inserter.insertSTRING(utf8); }
+            @Override public void visitData(byte[] data)   { inserter.insertDATA(data); }
+
+            @Override
+            public void visitArray(Inspector arr) {
+                Cursor cursor = inserter.insertARRAY();
+                ArrayTraverser arrayTraverser = new NestedInjector(cursor, guard != null ? guard : cursor);
+                arr.traverse(arrayTraverser);
+            }
+            @Override
+            public void visitObject(Inspector obj) {
+                Cursor cursor = inserter.insertOBJECT();
+                ObjectTraverser objectTraverser = new NestedInjector(cursor, guard != null ? guard : cursor);
+                obj.traverse(objectTraverser);
+            }
+        });
     }
 
     private void injectArray(Inserter inserter, Inspector inspector, Inspector guard) {
@@ -65,9 +77,7 @@ public class Injector {
                 return;
             }
 
-            var inserter = new ArrayInserter();
-            inserter.adjust(cursor);
-            injectValue(inserter, inspector, guard);
+            injectValue(new ArrayInserter(cursor), inspector, guard);
         }
 
         @Override
@@ -76,9 +86,7 @@ public class Injector {
                 return;
             }
 
-            var inserter = new ObjectInserter();
-            inserter.adjust(cursor, name);
-            injectValue(inserter, inspector, guard);
+            injectValue(new ObjectInserter(cursor, name), inspector, guard);
         }
     }
 }

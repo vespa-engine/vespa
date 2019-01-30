@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -59,10 +58,6 @@ public class InjectorTest {
 
     private final Injector injector = new Injector();
 
-    @Before
-    public void setUp() {
-    }
-
     private void inject(Inspector inspector, Inserter inserter) {
         injector.inject(inspector, inserter);
     }
@@ -73,16 +68,8 @@ public class InjectorTest {
         return inserter;
     }
 
-    private Inserter arrayInserter(Cursor cursor) {
-        var inserter = new ArrayInserter();
-        inserter.adjust(cursor);
-        return inserter;
-    }
-
-    private Inserter objectInserter(Cursor cursor, String name) {
-        var inserter = new ObjectInserter();
-        inserter.adjust(cursor, name);
-        return inserter;
+    private void assertEqualTo(Slime left, Slime right) {
+        assertTrue("'" + left + "' not equal to '" + right + "'", left.equalTo(right));
     }
 
     private void assertEqualTo(Inspector left, Inspector right) {
@@ -118,15 +105,15 @@ public class InjectorTest {
     @Test
     public void injectIntoArray() {
         f2.slime1.setArray();
-        inject(f1.empty.get(), arrayInserter(f2.slime1.get()));
-        inject(f1.nixValue.get(), arrayInserter(f2.slime1.get()));
-        inject(f1.boolValue.get(), arrayInserter(f2.slime1.get()));
-        inject(f1.longValue.get(), arrayInserter(f2.slime1.get()));
-        inject(f1.doubleValue.get(), arrayInserter(f2.slime1.get()));
-        inject(f1.stringValue.get(), arrayInserter(f2.slime1.get()));
-        inject(f1.dataValue.get(), arrayInserter(f2.slime1.get()));
-        inject(f1.arrayValue.get(), arrayInserter(f2.slime1.get()));
-        inject(f1.objectValue.get(), arrayInserter(f2.slime1.get()));
+        inject(f1.empty.get(), new ArrayInserter(f2.slime1.get()));
+        inject(f1.nixValue.get(), new ArrayInserter(f2.slime1.get()));
+        inject(f1.boolValue.get(), new ArrayInserter(f2.slime1.get()));
+        inject(f1.longValue.get(), new ArrayInserter(f2.slime1.get()));
+        inject(f1.doubleValue.get(), new ArrayInserter(f2.slime1.get()));
+        inject(f1.stringValue.get(), new ArrayInserter(f2.slime1.get()));
+        inject(f1.dataValue.get(), new ArrayInserter(f2.slime1.get()));
+        inject(f1.arrayValue.get(), new ArrayInserter(f2.slime1.get()));
+        inject(f1.objectValue.get(), new ArrayInserter(f2.slime1.get()));
 
         assertEquals(f1.empty.get().toString(), f2.slime1.get().entry(0).toString());
         assertEquals(f1.nixValue.get().toString(), f2.slime1.get().entry(1).toString());
@@ -142,15 +129,15 @@ public class InjectorTest {
     @Test
     public void injectIntoObject() {
         f2.slime1.setObject();
-        inject(f1.empty.get(), objectInserter(f2.slime1.get(), "a"));
-        inject(f1.nixValue.get(), objectInserter(f2.slime1.get(), "b"));
-        inject(f1.boolValue.get(), objectInserter(f2.slime1.get(), "c"));
-        inject(f1.longValue.get(), objectInserter(f2.slime1.get(), "d"));
-        inject(f1.doubleValue.get(), objectInserter(f2.slime1.get(), "e"));
-        inject(f1.stringValue.get(), objectInserter(f2.slime1.get(), "f"));
-        inject(f1.dataValue.get(), objectInserter(f2.slime1.get(), "g"));
-        inject(f1.arrayValue.get(), objectInserter(f2.slime1.get(), "h"));
-        inject(f1.objectValue.get(), objectInserter(f2.slime1.get(), "i"));
+        inject(f1.empty.get(), new ObjectInserter(f2.slime1.get(), "a"));
+        inject(f1.nixValue.get(), new ObjectInserter(f2.slime1.get(), "b"));
+        inject(f1.boolValue.get(), new ObjectInserter(f2.slime1.get(), "c"));
+        inject(f1.longValue.get(), new ObjectInserter(f2.slime1.get(), "d"));
+        inject(f1.doubleValue.get(), new ObjectInserter(f2.slime1.get(), "e"));
+        inject(f1.stringValue.get(), new ObjectInserter(f2.slime1.get(), "f"));
+        inject(f1.dataValue.get(), new ObjectInserter(f2.slime1.get(), "g"));
+        inject(f1.arrayValue.get(), new ObjectInserter(f2.slime1.get(), "h"));
+        inject(f1.objectValue.get(), new ObjectInserter(f2.slime1.get(), "i"));
 
         assertEquals(f1.empty.get().toString(), f2.slime1.get().field("a").toString());
         assertEquals(f1.nixValue.get().toString(), f2.slime1.get().field("b").toString());
@@ -167,11 +154,63 @@ public class InjectorTest {
     public void invalidInjectionIsIgnored() {
         inject(f1.arrayValue.get(), slimeInserter(f2.slime1));
         assertEquals(3, f2.slime1.get().entries());
-        inject(f1.longValue.get(), arrayInserter(f2.slime1.get()));
+        inject(f1.longValue.get(), new ArrayInserter(f2.slime1.get()));
         assertEquals(4, f2.slime1.get().entries());
-        inject(f1.doubleValue.get(), arrayInserter(f2.slime1.get()));
+        inject(f1.doubleValue.get(), new ArrayInserter(f2.slime1.get()));
         assertEquals(5, f2.slime1.get().entries());
-        inject(f1.nixValue.get().field("bogus"), arrayInserter(f2.slime1.get()));
+        inject(f1.nixValue.get().field("bogus"), new ArrayInserter(f2.slime1.get()));
         assertEquals(5, f2.slime1.get().entries());
+    }
+
+    @Test
+    public void recursiveArrayInject() {
+        Slime expect = new Slime();
+        {
+            Cursor arr = expect.setArray();
+            arr.addLong(1);
+            arr.addLong(2);
+            arr.addLong(3);
+            {
+                Cursor arrCpy = arr.addArray();
+                arrCpy.addLong(1);
+                arrCpy.addLong(2);
+                arrCpy.addLong(3);
+            }
+        }
+        Slime data = new Slime();
+        {
+            Cursor arr = data.setArray();
+            arr.addLong(1);
+            arr.addLong(2);
+            arr.addLong(3);
+        }
+        inject(data.get(), new ArrayInserter(data.get()));
+        assertEquals(expect.toString(), data.toString());
+    }
+
+    @Test
+    public void recursiveObjectInject() {
+        Slime expect = new Slime();
+        {
+            Cursor obj = expect.setObject();
+            obj.setLong("a", 1);
+            obj.setLong("b", 2);
+            obj.setLong("c", 3);
+            {
+                Cursor obj_cpy = obj.setObject("d");
+                obj_cpy.setLong("a", 1);
+                obj_cpy.setLong("b", 2);
+                obj_cpy.setLong("c", 3);
+            }
+        }
+        Slime data = new Slime();
+        {
+            Cursor obj = data.setObject();
+            obj.setLong("a", 1);
+            obj.setLong("b", 2);
+            obj.setLong("c", 3);
+        }
+        inject(data.get(), new ObjectInserter(data.get(), "d"));
+        assertEqualTo(expect, data);
     }
 }

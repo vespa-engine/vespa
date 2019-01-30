@@ -4,9 +4,6 @@ package com.yahoo.slime;
 import com.yahoo.text.Utf8;
 
 import java.io.ByteArrayOutputStream;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A port of the C++ json decoder intended to be fast.
@@ -20,7 +17,7 @@ public class JsonDecoder {
 
     private final SlimeInserter slimeInserter = new SlimeInserter();
     private final ArrayInserter arrayInserter = new ArrayInserter();
-    private final JsonObjectInserter objectInserter = new JsonObjectInserter();
+    private final ObjectInserter objectInserter = new ObjectInserter();
     private final ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
     private static final byte[] TRUE = {'t', 'r', 'u', 'e'};
@@ -282,25 +279,6 @@ public class JsonDecoder {
             default: return;
             }
         }
-    }
-
-    private static final class JsonObjectInserter implements Inserter {
-        private Cursor target;
-        private String key;
-        public final JsonObjectInserter adjust(Cursor c, String key) {
-            target = c;
-            this.key = key;
-            return this;
-        }
-        public final Cursor insertNIX()                { return target.setNix(key); }
-        public final Cursor insertBOOL(boolean value)  { return target.setBool(key, value); }
-        public final Cursor insertLONG(long value)     { return target.setLong(key, value); }
-        public final Cursor insertDOUBLE(double value) { return target.setDouble(key, value); }
-        public final Cursor insertSTRING(String value) { return target.setString(key, value); }
-        public final Cursor insertSTRING(byte[] utf8)  { return target.setString(key, utf8); }
-        public final Cursor insertDATA(byte[] value)   { return target.setData(key, value); }
-        public final Cursor insertARRAY()              { return target.setArray(key); }
-        public final Cursor insertOBJECT()             { return target.setObject(key); }
     }
 
 }

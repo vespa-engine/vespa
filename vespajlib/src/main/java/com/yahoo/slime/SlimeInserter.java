@@ -5,7 +5,7 @@ package com.yahoo.slime;
  * Helper class for inserting values into a Slime object.
  * For justification read Inserter documentation.
  **/
-final class SlimeInserter implements Inserter {
+public final class SlimeInserter implements Inserter {
     private Slime target;
     public final SlimeInserter adjust(Slime slime) {
         target = slime;

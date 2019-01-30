@@ -125,6 +125,7 @@ abstract class Value implements Cursor {
         if (equal) {
             switch (type()) {
                 case NIX:
+                    equal = valid() == that.valid();
                     break;
                 case BOOL:
                     equal = asBool() == that.asBool();

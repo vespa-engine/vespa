@@ -8,7 +8,7 @@ final class BinaryDecoder {
 
     private final SlimeInserter slimeInserter = new SlimeInserter();
     private final ArrayInserter arrayInserter = new ArrayInserter();
-    private final ObjectInserter objectInserter = new ObjectInserter();
+    private final ObjectSymbolInserter objectInserter = new ObjectSymbolInserter();
 
     public BinaryDecoder() {}
 
