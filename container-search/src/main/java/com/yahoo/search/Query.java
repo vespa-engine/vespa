@@ -202,7 +202,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
         argumentType.addField(new FieldDescription(OFFSET.toString(), "integer", "offset start"));
         argumentType.addField(new FieldDescription(HITS.toString(), "integer", "hits count"));
-        // TODO: Should this be added to com.yahoo.search.query.properties.QueryProperties? If not, why not?
         argumentType.addField(new FieldDescription(QUERY_PROFILE.toString(), "string"));
         argumentType.addField(new FieldDescription(SEARCH_CHAIN.toString(), "string"));
         argumentType.addField(new FieldDescription(TRACE_LEVEL.toString(), "integer", "tracelevel"));

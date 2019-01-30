@@ -52,15 +52,16 @@ public class SearchResponse {
     public static Timing createTiming(Query query, Result result) {
         return new Timing(result.getElapsedTime().firstFill(),
                           0,
-                          result.getElapsedTime().first(), query.getTimeout());
+                          result.getElapsedTime().first(),
+                          query.getTimeout());
     }
 
     public static HitCounts createHitCounts(Query query, Result result) {
         return new HitCounts(result.getHitCount(),
-                          result.getConcreteHitCount(),
-                          result.getTotalHitCount(),
-                          query.getHits(),
-                          query.getOffset());
+                             result.getConcreteHitCount(),
+                             result.getTotalHitCount(),
+                             query.getHits(),
+                             query.getOffset());
     }
 
 }

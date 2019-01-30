@@ -47,7 +47,7 @@ public class LocalProviderSpec {
 
     public final String clusterName;
 
-    //TODO: make this final
+    // TODO: make this final
     public Integer cacheSize;
 
     public LocalProviderSpec(String clusterName, Integer cacheSize) {
