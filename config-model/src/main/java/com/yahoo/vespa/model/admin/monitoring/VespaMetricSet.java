@@ -51,8 +51,17 @@ public class VespaMetricSet {
 
     private static Set<Metric> getOtherMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
+
         metrics.add(new Metric("slobrok.heartbeats.failed.count"));
         metrics.add(new Metric("logd.processed.lines.count"));
+
+        metrics.add(new Metric("jrt.transport.tls-certificate-verification-failures"));
+        metrics.add(new Metric("jrt.transport.peer-authorization-failures"));
+        metrics.add(new Metric("jrt.transport.server.tls-connections-established"));
+        metrics.add(new Metric("jrt.transport.client.tls-connections-established"));
+        metrics.add(new Metric("jrt.transport.server.unencrypted-connections-established"));
+        metrics.add(new Metric("jrt.transport.client.unencrypted-connections-established"));
+
         return metrics;
     }
 
