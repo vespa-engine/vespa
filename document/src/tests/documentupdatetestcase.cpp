@@ -12,6 +12,7 @@
 #include <vespa/document/update/fieldupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
+#include <vespa/document/update/tensormodifyupdate.h>
 #include <vespa/document/update/valueupdate.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/util/bytebuffer.h>
@@ -59,6 +60,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   void testMapValueUpdate();
   void testTensorAssignUpdate();
   void testTensorClearUpdate();
+  void testTensorModifyUpdate();
   void testThatDocumentUpdateFlagsIsWorking();
   void testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50();
   void testThatCreateIfNonExistentFlagIsSerializedAndDeserialized();
@@ -87,6 +89,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testMapValueUpdate);
   CPPUNIT_TEST(testTensorAssignUpdate);
   CPPUNIT_TEST(testTensorClearUpdate);
+  CPPUNIT_TEST(testTensorModifyUpdate);
   CPPUNIT_TEST(testThatDocumentUpdateFlagsIsWorking);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerializedAndDeserialized);
@@ -142,7 +145,7 @@ void testValueUpdate(const UpdateType& update, const DataType &type) {
     try{
         DocumentTypeRepo repo;
         nbostream stream = serialize(update);
-        typename UpdateType::UP copy(dynamic_cast<UpdateType*>(ValueUpdate::createInstance(repo, type, stream).release()));
+        std::unique_ptr<UpdateType> copy(dynamic_cast<UpdateType*>(ValueUpdate::createInstance(repo, type, stream).release()));
         CPPUNIT_ASSERT_EQUAL(update, *copy);
     } catch (std::exception& e) {
             std::cerr << "Failed while processing update " << update << "\n";
@@ -160,6 +163,31 @@ FieldValue::UP createTensorFieldValue() {
     auto fv(std::make_unique<TensorFieldValue>());
     *fv = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} }, {"x", "y"});
     return std::move(fv);
+}
+
+std::unique_ptr<Tensor> createTensorWith2Cells() {
+    return createTensor({    {{{"x", "8"}, {"y", "9"}}, 11},
+                             {{{"x", "9"}, {"y", "9"}}, 11} }, {"x", "y"});
+}
+
+FieldValue::UP createTensorFieldValueWith2Cells() {
+    auto fv(std::make_unique<TensorFieldValue>());
+    *fv = createTensorWith2Cells();
+    return std::move(fv);
+}
+
+std::unique_ptr<TensorModifyUpdate> createTensorModifyUpdate() {
+    auto tensorFieldValue(std::make_unique<TensorFieldValue>());
+    *tensorFieldValue = createTensor({ {{{"x", "8"}, {"y", "9"}}, 2} }, {"x", "y"});
+    auto update = std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::REPLACE, std::move(tensorFieldValue));
+    return update;
+}
+
+const Tensor &asTensor(const FieldValue &fieldValue) {
+    auto &tensorFieldValue = dynamic_cast<const TensorFieldValue &>(fieldValue);
+    auto &tensor = tensorFieldValue.getAsTensorPtr();
+    CPPUNIT_ASSERT(tensor);
+    return *tensor;
 }
 
 }  // namespace
@@ -917,6 +945,26 @@ DocumentUpdateTest::testTensorClearUpdate()
     upd.applyTo(updated);
     CPPUNIT_ASSERT(!updated.getValue("tensor"));
     CPPUNIT_ASSERT(*doc == updated);
+}
+
+void
+DocumentUpdateTest::testTensorModifyUpdate()
+{
+    TestDocMan docMan;
+    Document::UP doc(docMan.createDocument());
+    Document updated(*doc);
+    updated.setValue(updated.getField("tensor"), *createTensorFieldValueWith2Cells());
+    CPPUNIT_ASSERT(*doc != updated);
+    testValueUpdate(*createTensorModifyUpdate(), *DataType::TENSOR);
+    DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
+    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(*createTensorModifyUpdate()));
+    upd.applyTo(updated);
+    FieldValue::UP fval(updated.getValue("tensor"));
+    CPPUNIT_ASSERT(fval);
+    auto &tensor = asTensor(*fval);
+    // TODO: Check that tensor is correctly modified.
+    // For now, value is unchanged.
+    CPPUNIT_ASSERT(tensor.equals(*createTensorWith2Cells()));
 }
 
 void

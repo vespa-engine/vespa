@@ -15,6 +15,7 @@ class MapValueUpdate;
 class AddFieldPathUpdate;
 class AssignFieldPathUpdate;
 class RemoveFieldPathUpdate;
+class TensorModifyUpdate;
 
 struct UpdateVisitor {
     virtual ~UpdateVisitor() {}
@@ -30,6 +31,7 @@ struct UpdateVisitor {
     virtual void visit(const AddFieldPathUpdate &value) = 0;
     virtual void visit(const AssignFieldPathUpdate &value) = 0;
     virtual void visit(const RemoveFieldPathUpdate &value) = 0;
+    virtual void visit(const TensorModifyUpdate &value) = 0;
 };
 
 #define ACCEPT_UPDATE_VISITOR void accept(UpdateVisitor & visitor) const override { visitor.visit(*this); }
