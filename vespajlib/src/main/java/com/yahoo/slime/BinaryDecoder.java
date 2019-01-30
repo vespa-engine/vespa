@@ -6,9 +6,9 @@ import static com.yahoo.slime.BinaryFormat.*;
 final class BinaryDecoder {
     BufferedInput in;
 
-    private final SlimeInserter slimeInserter = new SlimeInserter();
-    private final ArrayInserter arrayInserter = new ArrayInserter();
-    private final ObjectInserter objectInserter = new ObjectInserter();
+    private final SlimeInserter slimeInserter = new SlimeInserter(null);
+    private final ArrayInserter arrayInserter = new ArrayInserter(null);
+    private final ObjectSymbolInserter objectInserter = new ObjectSymbolInserter(null, 0);
 
     public BinaryDecoder() {}
 

@@ -131,4 +131,13 @@ public interface Inspector {
      */
     Inspector field(String name);
 
+    /**
+     * Tests whether this is equal to Inspector.
+     *
+     * Since equality of two Inspectors is subtle, {@link Object#equals(Object)} is not used.
+     *
+     * @param that inspector.
+     * @return true if they are equal.
+     */
+    boolean equalTo(Inspector that);
 }

@@ -7,7 +7,7 @@ package com.yahoo.slime;
  * deserializers where you can use it to decouple the actual value
  * decoding from the container where the value should be inserted.
  **/
-interface Inserter {
+public interface Inserter {
     Cursor insertNIX();
     Cursor insertBOOL(boolean value);
     Cursor insertLONG(long value);

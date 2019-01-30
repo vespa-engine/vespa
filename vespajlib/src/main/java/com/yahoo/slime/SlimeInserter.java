@@ -5,12 +5,18 @@ package com.yahoo.slime;
  * Helper class for inserting values into a Slime object.
  * For justification read Inserter documentation.
  **/
-final class SlimeInserter implements Inserter {
+public final class SlimeInserter implements Inserter {
     private Slime target;
+
+    public SlimeInserter(Slime target) {
+        this.target = target;
+    }
+
     public final SlimeInserter adjust(Slime slime) {
         target = slime;
         return this;
     }
+
     public final Cursor insertNIX()                { return target.setNix(); }
     public final Cursor insertBOOL(boolean value)  { return target.setBool(value); }
     public final Cursor insertLONG(long value)     { return target.setLong(value); }
