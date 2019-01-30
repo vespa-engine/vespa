@@ -134,7 +134,7 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
     public void requireThatWeCanParseResizingTag() {
         Tuning t = createTuning(parseXml("<resizing>",
                 "<initialdocumentcount>128</initialdocumentcount>",
-                "<amortizecount>13</amortizecount>",
+                "<amortize-count>13</amortize-count>",
                 "</resizing>"));
         assertEquals(128, t.searchNode.resizing.initialDocumentCount.intValue());
         assertEquals(13, t.searchNode.resizing.amortizeCount.intValue());

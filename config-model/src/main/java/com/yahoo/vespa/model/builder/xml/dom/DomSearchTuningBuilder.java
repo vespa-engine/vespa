@@ -165,7 +165,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         for (Element e : XML.getChildren(spec)) {
             if (equals("initialdocumentcount", e)) {
                 sn.resizing.initialDocumentCount = asInt(e);
-            } else if (equals("amortizecount", e)) {
+            } else if (equals("amortize-count", e)) {
                 sn.resizing.amortizeCount = asInt(e);
             }
         }
