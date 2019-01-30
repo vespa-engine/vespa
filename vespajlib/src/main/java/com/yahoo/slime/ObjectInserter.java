@@ -9,7 +9,8 @@ public final class ObjectInserter implements Inserter {
     private String key;
 
     public ObjectInserter(Cursor c, String key) {
-        adjust(c, key);
+        target = c;
+        this.key = key;
     }
 
     public final ObjectInserter adjust(Cursor c, String key) {

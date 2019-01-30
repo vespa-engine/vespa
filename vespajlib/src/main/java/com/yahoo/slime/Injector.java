@@ -50,18 +50,6 @@ public class Injector {
         });
     }
 
-    private void injectArray(Inserter inserter, Inspector inspector, Inspector guard) {
-        Cursor cursor = inserter.insertARRAY();
-        ArrayTraverser arrayTraverser = new NestedInjector(cursor, guard != null ? guard : cursor);
-        inspector.traverse(arrayTraverser);
-    }
-
-    private void injectObject(Inserter inserter, Inspector inspector, Inspector guard) {
-        Cursor cursor = inserter.insertOBJECT();
-        ObjectTraverser objectTraverser = new NestedInjector(cursor, guard != null ? guard : cursor);
-        inspector.traverse(objectTraverser);
-    }
-
     private class NestedInjector implements ArrayTraverser, ObjectTraverser {
         private final Cursor cursor;
         private final Inspector guard;

@@ -9,7 +9,7 @@ public final class SlimeInserter implements Inserter {
     private Slime target;
 
     public SlimeInserter(Slime target) {
-        adjust(target);
+        this.target = target;
     }
 
     public final SlimeInserter adjust(Slime slime) {

@@ -104,6 +104,14 @@ public class ValueTest {
         assertNotEqualTo(left.get(), right.get());
     }
 
+    @Test
+    public void testNixEquality() {
+        assertEqualTo(NixValue.invalid(), NixValue.invalid());
+        assertEqualTo(NixValue.instance(), NixValue.instance());
+        assertNotEqualTo(NixValue.instance(), NixValue.invalid());
+        assertNotEqualTo(NixValue.invalid(), NixValue.instance());
+    }
+
     private void populateWithPrimitives(Cursor cursor, boolean enabled) {
         cursor.setBool("bool", enabled ? true : false);
         cursor.setNix("nix");

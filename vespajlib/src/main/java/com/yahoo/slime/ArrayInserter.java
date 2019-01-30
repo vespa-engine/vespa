@@ -8,7 +8,7 @@ package com.yahoo.slime;
 public final class ArrayInserter implements Inserter {
     private Cursor target;
 
-    public ArrayInserter(Cursor c) { adjust(c); }
+    public ArrayInserter(Cursor c) { target = c; }
 
     public final ArrayInserter adjust(Cursor c) {
         target = c;
