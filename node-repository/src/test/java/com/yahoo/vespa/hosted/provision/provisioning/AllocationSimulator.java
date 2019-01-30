@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import javax.swing.JFrame;
@@ -81,7 +82,8 @@ public class AllocationSimulator {
     private Node node(String hostname, Flavor flavor, Optional<String> parent, Optional<String> tenant) {
         return new Node("fake", Collections.singleton("127.0.0.1"),
                 parent.isPresent() ? Collections.emptySet() : getAdditionalIP(), hostname, parent, flavor, Status.initial(),
-                parent.isPresent() ? Node.State.ready : Node.State.active, allocation(tenant), History.empty(), parent.isPresent() ? NodeType.tenant : NodeType.host);
+                parent.isPresent() ? Node.State.ready : Node.State.active, allocation(tenant), History.empty(),
+                parent.isPresent() ? NodeType.tenant : NodeType.host, new Reports());
     }
 
     private Set<String> getAdditionalIP() {

@@ -6,11 +6,14 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.node.Report;
+import com.yahoo.vespa.hosted.provision.node.Reports;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -137,11 +140,33 @@ public class NodePatcher {
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
             case "hardwareDivergence" :
                 return node.with(node.status().withHardwareDivergence(removeQuotedNulls(asOptionalString(value))));
+            case "reports" :
+                return nodeWithPatchedReports(node, value);
             case "openStackId" :
                 return node.withOpenStackId(asString(value));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
+    }
+
+    private Node nodeWithPatchedReports(Node node, Inspector reportsInspector) {
+        // "reports": null clears the reports
+        if (reportsInspector.type() == Type.NIX) return node.with(new Reports());
+
+        var reportsBuilder = new Reports.Builder(node.reports());
+
+        reportsInspector.traverse((ObjectTraverser) (reportId, reportInspector) -> {
+            if (reportInspector.type() == Type.NIX) {
+                // ... "reports": { "reportId": null } clears the report "reportId"
+                reportsBuilder.clearReport(reportId);
+            } else {
+                // ... "reports": { "reportId": {...} } overrides the whole report "reportId"
+                reportsBuilder.setReport(Report.fromSlime(reportId, reportInspector));
+            }
+        });
+
+        return node.with(reportsBuilder.build());
+
     }
 
     private Set<String> asStringSet(Inspector field) {

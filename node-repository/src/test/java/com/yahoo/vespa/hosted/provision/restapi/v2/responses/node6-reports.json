@@ -1,0 +1,85 @@
+{
+  "url": "http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+  "id": "host6.yahoo.com",
+  "state": "active",
+  "type": "tenant",
+  "hostname": "host6.yahoo.com",
+  "openStackId": "node6",
+  "flavor": "default",
+  "canonicalFlavor": "default",
+  "minDiskAvailableGb": 400.0,
+  "minMainMemoryAvailableGb": 16.0,
+  "description": "Flavor-name-is-default",
+  "minCpuCores": 2.0,
+  "fastDisk": true,
+  "bandwidth":0.0,
+  "environment": "BARE_METAL",
+  "owner": {
+    "tenant": "tenant2",
+    "application": "application2",
+    "instance": "instance2"
+  },
+  "membership": {
+    "clustertype": "content",
+    "clusterid": "id2",
+    "group": "0",
+    "index": 1,
+    "retired": false
+  },
+  "restartGeneration": 0,
+  "currentRestartGeneration": 0,
+  "wantedDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.42.0",
+  "wantedVespaVersion": "6.42.0",
+  "allowedToBeDown": false,
+  "rebootGeneration": 1,
+  "currentRebootGeneration": 0,
+  "failCount": 0,
+  "hardwareFailure": false,
+  "wantToRetire": false,
+  "wantToDeprovision": false,
+  "history": [
+    {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "readied",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "reserved",
+      "at": 123,
+      "agent": "application"
+    },
+    {
+      "event": "activated",
+      "at": 123,
+      "agent": "application"
+    }
+  ],
+  "ipAddresses": [
+    "127.0.0.1",
+    "::1"
+  ],
+  "additionalIpAddresses": [],
+  "reports": {
+    "actualCpuCores": {
+      "createdMillis": 1,
+      "description": "Actual number of CPU cores (2) differs from spec (4)",
+      "value": 2
+    },
+    "diskSpace": {
+      "createdMillis": 2,
+      "description": "Actual number of CPU cores (2) differs from spec (4)",
+      "details": {
+        "inGib": 3,
+        "disks": [
+          "/dev/sda1",
+          "/dev/sdb3"
+        ]
+      }
+    }
+  }
+}
