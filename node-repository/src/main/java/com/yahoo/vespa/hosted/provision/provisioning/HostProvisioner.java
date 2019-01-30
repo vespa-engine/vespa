@@ -5,15 +5,44 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author freva
  */
 public interface HostProvisioner {
 
-    List<Node> provisionHosts(int numHosts, Flavor nodeFlavor, int numNodesOnHost);
+    /**
+     * Schedule provisioning of a given number of hosts.
+     *
+     * @param numHosts number of hosts to provision
+     * @param nodeFlavor Vespa flavor of the node that will run on this host. The resulting provisioned host
+     *                   will be of a flavor that is at least as big or bigger than this.
+     * @return list of nodes that should be added to the node-repo, the list will contain exactly 2 elements:
+     * the provisioned host, and a docker container on that host with flavor {@code nodeFlavor}
+     */
+    List<Node> provisionHosts(int numHosts, Flavor nodeFlavor);
 
-    void provisioning(Node node);
+    /**
+     * Continue provisioning of given list of Nodes.
+     *
+     * @param host the host to provision
+     * @param children list of all the nodes that run on the given host
+     * @return a subset of {@code host} and {@code children} where the values have been modified and should
+     * be written back to node-repository.
+     * @throws FatalProvisioningException if the provisioning has irrecoverably failed and the input nodes
+     * should be deleted from node-repo.
+     */
+    List<Node> provision(Node host, Set<Node> children) throws FatalProvisioningException;
 
-    void deprovision(Node node);
+    /**
+     * Deprovisions a given host and resources associated with it and its children (such as DNS entries).
+     * This method will only perform the actual deprovisioning of the host and does NOT:
+     *  - verify whether it is safe to do
+     *  - clean up config server references to this node or any of its children
+     * Therefore, this method should probably only be called for hosts that have no children.
+     *
+     * @param host host to deprovision.
+     */
+    void deprovision(Node host);
 }
