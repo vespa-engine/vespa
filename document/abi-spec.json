@@ -5192,7 +5192,7 @@
     "methods": [
       "public static com.yahoo.document.update.TensorModifyUpdate$Operation[] values()",
       "public static com.yahoo.document.update.TensorModifyUpdate$Operation valueOf(java.lang.String)",
-      "public static com.yahoo.document.update.TensorModifyUpdate$Operation getID(int)"
+      "public static com.yahoo.document.update.TensorModifyUpdate$Operation getOperation(int)"
     ],
     "fields": [
       "public static final enum com.yahoo.document.update.TensorModifyUpdate$Operation REPLACE",
@@ -5211,7 +5211,6 @@
     "methods": [
       "public void <init>(com.yahoo.document.update.TensorModifyUpdate$Operation, com.yahoo.document.datatypes.TensorFieldValue)",
       "public com.yahoo.document.update.TensorModifyUpdate$Operation getOperation()",
-      "public com.yahoo.document.datatypes.TensorFieldValue getTensor()",
       "public com.yahoo.document.datatypes.TensorFieldValue getValue()",
       "public void setValue(com.yahoo.document.datatypes.TensorFieldValue)",
       "public com.yahoo.document.datatypes.FieldValue applyTo(com.yahoo.document.datatypes.FieldValue)",
