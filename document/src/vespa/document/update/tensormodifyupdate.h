@@ -23,19 +23,19 @@ public:
     };
 private:
     Operation _operation;
-    std::unique_ptr<TensorFieldValue> _operand;
+    std::unique_ptr<TensorFieldValue> _tensor;
 
     TensorModifyUpdate();
     TensorModifyUpdate(const TensorModifyUpdate &rhs);
     ACCEPT_UPDATE_VISITOR;
 public:
-    TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> &&operand);
+    TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> &&tensor);
     ~TensorModifyUpdate() override;
     TensorModifyUpdate &operator=(const TensorModifyUpdate &rhs);
     TensorModifyUpdate &operator=(TensorModifyUpdate &&rhs);
     bool operator==(const ValueUpdate &other) const override;
     Operation getOperation() const { return _operation; }
-    const TensorFieldValue &getOperand() const { return *_operand; }
+    const TensorFieldValue &getTensor() const { return *_tensor; }
     void checkCompatibility(const Field &field) const override;
     bool applyTo(FieldValue &value) const override;
     void printXml(XmlOutputStream &xos) const override;

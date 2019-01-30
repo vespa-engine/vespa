@@ -25,19 +25,19 @@ IMPLEMENT_IDENTIFIABLE(TensorModifyUpdate, ValueUpdate);
 
 TensorModifyUpdate::TensorModifyUpdate()
     : _operation(Operation::MAX_NUM_OPERATIONS),
-      _operand()
+      _tensor()
 {
 }
 
 TensorModifyUpdate::TensorModifyUpdate(const TensorModifyUpdate &rhs)
     : _operation(rhs._operation),
-      _operand(rhs._operand->clone())
+      _tensor(rhs._tensor->clone())
 {
 }
 
-TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> &&operand)
+TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> &&tensor)
     : _operation(operation),
-      _operand(std::move(operand))
+      _tensor(std::move(tensor))
 {
 }
 
@@ -47,7 +47,7 @@ TensorModifyUpdate &
 TensorModifyUpdate::operator=(const TensorModifyUpdate &rhs)
 {
     _operation = rhs._operation;
-    _operand.reset(rhs._operand->clone());
+    _tensor.reset(rhs._tensor->clone());
     return *this;
 }
 
@@ -55,7 +55,7 @@ TensorModifyUpdate &
 TensorModifyUpdate::operator=(TensorModifyUpdate &&rhs)
 {
     _operation = rhs._operation;
-    _operand = std::move(rhs._operand);
+    _tensor = std::move(rhs._tensor);
     return *this;
 }
 
@@ -69,7 +69,7 @@ TensorModifyUpdate::operator==(const ValueUpdate &other) const
     if (_operation != o._operation) {
         return false;
     }
-    if (*_operand != *o._operand) {
+    if (*_tensor != *o._tensor) {
         return false;
     }
     return true;
@@ -92,7 +92,7 @@ TensorModifyUpdate::applyTo(FieldValue& value) const
     if (value.inherits(TensorFieldValue::classId)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         auto &oldTensor = tensorFieldValue.getAsTensorPtr();
-        // TODO: Apply operation with operand
+        // TODO: Apply operation with tensor
         auto newTensor = oldTensor->clone();
         tensorFieldValue = std::move(newTensor);
     } else {
@@ -129,17 +129,17 @@ TensorModifyUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
         throw DeserializeException(msg.str(), VESPA_STRLOC);
     }
     _operation = static_cast<Operation>(op);
-    auto operand = type.createFieldValue();
-    if (operand->inherits(TensorFieldValue::classId)) {
-        _operand.reset(static_cast<TensorFieldValue *>(operand.release()));
+    auto tensor = type.createFieldValue();
+    if (tensor->inherits(TensorFieldValue::classId)) {
+        _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));
     } else {
         std::string err = make_string(
                 "Expected tensor field value, got a \"%s\" field "
-                "value.", operand->getClass().name());
+                "value.", tensor->getClass().name());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
-    deserializer.read(*_operand);
+    deserializer.read(*_tensor);
 }
 
 TensorModifyUpdate*
