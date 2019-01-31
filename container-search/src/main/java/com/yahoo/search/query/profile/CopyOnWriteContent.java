@@ -37,12 +37,12 @@ public class CopyOnWriteContent extends FreezableClass implements Cloneable {
     // (COPYONWRITE,WRITABLE)->FROZEN: When a profile is frozen
 
     /** The modifiable content of this. Null if this is empty or if this is not in the WRITABLE state */
-    private Map<String,Object> map=null;
+    private Map<String ,Object> map=null;
     /**
      * If map is non-null this is either null (not instantiated yet) or an unmodifiable wrapper of map,
      * if map is null this is either null (this is empty) or a reference to the map of the content this was cloned from
      */
-    private Map<String,Object> unmodifiableMap =null;
+    private Map<String, Object> unmodifiableMap =null;
 
     /** Create a WRITABLE, empty instance */
     public CopyOnWriteContent() {

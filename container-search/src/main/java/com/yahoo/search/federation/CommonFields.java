@@ -4,8 +4,9 @@ package com.yahoo.search.federation;
  * A set of string constants for common hit field names.
  *
  * @author laboisse
+ * @deprecated do not use
  */
-// TODO: Deprecate and remove
+@Deprecated // TODO: Remove on Vespa 8
 public class CommonFields {
 
 	public static final String TITLE = "title";

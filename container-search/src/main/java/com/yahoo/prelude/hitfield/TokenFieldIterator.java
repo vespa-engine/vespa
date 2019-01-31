@@ -22,12 +22,14 @@ public class TokenFieldIterator implements ListIterator<FieldPart> {
         this.hitField = hitField;
     }
 
+    @Override
     public void add(FieldPart o) {
         fieldList.add(index, o);
         index++;
         hitField.markDirty();
     }
 
+    @Override
     public boolean hasNext() {
         int i = index;
         while (i < fieldList.size()) {
@@ -38,6 +40,7 @@ public class TokenFieldIterator implements ListIterator<FieldPart> {
         return false;
     }
 
+    @Override
     public boolean hasPrevious() {
         int i = index;
         while (i > 0) {
@@ -48,6 +51,7 @@ public class TokenFieldIterator implements ListIterator<FieldPart> {
         return false;
     }
 
+    @Override
     public FieldPart next() {
         int i = index;
         while (i < fieldList.size()) {
@@ -61,6 +65,7 @@ public class TokenFieldIterator implements ListIterator<FieldPart> {
         throw new NoSuchElementException("No more tokens available.");
     }
 
+    @Override
     public int nextIndex() {
         int i = index;
         while (i < fieldList.size()) {
@@ -71,6 +76,7 @@ public class TokenFieldIterator implements ListIterator<FieldPart> {
         return fieldList.size();
     }
 
+    @Override
     public FieldPart previous() {
         int i = index;
         while (i > 0) {
@@ -84,6 +90,7 @@ public class TokenFieldIterator implements ListIterator<FieldPart> {
         throw new NoSuchElementException("Trying to go before first token available.");
     }
 
+    @Override
     public int previousIndex() {
         int i = index;
         while (i > 0) {
@@ -94,6 +101,7 @@ public class TokenFieldIterator implements ListIterator<FieldPart> {
         return -1;
     }
 
+    @Override
     public void remove() {
         fieldList.remove(prevReturned);
         if (prevReturned < index)
@@ -101,6 +109,7 @@ public class TokenFieldIterator implements ListIterator<FieldPart> {
         hitField.markDirty();
     }
 
+    @Override
     public void set(FieldPart o) {
         fieldList.set(prevReturned, o);
         hitField.markDirty();

@@ -8,6 +8,7 @@ public interface XmlProducer {
 
     /**
      * Append the XML representation of this object's data to a StringBuilder.
+     *
      * @param target the StringBuilder to append to.
      * @return the target passed in is also returned (to allow chaining).
      */
@@ -16,6 +17,7 @@ public interface XmlProducer {
     /**
      * Convenience method equivalent to:
      * writeXML(new StringBuilder()).toString()
+     *
      * @return String containing XML representation of this object's data.
      */
     default String toXML() {

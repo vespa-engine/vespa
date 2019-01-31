@@ -295,26 +295,20 @@ public class HitField {
 
     /** Returns the content of this field, using the arguments as bolding tags */
     public String getContent(String boldOpenTag, String boldCloseTag, String separatorTag) {
-        StringBuilder buf = new StringBuilder();
+        StringBuilder b = new StringBuilder();
         Iterator<FieldPart> iter = ensureTokenized().iterator();
         while(iter.hasNext()) {
             FieldPart f = iter.next();
-            if (f instanceof BoldOpenFieldPart
-                && boldOpenTag != null
-                && boldOpenTag.length() > 0)
-                buf.append(boldOpenTag);
-            else if (f instanceof BoldCloseFieldPart
-                     && boldCloseTag != null
-                     && boldCloseTag.length() > 0)
-                buf.append(boldCloseTag);
-            else if (f instanceof SeparatorFieldPart
-                     && separatorTag != null
-                     && separatorTag.length() > 0)
-                buf.append(separatorTag);
+            if (f instanceof BoldOpenFieldPart && boldOpenTag != null && boldOpenTag.length() > 0)
+                b.append(boldOpenTag);
+            else if (f instanceof BoldCloseFieldPart && boldCloseTag != null && boldCloseTag.length() > 0)
+                b.append(boldCloseTag);
+            else if (f instanceof SeparatorFieldPart && separatorTag != null && separatorTag.length() > 0)
+                b.append(separatorTag);
             else
-                buf.append(f.getContent());
+                b.append(f.getContent());
         }
-        return buf.toString();
+        return b.toString();
     }
 
     public void markDirty() {
