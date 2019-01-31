@@ -8,21 +8,21 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
-import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
 
@@ -50,8 +50,8 @@ public class Upgrader extends Maintainer {
     public void maintain() {
         // Determine target versions for each upgrade policy
         Optional<Version> canaryTarget = controller().versionStatus().systemVersion().map(VespaVersion::versionNumber);
-        Optional<Version> defaultTarget = newestVersionWithConfidence(Confidence.normal);
-        Optional<Version> conservativeTarget = newestVersionWithConfidence(Confidence.high);
+        Collection<Version> defaultTargets = targetVersions(Confidence.normal);
+        Collection<Version> conservativeTargets = targetVersions(Confidence.high);
 
         // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation)
         for (VespaVersion version : controller().versionStatus().versions()) {
@@ -66,34 +66,31 @@ public class Upgrader extends Maintainer {
 
         // Cancel *failed* upgrades to earlier versions, as the new version may fix it
         String reason = "Failing on outdated version";
-        cancelUpgradesOf(applications().with(UpgradePolicy.defaultPolicy).upgrading().failing().notUpgradingTo(defaultTarget), reason);
-        cancelUpgradesOf(applications().with(UpgradePolicy.conservative).upgrading().failing().notUpgradingTo(conservativeTarget), reason);
+        cancelUpgradesOf(applications().with(UpgradePolicy.defaultPolicy).upgrading().failing().notUpgradingTo(defaultTargets), reason);
+        cancelUpgradesOf(applications().with(UpgradePolicy.conservative).upgrading().failing().notUpgradingTo(conservativeTargets), reason);
 
         // Schedule the right upgrades
         canaryTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.canary), target));
-        defaultTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.defaultPolicy), target));
-        conservativeTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.conservative), target));
+        defaultTargets.forEach(target -> upgrade(applications().with(UpgradePolicy.defaultPolicy), target));
+        conservativeTargets.forEach(target -> upgrade(applications().with(UpgradePolicy.conservative), target));
     }
 
-    private Optional<Version> newestVersionWithConfidence(Confidence confidence) {
-        return reversed(controller().versionStatus().versions()).stream()
-                                                                // Ensure we never pick a version newer than the system
-                                                                .filter(v -> !v.versionNumber().isAfter(controller().systemVersion()))
-                                                                .filter(v -> v.confidence().equalOrHigherThan(confidence))
-                                                                .findFirst()
-                                                                .map(VespaVersion::versionNumber);
-    }
-
-    private List<VespaVersion> reversed(List<VespaVersion> versions) {
-        List<VespaVersion> reversed = new ArrayList<>(versions.size());
-        for (int i = 0; i < versions.size(); i++)
-            reversed.add(versions.get(versions.size() - 1 - i));
-        return reversed;
+    /** Returns the target versions for given confidence, one per major version in the system */
+    private Collection<Version> targetVersions(Confidence confidence) {
+        return controller().versionStatus().versions().stream()
+                           // Ensure we never pick a version newer than the system
+                           .filter(v -> !v.versionNumber().isAfter(controller().systemVersion()))
+                           .filter(v -> v.confidence().equalOrHigherThan(confidence))
+                           .map(VespaVersion::versionNumber)
+                           .collect(Collectors.toMap(Version::getMajor, // Key on major version
+                                                     Function.identity(),  // Use version as value
+                                                     BinaryOperator.<Version>maxBy(Comparator.naturalOrder()))) // Pick highest version when merging versions within this major
+                           .values();
     }
 
     /** Returns a list of all applications, except those which are pinned — these should not be manipulated by the Upgrader */
     private ApplicationList applications() {
-        return ApplicationList.from(controller().applications().asList()).notPinned();
+        return ApplicationList.from(controller().applications().asList()).unpinned();
     }
 
     private void upgrade(ApplicationList applications, Version version) {
