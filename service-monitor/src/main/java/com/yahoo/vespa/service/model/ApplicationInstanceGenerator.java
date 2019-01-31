@@ -18,6 +18,7 @@ import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
+import com.yahoo.vespa.service.monitor.ServiceId;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 
 import java.util.HashMap;

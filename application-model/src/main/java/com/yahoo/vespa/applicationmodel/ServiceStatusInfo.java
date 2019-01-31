@@ -17,21 +17,29 @@ public class ServiceStatusInfo {
     private final Optional<Instant> since;
     private final Optional<Instant> lastChecked;
     private final Optional<String> error;
+    private final Optional<String> endpoint;
 
     public ServiceStatusInfo(ServiceStatus status) {
-        this(status, Optional.empty(), Optional.empty(), Optional.empty());
+        this(status, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    public ServiceStatusInfo(ServiceStatus status, Instant since, Instant lastChecked, Optional<String> error) {
-        this(status, Optional.of(since), Optional.of(lastChecked), error);
+    public ServiceStatusInfo(ServiceStatus status, Instant since, Instant lastChecked, Optional<String> error,
+                             Optional<String> endpoint) {
+        this(status, Optional.of(since), Optional.of(lastChecked), error, endpoint);
     }
 
     public ServiceStatusInfo(ServiceStatus status, Optional<Instant> since, Optional<Instant> lastChecked,
-                             Optional<String> error) {
+                             Optional<String> error, Optional<String> endpoint) {
         this.status = status;
         this.since = since;
         this.lastChecked = lastChecked;
         this.error = error;
+        this.endpoint = endpoint;
+    }
+
+    @JsonProperty("endpoint")
+    public String endpointOrNull() {
+        return endpoint.orElse(null);
     }
 
     @JsonProperty("serviceStatus")

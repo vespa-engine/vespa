@@ -13,7 +13,7 @@ import com.yahoo.vespa.service.duper.TestZoneApplication;
 import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.executor.Cancellable;
 import com.yahoo.vespa.service.executor.RunletExecutor;
-import com.yahoo.vespa.service.model.ServiceId;
+import com.yahoo.vespa.service.monitor.ServiceId;
 import org.junit.Test;
 
 import java.time.Duration;

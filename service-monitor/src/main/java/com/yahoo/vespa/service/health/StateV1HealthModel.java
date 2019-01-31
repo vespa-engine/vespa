@@ -6,10 +6,11 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.service.duper.HostAdminApplication;
 import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.executor.RunletExecutor;
 import com.yahoo.vespa.service.model.ApplicationInstanceGenerator;
-import com.yahoo.vespa.service.model.ServiceId;
+import com.yahoo.vespa.service.monitor.ServiceId;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -53,20 +54,26 @@ public class StateV1HealthModel implements AutoCloseable {
             HostName hostname = HostName.from(hostInfo.getHostname());
             for (ServiceInfo serviceInfo : hostInfo.getServices()) {
 
-                if (monitorTenantHostHealth && isZoneApplication &&
-                        !ZoneApplication.isNodeAdminServiceInfo(application.getApplicationId(), serviceInfo)) {
-                    // Only the node admin/host admin cluster of the zone application should be monitored
-                    // TODO: Move the node admin cluster out to a separate infrastructure application
-                    continue;
+                boolean isNodeAdmin = false;
+                if (monitorTenantHostHealth && isZoneApplication) {
+                    if (ZoneApplication.isNodeAdminServiceInfo(application.getApplicationId(), serviceInfo)) {
+                        isNodeAdmin = true;
+                    } else {
+                        // Only the node admin/host admin cluster of the zone application should be monitored
+                        // TODO: Move the node admin cluster out to a separate infrastructure application
+                        continue;
+                    }
                 }
 
                 ServiceId serviceId = ApplicationInstanceGenerator.getServiceId(application, serviceInfo);
                 for (PortInfo portInfo : serviceInfo.getPorts()) {
                     if (portInfo.getTags().containsAll(HTTP_HEALTH_PORT_TAGS)) {
+                        // The host-admin-in-zone-application is one big hack.
+                        int port = isNodeAdmin ? HostAdminApplication.HOST_ADMIN_HEALT_PORT : portInfo.getPort();
                         StateV1HealthEndpoint endpoint = new StateV1HealthEndpoint(
                                 serviceId,
                                 hostname,
-                                portInfo.getPort(),
+                                port,
                                 targetHealthStaleness,
                                 requestTimeout,
                                 connectionKeepAlive,
