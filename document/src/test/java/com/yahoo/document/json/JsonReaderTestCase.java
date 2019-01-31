@@ -149,10 +149,12 @@ public class JsonReaderTestCase {
         }
         {
             DocumentType x = new DocumentType("testtensor");
-            x.addField(new Field("mappedtensorfield",
+            x.addField(new Field("sparse_tensor",
                                  new TensorDataType(new TensorType.Builder().mapped("x").mapped("y").build())));
-            x.addField(new Field("indexedtensorfield",
-                                 new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
+            x.addField(new Field("dense_tensor",
+                    new TensorDataType(new TensorType.Builder().indexed("x", 2).indexed("y", 3).build())));
+            x.addField(new Field("dense_unbound_tensor",
+                    new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
             types.registerDocumentType(x);
         }
         {
@@ -1173,31 +1175,31 @@ public class JsonReaderTestCase {
         Document doc = createPutWithoutTensor().getDocument();
         assertEquals("testtensor", doc.getId().getDocType());
         assertEquals("id:unittest:testtensor::0", doc.getId().toString());
-        TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField("mappedtensorfield"));
+        TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField("sparse_tensor"));
         assertNull(fieldValue);
     }
 
     @Test
     public void testParsingOfEmptyTensor() {
-        assertMappedTensorField("tensor(x{},y{}):{}", createPutWithMappedTensor("{}"));
+        assertSparseTensorField("tensor(x{},y{}):{}", createPutWithSparseTensor("{}"));
     }
 
     @Test
     public void testParsingOfTensorWithEmptyDimensions() {
-        assertMappedTensorField("tensor(x{},y{}):{}",
-                                createPutWithMappedTensor(inputJson("{ 'dimensions': [] }")));
+        assertSparseTensorField("tensor(x{},y{}):{}",
+                                createPutWithSparseTensor(inputJson("{ 'dimensions': [] }")));
     }
 
     @Test
     public void testParsingOfTensorWithEmptyCells() {
-        assertMappedTensorField("tensor(x{},y{}):{}",
-                                createPutWithMappedTensor(inputJson("{ 'cells': [] }")));
+        assertSparseTensorField("tensor(x{},y{}):{}",
+                                createPutWithSparseTensor(inputJson("{ 'cells': [] }")));
     }
 
     @Test
-    public void testParsingOfMappedTensorWithCells() {
-        Tensor tensor = assertMappedTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
-                                createPutWithMappedTensor(inputJson("{",
+    public void testParsingOfSparseTensorWithCells() {
+        Tensor tensor = assertSparseTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
+                                createPutWithSparseTensor(inputJson("{",
                                                     "  'cells': [",
                                                     "    { 'address': { 'x': 'a', 'y': 'b' },",
                                                     "      'value': 2.0 },",
@@ -1209,7 +1211,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void testParsingOfIndexedTensorWithCells() {
+    public void testParsingOfDenseTensorWithCells() {
         Tensor tensor = assertTensorField("{{x:0,y:0}:2.0,{x:1,y:0}:3.0}}",
                            createPutWithTensor(inputJson("{",
                                    "  'cells': [",
@@ -1218,14 +1220,14 @@ public class JsonReaderTestCase {
                                    "    { 'address': { 'x': '1', 'y': '0' },",
                                    "      'value': 3.0 }",
                                    "  ]",
-                                   "}"), "indexedtensorfield"), "indexedtensorfield");
+                                   "}"), "dense_unbound_tensor"), "dense_unbound_tensor");
         assertTrue(tensor instanceof IndexedTensor); // this matters for performance
     }
 
     @Test
     public void testParsingOfTensorWithSingleCellInDifferentJsonOrder() {
-        assertMappedTensorField("{{x:a,y:b}:2.0}",
-                                createPutWithMappedTensor(inputJson("{",
+        assertSparseTensorField("{{x:a,y:b}:2.0}",
+                                createPutWithSparseTensor(inputJson("{",
                                         "  'cells': [",
                                         "    { 'value': 2.0,",
                                         "      'address': { 'x': 'a', 'y': 'b' } }",
@@ -1234,14 +1236,14 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void testAssignUpdateOfEmptyMappedTensor() {
-        assertTensorAssignUpdate("tensor(x{},y{}):{}", createAssignUpdateWithMappedTensor("{}"));
+    public void testAssignUpdateOfEmptySparseTensor() {
+        assertTensorAssignUpdate("tensor(x{},y{}):{}", createAssignUpdateWithSparseTensor("{}"));
     }
 
     @Test
-    public void testAssignUpdateOfEmptyIndexedTensor() {
+    public void testAssignUpdateOfEmptyDenseTensor() {
         try {
-            assertTensorAssignUpdate("tensor(x{},y{}):{}", createAssignUpdateWithTensor("{}", "indexedtensorfield"));
+            assertTensorAssignUpdate("tensor(x{},y{}):{}", createAssignUpdateWithTensor("{}", "dense_unbound_tensor"));
         }
         catch (IllegalArgumentException e) {
             assertEquals("An indexed tensor must have a value", "Tensor of type tensor(x[],y[]) has no values", e.getMessage());
@@ -1250,7 +1252,7 @@ public class JsonReaderTestCase {
 
     @Test
     public void testAssignUpdateOfNullTensor() {
-        ClearValueUpdate clearUpdate = (ClearValueUpdate) getTensorField(createAssignUpdateWithMappedTensor(null)).getValueUpdate(0);
+        ClearValueUpdate clearUpdate = (ClearValueUpdate) getTensorField(createAssignUpdateWithSparseTensor(null)).getValueUpdate(0);
         assertTrue(clearUpdate != null);
         assertTrue(clearUpdate.getValue() == null);
     }
@@ -1258,7 +1260,7 @@ public class JsonReaderTestCase {
     @Test
     public void testAssignUpdateOfTensorWithCells() {
         assertTensorAssignUpdate("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
-                createAssignUpdateWithMappedTensor(inputJson("{",
+                createAssignUpdateWithSparseTensor(inputJson("{",
                         "  'cells': [",
                         "    { 'address': { 'x': 'a', 'y': 'b' },",
                         "      'value': 2.0 },",
@@ -1270,7 +1272,7 @@ public class JsonReaderTestCase {
 
     @Test
     public void tensor_modify_update_with_replace_operation() {
-        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.REPLACE, "mappedtensorfield",
+        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.REPLACE, "sparse_tensor",
                 inputJson("{",
                         "  'operation': 'replace',",
                         "  'cells': [",
@@ -1279,7 +1281,7 @@ public class JsonReaderTestCase {
 
     @Test
     public void tensor_modify_update_with_add_operation() {
-        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.ADD, "mappedtensorfield",
+        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.ADD, "sparse_tensor",
                 inputJson("{",
                         "  'operation': 'add',",
                         "  'cells': [",
@@ -1288,11 +1290,23 @@ public class JsonReaderTestCase {
 
     @Test
     public void tensor_modify_update_with_multiply_operation() {
-        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.MULTIPLY, "mappedtensorfield",
+        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.MULTIPLY, "sparse_tensor",
                 inputJson("{",
                         "  'operation': 'multiply',",
                         "  'cells': [",
                         "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_modify_update_treats_the_input_tensor_as_sparse() {
+        // Note that the type of the tensor in the modify update is sparse (it only has mapped dimensions).
+        assertTensorModifyUpdate("tensor(x{},y{}):{{x:0,y:0}:2.0, {x:1,y:2}:3.0}",
+                TensorModifyUpdate.Operation.REPLACE, "dense_tensor",
+                inputJson("{",
+                        "  'operation': 'replace',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 },",
+                        "    { 'address': { 'x': '1', 'y': '2' }, 'value': 3.0 } ]}"));
     }
 
     @Test
@@ -1307,37 +1321,47 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_modify_update_on_dense_unbound_tensor_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("A modify update cannot be applied to tensor types with indexed unbound dimensions. Field 'dense_unbound_tensor' has unsupported tensor type 'tensor(x[],y[])'");
+        createTensorModifyUpdate(inputJson("{",
+                "  'operation': 'replace',",
+                "  'cells': [",
+                "    { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 } ]}"), "dense_unbound_tensor");
+    }
+
+    @Test
     public void tensor_modify_update_with_unknown_operation_throws() {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Unknown operation 'unknown' in modify update for field 'mappedtensorfield'");
+        exception.expectMessage("Unknown operation 'unknown' in modify update for field 'sparse_tensor'");
         createTensorModifyUpdate(inputJson("{",
                 "  'operation': 'unknown',",
                 "  'cells': [",
-                "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"), "mappedtensorfield");
+                "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"), "sparse_tensor");
     }
 
     @Test
     public void tensor_modify_update_without_operation_throws() {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Modify update for field 'mappedtensorfield' does not contain an operation");
+        exception.expectMessage("Modify update for field 'sparse_tensor' does not contain an operation");
         createTensorModifyUpdate(inputJson("{",
-                "  'cells': [] }"), "mappedtensorfield");
+                "  'cells': [] }"), "sparse_tensor");
     }
 
     @Test
     public void tensor_modify_update_without_cells_throws() {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Modify update for field 'mappedtensorfield' does not contain tensor cells");
+        exception.expectMessage("Modify update for field 'sparse_tensor' does not contain tensor cells");
         createTensorModifyUpdate(inputJson("{",
-                "  'operation': 'replace' }"), "mappedtensorfield");
+                "  'operation': 'replace' }"), "sparse_tensor");
     }
 
     @Test
     public void tensor_modify_update_with_unknown_content_throws() {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Unknown JSON string 'unknown' in modify update for field 'mappedtensorfield'");
+        exception.expectMessage("Unknown JSON string 'unknown' in modify update for field 'sparse_tensor'");
         createTensorModifyUpdate(inputJson("{",
-                "  'unknown': 'here' }"), "mappedtensorfield");
+                "  'unknown': 'here' }"), "sparse_tensor");
     }
 
     @Test
@@ -1416,8 +1440,8 @@ public class JsonReaderTestCase {
         return (DocumentPut) reader.next();
     }
 
-    private DocumentPut createPutWithMappedTensor(String inputTensor) {
-        return createPutWithTensor(inputTensor, "mappedtensorfield");
+    private DocumentPut createPutWithSparseTensor(String inputTensor) {
+        return createPutWithTensor(inputTensor, "sparse_tensor");
     }
     private DocumentPut createPutWithTensor(String inputTensor, String tensorFieldName) {
         JsonReader reader = createReader(inputJson("[",
@@ -1427,8 +1451,8 @@ public class JsonReaderTestCase {
         return (DocumentPut) reader.next();
     }
 
-    private DocumentUpdate createAssignUpdateWithMappedTensor(String inputTensor) {
-        return createAssignUpdateWithTensor(inputTensor, "mappedtensorfield");
+    private DocumentUpdate createAssignUpdateWithSparseTensor(String inputTensor) {
+        return createAssignUpdateWithTensor(inputTensor, "sparse_tensor");
     }
     private DocumentUpdate createAssignUpdateWithTensor(String inputTensor, String tensorFieldName) {
         JsonReader reader = createReader(inputJson("[",
@@ -1439,8 +1463,8 @@ public class JsonReaderTestCase {
         return (DocumentUpdate) reader.next();
     }
 
-    private static Tensor assertMappedTensorField(String expectedTensor, DocumentPut put) {
-        return assertTensorField(expectedTensor, put, "mappedtensorfield");
+    private static Tensor assertSparseTensorField(String expectedTensor, DocumentPut put) {
+        return assertTensorField(expectedTensor, put, "sparse_tensor");
     }
     private static Tensor assertTensorField(String expectedTensor, DocumentPut put, String tensorFieldName) {
         final Document doc = put.getDocument();
@@ -1487,7 +1511,7 @@ public class JsonReaderTestCase {
     }
 
     private static FieldUpdate getTensorField(DocumentUpdate update) {
-        FieldUpdate fieldUpdate = update.getFieldUpdate("mappedtensorfield");
+        FieldUpdate fieldUpdate = update.getFieldUpdate("sparse_tensor");
         assertEquals(1, fieldUpdate.size());
         return fieldUpdate;
     }
