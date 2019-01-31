@@ -67,8 +67,7 @@ public abstract class DiscFilterRequest {
     public abstract void setUri(URI uri);
 
     public HttpRequest getParentRequest() {
-        throw new UnsupportedOperationException(
-                "getParentRequest is not supported for " + parent.getClass().getName());
+        throw new UnsupportedOperationException("getParentRequest is not supported for " + parent.getClass().getName());
     }
 
     /**
@@ -340,8 +339,8 @@ public abstract class DiscFilterRequest {
      *  is included in the specified logical "role".
      */
     public boolean isUserInRole(String role) {
-        if(overrideIsUserInRole) {
-            if(roles != null) {
+        if (overrideIsUserInRole) {
+            if (roles != null) {
                 for (String role1 : roles) {
                     if (role1 != null && role1.trim().length() > 0) {
                         String userRole = role1.trim();
@@ -400,7 +399,7 @@ public abstract class DiscFilterRequest {
      */
     public void setCharacterEncoding(String encoding) {
         String charEncoding = setCharsetFromContentType(this.getContentType(), encoding);
-        if(charEncoding != null && !charEncoding.isEmpty()) {
+        if (charEncoding != null && !charEncoding.isEmpty()) {
             removeHeaders(HttpHeaders.Names.CONTENT_TYPE);
             setHeaders(HttpHeaders.Names.CONTENT_TYPE, charEncoding);
         }
@@ -410,11 +409,11 @@ public abstract class DiscFilterRequest {
      * Can be called multiple times to add Cookies
      */
     public void addCookie(JDiscCookieWrapper cookie) {
-        if(cookie != null) {
-            List<Cookie> cookies = new ArrayList<Cookie>();
-            //Get current set of cookies first
+        if (cookie != null) {
+            List<Cookie> cookies = new ArrayList<>();
+            // Get current set of cookies first
             List<Cookie> c = getCookies();
-            if(c != null && !c.isEmpty()) {
+            if (c != null && !c.isEmpty()) {
                 cookies.addAll(c);
             }
             cookies.add(cookie.getCookie());
@@ -426,7 +425,7 @@ public abstract class DiscFilterRequest {
 
     public JDiscCookieWrapper[] getWrappedCookies() {
         List<Cookie> cookies = getCookies();
-        if(cookies == null)  {
+        if (cookies == null)  {
             return null;
         }
         List<JDiscCookieWrapper> cookieWrapper = new ArrayList<>(cookies.size());
@@ -508,12 +507,9 @@ public abstract class DiscFilterRequest {
     }
 
     protected static ThreadLocalSimpleDateFormat formats[] = {
-            new ThreadLocalSimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz",
-                                            Locale.US),
-            new ThreadLocalSimpleDateFormat("EEEEEE, dd-MMM-yy HH:mm:ss zzz",
-                                            Locale.US),
-            new ThreadLocalSimpleDateFormat("EEE MMMM d HH:mm:ss yyyy",
-                                            Locale.US) };
+            new ThreadLocalSimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US),
+            new ThreadLocalSimpleDateFormat("EEEEEE, dd-MMM-yy HH:mm:ss zzz", Locale.US),
+            new ThreadLocalSimpleDateFormat("EEE MMMM d HH:mm:ss yyyy", Locale.US) };
 
     /**
      * The set of SimpleDateFormat formats to use in getDateHeader().
@@ -521,8 +517,8 @@ public abstract class DiscFilterRequest {
      * Notice that because SimpleDateFormat is not thread-safe, we can't declare
      * formats[] as a static variable.
      */
-    protected static final class ThreadLocalSimpleDateFormat extends
-            ThreadLocal<SimpleDateFormat> {
+    protected static final class ThreadLocalSimpleDateFormat extends ThreadLocal<SimpleDateFormat> {
+
         private final String format;
         private final Locale locale;
 
@@ -541,6 +537,7 @@ public abstract class DiscFilterRequest {
         public Date parse(String value) throws ParseException {
             return get().parse(value);
         }
+
     }
 
 }
