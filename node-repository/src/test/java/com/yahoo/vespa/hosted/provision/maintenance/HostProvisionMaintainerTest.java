@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
@@ -143,7 +144,7 @@ public class HostProvisionMaintainerTest {
                             false));
             Set<String> ips = state == Node.State.active ? Set.of("::1") : Set.of();
             return new Node("fake-id-" + hostname, ips, Set.of(), hostname,
-                    parentHostname, flavor, Status.initial(), state, allocation, History.empty(), nodeType);
+                    parentHostname, flavor, Status.initial(), state, allocation, History.empty(), nodeType, new Reports());
         }
 
         NodeRepository nodeRepository() {
