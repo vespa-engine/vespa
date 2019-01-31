@@ -198,7 +198,7 @@ public class CommandLineOptions {
             }
 
             if (route.isEmpty() && cluster.isEmpty()) {
-                route = "default-get";
+                route = "default";
             }
 
             if (trace < 0 || trace > 9) {

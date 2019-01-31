@@ -37,6 +37,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author bratseth
  */
+@SuppressWarnings("deprecation")
 public abstract class AbstractDocumentApiTestCase {
 
     protected abstract DocumentAccess access();
