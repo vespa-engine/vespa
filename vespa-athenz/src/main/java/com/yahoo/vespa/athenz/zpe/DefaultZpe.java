@@ -14,6 +14,11 @@ import java.security.cert.X509Certificate;
  * @author bjorncs
  */
 public class DefaultZpe implements Zpe {
+
+    public DefaultZpe() {
+        AuthZpeClient.init();
+    }
+
     @Override
     public AuthorizationResult checkAccessAllowed(ZToken roleToken, AthenzResourceName resourceName, String action) {
         return AuthorizationResult.fromAccessCheckStatus(
