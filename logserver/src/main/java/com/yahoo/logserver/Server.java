@@ -10,7 +10,7 @@ import com.yahoo.logserver.handlers.HandlerThread;
 import com.yahoo.logserver.handlers.LogHandler;
 import com.yahoo.logserver.net.LogConnectionFactory;
 import com.yahoo.logserver.net.control.Levels;
-import com.yahoo.system.CatchSigTerm;
+import com.yahoo.yolean.system.CatchSignals;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -150,8 +150,8 @@ public class Server implements Runnable {
         }
     }
 
-    private void setupSigTermHandler() {
-        CatchSigTerm.setup(signalCaught); // catch termination signal
+    private void setupSignalHandler() {
+        CatchSignals.setup(signalCaught); // catch termination and interrupt signals
     }
 
     private void waitForShutdown() {
@@ -191,7 +191,7 @@ public class Server implements Runnable {
 
         String portString = System.getProperty(APPNAME + ".listenport", LISTEN_PORT);
         Server server = Server.getInstance();
-        server.setupSigTermHandler();
+        server.setupSignalHandler();
         server.initialize(Integer.parseInt(portString));
 
         Thread t = new Thread(server, "logserver main");
