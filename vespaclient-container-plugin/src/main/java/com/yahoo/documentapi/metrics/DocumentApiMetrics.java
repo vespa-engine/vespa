@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.metrics;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.yahoo.metrics.simple.Counter;
 import com.yahoo.metrics.simple.Gauge;
 import com.yahoo.metrics.simple.MetricReceiver;
@@ -10,7 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -24,7 +26,7 @@ public class DocumentApiMetrics {
     private final Gauge feedLatency;
     private final Counter feedRequests;
     private final Map<DocumentOperationStatus, Map<DocumentOperationType, Point>> points = new HashMap<>();
-    private final Map<String, Point> versionPointCache = new ConcurrentHashMap<>();
+    private final Cache<String, Point> versionPointCache = CacheBuilder.newBuilder().maximumSize(256).build();
 
     public DocumentApiMetrics(MetricReceiver metricReceiver, String apiName) {
         Map<String, String> dimensions = new HashMap<>();
@@ -62,7 +64,12 @@ public class DocumentApiMetrics {
 
     public void reportHttpRequest(String clientVersion) {
         if (clientVersion != null) {
-            feedRequests.add(versionPointCache.computeIfAbsent(clientVersion, v -> new Point(Map.of("client-version", v))));
+            try {
+                Point point = versionPointCache.get(clientVersion, () -> new Point(Map.of("client-version", clientVersion)));
+                feedRequests.add(point);
+            } catch (ExecutionException e) { // When Point constructor throws an exception
+                throw new RuntimeException(e);
+            }
         } else {
             feedRequests.add();
         }
