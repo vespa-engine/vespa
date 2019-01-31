@@ -9,6 +9,7 @@ import com.yahoo.config.provision.HostName;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -32,6 +33,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
         LoadBalancer loadBalancer = new LoadBalancer(
                 new LoadBalancerId(application, cluster),
                 HostName.from("lb-" + application.toShortString() + "-" + cluster.value()),
+                Optional.of(new DnsZone("zone-id-1")),
                 Collections.singleton(4443),
                 ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),
                 reals,
