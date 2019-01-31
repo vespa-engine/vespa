@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.service.model;
+package com.yahoo.vespa.service.monitor;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
