@@ -572,7 +572,7 @@ VespaDocumentSerializer::write(const TensorModifyUpdate &value)
 {
     _stream << TensorModifyUpdate::classId;
     _stream << static_cast<uint8_t>(value.getOperation());
-    write(value.getOperand());
+    write(value.getTensor());
 }
 
 void
