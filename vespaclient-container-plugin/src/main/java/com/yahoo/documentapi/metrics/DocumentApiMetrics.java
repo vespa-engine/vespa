@@ -21,7 +21,9 @@ public class DocumentApiMetrics {
 
     private final Counter feeds;
     private final Gauge feedLatency;
+    private final Counter feedRequests;
     private final Map<DocumentOperationStatus, Map<DocumentOperationType, Point>> points = new HashMap<>();
+    private final Map<String, Point> versionPointCache = new HashMap<>();
 
     public DocumentApiMetrics(MetricReceiver metricReceiver, String apiName) {
         Map<String, String> dimensions = new HashMap<>();
@@ -37,6 +39,7 @@ public class DocumentApiMetrics {
 
         feeds = metricReceiver.declareCounter("feed.operations");
         feedLatency = metricReceiver.declareGauge("feed.latency");
+        feedRequests = metricReceiver.declareCounter("feed.http-requests");
     }
 
     public void reportSuccessful(DocumentOperationType documentOperationType, double latencyInSeconds) {
@@ -54,6 +57,14 @@ public class DocumentApiMetrics {
     public void reportFailure(DocumentOperationType documentOperationType, DocumentOperationStatus documentOperationStatus) {
         Point point = points.get(documentOperationStatus).get(documentOperationType);
         feeds.add(point);
+    }
+
+    public void reportClientVersion(String version) {
+        if (version != null) {
+            feedRequests.add(versionPointCache.computeIfAbsent(version, v -> new Point(Map.of("client-version", v))));
+        } else {
+            feedRequests.add();
+        }
     }
 
 }
