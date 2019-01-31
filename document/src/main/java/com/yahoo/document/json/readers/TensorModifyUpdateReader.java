@@ -28,6 +28,7 @@ public class TensorModifyUpdateReader {
     public static TensorModifyUpdate createModifyUpdate(TokenBuffer buffer, Field field) {
 
         expectFieldIsOfTypeTensor(field);
+        expectTensorTypeHasNoneIndexedUnboundDimensions(field);
         expectObjectStart(buffer.currentToken());
 
         ModifyUpdateResult result = createModifyUpdateResult(buffer, field);
@@ -41,6 +42,15 @@ public class TensorModifyUpdateReader {
         if (!(field.getDataType() instanceof TensorDataType)) {
             throw new IllegalArgumentException("A modify update can only be applied to tensor fields. " +
                     "Field '" + field.getName() + "' is of type '" + field.getDataType().getName() + "'");
+        }
+    }
+
+    private static void expectTensorTypeHasNoneIndexedUnboundDimensions(Field field) {
+        TensorType tensorType = ((TensorDataType)field.getDataType()).getTensorType();
+        if (tensorType.dimensions().stream()
+                .anyMatch(dim -> dim.type().equals(TensorType.Dimension.Type.indexedUnbound))) {
+            throw new IllegalArgumentException("A modify update cannot be applied to tensor types with indexed unbound dimensions. "
+                    + "Field '" + field.getName() + "' has unsupported tensor type '" + tensorType + "'");
         }
     }
 

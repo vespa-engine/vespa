@@ -1321,6 +1321,16 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_modify_update_on_dense_unbound_tensor_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("A modify update cannot be applied to tensor types with indexed unbound dimensions. Field 'dense_unbound_tensor' has unsupported tensor type 'tensor(x[],y[])'");
+        createTensorModifyUpdate(inputJson("{",
+                "  'operation': 'replace',",
+                "  'cells': [",
+                "    { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 } ]}"), "dense_unbound_tensor");
+    }
+
+    @Test
     public void tensor_modify_update_with_unknown_operation_throws() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Unknown operation 'unknown' in modify update for field 'sparse_tensor'");
