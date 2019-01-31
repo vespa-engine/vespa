@@ -116,11 +116,7 @@ public class MetricReceiverWrapper {
     }
 
     private Map<Dimensions, Map<String, MetricValue>> getOrCreateApplicationMetrics(String application, DimensionType type) {
-        if (! metrics.containsKey(type)) {
-            metrics.put(type, new HashMap<>());
-        }
-        Map<String, ApplicationMetrics> applicationMetrics = metrics.get(type);
-
+        Map<String, ApplicationMetrics> applicationMetrics = metrics.computeIfAbsent(type, m -> new HashMap<>());
         if (! applicationMetrics.containsKey(application)) {
             ApplicationMetrics metrics = new ApplicationMetrics();
             applicationMetrics.put(application, metrics);
