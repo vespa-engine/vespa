@@ -10,6 +10,7 @@ import com.yahoo.processing.request.Properties;
 * @author Tony Vaagenes
 */
 public class SingleTarget extends Target {
+
     private final SearchChainInvocationSpec searchChainInvocationSpec;
 
     public SingleTarget(ComponentId id, SearchChainInvocationSpec searchChainInvocationSpec, boolean isDerived) {
@@ -33,4 +34,5 @@ public class SingleTarget extends Target {
     public final boolean useByDefault() {
         return searchChainInvocationSpec.federationOptions.getUseByDefault();
     }
+
 }

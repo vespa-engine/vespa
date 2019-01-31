@@ -28,6 +28,7 @@ public class TensorModifyUpdateReader {
     public static TensorModifyUpdate createModifyUpdate(TokenBuffer buffer, Field field) {
 
         expectFieldIsOfTypeTensor(field);
+        expectTensorTypeHasNoneIndexedUnboundDimensions(field);
         expectObjectStart(buffer.currentToken());
 
         ModifyUpdateResult result = createModifyUpdateResult(buffer, field);
@@ -41,6 +42,15 @@ public class TensorModifyUpdateReader {
         if (!(field.getDataType() instanceof TensorDataType)) {
             throw new IllegalArgumentException("A modify update can only be applied to tensor fields. " +
                     "Field '" + field.getName() + "' is of type '" + field.getDataType().getName() + "'");
+        }
+    }
+
+    private static void expectTensorTypeHasNoneIndexedUnboundDimensions(Field field) {
+        TensorType tensorType = ((TensorDataType)field.getDataType()).getTensorType();
+        if (tensorType.dimensions().stream()
+                .anyMatch(dim -> dim.type().equals(TensorType.Dimension.Type.indexedUnbound))) {
+            throw new IllegalArgumentException("A modify update cannot be applied to tensor types with indexed unbound dimensions. "
+                    + "Field '" + field.getName() + "' has unsupported tensor type '" + tensorType + "'");
         }
     }
 
@@ -63,8 +73,8 @@ public class TensorModifyUpdateReader {
 
     private static ModifyUpdateResult createModifyUpdateResult(TokenBuffer buffer, Field field) {
         ModifyUpdateResult result = new ModifyUpdateResult();
-        // TODO: convert tensor type to one with only mapped dimensions.
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
+        TensorType convertedType = TensorModifyUpdate.convertToCompatibleType(tensorDataType.getTensorType());
         buffer.next();
         int localNesting = buffer.nesting();
         while (localNesting <= buffer.nesting()) {
@@ -73,7 +83,7 @@ public class TensorModifyUpdateReader {
                     result.operation = createOperation(buffer, field.getName());
                     break;
                 case TENSOR_CELLS:
-                    result.tensor = createTensor(buffer, tensorDataType.getTensorType());
+                    result.tensor = createTensor(buffer, convertedType);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown JSON string '" + buffer.currentName() + "' in modify update for field '" + field.getName() + "'");

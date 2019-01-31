@@ -14,6 +14,7 @@ import org.junit.Test;
 import java.io.FileOutputStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author bratseth
@@ -23,16 +24,20 @@ public class SerializationTestCase {
     private DocumentType documentType;
 
     private Field field;
-    private final static TensorType tensorType = new TensorType.Builder().mapped("x").mapped("y").build();
-    private Field tensorField;
+    private final static TensorType sparseTensorType = new TensorType.Builder().mapped("x").mapped("y").build();
+    private final static TensorType denseTensorType = new TensorType.Builder().indexed("x", 2).indexed("y", 3).build();
+    private Field sparseTensorField;
+    private Field denseTensorField;
 
     @Before
     public void setUp() {
         documentType = new DocumentType("document1");
         field = new Field("field1", DataType.getArray(DataType.STRING));
         documentType.addField(field);
-        tensorField = new Field("tensorfield", new TensorDataType(tensorType));
-        documentType.addField(tensorField);
+        sparseTensorField = new Field("sparse_tensor", new TensorDataType(sparseTensorType));
+        denseTensorField = new Field("dense_tensor", new TensorDataType(denseTensorType));
+        documentType.addField(sparseTensorField);
+        documentType.addField(denseTensorField);
     }
 
     @Test
@@ -65,11 +70,47 @@ public class SerializationTestCase {
         assertEquals("'field1' [clear]", deserializedUpdate.toString());
     }
 
+    @Test
+    public void test_tensor_modify_update_serialization_with_dense_tensor() {
+        String tensorString = "{{x:1,y:2}:2}";
+        FieldUpdate update = createTensorModifyUpdate(denseTensorField, denseTensorType, tensorString);
+
+        FieldUpdate deserializedUpdate = roundtripSerialize(update);
+        TensorModifyUpdate modifyUpdate = expectTensorModifyUpdate(deserializedUpdate, "dense_tensor");
+
+        assertEquals(TensorModifyUpdate.Operation.REPLACE, modifyUpdate.getOperation());
+        assertEquals(TensorType.fromSpec("tensor(x{},y{})"), modifyUpdate.getValue().getDataType().getTensorType());
+        assertEquals(createTensor(sparseTensorType, tensorString), modifyUpdate.getValue());
+        assertEquals(update, deserializedUpdate);
+    }
+
+    @Test
+    public void test_tensor_modify_update_serialization_with_sparse_tensor() {
+        String tensorString = "{{x:a,y:b}:2}";
+        FieldUpdate update = createTensorModifyUpdate(sparseTensorField, sparseTensorType, tensorString);
+
+        FieldUpdate deserializedUpdate = roundtripSerialize(update);
+        TensorModifyUpdate modifyUpdate = expectTensorModifyUpdate(deserializedUpdate, "sparse_tensor");
+
+        assertEquals(TensorModifyUpdate.Operation.REPLACE, modifyUpdate.getOperation());
+        assertEquals(TensorType.fromSpec("tensor(x{},y{})"), modifyUpdate.getValue().getDataType().getTensorType());
+        assertEquals(createTensor(sparseTensorType, tensorString), modifyUpdate.getValue());
+        assertEquals(update, deserializedUpdate);
+    }
+
+    private static FieldUpdate createTensorModifyUpdate(Field tensorField, TensorType tensorType, String tensorString) {
+        FieldUpdate result = new FieldUpdate(tensorField);
+        // Note that the tensor type is converted to only have mapped dimensions.
+        TensorFieldValue tensor = createTensor(TensorModifyUpdate.convertToCompatibleType(tensorType), tensorString);
+        result.addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.REPLACE, tensor));
+        return result;
+    }
+
     private static TensorFieldValue createTensor(TensorType type, String tensorCellString) {
         return new TensorFieldValue(Tensor.from(type, tensorCellString));
     }
 
-    private GrowableByteBuffer serializeUpdate(FieldUpdate update) {
+    private static GrowableByteBuffer serializeUpdate(FieldUpdate update) {
         DocumentSerializer buffer = DocumentSerializerFactory.createHead(new GrowableByteBuffer());
         update.serialize(buffer);
         buffer.getBuf().rewind();
@@ -80,22 +121,18 @@ public class SerializationTestCase {
         return new FieldUpdate(DocumentDeserializerFactory.createHead(new DocumentTypeManager(), buffer), documentType, Document.SERIALIZED_VERSION);
     }
 
-    @Test
-    public void testTensorModifySerialization() {
-        FieldUpdate update = new FieldUpdate(tensorField);
-        TensorFieldValue tensor = createTensor(tensorType, "{{x:8,y:9}:2}");
-        update.addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.REPLACE, tensor));
+    private FieldUpdate roundtripSerialize(FieldUpdate update) {
         GrowableByteBuffer buffer = serializeUpdate(update);
-        FieldUpdate deserializedUpdate = deserializeUpdate(buffer);
-        assertEquals("tensorfield", deserializedUpdate.getField().getName());
-        assertEquals(1, deserializedUpdate.getValueUpdates().size());
-        ValueUpdate valueUpdate = deserializedUpdate.getValueUpdate(0);
+        return deserializeUpdate(buffer);
+    }
+
+    private static TensorModifyUpdate expectTensorModifyUpdate(FieldUpdate update, String tensorFieldName) {
+        assertEquals(tensorFieldName, update.getField().getName());
+        assertEquals(1, update.getValueUpdates().size());
+        ValueUpdate valueUpdate = update.getValueUpdate(0);
         if (!(valueUpdate instanceof TensorModifyUpdate)) {
             throw new IllegalStateException("Expected tensorModifyUpdate");
         }
-        TensorModifyUpdate tensorModifyUpdate = (TensorModifyUpdate) valueUpdate;
-        assertEquals(TensorModifyUpdate.Operation.REPLACE, tensorModifyUpdate.getOperation());
-        assertEquals(tensor, tensorModifyUpdate.getValue());
-        assertEquals(update, deserializedUpdate);
+        return (TensorModifyUpdate)valueUpdate;
     }
 }

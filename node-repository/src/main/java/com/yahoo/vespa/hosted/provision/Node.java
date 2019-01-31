@@ -73,7 +73,6 @@ public final class Node {
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type,
                 Reports reports) {
         Objects.requireNonNull(id, "A node must have an ID");
-        requireNonEmpty(ipAddresses, "A node must have at least one valid IP address");
         requireNonEmptyString(hostname, "A node must have a hostname");
         requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
         Objects.requireNonNull(flavor, "A node must have a flavor");
@@ -83,6 +82,9 @@ public final class Node {
         Objects.requireNonNull(history, "A null node history is not permitted");
         Objects.requireNonNull(type, "A null node type is not permitted");
         Objects.requireNonNull(reports, "A null reports is not permitted");
+
+        if (state == State.active)
+            requireNonEmpty(ipAddresses, "An active node must have at least one valid IP address");
 
         this.ipAddresses = ImmutableSet.copyOf(ipAddresses);
         this.ipAddressPool = new IP.AddressPool(this, ipAddressPool);

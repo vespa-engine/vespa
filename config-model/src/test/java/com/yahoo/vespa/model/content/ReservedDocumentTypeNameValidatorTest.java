@@ -47,7 +47,7 @@ public class ReservedDocumentTypeNameValidatorTest {
     public void validation_is_case_insensitive() {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("The following document types conflict with reserved keyword names: " +
-                "'NULL', 'True', 'anD'.");
+                                        "'NULL', 'True', 'anD'.");
 
         ReservedDocumentTypeNameValidator validator = new ReservedDocumentTypeNameValidator();
         Map<String, NewDocumentType> orderedDocTypes = new TreeMap<>(asDocTypeMapping(Arrays.asList("NULL", "True", "anD")));

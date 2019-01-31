@@ -362,6 +362,15 @@ TEST("require that slime objects can be compared") {
     EXPECT_NOT_EQUAL(Slime().setArray(), Slime().setObject());
 }
 
+TEST("require that nix equality checks validity") {
+    const Inspector &good_nix = *vespalib::slime::NixValue::instance();
+    const Inspector &bad_nix = *vespalib::slime::NixValue::invalid();
+    EXPECT_EQUAL(good_nix, good_nix);
+    EXPECT_EQUAL(bad_nix, bad_nix);
+    EXPECT_NOT_EQUAL(good_nix, bad_nix);
+    EXPECT_NOT_EQUAL(bad_nix, good_nix);
+}
+
 TEST("require that we can resolve to symbol table from a cursor") {
     Slime slime;
     Cursor &c1 = slime.setObject();

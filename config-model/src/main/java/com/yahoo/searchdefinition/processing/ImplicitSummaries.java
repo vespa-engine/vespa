@@ -145,8 +145,7 @@ public class ImplicitSummaries extends Processor {
     // Returns whether this is valid. Warns if invalid and ignorable. Throws if not ignorable.
     private boolean isValid(SummaryField summaryField, Search search, boolean validate) {
         if (summaryField.getTransform() == SummaryTransform.DISTANCE ||
-            summaryField.getTransform() == SummaryTransform.POSITIONS)
-        {
+            summaryField.getTransform() == SummaryTransform.POSITIONS) {
             int sourceCount = summaryField.getSourceCount();
             if (validate && sourceCount != 1) {
                 throw newProcessException(search.getName(), summaryField.getName(),

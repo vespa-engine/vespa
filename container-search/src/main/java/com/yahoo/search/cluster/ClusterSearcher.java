@@ -208,16 +208,15 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
             result = search(query, execution, connection);
         } catch (RuntimeException e) { //TODO: Exceptions should not be used to signal backend communication errors
             log(LogLevel.WARNING, "An exception occurred while invoking backend searcher.", e);
-            result = new Result(query, ErrorMessage
-                    .createBackendCommunicationError("Failed calling "
-                            + connection + " in " + this + " for " + query
-                            + ": " + Exceptions.toMessageString(e)));
+            result = new Result(query, ErrorMessage.createBackendCommunicationError("Failed calling " + connection +
+                                                                                    " in " + this + " for " + query +
+                                                                                    ": " + Exceptions.toMessageString(e)));
         }
 
         if (result == null)
             result = new Result(query, ErrorMessage
-                    .createBackendCommunicationError("No result returned in "
-                            + this + " from " + connection + " for " + query));
+                    .createBackendCommunicationError("No result returned in " + this +
+                                                     " from " + connection + " for " + query));
 
         if (result.hits().getError() != null) {
             log(LogLevel.FINE, "FAILED: ", query);
@@ -235,8 +234,8 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
      */
     protected abstract Result search(Query query, Execution execution, T connection);
 
-    public @Override
-    final void fill(Result result, String summaryClass, Execution execution) {
+    @Override
+    public final void fill(Result result, String summaryClass, Execution execution) {
         Query query = result.getQuery();
         Hasher.NodeList<T> nodes = getHasher().getNodes();
         int code = query.hashCode();
@@ -245,17 +244,14 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         if (connection != null) {
             if (timedOut(query)) {
                 result.hits().addError(
-                        ErrorMessage.createTimeout(
-                                "No time left to get summaries for "
-                                + result));
+                        ErrorMessage.createTimeout("No time left to get summaries for " + result));
             } else {
                 // query.setTimeout(getNodeTimeout(query));
                 doFill(connection, result, summaryClass, execution);
             }
         } else {
             result.hits().addError(
-                    ErrorMessage.createNoBackendsInService("Could not fill '"
-                            + result + "' in '" + this + "'"));
+                    ErrorMessage.createNoBackendsInService("Could not fill '" + result + "' in '" + this + "'"));
         }
     }
 
@@ -265,13 +261,12 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         } catch (RuntimeException e) {
             result.hits().addError(
                     ErrorMessage
-                            .createBackendCommunicationError("Error filling "
-                                    + result + " from " + connection + ": "
-                                    + Exceptions.toMessageString(e)));
+                            .createBackendCommunicationError("Error filling " + result + " from " + connection + ": " +
+                                                             Exceptions.toMessageString(e)));
         }
         if (result.hits().getError() != null) {
             log(LogLevel.FINE, "FAILED: ", result.getQuery());
-        } else if (!result.isCached()) {
+        } else if ( ! result.isCached()) {
             log(LogLevel.FINE, "WORKING: ", result.getQuery());
         } else {
             log(LogLevel.FINE, "CACHE HIT: " + result.getQuery());

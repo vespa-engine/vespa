@@ -6,10 +6,14 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
+import com.yahoo.tensor.TensorType;
+
+import java.util.Objects;
 
 /*
  *  An update for the subset of the cells in a tensor.
- *  The tensor is a mapped (aka sparse) tensor.
+ *
+ *  The cells to update are contained in a sparse tensor (has only mapped dimensions).
  */
 public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
     protected Operation operation;
@@ -19,8 +23,23 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
         super(ValueUpdateClassID.TENSORMODIFY);
         this.operation = operation;
         this.tensor = tensor;
+        verifyCompatibleType(tensor.getDataType().getTensorType());
     }
 
+    private void verifyCompatibleType(TensorType type) {
+        if (type.dimensions().stream().anyMatch(dim -> dim.isIndexed()) ) {
+            throw new IllegalArgumentException("Tensor type '" + type + "' is not compatible as it contains some indexed dimensions");
+        }
+    }
+
+    /**
+     * Converts the given tensor type to a type that is compatible for being used in this update (has only mapped dimensions).
+     */
+    public static TensorType convertToCompatibleType(TensorType type) {
+        TensorType.Builder builder = new TensorType.Builder();
+        type.dimensions().stream().forEach(dim -> builder.mapped(dim.name()));
+        return builder.build();
+    }
 
     public Operation getOperation() { return operation; }
 
@@ -51,13 +70,17 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof TensorModifyUpdate && super.equals(o) &&
-                operation == ((TensorModifyUpdate) o).operation && tensor.equals(((TensorModifyUpdate) o).tensor);
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        TensorModifyUpdate that = (TensorModifyUpdate) o;
+        return operation == that.operation &&
+                tensor.equals(that.tensor);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + operation.hashCode() + tensor.hashCode();
+        return Objects.hash(super.hashCode(), operation, tensor);
     }
 
     @Override

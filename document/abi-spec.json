@@ -5210,6 +5210,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.document.update.TensorModifyUpdate$Operation, com.yahoo.document.datatypes.TensorFieldValue)",
+      "public static com.yahoo.tensor.TensorType convertToCompatibleType(com.yahoo.tensor.TensorType)",
       "public com.yahoo.document.update.TensorModifyUpdate$Operation getOperation()",
       "public com.yahoo.document.datatypes.TensorFieldValue getValue()",
       "public void setValue(com.yahoo.document.datatypes.TensorFieldValue)",

@@ -117,7 +117,7 @@ public class DockerHostCapacity {
         if (!dockerHost.type().equals(NodeType.host)) return new ResourceCapacity();
 
         ResourceCapacity hostCapacity = new ResourceCapacity(dockerHost);
-        for (Node container : allNodes.childrenOf(dockerHost).asList()) {
+        for (Node container : allNodes.childrenOf(dockerHost)) {
             boolean isUsedCapacity = !(treatInactiveOrRetiredAsUnusedCapacity && isInactiveOrRetired(container));
             if (isUsedCapacity) {
                 hostCapacity.subtract(container);

@@ -245,7 +245,7 @@ public class NodeIdentifierTest {
                                                 Version.emptyVersion,
                                                 false),
                                         clusterIndex),
-                                Generation.inital(),
+                                Generation.initial(),
                                 false));
 
     }

@@ -79,7 +79,7 @@ public class DocsumDefinition {
      */
     public Object convert(String fieldName, Inspector value) {
         DocsumField fieldType = getField(fieldName);
-        if (fieldType == null) return null;
+        if (fieldType == null || ! value.valid()) return null;
         return fieldType.convert(value);
     }
 

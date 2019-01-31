@@ -76,14 +76,14 @@ public class AllocationVisualizer extends JPanel {
         // Draw the docker hosts - and color each container according to application
         AllocationSnapshot simStep = steps.get(step);
         NodeList hosts = simStep.nodes.nodeType(NodeType.host);
-        for (Node host : hosts.asList()) {
+        for (Node host : hosts) {
 
             // Paint the host
             paintNode(host, g, nodeX, nodeY, true);
 
             // Paint containers
             NodeList containers = simStep.nodes.childrenOf(host);
-            for (Node container : containers.asList()) {
+            for (Node container : containers) {
                 nodeY = paintNode(container, g, nodeX, nodeY, false);
             }
 
