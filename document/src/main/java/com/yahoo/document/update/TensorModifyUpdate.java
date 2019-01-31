@@ -7,6 +7,8 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
 
+import java.util.Objects;
+
 /*
  *  An update for the subset of the cells in a tensor.
  *  The tensor is a mapped (aka sparse) tensor.
@@ -51,13 +53,17 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof TensorModifyUpdate && super.equals(o) &&
-                operation == ((TensorModifyUpdate) o).operation && tensor.equals(((TensorModifyUpdate) o).tensor);
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        TensorModifyUpdate that = (TensorModifyUpdate) o;
+        return operation == that.operation &&
+                tensor.equals(that.tensor);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + operation.hashCode() + tensor.hashCode();
+        return Objects.hash(super.hashCode(), operation, tensor);
     }
 
     @Override
