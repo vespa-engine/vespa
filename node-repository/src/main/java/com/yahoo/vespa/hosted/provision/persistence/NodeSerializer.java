@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.io.IOException;
@@ -62,6 +63,7 @@ public class NodeSerializer {
     private static final String hardwareDivergenceKey = "hardwareDivergence";
     private static final String osVersionKey = "osVersion";
     private static final String firmwareCheckKey = "firmwareCheck";
+    private static final String reportsKey = "reports";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -120,6 +122,7 @@ public class NodeSerializer {
                                                                                             hardwareDivergence));
         node.status().osVersion().ifPresent(version -> object.setString(osVersionKey, version.toString()));
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
+        node.reports().toSlime(object, reportsKey);
     }
 
     private void toSlime(Allocation allocation, Cursor object) {
@@ -166,7 +169,8 @@ public class NodeSerializer {
                         state,
                         allocationFromSlime(object.field(instanceKey)),
                         historyFromSlime(object.field(historyKey)),
-                        nodeTypeFromString(object.field(nodeTypeKey).asString()));
+                        nodeTypeFromString(object.field(nodeTypeKey).asString()),
+                        Reports.fromSlime(object.field(reportsKey)));
     }
 
     private Status statusFromSlime(Inspector object) {

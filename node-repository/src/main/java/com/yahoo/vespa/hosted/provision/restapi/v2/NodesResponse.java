@@ -186,6 +186,7 @@ class NodesResponse extends HttpResponse {
         ipAddressesToSlime(node.ipAddresses(), object.setArray("ipAddresses"));
         ipAddressesToSlime(node.ipAddressPool().asSet(), object.setArray("additionalIpAddresses"));
         node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString("hardwareDivergence", hardwareDivergence));
+        node.reports().toSlime(object, "reports");
     }
 
     private void toSlime(ApplicationId id, Cursor object) {

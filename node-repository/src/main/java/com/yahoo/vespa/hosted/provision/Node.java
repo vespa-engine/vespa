@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.time.Instant;
@@ -38,6 +39,7 @@ public final class Node {
     private final Status status;
     private final State state;
     private final NodeType type;
+    private final Reports reports;
 
     /** Record of the last event of each type happening to this node */
     private final History history;
@@ -68,7 +70,8 @@ public final class Node {
      * Others should use the {@code create} methods to create nodes, or the Builder to modify nodes.
      */
     public Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
-                Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type) {
+                Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type,
+                Reports reports) {
         Objects.requireNonNull(id, "A node must have an ID");
         requireNonEmptyString(hostname, "A node must have a hostname");
         requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
@@ -78,6 +81,7 @@ public final class Node {
         Objects.requireNonNull(allocation, "A null node allocation is not permitted");
         Objects.requireNonNull(history, "A null node history is not permitted");
         Objects.requireNonNull(type, "A null node type is not permitted");
+        Objects.requireNonNull(reports, "A null reports is not permitted");
 
         if (state == State.active)
             requireNonEmpty(ipAddresses, "An active node must have at least one valid IP address");
@@ -93,6 +97,7 @@ public final class Node {
         this.allocation = allocation;
         this.history = history;
         this.type = type;
+        this.reports = reports;
     }
 
     /** Helper for creating and mutating node objects. */
@@ -111,6 +116,7 @@ public final class Node {
         private State state = State.provisioned;
         private History history = History.empty();
         private Optional<Allocation> allocation = Optional.empty();
+        private Reports reports = new Reports();
 
         /** Creates a builder fairly well suited for a newly provisioned node (but see {@code create} and {@code createDockerNode}). */
         private Builder(String id, Set<String> ipAddresses, String hostname, Flavor flavor, NodeType type) {
@@ -190,8 +196,14 @@ public final class Node {
             return this;
         }
 
+        public Builder withReports(Reports reports) {
+            this.reports = reports;
+            return this;
+        }
+
         public Node build() {
-            return new Node(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state, allocation, history, type);
+            return new Node(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status,
+                    state, allocation, history, type, reports);
         }
     }
 
@@ -246,6 +258,9 @@ public final class Node {
 
     /** Returns a history of the last events happening to this node */
     public History history() { return history; }
+
+    /** Returns all the reports on this node. */
+    public Reports reports() { return reports; }
 
     /**
      * Returns a copy of this node with wantToRetire set to the given value and updated history.
@@ -371,6 +386,10 @@ public final class Node {
     /** Returns a copy of this node with the given history. */
     public Node with(History history) {
         return new Builder(this).withHistory(history).build();
+    }
+
+    public Node with(Reports reports) {
+        return new Builder(this).withReports(reports).build();
     }
 
     private static void requireNonEmptyString(Optional<String> value, String message) {

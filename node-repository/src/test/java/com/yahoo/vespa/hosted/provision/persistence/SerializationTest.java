@@ -11,6 +11,9 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Slime;
+import com.yahoo.slime.Type;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -18,6 +21,8 @@ import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.Report;
+import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import org.junit.Test;
 
@@ -326,6 +331,34 @@ public class SerializationTest {
         for (NodeType t : NodeType.values()) {
             assertEquals(t, NodeSerializer.nodeTypeFromString(NodeSerializer.toString(t)));
         }
+    }
+
+    @Test
+    public void reports_serialization() {
+        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        assertTrue(node.reports().isEmpty());
+
+        var slime = new Slime();
+        Cursor reportCursor = slime.setObject();
+        reportCursor.setLong(Report.CREATED_FIELD, 3);
+        reportCursor.setString(Report.DESCRIPTION_FIELD, "desc");
+        reportCursor.setLong("value", 4);
+        final String reportId = "rid";
+        var report = Report.fromSlime(reportId, reportCursor);
+        var reports = new Reports.Builder().setReport(report).build();
+
+        node = node.with(reports);
+        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+
+        reports = node.reports();
+        assertFalse(reports.isEmpty());
+        assertEquals(1, reports.getReports().size());
+        report = reports.getReport(reportId).orElseThrow();
+        assertEquals(reportId, report.getReportId());
+        assertEquals(Instant.ofEpochMilli(3), report.getCreatedTime());
+        assertEquals("desc", report.getDescription());
+        assertEquals(4, report.getInspector().field("value").asLong());
+        assertEquals(Type.NIX, report.getInspector().field("bogus").type());
     }
 
     private byte[] createNodeJson(String hostname, String... ipAddress) {
