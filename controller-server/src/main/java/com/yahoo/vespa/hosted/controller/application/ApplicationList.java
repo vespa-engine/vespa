@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -64,13 +65,18 @@ public class ApplicationList {
     }
 
     /** Returns the subset of applications which are not pinned to a certain Vespa version. */
-    public ApplicationList notPinned() {
+    public ApplicationList unpinned() {
         return listOf(list.stream().filter(application -> ! application.change().isPinned()));
     }
 
     /** Returns the subset of applications which are currently not upgrading to the given version */
     public ApplicationList notUpgradingTo(Version version) {
-        return listOf(list.stream().filter(application -> ! isUpgradingTo(version, application)));
+        return notUpgradingTo(Collections.singletonList(version));
+    }
+
+    /** Returns the subset of applications which are currently not upgrading to any of the given versions */
+    public ApplicationList notUpgradingTo(Collection<Version> versions) {
+        return listOf(list.stream().filter(application -> versions.stream().noneMatch(version -> isUpgradingTo(version, application))));
     }
 
     /**
@@ -78,7 +84,7 @@ public class ApplicationList {
      * or returns all if no version is specified
      */
     public ApplicationList notUpgradingTo(Optional<Version> version) {
-        if ( ! version.isPresent()) return this;
+        if (version.isEmpty()) return this;
         return notUpgradingTo(version.get());
     }
 
