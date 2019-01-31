@@ -14,6 +14,7 @@ public class MessageBusParams extends DocumentAccessParams {
     private String routingConfigId = null;
     private String protocolConfigId = null;
     private String route = "route:default";
+    private String routeForGet = "route:default-get";
     private int traceLevel = 0;
     private RPCNetworkParams rpcNetworkParams = new RPCNetworkParams();
     private com.yahoo.messagebus.MessageBusParams mbusParams = new com.yahoo.messagebus.MessageBusParams();
@@ -102,6 +103,14 @@ public class MessageBusParams extends DocumentAccessParams {
         return this;
     }
 
+    public MessageBusParams setRouteNameForGet(String routeName) {
+        return setRouteForGet("route:" + routeName);
+    }
+    public MessageBusParams setRouteForGet(String route) {
+        this.routeForGet = route;
+        return this;
+    }
+
     /**
      * Returns the route string that all requests will be sent to.
      *
@@ -109,6 +118,10 @@ public class MessageBusParams extends DocumentAccessParams {
      */
     public String getRoute() {
         return route;
+    }
+
+    public String getRouteForGet() {
+        return routeForGet;
     }
 
     /**

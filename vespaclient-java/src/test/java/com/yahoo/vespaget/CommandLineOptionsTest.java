@@ -46,7 +46,7 @@ public class CommandLineOptionsTest {
         assertFalse(params.documentIds.hasNext());
         assertFalse(params.printIdsOnly);
         assertEquals("[all]", params.fieldSet);
-        assertEquals("default", params.route);
+        assertEquals("default-get", params.route);
         assertTrue(params.cluster.isEmpty());
         assertEquals("client", params.configId);
         assertFalse(params.showDocSize);
@@ -145,7 +145,7 @@ public class CommandLineOptionsTest {
     public void testHeadersOnly() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Headers only option has been removed.");
-        ClientParameters params = getParsedOptions("--headersonly");
+        getParsedOptions("--headersonly");
     }
 
     @Test
