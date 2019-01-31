@@ -19,7 +19,7 @@ import java.util.TreeMap;
 public class Reports {
     private final Map<String, Report> reports;
 
-    public Reports() { this(new TreeMap<>()); }
+    public Reports() { this(Collections.emptyMap()); }
     private Reports(Map<String, Report> reports) { this.reports = Collections.unmodifiableMap(reports); }
 
     public boolean isEmpty() { return reports.isEmpty(); }

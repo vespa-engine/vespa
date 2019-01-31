@@ -533,7 +533,7 @@ public class RestApiTest {
                                 "    }," +
                                 "    \"diskSpace\": {" +
                                 "      \"createdMillis\": 2, " +
-                                "      \"description\": \"Actual number of CPU cores (2) differs from spec (4)\"," +
+                                "      \"description\": \"Actual disk space (2TB) differs from spec (3TB)\"," +
                                 "      \"details\": {" +
                                 "        \"inGib\": 3," +
                                 "        \"disks\": [\"/dev/sda1\", \"/dev/sdb3\"]" +
