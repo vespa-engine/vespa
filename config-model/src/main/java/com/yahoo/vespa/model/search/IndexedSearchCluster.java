@@ -107,6 +107,7 @@ public class IndexedSearchCluster extends SearchCluster
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
     private final boolean useFdispatchByDefault;
+    private final boolean useAdaptiveDispatch;
     private List<SearchNode> searchNodes = new ArrayList<>();
 
     /**
@@ -125,6 +126,7 @@ public class IndexedSearchCluster extends SearchCluster
         dispatchParent = new SimpleConfigProducer(this, "dispatchers");
         rootDispatch =  new DispatchGroup(this);
         useFdispatchByDefault = deployState.getProperties().useFdispatchByDefault();
+        useAdaptiveDispatch = deployState.getProperties().useAdaptiveDispatch();
     }
 
     @Override
@@ -186,6 +188,7 @@ public class IndexedSearchCluster extends SearchCluster
     public Dispatch addTld(DeployLogger deployLogger, AbstractConfigProducer tldParent, HostResource hostResource) {
         int index = rootDispatch.getDispatchers().size();
         Dispatch tld = Dispatch.createTld(rootDispatch, tldParent, index);
+        tld.useAdaptiveDispatch(useAdaptiveDispatch);
         tld.setHostResource(hostResource);
         tld.initService(deployLogger);
         rootDispatch.addDispatcher(tld);
@@ -210,12 +213,13 @@ public class IndexedSearchCluster extends SearchCluster
             log.log(LogLevel.DEBUG, "Adding tld with index " + containerIndex + " for content cluster " + this.getClusterName() +
                                     ", container cluster " + containerClusterName + " (container id " + containerSubId +
                                     ") on host " + container.getHostResource().getHostname());
-            rootDispatch.addDispatcher(createTld(deployLogger, tldParent, container.getHostResource(), containerClusterName, containerIndex));
+            rootDispatch.addDispatcher(createTld(deployLogger, tldParent, container.getHostResource(), containerClusterName, containerIndex).useAdaptiveDispatch(useAdaptiveDispatch));
         }
     }
 
     private Dispatch createTld(DeployLogger deployLogger, AbstractConfigProducer tldParent, HostResource hostResource, String containerClusterName, int containerIndex) {
         Dispatch tld = Dispatch.createTldWithContainerIdInName(rootDispatch, tldParent, containerClusterName, containerIndex);
+        tld.useAdaptiveDispatch(useAdaptiveDispatch);
         tld.setHostResource(hostResource);
         tld.initService(deployLogger);
         return tld;

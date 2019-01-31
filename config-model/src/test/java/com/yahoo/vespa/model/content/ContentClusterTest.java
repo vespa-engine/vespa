@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
@@ -16,6 +17,7 @@ import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
+import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -177,7 +179,7 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    public void testEndToEnd() throws Exception {
+    public void testEndToEnd() {
         String xml =
             "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
             "<services>\n" +
@@ -220,49 +222,73 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(3, cluster.getContainers().size());
     }
 
-    @Test
-    public void testEndToEndOneNode() throws Exception {
+    VespaModel createEnd2EndOneNode(ModelContext.Properties properties) {
         String services =
-        "<?xml version='1.0' encoding='UTF-8' ?>" +
-        "<services version='1.0'>" +
-        "  <admin version='2.0'>" +
-        "    <adminserver hostalias='node1'/>" +
-        "  </admin>"  +
-        "   <jdisc id='default' version='1.0'>" +
-        "     <search/>" +
-        "     <nodes>" +
-        "       <node hostalias='node1'/>" +
-        "     </nodes>" +
-        "   </jdisc>" +
-        "   <content id='storage' version='1.0'>" +
-        "     <redundancy>2</redundancy>" +
-        "     <group>" +
-        "       <node distribution-key='0' hostalias='node1'/>" +
-        "       <node distribution-key='1' hostalias='node1'/>" +
-        "     </group>" +
-        "     <tuning>" +
-        "       <cluster-controller>" +
-        "         <transition-time>0</transition-time>" +
-        "       </cluster-controller>" +
-        "     </tuning>" +
-        "     <documents>" +
-        "       <document mode='store-only' type='type1'/>" +
-        "     </documents>" +
-        "     <engine>" +
-        "       <proton/>" +
-        "     </engine>" +
-        "   </content>" +
-        " </services>";
+                "<?xml version='1.0' encoding='UTF-8' ?>" +
+                        "<services version='1.0'>" +
+                        "  <admin version='2.0'>" +
+                        "    <adminserver hostalias='node1'/>" +
+                        "  </admin>"  +
+                        "   <jdisc id='default' version='1.0'>" +
+                        "     <search/>" +
+                        "     <nodes>" +
+                        "       <node hostalias='node1'/>" +
+                        "     </nodes>" +
+                        "   </jdisc>" +
+                        "   <content id='storage' version='1.0'>" +
+                        "     <redundancy>2</redundancy>" +
+                        "     <group>" +
+                        "       <node distribution-key='0' hostalias='node1'/>" +
+                        "       <node distribution-key='1' hostalias='node1'/>" +
+                        "     </group>" +
+                        "     <tuning>" +
+                        "       <cluster-controller>" +
+                        "         <transition-time>0</transition-time>" +
+                        "       </cluster-controller>" +
+                        "     </tuning>" +
+                        "     <documents>" +
+                        "       <document mode='index' type='type1'/>" +
+                        "     </documents>" +
+                        "     <engine>" +
+                        "       <proton/>" +
+                        "     </engine>" +
+                        "   </content>" +
+                        " </services>";
 
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(properties);
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1");
-        VespaModel model = (new VespaModelCreatorWithMockPkg(null, services, sds)).create();
+        return (new VespaModelCreatorWithMockPkg(null, services, sds)).create(deployStateBuilder);
+    }
+    @Test
+    public void testEndToEndOneNode() {
+        VespaModel model = createEnd2EndOneNode(new TestProperties());
+
         assertEquals(1, model.getContentClusters().get("storage").getDocumentDefinitions().size());
         ContainerCluster cluster = model.getAdmin().getClusterControllers();
         assertEquals(1, cluster.getContainers().size());
     }
 
+    private void verifyRoundRobinPropertiesControl(boolean useAdaptiveDispatch) {
+        VespaModel model = createEnd2EndOneNode(new TestProperties().setUseAdaptiveDispatch(useAdaptiveDispatch));
+
+        ContentCluster cc = model.getContentClusters().get("storage");
+        PartitionsConfig.Builder partBuilder = new PartitionsConfig.Builder();
+        assertNotNull(cc.getSearch());
+        assertNotNull(cc.getSearch().getIndexed());
+        assertEquals(1, cc.getSearch().getIndexed().getTLDs().size());
+        cc.getSearch().getIndexed().getTLDs().get(0).getConfig(partBuilder);
+        PartitionsConfig partitionsConfig = new PartitionsConfig(partBuilder);
+        assertFalse(useAdaptiveDispatch == partitionsConfig.dataset(0).useroundrobinforfixedrow());
+    }
+
     @Test
-    public void testSearchTuning() throws Exception {
+    public void default_dispatch_controlled_by_properties() {
+        verifyRoundRobinPropertiesControl(false);
+        verifyRoundRobinPropertiesControl(true);
+    }
+
+    @Test
+    public void testSearchTuning() {
         String xml =
             "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
             "<services>\n" +
@@ -312,7 +338,7 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    public void testRedundancyRequired() throws Exception {
+    public void testRedundancyRequired() {
         String xml =
             "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
             "<services>\n" +
@@ -754,8 +780,6 @@ public class ContentClusterTest extends ContentBaseTest {
                 "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
                 "  </group>" +
                 "</content>", isHostedVespa);
-
-
     }
 
     private static ContentCluster createClusterWithFlushOnShutdownOverride(boolean flushOnShutdown, boolean isHostedVespa) throws Exception {

@@ -139,6 +139,9 @@ public class MockModelContext implements ModelContext {
 
             @Override
             public boolean useFdispatchByDefault() { return true; }
+
+            @Override
+            public boolean useAdaptiveDispatch() { return false; }
         };
     }
 }

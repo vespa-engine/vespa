@@ -36,6 +36,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean isFirstTimeDeployment = false;
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useFdispatchByDefault = true;
+    private boolean useAdaptiveDispatch = false;
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -48,6 +49,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public Set<Rotation> rotations() { return rotations; }
     @Override public boolean isBootstrap() { return isBootstrap; }
     @Override public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
+    @Override public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
 
@@ -58,6 +60,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setHostedVespa(boolean hostedVespa) {
         this.hostedVespa = hostedVespa;
+        return this;
+    }
+
+    public TestProperties setUseAdaptiveDispatch(boolean useAdaptiveDispatch) {
+        this.useAdaptiveDispatch = useAdaptiveDispatch;
         return this;
     }
 
