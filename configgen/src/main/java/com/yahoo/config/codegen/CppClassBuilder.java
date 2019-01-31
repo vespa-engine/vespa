@@ -246,8 +246,8 @@ public class CppClassBuilder implements ClassBuilder {
         w.write("    class ConfigPayload;\n");
         w.write("}\n\n");
         w.write("namespace vespalib::slime {\n");
-        w.write("    class Inspector;\n");
-        w.write("    class Cursor;\n");
+        w.write("    struct Inspector;\n");
+        w.write("    struct Cursor;\n");
         w.write("}\n\n");
         writeNameSpaceBegin(w, namespaceList);
         w.write("\nnamespace internal {\n\n");
