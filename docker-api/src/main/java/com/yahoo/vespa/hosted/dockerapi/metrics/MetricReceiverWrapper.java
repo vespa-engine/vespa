@@ -27,7 +27,7 @@ public class MetricReceiverWrapper {
     public static final String APPLICATION_NODE = "vespa.node";
 
     private final Object monitor = new Object();
-    private final Map<String, ApplicationMetrics> applicationMetrics = new HashMap<>(); // key is application name
+    private final Map<DimensionType, Map<String, ApplicationMetrics>> metrics = new HashMap<>();
     private final MetricReceiver metricReceiver;
 
     @Inject
@@ -39,8 +39,12 @@ public class MetricReceiverWrapper {
      *  Declaring the same dimensions and name results in the same CounterWrapper instance (idempotent).
      */
     public CounterWrapper declareCounter(String application, Dimensions dimensions, String name) {
+        return declareCounter(application, dimensions, name, DimensionType.DEFAULT);
+    }
+
+    public CounterWrapper declareCounter(String application, Dimensions dimensions, String name, DimensionType type) {
         synchronized (monitor) {
-            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application);
+            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application, type);
             if (!metricsByDimensions.containsKey(dimensions)) metricsByDimensions.put(dimensions, new HashMap<>());
             if (!metricsByDimensions.get(dimensions).containsKey(name)) {
                 CounterWrapper counter = new CounterWrapper(metricReceiver.declareCounter(name, new Point(dimensions.dimensionsMap)));
@@ -55,8 +59,12 @@ public class MetricReceiverWrapper {
      *  Declaring the same dimensions and name results in the same GaugeWrapper instance (idempotent).
      */
     public GaugeWrapper declareGauge(String application, Dimensions dimensions, String name) {
+        return declareGauge(application, dimensions, name, DimensionType.DEFAULT);
+    }
+
+    public GaugeWrapper declareGauge(String application, Dimensions dimensions, String name, DimensionType type) {
         synchronized (monitor) {
-            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application);
+            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application, type);
             if (!metricsByDimensions.containsKey(dimensions))
                 metricsByDimensions.put(dimensions, new HashMap<>());
             if (!metricsByDimensions.get(dimensions).containsKey(name)) {
@@ -68,22 +76,16 @@ public class MetricReceiverWrapper {
         }
     }
 
-    public List<DimensionMetrics> getAllMetrics() {
-        synchronized (monitor) {
-            List<DimensionMetrics> dimensionMetrics = new ArrayList<>();
-            applicationMetrics.forEach((application, applicationMetrics) -> applicationMetrics.metricsByDimensions().entrySet().stream()
-                    .map(entry -> new DimensionMetrics(application, entry.getKey(),
-                            entry.getValue().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, value -> value.getValue().getValue()))))
-                    .forEach(dimensionMetrics::add));
-            return dimensionMetrics;
-        }
+    public List<DimensionMetrics> getDefaultMetrics() {
+        return getMetricsByType(DimensionType.DEFAULT);
     }
 
-    // For testing, returns same as getAllMetrics(), but without "timestamp"
-    public Set<Map<String, Object>> getAllMetricsRaw() {
+    // For testing, returns same as getDefaultMetrics(), but without "timestamp"
+    public Set<Map<String, Object>> getDefaultMetricsRaw() {
         synchronized (monitor) {
             Set<Map<String, Object>> dimensionMetrics = new HashSet<>();
-            applicationMetrics.forEach((application, applicationMetrics) -> applicationMetrics.metricsByDimensions().entrySet().stream()
+            metrics.getOrDefault(DimensionType.DEFAULT, new HashMap<>())
+                    .forEach((application, applicationMetrics) -> applicationMetrics.metricsByDimensions().entrySet().stream()
                     .map(entry -> new DimensionMetrics(application, entry.getKey(),
                             entry.getValue().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, value -> value.getValue().getValue()))))
                     .map(DimensionMetrics::getMetrics)
@@ -92,16 +94,33 @@ public class MetricReceiverWrapper {
         }
     }
 
+    public List<DimensionMetrics> getMetricsByType(DimensionType type) {
+        synchronized (monitor) {
+            List<DimensionMetrics> dimensionMetrics = new ArrayList<>();
+            metrics.getOrDefault(type, new HashMap<>())
+                    .forEach((application, applicationMetrics) -> applicationMetrics.metricsByDimensions().entrySet().stream()
+                    .map(entry -> new DimensionMetrics(application, entry.getKey(),
+                            entry.getValue().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, value -> value.getValue().getValue()))))
+                    .forEach(dimensionMetrics::add));
+            return dimensionMetrics;
+        }
+    }
+
     // For testing
     Map<String, Number> getMetricsForDimension(String application, Dimensions dimensions) {
         synchronized (monitor) {
-            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application);
+            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application, DimensionType.DEFAULT);
             return metricsByDimensions.get(dimensions).entrySet().stream().collect(
                     Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
         }
     }
 
-    private Map<Dimensions, Map<String, MetricValue>> getOrCreateApplicationMetrics(String application) {
+    private Map<Dimensions, Map<String, MetricValue>> getOrCreateApplicationMetrics(String application, DimensionType type) {
+        if (! metrics.containsKey(type)) {
+            metrics.put(type, new HashMap<>());
+        }
+        Map<String, ApplicationMetrics> applicationMetrics = metrics.get(type);
+
         if (! applicationMetrics.containsKey(application)) {
             ApplicationMetrics metrics = new ApplicationMetrics();
             applicationMetrics.put(application, metrics);
@@ -117,4 +136,7 @@ public class MetricReceiverWrapper {
             return metricsByDimensions;
         }
     }
+
+    // Used to distinguish whether metrics have been populated with all tag vaules
+    public enum DimensionType {DEFAULT, PRETAGGED}
 }
