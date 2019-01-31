@@ -166,17 +166,17 @@ public class DockerProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
         prepareAndActivate(application1, 2, false, tester);
-        for (Node node : tester.getNodes(application1, Node.State.active).asList())
+        for (Node node : tester.getNodes(application1, Node.State.active))
             assertFalse(node.allocation().get().membership().cluster().isExclusive());
 
         prepareAndActivate(application1, 2, true, tester);
         assertEquals(setOf("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
-        for (Node node : tester.getNodes(application1, Node.State.active).asList())
+        for (Node node : tester.getNodes(application1, Node.State.active))
             assertTrue(node.allocation().get().membership().cluster().isExclusive());
 
         prepareAndActivate(application1, 2, false, tester);
         assertEquals(setOf("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
-        for (Node node : tester.getNodes(application1, Node.State.active).asList())
+        for (Node node : tester.getNodes(application1, Node.State.active))
             assertFalse(node.allocation().get().membership().cluster().isExclusive());
     }
 

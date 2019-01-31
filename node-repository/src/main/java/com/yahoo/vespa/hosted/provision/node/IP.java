@@ -207,14 +207,10 @@ public class IP {
 
     /** Validates and returns the given set of IP addresses */
     public static Set<String> requireAddresses(Set<String> addresses) {
-        String message = "A node must have at least one valid IP address";
-        if (addresses.isEmpty()) {
-            throw new IllegalArgumentException(message);
-        }
         try {
             addresses.forEach(InetAddresses::forString);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(message, e);
+            throw new IllegalArgumentException("A node must have at least one valid IP address", e);
         }
         return addresses;
     }

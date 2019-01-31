@@ -94,7 +94,7 @@ public class AllocationSimulator {
         if (tenant.isPresent()) {
             Allocation allocation = new Allocation(app(tenant.get()),
                                                    ClusterMembership.from("container/id1/3", new Version()),
-                                                   Generation.inital(),
+                                                   Generation.initial(),
                                                    false);
             return Optional.of(allocation);
         }

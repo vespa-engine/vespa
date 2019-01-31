@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -20,7 +21,7 @@ import static java.util.stream.Collectors.collectingAndThen;
  * @author bratseth
  * @author mpolden
  */
-public class NodeList {
+public class NodeList implements Iterable<Node> {
 
     private final List<Node> nodes;
 
@@ -103,4 +104,8 @@ public class NodeList {
         return nodes.stream().filter(predicate).collect(collectingAndThen(Collectors.toList(), NodeList::new));
     }
 
+    @Override
+    public Iterator<Node> iterator() {
+        return nodes.iterator();
+    }
 }

@@ -128,7 +128,7 @@ public class Status {
 
     /** Returns the initial status of a newly provisioned node */
     public static Status initial() {
-        return new Status(Generation.inital(), Optional.empty(), 0, Optional.empty(), false,
+        return new Status(Generation.initial(), Optional.empty(), 0, Optional.empty(), false,
                           false, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
