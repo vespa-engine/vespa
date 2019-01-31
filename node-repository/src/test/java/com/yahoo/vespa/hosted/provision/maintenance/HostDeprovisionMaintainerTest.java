@@ -92,7 +92,7 @@ public class HostDeprovisionMaintainerTest {
                 createNode("proxy2", Optional.of("proxyhost2"), NodeType.proxy, Node.State.active, Optional.of(proxyApp)));
 
         Set<Node> expected = Set.of(host2, host3);
-        Set<Node> actual = HostDeprovisionMaintainer.actionableNodes(new NodeList(nodes));
+        Set<Node> actual = HostDeprovisionMaintainer.candidates(new NodeList(nodes));
         assertEquals(expected, actual);
     }
 }

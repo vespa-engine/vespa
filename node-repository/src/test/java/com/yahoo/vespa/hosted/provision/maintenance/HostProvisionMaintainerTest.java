@@ -113,7 +113,7 @@ public class HostProvisionMaintainerTest {
                 createNode("proxy2", Optional.of("proxyhost2"), NodeType.proxy, Node.State.active, Optional.of(proxyApp)));
 
         Map<Node, Set<Node>> expected = Map.of(host4, Set.of(host41));
-        Map<Node, Set<Node>> actual = HostProvisionMaintainer.actionableNodes(new NodeList(nodes));
+        Map<Node, Set<Node>> actual = HostProvisionMaintainer.candidates(new NodeList(nodes));
         assertEquals(expected, actual);
     }
 

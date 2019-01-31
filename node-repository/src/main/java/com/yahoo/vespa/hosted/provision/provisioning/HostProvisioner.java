@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * Service for provisioning physical docker tenant hosts inside the zone.
+ *
  * @author freva
  */
 public interface HostProvisioner {

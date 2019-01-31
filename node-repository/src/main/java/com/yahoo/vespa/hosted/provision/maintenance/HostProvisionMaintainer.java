@@ -39,7 +39,7 @@ public class HostProvisionMaintainer extends Maintainer {
         try (Mutex lock = nodeRepository().lockUnallocated()) {
             NodeList nodes = nodeRepository().list();
 
-            actionableNodes(nodes).forEach((host, children) -> {
+            candidates(nodes).forEach((host, children) -> {
                 try {
                     List<Node> updatedNodes = hostProvisioner.provision(host, children);
                     nodeRepository().write(updatedNodes);
@@ -56,7 +56,7 @@ public class HostProvisionMaintainer extends Maintainer {
     }
 
     /** @return map of set of children by parent Node, where parent is of type host and in state provisioned */
-    static Map<Node, Set<Node>> actionableNodes(NodeList nodes) {
+    static Map<Node, Set<Node>> candidates(NodeList nodes) {
         Map<String, Node> provisionedHostsByHostname = nodes.state(Node.State.provisioned).nodeType(NodeType.host)
                 .asList().stream()
                 .collect(Collectors.toMap(Node::hostname, Function.identity()));

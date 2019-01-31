@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -37,7 +36,7 @@ public class HostDeprovisionMaintainer extends Maintainer {
         try (Mutex lock = nodeRepository().lockUnallocated()) {
             NodeList nodes = nodeRepository().list();
 
-            for (Node node : actionableNodes(nodes)) {
+            for (Node node : candidates(nodes)) {
                 try {
                     hostProvisioner.deprovision(node);
                     nodeRepository().removeRecursively(node.hostname());
@@ -49,7 +48,7 @@ public class HostDeprovisionMaintainer extends Maintainer {
     }
 
     /** @return Nodes of type host, in any state, that have no children with allocation */
-    static Set<Node> actionableNodes(NodeList nodes) {
+    static Set<Node> candidates(NodeList nodes) {
         Map<String, Node> hostsByHostname = nodes.nodeType(NodeType.host)
                 .asList().stream()
                 .collect(Collectors.toMap(Node::hostname, Function.identity()));
@@ -60,6 +59,6 @@ public class HostDeprovisionMaintainer extends Maintainer {
                 .distinct()
                 .forEach(hostsByHostname::remove);
 
-        return new HashSet<>(hostsByHostname.values());
+        return Set.copyOf(hostsByHostname.values());
     }
 }
