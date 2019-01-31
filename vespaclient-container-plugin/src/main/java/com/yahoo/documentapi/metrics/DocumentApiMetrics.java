@@ -59,9 +59,9 @@ public class DocumentApiMetrics {
         feeds.add(point);
     }
 
-    public void reportClientVersion(String version) {
-        if (version != null) {
-            feedRequests.add(versionPointCache.computeIfAbsent(version, v -> new Point(Map.of("client-version", v))));
+    public void reportHttpRequest(String clientVersion) {
+        if (clientVersion != null) {
+            feedRequests.add(versionPointCache.computeIfAbsent(clientVersion, v -> new Point(Map.of("client-version", v))));
         } else {
             feedRequests.add();
         }

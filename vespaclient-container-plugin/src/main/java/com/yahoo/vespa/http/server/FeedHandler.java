@@ -104,7 +104,7 @@ public class FeedHandler extends LoggingRequestHandler {
 
     @Override
     public HttpResponse handle(HttpRequest request) {
-        metricsHelper.reportClientVersion(findClientVersion(request).orElse(null));
+        metricsHelper.reportHttpRequest(findClientVersion(request).orElse(null));
         Tuple2<HttpResponse, Integer> protocolVersion = checkProtocolVersion(request);
 
         if (protocolVersion.first != null) {
