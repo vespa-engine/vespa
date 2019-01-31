@@ -3,6 +3,7 @@ package com.yahoo.document.serialization;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.update.TensorModifyUpdate;
@@ -28,11 +29,11 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
         if (operation == null) {
             throw new DeserializationException("Unknown operation id " + operationId + " for tensor modify update");
         }
-        FieldValue fieldValue = type.createFieldValue();
-        if (!(fieldValue instanceof TensorFieldValue)) {
-            throw new DeserializationException("Expected tensor field value, got " + type);
+        if (!(type instanceof TensorDataType)) {
+            throw new DeserializationException("Expected tensor data type, got " + type);
         }
-        TensorFieldValue tensor = (TensorFieldValue) fieldValue;
+        TensorDataType tensorDataType = (TensorDataType)type;
+        TensorFieldValue tensor = new TensorFieldValue(TensorModifyUpdate.convertToCompatibleType(tensorDataType.getTensorType()));
         tensor.deserialize(this);
         return new TensorModifyUpdate(operation, tensor);
     }

@@ -63,8 +63,8 @@ public class TensorModifyUpdateReader {
 
     private static ModifyUpdateResult createModifyUpdateResult(TokenBuffer buffer, Field field) {
         ModifyUpdateResult result = new ModifyUpdateResult();
-        // TODO: convert tensor type to one with only mapped dimensions.
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
+        TensorType convertedType = TensorModifyUpdate.convertToCompatibleType(tensorDataType.getTensorType());
         buffer.next();
         int localNesting = buffer.nesting();
         while (localNesting <= buffer.nesting()) {
@@ -73,7 +73,7 @@ public class TensorModifyUpdateReader {
                     result.operation = createOperation(buffer, field.getName());
                     break;
                 case TENSOR_CELLS:
-                    result.tensor = createTensor(buffer, tensorDataType.getTensorType());
+                    result.tensor = createTensor(buffer, convertedType);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown JSON string '" + buffer.currentName() + "' in modify update for field '" + field.getName() + "'");

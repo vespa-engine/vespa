@@ -151,6 +151,8 @@ public class JsonReaderTestCase {
             DocumentType x = new DocumentType("testtensor");
             x.addField(new Field("sparse_tensor",
                                  new TensorDataType(new TensorType.Builder().mapped("x").mapped("y").build())));
+            x.addField(new Field("dense_tensor",
+                    new TensorDataType(new TensorType.Builder().indexed("x", 2).indexed("y", 3).build())));
             x.addField(new Field("dense_unbound_tensor",
                     new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
             types.registerDocumentType(x);
@@ -1293,6 +1295,18 @@ public class JsonReaderTestCase {
                         "  'operation': 'multiply',",
                         "  'cells': [",
                         "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_modify_update_treats_the_input_tensor_as_sparse() {
+        // Note that the type of the tensor in the modify update is sparse (it only has mapped dimensions).
+        assertTensorModifyUpdate("tensor(x{},y{}):{{x:0,y:0}:2.0, {x:1,y:2}:3.0}",
+                TensorModifyUpdate.Operation.REPLACE, "dense_tensor",
+                inputJson("{",
+                        "  'operation': 'replace',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 },",
+                        "    { 'address': { 'x': '1', 'y': '2' }, 'value': 3.0 } ]}"));
     }
 
     @Test
