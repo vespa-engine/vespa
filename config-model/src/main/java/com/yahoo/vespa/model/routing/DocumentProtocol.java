@@ -132,8 +132,8 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
         // Build the indexing hop if it is possible to derive.
         addIndexingHop(content, table);
 
-        // Build the default routes if possible
-        addDefaultRoutes(content, containerClusters, table);
+        // Build the default route if is is possible to derive.
+        addDefaultRoute(content, containerClusters, table);
 
         // Return the complete routing table.
         simplifyRouteNames(table);
@@ -225,40 +225,49 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
     }
 
     /**
-     * Create the {@code default} and {@code default-get} routes for the Document protocol. The {@code default}
-     * route will be either a route to storage or a route to search. Since recovery from storage is supported,
-     * storage takes precedence over search when deciding on the final target of the default route. If there
-     * is an unambiguous docproc cluster in the application, the {@code default} route will pass through it.
-     * The {@code default-get} route skips the docproc but is otherwise identical to the {@code default} route.
+     * Create the "default" route for the Document protocol. This route will be either a route to storage or a route to
+     * search. Since we will be supporting recovery from storage, storage takes precedence over search when deciding on
+     * the final target of the default route. If there is an unambigous docproc cluster in the application, the default
+     * route will pass through this.
      *
      * @param content The content model from {@link com.yahoo.vespa.model.VespaModel}.
      * @param containerClusters a collection of {@link com.yahoo.vespa.model.container.ContainerCluster}s
      * @param table   The routing table to add to.
      */
-    private static void addDefaultRoutes(List<ContentCluster> content,
-                                         Collection<ContainerCluster> containerClusters,
-                                         RoutingTableSpec table) {
-        if (content.isEmpty() || !indexingHopExists(table)) {
-            return;
-        }
-        RouteSpec route = new RouteSpec("default");
-        String hop = getContainerClustersDocprocHop(containerClusters);
-        if (hop != null) {
-            route.addHop(hop);
-        }
-        route.addHop("indexing");
-        table.addRoute(route);
-
-        table.addRoute(new RouteSpec("default-get").addHop("indexing"));
-    }
-
-    private static boolean indexingHopExists(RoutingTableSpec table) {
-        for (int i = 0, len = table.getNumHops(); i < len; ++i) {
-            if (table.getHop(i).getName().equals("indexing")) {
-                return true;
+    private static void addDefaultRoute(List<ContentCluster> content,
+                                        Collection<ContainerCluster> containerClusters,
+                                        RoutingTableSpec table) {
+        List<String> hops = new ArrayList<>();
+        if (!content.isEmpty()) {
+            boolean found = false;
+            for (int i = 0, len = table.getNumHops(); i < len; ++i) {
+                if (table.getHop(i).getName().equals("indexing")) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                hops.add("indexing");
             }
         }
-        return false;
+        if (!hops.isEmpty()) {
+            RouteSpec route = new RouteSpec("default");
+            String hop = getContainerClustersDocprocHop(containerClusters);
+            if (hop != null) {
+                route.addHop(hop);
+            }
+            int numHops = hops.size();
+            if (numHops == 1) {
+                route.addHop(hops.get(0));
+            } else {
+                StringBuilder str = new StringBuilder();
+                for (int i = 0; i < numHops; ++i) {
+                    str.append(hops.get(i)).append(i < numHops - 1 ? " " : "");
+                }
+                route.addHop("[AND:" + str.toString() + "]");
+            }
+            table.addRoute(route);
+        }
     }
 
     private static String getContainerClustersDocprocHop(Collection<ContainerCluster> containerClusters) {
