@@ -165,6 +165,16 @@ public class JsonReaderTestCase {
             x.addField(new Field("integerfield", DataType.INT));
             types.registerDocumentType(x);
         }
+        {
+            DocumentType x = new DocumentType("testnull");
+            x.addField(new Field("intfield", DataType.INT));
+            x.addField(new Field("stringfield", DataType.STRING));
+            x.addField(new Field("arrayfield", new ArrayDataType(DataType.STRING)));
+            x.addField(new Field("weightedsetfield", new WeightedSetDataType(DataType.STRING, true, true)));
+            x.addField(new Field("mapfield",  new MapDataType(DataType.STRING, DataType.STRING)));
+            x.addField(new Field("tensorfield", new TensorDataType(new TensorType.Builder().indexed("x").build())));
+            types.registerDocumentType(x);
+        }
     }
 
     @After
@@ -1163,6 +1173,48 @@ public class JsonReaderTestCase {
             assertEquals("update of document id:unittest:smoke::whee is missing a 'fields' map", e.getMessage());
         }
     }
+
+    @Test
+    public void testNullValues() {
+        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testnull::doc1',",
+                "  'fields': {",
+                "    'intfield': null,",
+                "    'stringfield': null,",
+                "    'arrayfield': null,",
+                "    'weightedsetfield': null,",
+                "    'mapfield': null,",
+                "    'tensorfield': null",
+                "  }",
+                "}"));
+        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentParser.SupportedOperation.PUT,
+                "id:unittest:testnull::doc1");
+        Document doc = put.getDocument();
+        assertFieldValueNull(doc, "intfield");
+        assertFieldValueNull(doc, "stringfield");
+        assertFieldValueNull(doc, "arrayfield");
+        assertFieldValueNull(doc, "weightedsetfield");
+        assertFieldValueNull(doc, "mapfield");
+        assertFieldValueNull(doc, "tensorfield");
+    }
+
+    @Test(expected=JsonReaderException.class)
+    public void testNullArrayElement() {
+        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testnull::doc1',",
+                "  'fields': {",
+                "    'arrayfield': [ null ]",
+                "  }",
+                "}"));
+        r.readSingleDocument(DocumentParser.SupportedOperation.PUT, "id:unittest:testnull::doc1");
+        fail();
+    }
+
+    private void assertFieldValueNull(Document doc, String fieldName) {
+        Field field = doc.getField(fieldName);
+        assertNotNull(field);
+        FieldValue fieldValue = doc.getFieldValue(field);
+        assertNull(fieldValue);
+    }
+
 
     static ByteArrayInputStream jsonToInputStream(String json) {
         return new ByteArrayInputStream(Utf8.toBytes(json));

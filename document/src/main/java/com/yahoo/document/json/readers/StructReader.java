@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.json.readers;
 
+import com.fasterxml.jackson.core.JsonToken;
 import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StructuredFieldValue;
@@ -18,8 +19,11 @@ public class StructReader {
         while (buffer.nesting() >= initNesting) {
             Field f = getField(buffer, parent);
             try {
-                FieldValue v = readSingleValue(buffer, f.getDataType());
-                parent.setFieldValue(f, v);
+                // skip fields set to null
+                if (buffer.currentToken() != JsonToken.VALUE_NULL) {
+                    FieldValue v = readSingleValue(buffer, f.getDataType());
+                    parent.setFieldValue(f, v);
+                }
                 buffer.next();
             } catch (IllegalArgumentException e) {
                 throw new JsonReaderException(f, e);

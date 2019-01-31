@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.json.readers;
 
+import com.fasterxml.jackson.core.JsonToken;
+import com.google.common.base.Preconditions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
@@ -14,6 +16,7 @@ import static com.yahoo.document.json.readers.SingleValueReader.readSingleValue;
 public class ArrayReader {
     public static void fillArrayUpdate(TokenBuffer buffer, int initNesting, DataType valueType, List<FieldValue> arrayContents) {
         while (buffer.nesting() >= initNesting) {
+            Preconditions.checkArgument(buffer.currentToken() != JsonToken.VALUE_NULL, "Illegal null value for array entry");
             arrayContents.add(readSingleValue(buffer, valueType));
             buffer.next();
         }
@@ -25,6 +28,7 @@ public class ArrayReader {
         expectArrayStart(buffer.currentToken());
         buffer.next();
         while (buffer.nesting() >= initNesting) {
+            Preconditions.checkArgument(buffer.currentToken() != JsonToken.VALUE_NULL, "Illegal null value for array entry");
             parent.add(readSingleValue(buffer, valueType));
             buffer.next();
         }
