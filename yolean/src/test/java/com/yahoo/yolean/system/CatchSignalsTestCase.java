@@ -8,11 +8,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author arnej27959
  */
-public class CatchSigTermTestCase {
+public class CatchSignalsTestCase {
 
     @Test
     public void testThatSetupCompiles() {
-        CatchSigTerm.setup(new AtomicBoolean(false));
+        CatchSignals.setup(new AtomicBoolean(false));
     }
 
 }

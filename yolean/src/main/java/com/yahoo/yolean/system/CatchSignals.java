@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.system;
+package com.yahoo.yolean.system;
 
 import java.lang.reflect.*;
 
@@ -8,12 +8,12 @@ import java.lang.reflect.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class CatchSigTerm {
+public class CatchSignals {
     /**
-     * Sets up a signal handler for SIGTERM, where a given AtomicBoolean
-     * gets a true value when the TERM signal is caught.
+     * Sets up a signal handler for SIGTERM and SIGINT, where a given AtomicBoolean
+     * gets a true value when the signal is caught.
      *
-     * Callers basically have two options for acting on the TERM signal:
+     * Callers basically have two options for acting on the signal:
      *
      * They may choose to synchronize and wait() on this variable,
      * and they will be notified when it changes state to true. To avoid
@@ -26,7 +26,7 @@ public class CatchSigTerm {
      * as its state becomes true, the signal has been received, and the
      * application should exit as soon as possible.
      *
-     * @param signalCaught set to false initially, will be set to true when SIGTERM is caught.
+     * @param signalCaught set to false initially, will be set to true when SIGTERM or SIGINT is caught.
      */
     @SuppressWarnings("rawtypes")
     public static void setup(final AtomicBoolean signalCaught) {
@@ -44,22 +44,23 @@ public class CatchSigTerm {
                         return null;
                     }
                 };
-            Object shandler = Proxy.newProxyInstance(CatchSigTerm.class.getClassLoader(),
+            Object shandler = Proxy.newProxyInstance(CatchSignals.class.getClassLoader(),
                     new Class[] { shc },
                     ihandler);
             Constructor[] c = ssc.getDeclaredConstructors();
             assert c.length == 1;
             Object sigterm = c[0].newInstance("TERM");
+            Object sigint = c[0].newInstance("INT");
             Method m = findMethod(ssc, "handle");
             assert m != null; // "NoSuchMethodException"
             m.invoke(null, sigterm, shandler);
+            m.invoke(null, sigint, shandler);
         } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             System.err.println("FAILED setting up signal catching: "+e);
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    private static Method findMethod(Class c, String name) {
+    private static Method findMethod(Class<?> c, String name) {
         for (Method m : c.getDeclaredMethods()) {
             if (m.getName().equals(name)) {
                 return m;
