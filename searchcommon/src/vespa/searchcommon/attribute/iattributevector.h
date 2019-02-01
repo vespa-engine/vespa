@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace search {
-    class IDocumentWeightAttribute;
+    struct IDocumentWeightAttribute;
     class QueryTermSimple;
 }
 
