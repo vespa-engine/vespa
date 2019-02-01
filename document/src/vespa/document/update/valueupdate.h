@@ -53,7 +53,8 @@ public:
         Assign     = IDENTIFIABLE_CLASSID(AssignValueUpdate),
         Clear      = IDENTIFIABLE_CLASSID(ClearValueUpdate),
         Map        = IDENTIFIABLE_CLASSID(MapValueUpdate),
-        Remove     = IDENTIFIABLE_CLASSID(RemoveValueUpdate)
+        Remove     = IDENTIFIABLE_CLASSID(RemoveValueUpdate),
+        TensorModifyUpdate = IDENTIFIABLE_CLASSID(TensorModifyUpdate)
     };
 
     ValueUpdate()

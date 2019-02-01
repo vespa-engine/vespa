@@ -90,6 +90,9 @@ public abstract class FieldUpdateHelper {
             } else {
                 throw new IllegalArgumentException("Expected multi-value data type, got " + val.getDataType().getName() + ".");
             }
+        } else if (upd instanceof TensorModifyUpdate) {
+            // TODO: apply update to field value when supported in TensorModifyUpdate in Java.
+            return val;
         }
         throw new UnsupportedOperationException("Value update type " + upd.getClass().getName() + " not supported.");
     }
