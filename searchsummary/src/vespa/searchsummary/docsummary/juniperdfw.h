@@ -49,8 +49,9 @@ class DynamicTeaserDFW : public JuniperTeaserDFW
 public:
     DynamicTeaserDFW(juniper::Juniper * juniper) : JuniperTeaserDFW(juniper) { }
 
+    vespalib::string getJuniperInput(GeneralResult *gres, GetDocsumsState *state);
     vespalib::string makeDynamicTeaser(uint32_t docid,
-                                       GeneralResult *gres,
+                                       vespalib::string input,
                                        GetDocsumsState *state);
 
     void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
