@@ -8,8 +8,7 @@ import java.nio.ByteBuffer;
 
 
 /**
- * Superclass of "leaf" conditions containing a single entity which is either matched in
- * a field or not.
+ * Superclass of "leaf" conditions containing a single entity which is either matched in a field or not.
  *
  * @author bratseth
  * @author havardpe
@@ -116,8 +115,7 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
      * but for historical reasons that is not the case. This method has nothing
      * to do with Unicode normalization.
      *
-     * @param normalizable
-     *            set to true if accent removal can/should be performed
+     * @param normalizable set to true if accent removal can/should be performed
      */
     public void setNormalizable(boolean normalizable) {
         this.normalizable = normalizable;

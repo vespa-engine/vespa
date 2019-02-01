@@ -6,7 +6,7 @@ package com.yahoo.prelude.query;
  * A term type enumeration
  *
  * @author bratseth
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class TermType {
 
@@ -62,10 +62,9 @@ public class TermType {
      */
     public Item createItemClass() {
         try {
-            return instanceClass.newInstance();
+            return instanceClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
-            throw new RuntimeException("Could not create an instance for item "
-                    + this, e);
+            throw new RuntimeException("Could not create an instance for item " + this, e);
         }
     }
 
@@ -73,16 +72,15 @@ public class TermType {
         return sign;
     }
 
+    @Override
     public boolean equals(Object o) {
-        if (!(o instanceof TermType)) {
-            return false;
-        }
+        if ( ! (o instanceof TermType)) return false;
 
         TermType other = (TermType) o;
-
         return name.equals(other.name);
     }
 
+    @Override
     public int hashCode() {
         return name.hashCode();
     }

@@ -33,14 +33,6 @@ public class WordItem extends TermItem {
 
     private boolean lowercased = false;
 
-    public ItemType getItemType() {
-        return ItemType.WORD;
-    }
-
-    public String getName() {
-        return "WORD";
-    }
-
     public WordItem(String word) {
         this(word, "");
     }
@@ -70,12 +62,21 @@ public class WordItem extends TermItem {
         setWord(word);
     }
 
+    public ItemType getItemType() {
+        return ItemType.WORD;
+    }
+
+    public String getName() {
+        return "WORD";
+    }
+
     public void setWord(String word) {
         Validator.ensureNotNull("The word of a word item", word);
         Validator.ensureNonEmpty("The word of a word item", word);
         this.word = word;
     }
 
+    @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer); // takes care of index bytes
         putString(getEncodedWord(), buffer);
@@ -112,6 +113,7 @@ public class WordItem extends TermItem {
         return word;
     }
 
+    @Override
     public boolean isStemmed() { return stemmed; }
 
     public void setStemmed(boolean stemmed) { this.stemmed = stemmed; }
@@ -168,6 +170,7 @@ public class WordItem extends TermItem {
     }
 
     /** Returns true if this consists of regular word characters. Returns false if this represents a "special token" */
+    @Override
     public boolean isWords() {
         return words;
     }

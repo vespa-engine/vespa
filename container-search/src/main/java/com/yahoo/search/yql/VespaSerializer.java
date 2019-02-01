@@ -61,6 +61,7 @@ import java.util.Map.Entry;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
+import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.ExactStringItem;
@@ -102,9 +103,10 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 /**
  * Serialize Vespa query trees to YQL+ strings.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class VespaSerializer {
+
     // TODO refactor, too much copy/paste
 
     private static class AndSegmentSerializer extends Serializer {
@@ -270,6 +272,7 @@ public class VespaSerializer {
     }
 
     private static class NotSerializer extends Serializer {
+
         @Override
         void onExit(StringBuilder destination, Item item) {
             destination.append(')');
@@ -298,10 +301,8 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
-            throw new NullItemException(
-                    "NullItem encountered in query tree."
-                            + " This is usually a symptom of an invalid query or an error"
-                            + " in a query transformer.");
+            throw new NullItemException("NullItem encountered in query tree. This is usually a symptom of an invalid " +
+                                        "query or an error in a query transformer.");
         }
     }
 
@@ -402,6 +403,21 @@ public class VespaSerializer {
         }
     }
 
+    private static class BoolSerializer extends Serializer {
+
+        @Override
+        void onExit(StringBuilder destination, Item item) { }
+
+        @Override
+        boolean serialize(StringBuilder destination, Item item) {
+            BoolItem intItem = (BoolItem) item;
+            destination.append(normalizeIndexName(intItem.getIndexName())).append(" = ");
+            destination.append(((BoolItem) item).stringValue());
+            return false;
+        }
+
+    }
+
     private static class RegExpSerializer extends Serializer {
 
         @Override
@@ -419,6 +435,7 @@ public class VespaSerializer {
     }
 
     private static class ONearSerializer extends Serializer {
+
         @Override
         void onExit(StringBuilder destination, Item item) {
         }
@@ -452,6 +469,7 @@ public class VespaSerializer {
     }
 
     private static class OrSerializer extends Serializer {
+
         @Override
         void onExit(StringBuilder destination, Item item) {
             destination.append(')');
@@ -1071,6 +1089,7 @@ public class VespaSerializer {
         dispatchBuilder.put(EquivItem.class, new EquivSerializer());
         dispatchBuilder.put(ExactStringItem.class, new WordSerializer());
         dispatchBuilder.put(IntItem.class, new NumberSerializer());
+        dispatchBuilder.put(BoolItem.class, new BoolSerializer());
         dispatchBuilder.put(MarkerWordItem.class, new WordSerializer()); // gotcha
         dispatchBuilder.put(NearItem.class, new NearSerializer());
         dispatchBuilder.put(NotItem.class, new NotSerializer());

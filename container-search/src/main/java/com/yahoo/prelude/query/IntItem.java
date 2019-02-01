@@ -56,17 +56,6 @@ public class IntItem extends TermItem {
         expression = toExpression(from, to, 0);
     }
 
-    /** Returns the simplest expression matching this */
-    private String toExpression(Limit from, Limit to, int hitLimit) {
-        if (from.equals(to) && hitLimit == 0) return from.number().toString();
-
-        String expression = from.toRangeStart() + ";" + to.toRangeEnd();
-        if (hitLimit == 0) return expression;
-
-        // Insert ;hitLimit at the end inside the brackets
-        return expression.substring(0, expression.length()-1) + ";" + hitLimit + expression.substring(expression.length()-1);
-    }
-
     public IntItem(String expression) {
         this(expression, "");
     }
@@ -91,8 +80,19 @@ public class IntItem extends TermItem {
         this.expression = toExpression(from, to, hitLimit);
     }
 
+    /** Returns the simplest expression matching this */
+    private String toExpression(Limit from, Limit to, int hitLimit) {
+        if (from.equals(to) && hitLimit == 0) return from.number().toString();
+
+        String expression = from.toRangeStart() + ";" + to.toRangeEnd();
+        if (hitLimit == 0) return expression;
+
+        // Insert ;hitLimit at the end inside the brackets
+        return expression.substring(0, expression.length()-1) + ";" + hitLimit + expression.substring(expression.length()-1);
+    }
+
     /** Sets limit and flip them if "from" is greater than "to" */
-    private final void setLimits(Limit from, Limit to) {
+    private void setLimits(Limit from, Limit to) {
         if (from.number().doubleValue() > to.number().doubleValue()) {
             this.from = to;
             this.to = from;
@@ -188,8 +188,7 @@ public class IntItem extends TermItem {
      * <code>from</code> are returned, and if this number is negative the hits
      * closest to <code>to</code> are returned.
      *
-     * @param hitLimit
-     *            number of hits to match for this operator
+     * @param hitLimit number of hits to match for this operator
      */
     public final void setHitLimit(int hitLimit) {
         this.hitLimit = hitLimit;

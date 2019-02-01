@@ -19,14 +19,21 @@ public class Substring {
     /** The string this is a substring of */
     public final String string;
 
-    public Substring(int start, int end,String string) {
+    /** Creates a substring which is identical to the string containing it */
+    public Substring(String string) {
+        this.start = 0;
+        this.end = string.length();
+        this.string=string;
+    }
+
+    public Substring(int start, int end, String string) {
         this.start = start;
         this.end = end;
         this.string=string;
     }
 
     public String getValue() {
-        return string.substring(start,end);
+        return string.substring(start, end);
     }
 
     /** Returns the entire string this is a substring of. The start and end offsets are into this string. */
