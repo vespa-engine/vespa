@@ -65,4 +65,28 @@ TEST("require that dense tensors can be modified") {
                 .add({{"x",9},{"y",9}}, 11));
 }
 
+TEST("require that sparse tensors ignore updates to missing cells") {
+    checkUpdate(TensorSpec("tensor(x{},y{})")
+                .add({{"x","8"},{"y","9"}}, 11)
+                .add({{"x","9"},{"y","9"}}, 11),
+                TensorSpec("tensor(x{},y{})")
+                .add({{"x","7"},{"y","9"}}, 2)
+                .add({{"x","8"},{"y","9"}}, 2),
+                TensorSpec("tensor(x{},y{})")
+                .add({{"x","8"},{"y","9"}}, 2)
+                .add({{"x","9"},{"y","9"}}, 11));
+}
+
+TEST("require that dense tensors ignore updates to out of range cells") {
+    checkUpdate(TensorSpec("tensor(x[10],y[10])")
+                .add({{"x",8},{"y",9}}, 11)
+                .add({{"x",9},{"y",9}}, 11),
+                TensorSpec("tensor(x{},y{})")
+                .add({{"x","8"},{"y","9"}}, 2)
+                .add({{"x","10"},{"y","9"}}, 2),
+                TensorSpec("tensor(x[10],y[10])")
+                .add({{"x",8},{"y",9}}, 2)
+                .add({{"x",9},{"y",9}}, 11));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
