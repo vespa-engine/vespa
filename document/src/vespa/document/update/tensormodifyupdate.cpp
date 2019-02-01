@@ -1,15 +1,15 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensormodifyupdate.h"
-#include <vespa/document/base/field.h>
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
+#include <vespa/document/util/serializableexceptions.h>
 #include <vespa/eval/eval/operation.h>
-#include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/cell_values.h>
+#include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -117,16 +117,25 @@ TensorModifyUpdate::checkCompatibility(const Field& field) const
     }
 }
 
+std::unique_ptr<Tensor>
+TensorModifyUpdate::applyTo(const Tensor &tensor) const
+{
+    auto &cellTensor = _tensor->getAsTensorPtr();
+    if (cellTensor) {
+        vespalib::tensor::CellValues cellValues(static_cast<const vespalib::tensor::SparseTensor &>(*cellTensor));
+        return tensor.modify(getJoinFunction(_operation), cellValues);
+    }
+    return std::unique_ptr<Tensor>();
+}
+
 bool
 TensorModifyUpdate::applyTo(FieldValue& value) const
 {
     if (value.inherits(TensorFieldValue::classId)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         auto &oldTensor = tensorFieldValue.getAsTensorPtr();
-        auto &cellTensor = _tensor->getAsTensorPtr();
-        if (cellTensor) {
-            vespalib::tensor::CellValues cellValues(static_cast<const vespalib::tensor::SparseTensor &>(*cellTensor));
-            auto newTensor = oldTensor->modify(getJoinFunction(_operation), cellValues);
+        auto newTensor = applyTo(*oldTensor);
+        if (newTensor) {
             tensorFieldValue = std::move(newTensor);
         }
     } else {

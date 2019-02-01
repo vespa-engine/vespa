@@ -1,25 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_updater.h"
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/fieldvalue/predicatefieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/fieldvalue/literalfieldvalue.h>
-#include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/document/fieldvalue/referencefieldvalue.h>
-#include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/update/addvalueupdate.h>
-#include <vespa/document/update/removevalueupdate.h>
-#include <vespa/document/update/mapvalueupdate.h>
-#include <vespa/document/update/arithmeticvalueupdate.h>
-#include <vespa/document/update/clearvalueupdate.h>
+#include <vespa/eval/tensor/tensor.h>
 #include <vespa/document/base/forcelink.h>
-#include <vespa/searchlib/common/base.h>
-#include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/searchlib/attribute/reference_attribute.h>
-#include <vespa/searchlib/attribute/predicate_attribute.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/literalfieldvalue.h>
+#include <vespa/document/fieldvalue/predicatefieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
+#include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/update/addvalueupdate.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/clearvalueupdate.h>
+#include <vespa/document/update/mapvalueupdate.h>
+#include <vespa/document/update/removevalueupdate.h>
+#include <vespa/document/update/tensormodifyupdate.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/changevector.hpp>
+#include <vespa/searchlib/attribute/predicate_attribute.h>
+#include <vespa/searchlib/attribute/reference_attribute.h>
+#include <vespa/searchlib/common/base.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
 
@@ -201,6 +203,20 @@ AttributeUpdater::handleUpdate(PredicateAttribute &vec, uint32_t lid, const Valu
     }
 }
 
+namespace {
+
+void
+applyTensorModifyUpdate(TensorAttribute &vec, uint32_t lid, const TensorModifyUpdate &update)
+{
+    auto oldTensor = vec.getTensor(lid);
+    auto newTensor = update.applyTo(*oldTensor);
+    if (newTensor) {
+        vec.setTensor(lid, *newTensor);
+    }
+}
+
+}
+
 template <>
 void
 AttributeUpdater::handleUpdate(TensorAttribute &vec, uint32_t lid, const ValueUpdate &upd)
@@ -214,6 +230,8 @@ AttributeUpdater::handleUpdate(TensorAttribute &vec, uint32_t lid, const ValueUp
             vec.clearDoc(lid);
             updateValue(vec, lid, assign.getValue());
         }
+    } else if (op == ValueUpdate::TensorModifyUpdate) {
+        applyTensorModifyUpdate(vec, lid, static_cast<const TensorModifyUpdate &>(upd));
     } else if (op == ValueUpdate::Clear) {
         vec.clearDoc(lid);
     } else {
