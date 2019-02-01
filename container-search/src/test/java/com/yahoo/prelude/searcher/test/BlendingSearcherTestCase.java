@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.search.federation.FederationConfig;
 import com.yahoo.container.QrSearchersConfig;
@@ -49,7 +50,7 @@ public class BlendingSearcherTestCase {
         private SearchChain blendingChain;
         private final FederationConfig.Builder builder = new FederationConfig.Builder();
         private final Map<String, Searcher> searchers = new HashMap<>();
-        private SearchChainRegistry chainRegistry;
+        private SearchChainRegistry chainRegistry = new SearchChainRegistry();
 
         private final String blendingField;
 
@@ -67,20 +68,24 @@ public class BlendingSearcherTestCase {
             blendingField = s.docid().length() > 0 ? s.docid() : null;
         }
 
-        public boolean addChained(Searcher searcher, String sourceName) {
-            builder.target(new FederationConfig.Target.Builder().
-                    id(sourceName).
-                    searchChain(new FederationConfig.Target.SearchChain.Builder().
-                            searchChainId(sourceName).
-                            timeoutMillis(10000).
-                            useByDefault(true))
+        /** Adds a source implemented as a single searcher */
+        public void addSource(String sourceName, Searcher searcher) {
+            addSource(createSearchChain(new ComponentId(sourceName), searcher));
+        }
+
+        /** Adds a source implemented as a chain */
+        public void addSource(Chain<Searcher> chain) {
+            String sourceName = chain.getId().stringValue();
+            builder.target(new FederationConfig.Target.Builder().id(sourceName)
+                                                                .searchChain(new FederationConfig.Target.SearchChain.Builder()
+                                                                                     .searchChainId(sourceName).timeoutMillis(10000)
+                                                                                     .useByDefault(true))
             );
-            searchers.put(sourceName, searcher);
-            return true;
+            chainRegistry.register(chain);
         }
 
         @Override
-        public com.yahoo.search.Result search(com.yahoo.search.Query query, Execution execution) {
+        public Result search(Query query, Execution execution) {
             query.setTimeout(10000);
             query.setOffset(query.getOffset());
             query.setHits(query.getHits());
@@ -90,14 +95,12 @@ public class BlendingSearcherTestCase {
         }
 
         @Override
-        public void fill(com.yahoo.search.Result result, String summaryClass, Execution execution) {
+        public void fill(Result result, String summaryClass, Execution execution) {
             new Execution(blendingChain, Execution.Context.createContextStub(chainRegistry, null)).fill(result, summaryClass);
         }
 
         public boolean initialize() {
-            chainRegistry = new SearchChainRegistry();
-
-            //First add all the current searchers as searchchains
+            // First add all the current searchers as searchchains
             for(Map.Entry<String, Searcher> entry : searchers.entrySet()) {
                 chainRegistry.register(
                         createSearchChain(
@@ -151,7 +154,7 @@ public class BlendingSearcherTestCase {
         chain3.addResult(q, r3);
 
         BlendingSearcherWrapper blender1 = new BlendingSearcherWrapper();
-        blender1.addChained(chain1, "one");
+        blender1.addSource("one", chain1);
         blender1.initialize();
         q.setWindow( 0, 10);
         Result br1 = new Execution(blender1, Execution.Context.createContextStub()).search(q);
@@ -160,8 +163,8 @@ public class BlendingSearcherTestCase {
         assertEquals("http://host3.com/", br1.hits().get(0).getId().toString());
 
         BlendingSearcherWrapper blender2 = new BlendingSearcherWrapper();
-        blender2.addChained(chain1, "two");
-        blender2.addChained(chain2, "three");
+        blender2.addSource("two", chain1);
+        blender2.addSource("three", chain2);
         blender2.initialize();
         q.setWindow( 0, 10);
         Result br2 = new Execution(blender2, Execution.Context.createContextStub()).search(q);
@@ -170,9 +173,9 @@ public class BlendingSearcherTestCase {
         assertEquals("http://host4.com/", br2.hits().get(0).getId().toString());
 
         BlendingSearcherWrapper blender3 = new BlendingSearcherWrapper();
-        blender3.addChained(chain1, "four");
-        blender3.addChained(chain2, "five");
-        blender3.addChained(chain3, "six");
+        blender3.addSource("four", chain1);
+        blender3.addSource("five", chain2);
+        blender3.addSource("six", chain3);
         blender3.initialize();
         q.setWindow( 0, 10);
         Result br3 = new Execution(blender3, Execution.Context.createContextStub()).search(q);
@@ -204,22 +207,22 @@ public class BlendingSearcherTestCase {
 
     @Test
     public void testMultipleBackendsWithDuplicateRemoval() {
-        DocumentSourceSearcher chain1 = new DocumentSourceSearcher();
-        DocumentSourceSearcher chain2 = new DocumentSourceSearcher();
+        DocumentSourceSearcher docSource1 = new DocumentSourceSearcher();
+        DocumentSourceSearcher docSource2 = new DocumentSourceSearcher();
         Query q = new Query("/search?query=hannibal&search=a,b");
         Result r1 = new Result(q);
         Result r2 = new Result(q);
 
         r1.setTotalHitCount(1);
         r1.hits().add(new FastHit("http://host1.com/", 101));
-        chain1.addResult(q, r1);
+        docSource1.addResult(q, r1);
         r2.hits().add(new FastHit("http://host1.com/", 102));
         r2.setTotalHitCount(1);
-        chain2.addResult(q, r2);
+        docSource2.addResult(q, r2);
 
         BlendingSearcherWrapper blender = new BlendingSearcherWrapper("[id]");
-        blender.addChained(new FillSearcher(chain1), "a");
-        blender.addChained(new FillSearcher(chain2), "b");
+        blender.addSource(new Chain<>("a", new FillSearcher(), docSource1));
+        blender.addSource(new Chain<>("b", new FillSearcher(), docSource2));
         blender.initialize();
         q.setWindow( 0, 10);
         Result cr = new Execution(blender, Execution.Context.createContextStub()).search(q);
@@ -229,21 +232,21 @@ public class BlendingSearcherTestCase {
 
     @Test
     public void testMultipleBackendsWithErrorMerging() {
-        DocumentSourceSearcher chain1 = new DocumentSourceSearcher();
-        DocumentSourceSearcher chain2 = new DocumentSourceSearcher();
+        DocumentSourceSearcher docSource1 = new DocumentSourceSearcher();
+        DocumentSourceSearcher docSource2 = new DocumentSourceSearcher();
         Query q = new Query("/search?query=hannibal&search=a,b");
         Result r1 = new Result(q, ErrorMessage.createNoBackendsInService(null));
         Result r2 = new Result(q, ErrorMessage.createRequestTooLarge(null));
 
         r1.setTotalHitCount(0);
-        chain1.addResult(q, r1);
+        docSource1.addResult(q, r1);
         r2.hits().add(new FastHit("http://host1.com/", 102));
         r2.setTotalHitCount(1);
-        chain2.addResult(q, r2);
+        docSource2.addResult(q, r2);
 
         BlendingSearcherWrapper blender = new BlendingSearcherWrapper();
-        blender.addChained(new FillSearcher(chain1), "a");
-        blender.addChained(new FillSearcher(chain2), "b");
+        blender.addSource(new Chain<>("a", new FillSearcher(), docSource1));
+        blender.addSource(new Chain<>("b", new FillSearcher(), docSource2));
         blender.initialize();
         q.setWindow( 0, 10);
         Result cr = new Execution(blender, Execution.Context.createContextStub()).search(q);
@@ -264,8 +267,8 @@ public class BlendingSearcherTestCase {
 
     @Test
     public void testBlendingWithSortSpec() {
-        DocumentSourceSearcher chain1 = new DocumentSourceSearcher();
-        DocumentSourceSearcher chain2 = new DocumentSourceSearcher();
+        DocumentSourceSearcher docSource1 = new DocumentSourceSearcher();
+        DocumentSourceSearcher docSource2 = new DocumentSourceSearcher();
 
         Query q = new Query("/search?query=banana+&sorting=%2Bfoobar");
 
@@ -285,7 +288,7 @@ public class BlendingSearcherTestCase {
         r1.hits().add(r1h1);
         r1.hits().add(r1h2);
         r1.hits().add(r1h3);
-        chain1.addResult(q, r1);
+        docSource1.addResult(q, r1);
 
         r2.setTotalHitCount(3);
         Hit r2h1 = new Hit("http://host1.com/relevancy201", 201);
@@ -300,11 +303,11 @@ public class BlendingSearcherTestCase {
         r2.hits().add(r2h1);
         r2.hits().add(r2h2);
         r2.hits().add(r2h3);
-        chain2.addResult(q, r2);
+        docSource2.addResult(q, r2);
 
         BlendingSearcherWrapper blender = new BlendingSearcherWrapper();
-        blender.addChained(new FillSearcher(chain1), "chainedone");
-        blender.addChained(new FillSearcher(chain2), "chainedtwo");
+        blender.addSource(new Chain<>("a", new FillSearcher(), docSource1));
+        blender.addSource(new Chain<>("b", new FillSearcher(), docSource2));
         blender.initialize();
         q.setWindow( 0, 10);
         Result br = new Execution(blender, Execution.Context.createContextStub()).search(q);
@@ -323,8 +326,8 @@ public class BlendingSearcherTestCase {
      */
     @Test
     public void testBlendingWithSortSpecAnd2Phase() {
-        DocumentSourceSearcher chain1 = new DocumentSourceSearcher();
-        DocumentSourceSearcher chain2 = new DocumentSourceSearcher();
+        DocumentSourceSearcher docSource1 = new DocumentSourceSearcher();
+        DocumentSourceSearcher docSource2 = new DocumentSourceSearcher();
 
         Query q = new Query("/search?query=banana+&sorting=%2Battributefoobar");
         Result r1 = new Result(q);
@@ -340,7 +343,7 @@ public class BlendingSearcherTestCase {
         r1.hits().add(r1h1);
         r1.hits().add(r1h2);
         r1.hits().add(r1h3);
-        chain1.addResult(q, r1);
+        docSource1.addResult(q, r1);
 
         r2.setTotalHitCount(3);
         Hit r2h1 = new Hit("http://host1.com/relevancy201", 201);
@@ -352,11 +355,11 @@ public class BlendingSearcherTestCase {
         r2.hits().add(r2h1);
         r2.hits().add(r2h2);
         r2.hits().add(r2h3);
-        chain2.addResult(q, r2);
+        docSource2.addResult(q, r2);
 
         BlendingSearcherWrapper blender = new BlendingSearcherWrapper();
-        blender.addChained(chain1, "chainedone");
-        blender.addChained(chain2, "chainedtwo");
+        blender.addSource("chainedone", docSource1);
+        blender.addSource("chainedtwo", docSource2);
         blender.initialize();
         q.setWindow( 0, 10);
         Result br = new Execution(blender, Execution.Context.createContextStub()).search(q);
@@ -389,8 +392,8 @@ public class BlendingSearcherTestCase {
         second.addResult(query, r2);
 
         BlendingSearcherWrapper blender = new BlendingSearcherWrapper();
-        blender.addChained(new FillSearcher(first), "first");
-        blender.addChained(new FillSearcher(second), "second");
+        blender.addSource(new Chain<>("first", new FillSearcher(), first));
+        blender.addSource(new Chain<>("second", new FillSearcher(), second));
         blender.initialize();
         return blender;
     }

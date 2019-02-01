@@ -16,39 +16,14 @@ import com.yahoo.search.searchchain.Execution;
  */
 public class FillSearcher extends Searcher {
 
-    private final Searcher next;
-
-    public FillSearcher() {
-        next = null;
-    }
-
-    public FillSearcher(Searcher next) {
-        this.next = next;
-    }
+    public FillSearcher() { }
 
     @Override
     public Result search(Query query, Execution execution) {
         Result result;
-        if (next == null) {
-            result = execution.search(query);
-            execution.fill(result);
-        } else {
-            Execution e = new Execution(next, execution.context());
-            result = e.search(query);
-            e.fill(result);
-        }
+        result = execution.search(query);
+        execution.fill(result);
         return result;
-    }
-
-    // TODO: Remove this method as it does nothing new
-    @Override
-    public void fill(Result result, String summaryClass, Execution execution) {
-        if (next == null) {
-            execution.fill(result, summaryClass);
-        } else {
-            Execution e = new Execution(next, execution.context());
-            e.fill(result, summaryClass);
-        }
     }
 
 }
