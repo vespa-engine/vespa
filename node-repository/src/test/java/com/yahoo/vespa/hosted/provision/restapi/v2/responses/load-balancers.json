@@ -7,6 +7,7 @@
       "instance": "zoneapp",
       "cluster": "node-admin",
       "hostname": "lb-zoneapp.zoneapp.zoneapp-node-admin",
+      "dnsZone": "zone-id-1",
       "ports": [
         4443
       ],

@@ -4,8 +4,10 @@ package com.yahoo.vespa.hosted.provision.persistence;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.provision.lb.DnsZone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.Real;
@@ -13,7 +15,9 @@ import com.yahoo.vespa.hosted.provision.lb.Real;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Serializer for load balancers.
@@ -24,6 +28,7 @@ public class LoadBalancerSerializer {
 
     private static final String idField = "id";
     private static final String hostnameField = "hostname";
+    private static final String dnsZoneField = "dnsZone";
     private static final String inactiveField = "inactive";
     private static final String portsField = "ports";
     private static final String networksField = "networks";
@@ -37,6 +42,7 @@ public class LoadBalancerSerializer {
 
         root.setString(idField, loadBalancer.id().serializedForm());
         root.setString(hostnameField, loadBalancer.hostname().toString());
+        loadBalancer.dnsZone().ifPresent(dnsZone -> root.setString(dnsZoneField, dnsZone.id()));
         Cursor portArray = root.setArray(portsField);
         loadBalancer.ports().forEach(portArray::addLong);
         Cursor networkArray = root.setArray(networksField);
@@ -78,10 +84,15 @@ public class LoadBalancerSerializer {
 
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
                                 HostName.from(object.field(hostnameField).asString()),
+                                optionalField(object.field(dnsZoneField), DnsZone::new),
                                 ports,
                                 networks,
                                 reals,
                                 object.field(inactiveField).asBool());
+    }
+
+    private static <T> Optional<T> optionalField(Inspector field, Function<String, T> fieldMapper) {
+        return Optional.of(field).filter(Inspector::valid).map(Inspector::asString).map(fieldMapper);
     }
 
 }

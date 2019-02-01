@@ -5,9 +5,8 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -19,19 +18,21 @@ public class LoadBalancer {
 
     private final LoadBalancerId id;
     private final HostName hostname;
+    private final Optional<DnsZone> dnsZone;
     private final Set<Integer> ports;
     private final Set<String> networks;
     private final Set<Real> reals;
     private final boolean inactive;
 
     // TODO: Remove this when no longer used by internal code
-    public LoadBalancer(LoadBalancerId id, HostName hostname, List<Integer> ports, List<Real> reals, boolean inactive) {
-        this(id, hostname, ImmutableSortedSet.copyOf(ports), Collections.emptySet(), ImmutableSortedSet.copyOf(reals), inactive);
+    public LoadBalancer(LoadBalancerId id, HostName hostname, Set<Integer> ports, Set<String> networks, Set<Real> reals, boolean inactive) {
+        this(id, hostname, Optional.empty(), ports, networks, reals, inactive);
     }
 
-    public LoadBalancer(LoadBalancerId id, HostName hostname, Set<Integer> ports, Set<String> networks, Set<Real> reals, boolean inactive) {
+    public LoadBalancer(LoadBalancerId id, HostName hostname, Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks, Set<Real> reals, boolean inactive) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
+        this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.ports = ImmutableSortedSet.copyOf(requirePorts(ports));
         this.networks = ImmutableSortedSet.copyOf(Objects.requireNonNull(networks, "networks must be non-null"));
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals, "targets must be non-null"));
@@ -46,6 +47,11 @@ public class LoadBalancer {
     /** Fully-qualified domain name of this load balancer. This hostname can be used for query and feed */
     public HostName hostname() {
         return hostname;
+    }
+
+    /** ID of the DNS zone associated with this */
+    public Optional<DnsZone> dnsZone() {
+        return dnsZone;
     }
 
     /** Listening port(s) of this load balancer */
@@ -73,7 +79,7 @@ public class LoadBalancer {
 
     /** Return a copy of this that is set inactive */
     public LoadBalancer deactivate() {
-        return new LoadBalancer(id, hostname, ports, networks, reals, true);
+        return new LoadBalancer(id, hostname, dnsZone, ports, networks, reals, true);
     }
 
     private static Set<Integer> requirePorts(Set<Integer> ports) {

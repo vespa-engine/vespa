@@ -5,10 +5,13 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.hosted.provision.lb.DnsZone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import org.junit.Test;
+
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,6 +27,7 @@ public class LoadBalancerSerializerTest {
                                                                                            "default"),
                                                                         ClusterSpec.Id.from("qrs")),
                                                      HostName.from("lb-host"),
+                                                     Optional.of(new DnsZone("zone-id-1")),
                                                      ImmutableSet.of(4080, 4443),
                                                      ImmutableSet.of("10.2.3.4/24"),
                                                      ImmutableSet.of(new Real(HostName.from("real-1"),
@@ -37,6 +41,7 @@ public class LoadBalancerSerializerTest {
         LoadBalancer serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
         assertEquals(loadBalancer.id(), serialized.id());
         assertEquals(loadBalancer.hostname(), serialized.hostname());
+        assertEquals(loadBalancer.dnsZone(), serialized.dnsZone());
         assertEquals(loadBalancer.ports(), serialized.ports());
         assertEquals(loadBalancer.networks(), serialized.networks());
         assertEquals(loadBalancer.inactive(), serialized.inactive());
