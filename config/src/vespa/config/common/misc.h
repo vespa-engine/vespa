@@ -8,8 +8,8 @@
 namespace vespalib {
     class Slime;
     namespace slime {
-        class Inspector;
-        class Cursor;
+        struct Inspector;
+        struct Cursor;
     }
 }
 

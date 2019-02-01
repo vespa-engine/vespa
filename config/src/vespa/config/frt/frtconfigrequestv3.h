@@ -11,7 +11,7 @@ namespace config {
 class ConfigKey;
 class Connection;
 class Trace;
-class VespaVersion;
+struct VespaVersion;
 
 class FRTConfigRequestV3 : public SlimeConfigRequest {
 public:

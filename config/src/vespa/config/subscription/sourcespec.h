@@ -10,7 +10,7 @@ namespace config {
 
 class ConfigInstance;
 class SourceFactory;
-class TimingValues;
+struct TimingValues;
 
 typedef vespalib::string SourceSpecKey;
 
