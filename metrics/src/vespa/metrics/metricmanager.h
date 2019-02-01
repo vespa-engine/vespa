@@ -274,8 +274,8 @@ public:
 private:
     void takeSnapshots(const MetricLockGuard &, time_t timeToProcess);
 
-    friend class MetricManagerTest;
-    friend class SnapshotTest;
+    friend struct MetricManagerTest;
+    friend struct SnapshotTest;
 
     void configure(const MetricLockGuard & guard, std::unique_ptr<MetricsmanagerConfig> conf);
     void run() override;

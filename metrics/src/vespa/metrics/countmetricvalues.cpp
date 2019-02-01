@@ -4,6 +4,6 @@
 
 namespace metrics {
 
-template class CountMetricValues<uint64_t>;
+template struct CountMetricValues<uint64_t>;
 
 } // metrics

@@ -21,8 +21,8 @@
 
 namespace metrics {
 
-class SeenStrings;
-class SnapShotUsage;
+struct SeenStrings;
+struct SnapShotUsage;
 
 class MemoryConsumption : public vespalib::Printable {
 public:
