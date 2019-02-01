@@ -144,16 +144,16 @@ TEST("lock speed") {
 
   start.SetNow();
   for (i = 0; i < 1000000; i++) {
-      std::mutex lock0;
-      std::mutex lock1;
-      std::mutex lock2;
-      std::mutex lock3;
-      std::mutex lock4;
-      std::mutex lock5;
-      std::mutex lock6;
-      std::mutex lock7;
-      std::mutex lock8;
-      std::mutex lock9;
+      [[maybe_unused]] std::mutex lock0;
+      [[maybe_unused]] std::mutex lock1;
+      [[maybe_unused]] std::mutex lock2;
+      [[maybe_unused]] std::mutex lock3;
+      [[maybe_unused]] std::mutex lock4;
+      [[maybe_unused]] std::mutex lock5;
+      [[maybe_unused]] std::mutex lock6;
+      [[maybe_unused]] std::mutex lock7;
+      [[maybe_unused]] std::mutex lock8;
+      [[maybe_unused]] std::mutex lock9;
   }
   stop.SetNow();
   stop -= start;

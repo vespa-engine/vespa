@@ -129,7 +129,7 @@ FRT_Values::EnsureFree(uint32_t need)
     char *types = (char *) _stash.alloc(cnt + 1);
     memcpy(types, _typeString, _numValues);
     memset(types + _numValues, FRT_VALUE_NONE, cnt + 1 - _numValues);
-    FRT_Value *values = (FRT_Value *) _stash.alloc(cnt * sizeof(FRT_Value));
+    FRT_Value *values = (FRT_Value *) (void *)_stash.alloc(cnt * sizeof(FRT_Value));
     memcpy(values, _values, _numValues * sizeof(FRT_Value));
     _maxValues  = cnt;
     _typeString = types;
@@ -159,7 +159,7 @@ FRT_Values::AddInt8Array(const uint8_t *array, uint32_t len) {
 uint16_t *
 FRT_Values::AddInt16Array(uint32_t len) {
     EnsureFree();
-    uint16_t *ret = (uint16_t *) _stash.alloc(len * sizeof(uint16_t));
+    uint16_t *ret = (uint16_t *)(void *) _stash.alloc(len * sizeof(uint16_t));
     _values[_numValues]._int16_array._pt = ret;
     _values[_numValues]._int16_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT16_ARRAY;
@@ -169,7 +169,7 @@ FRT_Values::AddInt16Array(uint32_t len) {
 void
 FRT_Values::AddInt16Array(const uint16_t *array, uint32_t len) {
     EnsureFree();
-    uint16_t *pt = (uint16_t *) _stash.alloc(len * sizeof(uint16_t));
+    uint16_t *pt = (uint16_t *)(void *) _stash.alloc(len * sizeof(uint16_t));
     _values[_numValues]._int16_array._pt = pt;
     _values[_numValues]._int16_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT16_ARRAY;
@@ -179,7 +179,7 @@ FRT_Values::AddInt16Array(const uint16_t *array, uint32_t len) {
 uint32_t *
 FRT_Values::AddInt32Array(uint32_t len) {
     EnsureFree();
-    uint32_t *ret = (uint32_t *) _stash.alloc(len * sizeof(uint32_t));
+    uint32_t *ret = (uint32_t *)(void *) _stash.alloc(len * sizeof(uint32_t));
     _values[_numValues]._int32_array._pt = ret;
     _values[_numValues]._int32_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT32_ARRAY;
@@ -189,7 +189,7 @@ FRT_Values::AddInt32Array(uint32_t len) {
 void
 FRT_Values::AddInt32Array(const uint32_t *array, uint32_t len) {
     EnsureFree();
-    uint32_t *pt = (uint32_t *) _stash.alloc(len * sizeof(uint32_t));
+    uint32_t *pt = (uint32_t *)(void *) _stash.alloc(len * sizeof(uint32_t));
     _values[_numValues]._int32_array._pt = pt;
     _values[_numValues]._int32_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT32_ARRAY;
@@ -199,7 +199,7 @@ FRT_Values::AddInt32Array(const uint32_t *array, uint32_t len) {
 uint64_t *
 FRT_Values::AddInt64Array(uint32_t len) {
     EnsureFree();
-    uint64_t *ret = (uint64_t *) _stash.alloc(len * sizeof(uint64_t));
+    uint64_t *ret = (uint64_t *)(void *) _stash.alloc(len * sizeof(uint64_t));
     _values[_numValues]._int64_array._pt = ret;
     _values[_numValues]._int64_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT64_ARRAY;
@@ -209,7 +209,7 @@ FRT_Values::AddInt64Array(uint32_t len) {
 void
 FRT_Values::AddInt64Array(const uint64_t *array, uint32_t len) {
     EnsureFree();
-    uint64_t *pt = (uint64_t *) _stash.alloc(len * sizeof(uint64_t));
+    uint64_t *pt = (uint64_t *)(void *) _stash.alloc(len * sizeof(uint64_t));
     _values[_numValues]._int64_array._pt = pt;
     _values[_numValues]._int64_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT64_ARRAY;
@@ -219,7 +219,7 @@ FRT_Values::AddInt64Array(const uint64_t *array, uint32_t len) {
 float *
 FRT_Values::AddFloatArray(uint32_t len) {
     EnsureFree();
-    float *ret = (float *) _stash.alloc(len * sizeof(float));
+    float *ret = (float *)(void *) _stash.alloc(len * sizeof(float));
     _values[_numValues]._float_array._pt = ret;
     _values[_numValues]._float_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_FLOAT_ARRAY;
@@ -229,7 +229,7 @@ FRT_Values::AddFloatArray(uint32_t len) {
 void
 FRT_Values::AddFloatArray(const float *array, uint32_t len) {
     EnsureFree();
-    float *pt = (float *) _stash.alloc(len * sizeof(float));
+    float *pt = (float *)(void *) _stash.alloc(len * sizeof(float));
     _values[_numValues]._float_array._pt = pt;
     _values[_numValues]._float_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_FLOAT_ARRAY;
@@ -239,7 +239,7 @@ FRT_Values::AddFloatArray(const float *array, uint32_t len) {
 double *
 FRT_Values::AddDoubleArray(uint32_t len) {
     EnsureFree();
-    double *ret = (double *) _stash.alloc(len * sizeof(double));
+    double *ret = (double *)(void *) _stash.alloc(len * sizeof(double));
     _values[_numValues]._double_array._pt = ret;
     _values[_numValues]._double_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_DOUBLE_ARRAY;
@@ -249,7 +249,7 @@ FRT_Values::AddDoubleArray(uint32_t len) {
 void
 FRT_Values::AddDoubleArray(const double *array, uint32_t len) {
     EnsureFree();
-    double *pt = (double *) _stash.alloc(len * sizeof(double));
+    double *pt = (double *)(void *) _stash.alloc(len * sizeof(double));
     _values[_numValues]._double_array._pt = pt;
     _values[_numValues]._double_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_DOUBLE_ARRAY;
@@ -277,7 +277,7 @@ FRT_Values::AddString(uint32_t len) {
 FRT_StringValue *
 FRT_Values::AddStringArray(uint32_t len) {
     EnsureFree();
-    FRT_StringValue *ret = (FRT_StringValue *) _stash.alloc(len * sizeof(FRT_StringValue));
+    FRT_StringValue *ret = (FRT_StringValue *)(void *) _stash.alloc(len * sizeof(FRT_StringValue));
     _values[_numValues]._string_array._pt = ret;
     _values[_numValues]._string_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_STRING_ARRAY;
@@ -327,7 +327,7 @@ FRT_Values::AddData(uint32_t len) {
 FRT_DataValue *
 FRT_Values::AddDataArray(uint32_t len) {
     EnsureFree();
-    FRT_DataValue *ret = (FRT_DataValue *) _stash.alloc(len * sizeof(FRT_DataValue));
+    FRT_DataValue *ret = (FRT_DataValue *)(void *) _stash.alloc(len * sizeof(FRT_DataValue));
     _values[_numValues]._data_array._pt = ret;
     _values[_numValues]._data_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_DATA_ARRAY;
