@@ -17,6 +17,6 @@ public interface Data extends ListenableFreezable {
     /**
      * Returns the request that created this data
      */
-    public Request request();
+    Request request();
 
 }
