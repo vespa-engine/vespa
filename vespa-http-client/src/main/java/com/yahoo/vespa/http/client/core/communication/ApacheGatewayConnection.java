@@ -26,6 +26,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.message.BasicHeader;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -411,7 +412,8 @@ class ApacheGatewayConnection implements GatewayConnection {
                 clientBuilder.setConnectionManager(connMgr);
 
             }
-            clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion));
+            clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion.toFullString()));
+            clientBuilder.setDefaultHeaders(List.of(new BasicHeader(Headers.CLIENT_VERSION, Vtag.currentVersion.toFullString())));
             clientBuilder.setMaxConnPerRoute(1);
             clientBuilder.setMaxConnTotal(1);
             clientBuilder.disableContentCompression();
