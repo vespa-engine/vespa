@@ -8,7 +8,7 @@
 #include <memory>
 #include <climits>
 
-namespace vespalib::slime { class Cursor; }
+namespace vespalib::slime { struct Cursor; }
 
 namespace config {
 

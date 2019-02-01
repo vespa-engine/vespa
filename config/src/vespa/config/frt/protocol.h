@@ -9,7 +9,7 @@
 namespace vespalib {
     class Slime;
     namespace slime {
-        class Inspector;
+        struct Inspector;
     }
 }
 

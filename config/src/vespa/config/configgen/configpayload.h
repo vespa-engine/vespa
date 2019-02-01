@@ -3,7 +3,7 @@
 
 namespace vespalib {
     namespace slime {
-        class Inspector;
+        struct Inspector;
     }
 }
 

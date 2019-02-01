@@ -13,7 +13,7 @@ namespace config {
 class ConfigKey;
 class Connection;
 class Trace;
-class VespaVersion;
+struct VespaVersion;
 
 class SlimeConfigRequest : public FRTConfigRequest {
 public:
