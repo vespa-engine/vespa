@@ -5,7 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 
 namespace document {
-class SpanTreeVisitor;
+struct SpanTreeVisitor;
 
 struct SpanNode {
     typedef std::unique_ptr<SpanNode> UP;

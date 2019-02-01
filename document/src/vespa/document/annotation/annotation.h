@@ -7,7 +7,7 @@
 #include <memory>
 
 namespace document {
-class SpanNode;
+struct SpanNode;
 
 class Annotation {
     const AnnotationType * _type;
