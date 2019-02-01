@@ -45,7 +45,7 @@ printEntry(vespalib::asciistream & os, const Entry & e) const
         float _asFloat;
     } u;
     u._asFloat = e.getValue();
-    os << ", bvalue: 0x" << std::hex << u._asInt;
+    os << ", bvalue: 0x" << vespalib::hex << u._asInt;
     os << "}";
 }
 
@@ -65,7 +65,7 @@ printEntry(vespalib::asciistream & os, const Entry & e) const
         double _asDouble;
     } u;
     u._asDouble = e.getValue();
-    os << ", bvalue: 0x" << std::hex << u._asLong;
+    os << ", bvalue: 0x" << vespalib::hex << u._asLong;
     os << "}";
 }
 

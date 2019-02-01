@@ -37,7 +37,7 @@ calculateContentMd5(const std::vector<vespalib::string> & fileContents)
         if (md5sum[i] < 16) {
             s << "0";
         }
-        s << std::hex << (int)md5sum[i];
+        s << vespalib::hex << (int)md5sum[i];
     }
     return s.str();
 }
