@@ -170,6 +170,11 @@ std::unique_ptr<Tensor> createTensorWith2Cells() {
                              {{{"x", "9"}, {"y", "9"}}, 11} }, {"x", "y"});
 }
 
+std::unique_ptr<Tensor> createExpectedUpdatedTensorWith2Cells() {
+    return createTensor({    {{{"x", "8"}, {"y", "9"}}, 2},
+                             {{{"x", "9"}, {"y", "9"}}, 11} }, {"x", "y"});
+}
+
 FieldValue::UP createTensorFieldValueWith2Cells() {
     auto fv(std::make_unique<TensorFieldValue>());
     *fv = createTensorWith2Cells();
@@ -953,7 +958,8 @@ DocumentUpdateTest::testTensorModifyUpdate()
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     Document updated(*doc);
-    updated.setValue(updated.getField("tensor"), *createTensorFieldValueWith2Cells());
+    auto oldTensor = createTensorFieldValueWith2Cells();
+    updated.setValue(updated.getField("tensor"), *oldTensor);
     CPPUNIT_ASSERT(*doc != updated);
     testValueUpdate(*createTensorModifyUpdate(), *DataType::TENSOR);
     DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -962,9 +968,8 @@ DocumentUpdateTest::testTensorModifyUpdate()
     FieldValue::UP fval(updated.getValue("tensor"));
     CPPUNIT_ASSERT(fval);
     auto &tensor = asTensor(*fval);
-    // TODO: Check that tensor is correctly modified.
-    // For now, value is unchanged.
-    CPPUNIT_ASSERT(tensor.equals(*createTensorWith2Cells()));
+    auto expectedUpdatedTensor = createExpectedUpdatedTensorWith2Cells();
+    CPPUNIT_ASSERT(tensor.equals(*expectedUpdatedTensor));
 }
 
 void
