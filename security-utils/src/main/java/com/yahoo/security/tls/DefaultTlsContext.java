@@ -84,7 +84,7 @@ public class DefaultTlsContext implements TlsContext {
                 .toArray(String[]::new);
         if (validProtocols.length == 0) {
             throw new IllegalArgumentException(
-                    String.format("Non of the allowed protocols are supported (allowed-protocols=%s, supported-protocols=%s)",
+                    String.format("None of the allowed protocols are supported (allowed-protocols=%s, supported-protocols=%s)",
                                   ALLOWED_PROTOCOLS, Arrays.toString(sslEngine.getSupportedProtocols())));
         }
         log.log(Level.FINE, () -> String.format("Allowed protocols that are supported: %s", Arrays.toString(validProtocols)));
