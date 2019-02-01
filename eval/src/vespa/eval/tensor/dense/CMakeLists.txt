@@ -10,8 +10,10 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_replace_type_function.cpp
     dense_tensor.cpp
     dense_tensor_address_combiner.cpp
+    dense_tensor_address_mapper.cpp
     dense_tensor_builder.cpp
     dense_tensor_cells_iterator.cpp
+    dense_tensor_modify.cpp
     dense_tensor_reduce.cpp
     dense_tensor_view.cpp
     dense_xw_product_function.cpp

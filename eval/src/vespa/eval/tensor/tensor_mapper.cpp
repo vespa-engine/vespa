@@ -8,6 +8,7 @@
 #include "wrapped_simple_tensor.h"
 #include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
+#include <vespa/eval/tensor/dense/dense_tensor_address_mapper.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <limits>
 
@@ -103,25 +104,6 @@ SparseTensorMapper<TensorT>::map(const Tensor &tensor,
 
 //-----------------------------------------------------------------------------
 
-static constexpr uint32_t BAD_LABEL = std::numeric_limits<uint32_t>::max();
-static constexpr uint32_t BAD_ADDRESS = std::numeric_limits<uint32_t>::max();
-
-uint32_t mapLabelToNumber(vespalib::stringref label) {
-    uint32_t result = 0;
-    for (char c : label) {
-        if (c < '0' || c > '9') {
-            return BAD_LABEL; // bad char
-        }
-        result = result * 10 + (c - '0');
-        if (result > 100000000) {
-            return BAD_LABEL; // overflow
-        }
-    }
-    return result;
-}
-
-//-----------------------------------------------------------------------------
-
 class TensorTypeMapper : public TensorVisitor
 {
     ValueType _type;
@@ -148,8 +130,8 @@ TensorTypeMapper::addressOK(const TensorAddress &address)
     for (const auto &dimension : _type.dimensions()) {
         if (addressIterator.skipToDimension(dimension.name)) {
             if (dimension.is_indexed()) {
-                uint32_t label = mapLabelToNumber(addressIterator.label());
-                if (label == BAD_LABEL ||
+                uint32_t label = DenseTensorAddressMapper::mapLabelToNumber(addressIterator.label());
+                if (label == DenseTensorAddressMapper::BAD_LABEL ||
                     (dimension.is_bound() && label >= dimIterator->size)) {
                     return false;
                 }
@@ -171,8 +153,8 @@ TensorTypeMapper::expandUnboundDimensions(const TensorAddress &address)
     for (const auto &dimension : _type.dimensions()) {
         if (addressIterator.skipToDimension(dimension.name)) {
             if (dimension.is_indexed()) {
-                uint32_t label = mapLabelToNumber(addressIterator.label());
-                if (label != BAD_LABEL &&
+                uint32_t label = DenseTensorAddressMapper::mapLabelToNumber(addressIterator.label());
+                if (label != DenseTensorAddressMapper::BAD_LABEL &&
                     !dimension.is_bound() &&
                     label >= dimIterator->size) {
                     dimIterator->size = label + 1;
@@ -266,32 +248,11 @@ DenseTensorMapper::build()
                                          std::move(_cells));
 }
 
-uint32_t
-DenseTensorMapper::mapAddressToIndex(const TensorAddress &address)
-{
-    uint32_t idx = 0;
-    TensorAddressElementIterator<TensorAddress> addressIterator(address);
-    for (const auto &dimension : _type.dimensions()) {
-        if (addressIterator.skipToDimension(dimension.name)) {
-            uint32_t label = mapLabelToNumber(addressIterator.label());
-            if (label == BAD_LABEL || label >= dimension.size) {
-                return BAD_ADDRESS;
-            }
-            idx = idx * dimension.size + label;
-            addressIterator.next();
-        } else {
-            // output dimension not in input
-            idx = idx * dimension.size;
-        }
-    }
-    return idx;
-}
-
 void
 DenseTensorMapper::visit(const TensorAddress &address, double value)
 {
-    uint32_t idx = mapAddressToIndex(address);
-    if (idx != BAD_ADDRESS) {
+    uint32_t idx = DenseTensorAddressMapper::mapAddressToIndex(address, _type);
+    if (idx != DenseTensorAddressMapper::BAD_ADDRESS) {
         assert(idx < _cells.size());
         _cells[idx] += value;
     }
@@ -340,8 +301,8 @@ WrappedTensorMapper::visit(const TensorAddress &address, double value)
     for (const auto &dimension: _type.dimensions()) {
         if (addressIterator.skipToDimension(dimension.name)) {
             if (dimension.is_indexed()) {
-                uint32_t label = mapLabelToNumber(addressIterator.label());
-                if ((label == BAD_LABEL) || (label >= dimension.size)) {
+                uint32_t label = DenseTensorAddressMapper::mapLabelToNumber(addressIterator.label());
+                if ((label == DenseTensorAddressMapper::BAD_LABEL) || (label >= dimension.size)) {
                     return; // bad address; ignore cell
                 }
                 addr.emplace(dimension.name, label);

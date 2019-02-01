@@ -77,4 +77,10 @@ WrappedSimpleTensor::reduce(join_fun_t, const std::vector<vespalib::string> &) c
     LOG_ABORT("should not be reached");
 }
 
+std::unique_ptr<Tensor>
+WrappedSimpleTensor::modify(join_fun_t, const CellValues &) const
+{
+    LOG_ABORT("should not be reached");
+}
+
 } // namespace vespalib::tensor
