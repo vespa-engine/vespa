@@ -12,7 +12,6 @@ import org.junit.Test;
 
 import javax.net.ssl.SSLEngine;
 import javax.security.auth.x500.X500Principal;
-import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -33,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DefaultTlsContextTest {
 
     @Test
-    public void can_create_sslcontext_from_credentials() throws GeneralSecurityException {
+    public void can_create_sslcontext_from_credentials() {
         KeyPair keyPair = KeyUtils.generateKeypair(EC);
 
         X509Certificate certificate = X509CertificateBuilder
