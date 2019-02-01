@@ -63,6 +63,7 @@ BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %endif
+BuildRequires: xxhash-devel >= 0.6.5
 BuildRequires: lz4-devel
 BuildRequires: libzstd-devel
 BuildRequires: zlib-devel
@@ -97,6 +98,8 @@ Requires: perl-Pod-Usage
 Requires: perl-URI
 Requires: valgrind
 Requires: Judy
+Requires: xxhash
+Requires: xxhash-libs >= 0.6.5
 Requires: lz4
 Requires: libzstd
 Requires: zlib
