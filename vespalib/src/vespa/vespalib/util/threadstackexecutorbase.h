@@ -17,7 +17,7 @@ class FastOS_ThreadPool;
 
 namespace vespalib {
 
-namespace thread { class ThreadInit; }
+namespace thread { struct ThreadInit; }
 
 // Convenience macro used to create a function that can be used as an
 // init function when creating an executor to inject a frame with the
