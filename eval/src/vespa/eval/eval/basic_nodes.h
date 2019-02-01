@@ -14,7 +14,7 @@
 
 namespace vespalib::eval {
 
-namespace nodes { class Node; }
+namespace nodes { struct Node; }
 
 struct NodeTraverser;
 struct NodeVisitor;

@@ -8,11 +8,11 @@ namespace vespalib {
 
 class Slime;
 
-namespace slime { class Inserter; }
+namespace slime { struct Inserter; }
 
 namespace tensor {
 
-class Tensor;
+struct Tensor;
 class TensorBuilder;
 
 /**

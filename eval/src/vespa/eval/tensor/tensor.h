@@ -10,7 +10,7 @@
 #include <vespa/eval/eval/value_type.h>
 
 namespace vespalib {
-namespace eval { class BinaryOperation; }
+namespace eval { struct BinaryOperation; }
 namespace tensor {
 
 class TensorVisitor;

@@ -7,7 +7,7 @@
 namespace vespalib {
 namespace tensor {
 
-class Tensor;
+struct Tensor;
 
 /**
  * An interfrace for builder of tensors (sparse multi-dimensional array).

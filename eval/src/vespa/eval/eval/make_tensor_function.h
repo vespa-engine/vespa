@@ -6,11 +6,11 @@ namespace vespalib { class Stash; }
 
 namespace vespalib::eval {
 
-class TensorEngine;
+struct TensorEngine;
 class NodeTypes;
-class TensorFunction;
+struct TensorFunction;
 
-namespace nodes { class Node; }
+namespace nodes { struct Node; }
 
 const TensorFunction &make_tensor_function(const TensorEngine &engine, const nodes::Node &root, const NodeTypes &types, Stash &stash);
 

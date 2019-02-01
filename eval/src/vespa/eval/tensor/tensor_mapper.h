@@ -7,7 +7,7 @@
 namespace vespalib {
 namespace tensor {
 
-class Tensor;
+struct Tensor;
 
 /**
  * Class to map a tensor to a given tensor type.  Dimensions in input

@@ -8,7 +8,7 @@
 namespace vespalib {
 namespace eval {
 
-namespace nodes { class Node; }
+namespace nodes { struct Node; }
 class Function;
 
 /**

@@ -11,8 +11,8 @@ namespace vespalib {
 
 namespace slime {
 
-class Cursor;
-class Inspector;
+struct Cursor;
+struct Inspector;
 
 } // namespace vespalib::slime
 

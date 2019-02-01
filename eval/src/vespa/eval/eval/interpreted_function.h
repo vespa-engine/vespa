@@ -10,9 +10,9 @@
 namespace vespalib {
 namespace eval {
 
-namespace nodes { class Node; }
-class TensorEngine;
-class TensorFunction;
+namespace nodes { struct Node; }
+struct TensorEngine;
+struct TensorFunction;
 class TensorSpec;
 
 /**
