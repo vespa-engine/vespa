@@ -11,7 +11,7 @@ public final class Headers {
     private Headers() {
     }
 
-    public static final String CLIENT_VERSION = "Vespa-Http-Client-Version";
+    public static final String CLIENT_VERSION = "Vespa-Client-Version";
 
     public static final String TIMEOUT = "X-Yahoo-Feed-Timeout";
     public static final String DRAIN = "X-Yahoo-Feed-Drain";
