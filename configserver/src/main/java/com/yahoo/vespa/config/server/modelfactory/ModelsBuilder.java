@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -76,6 +75,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                          ApplicationPackage applicationPackage,
                                          SettableOptional<AllocatedHosts> allocatedHosts,
                                          Instant now) {
+        log.log(LogLevel.DEBUG, "Will build models for " + applicationId);
         Set<Version> versions = modelFactoryRegistry.allVersions();
 
         // If the application specifies a major, skip models on a newer major
@@ -127,10 +127,11 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                         throw new IllegalArgumentException(applicationId + ": Error loading model", e);
                     }
                 } else {
-                    log.log(Level.INFO, applicationId + ": Skipping major version " + majorVersions.get(i), e);
+                    log.log(LogLevel.INFO, applicationId + ": Skipping major version " + majorVersions.get(i), e);
                 }
             }
         }
+        log.log(LogLevel.DEBUG, "Done building models for " + applicationId);
         return allApplicationModels;
     }
 
