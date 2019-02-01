@@ -54,17 +54,15 @@ public abstract class SimpleIndexedItem extends SimpleTaggableItem implements In
         }
     }
 
+    @Override
     public boolean equals(Object object) {
-        if (!super.equals(object)) {
-            return false;
-        }
+        if (!super.equals(object)) return false;
+
         IndexedItem other = (IndexedItem) object; // Ensured by superclass
-        if (!this.index.equals(other.getIndexName())) {
-            return false;
-        }
-        return true;
+        return this.index.equals(other.getIndexName());
     }
 
+    @Override
     public int hashCode() {
         return super.hashCode() + 113 * index.hashCode();
     }

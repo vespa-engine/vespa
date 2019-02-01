@@ -352,6 +352,34 @@
     ],
     "fields": []
   },
+  "com.yahoo.prelude.query.BoolItem": {
+    "superClass": "com.yahoo.prelude.query.TermItem",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(boolean)",
+      "public void <init>(boolean, java.lang.String)",
+      "public void <init>(boolean, java.lang.String, boolean)",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "protected void encodeThis(java.nio.ByteBuffer)",
+      "public boolean value()",
+      "public java.lang.String stringValue()",
+      "public void setValue(boolean)",
+      "public void setValue(java.lang.String)",
+      "public java.lang.String getRawWord()",
+      "public boolean isStemmed()",
+      "protected void appendHeadingString(java.lang.StringBuilder)",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public int getNumWords()",
+      "public java.lang.String getIndexedString()",
+      "public boolean isWords()"
+    ],
+    "fields": []
+  },
   "com.yahoo.prelude.query.CompositeIndexedItem": {
     "superClass": "com.yahoo.prelude.query.CompositeTaggableItem",
     "interfaces": [
@@ -1321,6 +1349,7 @@
       "public"
     ],
     "methods": [
+      "public void <init>(java.lang.String)",
       "public void <init>(int, int, java.lang.String)",
       "public java.lang.String getValue()",
       "public java.lang.String getSuperstring()",
@@ -1618,8 +1647,6 @@
       "public"
     ],
     "methods": [
-      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public java.lang.String getName()",
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String)",
       "public void <init>(java.lang.String, boolean)",
@@ -1627,6 +1654,8 @@
       "public void <init>(com.yahoo.prelude.query.parser.Token, boolean)",
       "public void <init>(java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
       "public void <init>(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
       "public void setWord(java.lang.String)",
       "protected void encodeThis(java.nio.ByteBuffer)",
       "protected java.lang.String getEncodedWord()",
@@ -1728,6 +1757,7 @@
       "public void attachContext(com.yahoo.search.Query)",
       "public java.lang.String yqlRepresentation()",
       "public java.lang.String yqlRepresentation(com.yahoo.collections.Tuple2, boolean)",
+      "public java.lang.String yqlRepresentation(boolean)",
       "public com.yahoo.search.query.context.QueryContext getContext(boolean)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",

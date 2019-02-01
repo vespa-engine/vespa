@@ -318,12 +318,12 @@ public class MinimalQueryInserterTestCase {
     }
 
     @Test
-    public void testStringReprBasicSanity() {
+    public void testStringRepresentation() {
         String yql = "select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20order%20by%20something%2C%20shoesize%20desc%20limit%20300%20timeout%203%3B";
         Query query = new Query("search/?yql=" + yql);
         execution.search(query);
-        assertEquals("select ignoredfield from ignoredsource where [{\"segmenter\": {\"version\": \"1.9\", \"backend\": \"YqlUnitTest\"}}](title contains \"madonna\") order by something, shoesize desc limit 300 timeout 3;",
-                query.yqlRepresentation(new Tuple2<>("YqlUnitTest", new Version(1, 9)), true));
+        assertEquals("select ignoredfield from ignoredsource where title contains \"madonna\" order by something, shoesize desc limit 300 timeout 3;",
+                     query.yqlRepresentation());
     }
 
 

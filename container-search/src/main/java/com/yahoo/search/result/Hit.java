@@ -5,13 +5,10 @@ import com.yahoo.collections.ArraySet;
 import com.yahoo.component.provider.ListenableFreezableClass;
 import com.yahoo.net.URI;
 import com.yahoo.prelude.hitfield.HitField;
-import com.yahoo.prelude.hitfield.JSONString;
-import com.yahoo.prelude.hitfield.XMLString;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.response.Data;
 import com.yahoo.search.Query;
 import com.yahoo.search.Searcher;
-import com.yahoo.text.XML;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -22,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 /**
  * <p>A search hit. The identifier of the hit is the uri
@@ -92,7 +88,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * used to order equal relevant hit by add order
      */
     private int addNumber = -1;
-    private int sourceNumber;
 
     /** The query which produced this hit. Used for multi phase searching */
     private Query query;

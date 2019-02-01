@@ -7,6 +7,7 @@ import com.yahoo.language.Language;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.Item;
@@ -249,7 +250,11 @@ public class YqlParserTestCase {
     @Test
     public void testBoolean() {
         assertParse("select foo from bar where flag = true;", "flag:true");
-        assertParse("select foo from bar where flag = false;", "flag:false");
+        QueryTree query = assertParse("select foo from bar where flag = false;", "flag:false");
+        assertEquals(BoolItem.class, query.getRoot().getClass());
+        BoolItem item = (BoolItem)query.getRoot();
+        assertEquals("flag", item.getIndexName());
+        assertEquals(false, item.value());
     }
 
     @Test
@@ -922,8 +927,10 @@ public class YqlParserTestCase {
         }
     }
 
-    private void assertParse(String yqlQuery, String expectedQueryTree) {
-        assertEquals(expectedQueryTree, parse(yqlQuery).toString());
+    private QueryTree assertParse(String yqlQuery, String expectedQueryTree) {
+        QueryTree query = parse(yqlQuery);
+        assertEquals(expectedQueryTree, query.toString());
+        return query;
     }
 
     private void assertCanonicalParse(String yqlQuery, String expectedQueryTree) {
@@ -935,15 +942,17 @@ public class YqlParserTestCase {
         assertEquals(q.getModel().getQueryTree().toString(), expectedQueryTree);
     }
 
-    private void assertParseFail(String yqlQuery, Throwable expectedException) {
+    private QueryTree assertParseFail(String yqlQuery, Throwable expectedException) {
+        QueryTree query = null;
         try {
-            parse(yqlQuery);
+            query = parse(yqlQuery);
         } catch (Throwable t) {
             assertEquals(expectedException.getClass(), t.getClass());
             assertEquals(expectedException.getMessage(), t.getMessage());
-            return;
+            return query;
         }
         fail("Parse succeeded: " + yqlQuery);
+        return query;
     }
 
     private void assertSources(String yqlQuery, Collection<String> expectedSources) {

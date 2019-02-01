@@ -6,12 +6,13 @@ import com.google.common.annotations.Beta;
 /**
  * Query tree helper methods and factories.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @Beta
 public final class ToolBox {
 
     public static abstract class QueryVisitor {
+
         /**
          * Called for each item in the query tree given to
          * {@link ToolBox#visit(QueryVisitor, Item)}. Return true to visit the
@@ -29,6 +30,7 @@ public final class ToolBox {
          * visit() if there are no sub-items or visit() returned false.
          */
         public abstract void onExit();
+
     }
 
     public static void visit(QueryVisitor visitor, Item item) {
