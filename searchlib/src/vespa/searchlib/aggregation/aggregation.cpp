@@ -5,7 +5,7 @@
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/objects/visit.hpp>
-#include <vespa/vespalib/xxhash/xxhash.h>
+#include <xxhash.h>
 
 using namespace search::expression;
 
