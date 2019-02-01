@@ -160,7 +160,7 @@ public class ModelContextImpl implements ModelContext {
             this.useFdispatchByDefault = Flags.USE_FDISPATCH_BY_DEFAULT.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useAdaptiveDispatch = Flags.USE_ADAPTIVE_DISPATCH.bindTo(flagSource)
-                    .with(FetchVector.Dimension.ZONE_ID, zone.toString()).value();
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override
@@ -206,7 +206,7 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
         @Override
-        public boolean useAdaptiveDispatch() { return useFdispatchByDefault; }
+        public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
     }
 
 }

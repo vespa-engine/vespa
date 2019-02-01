@@ -94,7 +94,7 @@ public class Flags {
             "use-adaptive-dispatch", false,
             "Should adaptive dispatch be used over round robin",
             "Takes effect at redeployment",
-            ZONE_ID);
+            APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
