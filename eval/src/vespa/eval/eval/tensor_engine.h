@@ -17,7 +17,7 @@ class nbostream;
 
 namespace eval {
 
-class Value;
+struct Value;
 class Tensor;
 class TensorSpec;
 

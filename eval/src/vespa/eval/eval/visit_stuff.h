@@ -9,7 +9,7 @@ namespace vespalib {
 class ObjectVisitor;
 namespace eval {
 enum class Aggr;
-class TensorFunction;
+struct TensorFunction;
 namespace visit {
 using map_fun_t = double (*)(double);
 using join_fun_t = double (*)(double, double);

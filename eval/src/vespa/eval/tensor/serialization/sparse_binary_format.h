@@ -8,7 +8,7 @@ class nbostream;
 
 namespace tensor {
 
-class Tensor;
+struct Tensor;
 class TensorBuilder;
 
 /**
