@@ -875,7 +875,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         boolean isZoneApplication = SystemApplication.zone.id().equals(applicationId);
         if (isZoneApplication) {
             // Make it explicit that version is not yet supported here
-            if (deployOptions.field("vespaVersion").valid()) {
+            String versionStr = deployOptions.field("vespaVersion").asString();
+            boolean versionPresent = !versionStr.isEmpty() && !versionStr.equals("null");
+            if (versionPresent) {
                 throw new RuntimeException("Version not supported for system applications");
             }
             Version version = wantedSystemVersion(zone, SystemApplication.zone);
