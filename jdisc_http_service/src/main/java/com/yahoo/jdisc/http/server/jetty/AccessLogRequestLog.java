@@ -4,7 +4,6 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.google.common.base.Objects;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
-
 import com.yahoo.jdisc.http.servlet.ServletRequest;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
@@ -12,14 +11,9 @@ import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
 import javax.servlet.http.HttpServletRequest;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,6 +35,9 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
     private static final String HEADER_NAME_Y_RP = "y-rp";
     private static final String HEADER_NAME_YAHOOREMOTEIP = "yahooremoteip";
     private static final String HEADER_NAME_CLIENT_IP = "client-ip";
+
+    // HTTP headers that are logged as extra key-value-pairs in access log entries
+    private static final List<String> LOGGED_REQUEST_HEADERS = List.of("Vespa-Client-Version");
 
     private final AccessLog accessLog;
 
@@ -68,6 +65,13 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
             accessLogEntry.setReturnedContentSize(response.getHttpChannel().getBytesWritten());
             accessLogEntry.setStatusCode(response.getCommittedMetaData().getStatus());
 
+            LOGGED_REQUEST_HEADERS.forEach(header -> {
+                String value = request.getHeader(header);
+                if (value != null) {
+                    accessLogEntry.addKeyValue(header, value);
+                }
+            });
+
             accessLog.log(accessLogEntry);
         } catch (Exception e) {
             // Catching any exceptions here as it is unclear how Jetty handles exceptions from a RequestLog.
@@ -81,6 +85,8 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
      * time rather than at logging time. We may, for example, want to set things such as http headers and ip
      * addresses up-front and make it illegal for request handlers to modify these later.
      */
+    // TODO Move populating of access log entry to log(). populateAccessLogEntryFromHttpServletRequest() is not guaranteed
+    //  to be called if request is failed early (e.g invalid uri or header encoding).
     public static void populateAccessLogEntryFromHttpServletRequest(
             final HttpServletRequest request,
             final AccessLogEntry accessLogEntry) {
