@@ -7,7 +7,7 @@
 
 class FRT_Values;
 class FRT_Supervisor;
-class FRT_StringValue;
+struct FRT_StringValue;
 
 class FRT_Method
 {
