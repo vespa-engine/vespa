@@ -3,5 +3,6 @@ vespa_add_library(vespalib_vespalib_test OBJECT
     SOURCES
     make_tls_options_for_testing.cpp
     peer_policy_utils.cpp
+    time_tracer.cpp
     DEPENDS
 )
