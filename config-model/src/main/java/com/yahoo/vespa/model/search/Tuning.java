@@ -19,7 +19,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
     public static class Dispatch implements PartitionsConfig.Producer {
 
         public Integer maxHitsPerPartition = null;
-        public TuningDispatch.DispatchPolicy policy = TuningDispatch.DispatchPolicy.ROUNDROBIN;
+        public TuningDispatch.DispatchPolicy policy = null;
         public boolean useLocalNode = false;
         public Double minGroupCoverage = null;
         public Double minActiveDocsCoverage = null;
@@ -41,15 +41,17 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                     dataset.min_activedocs_coverage(minActiveDocsCoverage);
                 }
             }
-            for (PartitionsConfig.Dataset.Builder dataset : builder.dataset) {
-                switch (policy) {
-                    case ADAPTIVE:
-                        dataset.useroundrobinforfixedrow(false);
-                        break;
-                    case ROUNDROBIN:
-                    default:
-                        dataset.useroundrobinforfixedrow(true);
-                        break;
+            if (policy != null) {
+                for (PartitionsConfig.Dataset.Builder dataset : builder.dataset) {
+                    switch (policy) {
+                        case ADAPTIVE:
+                            dataset.useroundrobinforfixedrow(false);
+                            break;
+                        case ROUNDROBIN:
+                        default:
+                            dataset.useroundrobinforfixedrow(true);
+                            break;
+                    }
                 }
             }
         }

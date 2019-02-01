@@ -49,6 +49,6 @@ public class TuningDispatchTest {
     public void requireThatDefaultsAreNull() {
         TuningDispatch dispatch = new TuningDispatch.Builder().build();
         assertNull(dispatch.getMaxHitsPerPartition());
-        assertTrue(TuningDispatch.DispatchPolicy.ROUNDROBIN == dispatch.getDispatchPolicy());
+        assertNull(dispatch.getDispatchPolicy());
     }
 }

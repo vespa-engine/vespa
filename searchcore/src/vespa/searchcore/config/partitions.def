@@ -54,7 +54,7 @@ dataset[].mpp			int default=1
 dataset[].maxnodesdownperfixedrow int default=0
 
 ## Use simple roundrobin or adaptive based on latency.
-dataset[].useroundrobinforfixedrow bool default=false
+dataset[].useroundrobinforfixedrow bool default=true
 
 ## specifies where a fdispatch or fsearch process can be contacted.
 ## must be in the format hostname:port/id where /id is optional.

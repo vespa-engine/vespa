@@ -54,6 +54,7 @@ public interface ModelContext {
         boolean isFirstTimeDeployment();
         boolean useDedicatedNodeForLogserver();
         boolean useFdispatchByDefault();
+        boolean useAdaptiveDispatch();
     }
 
 }
