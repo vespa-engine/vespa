@@ -5,15 +5,34 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.documentapi.*;
+import com.yahoo.documentapi.AsyncParameters;
+import com.yahoo.documentapi.AsyncSession;
+import com.yahoo.documentapi.DocumentIdResponse;
+import com.yahoo.documentapi.DocumentResponse;
+import com.yahoo.documentapi.DocumentUpdateResponse;
+import com.yahoo.documentapi.RemoveResponse;
+import com.yahoo.documentapi.Response;
+import com.yahoo.documentapi.ResponseHandler;
 import com.yahoo.documentapi.Result;
-import com.yahoo.documentapi.messagebus.protocol.*;
+import com.yahoo.documentapi.UpdateResponse;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.GetDocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentReply;
 import com.yahoo.log.LogLevel;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBus;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.ReplyHandler;
+import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.StaticThrottlePolicy;
+import com.yahoo.messagebus.ThrottlePolicy;
 
-import java.lang.Error;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -36,6 +55,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     private final ThrottlePolicy throttlePolicy;
     private final SourceSession session;
     private String route;
+    private String routeForGet;
     private int traceLevel;
 
     /**
@@ -60,6 +80,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     MessageBusAsyncSession(AsyncParameters asyncParams, MessageBus bus, MessageBusParams mbusParams,
                            ReplyHandler handler) {
         route = mbusParams.getRoute();
+        routeForGet = mbusParams.getRouteForGet();
         traceLevel = mbusParams.getTraceLevel();
         throttlePolicy = mbusParams.getSourceSessionParams().getThrottlePolicy();
         if (handler == null) {
@@ -82,7 +103,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
 
     @Override
     public Result get(DocumentId id) {
-        return get(id, false, DocumentProtocol.Priority.NORMAL_1);
+        return get(id, DocumentProtocol.Priority.NORMAL_1);
     }
 
     @Override
@@ -134,8 +155,9 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
             long reqId = requestId.incrementAndGet();
             msg.setContext(reqId);
             msg.getTrace().setLevel(traceLevel);
-            if (route != null) {
-                return toResult(reqId, session.send(msg, route, true));
+            String toRoute = (msg.getType() == DocumentProtocol.MESSAGE_GETDOCUMENT ? routeForGet : route);
+            if (toRoute != null) {
+                return toResult(reqId, session.send(msg, toRoute, true));
             } else {
                 return toResult(reqId, session.send(msg));
             }
@@ -243,7 +265,6 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static Response toSuccess(Reply reply, long reqId) {
         switch (reply.getType()) {
             case DocumentProtocol.REPLY_GETDOCUMENT:

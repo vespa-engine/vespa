@@ -25,7 +25,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
 
@@ -49,6 +49,7 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         params.getRPCNetworkParams().setSlobrokConfigId(slobrokConfigId);
         params.setDocumentManagerConfigId("file:src/test/cfg/documentmanager.cfg");
         params.setRouteName("Route");
+        params.setRouteNameForGet("Route");
         params.setRoutingConfigId("file:src/test/cfg/messagebus.cfg");
         params.setTraceLevel(9);
         params.setSourceSessionParams(new SourceSessionParams().setThrottlePolicy(null));
