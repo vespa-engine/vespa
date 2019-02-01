@@ -47,7 +47,7 @@ struct DecodeResult {
     bool frame_decoded_ok() const noexcept { return (state == State::OK); }
 };
 
-class TlsContext;
+struct TlsContext;
 
 // TODO move to different namespace, not dependent on TLS?
 

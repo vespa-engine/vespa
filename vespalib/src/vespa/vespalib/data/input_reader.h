@@ -8,7 +8,7 @@
 
 namespace vespalib {
 
-class Input;
+struct Input;
 
 /**
  * A utility wrapper for the Input interface that supplies us with an

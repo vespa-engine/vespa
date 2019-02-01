@@ -7,7 +7,7 @@
 
 namespace vespalib {
 
-class Output;
+struct Output;
 
 /**
  * Thin layer on top of the Output interface that supplies us with an

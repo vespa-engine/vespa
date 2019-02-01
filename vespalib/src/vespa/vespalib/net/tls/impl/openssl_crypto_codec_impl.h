@@ -6,7 +6,7 @@
 #include <vespa/vespalib/net/tls/crypto_codec.h>
 #include <memory>
 
-namespace vespalib::net::tls { class TlsContext; }
+namespace vespalib::net::tls { struct TlsContext; }
 
 namespace vespalib::net::tls::impl {
 
