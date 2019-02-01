@@ -5,6 +5,8 @@
 #include "sparse_tensor_match.h"
 #include "sparse_tensor_apply.hpp"
 #include "sparse_tensor_reduce.hpp"
+#include "sparse_tensor_modify.h"
+#include <vespa/eval/tensor/cell_values.h>
 #include <vespa/eval/tensor/tensor_address_builder.h>
 #include <vespa/eval/tensor/tensor_apply.h>
 #include <vespa/eval/tensor/tensor_visitor.h>
@@ -184,6 +186,17 @@ SparseTensor::reduce(join_fun_t op,
                      const std::vector<vespalib::string> &dimensions) const
 {
     return sparse::reduce(*this, dimensions, op);
+}
+
+std::unique_ptr<Tensor>
+SparseTensor::modify(join_fun_t op, const CellValues &cellValues) const
+{
+    Stash stash;
+    Cells cells;
+    copyCells(cells, _cells, stash);
+    SparseTensorModify modifier(op, _type, std::move(stash), std::move(cells));
+    cellValues.accept(modifier);
+    return modifier.build();
 }
 
 }

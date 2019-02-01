@@ -7,7 +7,9 @@
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
+#include <vespa/eval/eval/operation.h>
 #include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/cell_values.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -19,7 +21,36 @@ using vespalib::IllegalStateException;
 using vespalib::tensor::Tensor;
 using vespalib::make_string;
 
+using join_fun_t = double (*)(double, double);
+
 namespace document {
+
+namespace {
+
+double
+replace(double, double b)
+{
+    return b;
+}
+    
+join_fun_t
+getJoinFunction(TensorModifyUpdate::Operation operation)
+{
+    using Operation = TensorModifyUpdate::Operation;
+    
+    switch (operation) {
+    case Operation::REPLACE:
+        return replace;
+    case Operation::ADD:
+        return vespalib::eval::operation::Add::f;
+    case Operation::MUL:
+        return vespalib::eval::operation::Mul::f;
+    default:
+        throw IllegalArgumentException("Bad operation", VESPA_STRLOC);
+    }
+}
+
+}
 
 IMPLEMENT_IDENTIFIABLE(TensorModifyUpdate, ValueUpdate);
 
@@ -92,9 +123,12 @@ TensorModifyUpdate::applyTo(FieldValue& value) const
     if (value.inherits(TensorFieldValue::classId)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         auto &oldTensor = tensorFieldValue.getAsTensorPtr();
-        // TODO: Apply operation with tensor
-        auto newTensor = oldTensor->clone();
-        tensorFieldValue = std::move(newTensor);
+        auto &cellTensor = _tensor->getAsTensorPtr();
+        if (cellTensor) {
+            vespalib::tensor::CellValues cellValues(static_cast<const vespalib::tensor::SparseTensor &>(*cellTensor));
+            auto newTensor = oldTensor->modify(getJoinFunction(_operation), cellValues);
+            tensorFieldValue = std::move(newTensor);
+        }
     } else {
         std::string err = make_string(
                 "Unable to perform a tensor modify update on a \"%s\" field "
