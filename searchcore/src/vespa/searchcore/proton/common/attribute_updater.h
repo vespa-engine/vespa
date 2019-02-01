@@ -15,7 +15,10 @@ namespace attribute {class ReferenceAttribute; }
 
 VESPA_DEFINE_EXCEPTION(UpdateException, vespalib::Exception);
 
-class AttrUpdate {
+/**
+ * Class used to apply (document) field values and field updates to attribute vectors.
+ */
+class AttributeUpdater {
     using Field = document::Field;
     using FieldValue = document::FieldValue;
     using FieldUpdate = document::FieldUpdate;

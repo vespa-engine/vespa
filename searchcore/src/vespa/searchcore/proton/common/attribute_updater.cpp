@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attrupdate.h"
+#include "attribute_updater.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
@@ -24,7 +24,7 @@
 #include <sstream>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".proton.common.attrupdate");
+LOG_SETUP(".proton.common.attribute_updater");
 
 using namespace document;
 using vespalib::make_string;
@@ -120,7 +120,7 @@ private:
 
 template <typename V, typename Accessor>
 void
-AttrUpdate::handleUpdateT(V & vec, Accessor, uint32_t lid, const ValueUpdate & upd)
+AttributeUpdater::handleUpdateT(V & vec, Accessor, uint32_t lid, const ValueUpdate & upd)
 {
     LOG(spam, "handleValueUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
     ValueUpdate::ValueUpdateType op = upd.getType();
@@ -181,7 +181,9 @@ AttrUpdate::handleUpdateT(V & vec, Accessor, uint32_t lid, const ValueUpdate & u
 }
 
 template <>
-void AttrUpdate::handleUpdate(PredicateAttribute &vec, uint32_t lid, const ValueUpdate &upd) {
+void
+AttributeUpdater::handleUpdate(PredicateAttribute &vec, uint32_t lid, const ValueUpdate &upd)
+{
     LOG(spam, "handleValueUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
     ValueUpdate::ValueUpdateType op = upd.getType();
     assert(!vec.hasMultiValue());
@@ -200,7 +202,9 @@ void AttrUpdate::handleUpdate(PredicateAttribute &vec, uint32_t lid, const Value
 }
 
 template <>
-void AttrUpdate::handleUpdate(TensorAttribute &vec, uint32_t lid, const ValueUpdate &upd) {
+void
+AttributeUpdater::handleUpdate(TensorAttribute &vec, uint32_t lid, const ValueUpdate &upd)
+{
     LOG(spam, "handleUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
     ValueUpdate::ValueUpdateType op = upd.getType();
     assert(!vec.hasMultiValue());
@@ -219,7 +223,9 @@ void AttrUpdate::handleUpdate(TensorAttribute &vec, uint32_t lid, const ValueUpd
 }
 
 template <>
-void AttrUpdate::handleUpdate(ReferenceAttribute &vec, uint32_t lid, const ValueUpdate &upd) {
+void
+AttributeUpdater::handleUpdate(ReferenceAttribute &vec, uint32_t lid, const ValueUpdate &upd)
+{
     LOG(spam, "handleUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
     ValueUpdate::ValueUpdateType op = upd.getType();
     assert(!vec.hasMultiValue());
@@ -237,7 +243,7 @@ void AttrUpdate::handleUpdate(ReferenceAttribute &vec, uint32_t lid, const Value
 }
 
 void
-AttrUpdate::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate & fUpdate)
+AttributeUpdater::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate & fUpdate)
 {
     LOG(spam, "handleFieldUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(fUpdate).c_str());
     for(const auto & update : fUpdate.getUpdates()) {
@@ -276,7 +282,7 @@ AttrUpdate::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate 
 }
 
 void
-AttrUpdate::handleValue(AttributeVector & vec, uint32_t lid, const FieldValue & val)
+AttributeUpdater::handleValue(AttributeVector & vec, uint32_t lid, const FieldValue & val)
 {
     LOG(spam, "handleValue(%s, %u): %s", vec.getName().c_str(), lid, toString(val).c_str());
     const vespalib::Identifiable::RuntimeClass & rc = vec.getClass();
@@ -303,7 +309,7 @@ AttrUpdate::handleValue(AttributeVector & vec, uint32_t lid, const FieldValue & 
 
 template <typename V, typename Accessor>
 void
-AttrUpdate::handleValueT(V & vec, Accessor, uint32_t lid, const FieldValue & val)
+AttributeUpdater::handleValueT(V & vec, Accessor, uint32_t lid, const FieldValue & val)
 {
     if (vec.hasMultiValue()) {
         vec.clearDoc(lid);
@@ -323,7 +329,7 @@ AttrUpdate::handleValueT(V & vec, Accessor, uint32_t lid, const FieldValue & val
 }
 
 void
-AttrUpdate::appendValue(IntegerAttribute & vec, uint32_t lid, const FieldValue & val, int weight)
+AttributeUpdater::appendValue(IntegerAttribute & vec, uint32_t lid, const FieldValue & val, int weight)
 {
     int64_t v = val.getAsLong();
     if (!vec.append(lid, v, weight)) {
@@ -333,7 +339,7 @@ AttrUpdate::appendValue(IntegerAttribute & vec, uint32_t lid, const FieldValue &
 }
 
 void
-AttrUpdate::removeValue(IntegerAttribute & vec, uint32_t lid, const FieldValue & val)
+AttributeUpdater::removeValue(IntegerAttribute & vec, uint32_t lid, const FieldValue & val)
 {
     int64_t v = val.getAsLong();
     if (!vec.remove(lid, v, 1)) {
@@ -343,7 +349,7 @@ AttrUpdate::removeValue(IntegerAttribute & vec, uint32_t lid, const FieldValue &
 }
 
 void
-AttrUpdate::updateValue(IntegerAttribute & vec, uint32_t lid, const FieldValue & val)
+AttributeUpdater::updateValue(IntegerAttribute & vec, uint32_t lid, const FieldValue & val)
 {
     int64_t v = val.getAsLong();
     if (!vec.update(lid, v)) {
@@ -353,7 +359,7 @@ AttrUpdate::updateValue(IntegerAttribute & vec, uint32_t lid, const FieldValue &
 }
 
 void
-AttrUpdate::appendValue(FloatingPointAttribute & vec, uint32_t lid, const FieldValue & val, int weight)
+AttributeUpdater::appendValue(FloatingPointAttribute & vec, uint32_t lid, const FieldValue & val, int weight)
 {
     double v = val.getAsDouble();
     if (!vec.append(lid, v, weight)) {
@@ -364,7 +370,7 @@ AttrUpdate::appendValue(FloatingPointAttribute & vec, uint32_t lid, const FieldV
 
 template <typename V, typename Accessor>
 void
-AttrUpdate::appendValue(V & vec, uint32_t lid, Accessor & ac)
+AttributeUpdater::appendValue(V & vec, uint32_t lid, Accessor & ac)
 {
     if (!vec.append(lid, ac)) {
         throw UpdateException(make_string("attribute append failed: %s[%u]",
@@ -373,7 +379,7 @@ AttrUpdate::appendValue(V & vec, uint32_t lid, Accessor & ac)
 }
 
 void
-AttrUpdate::removeValue(FloatingPointAttribute & vec, uint32_t lid, const FieldValue & val)
+AttributeUpdater::removeValue(FloatingPointAttribute & vec, uint32_t lid, const FieldValue & val)
 {
     double v = val.getAsDouble();
     if (!vec.remove(lid, v, 1)) {
@@ -383,7 +389,7 @@ AttrUpdate::removeValue(FloatingPointAttribute & vec, uint32_t lid, const FieldV
 }
 
 void
-AttrUpdate::updateValue(FloatingPointAttribute & vec, uint32_t lid, const FieldValue & val)
+AttributeUpdater::updateValue(FloatingPointAttribute & vec, uint32_t lid, const FieldValue & val)
 {
     double v = val.getAsDouble();
     if (!vec.update(lid, v)) {
@@ -406,7 +412,7 @@ getString(const search::StringAttribute & attr, uint32_t lid, const FieldValue &
 }
 
 void
-AttrUpdate::appendValue(StringAttribute & vec, uint32_t lid, const FieldValue & val, int weight)
+AttributeUpdater::appendValue(StringAttribute & vec, uint32_t lid, const FieldValue & val, int weight)
 {
     const vespalib::string & s = getString(vec, lid, val);
     if (!vec.append(lid, s, weight)) {
@@ -416,7 +422,7 @@ AttrUpdate::appendValue(StringAttribute & vec, uint32_t lid, const FieldValue & 
 }
 
 void
-AttrUpdate::removeValue(StringAttribute & vec, uint32_t lid, const FieldValue & val)
+AttributeUpdater::removeValue(StringAttribute & vec, uint32_t lid, const FieldValue & val)
 {
     const vespalib::string & v = getString(vec, lid, val);
     if (!vec.remove(lid, v, 1)) {
@@ -426,7 +432,7 @@ AttrUpdate::removeValue(StringAttribute & vec, uint32_t lid, const FieldValue & 
 }
 
 void
-AttrUpdate::updateValue(StringAttribute & vec, uint32_t lid, const FieldValue & val)
+AttributeUpdater::updateValue(StringAttribute & vec, uint32_t lid, const FieldValue & val)
 {
     const vespalib::string & v = getString(vec, lid, val);
     if (!vec.update(lid, v)) {
@@ -435,7 +441,8 @@ AttrUpdate::updateValue(StringAttribute & vec, uint32_t lid, const FieldValue & 
     }
 }
 
-void AttrUpdate::updateValue(PredicateAttribute &vec, uint32_t lid, const FieldValue &val)
+void
+AttributeUpdater::updateValue(PredicateAttribute &vec, uint32_t lid, const FieldValue &val)
 {
     if (!val.inherits(PredicateFieldValue::classId)) {
         throw UpdateException(
@@ -445,7 +452,8 @@ void AttrUpdate::updateValue(PredicateAttribute &vec, uint32_t lid, const FieldV
     vec.updateValue(lid, static_cast<const PredicateFieldValue &>(val));
 }
 
-void AttrUpdate::updateValue(TensorAttribute &vec, uint32_t lid, const FieldValue &val)
+void
+AttributeUpdater::updateValue(TensorAttribute &vec, uint32_t lid, const FieldValue &val)
 {
     if (!val.inherits(TensorFieldValue::classId)) {
         throw UpdateException(
@@ -461,7 +469,8 @@ void AttrUpdate::updateValue(TensorAttribute &vec, uint32_t lid, const FieldValu
     }
 }
 
-void AttrUpdate::updateValue(ReferenceAttribute &vec, uint32_t lid, const FieldValue &val)
+void
+AttributeUpdater::updateValue(ReferenceAttribute &vec, uint32_t lid, const FieldValue &val)
 {
     if (!val.inherits(ReferenceFieldValue::classId)) {
         vec.clearDoc(lid);
