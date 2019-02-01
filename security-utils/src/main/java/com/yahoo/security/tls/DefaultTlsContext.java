@@ -33,6 +33,8 @@ public class DefaultTlsContext implements TlsContext {
             "TLS_AES_256_GCM_SHA384", // TLSv1.3
             "TLS_CHACHA20_POLY1305_SHA256"); // TLSv1.3
 
+    public static final List<String> ALLOWED_PROTOCOLS = List.of("TLSv1.2"); // TODO Enable TLSv1.3
+
     private static final Logger log = Logger.getLogger(DefaultTlsContext.class.getName());
 
     private final SSLContext sslContext;
@@ -58,6 +60,7 @@ public class DefaultTlsContext implements TlsContext {
     public SSLEngine createSslEngine() {
         SSLEngine sslEngine = sslContext.createSSLEngine();
         restrictSetOfEnabledCiphers(sslEngine, acceptedCiphers);
+        restrictTlsProtocols(sslEngine);
         return sslEngine;
     }
 
@@ -73,6 +76,19 @@ public class DefaultTlsContext implements TlsContext {
         }
         log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", Arrays.toString(validCipherSuites)));
         sslEngine.setEnabledCipherSuites(validCipherSuites);
+    }
+
+    private static void restrictTlsProtocols(SSLEngine sslEngine) {
+        String[] validProtocols = Arrays.stream(sslEngine.getSupportedProtocols())
+                .filter(ALLOWED_PROTOCOLS::contains)
+                .toArray(String[]::new);
+        if (validProtocols.length == 0) {
+            throw new IllegalArgumentException(
+                    String.format("Non of the allowed protocols are supported (allowed-protocols=%s, supported-protocols=%s)",
+                                  ALLOWED_PROTOCOLS, Arrays.toString(sslEngine.getSupportedProtocols())));
+        }
+        log.log(Level.FINE, () -> String.format("Allowed protocols that are supported: %s", Arrays.toString(validProtocols)));
+        sslEngine.setEnabledProtocols(validProtocols);
     }
 
     private static SSLContext createSslContext(List<X509Certificate> certificates,

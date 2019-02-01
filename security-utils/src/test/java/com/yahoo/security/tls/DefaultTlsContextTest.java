@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import javax.net.ssl.SSLEngine;
 import javax.security.auth.x500.X500Principal;
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -32,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DefaultTlsContextTest {
 
     @Test
-    public void can_create_sslcontext_from_credentials() {
+    public void can_create_sslcontext_from_credentials() throws GeneralSecurityException {
         KeyPair keyPair = KeyUtils.generateKeypair(EC);
 
         X509Certificate certificate = X509CertificateBuilder
@@ -54,6 +55,9 @@ public class DefaultTlsContextTest {
         String[] enabledCiphers = sslEngine.getEnabledCipherSuites();
         assertThat(enabledCiphers).isNotEmpty();
         assertThat(enabledCiphers).isSubsetOf(DefaultTlsContext.ALLOWED_CIPHER_SUITES.toArray(new String[0]));
+
+        String[] enabledProtocols = sslEngine.getEnabledProtocols();
+        assertThat(enabledProtocols).contains("TLSv1.2");
     }
 
 }
