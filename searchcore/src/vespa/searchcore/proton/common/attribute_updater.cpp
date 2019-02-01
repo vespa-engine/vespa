@@ -209,9 +209,11 @@ void
 applyTensorModifyUpdate(TensorAttribute &vec, uint32_t lid, const TensorModifyUpdate &update)
 {
     auto oldTensor = vec.getTensor(lid);
-    auto newTensor = update.applyTo(*oldTensor);
-    if (newTensor) {
-        vec.setTensor(lid, *newTensor);
+    if (oldTensor) {
+        auto newTensor = update.applyTo(*oldTensor);
+        if (newTensor) {
+            vec.setTensor(lid, *newTensor);
+        }
     }
 }
 
