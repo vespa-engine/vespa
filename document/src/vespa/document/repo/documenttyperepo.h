@@ -15,7 +15,7 @@ namespace internal {
 
 class AnnotationType;
 class DataType;
-class DataTypeRepo;
+struct DataTypeRepo;
 class DocumentType;
 
 class DocumentTypeRepo {

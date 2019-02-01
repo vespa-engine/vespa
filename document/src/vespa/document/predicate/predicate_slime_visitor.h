@@ -3,7 +3,7 @@
 #pragma once
 
 namespace vespalib {
-namespace slime { class Inspector; }
+namespace slime { struct Inspector; }
 }  // namespace vespalib
 
 namespace document {
