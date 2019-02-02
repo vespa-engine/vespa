@@ -4,7 +4,7 @@
 #include <vespa/searchlib/docstore/idocumentstore.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 
-namespace searchcorespi::index { class IThreadService; }
+namespace searchcorespi::index { struct IThreadService; }
 namespace proton {
 
 /**

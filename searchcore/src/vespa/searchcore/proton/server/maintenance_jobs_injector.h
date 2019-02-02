@@ -13,12 +13,12 @@
 namespace proton {
 
 class IPruneRemovedDocumentsHandler;
-class IDocumentMoveHandler;
+struct IDocumentMoveHandler;
 class IBucketModifiedHandler;
 class IClusterStateChangedNotifier;
 class IBucketStateChangedNotifier;
-class IBucketStateCalculator;
-class IAttributeManager;
+struct IBucketStateCalculator;
+struct IAttributeManager;
 class AttributeUsageFilter;
 class IDiskMemUsageNotifier;
 namespace bucketdb { class IBucketCreateNotifier; }

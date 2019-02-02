@@ -7,7 +7,7 @@
 namespace proton
 {
 
-class IDocumentMetaStore;
+struct IDocumentMetaStore;
 
 /**
  * Class for task to be executed when a document remove completed and

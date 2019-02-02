@@ -6,7 +6,7 @@
 
 namespace proton {
 
-class IDocumentMetaStore;
+struct IDocumentMetaStore;
 
 /**
  * Iterator for scanning all documents in a document meta store.

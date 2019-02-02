@@ -14,7 +14,7 @@ namespace vespalib {
     class ThreadExecutor;
     class Executor;
 }
-namespace searchcorespi { namespace index {class IThreadService; }}
+namespace searchcorespi { namespace index { struct IThreadService; }}
 
 namespace proton {
 

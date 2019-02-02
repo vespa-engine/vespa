@@ -13,7 +13,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 
-namespace searchcorespi::index { class IThreadService; }
+namespace searchcorespi::index { struct IThreadService; }
 namespace search { class IBucketizer; }
 namespace search::common { class FileHeaderContext; }
 

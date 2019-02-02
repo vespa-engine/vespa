@@ -5,7 +5,7 @@
 #include "documentretrieverbase.h"
 
 namespace search {
-class IDocumentMetaStore;
+struct IDocumentMetaStore;
 class IAttributeManager;
 class IDocumentStore;
 namespace index { class Schema; }

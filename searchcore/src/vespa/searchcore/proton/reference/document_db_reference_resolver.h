@@ -7,7 +7,7 @@
 #include <map>
 
 namespace document { class DocumentType; class DocumentTypeRepo; }
-namespace search { class ISequencedTaskExecutor; class IAttributeManager; class IDocumentMetaStoreContext;
+namespace search { class ISequencedTaskExecutor; class IAttributeManager; struct IDocumentMetaStoreContext;
     namespace attribute { class IAttributeVector; class ReferenceAttribute; } }
 namespace vespa { namespace config { namespace search { namespace internal { class InternalImportedFieldsType; } } } }
 

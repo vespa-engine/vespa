@@ -12,7 +12,7 @@ namespace vespalib { class Executor; }
 namespace proton {
 
 class ForceCommitDoneTask;
-class IDocumentMetaStore;
+struct IDocumentMetaStore;
 class DocIdLimit;
 
 /**

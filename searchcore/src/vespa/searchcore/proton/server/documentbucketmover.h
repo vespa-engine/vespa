@@ -11,8 +11,8 @@
 namespace proton {
 
 class BucketDBOwner;
-class IDocumentMoveHandler;
-class IMoveOperationLimiter;
+struct IDocumentMoveHandler;
+struct IMoveOperationLimiter;
 class MaintenanceDocumentSubDB;
 
 /**

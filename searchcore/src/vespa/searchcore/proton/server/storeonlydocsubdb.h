@@ -23,11 +23,11 @@
 
 namespace proton {
 
-class DocumentDBTaggedMetrics;
+struct DocumentDBTaggedMetrics;
 class DocumentMetaStoreInitializerResult;
 class FeedHandler;
 class IDocumentSubDBOwner;
-class MetricsWireService;
+struct MetricsWireService;
 class ShrinkLidSpaceFlushTarget;
 namespace initializer { class InitializerTask; }
 

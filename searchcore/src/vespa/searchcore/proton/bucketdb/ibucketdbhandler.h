@@ -5,7 +5,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/searchlib/common/serialnum.h>
 
-namespace proton { class IDocumentMetaStore; }
+namespace proton { struct IDocumentMetaStore; }
 
 namespace proton::bucketdb {
 

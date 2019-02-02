@@ -7,7 +7,7 @@
 namespace proton {
 
 class AttributeMetrics;
-class DocumentDBTaggedMetrics;
+struct DocumentDBTaggedMetrics;
 
 struct MetricsWireService {
     virtual void addAttribute(AttributeMetrics &subAttributes,

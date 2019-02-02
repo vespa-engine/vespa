@@ -15,19 +15,19 @@
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <mutex>
 
-namespace searchcorespi { namespace index { class IThreadingService; } }
+namespace searchcorespi { namespace index { struct IThreadingService; } }
 
 namespace proton {
-class ConfigStore;
+struct ConfigStore;
 class CreateBucketOperation;
 class DDBState;
 class DeleteBucketOperation;
-class FeedConfigStore;
+struct FeedConfigStore;
 class FeedState;
 class IDocumentDBOwner;
-class IFeedHandlerOwner;
+struct IFeedHandlerOwner;
 class IFeedView;
-class IResourceWriteFilter;
+struct IResourceWriteFilter;
 class IReplayConfig;
 class JoinBucketsOperation;
 class PutOperation;

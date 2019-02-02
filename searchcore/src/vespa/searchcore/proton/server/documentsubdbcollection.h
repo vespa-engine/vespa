@@ -22,16 +22,16 @@ namespace search {
 
 namespace searchcorespi {
     class IFlushTarget;
-    namespace index { class IThreadingService; }
+    namespace index { struct IThreadingService; }
 }
 
 namespace proton {
 class DocumentDBConfig;
-class DocumentDBTaggedMetrics;
+struct DocumentDBTaggedMetrics;
 class MaintenanceController;
-class MetricsWireService;
+struct MetricsWireService;
 class ICommitable;
-class IDocumentDBReferenceResolver;
+struct IDocumentDBReferenceResolver;
 class IGetSerialNum;
 class DocTypeName;
 class HwInfo;
@@ -49,7 +49,7 @@ namespace matching {
 
 namespace initializer { class InitializerTask; }
 
-namespace index { class IndexConfig; }
+namespace index { struct IndexConfig; }
 
 class DocumentSubDBCollection {
 public:

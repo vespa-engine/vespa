@@ -13,7 +13,7 @@ namespace search::attribute { class AttributeHeader; }
 namespace proton {
 
 class AttributeDirectory;
-class IAttributeFactory;
+struct IAttributeFactory;
 
 /**
  * Class used by an attribute manager to initialize and load attribute vectors from disk.

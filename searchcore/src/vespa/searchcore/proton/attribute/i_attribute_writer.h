@@ -15,7 +15,7 @@ namespace document {
 
 namespace proton {
 
-class IFieldUpdateCallback;
+struct IFieldUpdateCallback;
 
 /**
  * Interface for an attribute writer that handles writes in form of put, update and remove

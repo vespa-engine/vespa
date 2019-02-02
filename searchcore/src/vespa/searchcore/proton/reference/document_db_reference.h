@@ -3,11 +3,11 @@
 
 #include "i_document_db_reference.h"
 
-namespace search { class IDocumentMetaStoreContext; }
+namespace search { struct IDocumentMetaStoreContext; }
 
 namespace proton {
 
-class IAttributeManager;
+struct IAttributeManager;
 class IGidToLidChangeHandler;
 
 /*
