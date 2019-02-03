@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/stash.h>
-#include <vespa/vespalib/xxhash/xxhash.h>
 #include <cstring>
 
 namespace vespalib::tensor {
@@ -41,7 +40,7 @@ public:
 
     uint32_t hash() const { return _hash; }
 
-    uint32_t calcHash() const { return XXH32(_start, _size, 0); }
+    uint32_t calcHash() const;
 
     bool operator<(const SparseTensorAddressRef &rhs) const {
         size_t minSize = std::min(_size, rhs._size);

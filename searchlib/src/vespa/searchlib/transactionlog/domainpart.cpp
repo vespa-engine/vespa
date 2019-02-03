@@ -2,11 +2,11 @@
 
 #include "domainpart.h"
 #include <vespa/vespalib/util/crc.h>
-#include <vespa/vespalib/xxhash/xxhash.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <xxhash.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domainpart");
