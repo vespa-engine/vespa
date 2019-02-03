@@ -76,7 +76,7 @@
 
 namespace storage::framework {
 
-class ComponentRegister;
+struct ComponentRegister;
 
 struct ComponentStateListener {
     virtual ~ComponentStateListener() = default;

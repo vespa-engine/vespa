@@ -21,11 +21,11 @@ namespace metrics {
 
 namespace storage::framework {
 
-class StatusReporter;
-class MetricRegistrator;
-class MetricUpdateHook;
-class ThreadPool;
-class Clock;
+struct StatusReporter;
+struct MetricRegistrator;
+struct MetricUpdateHook;
+struct ThreadPool;
+struct Clock;
 
 /**
  * The upgrade flags can be used to add forward/backward compatability. In most
