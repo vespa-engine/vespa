@@ -81,7 +81,9 @@ class ApplicationHealthMonitor implements ServiceStatusProvider, AutoCloseable {
 
     @Override
     public void close() {
-        monitors.values().forEach(HealthMonitor::close);
-        monitors.clear();
+        synchronized (guard) {
+            monitors.values().forEach(HealthMonitor::close);
+            monitors.clear();
+        }
     }
 }
