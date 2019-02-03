@@ -52,9 +52,9 @@ namespace storage {
 namespace lib {
     class Distribution;
 }
-class NodeStateUpdater;
+struct NodeStateUpdater;
 class PriorityMapper;
-class StorageComponentRegister;
+struct StorageComponentRegister;
 
 class StorageComponent : public framework::Component {
 public:

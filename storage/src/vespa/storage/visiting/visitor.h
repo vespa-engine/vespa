@@ -50,7 +50,7 @@ namespace framework { class MemoryAllocationType; }
 class GetIterReply;
 class CreateIteratorReply;
 class Visitor;
-class VisitorThreadMetrics;
+struct VisitorThreadMetrics;
 
 /**
  * To prevent circular dependency between visitors and visitor manager, this

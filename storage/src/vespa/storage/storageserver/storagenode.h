@@ -40,9 +40,9 @@ class StateManager;
 class MemoryStatusViewer;
 class StatusWebServer;
 class StorageLink;
-class DeadLockDetector;
-class StorageMetricSet;
-class StorageNodeContext;
+struct DeadLockDetector;
+struct StorageMetricSet;
+struct StorageNodeContext;
 class ApplicationGenerationFetcher;
 class StorageComponent;
 

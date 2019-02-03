@@ -113,7 +113,7 @@ public:
     StorBucketDatabase::Entry getBucketInfo(const document::Bucket &id) const;
 
 private:
-    friend class BucketManagerTest;
+    friend struct BucketManagerTest;
 
     void run(framework::ThreadHandle&) override;
 

@@ -73,7 +73,7 @@ public:
     using PriorityIdx = bmi::nth_index<PriorityQueue, 1>::type;
     using BucketIdx = bmi::nth_index<PriorityQueue, 2>::type;
 
-    class Disk;
+    struct Disk;
 
     class Stripe {
     public:

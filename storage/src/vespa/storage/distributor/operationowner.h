@@ -7,7 +7,7 @@
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/vdslib/state/clusterstate.h>
 
-namespace storage::framework { class Clock; }
+namespace storage::framework { struct Clock; }
 
 namespace storage::distributor {
 

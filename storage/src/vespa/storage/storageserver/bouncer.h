@@ -24,7 +24,7 @@ namespace config { class ConfigUri; }
 
 namespace storage {
 
-class BouncerMetrics;
+struct BouncerMetrics;
 
 class Bouncer : public StorageLink,
                 private StateListener,

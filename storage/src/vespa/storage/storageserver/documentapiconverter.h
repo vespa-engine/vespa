@@ -13,7 +13,7 @@ namespace api {
     class StorageReply;
 }
 
-class BucketResolver;
+struct BucketResolver;
 class PriorityConverter;
 /**
    Converts messages from storageapi to documentapi and

@@ -27,7 +27,7 @@
 
 namespace storage {
 
-class FileStorManagerTest;
+struct FileStorManagerTest;
 
 class StorageLink : public document::Printable,
                     public ChainedMessageSender,
@@ -179,7 +179,7 @@ private:
      * Some unit tests wants access to private functions. They can do this
      * through the storage link test.
      */
-    friend class StorageLinkTest;
+    friend struct StorageLinkTest;
 };
 
 std::ostream& operator<<(std::ostream& out, StorageLink& link);

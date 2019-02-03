@@ -56,7 +56,7 @@
 
 namespace storage {
 
-class BucketReadState;
+struct BucketReadState;
 
 class StorageBucketDBInitializer : public StorageLink,
                                    public framework::HtmlStatusReporter,
