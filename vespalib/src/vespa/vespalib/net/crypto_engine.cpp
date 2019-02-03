@@ -1,6 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "crypto_engine.h"
+#include <vector>
+#include <chrono>
+#include <thread>
+#include <vespa/vespalib/xxhash/xxhash.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/net/tls/authorization_mode.h>
 #include <vespa/vespalib/net/tls/auto_reloading_tls_crypto_engine.h>
@@ -10,11 +14,7 @@
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
 #include <vespa/vespalib/data/smart_buffer.h>
-#include <vector>
-#include <chrono>
-#include <thread>
-#include <xxhash.h>
-#include <cassert>
+#include <assert.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.net.crypto_engine");

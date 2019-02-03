@@ -8,7 +8,7 @@
 #include <vespa/searchlib/engine/packetconverter.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <xxhash.h>
+#include <vespa/vespalib/xxhash/xxhash.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet_search");

@@ -6,7 +6,6 @@ vespa_define_module(
 
     EXTERNAL_DEPENDS
     lz4
-    xxhash
     zstd
 
     APPS
@@ -146,4 +145,5 @@ vespa_define_module(
     src/vespa/vespalib/trace
     src/vespa/vespalib/util
     src/vespa/vespalib/websocket
+    src/vespa/vespalib/xxhash
 )

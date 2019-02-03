@@ -4,7 +4,7 @@
 #include "transport_thread.h"
 #include "iocomponent.h"
 #include <chrono>
-#include <xxhash.h>
+#include <vespa/vespalib/xxhash/xxhash.h>
 
 namespace {
 

@@ -3,7 +3,7 @@
 #include "value.h"
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
-#include <xxhash.h>
+#include <vespa/vespalib/xxhash/xxhash.h>
 
 using vespalib::compression::compress;
 using vespalib::compression::decompress;
