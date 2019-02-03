@@ -21,7 +21,6 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_trace>
     $<TARGET_OBJECTS:vespalib_vespalib_util>
     $<TARGET_OBJECTS:vespalib_vespalib_websocket>
-    $<TARGET_OBJECTS:vespalib_vespalib_xxhash>
     INSTALL lib64
     DEPENDS
     gcc
