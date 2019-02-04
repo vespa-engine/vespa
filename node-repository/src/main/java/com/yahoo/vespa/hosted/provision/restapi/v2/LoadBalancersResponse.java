@@ -62,6 +62,9 @@ public class LoadBalancersResponse extends HttpResponse {
             lbObject.setString("hostname", lb.hostname().value());
             lb.dnsZone().ifPresent(dnsZone -> lbObject.setString("dnsZone", dnsZone.id()));
 
+            Cursor networkArray = lbObject.setArray("networks");
+            lb.networks().forEach(networkArray::addString);
+
             Cursor portArray = lbObject.setArray("ports");
             lb.ports().forEach(portArray::addLong);
 
