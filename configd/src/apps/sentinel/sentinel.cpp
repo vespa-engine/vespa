@@ -65,7 +65,7 @@ main(int argc, char **argv)
     try {
         handler.subscribe(configId, CONFIG_TIMEOUT_MS);
     } catch (ConfigTimeoutException & ex) {
-        LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
+        LOG(warning, "Timeout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
         EV_STOPPING("config-sentinel", ex.what());
         exit(EXIT_FAILURE);
     } catch (InvalidConfigException& ex) {
@@ -88,25 +88,23 @@ main(int argc, char **argv)
             LOG(warning, "Configuration problem: (ignoring): %s",
                 ex.what());
         }
-        if (!vespalib::SignalHandler::CHLD.check()) {
-            int maxNum = 0;
-            fd_set fds;
-            FD_ZERO(&fds);
-            handler.updateActiveFdset(&fds, &maxNum);
-
-            struct timeval tv;
-            tv.tv_sec = 1;
-            tv.tv_usec = 0;
-
-            if (!vespalib::SignalHandler::CHLD.check()) {
-                select(maxNum, &fds, nullptr, nullptr, &tv);
-            }
+        if (vespalib::SignalHandler::CHLD.check()) {
+            continue;
         }
+        int maxNum = 0;
+        fd_set fds;
+        FD_ZERO(&fds);
+        handler.updateActiveFdset(&fds, &maxNum);
 
         struct timeval tv;
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+
+        select(maxNum, &fds, nullptr, nullptr, &tv);
+
         gettimeofday(&tv, nullptr);
         double delta = tv.tv_sec - lastTv.tv_sec
-                       + 1e-6 * tv.tv_usec - lastTv.tv_usec;
+                       + 1e-6 * (tv.tv_usec - lastTv.tv_usec);
         if (delta < 0.01) {
             usleep(12500); // Avoid busy looping;
         }

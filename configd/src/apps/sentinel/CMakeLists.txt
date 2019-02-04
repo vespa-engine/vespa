@@ -9,9 +9,13 @@ vespa_add_executable(configd_config-sentinel_app
     output-connection.cpp
     metrics.cpp
     state-api.cpp
+    cmdq.cpp
+    rpchooks.cpp
+    rpcserver.cpp
     OUTPUT_NAME vespa-config-sentinel
     INSTALL sbin
     DEPENDS
+    fnet
     configdefinitions
     staging_vespalib
 )

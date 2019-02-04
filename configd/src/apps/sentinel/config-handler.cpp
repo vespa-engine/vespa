@@ -157,6 +157,10 @@ ConfigHandler::doConfigure()
         _stateApi.bound(_boundPort);
     }
 
+    if (!_rpcServer || config.port.rpc != _rpcServer->getPort()) {
+        _rpcServer = std::make_unique<RpcServer>(config.port.rpc, _cmdQ);
+    }
+
     LOG(debug, "ConfigHandler::configure() %d config elements, tenant(%s), application(%s), instance(%s)",
         (int)config.service.size(), config.application.tenant.c_str(), config.application.name.c_str(),
         config.application.instance.c_str());
@@ -288,6 +292,15 @@ ConfigHandler::handleOutputs()
 void
 ConfigHandler::handleCommands()
 {
+    {
+        // handle RPC commands
+        std::vector<Cmd::UP> got = _cmdQ.drain();
+        for (const Cmd::UP & cmd : got) {
+            handleCmd(*cmd);
+        }
+        // implicit return via Cmd destructor
+    }
+
     // Accept new command connections, and read commands.
     int fd;
     struct sockaddr_storage sad;
@@ -362,6 +375,59 @@ splitCommand(char *line, char *&cmd, char *&args)
     args = line;
 }
 
+void
+ConfigHandler::handleCmd(const Cmd& cmd)
+{
+    switch (cmd.type()) {
+    case Cmd::LIST:
+        {
+            char retbuf[65536];
+            size_t left = 65536;
+            size_t pos = 0;
+            for (ServiceMap::iterator it(_services.begin()), mt(_services.end()); it != mt; it++) {
+                Service *service = it->second.get();
+                const SentinelConfig::Service& config = service->serviceConfig();
+                int sz = snprintf(retbuf + pos, left,
+                                  "%s state=%s mode=%s pid=%d exitstatus=%d id=\"%s\"\n",
+                                  service->name().c_str(), service->stateName(),
+                                  service->isAutomatic() ? "AUTO" : "MANUAL",
+                                  service->pid(), service->exitStatus(),
+                                  config.id.c_str());
+                pos += sz;
+                left -= sz;
+                if (left <= 0) break;
+            }
+            cmd.retValue(retbuf);
+        }
+        break;
+    case Cmd::START:
+        {
+            Service *service = serviceByName(cmd.serviceName());
+            if (service == nullptr) {
+                cmd.retError("Cannot find named service");
+                return;
+            }
+            service->setAutomatic(true);
+            if (! service->isRunning()) {
+                service->start();
+            }
+        }
+        break;
+    case Cmd::STOP:
+        {
+            Service *service = serviceByName(cmd.serviceName());
+            if (service == nullptr) {
+                cmd.retError("Cannot find named service");
+                return;
+            }
+            service->setAutomatic(false);
+            if (service->isRunning()) {
+                service->terminate(true, false);
+            }
+        }
+        break;
+    }
+}
 
 void
 ConfigHandler::handleCommand(CommandConnection *c)
