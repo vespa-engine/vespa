@@ -3,14 +3,16 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 /**
- * Represents a load balancer for an application.
+ * Represents a load balancer for an application's cluster. This is immutable.
  *
  * @author mpolden
  */
@@ -22,20 +24,22 @@ public class LoadBalancer {
     private final Set<Integer> ports;
     private final Set<String> networks;
     private final Set<Real> reals;
+    private final Set<RotationName> rotations;
     private final boolean inactive;
 
-    // TODO: Remove this when no longer used by internal code
-    public LoadBalancer(LoadBalancerId id, HostName hostname, Set<Integer> ports, Set<String> networks, Set<Real> reals, boolean inactive) {
-        this(id, hostname, Optional.empty(), ports, networks, reals, inactive);
+    public LoadBalancer(LoadBalancerId id, HostName hostname, Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks, Set<Real> reals, boolean inactive) {
+        this(id, hostname, dnsZone, ports, networks, reals, Collections.emptySet(), inactive);
     }
 
-    public LoadBalancer(LoadBalancerId id, HostName hostname, Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks, Set<Real> reals, boolean inactive) {
+    public LoadBalancer(LoadBalancerId id, HostName hostname, Optional<DnsZone> dnsZone, Set<Integer> ports,
+                        Set<String> networks, Set<Real> reals, Set<RotationName> rotations, boolean inactive) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.ports = ImmutableSortedSet.copyOf(requirePorts(ports));
         this.networks = ImmutableSortedSet.copyOf(Objects.requireNonNull(networks, "networks must be non-null"));
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals, "targets must be non-null"));
+        this.rotations = ImmutableSortedSet.copyOf(Objects.requireNonNull(rotations, "rotations must be non-null"));
         this.inactive = inactive;
     }
 
@@ -69,6 +73,11 @@ public class LoadBalancer {
         return reals;
     }
 
+    /** The rotations of which this is a member */
+    public Set<RotationName> rotations() {
+        return rotations;
+    }
+
     /**
      * Returns whether this load balancer is inactive. Inactive load balancers cannot be re-activated, and are
      * eventually removed by {@link LoadBalancerExpirer}.
@@ -80,6 +89,11 @@ public class LoadBalancer {
     /** Return a copy of this that is set inactive */
     public LoadBalancer deactivate() {
         return new LoadBalancer(id, hostname, dnsZone, ports, networks, reals, true);
+    }
+
+    /** Returns a copy of this with rotation membership set to given rotations */
+    public LoadBalancer with(Set<RotationName> rotations) {
+        return new LoadBalancer(id, hostname, dnsZone, ports, networks, reals, rotations, inactive);
     }
 
     private static Set<Integer> requirePorts(Set<Integer> ports) {

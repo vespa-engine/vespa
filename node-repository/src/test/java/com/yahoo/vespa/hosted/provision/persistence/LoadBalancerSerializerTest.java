@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.hosted.provision.lb.DnsZone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
@@ -36,6 +37,8 @@ public class LoadBalancerSerializerTest {
                                                                      new Real(HostName.from("real-2"),
                                                                               "127.0.0.2",
                                                                               4080)),
+                                                     ImmutableSet.of(RotationName.from("eu-cluster"),
+                                                                     RotationName.from("us-cluster")),
                                                      false);
 
         LoadBalancer serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
@@ -44,6 +47,7 @@ public class LoadBalancerSerializerTest {
         assertEquals(loadBalancer.dnsZone(), serialized.dnsZone());
         assertEquals(loadBalancer.ports(), serialized.ports());
         assertEquals(loadBalancer.networks(), serialized.networks());
+        assertEquals(loadBalancer.rotations(), serialized.rotations());
         assertEquals(loadBalancer.inactive(), serialized.inactive());
         assertEquals(loadBalancer.reals(), serialized.reals());
     }

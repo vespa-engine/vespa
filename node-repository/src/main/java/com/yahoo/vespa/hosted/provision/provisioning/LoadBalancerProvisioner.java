@@ -51,8 +51,9 @@ public class LoadBalancerProvisioner {
         try (Mutex applicationLock = nodeRepository.lock(application)) {
             try (Mutex loadBalancersLock = db.lockLoadBalancers()) {
                 Map<LoadBalancerId, LoadBalancer> loadBalancers = new LinkedHashMap<>();
-                for (Map.Entry<ClusterSpec.Id, List<Node>> kv : activeContainers(application).entrySet()) {
-                    LoadBalancer loadBalancer = create(application, kv.getKey(), kv.getValue());
+                for (Map.Entry<ClusterSpec, List<Node>> kv : activeContainers(application).entrySet()) {
+                    LoadBalancer loadBalancer = create(application, kv.getKey().id(), kv.getValue())
+                            .with(kv.getKey().rotations());
                     loadBalancers.put(loadBalancer.id(), loadBalancer);
                     db.writeLoadBalancer(loadBalancer);
                 }
@@ -87,14 +88,14 @@ public class LoadBalancerProvisioner {
         return service.create(application, cluster, reals);
     }
 
-    /** Returns a list of active containers for given application, grouped by cluster ID */
-    private Map<ClusterSpec.Id, List<Node>> activeContainers(ApplicationId application) {
+    /** Returns a list of active containers for given application, grouped by cluster spec */
+    private Map<ClusterSpec, List<Node>> activeContainers(ApplicationId application) {
         return new NodeList(nodeRepository.getNodes(Node.State.active))
                 .owner(application)
                 .type(ClusterSpec.Type.container)
                 .asList()
                 .stream()
-                .collect(Collectors.groupingBy(n -> n.allocation().get().membership().cluster().id()));
+                .collect(Collectors.groupingBy(n -> n.allocation().get().membership().cluster()));
     }
 
     /** Find IP addresses reachable by the load balancer service */
