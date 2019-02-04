@@ -95,10 +95,15 @@ deriveCompactionCompressionThreads(const ProtonConfig &proton,
 
     // We need at least 1 guaranteed free worker in order to ensure progress so #documentsdbs + 1 should suffice,
     // but we will not be cheap and give it one extra.
-    return std::max(scaledCores, proton.documentdb.size() + 1 + 1);
+    return std::max(scaledCores, proton.documentdb.size() + proton.flush.maxconcurrent + 1);
 }
 
 const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
+
+VESPA_THREAD_STACK_TAG(proton_shared_executor)
+VESPA_THREAD_STACK_TAG(index_warmup_executor)
+VESPA_THREAD_STACK_TAG(initialize_executor)
+VESPA_THREAD_STACK_TAG(close_executor)
 
 }
 
@@ -287,13 +292,13 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                              protonConfig.visit.ignoremaxbytes);
 
     vespalib::string fileConfigId;
-    _warmupExecutor = std::make_unique<vespalib::ThreadStackExecutor>(4, 128*1024);
+    _warmupExecutor = std::make_unique<vespalib::ThreadStackExecutor>(4, 128*1024, index_warmup_executor);
 
     const size_t sharedThreads = deriveCompactionCompressionThreads(protonConfig, hwInfo.cpu());
-    _sharedExecutor = std::make_unique<vespalib::BlockingThreadStackExecutor>(sharedThreads, 128*1024, sharedThreads*16);
+    _sharedExecutor = std::make_unique<vespalib::BlockingThreadStackExecutor>(sharedThreads, 128*1024, sharedThreads*16, proton_shared_executor);
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
-        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128 * 1024);
+        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128 * 1024, initialize_executor);
         _initDocumentDbsInSequence = (protonConfig.initialize.threads == 1);
     }
     _protonConfigurer.applyInitialConfig(initializeThreads);
@@ -434,7 +439,7 @@ Proton::~Proton()
         _fs4Server->shutDown();
     }
     size_t numCores = _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getHwInfo().cpu().cores();
-    vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000);
+    vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000, close_executor);
     closeDocumentDBs(closePool);
     _documentDBMap.clear();
     _persistenceEngine.reset();
