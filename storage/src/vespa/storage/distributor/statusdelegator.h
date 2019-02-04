@@ -4,7 +4,7 @@
 namespace storage {
 namespace distributor {
 
-class DelegatedStatusRequest;
+struct DelegatedStatusRequest;
 
 class StatusDelegator
 {

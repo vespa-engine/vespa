@@ -178,8 +178,8 @@ ValueColumn<T>::printValue(std::ostream& out, uint16_t row)  {
     out << _valuePrinter.str();
 }
 
-template class ValueColumn<int64_t>;
-template class ValueColumn<uint64_t>;
-template class ValueColumn<double>;
+template struct ValueColumn<int64_t>;
+template struct ValueColumn<uint64_t>;
+template struct ValueColumn<double>;
 
 }

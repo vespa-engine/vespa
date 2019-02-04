@@ -98,9 +98,9 @@ public:
     void immediately_send_get_node_state_replies() override;
 
 private:
-    class ExternalStateLock;
-    friend class ExternalStateLock;
-    friend class StateManagerTest;
+    struct ExternalStateLock;
+    friend struct ExternalStateLock;
+    friend struct StateManagerTest;
 
     void notifyStateListeners();
     bool sendGetNodeStateReplies(

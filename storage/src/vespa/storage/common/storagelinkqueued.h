@@ -25,7 +25,7 @@
 namespace storage {
 
 namespace framework {
-    class ComponentRegister;
+    struct ComponentRegister;
     class Component;
     class Thread;
 }

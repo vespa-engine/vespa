@@ -26,7 +26,7 @@
 
 namespace storage {
 
-class DoneInitializeHandler;
+struct DoneInitializeHandler;
 class HostInfo;
 
 namespace distributor {

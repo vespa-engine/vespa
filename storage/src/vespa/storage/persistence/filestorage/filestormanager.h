@@ -38,7 +38,7 @@ namespace api {
 
 class BucketMergeTest;
 class DiskInfo;
-class FileStorManagerTest;
+struct FileStorManagerTest;
 class ReadBucketList;
 class ModifiedBucketCheckerThread;
 class BucketOwnershipNotifier;
@@ -93,7 +93,7 @@ class FileStorManager : public StorageLinkQueued,
     std::vector<DiskThreads> getThreads() { return _disks; }
 
     friend class BucketMergeTest;
-    friend class FileStorManagerTest;
+    friend struct FileStorManagerTest;
     friend class MessageTest;
 
 public:

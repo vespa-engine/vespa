@@ -14,7 +14,7 @@
 
 namespace storage {
 
-namespace spi { class PersistenceProvider; }
+namespace spi { struct PersistenceProvider; }
 
 class ModifiedBucketChecker
     : public StorageLink,

@@ -71,7 +71,7 @@ public:
     RunStatistics& getLastRunStats() { return *_history.begin(); }
 
 private:
-    friend class BucketMoverTest;
+    friend struct BucketMoverTest;
 
     void startNewRun();
     void queueNewMoves();
