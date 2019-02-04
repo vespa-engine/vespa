@@ -189,6 +189,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("search_connections.average"));
         metrics.add(new Metric("active_queries.average"));
         metrics.add(new Metric("feed.latency.average"));
+        metrics.add(new Metric("feed.http-requests.count"));
+        metrics.add(new Metric("feed.http-requests.rate"));
         metrics.add(new Metric("queries.rate"));
         metrics.add(new Metric("query_container_latency.average"));
         metrics.add(new Metric("query_latency.average"));
