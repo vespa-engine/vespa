@@ -10,8 +10,8 @@
 
 class FRT_ReflectionBuilder;
 
-namespace vespalib::slime { class Cursor; }
-namespace vespalib { class Memory; }
+namespace vespalib::slime { struct Cursor; }
+namespace vespalib { struct Memory; }
 namespace vespalib { class TraceNode; }
 namespace mbus {
 
