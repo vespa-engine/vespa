@@ -73,35 +73,16 @@ public class SearchDefinitionsParsingTestCase extends SearchDefinitionTestCase {
         }
     }
 
-    private static class WarningCatcher extends Handler {
-        volatile boolean gotYqlWarning = false;
-
-        @Override
-        public void publish(LogRecord record) {
-            if (record.getLevel() == Level.WARNING && record.getMessage().indexOf("YQL") >= 0) {
-                gotYqlWarning = true;
+    @Test
+    public void illegalSearchDefinitionName() throws IOException, ParseException {
+        try {
+            SearchBuilder.buildFromFile("src/test/examples/invalid-name.sd");
+            fail("Name with dash passed");
+        } catch (ParseException e) {
+            if ( ! e.getMessage().contains("invalid-name")) {
+                throw e;
             }
         }
-
-        @Override
-        public void flush() {
-            // intentionally left blank
-        }
-
-        @Override
-        public void close() throws SecurityException {
-            // intentionally left blank
-        }
     }
 
-
-    @Test
-    public void requireYqlCompatibilityIsTested() throws Exception {
-        Logger log = Logger.getLogger("DeployLogger");
-        WarningCatcher w = new WarningCatcher();
-        log.addHandler(w);
-        assertNotNull(SearchBuilder.buildFromFile("src/test/examples/simple-with-weird-name.sd"));
-        log.removeHandler(w);
-        assertTrue(w.gotYqlWarning);
-    }
 }
