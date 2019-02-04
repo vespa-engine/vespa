@@ -12,7 +12,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 /**
- * Read rotations from the <rotations/> element in services.xml.
+ * Read rotations from the rotations element in services.xml.
  *
  * @author mpolden
  */
@@ -23,9 +23,11 @@ public class Rotations {
      * - lowercase
      * - alphanumeric
      * - begin with a character
+     * - contain zero consecutive dashes
      * - have a length between 1 and 12
      */
-    private static final Pattern pattern = Pattern.compile("^[a-z][a-z0-9-]{0,11}$");
+    private static final Pattern pattern = Pattern.compile("^[a-z](?:-?[a-z0-9]+)*$");
+    private static final int maxLength = 12;
 
     private Rotations() {}
 
@@ -35,7 +37,7 @@ public class Rotations {
         List<Element> children = XML.getChildren(rotationsElement, "rotation");
         for (Element el : children) {
             String name = el.getAttribute("id");
-            if (name == null || !pattern.matcher(name).find()) {
+            if (name == null || name.length() > maxLength || !pattern.matcher(name).matches()) {
                 throw new IllegalArgumentException("Rotation ID '" + name + "' is missing or has invalid format");
             }
             RotationName rotation = RotationName.from(name);

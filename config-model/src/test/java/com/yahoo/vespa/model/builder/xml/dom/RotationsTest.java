@@ -19,20 +19,25 @@ public class RotationsTest {
 
     @Test
     public void invalid_ids() {
-        assertInvalid("<rotation/>");
+        assertInvalid("<rotation/>"); // Unset
         assertInvalid("<rotation id=''/>"); // Blank
         assertInvalid("<rotation id='FOO'/>"); // Uppercaes
         assertInvalid("<rotation id='123'/>"); // Starting with non-character
         assertInvalid("<rotation id='foo!'/>"); // Non-alphanumeric
-        assertInvalid("<rotation id='fooooooooooooo'/>"); // Too long
+        assertInvalid("<rotation id='foo--bar'/>"); // Multiple consecutive dashes
+        assertInvalid("<rotation id='foo-'/>"); // Trailing dash
+        assertInvalid("<rotation id='foooooooooooo'/>"); // Too long
         assertInvalid("<rotation id='foo'/><rotation id='foo'/>"); // Duplicate ID
     }
 
     @Test
     public void valid_ids() {
         assertEquals(rotations(), xml(""));
+        assertEquals(rotations("f"), xml("<rotation id='f'/>"));
         assertEquals(rotations("foo"), xml("<rotation id='foo'/>"));
+        assertEquals(rotations("foo-bar"), xml("<rotation id='foo-bar'/>"));
         assertEquals(rotations("foo", "bar"), xml("<rotation id='foo'/><rotation id='bar'/>"));
+        assertEquals(rotations("fooooooooooo"), xml("<rotation id='fooooooooooo'/>"));
     }
 
     private static Set<RotationName> rotations(String... rotation) {
