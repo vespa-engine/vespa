@@ -46,7 +46,7 @@ TimeTracer::TimeTracer()
 uint32_t
 TimeTracer::get_tag_id(const vespalib::string &tag_name)
 {
-    auto guard = std::lock_guard(_lock);
+    std::lock_guard guard(_lock);
     auto pos = _tags.find(tag_name);
     if (pos != _tags.end()) {
         return pos->second;
@@ -59,7 +59,7 @@ TimeTracer::get_tag_id(const vespalib::string &tag_name)
 TimeTracer::ThreadState *
 TimeTracer::create_thread_state()
 {
-    auto guard = std::lock_guard(_lock);
+    std::lock_guard guard(_lock);
     _state_list.push_back(std::make_unique<ThreadState>());
     return _state_list.back().get();
 }
@@ -67,7 +67,7 @@ TimeTracer::create_thread_state()
 std::vector<TimeTracer::Record>
 TimeTracer::extract_all_impl()
 {
-    auto guard = std::lock_guard(_lock);
+    std::lock_guard guard(_lock);
     std::vector<Record> list;
     for (size_t thread_id = 0; thread_id < _state_list.size(); ++thread_id) {
         const LogEntry *entry = _state_list[thread_id]->get_log_entries();

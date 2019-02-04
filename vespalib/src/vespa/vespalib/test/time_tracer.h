@@ -25,7 +25,7 @@ namespace vespalib::test {
  *
  * In order to collect timing information, the client code uses the
  * TT_Tag and TT_Sample classes. The TT_Tag class represents a thing
- * that can happen. It should always be constructed up font. The
+ * that can happen. It should always be constructed up front. The
  * TT_Sample class represents the fact that the thing represented by a
  * TT_Tag is happening for as long as the TT_Sample object is
  * alive. In other words; if the TT_Tag is an event, the TT_Sample
