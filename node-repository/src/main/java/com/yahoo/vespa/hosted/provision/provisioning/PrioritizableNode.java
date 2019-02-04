@@ -15,7 +15,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     Node node;
 
     /** The free capacity, including retired allocations */
-    ResourceCapacity freeParentCapacity = new ResourceCapacity();
+    ResourceCapacity freeParentCapacity = ResourceCapacity.NONE;
 
     /** The parent host (docker or hypervisor) */
     Optional<Node> parent = Optional.empty();
