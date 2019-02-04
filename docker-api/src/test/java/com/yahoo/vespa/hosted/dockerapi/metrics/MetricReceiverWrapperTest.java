@@ -78,4 +78,19 @@ public class MetricReceiverWrapperTest {
         assertEquals(metricReceiver.getMetricsForDimension(applicationDocker, hostDimension).get("test.gauge"), 42.);
         assertEquals(metricReceiver.getMetricsForDimension(applicationDocker, newDimension).get("test.gauge"), 56.);
     }
+
+    @Test
+    public void testDeletingMetric() {
+        MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
+        metricReceiver.declareGauge(applicationDocker, hostDimension, "test.gauge");
+
+        Dimensions differentDimension = new Dimensions.Builder().add("host", "abcd.yahoo.com").build();
+        metricReceiver.declareGauge(applicationDocker, differentDimension, "test.gauge");
+
+        assertEquals(2, metricReceiver.getDefaultMetricsRaw().size());
+        metricReceiver.deleteMetricByDimension(applicationDocker, differentDimension, MetricReceiverWrapper.DimensionType.DEFAULT);
+        assertEquals(1, metricReceiver.getDefaultMetricsRaw().size());
+        assertEquals(metricReceiver.getMetricsForDimension(applicationDocker, hostDimension).size(), 1);
+        assertEquals(metricReceiver.getMetricsForDimension(applicationDocker, differentDimension).size(), 0);
+    }
 }

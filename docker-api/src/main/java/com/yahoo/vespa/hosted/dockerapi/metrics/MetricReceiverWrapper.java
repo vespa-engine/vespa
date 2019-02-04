@@ -106,12 +106,25 @@ public class MetricReceiverWrapper {
         }
     }
 
+    public void deleteMetricByDimension(String name,  Dimensions dimensionsToRemove, DimensionType type) {
+        try{
+            metrics.get(type)
+                    .get(name)
+                    .metricsByDimensions()
+                    .remove(dimensionsToRemove);
+        } catch (NullPointerException e) {}
+    }
+
     // For testing
     Map<String, Number> getMetricsForDimension(String application, Dimensions dimensions) {
         synchronized (monitor) {
             Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application, DimensionType.DEFAULT);
-            return metricsByDimensions.get(dimensions).entrySet().stream().collect(
-                    Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
+            try {
+                return metricsByDimensions.get(dimensions).entrySet().stream().collect(
+                        Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
+            } catch (NullPointerException e) {
+                return new HashMap<>();
+            }
         }
     }
 
