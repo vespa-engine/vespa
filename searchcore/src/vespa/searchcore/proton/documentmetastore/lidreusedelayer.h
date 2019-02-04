@@ -10,7 +10,7 @@ namespace searchcorespi
 namespace index
 {
 
-class IThreadingService;
+struct IThreadingService;
 
 }
 
@@ -22,7 +22,7 @@ namespace proton
 namespace documentmetastore
 {
 
-class IStore;
+struct IStore;
 
 /**
  * This class delays reuse of lids until references to the lids have

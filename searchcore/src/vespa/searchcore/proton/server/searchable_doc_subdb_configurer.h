@@ -25,7 +25,7 @@
 
 namespace proton {
 
-class IDocumentDBReferenceResolver;
+struct IDocumentDBReferenceResolver;
 class ReconfigParams;
 
 /**

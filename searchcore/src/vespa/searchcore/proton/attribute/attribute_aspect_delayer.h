@@ -13,7 +13,7 @@ class InternalSummarymapType;
 
 namespace proton {
 
-class IDocumentTypeInspector;
+struct IDocumentTypeInspector;
 class IIndexschemaInspector;
 
 /*

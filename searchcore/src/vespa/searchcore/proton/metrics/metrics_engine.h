@@ -17,7 +17,7 @@ namespace config {
 namespace proton {
 
 class AttributeMetrics;
-class DocumentDBTaggedMetrics;
+struct DocumentDBTaggedMetrics;
 
 class MetricsEngine : public MetricsWireService
 {

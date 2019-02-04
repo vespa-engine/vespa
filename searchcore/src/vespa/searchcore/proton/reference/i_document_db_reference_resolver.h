@@ -4,7 +4,7 @@
 #include <vespa/fastos/timestamp.h>
 #include <memory>
 
-namespace search { class IAttributeManager; class IDocumentMetaStoreContext; }
+namespace search { class IAttributeManager; struct IDocumentMetaStoreContext; }
 
 namespace proton {
 

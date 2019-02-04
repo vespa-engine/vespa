@@ -10,7 +10,7 @@
 
 namespace proton {
 
-class IDocumentMetaStore;
+struct IDocumentMetaStore;
 
 
 /**

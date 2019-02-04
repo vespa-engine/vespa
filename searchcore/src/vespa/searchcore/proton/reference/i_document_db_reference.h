@@ -8,7 +8,7 @@ namespace search::attribute { class ReadableAttributeVector; }
 namespace search {
 
 class IGidToLidMapperFactory;
-class IDocumentMetaStoreContext;
+struct IDocumentMetaStoreContext;
 
 }
 

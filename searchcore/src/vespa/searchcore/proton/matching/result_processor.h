@@ -13,7 +13,7 @@ namespace search {
         class GroupingContext;
         class GroupingSession;
     }
-    class IDocumentMetaStore;
+    struct IDocumentMetaStore;
 }
 
 namespace proton::matching {

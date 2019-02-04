@@ -8,7 +8,7 @@
 namespace proton
 {
 
-class IDocumentMetaStore;
+struct IDocumentMetaStore;
 class IPruneRemovedDocumentsHandler;
 class IFrozenBucketHandler;
 

@@ -3,7 +3,7 @@
 
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 
-namespace search::common { class ICompactableLidSpace; }
+namespace search::common { struct ICompactableLidSpace; }
 
 namespace proton {
 

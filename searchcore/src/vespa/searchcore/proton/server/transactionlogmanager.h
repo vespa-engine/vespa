@@ -9,7 +9,7 @@
 #include <vespa/searchlib/transactionlog/translogclient.h>
 
 namespace proton {
-class ConfigStore;
+struct ConfigStore;
 
 /**
  * Class managing the initialization and replay of the transaction log.

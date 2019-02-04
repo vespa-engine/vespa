@@ -11,8 +11,8 @@ namespace proton::matching {
 
 typedef vespalib::string SessionId;
 
-class GroupingSessionCache;
-class SearchSessionCache;
+struct GroupingSessionCache;
+struct SearchSessionCache;
 
 class SessionManager : public ISessionCachePruner {
 public:

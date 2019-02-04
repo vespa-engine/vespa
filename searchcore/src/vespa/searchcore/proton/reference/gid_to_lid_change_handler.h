@@ -8,7 +8,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/document/base/globalid.h>
 
-namespace searchcorespi { namespace index { class IThreadService; } }
+namespace searchcorespi { namespace index { struct IThreadService; } }
 
 namespace proton {
 

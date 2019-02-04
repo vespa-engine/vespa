@@ -33,7 +33,7 @@ class PutDoneContext;
 class RemoveDoneContext;
 class CommitTimeTracker;
 class IGidToLidChangeHandler;
-class IFieldUpdateCallback;
+struct IFieldUpdateCallback;
 class RemoveDocumentsOperation;
 class DocumentOperation;
 

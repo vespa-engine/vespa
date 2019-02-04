@@ -16,7 +16,7 @@ namespace searchcorespi {
     class IIndexManager;
 }
 namespace proton::index {
-    class IndexConfig;
+    struct IndexConfig;
 }
 
 namespace proton {
@@ -27,11 +27,11 @@ class DocumentDBConfig;
 class DocumentSubDbInitializer;
 class DocumentSubDbInitializerResult;
 class FeedHandler;
-class IAttributeManager;
-class IBucketStateCalculator;
-class IDocumentDBReferenceResolver;
+struct IAttributeManager;
+struct IBucketStateCalculator;
+struct IDocumentDBReferenceResolver;
 class IDocumentDBReference;
-class IDocumentMetaStoreContext;
+struct IDocumentMetaStoreContext;
 class IDocumentRetriever;
 class IFeedView;
 class IIndexWriter;

@@ -45,7 +45,7 @@ namespace vespa::config::search::core::internal { class InternalProtonType; }
 
 namespace proton {
 class IDocumentDBOwner;
-class MetricsWireService;
+struct MetricsWireService;
 class StatusReport;
 class ExecutorThreadingServiceStats;
 

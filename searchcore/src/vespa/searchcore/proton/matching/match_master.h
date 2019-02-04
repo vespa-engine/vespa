@@ -5,13 +5,13 @@
 #include "result_processor.h"
 #include "matching_stats.h"
 
-namespace vespalib { class ThreadBundle; }
+namespace vespalib { struct ThreadBundle; }
 namespace search { class FeatureSet; }
 
 namespace proton::matching {
 
 class MatchToolsFactory;
-class MatchParams;
+struct MatchParams;
 
 /**
  * Handles overall matching and keeps track of match threads.
