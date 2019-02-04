@@ -42,6 +42,11 @@
           "port": 4080
         }
       ],
+      "rotations": [
+        {
+          "name": "us-cluster"
+        }
+      ],
       "inactive": false
     }
   ]

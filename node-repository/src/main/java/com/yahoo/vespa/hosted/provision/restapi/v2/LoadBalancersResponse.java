@@ -76,6 +76,12 @@ public class LoadBalancersResponse extends HttpResponse {
                 realObject.setLong("port", real.port());
             });
 
+            Cursor rotationArray = lbObject.setArray("rotations");
+            lb.rotations().forEach(rotation -> {
+                Cursor rotationObject = rotationArray.addObject();
+                rotationObject.setString("name", rotation.value());
+            });
+
             lbObject.setBool("inactive", lb.inactive());
         });
 
