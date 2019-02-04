@@ -501,7 +501,7 @@ public class ProvisioningTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
                                                   ClusterSpec.Id.from("music"),
                                                   new com.yahoo.component.Version(4, 5, 6),
-                                                 false);
+                                                  false, Collections.emptySet());
         tester.prepare(application, cluster, Capacity.fromNodeCount(5, Optional.empty(), false, false), 1);
         // No exception; Success
     }
@@ -793,8 +793,8 @@ public class ProvisioningTest {
         tester.makeReadyNodes(6, "large-variant-variant"); //cost = 11
 
         ApplicationId applicationId = tester.makeApplicationId();
-        ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false);
-        ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"), false);
+        ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false, Collections.emptySet());
+        ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"), false, Collections.emptySet());
 
         List<HostSpec> containerNodes = tester.prepare(applicationId, containerClusterSpec, 5, 1, "large");
         List<HostSpec> contentNodes = tester.prepare(applicationId, contentClusterSpec, 10, 1, "large");
@@ -829,10 +829,10 @@ public class ProvisioningTest {
                                 int content1Size, boolean required, String flavor, Version wantedVersion,
                                 ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
-        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion, false);
-        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), wantedVersion, false);
-        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion, false);
-        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion, false);
+        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion, false, Collections.emptySet());
+        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), wantedVersion, false, Collections.emptySet());
+        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion, false, Collections.emptySet());
+        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion, false, Collections.emptySet());
 
         Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, required, flavor, tester);
         Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, required, flavor, tester);

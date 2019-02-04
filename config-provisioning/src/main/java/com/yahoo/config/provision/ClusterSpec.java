@@ -1,10 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.component.Version;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * A specification of a cluster - or group in a grouped cluster - to be run on a set of hosts.
@@ -19,17 +22,21 @@ public final class ClusterSpec {
 
     /** The group id of these hosts, or empty if this is represents a request for hosts */
     private final Optional<Group> groupId;
-
     private final Version vespaVersion;
-
     private boolean exclusive;
+    private final Set<RotationName> rotations;
 
-    private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive) {
+    private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
+                        Set<RotationName> rotations) {
+        if (type != Type.container && !rotations.isEmpty()) {
+            throw new IllegalArgumentException("Rotations can only be declared for clusters of type " + Type.container);
+        }
         this.type = type;
         this.id = id;
         this.groupId = groupId;
         this.vespaVersion = vespaVersion;
         this.exclusive = exclusive;
+        this.rotations = ImmutableSortedSet.copyOf(rotations);
     }
 
     /** Returns the cluster type */
@@ -51,20 +58,35 @@ public final class ClusterSpec {
      */
     public boolean isExclusive() { return exclusive; }
 
+    /** Returns the rotations of which this cluster should be a member */
+    public Set<RotationName> rotations() {
+        return rotations;
+    }
+
     public ClusterSpec with(Optional<Group> newGroup) {
-        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive);
+        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, rotations);
     }
 
     public ClusterSpec exclusive(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive);
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, rotations);
     }
 
+    // TODO: Remove when versions <= 7.6 are gone
     public static ClusterSpec request(Type type, Id id, Version vespaVersion, boolean exclusive) {
-        return new ClusterSpec(type, id, Optional.empty(), vespaVersion, exclusive);
+        return new ClusterSpec(type, id, Optional.empty(), vespaVersion, exclusive, Collections.emptySet());
     }
 
+    public static ClusterSpec request(Type type, Id id, Version vespaVersion, boolean exclusive, Set<RotationName> rotations) {
+        return new ClusterSpec(type, id, Optional.empty(), vespaVersion, exclusive, rotations);
+    }
+
+    // TODO: Remove when versions <= 7.6 are gone
     public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion, boolean exclusive) {
-        return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive);
+        return from(type, id, groupId, vespaVersion, exclusive, Collections.emptySet());
+    }
+
+    public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion, boolean exclusive, Set<RotationName> rotations) {
+        return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive, rotations);
     }
 
     @Override

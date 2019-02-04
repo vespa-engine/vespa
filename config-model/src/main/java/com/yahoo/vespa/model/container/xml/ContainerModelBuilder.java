@@ -563,7 +563,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
                                                               ClusterSpec.Id.from(cluster.getName()),
                                                               deployState.getWantedNodeVespaVersion(),
-                                                              false);
+                                                              false,
+                                                              Collections.emptySet());
                 Capacity capacity = Capacity.fromNodeCount(1,
                                                            Optional.empty(),
                                                            false,
@@ -581,7 +582,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(),
                                                                                   ClusterSpec.Type.container,
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
-                                                                                  log);
+                                                                                  log,
+                                                                                  rotations);
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
@@ -590,7 +592,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, 
                                                       ClusterSpec.Id.from(cluster.getName()), 
                                                       context.getDeployState().getWantedNodeVespaVersion(),
-                                                      false);
+                                                      false,
+                                                      Collections.emptySet());
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().getHostSystem().allocateHosts(clusterSpec, 
                                                                 Capacity.fromRequiredNodeType(type), 1, log);

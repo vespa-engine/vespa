@@ -51,7 +51,7 @@ public class InactiveAndFailedExpirerTest {
         List<Node> nodes = tester.makeReadyNodes(2, "default");
 
         // Allocate then deallocate 2 nodes
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Collections.emptySet());
         List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
@@ -90,9 +90,9 @@ public class InactiveAndFailedExpirerTest {
 
         // Allocate and deallocate a single node
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
-                                                  ClusterSpec.Id.from("test"), 
+                                                  ClusterSpec.Id.from("test"),
                                                   Version.fromString("6.42"),
-                                                  false);
+                                                  false, Collections.emptySet());
         List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
@@ -118,8 +118,8 @@ public class InactiveAndFailedExpirerTest {
     @Test
     public void node_that_wants_to_retire_is_moved_to_parked() throws OrchestrationException {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), 
-                                                  Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
+                                                  Version.fromString("6.42"), false, Collections.emptySet());
         tester.makeReadyNodes(5, "default");
 
         // Allocate two nodes

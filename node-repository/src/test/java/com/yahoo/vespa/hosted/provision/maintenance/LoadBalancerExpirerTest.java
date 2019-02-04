@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -87,7 +88,7 @@ public class LoadBalancerExpirerTest {
     private void deployApplication(ApplicationId application, ClusterSpec.Id cluster) {
         tester.makeReadyNodes(10, "default");
         List<HostSpec> hosts = tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.container, cluster,
-                                                                               Vtag.currentVersion, false),
+                                                                               Vtag.currentVersion, false, Collections.emptySet()),
                                               2, 1,
                                               "default");
         tester.activate(application, hosts);

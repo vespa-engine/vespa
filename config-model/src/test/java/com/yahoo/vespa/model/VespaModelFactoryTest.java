@@ -109,7 +109,7 @@ public class VespaModelFactoryTest {
                                     ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.admin,
                                                                             new ClusterSpec.Id(routingClusterName),
                                                                             ClusterSpec.Group.from(0),
-                                                                            Version.fromString("6.42"), false),
+                                                                            Version.fromString("6.42"), false, Collections.emptySet()),
                                                            0));
             }
 
@@ -120,7 +120,7 @@ public class VespaModelFactoryTest {
                                                               ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.container,
                                                                                                       new ClusterSpec.Id(routingClusterName),
                                                                                                       ClusterSpec.Group.from(0),
-                                                                                                      Version.fromString("6.42"), false),
+                                                                                                      Version.fromString("6.42"), false, Collections.emptySet()),
                                                                                      0)));
             }
         };
