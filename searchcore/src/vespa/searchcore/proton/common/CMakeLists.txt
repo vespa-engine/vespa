@@ -1,8 +1,8 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchcore_pcommon STATIC
     SOURCES
+    attribute_updater.cpp
     attributefieldvaluenode.cpp
-    attrupdate.cpp
     cachedselect.cpp
     commit_time_tracker.cpp
     dbdocumentid.cpp

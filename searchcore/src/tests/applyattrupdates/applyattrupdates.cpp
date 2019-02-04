@@ -15,7 +15,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
-#include <vespa/searchcore/proton/common/attrupdate.h>
+#include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/reference_attribute.h>
@@ -110,7 +110,7 @@ private:
     void applyValueUpdate(AttributeVector & vec, uint32_t docId, const ValueUpdate & upd) {
         FieldUpdate fupd(_docType->getField(vec.getName()));
         fupd.addUpdate(upd);
-        search::AttrUpdate::handleUpdate(vec, docId, fupd);
+        search::AttributeUpdater::handleUpdate(vec, docId, fupd);
         vec.commit();
     }
 

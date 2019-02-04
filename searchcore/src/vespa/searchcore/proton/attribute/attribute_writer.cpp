@@ -5,7 +5,7 @@
 #include "attributemanager.h"
 #include "document_field_extractor.h"
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
-#include <vespa/searchcore/proton/common/attrupdate.h>
+#include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
@@ -102,7 +102,7 @@ applyPutToAttribute(SerialNum serialNum, const FieldValue::UP &fieldValue, Docum
 {
     ensureLidSpace(serialNum, lid, attr);
     if (fieldValue.get()) {
-        AttrUpdate::handleValue(attr, lid, *fieldValue);
+        AttributeUpdater::handleValue(attr, lid, *fieldValue);
     } else {
         attr.clearDoc(lid);
     }
@@ -127,7 +127,7 @@ applyUpdateToAttribute(SerialNum serialNum, const FieldUpdate &fieldUpd,
                        DocumentIdT lid, AttributeVector &attr)
 {
     ensureLidSpace(serialNum, lid, attr);
-    AttrUpdate::handleUpdate(attr, lid, fieldUpd);
+    AttributeUpdater::handleUpdate(attr, lid, fieldUpd);
 }
 
 void
@@ -135,7 +135,7 @@ applyUpdateToAttributeAndCommit(SerialNum serialNum, const FieldUpdate &fieldUpd
                                 DocumentIdT lid, AttributeVector &attr)
 {
     ensureLidSpace(serialNum, lid, attr);
-    AttrUpdate::handleUpdate(attr, lid, fieldUpd);
+    AttributeUpdater::handleUpdate(attr, lid, fieldUpd);
     attr.commit(serialNum, serialNum);
 }
 

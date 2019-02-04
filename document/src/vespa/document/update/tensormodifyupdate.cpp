@@ -1,12 +1,14 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensormodifyupdate.h"
-#include <vespa/document/base/field.h>
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
+#include <vespa/document/util/serializableexceptions.h>
+#include <vespa/eval/eval/operation.h>
+#include <vespa/eval/tensor/cell_values.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -19,7 +21,36 @@ using vespalib::IllegalStateException;
 using vespalib::tensor::Tensor;
 using vespalib::make_string;
 
+using join_fun_t = double (*)(double, double);
+
 namespace document {
+
+namespace {
+
+double
+replace(double, double b)
+{
+    return b;
+}
+    
+join_fun_t
+getJoinFunction(TensorModifyUpdate::Operation operation)
+{
+    using Operation = TensorModifyUpdate::Operation;
+    
+    switch (operation) {
+    case Operation::REPLACE:
+        return replace;
+    case Operation::ADD:
+        return vespalib::eval::operation::Add::f;
+    case Operation::MUL:
+        return vespalib::eval::operation::Mul::f;
+    default:
+        throw IllegalArgumentException("Bad operation", VESPA_STRLOC);
+    }
+}
+
+}
 
 IMPLEMENT_IDENTIFIABLE(TensorModifyUpdate, ValueUpdate);
 
@@ -86,15 +117,27 @@ TensorModifyUpdate::checkCompatibility(const Field& field) const
     }
 }
 
+std::unique_ptr<Tensor>
+TensorModifyUpdate::applyTo(const Tensor &tensor) const
+{
+    auto &cellTensor = _tensor->getAsTensorPtr();
+    if (cellTensor) {
+        vespalib::tensor::CellValues cellValues(static_cast<const vespalib::tensor::SparseTensor &>(*cellTensor));
+        return tensor.modify(getJoinFunction(_operation), cellValues);
+    }
+    return std::unique_ptr<Tensor>();
+}
+
 bool
 TensorModifyUpdate::applyTo(FieldValue& value) const
 {
     if (value.inherits(TensorFieldValue::classId)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         auto &oldTensor = tensorFieldValue.getAsTensorPtr();
-        // TODO: Apply operation with tensor
-        auto newTensor = oldTensor->clone();
-        tensorFieldValue = std::move(newTensor);
+        auto newTensor = applyTo(*oldTensor);
+        if (newTensor) {
+            tensorFieldValue = std::move(newTensor);
+        }
     } else {
         std::string err = make_string(
                 "Unable to perform a tensor modify update on a \"%s\" field "
