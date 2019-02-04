@@ -7,24 +7,18 @@ template <typename... ConfigTypes>
 ConfigKeySet &
 ConfigKeySet::add(const vespalib::string & configId)
 {
-    addImpl(configId, TypeTag<ConfigTypes...>());
+    addImpl<ConfigTypes...>(configId);
     return *this;
-}
-
-template <typename ConfigType>
-void
-ConfigKeySet::addImpl(const vespalib::string & configId, TypeTag<ConfigType>)
-{
-    insert(ConfigKey::create<ConfigType>(configId));
 }
 
 template <typename ConfigType, typename... ConfigTypes>
 void
-ConfigKeySet::addImpl(const vespalib::string & configId, TypeTag<ConfigType, ConfigTypes...>)
+ConfigKeySet::addImpl(const vespalib::string & configId)
 {
     insert(ConfigKey::create<ConfigType>(configId));
-    addImpl(configId, TypeTag<ConfigTypes...>());
+    if constexpr(sizeof...(ConfigTypes) > 0) {
+        addImpl<ConfigTypes...>(configId);
+    }
 }
-
 
 }
