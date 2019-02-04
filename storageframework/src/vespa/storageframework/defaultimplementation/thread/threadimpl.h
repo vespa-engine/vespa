@@ -9,7 +9,7 @@
 
 namespace storage::framework::defaultimplementation {
 
-class ThreadPoolImpl;
+struct ThreadPoolImpl;
 
 class ThreadImpl : public Thread
 {

@@ -19,7 +19,7 @@ namespace metrics {
 
 namespace storage::framework {
 
-class MetricUpdateHook;
+struct MetricUpdateHook;
 
 struct MetricRegistrator {
     virtual ~MetricRegistrator() {}
