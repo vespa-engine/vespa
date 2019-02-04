@@ -89,6 +89,7 @@ private:
     void handleNewState() override;
     const lib::NodeState &getDerivedNodeState(document::BucketSpace bucketSpace) const;
 
+    void append_node_identity(std::ostream& target_stream) const;
 };
 
 } // storage

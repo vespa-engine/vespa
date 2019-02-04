@@ -213,9 +213,11 @@ BouncerTest::assertMessageBouncedWithAbort()
 {
     CPPUNIT_ASSERT_EQUAL(size_t(1), _upper->getNumReplies());
     CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::ABORTED,
-            static_cast<api::RemoveReply&>(*_upper->getReply(0)).
-            getResult().getResult());
+    auto& reply = dynamic_cast<api::StorageReply&>(*_upper->getReply(0));
+    CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::ABORTED,
+                         "We don't allow command of type MessageType(12, Remove) "
+                         "when node is in state Down (on storage.2)"),
+                         reply.getResult());
     CPPUNIT_ASSERT_EQUAL(size_t(0), _lower->getNumCommands());
 }
 

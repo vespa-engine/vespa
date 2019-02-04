@@ -102,6 +102,10 @@ Bouncer::validateConfig(
     }
 }
 
+void Bouncer::append_node_identity(std::ostream& target_stream) const {
+    target_stream << " (on " << _component.getNodeType() << '.' << _component.getIndex() << ")";
+}
+
 void
 Bouncer::abortCommandForUnavailableNode(api::StorageMessage& msg,
                                         const lib::State& state)
@@ -111,7 +115,8 @@ Bouncer::abortCommandForUnavailableNode(api::StorageMessage& msg,
             static_cast<api::StorageCommand&>(msg).makeReply().release());
     std::ostringstream ost;
     ost << "We don't allow command of type " << msg.getType()
-        << " when node is in state " << state.toString(true) << ".";
+        << " when node is in state " << state.toString(true);
+    append_node_identity(ost);
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, ost.str()));
     sendUp(reply);
 }
@@ -123,7 +128,8 @@ Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg,
     auto& as_cmd = dynamic_cast<api::StorageCommand&>(msg);
     std::ostringstream ost;
     ost << "Message " << msg.getType() << " is more than "
-        << maxClockSkewInSeconds << " seconds in the future.";
+        << maxClockSkewInSeconds << " seconds in the future";
+    append_node_identity(ost);
     LOGBP(warning, "Rejecting operation from distributor %u: %s",
           as_cmd.getSourceIndex(), ost.str().c_str());
     _metrics->clock_skew_aborts.inc();
@@ -140,7 +146,8 @@ Bouncer::abortCommandDueToClusterDown(api::StorageMessage& msg)
             static_cast<api::StorageCommand&>(msg).makeReply().release());
     std::ostringstream ost;
     ost << "We don't allow external load while cluster is in state "
-        << _clusterState->toString(true) << ".";
+        << _clusterState->toString(true);
+    append_node_identity(ost);
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, ost.str()));
     sendUp(reply);
 }
