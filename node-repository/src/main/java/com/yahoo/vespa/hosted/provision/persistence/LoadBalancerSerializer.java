@@ -78,9 +78,7 @@ public class LoadBalancerSerializer {
         object.field(portsField).traverse((ArrayTraverser) (i, port) -> ports.add((int) port.asLong()));
 
         Set<String> networks = new LinkedHashSet<>();
-        if (object.field(networksField).valid()) { // TODO: Remove check after 2019-03-01
-            object.field(networksField).traverse((ArrayTraverser) (i, network) -> networks.add(network.asString()));
-        }
+        object.field(networksField).traverse((ArrayTraverser) (i, network) -> networks.add(network.asString()));
 
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
                                 HostName.from(object.field(hostnameField).asString()),
