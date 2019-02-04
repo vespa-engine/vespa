@@ -209,7 +209,7 @@ public class NodePrioritizer {
         return pri;
     }
 
-    static boolean isPreferredNodeToBeReloacted(List<Node> nodes, Node node, Node parent) {
+    static boolean isPreferredNodeToBeRelocated(List<Node> nodes, Node node, Node parent) {
         NodeList list = new NodeList(nodes);
         return list.childrenOf(parent).asList().stream()
                    .sorted(NodePrioritizer::compareForRelocation)

@@ -246,7 +246,7 @@ class NodeAllocation {
     }
 
     /** Returns true if the content of this list is sufficient to meet the request */
-    boolean fullfilled() {
+    boolean fulfilled() {
         return requestedNodes.fulfilledBy(acceptedOfRequestedFlavor);
     }
 
