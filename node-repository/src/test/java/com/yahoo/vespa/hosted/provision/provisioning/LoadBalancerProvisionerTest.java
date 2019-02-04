@@ -114,7 +114,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     private ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id) {
-        return ClusterSpec.request(type, id, Version.fromString("6.42"), false);
+        return ClusterSpec.request(type, id, Version.fromString("6.42"), false, Collections.emptySet());
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec... specs) {

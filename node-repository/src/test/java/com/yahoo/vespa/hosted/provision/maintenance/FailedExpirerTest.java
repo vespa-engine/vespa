@@ -49,7 +49,8 @@ public class FailedExpirerTest {
 
     private static final ApplicationId tenantHostApplicationId = ApplicationId.from("vespa", "zone-app", "default");
     private static final ClusterSpec tenantHostApplicationClusterSpec =  ClusterSpec.request(
-            ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"), false);
+            ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"), false,
+            Collections.emptySet());
     private static final Capacity tenantHostApplicationCapacity = Capacity.fromRequiredNodeType(NodeType.host);
 
     @Test
@@ -319,7 +320,8 @@ public class FailedExpirerTest {
             ClusterSpec clusterSpec = ClusterSpec.request(clusterType,
                                                           ClusterSpec.Id.from("test"),
                                                           Version.fromString("6.42"),
-                                                          false);
+                                                          false,
+                                                          Collections.emptySet());
             Capacity capacity = Capacity.fromNodeCount(hostname.length, Optional.of(flavor.name()), false, true);
             return allocate(applicationId, clusterSpec, capacity);
         }

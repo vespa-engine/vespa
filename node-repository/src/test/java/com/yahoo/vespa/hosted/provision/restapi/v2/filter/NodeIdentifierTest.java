@@ -31,6 +31,7 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.util.Collections;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
@@ -243,7 +244,7 @@ public class NodeIdentifierTest {
                                                 new ClusterSpec.Id(clusterId),
                                                 ClusterSpec.Group.from(0),
                                                 Version.emptyVersion,
-                                                false),
+                                                false, Collections.emptySet()),
                                         clusterIndex),
                                 Generation.initial(),
                                 false));

@@ -22,6 +22,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Rotation;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.search.rendering.RendererRegistry;
@@ -33,10 +34,10 @@ import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.builder.xml.dom.DomClientProviderBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomComponentBuilder;
-import com.yahoo.vespa.model.builder.xml.dom.DomFilterBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomHandlerBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
+import com.yahoo.vespa.model.builder.xml.dom.Rotations;
 import com.yahoo.vespa.model.builder.xml.dom.ServletBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.docproc.DomDocprocChainsBuilder;
@@ -465,6 +466,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
     private void addNodesFromXml(ContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
+        Element rotationsElement = XML.getChild(containerElement, "rotations");
         if (nodesElement == null) { // default single node on localhost
             Container node = new Container(cluster, "container.0", 0, cluster.isHostedVespa());
             HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
@@ -472,7 +474,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             node.initService(context.getDeployLogger());
             cluster.addContainers(Collections.singleton(node));
         } else {
-            List<Container> nodes = createNodes(cluster, nodesElement, context);
+            List<Container> nodes = createNodes(cluster, nodesElement, rotationsElement, context);
             applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployLogger()));
 
             if ( !cluster.getJvmGCOptions().isPresent()) {
@@ -506,9 +508,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return sb.toString();
     }
     
-    private List<Container> createNodes(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+    private List<Container> createNodes(ContainerCluster cluster, Element nodesElement, Element rotationsElement, ConfigModelContext context) {
         if (nodesElement.hasAttribute("count")) // regular, hosted node spec
-            return createNodesFromNodeCount(cluster, nodesElement, context);
+            return createNodesFromNodeCount(cluster, nodesElement, rotationsElement, context);
         else if (nodesElement.hasAttribute("type")) // internal use for hosted system infrastructure nodes
             return createNodesFromNodeType(cluster, nodesElement, context);
         else if (nodesElement.hasAttribute("of")) // hosted node spec referencing a content cluster
@@ -561,7 +563,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
                                                               ClusterSpec.Id.from(cluster.getName()),
                                                               deployState.getWantedNodeVespaVersion(),
-                                                              false);
+                                                              false,
+                                                              Collections.emptySet());
                 Capacity capacity = Capacity.fromNodeCount(1,
                                                            Optional.empty(),
                                                            false,
@@ -573,12 +576,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private List<Container> createNodesFromNodeCount(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+    private List<Container> createNodesFromNodeCount(ContainerCluster cluster, Element nodesElement, Element rotationsElement, ConfigModelContext context) {
         NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
+        Set<RotationName> rotations = Rotations.from(rotationsElement);
         Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(),
                                                                                   ClusterSpec.Type.container,
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
-                                                                                  log);
+                                                                                  log,
+                                                                                  rotations);
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
@@ -587,7 +592,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, 
                                                       ClusterSpec.Id.from(cluster.getName()), 
                                                       context.getDeployState().getWantedNodeVespaVersion(),
-                                                      false);
+                                                      false,
+                                                      Collections.emptySet());
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().getHostSystem().allocateHosts(clusterSpec, 
                                                                 Capacity.fromRequiredNodeType(type), 1, log);

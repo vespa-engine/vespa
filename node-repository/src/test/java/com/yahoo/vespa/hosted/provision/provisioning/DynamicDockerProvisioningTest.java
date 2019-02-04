@@ -330,9 +330,9 @@ public class DynamicDockerProvisioningTest {
         ApplicationId applicationId = tester.makeApplicationId();
         List<HostSpec> list = tester.prepare(applicationId,
                 ClusterSpec.request(ClusterSpec.Type.container,
-                        ClusterSpec.Id.from("node-admin"),
-                        Version.fromString("6.42"),
-                                    false),
+                                    ClusterSpec.Id.from("node-admin"),
+                                    Version.fromString("6.42"),
+                                    false, Collections.emptySet()),
                 Capacity.fromRequiredNodeType(NodeType.host),
                 1);
         tester.activate(applicationId, ImmutableSet.copyOf(list));
@@ -349,6 +349,6 @@ public class DynamicDockerProvisioningTest {
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false);
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false, Collections.emptySet());
     }
 }

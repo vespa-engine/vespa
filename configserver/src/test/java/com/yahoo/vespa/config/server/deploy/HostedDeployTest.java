@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.deploy;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -14,12 +15,13 @@ import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.component.Version;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
@@ -36,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -292,6 +295,24 @@ public class HostedDeployTest {
         List<RestartActions.Entry> actions = prepareResult.configChangeActions().getRestartActions().getEntries();
         assertThat(actions.size(), is(1));
         assertThat(actions.get(0).getMessages(), equalTo(ImmutableSet.of("change", "other change")));
+    }
+
+    @Test
+    public void testDeployWithClusterRotations() {
+        CountingModelFactory modelFactory = DeployTester.createModelFactory(Version.fromString("4.5.6"), Clock.systemUTC());
+        DeployTester tester = new DeployTester(Collections.singletonList(modelFactory), createConfigserverConfig());
+        ApplicationId applicationId = tester.applicationId();
+
+        tester.deployApp("src/test/apps/hosted/", "4.5.6", Instant.now());
+        Set<HostSpec> containers = tester.getAllocatedHostsOf(applicationId).getHosts().stream()
+                                         .filter(h -> h.membership().get().cluster().type() == ClusterSpec.Type.container)
+                                         .collect(Collectors.toSet());
+        assertFalse("Allocated container hosts", containers.isEmpty());
+
+        Set<RotationName> expected = Set.of(RotationName.from("eu-cluster"), RotationName.from("us-cluster"));
+        for (HostSpec container : containers) {
+            assertEquals(expected, container.membership().get().cluster().rotations());
+        }
     }
 
     private static ConfigserverConfig createConfigserverConfig() {

@@ -235,7 +235,7 @@ public class InfrastructureProvisionerTest {
     private Node addNode(int id, Node.State state, Optional<Version> wantedVespaVersion) {
         Node node = tester.addNode("id-" + id, "node-" + id, "default", nodeType);
         Optional<Node> nodeWithAllocation = wantedVespaVersion.map(version -> {
-            ClusterSpec clusterSpec = ClusterSpec.from(ClusterSpec.Type.admin, new ClusterSpec.Id("clusterid"), ClusterSpec.Group.from(0), version, false);
+            ClusterSpec clusterSpec = ClusterSpec.from(ClusterSpec.Type.admin, new ClusterSpec.Id("clusterid"), ClusterSpec.Group.from(0), version, false, Collections.emptySet());
             ClusterMembership membership = ClusterMembership.from(clusterSpec, 1);
             Allocation allocation = new Allocation(application.getApplicationId(), membership, new Generation(0, 0), false);
             return node.with(allocation);

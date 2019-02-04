@@ -6,7 +6,7 @@
     <nodes count='1'/>
   </admin>
 
-  <jdisc version="1.0">
+  <container version="1.0">
     <http>
       <filtering>
         <access-control domain="foo" write="true" />
@@ -15,7 +15,11 @@
     </http>
     <search/>
     <nodes count='1'/>
-  </jdisc>
+    <rotations>
+      <rotation id='us-cluster'/>
+      <rotation id='eu-cluster'/>
+    </rotations>
+  </container>
 
   <content id="music" version="1.0">
     <redundancy>1</redundancy>
