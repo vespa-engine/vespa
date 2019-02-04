@@ -95,7 +95,7 @@ deriveCompactionCompressionThreads(const ProtonConfig &proton,
 
     // We need at least 1 guaranteed free worker in order to ensure progress so #documentsdbs + 1 should suffice,
     // but we will not be cheap and give it one extra.
-    return std::max(scaledCores, proton.documentdb.size() + 1 + 1);
+    return std::max(scaledCores, proton.documentdb.size() + proton.flush.maxconcurrent + 1);
 }
 
 const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
