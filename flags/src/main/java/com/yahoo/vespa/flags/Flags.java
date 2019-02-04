@@ -85,7 +85,7 @@ public class Flags {
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
     public static final UnboundBooleanFlag USE_FDISPATCH_BY_DEFAULT = defineFeatureFlag(
-            "use-fdispatch-by-default", true,
+            "use-fdispatch-by-default", false,
             "Should fdispatch be used as the default instead of the java dispatcher",
             "Takes effect at redeployment",
             APPLICATION_ID);
