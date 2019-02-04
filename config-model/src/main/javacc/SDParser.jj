@@ -1207,7 +1207,7 @@ Object attributeSetting(FieldOperationContainer field, AttributeOperation attrib
       | <ENABLEBITVECTORS>    { attribute.setEnableBitVectors(true); }
       | <ENABLEONLYBITVECTOR> { attribute.setEnableOnlyBitVector(true); }
       | sorting(field, attributeName)
-      | <ALIAS> { String alias; String aliasedName=attributeName; } [aliasedName = identifier()] <COLON> alias = identifier() {
+      | <ALIAS> { String alias; String aliasedName=attributeName; } [aliasedName = identifier()] <COLON> alias = identifierWithDash() {
           attribute.setDoAlias(true);
           attribute.setAlias(alias);
           attribute.setAliasedName(aliasedName);
@@ -1250,7 +1250,7 @@ Object summaryInDocument(DocumentSummary document) :
 
 }
 {
-    <SUMMARY> name = identifier() { }
+    <SUMMARY> name = identifierWithDash() { }
     <TYPE>    type = dataType()   {
         summary = new SummaryField(name, type);
         summary.setVsmCommand(SummaryField.VsmCommand.FLATTENSPACE);
@@ -1700,7 +1700,7 @@ Object documentSummary(Search search) :
 }
 {
     ( <DOCUMENTSUMMARY>
-      name = identifier() { search.addSummary(summary = new DocumentSummary(name)); }
+      name = identifierWithDash() { search.addSummary(summary = new DocumentSummary(name)); }
       lbrace()
          (
            <FROMDISK> { summary.setFromDisk(true); } |
