@@ -187,23 +187,21 @@ public class NodePrioritizer {
      * parameters to the priority sorting procedure.
      */
     private PrioritizableNode toNodePriority(Node node, boolean isSurplusNode, boolean isNewNode) {
-        PrioritizableNode pri = new PrioritizableNode();
-        pri.node = node;
-        pri.isSurplusNode = isSurplusNode;
-        pri.isNewNode = isNewNode;
-        pri.preferredOnFlavor = requestedNodes.specifiesNonStockFlavor() && node.flavor().equals(getFlavor(requestedNodes));
-        pri.parent = findParentNode(node);
+        PrioritizableNode.Builder builder = new PrioritizableNode.Builder(node)
+                .withSurplusNode(isSurplusNode)
+                .withNewNode(isNewNode)
+                .withPreferredOnFlavor(
+                        requestedNodes.specifiesNonStockFlavor() && node.flavor().equals(getFlavor(requestedNodes)));
 
-        if (pri.parent.isPresent()) {
-            Node parent = pri.parent.get();
-            pri.freeParentCapacity = capacity.freeCapacityOf(parent, false);
+        allNodes.parentOf(node).ifPresent(parent -> {
+            builder.withParent(parent).withFreeParentCapacity(capacity.freeCapacityOf(parent, false));
 
             if (spareHosts.contains(parent)) {
-                pri.violatesSpares = true;
+                builder.withViolatesSpares(true);
             }
-        }
+        });
 
-        return pri;
+        return builder.build();
     }
 
     static boolean isPreferredNodeToBeRelocated(List<Node> nodes, Node node, Node parent) {
@@ -231,13 +229,6 @@ public class NodePrioritizer {
     private boolean isDocker() {
         Flavor flavor = getFlavor(requestedNodes);
         return (flavor != null) && flavor.getType().equals(Flavor.Type.DOCKER_CONTAINER);
-    }
-
-    private Optional<Node> findParentNode(Node node) {
-        if (!node.parentHostname().isPresent()) return Optional.empty();
-        return allNodes.asList().stream()
-                .filter(n -> n.hostname().equals(node.parentHostname().orElse(" NOT A NODE")))
-                .findAny();
     }
 
     private static int compareForRelocation(Node a, Node b) {
