@@ -12,6 +12,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
@@ -116,7 +117,8 @@ public class MockNodeRepository extends NodeRepository {
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container,
                                                       ClusterSpec.Id.from("node-admin"),
                                                       Version.fromString("6.42"),
-                                                      false, Collections.emptySet());
+                                                      false,
+                                                      Set.of(RotationName.from("us-cluster")));
         activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), 1, null), zoneApp, provisioner);
 
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));

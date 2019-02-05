@@ -30,7 +30,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Test of the nodes/v2 API.
+ * Test of the REST APIs provided by the node repository.
  * 
  * Note: This class is referenced from our operations documentation and must not be renamed/moved without updating that.
  * 
