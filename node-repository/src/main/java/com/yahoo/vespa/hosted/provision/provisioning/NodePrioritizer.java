@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  *
  * @author smorgrav
  */
-public class NodePrioritizer {
+class NodePrioritizer {
 
     private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
@@ -46,9 +46,9 @@ public class NodePrioritizer {
     private final boolean isAllocatingForReplacement;
     private final Set<Node> spareHosts;
 
-    NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
+    NodePrioritizer(NodeList allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                     int spares, NameResolver nameResolver) {
-        this.allNodes = new NodeList(allNodes);
+        this.allNodes = allNodes;
         this.capacity = new DockerHostCapacity(allNodes);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
@@ -57,14 +57,14 @@ public class NodePrioritizer {
         this.spareHosts = findSpareHosts(allNodes, capacity, spares);
 
 
-        int nofFailedNodes = (int) allNodes.stream()
+        int nofFailedNodes = (int) allNodes.asList().stream()
                 .filter(node -> node.state().equals(Node.State.failed))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(appId))
                 .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
                 .count();
 
-        int nofNodesInCluster = (int) allNodes.stream()
+        int nofNodesInCluster = (int) allNodes.asList().stream()
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(appId))
                 .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
@@ -80,8 +80,8 @@ public class NodePrioritizer {
      * We do not count retired or inactive nodes as used capacity (as they could have been
      * moved to create space for the spare node in the first place).
      */
-    private static Set<Node> findSpareHosts(List<Node> nodes, DockerHostCapacity capacity, int spares) {
-        return nodes.stream()
+    private static Set<Node> findSpareHosts(NodeList nodes, DockerHostCapacity capacity, int spares) {
+        return nodes.asList().stream()
                 .filter(node -> node.type().equals(NodeType.host))
                 .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
                 .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
