@@ -152,7 +152,7 @@ public class VdsVisit {
 
     private void printSyntax(Options options) {
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("vespa-visit <options>", "Visit documents from VDS", options , "");
+        formatter.printHelp("vespa-visit <options>", "Visit documents from Vespa", options , "");
     }
 
     @SuppressWarnings("AccessStaticViaInstance")
