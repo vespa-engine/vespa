@@ -6,11 +6,15 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Performs preparation of node activation changes for a single host group in an application.
@@ -20,9 +24,14 @@ import java.util.List;
 public class GroupPreparer {
 
     private final NodeRepository nodeRepository;
+    private final Optional<HostProvisioner> hostProvisioner;
+    private final BooleanFlag dynamicProvisioningEnabledFlag;
 
-    public GroupPreparer(NodeRepository nodeRepository) {
+    public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
+                         BooleanFlag dynamicProvisioningEnabledFlag) {
         this.nodeRepository = nodeRepository;
+        this.hostProvisioner = hostProvisioner;
+        this.dynamicProvisioningEnabledFlag = dynamicProvisioningEnabledFlag;
     }
 
     /**
@@ -43,6 +52,10 @@ public class GroupPreparer {
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                               List<Node> surplusActiveNodes, MutableInteger highestIndex, int spareCount) {
+        boolean dynamicProvisioningEnabled = hostProvisioner.isPresent() && dynamicProvisioningEnabledFlag
+                .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
+                .value();
+
         try (Mutex lock = nodeRepository.lock(application)) {
 
             // Lock ready pool to ensure that the same nodes are not simultaneously allocated by others

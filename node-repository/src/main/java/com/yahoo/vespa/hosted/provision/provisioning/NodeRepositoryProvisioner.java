@@ -17,6 +17,8 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.flag.FlagId;
@@ -56,13 +58,14 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone,
-                                     ProvisionServiceProvider provisionServiceProvider) {
+                                     ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.capacityPolicies = new CapacityPolicies(zone, flavors);
         this.zone = zone;
-        this.preparer = new Preparer(nodeRepository, zone.environment().equals(Environment.prod)
-                ? SPARE_CAPACITY_PROD
-                : SPARE_CAPACITY_NONPROD);
+        this.preparer = new Preparer(nodeRepository,
+                zone.environment().equals(Environment.prod) ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
+                provisionServiceProvider.getHostProvisioner(),
+                Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource));
         this.activator = new Activator(nodeRepository);
         this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService().map(lbService ->
                 new LoadBalancerProvisioner(nodeRepository, lbService));
