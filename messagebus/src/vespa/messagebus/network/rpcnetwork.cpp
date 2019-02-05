@@ -13,6 +13,7 @@
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/vespalib/component/vtag.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fnet/scheduler.h>
@@ -296,13 +297,15 @@ RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceN
         return Error(ErrorCode::NO_ADDRESS_FOR_SERVICE,
                      make_string("The address of service '%s' could not be resolved. It is not currently "
                                  "registered with the Vespa name server. "
-                                 "The service must be having problems, or the routing configuration is wrong.",
-                                 serviceName.c_str()));
+                                 "The service must be having problems, or the routing configuration is wrong. "
+                                 "Address resolution attempted from host '%s'",
+                                 serviceName.c_str(), getIdentity().getHostname().c_str()));
     }
     RPCTarget::SP target = _targetPool->getTarget(*_orb, *ret);
     if ( ! target) {
         return Error(ErrorCode::CONNECTION_ERROR,
-                     make_string("Failed to connect to service '%s'.", serviceName.c_str()));
+                     make_string("Failed to connect to service '%s' from host '%s'.",
+                                 serviceName.c_str(), getIdentity().getHostname().c_str()));
     }
     ret->setTarget(target); // free by freeServiceAddress()
     recipient.setServiceAddress(IServiceAddress::UP(ret.release()));
@@ -330,11 +333,45 @@ RPCNetwork::send(const Message &msg, const std::vector<RoutingNode*> &recipients
     }
 }
 
+namespace {
+
+void emit_recipient_endpoint(vespalib::asciistream& stream, const RoutingNode& recipient) {
+    if (recipient.hasServiceAddress()) {
+        // At this point the service addresses _should_ be RPCServiceAddress instances,
+        // but stay on the safe side of the tracks anyway.
+        const auto* rpc_addr = dynamic_cast<const RPCServiceAddress*>(&recipient.getServiceAddress());
+        if (rpc_addr) {
+            stream << rpc_addr->getServiceName() << " at " << rpc_addr->getConnectionSpec();
+        } else {
+            stream << "<non-RPC service address>";
+        }
+    } else {
+        stream << "<unknown service address>";
+    }
+}
+
+}
+
+vespalib::string RPCNetwork::buildRecipientListString(const SendContext& ctx) {
+    vespalib::asciistream s;
+    bool first = true;
+    for (const auto* recipient : ctx._recipients) {
+        if (!first) {
+            s << ", ";
+        }
+        first = false;
+        emit_recipient_endpoint(s, *recipient);
+    }
+    return s.str();
+}
+
 void
 RPCNetwork::send(RPCNetwork::SendContext &ctx)
 {
     if (ctx._hasError) {
-        replyError(ctx, ErrorCode::HANDSHAKE_FAILED, "An error occured while resolving version.");
+        replyError(ctx, ErrorCode::HANDSHAKE_FAILED,
+                make_string("An error occurred while resolving version of recipient(s) [%s] from host '%s'.",
+                            buildRecipientListString(ctx).c_str(), getIdentity().getHostname().c_str()));
     } else {
         uint64_t timeRemaining = ctx._msg.getTimeRemainingNow();
         Blob payload = _owner->getProtocol(ctx._msg.getProtocol())->encode(ctx._version, ctx._msg);

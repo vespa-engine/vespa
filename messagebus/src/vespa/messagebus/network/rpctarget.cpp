@@ -74,12 +74,12 @@ RPCTarget::RequestDone(FRT_RPCRequest *req)
         if (req->CheckReturnTypes("s")) {
             FRT_Values &val = *req->GetReturn();
             try {
-                _version.reset(new vespalib::Version(val[0]._string._str));
+                _version = std::make_unique<vespalib::Version>(val[0]._string._str);
             } catch (vespalib::IllegalArgumentException &e) {
                 (void)e;
             }
         } else if (req->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD) {
-            _version.reset(new vespalib::Version("4.1"));
+            // Talking to a non-messagebus RPC endpoint. _version remains nullptr.
         }
         _versionHandlers.swap(handlers);
         _state = PROCESSING_HANDLERS;
