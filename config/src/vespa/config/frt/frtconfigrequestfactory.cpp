@@ -10,9 +10,8 @@ namespace config {
 /**
  * Factory for creating config requests depending on protocol version;
  */
-FRTConfigRequestFactory::FRTConfigRequestFactory(int protocolVersion, int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType)
-    : _protocolVersion(protocolVersion),
-      _traceLevel(traceLevel),
+FRTConfigRequestFactory::FRTConfigRequestFactory([[maybe_unused]] int protocolVersion, int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType)
+    : _traceLevel(traceLevel),
       _vespaVersion(vespaVersion),
       _hostName(vespalib::HostName::get()),
       _compressionType(compressionType)
