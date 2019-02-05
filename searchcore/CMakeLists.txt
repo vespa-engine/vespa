@@ -56,7 +56,6 @@ vespa_define_module(
     src/apps/vespa-transactionlog-inspect
 
     TESTS
-    src/tests/applyattrupdates
     src/tests/fdispatch/randomrow
     src/tests/fdispatch/fnet_search
     src/tests/grouping
@@ -75,6 +74,7 @@ vespa_define_module(
     src/tests/proton/attribute/imported_attributes_repo
     src/tests/proton/bucketdb/bucketdb
     src/tests/proton/common
+    src/tests/proton/common/attribute_updater
     src/tests/proton/common/document_type_inspector
     src/tests/proton/common/hw_info_sampler
     src/tests/proton/common/state_reporter_utils
