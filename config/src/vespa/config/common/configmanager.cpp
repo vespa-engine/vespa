@@ -19,8 +19,7 @@ ConfigManager::ConfigManager(SourceFactory::UP sourceFactory, int64_t initialGen
       _generation(initialGeneration),
       _subscriptionMap(),
       _lock(),
-      _firstLock(),
-      _first(true)
+      _firstLock()
 { }
 
 ConfigManager::~ConfigManager() { }

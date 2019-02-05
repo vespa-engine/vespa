@@ -29,7 +29,6 @@ private:
     const ConfigKey _key;
     int64_t _generation;
     BuilderMapSP _builderMap;
-    int64_t _lastGeneration;
     ConfigState _lastState;
 
     bool validRequest(const ConfigKey & key);

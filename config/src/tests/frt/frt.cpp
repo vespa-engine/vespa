@@ -38,7 +38,7 @@ namespace {
         { }
         ConfigUpdate::UP provide() override { return ConfigUpdate::UP(); }
         void handle(ConfigUpdate::UP u) override { update = std::move(u); }
-        bool wait(int timeoutInMillis) { (void) timeoutInMillis; return notified; }
+        bool wait(uint64_t timeoutInMillis) override { (void) timeoutInMillis; return notified; }
         bool poll() override { return notified; }
         void interrupt() override { }
 

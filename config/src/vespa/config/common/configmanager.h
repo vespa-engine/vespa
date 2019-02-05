@@ -42,7 +42,6 @@ private:
     SubscriptionMap _subscriptionMap;
     vespalib::Lock _lock;
     vespalib::Lock _firstLock;
-    bool _first;
 };
 
 } // namespace config

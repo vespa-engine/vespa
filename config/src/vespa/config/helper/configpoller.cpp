@@ -43,7 +43,7 @@ ConfigPoller::poll()
         for (size_t i = 0; i < _handleList.size(); i++) {
             ICallback * callback(_callbackList[i]);
             if (_handleList[i]->isChanged())
-                callback->configure(std::move(_handleList[i]->getConfig()));
+                callback->configure(_handleList[i]->getConfig());
         }
     } else {
         LOG(debug, "No new config available");
