@@ -31,7 +31,7 @@ public:
 
         /**
          * This method is invoked once the version of the corresponding {@link
-         * RPCTarget} becomes available. If a problem occured while retrieving
+         * RPCTarget} becomes available. If a problem occurred while retrieving
          * the version, this method is invoked with a null argument.
          *
          * @param ver The version of corresponding target, or null.
