@@ -118,12 +118,10 @@ public class FeedHandler extends LoggingRequestHandler {
         if (versionHeader != null) {
             return Optional.of(versionHeader);
         }
-        String userAgentHeader = request.getHeader("User-Agent");
-        Matcher matcher = USER_AGENT_PATTERN.matcher(userAgentHeader);
-        if (matcher.matches()) {
-            return Optional.of(matcher.group(1));
-        }
-        return Optional.empty();
+        return Optional.ofNullable(request.getHeader("User-Agent"))
+                .map(USER_AGENT_PATTERN::matcher)
+                .filter(Matcher::matches)
+                .map(matcher -> matcher.group(1));
     }
 
     // Protected for testing
