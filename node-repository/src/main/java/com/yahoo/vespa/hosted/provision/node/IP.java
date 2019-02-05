@@ -85,7 +85,8 @@ public class IP {
             return allocation;
         }
 
-        /** Find all unused addresses in this pool
+        /**
+         * Finds all unused addresses in this pool
          *
          * @param nodes All nodes in the repository
          */

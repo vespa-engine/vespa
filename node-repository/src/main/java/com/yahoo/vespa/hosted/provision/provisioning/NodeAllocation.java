@@ -215,19 +215,19 @@ class NodeAllocation {
             if ( ! node.state().equals(Node.State.active)) {
                 // reactivated node - make sure its not retired
                 node = node.unretire();
-                prioritizableNode.node= node;
+                prioritizableNode.node = node;
             }
             acceptedOfRequestedFlavor++;
         } else {
             ++wasRetiredJustNow;
             // Retire nodes which are of an unwanted flavor, retired flavor or have an overlapping parent host
             node = node.retire(nodeRepository.clock().instant());
-            prioritizableNode.node= node;
+            prioritizableNode.node = node;
         }
         if ( ! node.allocation().get().membership().cluster().equals(cluster)) {
             // group may be different
             node = setCluster(cluster, node);
-            prioritizableNode.node= node;
+            prioritizableNode.node = node;
         }
         indexes.add(node.allocation().get().membership().index());
         highestIndex.set(Math.max(highestIndex.get(), node.allocation().get().membership().index()));

@@ -95,7 +95,7 @@ public class NodeFailer extends Maintainer {
         int throttledNodeFailures = 0;
 
         // Ready nodes
-        try (Mutex lock = nodeRepository().lockUnallocated()) {
+        try (Mutex lock = nodeRepository().lockAllocation()) {
             updateNodeLivenessEventsForReadyNodes();
 
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {

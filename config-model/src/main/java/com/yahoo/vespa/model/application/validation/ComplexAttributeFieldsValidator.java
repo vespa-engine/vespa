@@ -49,7 +49,7 @@ public class ComplexAttributeFieldsValidator extends Validator {
         if (!unsupportedFields.isEmpty()) {
             throw new IllegalArgumentException(
                     String.format("For cluster '%s', search '%s': The following complex fields do not support using struct field attributes: %s. " +
-                                    "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types",
+                                  "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types",
                             clusterName, search.getName(), unsupportedFields));
         }
     }

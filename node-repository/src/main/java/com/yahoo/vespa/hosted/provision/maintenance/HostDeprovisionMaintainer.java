@@ -33,7 +33,7 @@ public class HostDeprovisionMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        try (Mutex lock = nodeRepository().lockUnallocated()) {
+        try (Mutex lock = nodeRepository().lockAllocation()) {
             NodeList nodes = nodeRepository().list();
 
             for (Node node : candidates(nodes)) {

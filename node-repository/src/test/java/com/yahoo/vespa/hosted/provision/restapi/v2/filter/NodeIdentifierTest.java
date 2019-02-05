@@ -176,7 +176,7 @@ public class NodeIdentifierTest {
         String environment = ZONE.environment().value();
         NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
         Node node = createNode(clusterId, clusterIndex, tenant, application);
-        nodeRepositoryDummy.nodeRepository().addDockerNodes(singletonList(node));
+        nodeRepositoryDummy.nodeRepository().addDockerNodes(singletonList(node), nodeRepositoryDummy.nodeRepository().lockAllocation());
         Pkcs10Csr csr = Pkcs10CsrBuilder
                 .fromKeypair(new X500Principal("CN=" + TENANT_DOCKER_CONTAINER_IDENTITY), KEYPAIR, SHA256_WITH_ECDSA)
                 .build();
