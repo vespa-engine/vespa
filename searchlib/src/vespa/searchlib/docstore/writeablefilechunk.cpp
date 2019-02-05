@@ -433,7 +433,7 @@ WriteableFileChunk::computeChunkMeta(ProcessedChunkQ & chunks, size_t startPos, 
 
     GenerationHandler::Guard bucketizerGuard = _bucketMap.getGuard();
     for (size_t i(0), m(chunks.size()); i < m; i++) {
-        if (chunks[i].get() != 0) {
+        if (chunks[i]) {
             const ProcessedChunk & chunk = *chunks[i];
             const ChunkMeta cmeta(computeChunkMeta(guard, bucketizerGuard, startPos + sz, chunk, *_chunkMap[chunk.getChunkId()]));
             sz += chunk.getBuf().getDataLen();
@@ -497,8 +497,7 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
     uint32_t nextChunkId(firstChunkId);
     bool done(false);
     {
-        ProcessedChunkQ newChunks(drainQ());
-        if ( ! newChunks.empty()) {
+        for (ProcessedChunkQ newChunks(drainQ()); !newChunks.empty(); newChunks = drainQ()) {
             insertChunks(_orderedChunks, newChunks, nextChunkId);
             ProcessedChunkQ chunks(fetchNextChain(_orderedChunks, nextChunkId));
             nextChunkId += chunks.size();
@@ -508,11 +507,11 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
             writeData(chunks, sz);
             updateChunkInfo(chunks, cmetaV, sz);
             LOG(spam, "bucket spread = '%3.2f'", getBucketSpread());
+            if (done) break;
         }
     }
-    LOG(debug,
-        "Stopping the filewriter with startchunkid = %d and ending chunkid = %d done=%d",
-        firstChunkId, nextChunkId, done);
+    LOG(debug, "Stopping the filewriter with startchunkid = %d and ending chunkid = %d done=%d",
+               firstChunkId, nextChunkId, done);
     MonitorGuard guard(_writeMonitor);
     if (done) {
         assert(_writeQ.empty());
@@ -925,6 +924,6 @@ PendingChunk::PendingChunk(uint64_t lastSerial, uint64_t dataOffset, uint32_t da
       _dataLen(dataLen)
 { }
 
-PendingChunk::~PendingChunk() { }
+PendingChunk::~PendingChunk() = default;
 
 } // namespace search
