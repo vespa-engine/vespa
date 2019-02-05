@@ -36,7 +36,7 @@ public class NodePrioritizer {
     private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
-    private final List<Node> allNodes;
+    private final NodeList allNodes;
     private final DockerHostCapacity capacity;
     private final NodeSpec requestedNodes;
     private final ApplicationId appId;
@@ -48,23 +48,23 @@ public class NodePrioritizer {
 
     NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                     int spares, NameResolver nameResolver) {
-        this.allNodes = Collections.unmodifiableList(allNodes);
+        this.allNodes = new NodeList(allNodes);
+        this.capacity = new DockerHostCapacity(allNodes);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.appId = appId;
         this.nameResolver = nameResolver;
-        this.spareHosts = findSpareHosts(allNodes, spares);
+        this.spareHosts = findSpareHosts(allNodes, capacity, spares);
 
-        this.capacity = new DockerHostCapacity(allNodes);
 
-        long nofFailedNodes = allNodes.stream()
+        int nofFailedNodes = (int) allNodes.stream()
                 .filter(node -> node.state().equals(Node.State.failed))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(appId))
                 .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
                 .count();
 
-        long nofNodesInCluster = allNodes.stream()
+        int nofNodesInCluster = (int) allNodes.stream()
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(appId))
                 .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
@@ -80,8 +80,7 @@ public class NodePrioritizer {
      * We do not count retired or inactive nodes as used capacity (as they could have been
      * moved to create space for the spare node in the first place).
      */
-    private static Set<Node> findSpareHosts(List<Node> nodes, int spares) {
-        DockerHostCapacity capacity = new DockerHostCapacity(new ArrayList<>(nodes));
+    private static Set<Node> findSpareHosts(List<Node> nodes, DockerHostCapacity capacity, int spares) {
         return nodes.stream()
                 .filter(node -> node.type().equals(NodeType.host))
                 .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
@@ -119,9 +118,7 @@ public class NodePrioritizer {
     // NOTE: This must only be called while holding the allocation lock.
     void addNewDockerNodes(Mutex allocationLock) {
         if (!isDocker) return;
-        DockerHostCapacity capacity = new DockerHostCapacity(allNodes);
         ResourceCapacity wantedResourceCapacity = ResourceCapacity.of(getFlavor(requestedNodes));
-        NodeList list = new NodeList(allNodes);
 
         for (Node node : allNodes) {
             if (node.type() != NodeType.host) continue;
@@ -129,8 +126,8 @@ public class NodePrioritizer {
             if (node.status().wantToRetire()) continue;
 
             boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(node, wantedResourceCapacity);
-            boolean conflictingCluster = list.childrenOf(node).owner(appId).asList().stream()
-                                             .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
+            boolean conflictingCluster = allNodes.childrenOf(node).owner(appId).asList().stream()
+                    .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
 
             if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
 
@@ -138,7 +135,7 @@ public class NodePrioritizer {
 
             Optional<IP.Allocation> allocation;
             try {
-                allocation = node.ipAddressPool().findAllocation(list, nameResolver);
+                allocation = node.ipAddressPool().findAllocation(allNodes, nameResolver);
                 if (!allocation.isPresent()) continue; // No free addresses in this pool
             } catch (Exception e) {
                 log.log(LogLevel.WARNING, "Failed to resolve hostname for allocation, skipping", e);
@@ -164,7 +161,7 @@ public class NodePrioritizer {
      */
     void addApplicationNodes() {
         List<Node.State> legalStates = Arrays.asList(Node.State.active, Node.State.inactive, Node.State.reserved);
-        allNodes.stream()
+        allNodes.asList().stream()
                 .filter(node -> node.type().equals(requestedNodes.type()))
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
@@ -177,7 +174,7 @@ public class NodePrioritizer {
      * Add nodes already provisioned, but not allocated to any application
      */
     void addReadyNodes() {
-        allNodes.stream()
+        allNodes.asList().stream()
                 .filter(node -> node.type().equals(requestedNodes.type()))
                 .filter(node -> node.state().equals(Node.State.ready))
                 .map(node -> toNodePriority(node, false, false))
@@ -212,22 +209,15 @@ public class NodePrioritizer {
     static boolean isPreferredNodeToBeRelocated(List<Node> nodes, Node node, Node parent) {
         NodeList list = new NodeList(nodes);
         return list.childrenOf(parent).asList().stream()
-                   .sorted(NodePrioritizer::compareForRelocation)
-                   .findFirst()
+                   .min(NodePrioritizer::compareForRelocation)
                    .filter(n -> n.equals(node))
                    .isPresent();
     }
 
-    private boolean isReplacement(long nofNodesInCluster, long nodeFailedNodes) {
+    private boolean isReplacement(int nofNodesInCluster, int nodeFailedNodes) {
         if (nodeFailedNodes == 0) return false;
 
-        int wantedCount = 0;
-        if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
-            NodeSpec.CountNodeSpec countSpec = (NodeSpec.CountNodeSpec) requestedNodes;
-            wantedCount = countSpec.getCount();
-        }
-
-        return (wantedCount > nofNodesInCluster - nodeFailedNodes);
+        return requestedNodes.fulfilledBy(nofNodesInCluster - nodeFailedNodes);
     }
 
     private static Flavor getFlavor(NodeSpec requestedNodes) {
@@ -245,7 +235,7 @@ public class NodePrioritizer {
 
     private Optional<Node> findParentNode(Node node) {
         if (!node.parentHostname().isPresent()) return Optional.empty();
-        return allNodes.stream()
+        return allNodes.asList().stream()
                 .filter(n -> n.hostname().equals(node.parentHostname().orElse(" NOT A NODE")))
                 .findAny();
     }

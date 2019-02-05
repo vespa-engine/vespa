@@ -24,7 +24,11 @@ public class DockerHostCapacity {
     private final NodeList allNodes;
 
     public DockerHostCapacity(List<Node> allNodes) {
-        this.allNodes = new NodeList(allNodes);
+        this(new NodeList(allNodes));
+    }
+
+    public DockerHostCapacity(NodeList allNodes) {
+        this.allNodes = allNodes;
     }
 
     /**

@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +27,11 @@ public class NodeList implements Iterable<Node> {
     private final List<Node> nodes;
 
     public NodeList(List<Node> nodes) {
-        this.nodes = ImmutableList.copyOf(nodes);
+        this(nodes, true);
+    }
+
+    private NodeList(List<Node> nodes, boolean copy) {
+        this.nodes = copy ? ImmutableList.copyOf(nodes) : Collections.unmodifiableList(nodes);
     }
 
     /** Returns the subset of nodes which are retired */
@@ -86,13 +91,18 @@ public class NodeList implements Iterable<Node> {
     /** Returns the parent nodes of the given child nodes */
     public NodeList parentsOf(Collection<Node> children) {
         return children.stream()
-                       .map(Node::parentHostname)
+                       .map(this::parentOf)
                        .filter(Optional::isPresent)
-                       .map(Optional::get)
-                       .map(hostName -> nodes.stream().filter(node -> node.hostname().equals(hostName)).findFirst())
-                       .filter(Optional::isPresent)
-                       .map(Optional::get)
-                       .collect(collectingAndThen(Collectors.toList(), NodeList::new));
+                       .flatMap(Optional::stream)
+                       .collect(collectingAndThen(Collectors.toList(), NodeList::nonCopyNew));
+    }
+
+    /** Returns the parent node of the given child node */
+    public Optional<Node> parentOf(Node child) {
+        return child.parentHostname()
+                .flatMap(parentHostname -> nodes.stream()
+                        .filter(node -> node.hostname().equals(parentHostname))
+                        .findFirst());
     }
 
     public int size() { return nodes.size(); }
@@ -101,11 +111,15 @@ public class NodeList implements Iterable<Node> {
     public List<Node> asList() { return nodes; }
 
     private NodeList filter(Predicate<Node> predicate) {
-        return nodes.stream().filter(predicate).collect(collectingAndThen(Collectors.toList(), NodeList::new));
+        return nodes.stream().filter(predicate).collect(collectingAndThen(Collectors.toList(), NodeList::nonCopyNew));
     }
 
     @Override
     public Iterator<Node> iterator() {
         return nodes.iterator();
+    }
+
+    private static NodeList nonCopyNew(List<Node> nodes) {
+        return new NodeList(nodes, false);
     }
 }

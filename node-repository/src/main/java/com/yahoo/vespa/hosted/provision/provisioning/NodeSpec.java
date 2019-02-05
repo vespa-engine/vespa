@@ -85,9 +85,6 @@ public interface NodeSpec {
             return requestedFlavor;
         }
 
-        // TODO: Remove usage of this
-        public int getCount()  { return count; }
-
         @Override
         public boolean isExclusive() { return exclusive; }
 
