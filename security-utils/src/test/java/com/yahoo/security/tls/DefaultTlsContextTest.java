@@ -54,6 +54,9 @@ public class DefaultTlsContextTest {
         String[] enabledCiphers = sslEngine.getEnabledCipherSuites();
         assertThat(enabledCiphers).isNotEmpty();
         assertThat(enabledCiphers).isSubsetOf(DefaultTlsContext.ALLOWED_CIPHER_SUITES.toArray(new String[0]));
+
+        String[] enabledProtocols = sslEngine.getEnabledProtocols();
+        assertThat(enabledProtocols).contains("TLSv1.2");
     }
 
 }
