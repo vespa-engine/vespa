@@ -6,11 +6,13 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Point;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -107,24 +109,22 @@ public class MetricReceiverWrapper {
     }
 
     public void deleteMetricByDimension(String name,  Dimensions dimensionsToRemove, DimensionType type) {
-        try{
-            metrics.get(type)
-                    .get(name)
-                    .metricsByDimensions()
-                    .remove(dimensionsToRemove);
-        } catch (NullPointerException e) {}
+        synchronized (monitor) {
+            Optional.ofNullable(metrics.get(type))
+                    .map(m -> m.get(name))
+                    .map(ApplicationMetrics::metricsByDimensions)
+                    .ifPresent(m -> m.remove(dimensionsToRemove));
+        }
     }
 
     // For testing
     Map<String, Number> getMetricsForDimension(String application, Dimensions dimensions) {
         synchronized (monitor) {
             Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application, DimensionType.DEFAULT);
-            try {
-                return metricsByDimensions.get(dimensions).entrySet().stream().collect(
-                        Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
-            } catch (NullPointerException e) {
-                return new HashMap<>();
-            }
+            return metricsByDimensions.getOrDefault(dimensions, Collections.emptyMap())
+                    .entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
         }
     }
 
