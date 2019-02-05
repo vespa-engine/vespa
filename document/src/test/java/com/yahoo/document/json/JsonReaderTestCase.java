@@ -155,6 +155,8 @@ public class JsonReaderTestCase {
                     new TensorDataType(new TensorType.Builder().indexed("x", 2).indexed("y", 3).build())));
             x.addField(new Field("dense_unbound_tensor",
                     new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
+            x.addField(new Field("mixed_tensor",
+                    new TensorDataType(new TensorType.Builder().mapped("x").indexed("y", 3).build())));
             types.registerDocumentType(x);
         }
         {
@@ -1380,6 +1382,15 @@ public class JsonReaderTestCase {
                 "  'operation': 'replace',",
                 "  'cells': [",
                 "    { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 } ]}"), "dense_unbound_tensor");
+    }
+
+    @Test
+    public void tensor_modify_update_on_mixed_tensor_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("A modify update cannot be applied to tensor types with mixed dimensions. Field 'mixed_tensor' has mixed tensor type 'tensor(x{},y[3])'");
+        createTensorModifyUpdate(inputJson("{",
+                "  'operation': 'replace',",
+                "  'cells': [] }"), "mixed_tensor");
     }
 
     @Test
