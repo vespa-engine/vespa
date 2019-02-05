@@ -23,10 +23,6 @@ public:
 
     FRTConfigRequest::UP createConfigRequest(const ConfigKey & key, Connection * connection, const ConfigState & state, int64_t serverTimeout) const;
 private:
-#ifdef __clang__
-    [[maybe_unused]]
-#endif
-    const int _protocolVersion;
     const int _traceLevel;
     const VespaVersion _vespaVersion;
     vespalib::string _hostName;
