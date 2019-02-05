@@ -48,14 +48,44 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
     @Override
     public void log(final Request request, final Response response) {
         try {
-            final AccessLogEntry accessLogEntryFromServletRequest = (AccessLogEntry) request.getAttribute(
-                    JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY);
-            final AccessLogEntry accessLogEntry;
-            if (accessLogEntryFromServletRequest != null) {
-                accessLogEntry = accessLogEntryFromServletRequest;
-            } else {
-                accessLogEntry = new AccessLogEntry();
-                populateAccessLogEntryFromHttpServletRequest(request, accessLogEntry);
+            AccessLogEntry accessLogEntry = Optional.ofNullable(request.getAttribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY))
+                    .map(AccessLogEntry.class::cast)
+                    .orElseGet(AccessLogEntry::new);
+
+            accessLogEntry.setRawPath(request.getRequestURI());
+            String queryString = request.getQueryString();
+            if (queryString != null) {
+                accessLogEntry.setRawQuery(queryString);
+            }
+
+            final String remoteAddress = getRemoteAddress(request);
+            final int remotePort = getRemotePort(request);
+            final String peerAddress = request.getRemoteAddr();
+            final int peerPort = request.getRemotePort();
+
+            accessLogEntry.setUserAgent(request.getHeader("User-Agent"));
+            accessLogEntry.setHttpMethod(request.getMethod());
+            accessLogEntry.setHostString(request.getHeader("Host"));
+            accessLogEntry.setReferer(request.getHeader("Referer"));
+            accessLogEntry.setIpV4Address(peerAddress);
+            accessLogEntry.setRemoteAddress(remoteAddress);
+            accessLogEntry.setRemotePort(remotePort);
+            if (!Objects.equal(remoteAddress, peerAddress)) {
+                accessLogEntry.setPeerAddress(peerAddress);
+            }
+            if (remotePort != peerPort) {
+                accessLogEntry.setPeerPort(peerPort);
+            }
+            accessLogEntry.setHttpVersion(request.getProtocol());
+            accessLogEntry.setScheme(request.getScheme());
+            accessLogEntry.setLocalPort(request.getLocalPort());
+            Principal principal = (Principal) request.getAttribute(ServletRequest.JDISC_REQUEST_PRINCIPAL);
+            if (principal != null) {
+                accessLogEntry.setUserPrincipal(principal);
+            }
+            X509Certificate[] clientCert = (X509Certificate[]) request.getAttribute(ServletRequest.SERVLET_REQUEST_X509CERT);
+            if (clientCert != null && clientCert.length > 0) {
+                accessLogEntry.setSslPrincipal(clientCert[0].getSubjectX500Principal());
             }
 
             final long startTime = request.getTimeStamp();
@@ -76,55 +106,6 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
         } catch (Exception e) {
             // Catching any exceptions here as it is unclear how Jetty handles exceptions from a RequestLog.
             logger.log(Level.SEVERE, "Failed to log access log entry: " + e.getMessage(), e);
-        }
-    }
-
-    /*
-     * Collecting all log entry population based on extracting information from HttpServletRequest in one method
-     * means that this may easily be moved to another location, e.g. if we want to populate this at instantiation
-     * time rather than at logging time. We may, for example, want to set things such as http headers and ip
-     * addresses up-front and make it illegal for request handlers to modify these later.
-     */
-    // TODO Move populating of access log entry to log(). populateAccessLogEntryFromHttpServletRequest() is not guaranteed
-    //  to be called if request is failed early (e.g invalid uri or header encoding).
-    public static void populateAccessLogEntryFromHttpServletRequest(
-            final HttpServletRequest request,
-            final AccessLogEntry accessLogEntry) {
-
-        accessLogEntry.setRawPath(request.getRequestURI());
-        String queryString = request.getQueryString();
-        if (queryString != null) {
-            accessLogEntry.setRawQuery(queryString);
-        }
-
-        final String remoteAddress = getRemoteAddress(request);
-        final int remotePort = getRemotePort(request);
-        final String peerAddress = request.getRemoteAddr();
-        final int peerPort = request.getRemotePort();
-
-        accessLogEntry.setUserAgent(request.getHeader("User-Agent"));
-        accessLogEntry.setHttpMethod(request.getMethod());
-        accessLogEntry.setHostString(request.getHeader("Host"));
-        accessLogEntry.setReferer(request.getHeader("Referer"));
-        accessLogEntry.setIpV4Address(peerAddress);
-        accessLogEntry.setRemoteAddress(remoteAddress);
-        accessLogEntry.setRemotePort(remotePort);
-        if (!Objects.equal(remoteAddress, peerAddress)) {
-            accessLogEntry.setPeerAddress(peerAddress);
-        }
-        if (remotePort != peerPort) {
-            accessLogEntry.setPeerPort(peerPort);
-        }
-        accessLogEntry.setHttpVersion(request.getProtocol());
-        accessLogEntry.setScheme(request.getScheme());
-        accessLogEntry.setLocalPort(request.getLocalPort());
-        Principal principal = (Principal) request.getAttribute(ServletRequest.JDISC_REQUEST_PRINCIPAL);
-        if (principal != null) {
-            accessLogEntry.setUserPrincipal(principal);
-        }
-        X509Certificate[] clientCert = (X509Certificate[]) request.getAttribute(ServletRequest.SERVLET_REQUEST_X509CERT);
-        if (clientCert != null && clientCert.length > 0) {
-            accessLogEntry.setSslPrincipal(clientCert[0].getSubjectX500Principal());
         }
     }
 
