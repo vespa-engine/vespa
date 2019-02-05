@@ -44,8 +44,8 @@ public class GroupPreparer {
                               List<Node> surplusActiveNodes, MutableInteger highestIndex, int spareCount) {
         try (Mutex lock = nodeRepository.lock(application)) {
 
-            // Lock ready pool to ensure that ready nodes are not simultaneously grabbed by others
-            try (Mutex readyLock = nodeRepository.lockUnallocated()) {
+            // Lock ready pool to ensure that the same nodes are not simultaneously allocated by others
+            try (Mutex allocationLock = nodeRepository.lockAllocation()) {
 
                 // Create a prioritized set of nodes
                 NodePrioritizer prioritizer = new NodePrioritizer(nodeRepository.getNodes(),
@@ -58,7 +58,7 @@ public class GroupPreparer {
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
-                prioritizer.addNewDockerNodes();
+                prioritizer.addNewDockerNodes(allocationLock);
 
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, nodeRepository);
@@ -73,7 +73,7 @@ public class GroupPreparer {
 
                 // Carry out and return allocation
                 nodeRepository.reserve(allocation.reservableNodes());
-                nodeRepository.addDockerNodes(allocation.newNodes());
+                nodeRepository.addDockerNodes(allocation.newNodes(), allocationLock);
                 surplusActiveNodes.removeAll(allocation.surplusNodes());
                 return allocation.finalNodes(surplusActiveNodes);
             }

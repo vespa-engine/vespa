@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -115,7 +116,8 @@ public class NodePrioritizer {
     /**
      * Add a node on each docker host with enough capacity for the requested flavor
      */
-    void addNewDockerNodes() {
+    // NOTE: This must only be called while holding the allocation lock.
+    void addNewDockerNodes(Mutex allocationLock) {
         if (!isDocker) return;
         DockerHostCapacity capacity = new DockerHostCapacity(allNodes);
         ResourceCapacity wantedResourceCapacity = ResourceCapacity.of(getFlavor(requestedNodes));

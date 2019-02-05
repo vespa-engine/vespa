@@ -67,7 +67,7 @@ public class NodeRetirer extends Maintainer {
      * Returns true iff all there are no unallocated nodes that match the retirement policy
      */
     boolean retireUnallocated() {
-        try (Mutex lock = nodeRepository().lockUnallocated()) {
+        try (Mutex lock = nodeRepository().lockAllocation()) {
             List<Node> allNodes = nodeRepository().getNodes(NodeType.tenant);
             Map<Flavor, Map<Node.State, Long>> numSpareNodesByFlavorByState = getNumberOfNodesByFlavorByNodeState(allNodes);
             flavorSpareChecker.updateReadyAndActiveCountsByFlavor(numSpareNodesByFlavorByState);

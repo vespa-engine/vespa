@@ -252,7 +252,7 @@ public class NodeRepository extends AbstractComponent {
             default:
                 throw new IllegalArgumentException(
                         String.format("Don't know how to create ACL for node [hostname=%s type=%s]",
-                                node.hostname(), node.type()));
+                                      node.hostname(), node.type()));
         }
 
         return new NodeAcl(node, trustedNodes, trustedNetworks, trustedPorts);
@@ -303,7 +303,9 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
-    public List<Node> addDockerNodes(List<Node> nodes) {
+    // NOTE: This can only be called while holding the allocation lock, and that lock must have been held since
+    //       the nodes list was computed
+    public List<Node> addDockerNodes(List<Node> nodes, Mutex allocationLock) {
         for (Node node : nodes) {
             if (!node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER)) {
                 throw new IllegalArgumentException("Cannot add " + node.hostname() + ": This is not a docker node");
@@ -314,12 +316,10 @@ public class NodeRepository extends AbstractComponent {
             Optional<Node> existing = getNode(node.hostname());
             if (existing.isPresent())
                 throw new IllegalArgumentException("Cannot add " + node.hostname() + ": A node with this name already exists (" +
-                                                           existing.get() + ", " + existing.get().history() + "). Node to be added: " +
-                                                           node + ", " + node.history());
+                                                   existing.get() + ", " + existing.get().history() + "). Node to be added: " +
+                                                   node + ", " + node.history());
         }
-        try (Mutex lock = lockUnallocated()) {
-            return db.addNodesInState(nodes, Node.State.reserved);
-        }
+        return db.addNodesInState(nodes, Node.State.reserved);
     }
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */
@@ -329,14 +329,14 @@ public class NodeRepository extends AbstractComponent {
             if (existing.isPresent())
                 throw new IllegalArgumentException("Cannot add " + node.hostname() + ": A node with this name already exists");
         }
-        try (Mutex lock = lockUnallocated()) {
+        try (Mutex lock = lockAllocation()) {
             return db.addNodes(nodes);
         }
     }
 
     /** Sets a list of nodes ready and returns the nodes in the ready state */
     public List<Node> setReady(List<Node> nodes, Agent agent, String reason) {
-        try (Mutex lock = lockUnallocated()) {
+        try (Mutex lock = lockAllocation()) {
             List<Node> nodesWithResetFields = nodes.stream()
                     .map(node -> {
                         if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
@@ -554,7 +554,7 @@ public class NodeRepository extends AbstractComponent {
     }
 
     private List<Node> removeRecursively(Node node, boolean force) {
-        try (Mutex lock = lockUnallocated()) {
+        try (Mutex lock = lockAllocation()) {
             List<Node> removed = new ArrayList<>();
 
              if (node.type().isDockerHost()) {
@@ -665,7 +665,7 @@ public class NodeRepository extends AbstractComponent {
 
         // perform operation while holding locks
         List<Node> resultingNodes = new ArrayList<>();
-        try (Mutex lock = lockUnallocated()) {
+        try (Mutex lock = lockAllocation()) {
             for (Node node : unallocatedNodes)
                 resultingNodes.add(action.apply(node));
         }
@@ -690,12 +690,12 @@ public class NodeRepository extends AbstractComponent {
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
     public Mutex lock(ApplicationId application, Duration timeout) { return db.lock(application, timeout); }
 
-    /** Create a lock which provides exclusive rights to changing the set of ready nodes */
-    public Mutex lockUnallocated() { return db.lockInactive(); }
+    /** Create a lock which provides exclusive rights to allocating nodes */
+    public Mutex lockAllocation() { return db.lockInactive(); }
 
     /** Acquires the appropriate lock for this node */
     private Mutex lock(Node node) {
-        return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
+        return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockAllocation();
     }
 
 }

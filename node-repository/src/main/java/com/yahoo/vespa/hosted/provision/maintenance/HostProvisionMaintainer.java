@@ -36,7 +36,7 @@ public class HostProvisionMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        try (Mutex lock = nodeRepository().lockUnallocated()) {
+        try (Mutex lock = nodeRepository().lockAllocation()) {
             NodeList nodes = nodeRepository().list();
 
             candidates(nodes).forEach((host, children) -> {
