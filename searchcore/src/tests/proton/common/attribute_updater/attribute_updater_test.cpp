@@ -8,6 +8,7 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -25,11 +26,16 @@
 LOG_SETUP("attribute_updater_test");
 
 using namespace document;
+using document::config_builder::Struct;
+using document::config_builder::Wset;
+using document::config_builder::Array;
+using document::config_builder::Map;
 using search::attribute::BasicType;
 using search::attribute::Config;
 using search::attribute::CollectionType;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
+
 
 namespace search {
 
@@ -60,6 +66,27 @@ typedef AttributeVector::SP AttributePtr;
 typedef AttributeVector::WeightedInt WeightedInt;
 typedef AttributeVector::WeightedFloat WeightedFloat;
 typedef AttributeVector::WeightedString WeightedString;
+
+std::unique_ptr<DocumentTypeRepo>
+makeDocumentTypeRepo()
+{
+    config_builder::DocumenttypesConfigBuilderHelper builder;
+    builder.document(222, "testdoc",
+                     Struct("testdoc.header")
+                             .addField("int", DataType::T_INT)
+                             .addField("float", DataType::T_FLOAT)
+                             .addField("string", DataType::T_STRING)
+                             .addField("aint", Array(DataType::T_INT))
+                             .addField("afloat", Array(DataType::T_FLOAT))
+                             .addField("astring", Array(DataType::T_STRING))
+                             .addField("wsint", Wset(DataType::T_INT))
+                             .addField("wsfloat", Wset(DataType::T_FLOAT))
+                             .addField("wsstring", Wset(DataType::T_STRING))
+                             .addField("ref", 333),
+                     Struct("testdoc.body"))
+                     .referenceType(333, 222);
+    return std::make_unique<DocumentTypeRepo>(builder.config());
+}
 
 class Test : public vespalib::TestApp
 {
@@ -136,11 +163,12 @@ private:
     void requireThatArrayAttributesAreUpdated();
     void requireThatWeightedSetAttributesAreUpdated();
 
-    DocumentTypeRepo _repo;
-    const DocumentType* _docType;
+    std::unique_ptr<DocumentTypeRepo> _repo;
+    const DocumentType *_docType;
 
 public:
     Test();
+    ~Test();
     int Main() override;
 };
 
@@ -367,10 +395,13 @@ Test::requireThatWeightedSetAttributesAreUpdated()
 }
 
 Test::Test()
-    : _repo(readDocumenttypesConfig(TEST_PATH("doctypes.cfg"))),
-      _docType(_repo.getDocumentType("testdoc"))
+    : _repo(makeDocumentTypeRepo()),
+      _docType(_repo->getDocumentType("testdoc"))
 {
 }
+
+Test::~Test() = default;
+
 
 int
 Test::Main()
