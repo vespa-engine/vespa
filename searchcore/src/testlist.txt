@@ -1,5 +1,4 @@
 ?tests/proton/proton
-tests/applyattrupdates
 tests/fdispatch/randomrow
 tests/fdispatch/fnet_search
 tests/grouping
@@ -11,6 +10,7 @@ tests/proton/attribute/attributes_state_explorer
 tests/proton/attribute/document_field_populator
 tests/proton/bucketdb/bucketdb
 tests/proton/common
+tests/proton/common/attribute_updater
 tests/proton/common/document_type_inspector
 tests/proton/common/state_reporter_utils
 tests/proton/config

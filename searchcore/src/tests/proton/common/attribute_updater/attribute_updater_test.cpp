@@ -22,7 +22,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("applyattrupdates_test");
+LOG_SETUP("attribute_updater_test");
 
 using namespace document;
 using search::attribute::BasicType;
