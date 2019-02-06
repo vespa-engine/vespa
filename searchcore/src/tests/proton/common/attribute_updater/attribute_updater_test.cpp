@@ -5,8 +5,8 @@
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/floatfieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -14,8 +14,8 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/clearvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
+#include <vespa/document/update/removevalueupdate.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
@@ -26,16 +26,15 @@
 LOG_SETUP("attribute_updater_test");
 
 using namespace document;
-using document::config_builder::Struct;
-using document::config_builder::Wset;
 using document::config_builder::Array;
 using document::config_builder::Map;
+using document::config_builder::Struct;
+using document::config_builder::Wset;
 using search::attribute::BasicType;
-using search::attribute::Config;
 using search::attribute::CollectionType;
+using search::attribute::Config;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
-
 
 namespace search {
 
@@ -65,54 +64,18 @@ makeDocumentTypeRepo()
     return std::make_unique<DocumentTypeRepo>(builder.config());
 }
 
-class Test : public vespalib::TestApp
-{
-private:
-    template <typename T, typename VectorType>
-    AttributePtr
-    create(uint32_t numDocs, T val, int32_t weight,
-           const std::string & baseName,
-           const Config &info)
-    {
-        LOG(info, "create attribute vector: %s", baseName.c_str());
-        AttributePtr vec = AttributeFactory::createAttribute(baseName, info);
-        VectorType * api = static_cast<VectorType *>(vec.get());
-        for (uint32_t i = 0; i < numDocs; ++i) {
-            if (!api->addDoc(i)) {
-                LOG(info, "failed adding doc: %u", i);
-                return AttributePtr();
-            }
-            if (api->hasMultiValue()) {
-                if (!api->append(i, val, weight)) {
-                    LOG(info, "failed append to doc: %u", i);
-                }
-            } else {
-                if (!api->update(i, val)) {
-                    LOG(info, "failed update doc: %u", i);
-                    return AttributePtr();
-                }
-            }
-        }
-        api->commit();
-        return vec;
-    }
+struct Fixture {
+    std::unique_ptr<DocumentTypeRepo> repo;
+    const DocumentType *docType;
 
-    template <typename T>
-    bool check(const AttributePtr &vec, uint32_t docId, const std::vector<T> &values) {
-        uint32_t sz = vec->getValueCount(docId);
-        if (!EXPECT_EQUAL(sz, values.size())) return false;
-        std::vector<T> buf(sz);
-        uint32_t asz = vec->get(docId, &buf[0], sz);
-        if (!EXPECT_EQUAL(sz, asz)) return false;
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            if (!EXPECT_EQUAL(buf[i].getValue(), values[i].getValue())) return false;
-            if (!EXPECT_EQUAL(buf[i].getWeight(), values[i].getWeight())) return false;
-        }
-        return true;
+    Fixture()
+        : repo(makeDocumentTypeRepo()),
+          docType(repo->getDocumentType("testdoc"))
+    {
     }
 
     void applyValueUpdate(AttributeVector & vec, uint32_t docId, const ValueUpdate & upd) {
-        FieldUpdate fupd(_docType->getField(vec.getName()));
+        FieldUpdate fupd(docType->getField(vec.getName()));
         fupd.addUpdate(upd);
         search::AttributeUpdater::handleUpdate(vec, docId, fupd);
         vec.commit();
@@ -135,21 +98,53 @@ private:
         ArithmeticValueUpdate arithmetic(ArithmeticValueUpdate::Add, 10);
         applyValueUpdate(vec, 4, MapValueUpdate(first, arithmetic));
     }
-
-    void requireThatSingleAttributesAreUpdated();
-    void requireThatArrayAttributesAreUpdated();
-    void requireThatWeightedSetAttributesAreUpdated();
-
-    std::unique_ptr<DocumentTypeRepo> _repo;
-    const DocumentType *_docType;
-
-public:
-    Test();
-    ~Test();
-    int Main() override;
 };
 
-namespace {
+template <typename T, typename VectorType>
+AttributePtr
+create(uint32_t numDocs, T val, int32_t weight,
+       const std::string & baseName,
+       const Config &info)
+{
+    LOG(info, "create attribute vector: %s", baseName.c_str());
+    AttributePtr vec = AttributeFactory::createAttribute(baseName, info);
+    VectorType * api = static_cast<VectorType *>(vec.get());
+    for (uint32_t i = 0; i < numDocs; ++i) {
+        if (!api->addDoc(i)) {
+            LOG(info, "failed adding doc: %u", i);
+            return AttributePtr();
+        }
+        if (api->hasMultiValue()) {
+            if (!api->append(i, val, weight)) {
+                LOG(info, "failed append to doc: %u", i);
+            }
+        } else {
+            if (!api->update(i, val)) {
+                LOG(info, "failed update doc: %u", i);
+                return AttributePtr();
+            }
+        }
+    }
+    api->commit();
+    return vec;
+}
+
+template <typename T>
+bool
+check(const AttributePtr &vec, uint32_t docId, const std::vector<T> &values)
+{
+    uint32_t sz = vec->getValueCount(docId);
+    if (!EXPECT_EQUAL(sz, values.size())) return false;
+    std::vector<T> buf(sz);
+    uint32_t asz = vec->get(docId, &buf[0], sz);
+    if (!EXPECT_EQUAL(sz, asz)) return false;
+    for (uint32_t i = 0; i < values.size(); ++i) {
+        if (!EXPECT_EQUAL(buf[i].getValue(), values[i].getValue())) return false;
+        if (!EXPECT_EQUAL(buf[i].getWeight(), values[i].getWeight())) return false;
+    }
+    return true;
+}
+
 
 GlobalId toGid(vespalib::stringref docId) {
     return DocumentId(docId).getGlobalId();
@@ -175,10 +170,7 @@ void assertRef(AttributeVector &vec, vespalib::stringref str, uint32_t doc) {
     EXPECT_EQUAL(toGid(str), gid);
 }
 
-}
-
-void
-Test::requireThatSingleAttributesAreUpdated()
+TEST_F("require that single attributes are updated", Fixture)
 {
     using search::attribute::getUndefined;
     CollectionType ct(CollectionType::SINGLE);
@@ -187,9 +179,9 @@ Test::requireThatSingleAttributesAreUpdated()
         AttributePtr vec = create<int32_t, IntegerAttribute>(3, 32, 0,
                                                              "in1/int",
                                                              Config(bt, ct));
-        applyValueUpdate(*vec, 0, AssignValueUpdate(IntFieldValue(64)));
-        applyValueUpdate(*vec, 1, ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
-        applyValueUpdate(*vec, 2, ClearValueUpdate());
+        f.applyValueUpdate(*vec, 0, AssignValueUpdate(IntFieldValue(64)));
+        f.applyValueUpdate(*vec, 1, ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
+        f.applyValueUpdate(*vec, 2, ClearValueUpdate());
         EXPECT_EQUAL(3u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64)}));
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(42)}));
@@ -201,9 +193,9 @@ Test::requireThatSingleAttributesAreUpdated()
                                                                  "in1/float",
                                                                  Config(bt,
                                                                         ct));
-        applyValueUpdate(*vec, 0, AssignValueUpdate(FloatFieldValue(77.7f)));
-        applyValueUpdate(*vec, 1, ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
-        applyValueUpdate(*vec, 2, ClearValueUpdate());
+        f.applyValueUpdate(*vec, 0, AssignValueUpdate(FloatFieldValue(77.7f)));
+        f.applyValueUpdate(*vec, 1, ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
+        f.applyValueUpdate(*vec, 2, ClearValueUpdate());
         EXPECT_EQUAL(3u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(65.5f)}));
@@ -215,8 +207,8 @@ Test::requireThatSingleAttributesAreUpdated()
                                                                 "in1/string",
                                                                 Config(bt,
                                                                        ct));
-        applyValueUpdate(*vec, 0, AssignValueUpdate(StringFieldValue("second")));
-        applyValueUpdate(*vec, 2, ClearValueUpdate());
+        f.applyValueUpdate(*vec, 0, AssignValueUpdate(StringFieldValue("second")));
+        f.applyValueUpdate(*vec, 2, ClearValueUpdate());
         EXPECT_EQUAL(3u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second")}));
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("first")}));
@@ -235,8 +227,8 @@ Test::requireThatSingleAttributesAreUpdated()
             asReferenceAttribute(*vec).update(docId, toGid(doc1));
         }
         vec->commit();
-        applyValueUpdate(*vec, 0, AssignValueUpdate(ReferenceFieldValue(dynamic_cast<const ReferenceDataType &>(_docType->getField("ref").getDataType()), DocumentId(doc2))));
-        applyValueUpdate(*vec, 2, ClearValueUpdate());
+        f.applyValueUpdate(*vec, 0, AssignValueUpdate(ReferenceFieldValue(dynamic_cast<const ReferenceDataType &>(f.docType->getField("ref").getDataType()), DocumentId(doc2))));
+        f.applyValueUpdate(*vec, 2, ClearValueUpdate());
         EXPECT_EQUAL(3u, vec->getNumDocs());
         TEST_DO(assertRef(*vec, doc2, 0));
         TEST_DO(assertRef(*vec, doc1, 1));
@@ -244,8 +236,7 @@ Test::requireThatSingleAttributesAreUpdated()
     }
 }
 
-void
-Test::requireThatArrayAttributesAreUpdated()
+TEST_F("require that array attributes are updated", Fixture)
 {
     CollectionType ct(CollectionType::ARRAY);
     {
@@ -255,9 +246,9 @@ Test::requireThatArrayAttributesAreUpdated()
                                                              Config(bt, ct));
         IntFieldValue first(32);
         IntFieldValue second(64);
-        ArrayFieldValue assign(_docType->getField("aint").getDataType());
+        ArrayFieldValue assign(f.docType->getField("aint").getDataType());
         assign.add(second);
-        applyArrayUpdates(*vec, assign, first, second);
+        f.applyArrayUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64)}));
@@ -274,9 +265,9 @@ Test::requireThatArrayAttributesAreUpdated()
                                                                         ct));
         FloatFieldValue first(55.5f);
         FloatFieldValue second(77.7f);
-        ArrayFieldValue assign(_docType->getField("afloat").getDataType());
+        ArrayFieldValue assign(f.docType->getField("afloat").getDataType());
         assign.add(second);
-        applyArrayUpdates(*vec, assign, first, second);
+        f.applyArrayUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
@@ -292,9 +283,9 @@ Test::requireThatArrayAttributesAreUpdated()
                                                                 Config(bt, ct));
         StringFieldValue first("first");
         StringFieldValue second("second");
-        ArrayFieldValue assign(_docType->getField("astring").getDataType());
+        ArrayFieldValue assign(f.docType->getField("astring").getDataType());
         assign.add(second);
-        applyArrayUpdates(*vec, assign, first, second);
+        f.applyArrayUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second")}));
@@ -305,8 +296,7 @@ Test::requireThatArrayAttributesAreUpdated()
     }
 }
 
-void
-Test::requireThatWeightedSetAttributesAreUpdated()
+TEST_F("require that weighted set attributes are updated", Fixture)
 {
     CollectionType ct(CollectionType::WSET);
     {
@@ -317,9 +307,9 @@ Test::requireThatWeightedSetAttributesAreUpdated()
         IntFieldValue first(32);
         IntFieldValue second(64);
         WeightedSetFieldValue
-            assign(_docType->getField("wsint").getDataType());
+            assign(f.docType->getField("wsint").getDataType());
         assign.add(second, 20);
-        applyWeightedSetUpdates(*vec, assign, first, second);
+        f.applyWeightedSetUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64, 20)}));
@@ -337,9 +327,9 @@ Test::requireThatWeightedSetAttributesAreUpdated()
         FloatFieldValue first(55.5f);
         FloatFieldValue second(77.7f);
         WeightedSetFieldValue
-            assign(_docType->getField("wsfloat").getDataType());
+            assign(f.docType->getField("wsfloat").getDataType());
         assign.add(second, 20);
-        applyWeightedSetUpdates(*vec, assign, first, second);
+        f.applyWeightedSetUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f, 20)}));
@@ -358,9 +348,9 @@ Test::requireThatWeightedSetAttributesAreUpdated()
         StringFieldValue first("first");
         StringFieldValue second("second");
         WeightedSetFieldValue
-            assign(_docType->getField("wsstring").getDataType());
+            assign(f.docType->getField("wsstring").getDataType());
         assign.add(second, 20);
-        applyWeightedSetUpdates(*vec, assign, first, second);
+        f.applyWeightedSetUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second", 20)}));
@@ -371,27 +361,7 @@ Test::requireThatWeightedSetAttributesAreUpdated()
     }
 }
 
-Test::Test()
-    : _repo(makeDocumentTypeRepo()),
-      _docType(_repo->getDocumentType("testdoc"))
-{
 }
 
-Test::~Test() = default;
+TEST_MAIN() { TEST_RUN_ALL(); }
 
-
-int
-Test::Main()
-{
-    TEST_INIT("applyattrupdates_test");
-
-    TEST_DO(requireThatSingleAttributesAreUpdated());
-    TEST_DO(requireThatArrayAttributesAreUpdated());
-    TEST_DO(requireThatWeightedSetAttributesAreUpdated());
-
-    TEST_DONE();
-}
-
-} // namespace search
-
-TEST_APPHOOK(search::Test);
