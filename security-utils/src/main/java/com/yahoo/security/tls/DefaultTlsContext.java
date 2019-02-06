@@ -61,6 +61,7 @@ public class DefaultTlsContext implements TlsContext {
         SSLEngine sslEngine = sslContext.createSSLEngine();
         restrictSetOfEnabledCiphers(sslEngine, acceptedCiphers);
         restrictTlsProtocols(sslEngine);
+        sslEngine.setNeedClientAuth(true);
         return sslEngine;
     }
 
