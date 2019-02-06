@@ -7,6 +7,7 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -16,10 +17,14 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
+#include <vespa/document/update/tensormodifyupdate.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/tensor/tensor.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/reference_attribute.h>
+#include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -35,6 +40,12 @@ using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
+using search::tensor::ITensorAttribute;
+using search::tensor::DenseTensorAttribute;
+using vespalib::eval::ValueType;
+using vespalib::eval::TensorSpec;
+using vespalib::tensor::DefaultTensorEngine;
+using vespalib::tensor::Tensor;
 
 namespace search {
 
@@ -58,7 +69,8 @@ makeDocumentTypeRepo()
                              .addField("wsint", Wset(DataType::T_INT))
                              .addField("wsfloat", Wset(DataType::T_FLOAT))
                              .addField("wsstring", Wset(DataType::T_STRING))
-                             .addField("ref", 333),
+                             .addField("ref", 333)
+                             .addField("dense_tensor", DataType::T_TENSOR),
                      Struct("testdoc.body"))
                      .referenceType(333, 222);
     return std::make_unique<DocumentTypeRepo>(builder.config());
@@ -359,6 +371,52 @@ TEST_F("require that weighted set attributes are updated", Fixture)
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedString>{}));
         EXPECT_TRUE(check(vec, 4, std::vector<WeightedString>{WeightedString("first", 110)}));
     }
+}
+
+std::unique_ptr<DenseTensorAttribute>
+makeDenseTensorAttribute(const vespalib::string &name, const vespalib::string &tensorType)
+{
+    Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
+    cfg.setTensorType(ValueType::from_spec(tensorType));
+    auto result = std::make_unique<DenseTensorAttribute>(name, cfg);
+    result->addReservedDoc();
+    result->addDocs(1);
+    return result;
+}
+
+std::unique_ptr<Tensor>
+makeTensor(const TensorSpec &spec)
+{
+    auto result = DefaultTensorEngine::ref().from_spec(spec);
+    return std::unique_ptr<Tensor>(dynamic_cast<Tensor*>(result.release()));
+}
+
+std::unique_ptr<TensorFieldValue>
+makeTensorFieldValue(const TensorSpec &spec)
+{
+    auto result = std::make_unique<TensorFieldValue>();
+    result->assignDeserialized(makeTensor(spec));
+    return result;
+}
+
+void
+setTensor(DenseTensorAttribute &attribute, uint32_t lid, const TensorSpec &spec)
+{
+    auto tensor = makeTensor(spec);
+    attribute.setTensor(lid, *tensor);
+    attribute.commit();
+}
+
+TEST_F("require that tensor modify update is applied", Fixture)
+{
+    vespalib::string type = "tensor(x[2])";
+    auto attribute = makeDenseTensorAttribute("dense_tensor", type);
+    setTensor(*attribute, 1, TensorSpec(type).add({{"x", 0}}, 3).add({{"x", 1}}, 5));
+
+    TensorModifyUpdate update(TensorModifyUpdate::Operation::REPLACE,
+            makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x",0}}, 7)));
+    f.applyValueUpdate(*attribute, 1, update);
+    EXPECT_EQUAL(TensorSpec(type).add({{"x",0}}, 7).add({{"x", 1}}, 5), attribute->getTensor(1)->toSpec());
 }
 
 }
