@@ -184,7 +184,7 @@ public class ConfigServerBootstrapTest {
                                               .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                                               .hostedVespa(hosted)
                                               .multitenant(hosted)
-                                              .maxDurationOfBootstrap(1) /* seconds */
+                                              .maxDurationOfBootstrap(2) /* seconds */
                                               .sleepTimeWhenRedeployingFails(0)); /* seconds */
     }
 
