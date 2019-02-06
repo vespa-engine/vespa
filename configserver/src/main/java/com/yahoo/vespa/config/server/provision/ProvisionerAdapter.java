@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.NetworkPorts;
 
 import java.util.*;
 
@@ -37,6 +38,11 @@ public class ProvisionerAdapter implements HostProvisioner {
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
         return provisioner.prepare(applicationId, cluster, capacity, groups, logger);
+    }
+
+    @Override
+    public NetworkPorts getNetworkPorts(HostSpec host) {
+        return provisioner.getNetworkPorts(host);
     }
 
 }

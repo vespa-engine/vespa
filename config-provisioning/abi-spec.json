@@ -497,6 +497,41 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.NetworkPorts$Allocation": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(int, java.lang.String, java.lang.String, java.lang.String)",
+      "public java.lang.String key()",
+      "public java.lang.String toString()"
+    ],
+    "fields": [
+      "public final int port",
+      "public final java.lang.String serviceType",
+      "public final java.lang.String configId",
+      "public final java.lang.String portSuffix"
+    ]
+  },
+  "com.yahoo.config.provision.NetworkPorts": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static java.util.Optional empty()",
+      "public java.util.Map byPortMap()",
+      "public java.util.Map byKeyMap()",
+      "public java.util.Collection allocations()",
+      "public void <init>()",
+      "public void add(com.yahoo.config.provision.NetworkPorts$Allocation)",
+      "public void override(com.yahoo.config.provision.NetworkPorts$Allocation)"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.provision.NodeFlavors": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -582,6 +617,7 @@
     ],
     "methods": [
       "public abstract java.util.List prepare(com.yahoo.config.provision.ApplicationId, com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, int, com.yahoo.config.provision.ProvisionLogger)",
+      "public com.yahoo.config.provision.NetworkPorts getNetworkPorts(com.yahoo.config.provision.HostSpec)",
       "public abstract void activate(com.yahoo.transaction.NestedTransaction, com.yahoo.config.provision.ApplicationId, java.util.Collection)",
       "public abstract void remove(com.yahoo.transaction.NestedTransaction, com.yahoo.config.provision.ApplicationId)",
       "public abstract void restart(com.yahoo.config.provision.ApplicationId, com.yahoo.config.provision.HostFilter)"
