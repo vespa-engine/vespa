@@ -42,7 +42,7 @@ import static org.junit.Assert.fail;
 /**
  * @author mortent
  */
-public class DynamicDockerProvisioningTest {
+public class DynamicDockerAllocationTest {
 
     /**
      * Test relocation of nodes from spare hosts.
