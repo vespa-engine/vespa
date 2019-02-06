@@ -8,6 +8,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RotationName;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -21,13 +22,16 @@ public class LoadBalancer {
     private final ApplicationId application;
     private final ClusterSpec.Id cluster;
     private final HostName hostname;
+    private final Optional<String> dnsZone;
     private final Set<RotationName> rotations;
 
-    public LoadBalancer(String id, ApplicationId application, ClusterSpec.Id cluster, HostName hostname, Set<RotationName> rotations) {
+    public LoadBalancer(String id, ApplicationId application, ClusterSpec.Id cluster, HostName hostname,
+                        Optional<String> dnsZone, Set<RotationName> rotations) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.application = Objects.requireNonNull(application, "application must be non-null");
         this.cluster = Objects.requireNonNull(cluster, "cluster must be non-null");
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
+        this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.rotations = ImmutableSortedSet.copyOf(Objects.requireNonNull(rotations, "rotations must be non-null"));
     }
 
@@ -45,6 +49,10 @@ public class LoadBalancer {
 
     public HostName hostname() {
         return hostname;
+    }
+
+    public Optional<String> dnsZone() {
+        return dnsZone;
     }
 
     public Set<RotationName> rotations() {

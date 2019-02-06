@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,14 +29,16 @@ public class RoutingPolicy {
     private final String recordId;
     private final HostName alias;
     private final HostName canonicalName;
+    private final Optional<String> dnsZone;
     private final Set<RotationName> rotations;
 
     public RoutingPolicy(ApplicationId owner, String recordId, HostName alias, HostName canonicalName,
-                         Set<RotationName> rotations) {
+                         Optional<String> dnsZone, Set<RotationName> rotations) {
         this.owner = Objects.requireNonNull(owner, "owner must be non-null");
         this.recordId = Objects.requireNonNull(recordId, "recordId must be non-null");
         this.alias = Objects.requireNonNull(alias, "alias must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
+        this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.rotations = ImmutableSortedSet.copyOf(Objects.requireNonNull(rotations, "rotations must be non-null"));
     }
 
@@ -59,6 +62,11 @@ public class RoutingPolicy {
         return canonicalName;
     }
 
+    /** DNS zone for this, if any */
+    public Optional<String> dnsZone() {
+        return dnsZone;
+    }
+
     /** The rotations in this policy */
     public Set<RotationName> rotations() {
         return rotations;
@@ -73,18 +81,19 @@ public class RoutingPolicy {
                recordId.equals(that.recordId) &&
                alias.equals(that.alias) &&
                canonicalName.equals(that.canonicalName) &&
+               dnsZone.equals(that.dnsZone) &&
                rotations.equals(that.rotations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, recordId, alias, canonicalName, rotations);
+        return Objects.hash(owner, recordId, alias, canonicalName, dnsZone, rotations);
     }
 
     @Override
     public String toString() {
-        return String.format("%s: %s -> %s (rotations: %s), owned by %s", recordId, alias, canonicalName,
-                             rotations, owner.toShortString());
+        return String.format("%s: %s -> %s [rotations: %s%s], owned by %s", recordId, alias, canonicalName, rotations,
+                             dnsZone.map(z -> ", DNS zone: " + z).orElse(""), owner.toShortString());
     }
 
     public static String createAlias(ClusterSpec.Id clusterId, ApplicationId applicationId, ZoneId zoneId) {

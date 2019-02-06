@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -28,11 +29,13 @@ public class RoutingPolicySerializerTest {
                                                                              "record-id-1",
                                                                              HostName.from("my-pretty-alias"),
                                                                              HostName.from("long-and-ugly-name"),
+                                                                             Optional.of("zone1"),
                                                                              rotations),
                                                            new RoutingPolicy(owner,
                                                                              "record-id-2",
                                                                              HostName.from("my-pretty-alias-2"),
                                                                              HostName.from("long-and-ugly-name-2"),
+                                                                             Optional.empty(),
                                                                              rotations));
         Set<RoutingPolicy> serialized = serializer.fromSlime(owner, serializer.toSlime(loadBalancers));
         assertEquals(loadBalancers, serialized);
@@ -60,11 +63,13 @@ public class RoutingPolicySerializerTest {
                                                                              "record-id-1",
                                                                              HostName.from("my-pretty-alias"),
                                                                              HostName.from("long-and-ugly-name"),
+                                                                             Optional.empty(),
                                                                              Collections.emptySet()),
                                                            new RoutingPolicy(owner,
                                                                              "record-id-2",
                                                                              HostName.from("my-pretty-alias-2"),
                                                                              HostName.from("long-and-ugly-name-2"),
+                                                                             Optional.empty(),
                                                                              Collections.emptySet()));
         RoutingPolicySerializer serializer = new RoutingPolicySerializer();
         assertEquals(loadBalancers, serializer.fromSlime(owner, SlimeUtils.jsonToSlime(json)));

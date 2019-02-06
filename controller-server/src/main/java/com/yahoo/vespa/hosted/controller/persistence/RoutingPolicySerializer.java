@@ -12,7 +12,9 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Serializer and deserializer for a {@link RoutingPolicy}.
@@ -27,6 +29,7 @@ public class RoutingPolicySerializer {
     private static final String recordIdField = "recordId";
     private static final String aliasField = "alias";
     private static final String canonicalNameField = "canonicalName";
+    private static final String dnsZoneField = "dnsZone";
     private static final String rotationsField = "rotations";
 
     public Slime toSlime(Set<RoutingPolicy> routingPolicies) {
@@ -38,6 +41,7 @@ public class RoutingPolicySerializer {
             policyObject.setString(recordIdField, policy.recordId());
             policyObject.setString(aliasField, policy.alias().value());
             policyObject.setString(canonicalNameField, policy.canonicalName().value());
+            policy.dnsZone().ifPresent(dnsZone -> policyObject.setString(dnsZoneField, dnsZone));
             Cursor rotationArray = policyObject.setArray(rotationsField);
             policy.rotations().forEach(rotation -> {
                 rotationArray.addString(rotation.value());
@@ -64,9 +68,14 @@ public class RoutingPolicySerializer {
                                            recordId.asString(),
                                            HostName.from(inspect.field(aliasField).asString()),
                                            HostName.from(inspect.field(canonicalNameField).asString()),
+                                           optionalField(inspect.field(dnsZoneField), Function.identity()),
                                            rotations));
         });
         return Collections.unmodifiableSet(policies);
+    }
+
+    private static <T> Optional<T> optionalField(Inspector field, Function<String, T> fieldMapper) {
+        return Optional.of(field).filter(Inspector::valid).map(Inspector::asString).map(fieldMapper);
     }
 
 }

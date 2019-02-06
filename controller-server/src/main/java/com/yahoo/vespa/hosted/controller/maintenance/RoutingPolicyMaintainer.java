@@ -107,7 +107,8 @@ public class RoutingPolicyMaintainer extends Maintainer {
         } else {
             id = nameService.createCname(name, data);
         }
-        return new RoutingPolicy(application, id.asString(), alias, loadBalancer.hostname(), loadBalancer.rotations());
+        return new RoutingPolicy(application, id.asString(), alias, loadBalancer.hostname(), loadBalancer.dnsZone(),
+                                 loadBalancer.rotations());
     }
 
     /** Find all load balancers assigned to application in given zone */
