@@ -124,7 +124,7 @@ public class OperatorChangeApplicationMaintainerTest {
         Fixture(Zone zone, NodeRepository nodeRepository, NodeFlavors flavors, Curator curator) {
             this.nodeRepository = nodeRepository;
             this.curator = curator;
-            this.provisioner =  new NodeRepositoryProvisioner(nodeRepository, flavors, zone, new MockProvisionServiceProvider());
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, zone, new MockProvisionServiceProvider());
         }
 
         void activate() {

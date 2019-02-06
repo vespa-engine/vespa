@@ -8,11 +8,9 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -25,7 +23,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester.createConfig;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
@@ -36,12 +33,7 @@ import static org.junit.Assert.assertFalse;
  */
 public class AclProvisioningTest {
 
-    private ProvisioningTester tester;
-
-    @Before
-    public void before() {
-        this.tester = new ProvisioningTester(Zone.defaultZone(), createConfig());
-    }
+    private ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
     public void trusted_nodes_for_allocated_node() {

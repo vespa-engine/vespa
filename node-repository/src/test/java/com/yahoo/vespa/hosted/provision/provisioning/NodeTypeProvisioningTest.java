@@ -5,11 +5,8 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
 import com.yahoo.vespa.hosted.provision.maintenance.RetiredExpirer;
@@ -35,7 +32,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class NodeTypeProvisioningTest {
 
-    private final ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+    private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     private final ApplicationId application = tester.makeApplicationId(); // application using proxy nodes
     private final Capacity capacity = Capacity.fromRequiredNodeType(NodeType.proxy);

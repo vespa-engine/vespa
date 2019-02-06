@@ -35,7 +35,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_provisioning_of_multiple_groups() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -67,7 +67,7 @@ public class MultigroupProvisioningTest {
      */
     @Test @Ignore
     public void test_provisioning_of_groups_with_asymmetry() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -80,7 +80,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_provisioning_of_multiple_groups_after_flavor_migration() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -94,7 +94,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_one_node_and_group_to_two() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -106,7 +106,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_one_node_and_group_to_two_with_flavor_migration() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -119,7 +119,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_provisioning_of_multiple_groups_after_flavor_migration_and_exiration() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 

@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -315,24 +316,22 @@ class NodeAllocation {
     }
 
     List<Node> reservableNodes() {
-        return nodes.stream().map(n -> n.node)
-                    .filter(n -> n.state() == Node.State.inactive ||
-                                 n.state() == Node.State.ready)
-                    .collect(Collectors.toList());
+        return nodesFilter(n -> n.node.state() == Node.State.inactive || n.node.state() == Node.State.ready);
     }
 
     List<Node> surplusNodes() {
-        return nodes.stream()
-                    .filter(n -> n.isSurplusNode)
-                    .map(n -> n.node)
-                    .collect(Collectors.toList());
+        return nodesFilter(n -> n.isSurplusNode);
     }
 
     List<Node> newNodes() {
+        return nodesFilter(n -> n.isNewNode);
+    }
+
+    private List<Node> nodesFilter(Predicate<PrioritizableNode> predicate) {
         return nodes.stream()
-                    .filter(n -> n.isNewNode)
-                    .map(n -> n.node)
-                    .collect(Collectors.toList());
+                .filter(predicate)
+                .map(n -> n.node)
+                .collect(Collectors.toList());
     }
 
     private List<PrioritizableNode> byDecreasingIndex(Set<PrioritizableNode> nodes) {

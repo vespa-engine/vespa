@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
+import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
@@ -75,33 +76,21 @@ public class ProvisioningTester {
     private int nextHost = 0;
     private int nextIP = 0;
 
-    public ProvisioningTester(Zone zone) {
-        this(zone, createConfig());
-    }
-
-    public ProvisioningTester(Zone zone, FlavorsConfig config) {
-        this(zone, config, new MockCurator(), new MockNameResolver().mockAnyLookup());
-    }
-
-    public ProvisioningTester(Zone zone, FlavorsConfig config, Curator curator, NameResolver nameResolver) {
-        try {
-            this.nodeFlavors = new NodeFlavors(config);
-            this.clock = new ManualClock();
-            this.curator = curator;
-            this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver,
-                                                     new DockerImage("docker-registry.domain.tld:8080/dist/vespa"), true);
-            this.orchestrator = mock(Orchestrator.class);
-            doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
-            this.loadBalancerService = new LoadBalancerServiceMock();
-            ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(
-                    loadBalancerService, null);
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, provisionServiceProvider);
-            this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
-            this.provisionLogger = new NullProvisionLogger();
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public ProvisioningTester(
+            Curator curator, NodeFlavors nodeFlavors, Zone zone, NameResolver nameResolver,
+            Orchestrator orchestrator, HostProvisioner hostProvisioner,
+            LoadBalancerServiceMock loadBalancerService) {
+        this.curator = curator;
+        this.nodeFlavors = nodeFlavors;
+        this.clock = new ManualClock();
+        this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver,
+                new DockerImage("docker-registry.domain.tld:8080/dist/vespa"), true);
+        this.orchestrator = orchestrator;
+        ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
+        this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, provisionServiceProvider);
+        this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
+        this.provisionLogger = new NullProvisionLogger();
+        this.loadBalancerService = loadBalancerService;
     }
 
     public static FlavorsConfig createConfig() {
@@ -393,12 +382,75 @@ public class ProvisioningTester {
         return nodeRepository.getNode(hostname).map(Node::flavor).orElseThrow(() -> new RuntimeException("No flavor for host " + hostname));
     }
 
-    private static class NullProvisionLogger implements ProvisionLogger {
+    public static final class Builder {
+        private Curator curator;
+        private FlavorsConfig flavorsConfig;
+        private Zone zone;
+        private NameResolver nameResolver;
+        private Orchestrator orchestrator;
+        private HostProvisioner hostProvisioner;
+        private LoadBalancerServiceMock loadBalancerService;
 
-        @Override
-        public void log(Level level, String message) {
+        public Builder curator(Curator curator) {
+            this.curator = curator;
+            return this;
         }
 
+        public Builder flavorsConfig(FlavorsConfig flavorsConfig) {
+            this.flavorsConfig = flavorsConfig;
+            return this;
+        }
+
+        public Builder zone(Zone zone) {
+            this.zone = zone;
+            return this;
+        }
+
+        public Builder nameResolver(NameResolver nameResolver) {
+            this.nameResolver = nameResolver;
+            return this;
+        }
+
+        public Builder orchestrator(Orchestrator orchestrator) {
+            this.orchestrator = orchestrator;
+            return this;
+        }
+
+        public Builder hostProvisioner(HostProvisioner hostProvisioner) {
+            this.hostProvisioner = hostProvisioner;
+            return this;
+        }
+
+        public Builder loadBalancerService(LoadBalancerServiceMock loadBalancerService) {
+            this.loadBalancerService = loadBalancerService;
+            return this;
+        }
+
+        public ProvisioningTester build() {
+            Orchestrator orchestrator = Optional.ofNullable(this.orchestrator)
+                    .orElseGet(() -> {
+                        Orchestrator orch = mock(Orchestrator.class);
+                        try {
+                            doThrow(new RuntimeException()).when(orch).acquirePermissionToRemove(any());
+                        } catch (OrchestrationException e) {
+                            throw new RuntimeException(e);
+                        }
+                        return orch;
+                    });
+
+            return new ProvisioningTester(
+                    Optional.ofNullable(curator).orElseGet(MockCurator::new),
+                    new NodeFlavors(Optional.ofNullable(flavorsConfig).orElseGet(ProvisioningTester::createConfig)),
+                    Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
+                    Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
+                    orchestrator,
+                    Optional.ofNullable(hostProvisioner).orElseGet(() -> null),
+                    Optional.ofNullable(loadBalancerService).orElseGet(LoadBalancerServiceMock::new));
+        }
+    }
+
+    private static class NullProvisionLogger implements ProvisionLogger {
+        @Override public void log(Level level, String message) { }
     }
 
 }

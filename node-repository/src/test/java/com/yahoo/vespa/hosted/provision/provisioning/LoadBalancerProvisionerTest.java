@@ -8,14 +8,12 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.RotationName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -36,12 +34,7 @@ public class LoadBalancerProvisionerTest {
     private final ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
     private final ApplicationId app2 = ApplicationId.from("tenant2", "application2", "default");
 
-    private ProvisioningTester tester;
-
-    @Before
-    public void before() {
-        tester = new ProvisioningTester(Zone.defaultZone());
-    }
+    private ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
     public void provision_load_balancer() {

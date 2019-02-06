@@ -79,7 +79,7 @@ public class GroupPreparer {
         }
     }
 
-    private String outOfCapacityDetails(NodeAllocation allocation) {
+    private static String outOfCapacityDetails(NodeAllocation allocation) {
         if (allocation.wouldBeFulfilledWithoutExclusivity())
             return ": Not enough nodes available due to host exclusivity constraints.";
         else if (allocation.wouldBeFulfilledWithClashingParentHost())
