@@ -612,10 +612,10 @@ public:
         return (uint32_t)((const uint8_t*)da)[0];
       case 2:
       case 3:
-        return (uint32_t)((const uint16_t*)da)[0];
+        return (uint32_t)((const uint16_t*)(const void *)da)[0];
       case 4:
       default:
-        return ((const uint32_t*)da)[0];
+        return ((const uint32_t*)(const void *) da)[0];
       }
     }
 
@@ -2203,7 +2203,7 @@ public:
       if(_data_type==DATA_FIXED)
         return _fixed_data_size;
       else
-        return (int)(*((uint32_t*)(_data+_state[fs+FINAL_SYMBOL])));
+        return (int)(*((uint32_t*)(void *)(_data+_state[fs+FINAL_SYMBOL])));
     }
     return -1;
   }

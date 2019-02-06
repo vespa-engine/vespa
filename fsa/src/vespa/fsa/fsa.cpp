@@ -236,7 +236,7 @@ bool FSA::read(const char *file, FileAccessMethod fam)
     }
   }
   else {
-    _state = (state_t*)((uint8_t*)_mmap_addr + sizeof(header) +
+    _state = (state_t*)(void *)((uint8_t*)_mmap_addr + sizeof(header) +
                                                _size*sizeof(symbol_t));
   }
   checksum += Checksum::compute(_state,_size*sizeof(state_t));
@@ -268,7 +268,7 @@ bool FSA::read(const char *file, FileAccessMethod fam)
       }
     }
     else {
-      _perf_hash = (hash_t*)((uint8_t*)_mmap_addr + sizeof(header) +
+      _perf_hash = (hash_t*)(void *)((uint8_t*)_mmap_addr + sizeof(header) +
                                                     _size*sizeof(symbol_t) +
                                                     _size*sizeof(state_t) +
                                                     _data_size);
