@@ -4,10 +4,14 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/serialization/slime_binary_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <ostream>
 #include <cassert>
 
+using vespalib::slime::JsonFormat;
 using vespalib::tensor::Tensor;
+using vespalib::tensor::SlimeBinaryFormat;
 using namespace vespalib::xml;
 
 namespace document {
@@ -110,7 +114,17 @@ TensorFieldValue::print(std::ostream& out, bool verbose,
 {
     (void) verbose;
     (void) indent;
-    out << "{TensorFieldValue::print not yet implemented}";
+    out << "{TensorFieldValue: ";
+    if (_tensor) {
+        auto slime = SlimeBinaryFormat::serialize(*_tensor);
+        vespalib::SimpleBuffer buf;
+        JsonFormat::encode(*slime, buf, true);
+        auto json = buf.get().make_string();
+        out << json;
+    } else {
+        out << "null";
+    }
+    out << "}";
 }
 
 void

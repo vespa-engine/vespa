@@ -67,5 +67,13 @@ TEST("require that TensorFieldValue can be assigned tensors and cloned") {
     EXPECT_EQUAL(*twoClone, twoCellsTwoDimsValue2);
 }
 
+TEST("require that TensorFieldValue::toString works")
+{
+    TensorFieldValue tensorFieldValue;
+    EXPECT_EQUAL("{TensorFieldValue: null}", tensorFieldValue.toString());
+    tensorFieldValue = createTensor({{{{"x","a"}}, 3}}, {"x"});
+    EXPECT_EQUAL("{TensorFieldValue: {\"dimensions\":[\"x\"],\"cells\":[{\"address\":{\"x\":\"a\"},\"value\":3}]}}", tensorFieldValue.toString());
+}
+
 
 TEST_MAIN() { TEST_RUN_ALL(); }
