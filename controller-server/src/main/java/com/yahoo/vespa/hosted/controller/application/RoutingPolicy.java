@@ -2,14 +2,17 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -25,12 +28,15 @@ public class RoutingPolicy {
     private final String recordId;
     private final HostName alias;
     private final HostName canonicalName;
+    private final Set<RotationName> rotations;
 
-    public RoutingPolicy(ApplicationId owner, String recordId, HostName alias, HostName canonicalName) {
+    public RoutingPolicy(ApplicationId owner, String recordId, HostName alias, HostName canonicalName,
+                         Set<RotationName> rotations) {
         this.owner = Objects.requireNonNull(owner, "owner must be non-null");
         this.recordId = Objects.requireNonNull(recordId, "recordId must be non-null");
         this.alias = Objects.requireNonNull(alias, "alias must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
+        this.rotations = ImmutableSortedSet.copyOf(Objects.requireNonNull(rotations, "rotations must be non-null"));
     }
 
     /** The application owning this */
@@ -53,6 +59,11 @@ public class RoutingPolicy {
         return canonicalName;
     }
 
+    /** The rotations in this policy */
+    public Set<RotationName> rotations() {
+        return rotations;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -61,17 +72,19 @@ public class RoutingPolicy {
         return owner.equals(that.owner) &&
                recordId.equals(that.recordId) &&
                alias.equals(that.alias) &&
-               canonicalName.equals(that.canonicalName);
+               canonicalName.equals(that.canonicalName) &&
+               rotations.equals(that.rotations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, recordId, alias, canonicalName);
+        return Objects.hash(owner, recordId, alias, canonicalName, rotations);
     }
 
     @Override
     public String toString() {
-        return String.format("%s: %s -> %s, owned by %s", recordId, alias, canonicalName, owner.toShortString());
+        return String.format("%s: %s -> %s (rotations: %s), owned by %s", recordId, alias, canonicalName,
+                             rotations, owner.toShortString());
     }
 
     public static String createAlias(ClusterSpec.Id clusterId, ApplicationId applicationId, ZoneId zoneId) {

@@ -119,15 +119,17 @@ public class RoutingPolicyMaintainerTest {
 
     }
 
-    private List<LoadBalancer> makeLoadBalancers(ZoneId zone, ApplicationId applicationId, int count) {
+    private List<LoadBalancer> makeLoadBalancers(ZoneId zone, ApplicationId application, int count) {
         List<LoadBalancer> loadBalancers = new ArrayList<>();
+        Set<RotationName> rotations = Collections.singleton(RotationName.from("r1"));
         for (int i = 0; i < count; i++) {
             loadBalancers.add(
                     new LoadBalancer("LB-" + i + "-Z-" + zone.value(),
-                                     applicationId,
+                                     application,
                                      ClusterSpec.Id.from("cluster-" + i),
-                                     HostName.from("loadbalancer-" + i + "-" + applicationId.serializedForm() +
-                                                   "-zone-" + zone.value())));
+                                     HostName.from("loadbalancer-" + i + "-" + application.serializedForm() +
+                                                   "-zone-" + zone.value()),
+                                     rotations));
         }
         return loadBalancers;
     }

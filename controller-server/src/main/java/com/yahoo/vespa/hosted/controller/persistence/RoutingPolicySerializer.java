@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -26,6 +27,7 @@ public class RoutingPolicySerializer {
     private static final String recordIdField = "recordId";
     private static final String aliasField = "alias";
     private static final String canonicalNameField = "canonicalName";
+    private static final String rotationsField = "rotations";
 
     public Slime toSlime(Set<RoutingPolicy> routingPolicies) {
         Slime slime = new Slime();
@@ -36,6 +38,10 @@ public class RoutingPolicySerializer {
             policyObject.setString(recordIdField, policy.recordId());
             policyObject.setString(aliasField, policy.alias().value());
             policyObject.setString(canonicalNameField, policy.canonicalName().value());
+            Cursor rotationArray = policyObject.setArray(rotationsField);
+            policy.rotations().forEach(rotation -> {
+                rotationArray.addString(rotation.value());
+            });
         });
         return slime;
     }
@@ -48,6 +54,8 @@ public class RoutingPolicySerializer {
             field = root.field(aliasesField); // TODO: Remove after 7.9 has been released
         }
         field.traverse((ArrayTraverser) (i, inspect) -> {
+            Set<RotationName> rotations = new LinkedHashSet<>();
+            inspect.field(rotationsField).traverse((ArrayTraverser) (j, rotation) -> rotations.add(RotationName.from(rotation.asString())));
             Inspector recordId = inspect.field(recordIdField);
             if (!recordId.valid()) {
                 recordId = inspect.field(idField); // TODO: Remove after 7.9 has been released
@@ -55,7 +63,8 @@ public class RoutingPolicySerializer {
             policies.add(new RoutingPolicy(owner,
                                            recordId.asString(),
                                            HostName.from(inspect.field(aliasField).asString()),
-                                           HostName.from(inspect.field(canonicalNameField).asString())));
+                                           HostName.from(inspect.field(canonicalNameField).asString()),
+                                           rotations));
         });
         return Collections.unmodifiableSet(policies);
     }

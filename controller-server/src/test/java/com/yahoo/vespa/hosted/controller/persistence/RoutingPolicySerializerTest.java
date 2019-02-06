@@ -4,10 +4,12 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -21,14 +23,17 @@ public class RoutingPolicySerializerTest {
     public void test_serialization() {
         RoutingPolicySerializer serializer = new RoutingPolicySerializer();
         ApplicationId owner = ApplicationId.defaultId();
+        Set<RotationName> rotations = Set.of(RotationName.from("r1"), RotationName.from("r2"));
         Set<RoutingPolicy> loadBalancers = ImmutableSet.of(new RoutingPolicy(owner,
                                                                              "record-id-1",
                                                                              HostName.from("my-pretty-alias"),
-                                                                             HostName.from("long-and-ugly-name")),
+                                                                             HostName.from("long-and-ugly-name"),
+                                                                             rotations),
                                                            new RoutingPolicy(owner,
                                                                              "record-id-2",
                                                                              HostName.from("my-pretty-alias-2"),
-                                                                             HostName.from("long-and-ugly-name-2")));
+                                                                             HostName.from("long-and-ugly-name-2"),
+                                                                             rotations));
         Set<RoutingPolicy> serialized = serializer.fromSlime(owner, serializer.toSlime(loadBalancers));
         assertEquals(loadBalancers, serialized);
     }
@@ -54,11 +59,13 @@ public class RoutingPolicySerializerTest {
         Set<RoutingPolicy> loadBalancers = ImmutableSet.of(new RoutingPolicy(owner,
                                                                              "record-id-1",
                                                                              HostName.from("my-pretty-alias"),
-                                                                             HostName.from("long-and-ugly-name")),
+                                                                             HostName.from("long-and-ugly-name"),
+                                                                             Collections.emptySet()),
                                                            new RoutingPolicy(owner,
                                                                              "record-id-2",
                                                                              HostName.from("my-pretty-alias-2"),
-                                                                             HostName.from("long-and-ugly-name-2")));
+                                                                             HostName.from("long-and-ugly-name-2"),
+                                                                             Collections.emptySet()));
         RoutingPolicySerializer serializer = new RoutingPolicySerializer();
         assertEquals(loadBalancers, serializer.fromSlime(owner, SlimeUtils.jsonToSlime(json)));
     }
