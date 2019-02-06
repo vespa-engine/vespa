@@ -50,7 +50,7 @@ public:
 
     TraceNode & operator =(const TraceNode &);
     TraceNode(TraceNode &&) noexcept;
-    TraceNode & operator =(TraceNode &&) noexcept = default;
+    TraceNode & operator =(TraceNode &&) = default;
     ~TraceNode();
 
     /**

@@ -16,7 +16,6 @@ vespa_define_module(
     src/apps/vespa-drop-file-from-cache
 
     TESTS
-    src/tests/alignedmemory
     src/tests/alloc
     src/tests/approx
     src/tests/array

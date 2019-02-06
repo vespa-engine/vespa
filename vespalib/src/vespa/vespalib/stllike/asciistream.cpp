@@ -477,7 +477,7 @@ asciistream& asciistream::operator<<(const void* p)
 
 asciistream & asciistream::operator << (float v)
 {
-    if ((_floatSpec == fixed)) {
+    if (_floatSpec == fixed) {
         printFixed(v);
     } else {
         printScientific(v);
@@ -487,7 +487,7 @@ asciistream & asciistream::operator << (float v)
 
 asciistream & asciistream::operator << (double v)
 {
-    if ((_floatSpec == fixed)) {
+    if (_floatSpec == fixed) {
         printFixed(v);
     } else {
         printScientific(v);
