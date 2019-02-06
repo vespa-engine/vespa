@@ -162,7 +162,7 @@ Logger::Logger(const char *name, const char *rcsId)
 Logger::~Logger()
 {
   _numInstances--;
-  if ((_numInstances == 1)) {
+  if (_numInstances == 1) {
     if (logger != nullptr) {
       logger->~Logger();
       free(logger);
