@@ -13,21 +13,22 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Represents a DNS alias for a load balancer.
+ * Represents the DNS routing policy for a load balancer.
  *
  * @author mortent
  */
-public class LoadBalancerAlias {
+public class RoutingPolicy {
 
     private static final String ignoredEndpointPart = "default";
+
     private final ApplicationId owner;
-    private final String id;
+    private final String recordId;
     private final HostName alias;
     private final HostName canonicalName;
 
-    public LoadBalancerAlias(ApplicationId owner, String id, HostName alias, HostName canonicalName) {
+    public RoutingPolicy(ApplicationId owner, String recordId, HostName alias, HostName canonicalName) {
         this.owner = Objects.requireNonNull(owner, "owner must be non-null");
-        this.id = Objects.requireNonNull(id, "id must be non-null");
+        this.recordId = Objects.requireNonNull(recordId, "recordId must be non-null");
         this.alias = Objects.requireNonNull(alias, "alias must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
     }
@@ -37,17 +38,17 @@ public class LoadBalancerAlias {
         return owner;
     }
 
-    /** The ID of the DNS record represented by this */
-    public String id() {
-        return id;
+    /** The ID of the DNS record identifying this */
+    public String recordId() {
+        return recordId;
     }
 
-    /** This alias (lhs of the CNAME record) */
+    /** This alias (lhs of a CNAME record) */
     public HostName alias() {
         return alias;
     }
 
-    /** The canonical name of this (rhs of the CNAME record) */
+    /** The canonical name for this (rhs of a CNAME record) */
     public HostName canonicalName() {
         return canonicalName;
     }
@@ -56,21 +57,21 @@ public class LoadBalancerAlias {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        LoadBalancerAlias that = (LoadBalancerAlias) o;
-        return Objects.equals(owner, that.owner) &&
-               Objects.equals(id, that.id) &&
-               Objects.equals(alias, that.alias) &&
-               Objects.equals(canonicalName, that.canonicalName);
+        RoutingPolicy that = (RoutingPolicy) o;
+        return owner.equals(that.owner) &&
+               recordId.equals(that.recordId) &&
+               alias.equals(that.alias) &&
+               canonicalName.equals(that.canonicalName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, id, alias, canonicalName);
+        return Objects.hash(owner, recordId, alias, canonicalName);
     }
 
     @Override
     public String toString() {
-        return String.format("%s: %s -> %s, owned by %s", id, alias, canonicalName, owner.toShortString());
+        return String.format("%s: %s -> %s, owned by %s", recordId, alias, canonicalName, owner.toShortString());
     }
 
     public static String createAlias(ClusterSpec.Id clusterId, ApplicationId applicationId, ZoneId zoneId) {

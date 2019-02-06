@@ -6,13 +6,13 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import org.junit.Test;
 
-import static com.yahoo.vespa.hosted.controller.application.LoadBalancerAlias.createAlias;
+import static com.yahoo.vespa.hosted.controller.application.RoutingPolicy.createAlias;
 import static org.junit.Assert.*;
 
 /**
  * @author mpolden
  */
-public class LoadBalancerAliasTest {
+public class RoutingPolicyTest {
 
     @Test
     public void test_endpoint_names() {
