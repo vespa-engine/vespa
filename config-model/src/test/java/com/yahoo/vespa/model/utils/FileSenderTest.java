@@ -172,5 +172,8 @@ public class FileSenderTest {
         public int getPortCount() {
             return 0;
         }
+
+        @Override
+        public String[] getPortSuffixes() { return null; }
     }
 }

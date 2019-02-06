@@ -38,6 +38,11 @@ public class SimpleService extends AbstractService implements com.yahoo.test.Sta
     public int getWantedPort(){ return 10000; }
     public int getPortCount() { return 5; }
 
+    @Override
+    public String[] getPortSuffixes() {
+        return new String[]{ "a", "b", "c", "d", "e" };
+    }
+
     // Make sure this service is listed in the sentinel config
     public String getStartupCommand()   { return "sleep 0"; }
 

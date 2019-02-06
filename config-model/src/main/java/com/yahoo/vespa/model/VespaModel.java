@@ -180,6 +180,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             root.prepare(configModelRepo);
             configModelRepo.prepareConfigModels(deployState);
             validateWrapExceptions();
+            hostSystem.dumpPortAllocations();
         }
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());

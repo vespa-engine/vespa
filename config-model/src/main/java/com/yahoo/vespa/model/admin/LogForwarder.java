@@ -55,6 +55,11 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
      */
     public int getPortCount() { return 0; }
 
+    @Override
+    public String[] getPortSuffixes() {
+        return null;
+    }
+
     /**
      * @return The command used to start LogForwarder
      */

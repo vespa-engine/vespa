@@ -234,4 +234,10 @@ public class Dispatch extends AbstractService implements SearchInterface,
      * @return the number of ports needed
      */
     public int getPortCount() { return 3; }
+
+    @Override
+    public String[] getPortSuffixes() {
+        return new String[]{ "rpc", "fs4", "health" };
+    }
+
 }

@@ -26,7 +26,7 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
         super(host, "sentinel");
         this.applicationId = applicationId;
         this.zone = zone;
-        portsMeta.on(0).tag("rpc").tag("notyet");
+        portsMeta.on(0).tag("rpc").tag("admin");
         portsMeta.on(1).tag("telnet").tag("interactive").tag("http").tag("state");
         setProp("clustertype", "hosts");
         setProp("clustername", "admin");
@@ -46,6 +46,11 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
      * @return The number of ports reserved by the Sentinel.
      */
     public int getPortCount() { return 2; }
+
+    @Override
+    public String[] getPortSuffixes() {
+        return new String[]{ "rpc", "http" };
+    }
 
     @Override
     public int getHealthPort() {return getRelativePort(1); }

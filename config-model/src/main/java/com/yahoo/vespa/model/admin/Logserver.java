@@ -70,4 +70,9 @@ public class Logserver extends AbstractService {
         return 4;
     }
 
+    @Override
+    public String[] getPortSuffixes() {
+        return new String[]{ "unused", "logtp", "last.errors", "replicator" };
+    }
+
 }

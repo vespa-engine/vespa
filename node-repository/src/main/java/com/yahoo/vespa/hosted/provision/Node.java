@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;

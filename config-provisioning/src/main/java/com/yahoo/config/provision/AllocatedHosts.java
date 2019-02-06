@@ -35,6 +35,7 @@ public class AllocatedHosts {
 
     /** Current version */
     private static final String hostSpecCurrentVespaVersion = "currentVespaVersion";
+    private static final String hostSpecNetworkPorts = "ports";
 
     private final ImmutableSet<HostSpec> hosts;
 
@@ -60,6 +61,7 @@ public class AllocatedHosts {
         });
         host.flavor().ifPresent(flavor -> cursor.setString(hostSpecFlavor, flavor.name()));
         host.version().ifPresent(version -> cursor.setString(hostSpecCurrentVespaVersion, version.toFullString()));
+        host.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, cursor.setArray(hostSpecNetworkPorts)));
     }
 
     /** Returns the hosts of this allocation */
@@ -84,8 +86,9 @@ public class AllocatedHosts {
                 object.field(hostSpecFlavor).valid() ? flavorFromSlime(object, nodeFlavors) : Optional.empty();
         Optional<com.yahoo.component.Version> version =
                 optionalString(object.field(hostSpecCurrentVespaVersion)).map(com.yahoo.component.Version::new);
-
-        return new HostSpec(object.field(hostSpecHostName).asString(), Collections.emptyList(), flavor, membership, version);
+        Optional<NetworkPorts> networkPorts =
+                NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPorts));
+        return new HostSpec(object.field(hostSpecHostName).asString(), Collections.emptyList(), flavor, membership, version, networkPorts);
     }
 
     private static ClusterMembership membershipFromSlime(Inspector object) {
