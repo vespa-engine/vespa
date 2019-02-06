@@ -12,7 +12,12 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -25,6 +30,7 @@ public class DnsMaintainer extends Maintainer {
     private static final Logger log = Logger.getLogger(DnsMaintainer.class.getName());
 
     private final NameService nameService;
+    private final AtomicInteger rotationIndex = new AtomicInteger(0);
 
     public DnsMaintainer(Controller controller, Duration interval, JobControl jobControl,
                          NameService nameService) {
@@ -40,7 +46,7 @@ public class DnsMaintainer extends Maintainer {
     protected void maintain() {
         try (RotationLock lock = rotationRepository().lock()) {
             Map<RotationId, Rotation> unassignedRotations = rotationRepository().availableRotations(lock);
-            unassignedRotations.values().forEach(this::removeDnsAlias);
+            rotationToCheckOf(unassignedRotations.values()).ifPresent(this::removeDnsAlias);
         }
     }
 
@@ -55,6 +61,22 @@ public class DnsMaintainer extends Maintainer {
                                               record.name().asString(), rotation.id().asString(), rotation.name()));
                        nameService.removeRecord(record.id());
                    });
+    }
+
+    /**
+     * Returns the rotation that should be checked in this run. We check only one rotation per run to avoid running into
+     * rate limits that may be imposed by the {@link NameService} implementation.
+     */
+    private Optional<Rotation> rotationToCheckOf(Collection<Rotation> rotations) {
+        if (rotations.isEmpty()) return Optional.empty();
+        List<Rotation> rotationList = new ArrayList<>(rotations);
+        int index = rotationIndex.getAndUpdate((i)-> {
+            if (i < rotationList.size() - 1) {
+                return ++i;
+            }
+            return 0;
+        });
+        return Optional.of(rotationList.get(index));
     }
 
     /** Returns whether we can update the given record */

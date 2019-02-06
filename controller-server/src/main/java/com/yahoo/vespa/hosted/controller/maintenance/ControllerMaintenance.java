@@ -75,7 +75,7 @@ public class ControllerMaintenance extends AbstractComponent {
         clusterUtilizationMaintainer = new ClusterUtilizationMaintainer(controller, Duration.ofHours(2), jobControl);
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(5), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
-        dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(12), jobControl, nameService);
+        dnsMaintainer = new DnsMaintainer(controller, Duration.ofMinutes(5), jobControl, nameService);
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
         jobRunner = new JobRunner(controller, Duration.ofMinutes(2), jobControl);
         osUpgraders = osUpgraders(controller, jobControl);
