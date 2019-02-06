@@ -40,6 +40,14 @@ typedef TypeType<4> STRING;
 typedef TypeType<5> DATA;
 typedef TypeType<6> ARRAY;
 typedef TypeType<7> OBJECT;
+extern template struct TypeType<NIX::ID>;
+extern template struct TypeType<BOOL::ID>;
+extern template struct TypeType<LONG::ID>;
+extern template struct TypeType<DOUBLE::ID>;
+extern template struct TypeType<STRING::ID>;
+extern template struct TypeType<DATA::ID>;
+extern template struct TypeType<ARRAY::ID>;
+extern template struct TypeType<OBJECT::ID>;
 
 } // namespace vespalib::slime
 } // namespace vespalib

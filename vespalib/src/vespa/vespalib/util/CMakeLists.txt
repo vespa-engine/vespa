@@ -2,7 +2,6 @@
 vespa_add_library(vespalib_vespalib_util OBJECT
     SOURCES
     active.cpp
-    alignedmemory.cpp
     alloc.cpp
     approx.cpp
     array.cpp
