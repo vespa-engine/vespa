@@ -7,6 +7,7 @@
 #include <chrono>
 #include <mutex>
 #include <atomic>
+#include <thread>
 #include <map>
 
 namespace vespalib::test {
@@ -82,6 +83,26 @@ public:
                time_point start_in, time_point stop_in)
             : thread_id(thread_id_in), tag_id(tag_id_in),
               start(start_in), stop(stop_in) {}
+        double ms_duration() const;
+        vespalib::string tag_name() const;
+    };
+
+    class Extractor {
+    private:
+        bool       _by_thread;
+        uint32_t   _thread_id;
+        bool       _by_tag;
+        uint32_t   _tag_id;
+        bool       _by_time;
+        time_point _a;
+        time_point _b;
+    public:
+        bool keep(const Record &entry) const;
+        Extractor &&by_thread(uint32_t thread_id) &&;
+        Extractor &&by_tag(uint32_t tag_id) &&;
+        Extractor &&by_time(time_point a, time_point b) &&;
+        std::vector<Record> get() const;
+        ~Extractor();
     };
 
 private:
@@ -93,20 +114,35 @@ private:
         LogEntry(uint32_t tag_id_in, time_point start_in, time_point stop_in, const LogEntry *next_in)
             : tag_id(tag_id_in), start(start_in), stop(stop_in), next(next_in) {}
     };
+
+    struct Guard {
+        std::atomic_flag &lock;
+        explicit Guard(std::atomic_flag &lock_in) noexcept : lock(lock_in) {
+            while (__builtin_expect(lock.test_and_set(std::memory_order_acquire), false)) {
+                std::this_thread::yield();
+            }
+        }
+        ~Guard() noexcept { lock.clear(std::memory_order_release); }
+    };
+
     class ThreadState {
     private:
+        uint32_t _thread_id;
+        mutable std::atomic_flag _lock;
         vespalib::Stash _stash;
-        std::atomic<const LogEntry *> _list;
+        const LogEntry * _list;
     public:
         using UP = std::unique_ptr<ThreadState>;
-        ThreadState() : _stash(64 * 1024), _list(nullptr) {}
+        ThreadState(uint32_t thread_id)
+            : _thread_id(thread_id), _lock{ATOMIC_FLAG_INIT}, _stash(64 * 1024), _list(nullptr) {}
+        uint32_t thread_id() const { return _thread_id; }
         const LogEntry *get_log_entries() const {
-            return _list.load(std::memory_order_acquire);
+            Guard guard(_lock);
+            return _list;
         }
         void add_log_entry(uint32_t tag_id, time_point start, time_point stop) {
-            const LogEntry *old_list = _list.load(std::memory_order_relaxed);
-            _list.store(&_stash.create<LogEntry>(tag_id, start, stop, old_list),
-                        std::memory_order_release);
+            Guard guard(_lock);
+            _list = &_stash.create<LogEntry>(tag_id, start, stop, _list);
         }
     };
     static TimeTracer &master();
@@ -123,15 +159,17 @@ private:
     std::mutex _lock;
     std::vector<ThreadState::UP> _state_list;
     std::map<vespalib::string, uint32_t> _tags;
+    std::vector<vespalib::string> _tag_names;
 
     TimeTracer();
     ~TimeTracer();
     uint32_t get_tag_id(const vespalib::string &tag_name);
+    vespalib::string get_tag_name(uint32_t tag_id);
     ThreadState *create_thread_state();
-    std::vector<Record> extract_all_impl();
+    std::vector<Record> extract_impl(const Extractor &extractor);
 
 public:
-    static std::vector<Record> extract_all();
+    static Extractor extract() { return Extractor(); }
 };
 
 } // namespace vespalib::test
