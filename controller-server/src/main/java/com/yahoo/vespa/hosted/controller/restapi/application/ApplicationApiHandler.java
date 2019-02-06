@@ -880,7 +880,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             if (versionPresent) {
                 throw new RuntimeException("Version not supported for system applications");
             }
+            // To avoid second guessing the orchestrated upgrades of system applications
+            // we don't allow to deploy these during an system upgrade (i.e when new vespa is being rolled out)
             Version version = wantedSystemVersion(zone, SystemApplication.zone);
+            if (!controller.systemVersion().equals(version)) {
+                throw new RuntimeException("Deployment of system applications during a system upgrade is not allowed");
+            }
             ActivateResult result = controller.applications()
                     .deploySystemApplicationPackage(SystemApplication.zone, zone, version);
             return new SlimeJsonResponse(toSlime(result));
