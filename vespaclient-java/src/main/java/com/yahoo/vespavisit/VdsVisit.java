@@ -292,14 +292,6 @@ public class VdsVisit {
                 .build());
 
         options.addOption(Option.builder()
-                .longOpt("maxhits")
-                .hasArg(true)
-                .argName("num")
-                .desc("Abort visiting when we have received this many \"first pass\" documents. Only appropriate for visiting involving id.order. This is only an approximate number, all pending work will be completed and those documents will also be returned.")
-                .type(Number.class)
-                .build());
-
-        options.addOption(Option.builder()
                 .longOpt("maxtotalhits")
                 .hasArg(true)
                 .argName("num")
@@ -320,13 +312,6 @@ public class VdsVisit {
                 .argName("name")
                 .desc("Priority used for each visitor. Defaults to NORMAL_3. " +
                         "Use with care to avoid starving lower prioritized traffic in the cluster")
-                .build());
-
-        options.addOption(Option.builder()
-                .longOpt("ordering")
-                .hasArg(true)
-                .argName("order")
-                .desc("Order to visit documents in. Only makes sense in conjunction with a document selection involving id.order. Legal values are \"ascending\" and \"descending\"")
                 .build());
 
         options.addOption(Option.builder()
