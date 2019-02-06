@@ -165,7 +165,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam)
     }
   }
   else {
-    _index = (UnitData*)((uint8_t*)_mmap_addr + sizeof(header));
+    _index = (UnitData*)(void *)((uint8_t*)_mmap_addr + sizeof(header));
   }
 
   // read _info
@@ -179,7 +179,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam)
     }
   }
   else {
-    _info = (uint32_t*)((uint8_t*)_index + _index_size*sizeof(UnitData));
+    _info = (uint32_t*)(void *)((uint8_t*)_index + _index_size*sizeof(UnitData));
   }
 
   // read _catindex
@@ -193,7 +193,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam)
     }
   }
   else {
-    _catindex = (uint32_t*)((uint8_t*)_info + _info_size*sizeof(uint32_t));
+    _catindex = (uint32_t*)(void *)((uint8_t*)_info + _info_size*sizeof(uint32_t));
   }
 
   // read _strings

@@ -349,12 +349,12 @@ void Automaton::PackedAutomaton::finalize()
     std::map<uint32_t,uint32_t> bcomp;
     std::map<uint32_t,uint32_t>::iterator bcomp_it;
     bcomp[0]=0;
-    uint32_t lastsize = *((uint32_t*)_blob), currsize;
+    uint32_t lastsize = *((uint32_t*)(void *)_blob), currsize;
     uint32_t i=lastsize+sizeof(uint32_t);
     uint32_t j=lastsize;
     bool fixedsize = true;
     while(i<_blob_used){
-      currsize = *((uint32_t*)(_blob+i));
+      currsize = *((uint32_t*)(void *)(_blob+i));
       if(currsize!=lastsize){
         fixedsize = false;
         break;

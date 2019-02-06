@@ -154,11 +154,11 @@ int main(int argc, char** argv)
           break;
         case 2:
         case 3:
-          num_meta = *((const uint16_t*)it->data());
+          num_meta = *((const uint16_t*)(const void *)it->data());
           break;
         case 4:
         default:
-          num_meta = *((const uint32_t*)it->data());
+          num_meta = *((const uint32_t*)(const void *)it->data());
           break;
         }
         std::cout << it->str() << '\t' << num_meta << '\n';
