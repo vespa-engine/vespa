@@ -230,6 +230,11 @@ private:
     bool Write();
 
     bool writePendingAfterConnect();
+
+    /**
+     * @return address spec of socket peer. Only makes sense to call on non-listening sockets.
+     */
+    vespalib::string GetPeerSpec() const;
 public:
 
     /**
