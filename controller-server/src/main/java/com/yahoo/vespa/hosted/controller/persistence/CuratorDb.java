@@ -63,6 +63,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 public class CuratorDb {
 
     private static final Logger log = Logger.getLogger(CuratorDb.class.getName());
+    private static final Duration deployLockTimeout = Duration.ofMinutes(20);
     private static final Duration defaultLockTimeout = Duration.ofMinutes(5);
     private static final Duration defaultTryLockTimeout = Duration.ofSeconds(1);
 
@@ -115,7 +116,7 @@ public class CuratorDb {
 
     // -------------- Locks ---------------------------------------------------
 
-    /** Create a reentrant lock */
+    /** Creates a reentrant lock */
     private Lock lock(Path path, Duration timeout) {
         Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator));
         lock.acquire(timeout);
@@ -128,6 +129,13 @@ public class CuratorDb {
 
     public Lock lock(ApplicationId id) {
         return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
+    }
+
+    // Timeout should be higher than the time deployment takes, since there might be deployments wanting
+    // to run in parallel, too low timeout in that case has been seen to lead to deployments not
+    // getting the lock before it times out
+    public Lock lockForDeployment(ApplicationId id) {
+        return lock(lockPath(id), deployLockTimeout);
     }
 
     public Lock lock(ApplicationId id, JobType type) {
