@@ -123,11 +123,9 @@ public class VdsVisitTestCase {
                 "--libraryparam", "asdf", "rargh",
                 "--libraryparam", "pinkie", "pie",
                 "--processtime", "555",
-                "--maxhits", "1001",
                 "--maxtotalhits", "2002",
                 "--tracelevel", "8",
                 "--priority", "NORMAL_1",
-                "--ordering", "ascending",
                 "--skipbucketsonfatalerrors",
                 "--abortonclusterdown",
                 "--visitremoves",
@@ -161,11 +159,9 @@ public class VdsVisitTestCase {
         assertTrue(Arrays.equals("rargh".getBytes(), params.getLibraryParameters().get("asdf")));
         //assertTrue(Arrays.equals("pie".getBytes(), params.getLibraryParameters().get("pinkie")));
         assertEquals(555, allParams.getProcessTime());
-        assertEquals(1001, params.getMaxFirstPassHits());
         assertEquals(2002, params.getMaxTotalHits());
         assertEquals(8, params.getTraceLevel());
         assertEquals(DocumentProtocol.Priority.NORMAL_1, params.getPriority());
-        assertEquals(OrderingSpecification.ASCENDING, params.getVisitorOrdering());
         assertTrue(allParams.getAbortOnClusterDown());
         assertTrue(params.visitRemoves());
 
@@ -192,13 +188,6 @@ public class VdsVisitTestCase {
                         "Visitor priority NORMAL_1" + nl +
                         "Skip visiting super buckets with fatal errors." + nl,
                 outputStream.toString("utf-8"));
-
-        args = new String[] {
-                "--ordering", "descending"
-        };
-        allParams = parser.parse(args);
-        params = allParams.getVisitorParameters();
-        assertEquals(OrderingSpecification.DESCENDING, params.getVisitorOrdering());
     }
 
     private static String[] emptyArgList() { return new String[]{}; }
@@ -222,20 +211,6 @@ public class VdsVisitTestCase {
             fail("no exception thrown");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("Unknown priority name"));
-        }
-    }
-
-    @Test
-    public void testBadOrderingValue() throws Exception {
-        String[] args = new String[] {
-                "--ordering", "yonder"
-        };
-        VdsVisit.ArgumentParser parser = createMockArgumentParser();
-        try {
-            parser.parse(args);
-            fail("no exception thrown");
-        } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("Unknown ordering"));
         }
     }
 
