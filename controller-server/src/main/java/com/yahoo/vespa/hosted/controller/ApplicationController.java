@@ -68,10 +68,8 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -267,7 +265,7 @@ public class ApplicationController {
         if (applicationId.instance().isTester())
             throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
 
-        try (Lock lock = lock(applicationId)) {
+        try (Lock lock = lockForDeployment(applicationId)) {
             LockedApplication application = get(applicationId)
                     .map(app -> new LockedApplication(app, lock))
                     .orElseGet(() -> new LockedApplication(createApplication(applicationId, Optional.empty()), lock));
@@ -657,6 +655,16 @@ public class ApplicationController {
      */
     Lock lock(ApplicationId application) {
         return curator.lock(application);
+    }
+
+    /**
+     * Returns a lock which provides exclusive rights to changing this application, with a timeout that
+     * is suitable for deployments.
+     * Any operation which stores an application need to first acquire this lock, then read, modify
+     * and store the application, and finally release (close) the lock.
+     */
+    private Lock lockForDeployment(ApplicationId application) {
+        return curator.lockForDeployment(application);
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system. */
