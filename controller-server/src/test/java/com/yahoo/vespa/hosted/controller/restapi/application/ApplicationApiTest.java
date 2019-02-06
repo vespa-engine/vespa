@@ -668,6 +668,19 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(entity)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
+
+        // POST (deploy) a system application with an application package
+        HttpEntity noAppEntity = createApplicationDeployData(Optional.empty(), true);
+        tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
+                        .data(noAppEntity)
+                        .userIdentity(USER_ID),
+                new File("deploy-result.json"));
+
+        // POST (deploy) a system application without an application package
+        tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/proxy-host/environment/prod/region/us-central-1/instance/default/deploy", POST)
+                        .data(noAppEntity)
+                        .userIdentity(USER_ID),
+                new File("deploy-no-deployment.json"), 400);
     }
 
     // Tests deployment to config server when using just on API call
