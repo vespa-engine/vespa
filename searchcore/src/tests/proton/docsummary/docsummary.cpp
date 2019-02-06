@@ -778,12 +778,7 @@ Test::requireThatAttributesAreUsed()
                          "bj", *rep, 0, rclass));
 
     // empty doc
-    EXPECT_TRUE(assertSlime("{bd:[],"
-                             "be:[],"
-                             "bf:[],"
-                             "bg:[],"
-                             "bh:[],"
-                             "bi:[]}", *rep, 1, false));
+    EXPECT_TRUE(assertSlime("{}", *rep, 1, false));
     TEST_DO(assertTensor(Tensor::UP(), "bj", *rep, 1, rclass));
 
     proton::IAttributeManager::SP attributeManager = dc._ddb->getReadySubDB()->getAttributeManager();
@@ -807,9 +802,7 @@ Test::requireThatAttributesAreUsed()
     req3.hits.push_back(DocsumRequest::Hit(gid3));
     DocsumReply::UP rep3 = dc._ddb->getDocsums(req3);
 
-    EXPECT_TRUE(assertSlime("{bd:[],be:[],bf:[],bg:[],"
-                            "bh:[],bi:[],"
-                            "bj:'0x01020178017901016101624010000000000000'}",
+    EXPECT_TRUE(assertSlime("{bj:'0x01020178017901016101624010000000000000'}",
                             *rep3, 0, true));
 }
 
