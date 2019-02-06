@@ -39,29 +39,6 @@ using search::attribute::ReferenceAttribute;
 
 namespace search {
 
-//-----------------------------------------------------------------------------
-
-template <typename T>
-class Vector
-{
-private:
-    std::vector<T> _vec;
-public:
-    Vector() : _vec() {}
-    size_t size() const {
-        return _vec.size();
-    }
-    Vector & pb(const T & val) {
-        _vec.push_back(val);
-        return *this;
-    }
-    const T & operator [] (size_t idx) const {
-        return _vec[idx];
-    }
-};
-
-//-----------------------------------------------------------------------------
-
 typedef AttributeVector::SP AttributePtr;
 typedef AttributeVector::WeightedInt WeightedInt;
 typedef AttributeVector::WeightedFloat WeightedFloat;
@@ -121,7 +98,7 @@ private:
     }
 
     template <typename T>
-    bool check(const AttributePtr & vec, uint32_t docId, const Vector<T> & values) {
+    bool check(const AttributePtr &vec, uint32_t docId, const std::vector<T> &values) {
         uint32_t sz = vec->getValueCount(docId);
         if (!EXPECT_EQUAL(sz, values.size())) return false;
         std::vector<T> buf(sz);
@@ -214,9 +191,9 @@ Test::requireThatSingleAttributesAreUpdated()
         applyValueUpdate(*vec, 1, ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
         applyValueUpdate(*vec, 2, ClearValueUpdate());
         EXPECT_EQUAL(3u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, Vector<WeightedInt>().pb(WeightedInt(64))));
-        EXPECT_TRUE(check(vec, 1, Vector<WeightedInt>().pb(WeightedInt(42))));
-        EXPECT_TRUE(check(vec, 2, Vector<WeightedInt>().pb(WeightedInt(getUndefined<int32_t>()))));
+        EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64)}));
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(42)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{WeightedInt(getUndefined<int32_t>())}));
     }
     {
         BasicType bt(BasicType::FLOAT);
@@ -228,8 +205,8 @@ Test::requireThatSingleAttributesAreUpdated()
         applyValueUpdate(*vec, 1, ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
         applyValueUpdate(*vec, 2, ClearValueUpdate());
         EXPECT_EQUAL(3u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, Vector<WeightedFloat>().pb(WeightedFloat(77.7f))));
-        EXPECT_TRUE(check(vec, 1, Vector<WeightedFloat>().pb(WeightedFloat(65.5f))));
+        EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(65.5f)}));
         EXPECT_TRUE(std::isnan(vec->getFloat(2)));
     }
     {
@@ -241,9 +218,9 @@ Test::requireThatSingleAttributesAreUpdated()
         applyValueUpdate(*vec, 0, AssignValueUpdate(StringFieldValue("second")));
         applyValueUpdate(*vec, 2, ClearValueUpdate());
         EXPECT_EQUAL(3u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, Vector<WeightedString>().pb(WeightedString("second"))));
-        EXPECT_TRUE(check(vec, 1, Vector<WeightedString>().pb(WeightedString("first"))));
-        EXPECT_TRUE(check(vec, 2, Vector<WeightedString>().pb(WeightedString(""))));
+        EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second")}));
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("first")}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{WeightedString("")}));
     }
     {
         BasicType bt(BasicType::REFERENCE);
@@ -283,11 +260,11 @@ Test::requireThatArrayAttributesAreUpdated()
         applyArrayUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, Vector<WeightedInt>().pb(WeightedInt(64))));
-        EXPECT_TRUE(check(vec, 1, Vector<WeightedInt>().pb(WeightedInt(32)).pb(WeightedInt(64))));
-        EXPECT_TRUE(check(vec, 2, Vector<WeightedInt>()));
-        EXPECT_TRUE(check(vec, 3, Vector<WeightedInt>()));
-        EXPECT_TRUE(check(vec, 4, Vector<WeightedInt>().pb(WeightedInt(32))));
+        EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64)}));
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(32), WeightedInt(64)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{}));
+        EXPECT_TRUE(check(vec, 3, std::vector<WeightedInt>{}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedInt>{WeightedInt(32)}));
     }
     {
         BasicType bt(BasicType::FLOAT);
@@ -302,11 +279,11 @@ Test::requireThatArrayAttributesAreUpdated()
         applyArrayUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, Vector<WeightedFloat>().pb(WeightedFloat(77.7f))));
-        EXPECT_TRUE(check(vec, 1, Vector<WeightedFloat>().pb(WeightedFloat(55.5f)).pb(WeightedFloat(77.7f))));
-        EXPECT_TRUE(check(vec, 2, Vector<WeightedFloat>()));
-        EXPECT_TRUE(check(vec, 3, Vector<WeightedFloat>()));
-        EXPECT_TRUE(check(vec, 4, Vector<WeightedFloat>().pb(WeightedFloat(55.5f))));
+        EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(55.5f), WeightedFloat(77.7f)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedFloat>{}));
+        EXPECT_TRUE(check(vec, 3, std::vector<WeightedFloat>{}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedFloat>{WeightedFloat(55.5f)}));
     }
     {
         BasicType bt(BasicType::STRING);
@@ -320,11 +297,11 @@ Test::requireThatArrayAttributesAreUpdated()
         applyArrayUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, Vector<WeightedString>().pb(WeightedString("second"))));
-        EXPECT_TRUE(check(vec, 1, Vector<WeightedString>().pb(WeightedString("first")).pb(WeightedString("second"))));
-        EXPECT_TRUE(check(vec, 2, Vector<WeightedString>()));
-        EXPECT_TRUE(check(vec, 3, Vector<WeightedString>()));
-        EXPECT_TRUE(check(vec, 4, Vector<WeightedString>().pb(WeightedString("first"))));
+        EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second")}));
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("first"), WeightedString("second")}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{}));
+        EXPECT_TRUE(check(vec, 3, std::vector<WeightedString>{}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedString>{WeightedString("first")}));
     }
 }
 
@@ -345,11 +322,11 @@ Test::requireThatWeightedSetAttributesAreUpdated()
         applyWeightedSetUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, Vector<WeightedInt>().pb(WeightedInt(64, 20))));
-        EXPECT_TRUE(check(vec, 1, Vector<WeightedInt>().pb(WeightedInt(32, 100)).pb(WeightedInt(64, 20))));
-        EXPECT_TRUE(check(vec, 2, Vector<WeightedInt>()));
-        EXPECT_TRUE(check(vec, 3, Vector<WeightedInt>()));
-        EXPECT_TRUE(check(vec, 4, Vector<WeightedInt>().pb(WeightedInt(32, 110))));
+        EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64, 20)}));
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(32, 100), WeightedInt(64, 20)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{}));
+        EXPECT_TRUE(check(vec, 3, std::vector<WeightedInt>{}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedInt>{WeightedInt(32, 110)}));
     }
     {
         BasicType bt(BasicType::FLOAT);
@@ -365,11 +342,11 @@ Test::requireThatWeightedSetAttributesAreUpdated()
         applyWeightedSetUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, Vector<WeightedFloat>().pb(WeightedFloat(77.7f, 20))));
-        EXPECT_TRUE(check(vec, 1, Vector<WeightedFloat>().pb(WeightedFloat(55.5f, 100)).pb(WeightedFloat(77.7f, 20))));
-        EXPECT_TRUE(check(vec, 2, Vector<WeightedFloat>()));
-        EXPECT_TRUE(check(vec, 3, Vector<WeightedFloat>()));
-        EXPECT_TRUE(check(vec, 4, Vector<WeightedFloat>().pb(WeightedFloat(55.5f, 110))));
+        EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f, 20)}));
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(55.5f, 100), WeightedFloat(77.7f, 20)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedFloat>{}));
+        EXPECT_TRUE(check(vec, 3, std::vector<WeightedFloat>{}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedFloat>{WeightedFloat(55.5f, 110)}));
     }
     {
         BasicType bt(BasicType::STRING);
@@ -386,11 +363,11 @@ Test::requireThatWeightedSetAttributesAreUpdated()
         applyWeightedSetUpdates(*vec, assign, first, second);
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, Vector<WeightedString>().pb(WeightedString("second", 20))));
-        EXPECT_TRUE(check(vec, 1, Vector<WeightedString>().pb(WeightedString("first", 100)).pb(WeightedString("second", 20))));
-        EXPECT_TRUE(check(vec, 2, Vector<WeightedString>()));
-        EXPECT_TRUE(check(vec, 3, Vector<WeightedString>()));
-        EXPECT_TRUE(check(vec, 4, Vector<WeightedString>().pb(WeightedString("first", 110))));
+        EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second", 20)}));
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("first", 100), WeightedString("second", 20)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{}));
+        EXPECT_TRUE(check(vec, 3, std::vector<WeightedString>{}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedString>{WeightedString("first", 110)}));
     }
 }
 
