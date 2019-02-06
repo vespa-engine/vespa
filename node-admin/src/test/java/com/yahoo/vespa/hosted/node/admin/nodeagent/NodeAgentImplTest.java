@@ -713,7 +713,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.updateContainerNodeMetrics();
 
-        Set<Map<String, Object>> actualMetrics = metricReceiver.getAllMetricsRaw();
+        Set<Map<String, Object>> actualMetrics = metricReceiver.getDefaultMetricsRaw();
         assertEquals(Collections.emptySet(), actualMetrics);
     }
 
