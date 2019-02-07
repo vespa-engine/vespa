@@ -4493,7 +4493,8 @@
       "public abstract void write(com.yahoo.document.update.AssignValueUpdate, com.yahoo.document.DataType)",
       "public abstract void write(com.yahoo.document.update.RemoveValueUpdate, com.yahoo.document.DataType)",
       "public abstract void write(com.yahoo.document.update.ClearValueUpdate, com.yahoo.document.DataType)",
-      "public abstract void write(com.yahoo.document.update.TensorModifyUpdate)"
+      "public abstract void write(com.yahoo.document.update.TensorModifyUpdate)",
+      "public abstract void write(com.yahoo.document.update.TensorAddUpdate)"
     ],
     "fields": []
   },
@@ -4747,7 +4748,8 @@
       "public void read(com.yahoo.document.annotation.Span)",
       "public void read(com.yahoo.document.annotation.SpanList)",
       "public void read(com.yahoo.document.annotation.AlternateSpanList)",
-      "protected com.yahoo.document.update.ValueUpdate readTensorModifyUpdate(com.yahoo.document.DataType)"
+      "protected com.yahoo.document.update.ValueUpdate readTensorModifyUpdate(com.yahoo.document.DataType)",
+      "protected com.yahoo.document.update.ValueUpdate readTensorAddUpdate(com.yahoo.document.DataType)"
     ],
     "fields": []
   },
@@ -4759,7 +4761,8 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.document.DocumentTypeManager, com.yahoo.io.GrowableByteBuffer)",
-      "protected com.yahoo.document.update.ValueUpdate readTensorModifyUpdate(com.yahoo.document.DataType)"
+      "protected com.yahoo.document.update.ValueUpdate readTensorModifyUpdate(com.yahoo.document.DataType)",
+      "protected com.yahoo.document.update.ValueUpdate readTensorAddUpdate(com.yahoo.document.DataType)"
     ],
     "fields": []
   },
@@ -4810,6 +4813,7 @@
       "public void write(com.yahoo.document.update.RemoveValueUpdate, com.yahoo.document.DataType)",
       "public void write(com.yahoo.document.update.ClearValueUpdate, com.yahoo.document.DataType)",
       "public void write(com.yahoo.document.update.TensorModifyUpdate)",
+      "public void write(com.yahoo.document.update.TensorAddUpdate)",
       "public static long getSerializedSize(com.yahoo.document.Document)"
     ],
     "fields": []
@@ -4864,6 +4868,7 @@
       "public void write(com.yahoo.document.update.RemoveValueUpdate, com.yahoo.document.DataType)",
       "public void write(com.yahoo.document.update.ClearValueUpdate, com.yahoo.document.DataType)",
       "public void write(com.yahoo.document.update.TensorModifyUpdate)",
+      "public void write(com.yahoo.document.update.TensorAddUpdate)",
       "public static long getSerializedSize(com.yahoo.document.Document)"
     ],
     "fields": []
@@ -4876,7 +4881,8 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.io.GrowableByteBuffer)",
-      "public void write(com.yahoo.document.update.TensorModifyUpdate)"
+      "public void write(com.yahoo.document.update.TensorModifyUpdate)",
+      "public void write(com.yahoo.document.update.TensorAddUpdate)"
     ],
     "fields": []
   },

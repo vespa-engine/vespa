@@ -91,7 +91,7 @@ public class JsonSerializationHelper {
         generator.writeEndArray();
     }
 
-    private static void serializeTensorCells(JsonGenerator generator, Tensor tensor) throws IOException {
+    static void serializeTensorCells(JsonGenerator generator, Tensor tensor) throws IOException {
         generator.writeArrayFieldStart(TensorReader.TENSOR_CELLS);
         for (Map.Entry<TensorAddress, Double> cell : tensor.cells().entrySet()) {
             generator.writeStartObject();

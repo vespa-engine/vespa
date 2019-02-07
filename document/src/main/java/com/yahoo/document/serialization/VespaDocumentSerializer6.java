@@ -48,6 +48,7 @@ import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.RemoveValueUpdate;
+import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
@@ -685,7 +686,12 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
     @Override
     public void write(TensorModifyUpdate update) {
-        throw new IllegalArgumentException("Write of TensorModifyUpdate not yet implemeneted");
+        throw new IllegalArgumentException("Write of TensorModifyUpdate not implemeneted for Vespa 6");
+    }
+
+    @Override
+    public void write(TensorAddUpdate update) {
+        throw new IllegalArgumentException("Write of TensorAddUpdate not implemeneted for Vespa 6");
     }
 
     /**
