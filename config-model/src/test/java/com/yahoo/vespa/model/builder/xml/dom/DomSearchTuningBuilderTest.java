@@ -138,6 +138,8 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "</resizing>"));
         assertEquals(128, t.searchNode.resizing.initialDocumentCount.intValue());
         assertEquals(13, t.searchNode.resizing.amortizeCount.intValue());
+        String cfg = getProtonCfg(t);
+        assertThat(cfg, containsString("grow.initial 128"));
     }
 
     @Test
