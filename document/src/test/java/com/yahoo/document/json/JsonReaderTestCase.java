@@ -1455,6 +1455,13 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_add_update_without_cells_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Add update for field 'sparse_tensor' does not contain tensor cells");
+        createTensorAddUpdate(inputJson("{}"), "sparse_tensor");
+    }
+
+    @Test
     public void require_that_parser_propagates_datatype_parser_errors_predicate() {
         assertParserErrorMatches(
                 "Error in document 'id:unittest:testpredicate::0' - could not parse field 'boolean' of type 'predicate': " +

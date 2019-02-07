@@ -6,6 +6,7 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.TensorAddUpdate;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
@@ -28,6 +29,7 @@ public class TensorAddUpdateReader {
         TensorType tensorType = tensorDataType.getTensorType();
         TensorFieldValue tensorFieldValue = new TensorFieldValue(tensorType);
         fillTensor(buffer, tensorFieldValue);
+        expectTensorIsNonEmpty(field, tensorFieldValue.getTensor().get());
         return new TensorAddUpdate(tensorFieldValue);
     }
 
@@ -39,5 +41,12 @@ public class TensorAddUpdateReader {
                     + "Field '" + field.getName() + "' has unsupported tensor type '" + tensorType + "'");
         }
     }
+
+    private static void expectTensorIsNonEmpty(Field field, Tensor tensor) {
+        if (tensor.isEmpty()) {
+            throw new IllegalArgumentException("Add update for field '" + field.getName() + "' does not contain tensor cells");
+        }
+    }
+
 
 }

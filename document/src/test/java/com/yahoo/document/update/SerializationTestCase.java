@@ -27,20 +27,12 @@ public class SerializationTestCase {
     private DocumentType documentType;
 
     private Field field;
-    private final static TensorType sparseTensorType = new TensorType.Builder().mapped("x").mapped("y").build();
-    private final static TensorType denseTensorType = new TensorType.Builder().indexed("x", 2).indexed("y", 3).build();
-    private Field sparseTensorField;
-    private Field denseTensorField;
 
     @Before
     public void setUp() {
         documentType = new DocumentType("document1");
         field = new Field("field1", DataType.getArray(DataType.STRING));
         documentType.addField(field);
-        sparseTensorField = new Field("sparse_tensor", new TensorDataType(sparseTensorType));
-        denseTensorField = new Field("dense_tensor", new TensorDataType(denseTensorType));
-        documentType.addField(sparseTensorField);
-        documentType.addField(denseTensorField);
     }
 
     @Test
@@ -73,69 +65,4 @@ public class SerializationTestCase {
         assertEquals("'field1' [clear]", deserializedUpdate.toString());
     }
 
-    @Test
-    public void test_tensor_modify_update_serialization_with_dense_tensor() {
-        String tensorString = "{{x:1,y:2}:2}";
-        FieldUpdate update = createTensorModifyUpdate(denseTensorField, denseTensorType, tensorString);
-
-        FieldUpdate deserializedUpdate = roundtripSerialize(update);
-        TensorModifyUpdate modifyUpdate = expectTensorModifyUpdate(deserializedUpdate, "dense_tensor");
-
-        assertEquals(TensorModifyUpdate.Operation.REPLACE, modifyUpdate.getOperation());
-        assertEquals(TensorType.fromSpec("tensor(x{},y{})"), modifyUpdate.getValue().getDataType().getTensorType());
-        assertEquals(createTensor(sparseTensorType, tensorString), modifyUpdate.getValue());
-        assertEquals(update, deserializedUpdate);
-    }
-
-    @Test
-    public void test_tensor_modify_update_serialization_with_sparse_tensor() {
-        String tensorString = "{{x:a,y:b}:2}";
-        FieldUpdate update = createTensorModifyUpdate(sparseTensorField, sparseTensorType, tensorString);
-
-        FieldUpdate deserializedUpdate = roundtripSerialize(update);
-        TensorModifyUpdate modifyUpdate = expectTensorModifyUpdate(deserializedUpdate, "sparse_tensor");
-
-        assertEquals(TensorModifyUpdate.Operation.REPLACE, modifyUpdate.getOperation());
-        assertEquals(TensorType.fromSpec("tensor(x{},y{})"), modifyUpdate.getValue().getDataType().getTensorType());
-        assertEquals(createTensor(sparseTensorType, tensorString), modifyUpdate.getValue());
-        assertEquals(update, deserializedUpdate);
-    }
-
-    private static FieldUpdate createTensorModifyUpdate(Field tensorField, TensorType tensorType, String tensorString) {
-        FieldUpdate result = new FieldUpdate(tensorField);
-        // Note that the tensor type is converted to only have mapped dimensions.
-        TensorFieldValue tensor = createTensor(TensorModifyUpdate.convertToCompatibleType(tensorType), tensorString);
-        result.addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.REPLACE, tensor));
-        return result;
-    }
-
-    private static TensorFieldValue createTensor(TensorType type, String tensorCellString) {
-        return new TensorFieldValue(Tensor.from(type, tensorCellString));
-    }
-
-    private static GrowableByteBuffer serializeUpdate(FieldUpdate update) {
-        DocumentSerializer buffer = DocumentSerializerFactory.createHead(new GrowableByteBuffer());
-        update.serialize(buffer);
-        buffer.getBuf().rewind();
-        return buffer.getBuf();
-    }
-
-    private FieldUpdate deserializeUpdate(GrowableByteBuffer buffer) {
-        return new FieldUpdate(DocumentDeserializerFactory.createHead(new DocumentTypeManager(), buffer), documentType, Document.SERIALIZED_VERSION);
-    }
-
-    private FieldUpdate roundtripSerialize(FieldUpdate update) {
-        GrowableByteBuffer buffer = serializeUpdate(update);
-        return deserializeUpdate(buffer);
-    }
-
-    private static TensorModifyUpdate expectTensorModifyUpdate(FieldUpdate update, String tensorFieldName) {
-        assertEquals(tensorFieldName, update.getField().getName());
-        assertEquals(1, update.getValueUpdates().size());
-        ValueUpdate valueUpdate = update.getValueUpdate(0);
-        if (!(valueUpdate instanceof TensorModifyUpdate)) {
-            throw new IllegalStateException("Expected tensorModifyUpdate");
-        }
-        return (TensorModifyUpdate)valueUpdate;
-    }
 }
