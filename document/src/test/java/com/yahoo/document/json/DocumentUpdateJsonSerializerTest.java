@@ -32,7 +32,8 @@ import static com.yahoo.test.json.JsonTestHelper.inputJson;
  */
 public class DocumentUpdateJsonSerializerTest {
 
-    final static TensorType tensorType = new TensorType.Builder().mapped("x").mapped("y").build();
+    final static TensorType sparseTensorType = new TensorType.Builder().mapped("x").mapped("y").build();
+    final static TensorType denseTensorType = new TensorType.Builder().indexed("x", 2).indexed("y", 3).build();
     final static DocumentTypeManager types = new DocumentTypeManager();
     final static JsonFactory parserFactory = new JsonFactory();
     final static DocumentType docType = new DocumentType("doctype");
@@ -51,7 +52,8 @@ public class DocumentUpdateJsonSerializerTest {
         docType.addField(new Field("float_field", DataType.FLOAT));
         docType.addField(new Field("double_field", DataType.DOUBLE));
         docType.addField(new Field("byte_field", DataType.BYTE));
-        docType.addField(new Field("tensor_field", new TensorDataType(tensorType)));
+        docType.addField(new Field("sparse_tensor", new TensorDataType(sparseTensorType)));
+        docType.addField(new Field("dense_tensor", new TensorDataType(denseTensorType)));
         docType.addField(new Field("reference_field", new ReferenceDataType(refTargetDocType, 777)));
         docType.addField(new Field("predicate_field", DataType.PREDICATE));
         docType.addField(new Field("raw_field", DataType.RAW));
@@ -252,7 +254,7 @@ public class DocumentUpdateJsonSerializerTest {
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
-                "        'tensor_field': {",
+                "        'sparse_tensor': {",
                 "            'assign': {",
                 "                'cells': [",
                 "                    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 },",
@@ -261,6 +263,26 @@ public class DocumentUpdateJsonSerializerTest {
                 "            }",
                 "        }",
                 "    }",
+                "}"
+        ));
+    }
+
+    @Test
+    public void test_tensor_modify_update() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "  'update': 'DOCUMENT_ID',",
+                "  'fields': {",
+                "    'dense_tensor': {",
+                "      'modify': {",
+                "        'operation': 'replace',",
+                "        'cells': [",
+                "          { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 },",
+                "          { 'address': { 'x': '1', 'y': '2' }, 'value': 3.0 }",
+                "        ]",
+                "      }",
+                "    }",
+                "  }",
                 "}"
         ));
     }

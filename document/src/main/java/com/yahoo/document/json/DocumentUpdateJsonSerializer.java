@@ -263,7 +263,15 @@ public class DocumentUpdateJsonSerializer
 
         @Override
         public void write(TensorModifyUpdate update) {
-            throw new JsonSerializationException("Serialization of tensor modify update is not yet implemented");
+            wrapIOException(() -> {
+                generator.writeObjectFieldStart("modify");
+                generator.writeFieldName("operation");
+                generator.writeString(update.getOperation().name);
+                if (update.getValue().getTensor().isPresent()) {
+                    serializeTensorCells(generator, update.getValue().getTensor().get());
+                }
+                generator.writeEndObject();
+            });
         }
 
         @Override
