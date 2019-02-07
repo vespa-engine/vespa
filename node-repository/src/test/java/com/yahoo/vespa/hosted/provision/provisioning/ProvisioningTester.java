@@ -452,7 +452,7 @@ public class ProvisioningTester {
                     Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
                     Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
                     orchestrator,
-                    Optional.ofNullable(hostProvisioner).orElseGet(() -> null),
+                    Optional.ofNullable(hostProvisioner).orElse(null),
                     Optional.ofNullable(loadBalancerService).orElseGet(LoadBalancerServiceMock::new),
                     Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new));
         }

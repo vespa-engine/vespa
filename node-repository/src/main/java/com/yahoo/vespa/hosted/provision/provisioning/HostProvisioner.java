@@ -20,10 +20,9 @@ public interface HostProvisioner {
      * @param numHosts number of hosts to provision
      * @param nodeFlavor Vespa flavor of the node that will run on this host. The resulting provisioned host
      *                   will be of a flavor that is at least as big or bigger than this.
-     * @return list of nodes that should be added to the node-repo, the list will contain exactly 2 elements:
-     * the provisioned host, and a docker container on that host with flavor {@code nodeFlavor}
+     * @return list of {@link ProvisionedHost} describing the provisioned hosts and nodes on them.
      */
-    List<Node> provisionHosts(int numHosts, Flavor nodeFlavor);
+    List<ProvisionedHost> provisionHosts(int numHosts, Flavor nodeFlavor);
 
     /**
      * Continue provisioning of given list of Nodes.

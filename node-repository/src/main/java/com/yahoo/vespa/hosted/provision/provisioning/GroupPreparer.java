@@ -75,6 +75,28 @@ public class GroupPreparer {
                 NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,
                         highestIndex, nodeRepository.zone(), nodeRepository.clock());
                 allocation.offer(prioritizer.prioritize());
+
+                if (dynamicProvisioningEnabled) {
+                    List<ProvisionedHost> provisionedHosts = allocation.getFulfilledDockerDeficit().map(deficit ->
+                            hostProvisioner.get().provisionHosts(deficit.getCount(), deficit.getFlavor())).orElseGet(List::of);
+
+                    // At this point we have started provisioning of the hosts, the first priority is to make sure that
+                    // the returned hosts are added to the node-repo so that they are tracked by the provision maintainers
+                    List<Node> hosts = provisionedHosts.stream()
+                            .map(ProvisionedHost::generateHost)
+                            .collect(Collectors.toList());
+                    nodeRepository.addNodes(hosts);
+
+                    // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
+                    List<PrioritizableNode> nodes = provisionedHosts.stream()
+                            .map(provisionedHost -> new PrioritizableNode.Builder(provisionedHost.generateNode())
+                                    .withParent(provisionedHost.generateHost())
+                                    .withNewNode(true)
+                                    .build())
+                            .collect(Collectors.toList());
+                    allocation.offer(nodes);
+                }
+
                 if (! allocation.fulfilled() && requestedNodes.canFail())
                     throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
                                                      " in " + application.toShortString() +
