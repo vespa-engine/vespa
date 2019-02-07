@@ -15,6 +15,10 @@ import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.json.document.DocumentParser;
+import com.yahoo.document.serialization.DocumentDeserializerFactory;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
@@ -28,6 +32,8 @@ import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
 import static com.yahoo.test.json.JsonTestHelper.inputJson;
 
 /**
+ * Tests roundtrip serialization (JSON -> DocumentUpdate -> Buffer -> DocumentUpdate -> JSON) of document updates.
+ *
  * @author Vegard Sjonfjell
  */
 public class DocumentUpdateJsonSerializerTest {
@@ -70,13 +76,29 @@ public class DocumentUpdateJsonSerializerTest {
         types.registerDocumentType(docType);
     }
 
-    private static DocumentUpdate deSerializeDocumentUpdate(String jsonDoc, String docId) {
+    private static GrowableByteBuffer serializeDocumentUpdate(DocumentUpdate update) {
+        DocumentSerializer serializer = DocumentSerializerFactory.createHead(new GrowableByteBuffer());
+        update.serialize(serializer);
+        serializer.getBuf().rewind();
+        return serializer.getBuf();
+    }
+
+    private static DocumentUpdate deserializeDocumentUpdate(GrowableByteBuffer buffer) {
+        return new DocumentUpdate(DocumentDeserializerFactory.createHead(types, buffer));
+    }
+
+    private static DocumentUpdate roundtripSerialize(DocumentUpdate update) {
+        GrowableByteBuffer buffer = serializeDocumentUpdate(update);
+        return deserializeDocumentUpdate(buffer);
+    }
+
+    private static DocumentUpdate jsonToDocumentUpdate(String jsonDoc, String docId) {
         final InputStream rawDoc = new ByteArrayInputStream(Utf8.toBytes(jsonDoc));
         JsonReader reader = new JsonReader(types, rawDoc, parserFactory);
         return (DocumentUpdate) reader.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, docId);
     }
 
-    private static String serializeDocumentUpdate(DocumentUpdate update) {
+    private static String documentUpdateToJson(DocumentUpdate update) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         DocumentUpdateJsonSerializer serializer = new DocumentUpdateJsonSerializer(outputStream);
         serializer.serialize(update);
@@ -88,15 +110,21 @@ public class DocumentUpdateJsonSerializerTest {
         }
     }
 
-    private static void deSerializeAndSerializeJsonAndMatch(String jsonDoc) {
+    private static void roundtripSerializeJsonAndMatch(String jsonDoc, String expectedJsonDoc) {
         jsonDoc = jsonDoc.replaceFirst("DOCUMENT_ID", DEFAULT_DOCUMENT_ID);
-        DocumentUpdate update = deSerializeDocumentUpdate(jsonDoc, DEFAULT_DOCUMENT_ID);
-        assertJsonEquals(serializeDocumentUpdate(update), jsonDoc);
+        expectedJsonDoc = expectedJsonDoc.replaceFirst("DOCUMENT_ID", DEFAULT_DOCUMENT_ID);
+        DocumentUpdate update = jsonToDocumentUpdate(jsonDoc, DEFAULT_DOCUMENT_ID);
+        DocumentUpdate roundtripUpdate = roundtripSerialize(update);
+        assertJsonEquals(expectedJsonDoc, documentUpdateToJson(roundtripUpdate));
+    }
+
+    private static void roundtripSerializeJsonAndMatch(String jsonDoc) {
+        roundtripSerializeJsonAndMatch(jsonDoc, jsonDoc);
     }
 
     @Test
     public void testArithmeticUpdate() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -119,7 +147,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testAssignSimpleTypes() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -145,7 +173,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testAssignWeightedSet() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -168,7 +196,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testAddUpdate() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -193,7 +221,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testRemoveUpdate() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -216,7 +244,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testMatchUpdateArithmetic() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -233,7 +261,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testMatchUpdateAssign() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "     'fields': {",
@@ -250,7 +278,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testAssignTensor() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -269,7 +297,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void test_tensor_modify_update() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "  'update': 'DOCUMENT_ID',",
                 "  'fields': {",
@@ -289,7 +317,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void reference_field_id_can_be_update_assigned_non_empty_id() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -303,7 +331,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void reference_field_id_can_be_update_assigned_empty_id() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -317,7 +345,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testAssignPredicate() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -331,7 +359,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testAssignRaw() {
-                deSerializeAndSerializeJsonAndMatch(inputJson(
+                roundtripSerializeJsonAndMatch(inputJson(
                         "{",
                         "    'update': 'DOCUMENT_ID',",
                         "    'fields': {",
@@ -345,7 +373,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testAssignMap() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -363,7 +391,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testSimultaneousFieldsAndFieldPathsUpdate() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "   'update': 'DOCUMENT_ID',",
                 "   'fields': {",
@@ -383,7 +411,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testAssignFieldPathUpdate() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "   'update': 'DOCUMENT_ID',",
                 "   'fields': {",
@@ -409,7 +437,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testRemoveFieldPathUpdate() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "   'update': 'DOCUMENT_ID',",
                 "   'fields': {",
@@ -423,7 +451,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testAddFieldPathUpdate() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "   'update': 'DOCUMENT_ID',",
                 "   'fields': {",
@@ -437,7 +465,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testArithmeticFieldPathUpdate() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "   'update': 'DOCUMENT_ID',",
                 "   'fields': {",
@@ -454,7 +482,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testMultipleOperationsOnSingleFieldPath() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "   'update': 'DOCUMENT_ID',",
                 "   'fields': {",
@@ -471,7 +499,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testAssignSinglePos() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -485,7 +513,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testAssignMultiPos() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -499,7 +527,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testClearField() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
@@ -516,7 +544,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testCreateIfNotExistTrue() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'create': true,",
@@ -531,7 +559,8 @@ public class DocumentUpdateJsonSerializerTest {
 
     @Test
     public void testCreateIfNotExistFalse() {
-        deSerializeAndSerializeJsonAndMatch(inputJson(
+        // NOTE: DocumentUpdateJsonSerializer only writes 'create' when true.
+        roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'create': false,",
@@ -541,6 +570,13 @@ public class DocumentUpdateJsonSerializerTest {
                 "        }",
                 "    }",
                 "}"
-        ));
+        ), inputJson("{",
+                "    'update': 'DOCUMENT_ID',",
+                "    'fields': {",
+                "        'int_field': {",
+                "            'assign': 42",
+                "        }",
+                "    }",
+                "}"));
     }
 }

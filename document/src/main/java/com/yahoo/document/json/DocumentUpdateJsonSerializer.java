@@ -103,7 +103,7 @@ public class DocumentUpdateJsonSerializer
                 }
 
                 Optional<Boolean> createIfNotExistent = update.getOptionalCreateIfNonExistent();
-                if (createIfNotExistent.isPresent()) {
+                if (createIfNotExistent.isPresent() && createIfNotExistent.get()) {
                     generator.writeBooleanField("create", createIfNotExistent.get());
                 }
 

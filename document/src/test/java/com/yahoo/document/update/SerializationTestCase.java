@@ -17,6 +17,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 /**
+ * NOTE: Roundtrip serialization (JSON -> DocumentUpdate -> ByteBuffer -> DocumentUpdate -> JSON) of updates is tested in DocumentUpdateJsonSerializerTest.
+ *       Consider adding new test cases to that test class instead.
+ *
  * @author bratseth
  */
 public class SerializationTestCase {
