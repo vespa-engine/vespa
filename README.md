@@ -29,6 +29,7 @@ parallel. Vespa is a platform which performs these operations for you. It has be
 and is used on a number of large internet services and apps which serve hundreds of thousands of queries from 
 Vespa per second.
 
+
 ## Install
 
 To get started using Vespa pick one of the quick start documents:
