@@ -18,15 +18,13 @@ using namespace fieldvalue;
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(StructuredFieldValue, FieldValue);
 
 StructuredFieldValue::Iterator::Iterator()
-    : _owner(0),
-      _iterator(),
+    : _iterator(),
       _field(0)
 {
 }
 
 StructuredFieldValue::Iterator::Iterator(const StructuredFieldValue& owner, const Field* first)
-    : _owner(&const_cast<StructuredFieldValue&>(owner)),
-      _iterator(owner.getIterator(first).release()),
+    : _iterator(owner.getIterator(first).release()),
       _field(_iterator->getNextField())
 {
 }

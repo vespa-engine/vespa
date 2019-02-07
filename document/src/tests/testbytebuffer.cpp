@@ -13,6 +13,15 @@ using namespace document;
 
 CPPUNIT_TEST_SUITE_REGISTRATION( ByteBuffer_Test );
 
+namespace {
+
+template <typename S>
+void assign(S &lhs, const S &rhs)
+{
+    lhs = rhs;
+}
+
+}
 
 void ByteBuffer_Test::setUp()
 {
@@ -79,7 +88,7 @@ void ByteBuffer_Test::test_assignment_operator()
 
         // Test Selfassignment == no change
         //
-        b2 = b2;
+        assign(b2, b2);
 
 
         CPPUNIT_ASSERT_EQUAL(b1.getPos(),b2.getPos());

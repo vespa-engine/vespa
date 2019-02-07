@@ -69,7 +69,6 @@ private:
         uint32_t _numComponents;
     };
     Offsets _offsets;
-    uint32_t _nssComponentId;
     vespalib::string _rawId;
 };
 

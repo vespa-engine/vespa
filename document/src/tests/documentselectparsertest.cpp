@@ -236,7 +236,7 @@ DocumentSelectParserTest::createDocs()
                 _doc.back()->getField("byteweightedset").getDataType());
         wsbytes.add(ByteFieldValue(5));
         wsbytes.add(ByteFieldValue(75));
-        wsbytes.add(ByteFieldValue(255));
+        wsbytes.add(ByteFieldValue(static_cast<int8_t>(255)));
         wsbytes.add(ByteFieldValue(0));
         _doc.back()->setValue("byteweightedset", wsbytes);
     }

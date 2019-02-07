@@ -123,7 +123,6 @@ class FieldNotFoundException : public vespalib::Exception
 private:
     vespalib::string _fieldName;
     int32_t _fieldId;
-    int16_t _serializationVersion;
 
 public:
     FieldNotFoundException(const vespalib::string& fieldName,

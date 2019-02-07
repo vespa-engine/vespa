@@ -79,8 +79,7 @@ FieldNotFoundException(const vespalib::string& fieldName,
                        const vespalib::string& location)
     : Exception("Field with name " + fieldName + " not found", location, 1),
       _fieldName(fieldName),
-      _fieldId(0),
-      _serializationVersion(0)
+      _fieldId(0)
 {
 }
 
@@ -93,8 +92,7 @@ FieldNotFoundException(int fieldId,
         vespalib::make_string("Field with id %i not found", fieldId), location, 1),
 
       _fieldName(),
-      _fieldId(fieldId),
-      _serializationVersion(serializationVersion)
+      _fieldId(fieldId)
 {
 }
 

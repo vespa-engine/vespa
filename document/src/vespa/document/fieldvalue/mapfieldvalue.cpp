@@ -350,7 +350,7 @@ MapFieldValue::createValue() const {
 void
 MapFieldValue::ensureLookupMap() const {
     if (!_lookupMap) {
-        _lookupMap = std::move(buildLookupMap());
+        _lookupMap = buildLookupMap();
     }
 }
 

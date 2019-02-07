@@ -60,7 +60,6 @@ protected:
         virtual const Field* getNextField() = 0;
     };
     class Iterator {
-        const StructuredFieldValue* _owner;
         StructuredIterator::UP      _iterator;
         const Field *               _field;
 

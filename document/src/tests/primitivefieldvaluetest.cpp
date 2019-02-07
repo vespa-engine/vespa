@@ -378,7 +378,7 @@ PrimitiveFieldValueTest::testNumerics()
     CPPUNIT_ASSERT_EQUAL(-1, (int) b2.getValue());
 
     ShortFieldValue s1(-32768);
-    ShortFieldValue s2(65535);
+    ShortFieldValue s2(static_cast<int16_t>(65535));
     CPPUNIT_ASSERT_EQUAL((int16_t)-32768, s1.getValue());
     CPPUNIT_ASSERT_EQUAL((int16_t)65535, s2.getValue());
     CPPUNIT_ASSERT_EQUAL((int16_t)-1, s2.getValue());

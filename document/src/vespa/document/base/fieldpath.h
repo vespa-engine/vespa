@@ -34,8 +34,8 @@ public:
     */
     FieldPathEntry();
 
-    FieldPathEntry(FieldPathEntry &&) noexcept = default;
-    FieldPathEntry & operator=(FieldPathEntry &&) noexcept = default;
+    FieldPathEntry(FieldPathEntry &&) = default;
+    FieldPathEntry & operator=(FieldPathEntry &&) = default;
     FieldPathEntry(const FieldPathEntry &);
     FieldPathEntry & operator=(const FieldPathEntry &);
 
