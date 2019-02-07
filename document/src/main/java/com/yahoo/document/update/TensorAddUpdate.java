@@ -64,4 +64,9 @@ public class TensorAddUpdate extends ValueUpdate<TensorFieldValue> {
     public int hashCode() {
         return Objects.hash(super.hashCode(), tensor);
     }
+
+    @Override
+    public String toString() {
+        return super.toString() + " " + tensor;
+    }
 }

@@ -5203,6 +5203,7 @@
       "public void setValue(com.yahoo.document.datatypes.TensorFieldValue)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
+      "public java.lang.String toString()",
       "public bridge synthetic void setValue(com.yahoo.document.datatypes.FieldValue)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue getValue()"
     ],
