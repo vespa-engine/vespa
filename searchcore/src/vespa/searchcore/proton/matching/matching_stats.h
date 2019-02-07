@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <cstddef>
+#include <vespa/fastos/timestamp.h>
 
 namespace proton::matching {
 
@@ -23,11 +24,12 @@ private:
         double _max;
     public:
         Avg() : _value(0.0), _count(0), _min(0.0), _max(0.0) {}
-        void set(double value) {
+        Avg & set(double value) {
             _value = value;
             _count = 1;
             _min = value;
             _max = value;
+            return *this;
         }
         double avg() const {
             return (_count > 0) ? (_value / _count) : 0;
@@ -60,6 +62,7 @@ public:
         size_t _docsRanked;
         size_t _docsReRanked;
         size_t _softDoomed;
+        Avg    _leftAtDoom;
         Avg    _active_time;
         Avg    _wait_time;
     public:
@@ -69,6 +72,7 @@ public:
               _docsRanked(0),
               _docsReRanked(0),
               _softDoomed(0),
+              _leftAtDoom(),
               _active_time(),
               _wait_time() { }
 
@@ -82,6 +86,8 @@ public:
         size_t docsReRanked() const { return _docsReRanked; }
         Partition &softDoomed(bool v) { _softDoomed += v ? 1 : 0; return *this; }
         size_t softDoomed() const { return _softDoomed; }
+        Partition & timeLeftAtDoom(fastos::TimeStamp leftAtDoom) { _leftAtDoom.set(leftAtDoom.sec()); return *this; }
+        fastos::TimeStamp timeLeftAtDoom() const { return fastos::TimeStamp::fromSec(_leftAtDoom.min()); }
 
         Partition &active_time(double time_s) { _active_time.set(time_s); return *this; }
         double active_time_avg() const { return _active_time.avg(); }
@@ -100,6 +106,7 @@ public:
             _docsRanked += rhs._docsRanked;
             _docsReRanked += rhs._docsReRanked;
             _softDoomed += rhs._softDoomed;
+            _leftAtDoom.add(rhs._leftAtDoom);
 
             _active_time.add(rhs._active_time);
             _wait_time.add(rhs._wait_time);
@@ -115,6 +122,7 @@ private:
     size_t                 _docsRanked;
     size_t                 _docsReRanked;
     size_t                 _softDoomed;
+    Avg                    _leftAtDoom;
     double                 _softDoomFactor;
     Avg                    _queryCollateralTime;
     Avg                    _queryLatency;
@@ -151,6 +159,10 @@ public:
 
     MatchingStats &softDoomed(size_t value) { _softDoomed = value; return *this; }
     size_t softDoomed() const { return _softDoomed; }
+
+    MatchingStats & timeLeftAtDoom(fastos::TimeStamp leftAtDoom) { _leftAtDoom.set(leftAtDoom.sec()); return *this; }
+    fastos::TimeStamp timeLeftAtDoom() const { return fastos::TimeStamp::fromSec(_leftAtDoom.min()); }
+
     MatchingStats &softDoomFactor(double value) { _softDoomFactor = value; return *this; }
     double softDoomFactor() const { return _softDoomFactor; }
     MatchingStats &updatesoftDoomFactor(double hardLimit, double softLimit, double duration);

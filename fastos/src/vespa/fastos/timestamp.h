@@ -45,6 +45,7 @@ public:
     double sec()                             const { return val()/1000000000.0; }
     std::string toString()                   const { return asString(sec()); }
     static std::string asString(double timeInSeconds);
+    static TimeStamp fromSec(double sec) { return Seconds(sec); }
 private:
     TimeT _time;
 };
