@@ -344,10 +344,9 @@ getAlignedStartPos(FastOS_File & file)
 }
 
 WriteableFileChunk::ProcessedChunkQ
-WriteableFileChunk::drainQ()
+WriteableFileChunk::drainQ(MonitorGuard & guard)
 {
     ProcessedChunkQ newChunks;
-    MonitorGuard guard(_writeMonitor);
     newChunks.swap(_writeQ);
     if ( ! newChunks.empty() ) {
         guard.broadcast();
@@ -496,8 +495,10 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
     LOG(debug, "Starting the filewriter with chunkid = %d", firstChunkId);
     uint32_t nextChunkId(firstChunkId);
     bool done(false);
+    MonitorGuard guard(_writeMonitor);
     {
-        for (ProcessedChunkQ newChunks(drainQ()); !newChunks.empty(); newChunks = drainQ()) {
+        for (ProcessedChunkQ newChunks(drainQ(guard)); !newChunks.empty(); newChunks = drainQ(guard)) {
+            guard.unlock();
             insertChunks(_orderedChunks, newChunks, nextChunkId);
             ProcessedChunkQ chunks(fetchNextChain(_orderedChunks, nextChunkId));
             nextChunkId += chunks.size();
@@ -507,30 +508,23 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
             writeData(chunks, sz);
             updateChunkInfo(chunks, cmetaV, sz);
             LOG(spam, "bucket spread = '%3.2f'", getBucketSpread());
+            guard = MonitorGuard(_writeMonitor);
             if (done) break;
         }
     }
     LOG(debug, "Stopping the filewriter with startchunkid = %d and ending chunkid = %d done=%d",
                firstChunkId, nextChunkId, done);
-    MonitorGuard guard(_writeMonitor);
+    assert(_writeQ.empty());
+    _writeTaskIsRunning = false;
     if (done) {
-        assert(_writeQ.empty());
         assert(_chunkMap.empty());
         for (const ChunkInfo & cm : _chunkInfo) {
             (void) cm;
             assert(cm.valid() && cm.getSize() != 0);
         }
-        _writeTaskIsRunning = false;
         guard.broadcast();
     } else {
-        if (_writeQ.empty()) {
-            _firstChunkIdToBeWritten = nextChunkId;
-            _writeTaskIsRunning = false;
-        } else {
-            _writeTaskIsRunning = true;
-            guard.unlock();
-            restart(nextChunkId);
-        }
+        _firstChunkIdToBeWritten = nextChunkId;
     }
 }
 

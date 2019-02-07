@@ -84,7 +84,7 @@ private:
     int32_t flushLastIfNonEmpty(bool force);
     // _writeMonitor should not be held when calling restart
     void restart(uint32_t nextChunkId);
-    ProcessedChunkQ drainQ();
+    ProcessedChunkQ drainQ(vespalib::MonitorGuard & guard);
     void readDataHeader();
     void readIdxHeader(FastOS_FileInterface & idxFile);
     void writeDataHeader(const common::FileHeaderContext &fileHeaderContext);
