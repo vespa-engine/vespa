@@ -347,8 +347,8 @@ ArrayParam<T>::ArrayParam(const Property & prop) {
 // Explicit instantiation since these are inspected by unit tests.
 // FIXME this feels a bit dirty, consider breaking up ArrayParam to remove dependencies
 // on templated vector parsing. This is why it's defined in this translation unit as it is.
-template class ArrayParam<int64_t>;
-template class ArrayParam<double>;
+template struct ArrayParam<int64_t>;
+template struct ArrayParam<double>;
 
 } // namespace dotproduct
 

@@ -4,7 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib::eval { class ConstantValue; }
+namespace vespalib::eval { struct ConstantValue; }
 
 namespace search::fef {
 

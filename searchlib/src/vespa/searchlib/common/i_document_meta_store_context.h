@@ -6,7 +6,7 @@
 
 namespace search {
 
-class IDocumentMetaStore;
+struct IDocumentMetaStore;
 
 /**
  * API for providing read interface to the document meta store.

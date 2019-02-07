@@ -5,7 +5,7 @@
 #include "rankedhit.h"
 #include <vespa/vespalib/util/array.h>
 
-class FastS_IResultSorter;
+struct FastS_IResultSorter;
 
 namespace search {
 

@@ -5,7 +5,7 @@
 
 namespace search::query {
 
-class QueryVisitor;
+struct QueryVisitor;
 
 /**
   This is the base of any node in the query tree. Both leaf nodes (terms)

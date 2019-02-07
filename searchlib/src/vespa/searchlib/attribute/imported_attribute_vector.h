@@ -8,7 +8,7 @@
 
 namespace search {
 
-class IDocumentMetaStoreContext;
+struct IDocumentMetaStoreContext;
 
 namespace attribute {
 
