@@ -69,6 +69,7 @@
 #define CID_RemoveFieldPathUpdate  DOCUMENT_CID(88)
 
 #define CID_TensorModifyUpdate     DOCUMENT_CID(100)
+#define CID_TensorAddUpdate        DOCUMENT_CID(101)
 
 #define CID_document_DocumentUpdate    DOCUMENT_CID(999)
 

@@ -11,4 +11,5 @@
 #include "mapvalueupdate.h"
 #include "removevalueupdate.h"
 #include "tensormodifyupdate.h"
+#include "tensoraddupdate.h"
 
