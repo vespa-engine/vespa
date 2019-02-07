@@ -50,6 +50,7 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
     @Override
     public FieldValue applyTo(FieldValue oldValue) {
         if (oldValue instanceof TensorFieldValue) {
+            // TODO: implement
         } else {
             throw new IllegalStateException("Cannot use tensor modify update on non-tensor datatype "+oldValue.getClass().getName());
         }
