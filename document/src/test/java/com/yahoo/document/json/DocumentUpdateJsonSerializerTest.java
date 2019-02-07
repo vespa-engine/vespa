@@ -296,7 +296,7 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
-    public void test_tensor_modify_update() {
+    public void test_tensor_modify_update_on_dense_tensor() {
         roundtripSerializeJsonAndMatch(inputJson(
                 "{",
                 "  'update': 'DOCUMENT_ID',",
@@ -307,6 +307,26 @@ public class DocumentUpdateJsonSerializerTest {
                 "        'cells': [",
                 "          { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 },",
                 "          { 'address': { 'x': '1', 'y': '2' }, 'value': 3.0 }",
+                "        ]",
+                "      }",
+                "    }",
+                "  }",
+                "}"
+        ));
+    }
+
+    @Test
+    public void test_tensor_modify_update_on_sparse_tensor() {
+        roundtripSerializeJsonAndMatch(inputJson(
+                "{",
+                "  'update': 'DOCUMENT_ID',",
+                "  'fields': {",
+                "    'sparse_tensor': {",
+                "      'modify': {",
+                "        'operation': 'add',",
+                "        'cells': [",
+                "          { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 },",
+                "          { 'address': { 'x': 'c', 'y': 'd' }, 'value': 3.0 }",
                 "        ]",
                 "      }",
                 "    }",
