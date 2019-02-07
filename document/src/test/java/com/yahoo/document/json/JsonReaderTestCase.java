@@ -43,6 +43,7 @@ import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
+import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
@@ -1428,6 +1429,32 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_add_update_on_sparse_tensor() {
+        assertTensorAddUpdate("{{x:a,y:b}:2.0, {x:c,y:d}: 3.0}", "sparse_tensor",
+                inputJson("{",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 },",
+                        "    { 'address': { 'x': 'c', 'y': 'd' }, 'value': 3.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_add_update_on_non_sparse_tensor_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("An add update can only be applied to sparse tensors. Field 'mixed_tensor' has unsupported tensor type 'tensor(x{},y[3])'");
+        createTensorAddUpdate(inputJson("{",
+                "  'cells': [] }"), "mixed_tensor");
+    }
+
+    @Test
+    public void tensor_add_update_on_not_fully_specified_cell_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Missing a value for dimension y for tensor(x{},y{})");
+        createTensorAddUpdate(inputJson("{",
+                "  'cells': [",
+                "    { 'address': { 'x': 'a' }, 'value': 2.0 } ]}"), "sparse_tensor");
+    }
+
+    @Test
     public void require_that_parser_propagates_datatype_parser_errors_predicate() {
         assertParserErrorMatches(
                 "Error in document 'id:unittest:testpredicate::0' - could not parse field 'boolean' of type 'predicate': " +
@@ -1571,6 +1598,30 @@ public class JsonReaderTestCase {
         TensorModifyUpdate modifyUpdate = (TensorModifyUpdate) fieldUpdate.getValueUpdate(0);
         assertEquals(expectedOperation, modifyUpdate.getOperation());
         assertEquals(Tensor.from(expectedTensor), modifyUpdate.getValue().getTensor().get());
+    }
+
+    private DocumentUpdate createTensorAddUpdate(String tensorJson, String tensorFieldName) {
+        JsonReader reader = createReader(inputJson("[",
+                "{ 'update': '" + TENSOR_DOC_ID + "',",
+                "  'fields': {",
+                "    '" + tensorFieldName + "': {",
+                "      'add': " + tensorJson + " }}}]"));
+        return (DocumentUpdate) reader.next();
+    }
+
+    private void assertTensorAddUpdate(String expectedTensor, String tensorFieldName, String tensorJson) {
+        assertTensorAddUpdate(expectedTensor, tensorFieldName,
+                createTensorAddUpdate(tensorJson, tensorFieldName));
+    }
+
+    private static void assertTensorAddUpdate(String expectedTensor, String tensorFieldName, DocumentUpdate update) {
+        assertEquals("testtensor", update.getId().getDocType());
+        assertEquals(TENSOR_DOC_ID, update.getId().toString());
+        assertEquals(1, update.fieldUpdates().size());
+        FieldUpdate fieldUpdate = update.getFieldUpdate(tensorFieldName);
+        assertEquals(1, fieldUpdate.size());
+        TensorAddUpdate addUpdate = (TensorAddUpdate) fieldUpdate.getValueUpdate(0);
+        assertEquals(Tensor.from(expectedTensor), addUpdate.getValue().getTensor().get());
     }
 
     private static FieldUpdate getTensorField(DocumentUpdate update) {
