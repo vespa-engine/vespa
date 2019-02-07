@@ -63,11 +63,11 @@ public class SearchCluster implements NodeManager<Node> {
     public SearchCluster(String clusterId, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
         this.clusterId = clusterId;
         this.dispatchConfig = dispatchConfig;
-        this.size = dispatchConfig.node().size();
         this.fs4ResourcePool = fs4ResourcePool;
         this.vipStatus = vipStatus;
 
         List<Node> nodes = toNodes(dispatchConfig);
+        this.size = nodes.size();
 
         // Create groups
         ImmutableMap.Builder<Integer, Group> groupsBuilder = new ImmutableMap.Builder<>();
