@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 
 /**
@@ -106,7 +107,7 @@ public class Dispatcher extends AbstractComponent {
 
     @FunctionalInterface
     private interface SearchInvokerSupplier {
-        Optional<SearchInvoker> supply(Query query, int groupId, List<Node> nodes, boolean acceptIncompleteCoverage);
+        Optional<SearchInvoker> supply(Query query, OptionalInt groupId, List<Node> nodes, boolean acceptIncompleteCoverage);
     }
 
     // build invoker based on searchpath
@@ -121,7 +122,7 @@ public class Dispatcher extends AbstractComponent {
                 return Optional.empty();
             } else {
                 query.trace(false, 2, "Dispatching internally with search path ", searchPath);
-                return invokerFactory.supply(query, -1, nodes, true);
+                return invokerFactory.supply(query, OptionalInt.empty(), nodes, true);
             }
         } catch (InvalidSearchPathException e) {
             return Optional.of(new SearchErrorInvoker(ErrorMessage.createIllegalQuery(e.getMessage())));
@@ -133,7 +134,7 @@ public class Dispatcher extends AbstractComponent {
         if (directNode.isPresent()) {
             Node node = directNode.get();
             query.trace(false, 2, "Dispatching directly to ", node);
-            return invokerFactory.supply(query, -1, Arrays.asList(node), true);
+            return invokerFactory.supply(query, OptionalInt.empty(), Arrays.asList(node), true);
         }
 
         int covered = searchCluster.groupsWithSufficientCoverage();
@@ -148,7 +149,8 @@ public class Dispatcher extends AbstractComponent {
             }
             Group group = groupInCluster.get();
             boolean acceptIncompleteCoverage = (i == max - 1);
-            Optional<SearchInvoker> invoker = invokerFactory.supply(query, group.id(), group.nodes(), acceptIncompleteCoverage);
+            Optional<SearchInvoker> invoker = invokerFactory.supply(query, OptionalInt.of(group.id()), group.nodes(),
+                    acceptIncompleteCoverage);
             if (invoker.isPresent()) {
                 query.trace(false, 2, "Dispatching internally to search group ", group.id());
                 query.getModel().setSearchPath("/" + group.id());

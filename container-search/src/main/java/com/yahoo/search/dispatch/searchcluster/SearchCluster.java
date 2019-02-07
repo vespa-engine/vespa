@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
@@ -331,9 +332,10 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    private void logIfInsufficientCoverage(boolean sufficient, int groupId, int nodes) {
+    private void logIfInsufficientCoverage(boolean sufficient, OptionalInt groupId, int nodes) {
         if (!sufficient) {
-            log.warning(() -> String.format("Coverage of group %s is only %d/%d (requires %d)", groupId, nodes, groupSize(),
+            String group = groupId.isPresent()? Integer.toString(groupId.getAsInt()) : "(unspecified)";
+            log.warning(() -> String.format("Coverage of group %s is only %d/%d (requires %d)", group, nodes, groupSize(),
                     groupSize() - dispatchConfig.maxNodesDownPerGroup()));
         }
     }
@@ -341,14 +343,22 @@ public class SearchCluster implements NodeManager<Node> {
     /**
      * Calculate whether a subset of nodes in a group has enough coverage
      */
-    public boolean isPartialGroupCoverageSufficient(int groupId, List<Node> nodes) {
+    public boolean isPartialGroupCoverageSufficient(OptionalInt knownGroupId, List<Node> nodes) {
         if (orderedGroups.size() == 1) {
             boolean sufficient = nodes.size() >= groupSize() - dispatchConfig.maxNodesDownPerGroup();
-            logIfInsufficientCoverage(sufficient, groupId, nodes.size());
+            logIfInsufficientCoverage(sufficient, knownGroupId, nodes.size());
             return sufficient;
         }
 
-        int nodesInGroup = groups.get(groupId).nodes().size();
+        if (knownGroupId.isEmpty()) {
+            return false;
+        }
+        int groupId = knownGroupId.getAsInt();
+        Group group = groups.get(groupId);
+        if (group == null) {
+            return false;
+        }
+        int nodesInGroup = group.nodes().size();
         long sumOfActiveDocuments = 0;
         int otherGroups = 0;
         for (Group g : orderedGroups) {
@@ -363,7 +373,7 @@ public class SearchCluster implements NodeManager<Node> {
         }
         long averageDocumentsInOtherGroups = sumOfActiveDocuments / otherGroups;
         boolean sufficient = isGroupCoverageSufficient(nodes.size(), nodesInGroup, activeDocuments, averageDocumentsInOtherGroups);
-        logIfInsufficientCoverage(sufficient, groupId, nodes.size());
+        logIfInsufficientCoverage(sufficient, knownGroupId, nodes.size());
         return sufficient;
     }
 }
