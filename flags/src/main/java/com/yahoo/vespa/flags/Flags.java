@@ -27,7 +27,7 @@ public class Flags {
             HOSTNAME, APPLICATION_ID);
 
     public static final UnboundBooleanFlag CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD = defineFeatureFlag(
-            "config-server-bootstrap-in-separate-thread", true,
+            "config-server-bootstrap-in-separate-thread", false,
             "Whether to run config server/controller bootstrap in a separate thread.",
             "Takes effect only at bootstrap of config server/controller",
             HOSTNAME);
