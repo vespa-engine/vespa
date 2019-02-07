@@ -7,6 +7,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import org.apache.zookeeper.KeeperException.NoNodeException;
@@ -15,9 +16,13 @@ import org.apache.zookeeper.data.Stat;
 
 import javax.inject.Inject;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Stores instance suspension status and which hosts are allowed to go down in zookeeper.
@@ -31,12 +36,22 @@ public class ZookeeperStatusService implements StatusService {
 
     final static String HOST_STATUS_BASE_PATH = "/vespa/host-status-service";
     final static String APPLICATION_STATUS_BASE_PATH = "/vespa/application-status-service";
+    final static String COUNTER_PATH = "/vespa/cache-counter";
 
     private final Curator curator;
+    private final CuratorCounter counter;
+
+    /** A cache of hosts allowed to be down. Access only through {@link #getValidCache()}! */
+    private final Map<ApplicationInstanceReference, Set<HostName>> hostsDown;
+
+    private volatile long cacheRefreshedAt;
 
     @Inject
     public ZookeeperStatusService(@Component Curator curator) {
         this.curator = curator;
+        this.counter = new CuratorCounter(curator, COUNTER_PATH);
+        this.cacheRefreshedAt = counter.get();
+        this.hostsDown = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -122,6 +137,9 @@ public class ZookeeperStatusService implements StatusService {
             //TODO: IOException with explanation
             throw new RuntimeException(e);
         }
+        finally {
+            counter.next();
+        }
     }
 
     private void deleteNode_ignoreNoNodeException(String path, String debugLogMessageIfNotExists) throws Exception {
@@ -142,15 +160,31 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    //TODO: Eliminate repeated calls to getHostStatus, replace with bulk operation.
     private HostStatus getInternalHostStatus(ApplicationInstanceReference applicationInstanceReference, HostName hostName) {
-        try {
-            Stat statOrNull = curator.framework().checkExists().forPath(
-                    hostAllowedDownPath(applicationInstanceReference, hostName));
+        return getValidCache().computeIfAbsent(applicationInstanceReference, this::hostsDownFor)
+                              .contains(hostName) ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS;
+    }
 
-            return (statOrNull == null) ? HostStatus.NO_REMARKS : HostStatus.ALLOWED_TO_BE_DOWN;
-        } catch (Exception e) {
-            //TODO: IOException with explanation - Should we only catch IOExceptions or are they a special case?
+    /** Holding an application's lock ensures the cache is up to date for that application. */
+    private Map<ApplicationInstanceReference, Set<HostName>> getValidCache() {
+        long cacheGeneration = counter.get();
+        if (counter.get() != cacheRefreshedAt) {
+            cacheRefreshedAt = cacheGeneration;
+            hostsDown.clear();
+        }
+        return hostsDown;
+    }
+
+    private Set<HostName> hostsDownFor(ApplicationInstanceReference application) {
+        try {
+            if (curator.framework().checkExists().forPath(hostsAllowedDownPath(application)) == null)
+                return Collections.emptySet();
+
+            return curator.framework().getChildren().forPath(hostsAllowedDownPath(application))
+                          .stream().map(HostName::new)
+                          .collect(Collectors.toUnmodifiableSet());
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
