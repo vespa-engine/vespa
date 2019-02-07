@@ -5,18 +5,17 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.application.LoadBalancerAlias;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
 
@@ -25,23 +24,25 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author mortent
  */
-public class LoadBalancerAliasMaintainerTest {
+public class RoutingPolicyMaintainerTest {
 
     @Test
-    public void maintains_load_balancer_records_correctly() {
+    public void maintains_routing_policies() {
         DeploymentTester tester = new DeploymentTester();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
-        LoadBalancerAliasMaintainer maintainer = new LoadBalancerAliasMaintainer(tester.controller(), Duration.ofHours(12),
-                                                                                 new JobControl(new MockCuratorDb()),
-                                                                                 tester.controllerTester().nameService(),
-                                                                                 tester.controllerTester().curator());
+        RoutingPolicyMaintainer maintainer = new RoutingPolicyMaintainer(tester.controller(), Duration.ofHours(12),
+                                                                         new JobControl(new MockCuratorDb()),
+                                                                         tester.controllerTester().nameService(),
+                                                                         tester.controllerTester().curator());
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -57,18 +58,17 @@ public class LoadBalancerAliasMaintainerTest {
 
         maintainer.maintain();
         Map<RecordId, Record> records = tester.controllerTester().nameService().records();
-        long recordCount = records.entrySet().stream().filter(entry -> entry.getValue().data().asString().contains("loadbalancer")).count();
-        assertEquals(4, recordCount);
+        Supplier<Long> recordCount = () -> records.entrySet().stream().filter(entry -> entry.getValue().data().asString().contains("loadbalancer")).count();
+        assertEquals(4, (long) recordCount.get());
 
-        Set<LoadBalancerAlias> loadBalancerAliases = tester.controller().curator().readLoadBalancerAliases(application.id());
-        assertEquals(4, loadBalancerAliases.size());
+        Set<RoutingPolicy> policies = tester.controller().curator().readRoutingPolicies(application.id());
+        assertEquals(4, policies.size());
 
 
         // no update
         maintainer.maintain();
         Map<RecordId, Record> records2 = tester.controllerTester().nameService().records();
-        long recordCount2 = records2.entrySet().stream().filter(entry -> entry.getValue().data().asString().contains("loadbalancer")).count();
-        assertEquals(recordCount, recordCount2);
+        assertEquals(4, (long) recordCount.get());
         assertEquals(records, records2);
 
 
@@ -76,12 +76,10 @@ public class LoadBalancerAliasMaintainerTest {
         setupClustersWithLoadBalancers(tester, application, numberOfClustersPerZone + 1);
 
         maintainer.maintain();
-        Map<RecordId, Record> records3 = tester.controllerTester().nameService().records();
-        long recordCount3 = records3.entrySet().stream().filter(entry -> entry.getValue().data().asString().contains("loadbalancer")).count();
-        assertEquals(6,recordCount3);
+        assertEquals(6, (long) recordCount.get());
 
-        Set<LoadBalancerAlias> aliases3 = tester.controller().curator().readLoadBalancerAliases(application.id());
-        assertEquals(6, aliases3.size());
+        Set<RoutingPolicy> policies2 = tester.controller().curator().readRoutingPolicies(application.id());
+        assertEquals(6, policies2.size());
 
 
         // Add application
@@ -90,11 +88,9 @@ public class LoadBalancerAliasMaintainerTest {
         setupClustersWithLoadBalancers(tester, application2, numberOfClustersPerZone);
 
         maintainer.maintain();
-        Map<RecordId, Record> records4 = tester.controllerTester().nameService().records();
-        long recordCount4 = records4.entrySet().stream().filter(entry -> entry.getValue().data().asString().contains("loadbalancer")).count();
-        assertEquals(10,recordCount4);
+        assertEquals(10, (long) recordCount.get());
 
-        Set<LoadBalancerAlias> aliases4 = tester.controller().curator().readLoadBalancerAliases(application2.id());
+        Set<RoutingPolicy> aliases4 = tester.controller().curator().readRoutingPolicies(application2.id());
         assertEquals(4, aliases4.size());
 
 
@@ -102,9 +98,7 @@ public class LoadBalancerAliasMaintainerTest {
         setupClustersWithLoadBalancers(tester, application, numberOfClustersPerZone);
 
         maintainer.maintain();
-        Map<RecordId, Record> records5 = tester.controllerTester().nameService().records();
-        long recordCount5 = records5.entrySet().stream().filter(entry -> entry.getValue().data().asString().contains("loadbalancer")).count();
-        assertEquals(8, recordCount5);
+        assertEquals(8, (long) recordCount.get());
 
         // Remove application app2
         tester.controller().applications().get(application2.id())
@@ -113,9 +107,7 @@ public class LoadBalancerAliasMaintainerTest {
               .forEach(zone -> tester.controller().applications().deactivate(application2.id(), zone));
 
         maintainer.maintain();
-        Map<RecordId, Record> records6 = tester.controllerTester().nameService().records();
-        long recordCount6 = records6.entrySet().stream().filter(entry -> entry.getValue().data().asString().contains("loadbalancer")).count();
-        assertEquals(4, recordCount6);
+        assertEquals(4, (long) recordCount.get());
     }
 
     private void setupClustersWithLoadBalancers(DeploymentTester tester, Application application, int numberOfClustersPerZone) {
@@ -128,17 +120,18 @@ public class LoadBalancerAliasMaintainerTest {
 
     }
 
-    private List<LoadBalancer> makeLoadBalancers(ZoneId zone, ApplicationId applicationId, int count) {
+    private List<LoadBalancer> makeLoadBalancers(ZoneId zone, ApplicationId application, int count) {
         List<LoadBalancer> loadBalancers = new ArrayList<>();
+        Set<RotationName> rotations = Collections.singleton(RotationName.from("r1"));
         for (int i = 0; i < count; i++) {
             loadBalancers.add(
                     new LoadBalancer("LB-" + i + "-Z-" + zone.value(),
-                                     new TenantId(applicationId.tenant().value()),
-                                     new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(applicationId.application().value()),
-                                     new InstanceId(applicationId.instance().value()),
+                                     application,
                                      ClusterSpec.Id.from("cluster-" + i),
-                                     HostName.from("loadbalancer-" + i + "-" + applicationId.serializedForm() + "-zone-" + zone.value())
-                                     ));
+                                     HostName.from("loadbalancer-" + i + "-" + application.serializedForm() +
+                                                   "-zone-" + zone.value()),
+                                     Optional.of("dns-zone-1"),
+                                     rotations));
         }
         return loadBalancers;
     }

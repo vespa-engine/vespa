@@ -17,7 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.LoadBalancerAlias;
+import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
@@ -33,23 +33,23 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Maintains DNS aliases for all load balancers in this system.
+ * Maintains routing policies for all exclusive load balancers in this system.
  *
  * @author mortent
  */
-public class LoadBalancerAliasMaintainer extends Maintainer {
+public class RoutingPolicyMaintainer extends Maintainer {
 
-    private static final Logger log = Logger.getLogger(LoadBalancerAliasMaintainer.class.getName());
+    private static final Logger log = Logger.getLogger(RoutingPolicyMaintainer.class.getName());
 
     private final NameService nameService;
     private final CuratorDb db;
     private final ApplicationController applications;
 
-    public LoadBalancerAliasMaintainer(Controller controller,
-                                       Duration interval,
-                                       JobControl jobControl,
-                                       NameService nameService,
-                                       CuratorDb db) {
+    public RoutingPolicyMaintainer(Controller controller,
+                                   Duration interval,
+                                   JobControl jobControl,
+                                   NameService nameService,
+                                   CuratorDb db) {
         super(controller, interval, jobControl);
         this.nameService = nameService;
         this.db = db;
@@ -73,26 +73,26 @@ public class LoadBalancerAliasMaintainer extends Maintainer {
                     applications.store(locked.withLoadBalancersIn(zone, loadBalancers));
                 });
 
-                try (Lock lock = db.lockLoadBalancerAliases()) {
-                    Set<LoadBalancerAlias> aliases = new LinkedHashSet<>(db.readLoadBalancerAliases(application.id()));
+                try (Lock lock = db.lockRoutingPolicies()) {
+                    Set<RoutingPolicy> policies = new LinkedHashSet<>(db.readRoutingPolicies(application.id()));
                     for (LoadBalancer loadBalancer : loadBalancers) {
                         try {
-                            aliases.add(registerDnsAlias(application.id(), zone, loadBalancer));
+                            policies.add(registerDnsAlias(application.id(), zone, loadBalancer));
                         } catch (Exception e) {
                             log.log(LogLevel.WARNING, "Failed to create or update DNS record for load balancer " +
                                                       loadBalancer.hostname() + ". Retrying in " + maintenanceInterval(),
                                     e);
                         }
                     }
-                    db.writeLoadBalancerAliases(application.id(), aliases);
+                    db.writeRoutingPolicies(application.id(), policies);
                 }
             }
         }
     }
 
     /** Register DNS alias for given load balancer */
-    private LoadBalancerAlias registerDnsAlias(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer) {
-        HostName alias = HostName.from(LoadBalancerAlias.createAlias(loadBalancer.cluster(), application, zone));
+    private RoutingPolicy registerDnsAlias(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer) {
+        HostName alias = HostName.from(RoutingPolicy.createAlias(loadBalancer.cluster(), application, zone));
         RecordName name = RecordName.from(alias.value());
         RecordData data = RecordData.fqdn(loadBalancer.hostname().value());
         List<Record> existingRecords = nameService.findRecords(Record.Type.CNAME, name);
@@ -107,7 +107,8 @@ public class LoadBalancerAliasMaintainer extends Maintainer {
         } else {
             id = nameService.createCname(name, data);
         }
-        return new LoadBalancerAlias(application, id.asString(), alias, loadBalancer.hostname());
+        return new RoutingPolicy(application, id.asString(), alias, loadBalancer.hostname(), loadBalancer.dnsZone(),
+                                 loadBalancer.rotations());
     }
 
     /** Find all load balancers assigned to application in given zone */
@@ -124,8 +125,8 @@ public class LoadBalancerAliasMaintainer extends Maintainer {
 
     /** Remove all DNS records that point to non-existing load balancers */
     private void removeObsoleteDnsRecords() {
-        try (Lock lock = db.lockLoadBalancerAliases()) {
-            List<LoadBalancerAlias> removalCandidates = new ArrayList<>(db.readLoadBalancerAliases());
+        try (Lock lock = db.lockRoutingPolicies()) {
+            List<RoutingPolicy> removalCandidates = new ArrayList<>(db.readRoutingPolicies());
             Set<HostName> activeLoadBalancers = controller().applications().asList().stream()
                                                             .map(Application::deployments)
                                                             .map(Map::values)
@@ -137,11 +138,11 @@ public class LoadBalancerAliasMaintainer extends Maintainer {
 
             // Remove any active load balancers
             removalCandidates.removeIf(lb -> activeLoadBalancers.contains(lb.canonicalName()));
-            for (LoadBalancerAlias alias : removalCandidates) {
+            for (RoutingPolicy policy : removalCandidates) {
                 try {
-                    nameService.removeRecord(new RecordId(alias.id()));
+                    nameService.removeRecord(new RecordId(policy.recordId()));
                 } catch (Exception e) {
-                    log.log(LogLevel.WARNING, "Failed to remove DNS record with ID '" + alias.id() +
+                    log.log(LogLevel.WARNING, "Failed to remove DNS record with ID '" + policy.recordId() +
                                               "'. Retrying in " + maintenanceInterval());
                 }
             }
