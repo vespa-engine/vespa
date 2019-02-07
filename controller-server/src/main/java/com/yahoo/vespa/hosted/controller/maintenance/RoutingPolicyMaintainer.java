@@ -6,7 +6,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
@@ -16,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -24,6 +22,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +32,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Maintains routing policies for all exclusive load balancers in this system.
+ * Maintains DNS records as defined by routing policies for all exclusive load balancers in this system.
  *
  * @author mortent
+ * @author mpolden
  */
 public class RoutingPolicyMaintainer extends Maintainer {
 
@@ -43,7 +43,6 @@ public class RoutingPolicyMaintainer extends Maintainer {
 
     private final NameService nameService;
     private final CuratorDb db;
-    private final ApplicationController applications;
 
     public RoutingPolicyMaintainer(Controller controller,
                                    Duration interval,
@@ -53,39 +52,52 @@ public class RoutingPolicyMaintainer extends Maintainer {
         super(controller, interval, jobControl);
         this.nameService = nameService;
         this.db = db;
-        this.applications = controller.applications();
     }
 
     @Override
     protected void maintain() {
-        updateDnsRecords();
-        removeObsoleteDnsRecords();
+        Map<DeploymentId, List<LoadBalancer>> loadBalancers = loadBalancers(controller().applications().asList());
+        updateDnsRecords(loadBalancers);
+        removeObsoleteDnsRecords(loadBalancers);
+    }
+
+    /** Find all exclusive load balancers owned by given applications, grouped by deployment */
+    private Map<DeploymentId, List<LoadBalancer>> loadBalancers(List<Application> applications) {
+        Map<DeploymentId, List<LoadBalancer>> result = new LinkedHashMap<>();
+        for (Application application : applications) {
+            for (ZoneId zone : application.deployments().keySet()) {
+                DeploymentId deployment = new DeploymentId(application.id(), zone);
+                try {
+                    List<LoadBalancer> loadBalancers = findLoadBalancersIn(deployment);
+                    if (loadBalancers.isEmpty()) continue;
+                    result.put(deployment, loadBalancers);
+                } catch (Exception e) {
+                    log.log(LogLevel.WARNING,
+                            String.format("Got exception fetching load balancers for application: %s, in zone: %s. Retrying in %s",
+                                          application.id().toShortString(), zone.value(), maintenanceInterval()),  e);
+                }
+            }
+        }
+        return Collections.unmodifiableMap(result);
     }
 
     /** Create DNS records for all exclusive load balancers */
-    private void updateDnsRecords() {
-        for (Application application : applications.asList()) {
-            for (ZoneId zone : application.deployments().keySet()) {
-                List<LoadBalancer> loadBalancers = findLoadBalancersIn(zone, application.id());
-                if (loadBalancers.isEmpty()) continue;
-
-                applications.lockIfPresent(application.id(), (locked) -> {
-                    applications.store(locked.withLoadBalancersIn(zone, loadBalancers));
-                });
-
-                try (Lock lock = db.lockRoutingPolicies()) {
-                    Set<RoutingPolicy> policies = new LinkedHashSet<>(db.readRoutingPolicies(application.id()));
-                    for (LoadBalancer loadBalancer : loadBalancers) {
-                        try {
-                            policies.add(registerDnsAlias(application.id(), zone, loadBalancer));
-                        } catch (Exception e) {
-                            log.log(LogLevel.WARNING, "Failed to create or update DNS record for load balancer " +
-                                                      loadBalancer.hostname() + ". Retrying in " + maintenanceInterval(),
-                                    e);
-                        }
+    private void updateDnsRecords(Map<DeploymentId, List<LoadBalancer>> loadBalancers) {
+        for (Map.Entry<DeploymentId, List<LoadBalancer>> entry : loadBalancers.entrySet()) {
+            ApplicationId application = entry.getKey().applicationId();
+            ZoneId zone = entry.getKey().zoneId();
+            try (Lock lock = db.lockRoutingPolicies()) {
+                Set<RoutingPolicy> policies = new LinkedHashSet<>(db.readRoutingPolicies(application));
+                for (LoadBalancer loadBalancer : entry.getValue()) {
+                    try {
+                        policies.add(registerDnsAlias(application, zone, loadBalancer));
+                    } catch (Exception e) {
+                        log.log(LogLevel.WARNING, "Failed to create or update DNS record for load balancer " +
+                                                  loadBalancer.hostname() + ". Retrying in " + maintenanceInterval(),
+                                e);
                     }
-                    db.writeRoutingPolicies(application.id(), policies);
                 }
+                db.writeRoutingPolicies(application, policies);
             }
         }
     }
@@ -112,29 +124,26 @@ public class RoutingPolicyMaintainer extends Maintainer {
     }
 
     /** Find all load balancers assigned to application in given zone */
-    private List<LoadBalancer> findLoadBalancersIn(ZoneId zone, ApplicationId application) {
+    private List<LoadBalancer> findLoadBalancersIn(DeploymentId deployment) {
         try {
-            return controller().applications().configServer().getLoadBalancers(new DeploymentId(application, zone));
+            return controller().applications().configServer().getLoadBalancers(deployment);
         } catch (Exception e) {
             log.log(LogLevel.WARNING,
                     String.format("Got exception fetching load balancers for application: %s, in zone: %s. Retrying in %s",
-                                  application.toShortString(), zone.value(), maintenanceInterval()),  e);
+                                  deployment.applicationId().toShortString(), deployment.zoneId().value(),
+                                  maintenanceInterval()),  e);
         }
         return Collections.emptyList();
     }
 
     /** Remove all DNS records that point to non-existing load balancers */
-    private void removeObsoleteDnsRecords() {
+    private void removeObsoleteDnsRecords(Map<DeploymentId, List<LoadBalancer>> loadBalancers) {
         try (Lock lock = db.lockRoutingPolicies()) {
             List<RoutingPolicy> removalCandidates = new ArrayList<>(db.readRoutingPolicies());
-            Set<HostName> activeLoadBalancers = controller().applications().asList().stream()
-                                                            .map(Application::deployments)
-                                                            .map(Map::values)
-                                                            .flatMap(Collection::stream)
-                                                            .map(Deployment::loadBalancers)
-                                                            .map(Map::values)
-                                                            .flatMap(Collection::stream)
-                                                            .collect(Collectors.toUnmodifiableSet());
+            Set<HostName> activeLoadBalancers = loadBalancers.values().stream()
+                                                             .flatMap(Collection::stream)
+                                                             .map(LoadBalancer::hostname)
+                                                             .collect(Collectors.toSet());
 
             // Remove any active load balancers
             removalCandidates.removeIf(lb -> activeLoadBalancers.contains(lb.canonicalName()));
