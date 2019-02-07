@@ -92,15 +92,15 @@ public class ZookeeperStatusServiceTest {
 
             //shuffling to catch "clean database" failures for all cases.
             for (HostStatus hostStatus: shuffledList(HostStatus.values())) {
-                doTimes(2, () -> {
+                for (int i = 0; i < 2; i++) {
                     statusRegistry.setHostState(
                             TestIds.HOST_NAME1,
                             hostStatus);
 
                     assertThat(statusRegistry.getHostStatus(
-                                    TestIds.HOST_NAME1),
-                            is(hostStatus));
-                });
+                            TestIds.HOST_NAME1),
+                               is(hostStatus));
+                }
             }
         }
     }
@@ -262,17 +262,6 @@ public class ZookeeperStatusServiceTest {
         assertThat(suspendedApps, hasItem(TestIds.APPLICATION_INSTANCE_REFERENCE2));
     }
 
-    private static void assertSessionFailed(Runnable statusServiceOperations) {
-        try {
-            statusServiceOperations.run();
-            fail("Expected session expired exception");
-        } catch (RuntimeException e) {
-            if (!(e.getCause() instanceof SessionFailedException)) {
-                throw e;
-            }
-        }
-    }
-
     //TODO: move to vespajlib
     private static <T> List<T> shuffledList(T[] values) {
         //new ArrayList necessary to avoid "write through" behaviour
@@ -281,10 +270,4 @@ public class ZookeeperStatusServiceTest {
         return list;
     }
 
-    //TODO: move to vespajlib
-    private static void doTimes(int numberOfIterations, Runnable runnable) {
-        for (int i = 0; i < numberOfIterations; i++) {
-            runnable.run();
-        }
-    }
 }

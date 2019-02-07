@@ -9,7 +9,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
-import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.data.Stat;
@@ -18,8 +17,6 @@ import javax.inject.Inject;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 /**
@@ -107,19 +104,6 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    private InterProcessSemaphoreMutex acquireMutexOrThrow(long timeout, TimeUnit timeoutTimeUnit, String lockPath) throws Exception {
-        InterProcessSemaphoreMutex mutex = new InterProcessSemaphoreMutex(curator.framework(), lockPath);
-
-        log.log(LogLevel.DEBUG, "Waiting for lock on " + lockPath);
-        boolean acquired = mutex.acquire(timeout, timeoutTimeUnit);
-        if (!acquired) {
-            log.log(LogLevel.DEBUG, "Timed out waiting for lock on " + lockPath);
-            throw new TimeoutException("Timed out waiting for lock on " + lockPath);
-        }
-        log.log(LogLevel.DEBUG, "Successfully acquired lock on " + lockPath);
-        return mutex;
-    }
-
     private void setHostStatus(ApplicationInstanceReference applicationInstanceReference,
                                HostName hostName,
                                HostStatus status) {
@@ -196,10 +180,6 @@ public class ZookeeperStatusService implements StatusService {
 
     private static String hostsAllowedDownPath(ApplicationInstanceReference applicationInstanceReference) {
         return applicationInstancePath(applicationInstanceReference) + "/hosts-allowed-down";
-    }
-
-    private static String applicationInstanceLockPath(ApplicationInstanceReference applicationInstanceReference) {
-        return applicationInstancePath(applicationInstanceReference) + "/lock";
     }
 
     private static String applicationInstanceLock2Path(ApplicationInstanceReference applicationInstanceReference) {
