@@ -12,8 +12,6 @@ import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -30,8 +28,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE;
-import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.EXIT_JVM;
+import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.BOOTSTRAP_IN_CONSTRUCTOR;
 
 /**
  * Main component that bootstraps and starts config server threads.
@@ -43,47 +40,32 @@ import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApp
  * @author Ulf Lilleengen
  * @author hmusum
  */
-public class ConfigServerBootstrap extends AbstractComponent implements Runnable {
+public class ConfigServerBootstrap extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(ConfigServerBootstrap.class.getName());
 
     // INITIALIZE_ONLY is for testing only
-    enum Mode {BOOTSTRAP_IN_CONSTRUCTOR, BOOTSTRAP_IN_SEPARATE_THREAD, INITIALIZE_ONLY}
-    enum RedeployingApplicationsFails {EXIT_JVM, CONTINUE}
+    enum Mode {BOOTSTRAP_IN_CONSTRUCTOR, INITIALIZE_ONLY}
 
     private final ApplicationRepository applicationRepository;
     private final RpcServer server;
-    private final Optional<Thread> serverThread;
     private final VersionState versionState;
     private final StateMonitor stateMonitor;
     private final VipStatus vipStatus;
     private final ConfigserverConfig configserverConfig;
     private final Duration maxDurationOfRedeployment;
     private final Duration sleepTimeWhenRedeployingFails;
-    private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
     private final ExecutorService rpcServerExecutor;
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "WeakerAccess"})
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
-                                 VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
-                                 FlagSource flagSource) {
-        this(applicationRepository, server, versionState, stateMonitor, vipStatus,
-                Flags.CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD.bindTo(flagSource).value()
-                     ? Mode.BOOTSTRAP_IN_SEPARATE_THREAD
-                     : Mode.BOOTSTRAP_IN_CONSTRUCTOR,
-             EXIT_JVM);
+                                 VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus) {
+        this(applicationRepository, server, versionState, stateMonitor, vipStatus, BOOTSTRAP_IN_CONSTRUCTOR);
     }
 
-    // For testing only
-    ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server, VersionState versionState,
-                          StateMonitor stateMonitor, VipStatus vipStatus, Mode mode) {
-        this(applicationRepository, server, versionState, stateMonitor, vipStatus, mode, CONTINUE);
-    }
-
-    private ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
-                                  VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
-                                  Mode mode, RedeployingApplicationsFails exitIfRedeployingApplicationsFails) {
+    ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
+                          VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus, Mode mode) {
         this.applicationRepository = applicationRepository;
         this.server = server;
         this.versionState = versionState;
@@ -92,21 +74,13 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.configserverConfig = applicationRepository.configserverConfig();
         this.maxDurationOfRedeployment = Duration.ofSeconds(configserverConfig.maxDurationOfBootstrap());
         this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(configserverConfig.sleepTimeWhenRedeployingFails());
-        this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
         initializing(); // Initially take server out of rotation
-        log.log(LogLevel.INFO, "Mode: " + mode);
         switch (mode) {
-            case BOOTSTRAP_IN_SEPARATE_THREAD:
-                this.serverThread = Optional.of(new Thread(this, "config server bootstrap thread"));
-                serverThread.get().start();
-                break;
             case BOOTSTRAP_IN_CONSTRUCTOR:
-                this.serverThread = Optional.empty();
                 start();
                 break;
             case INITIALIZE_ONLY:
-                this.serverThread = Optional.empty();
                 break;
             default:
                 throw new IllegalArgumentException("Unknown mode " + mode + ", legal values: " + Arrays.toString(Mode.values()));
@@ -120,52 +94,30 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         server.stop();
         log.log(LogLevel.INFO, "RPC server stopped");
         rpcServerExecutor.shutdown();
-        serverThread.ifPresent(thread -> {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                log.log(LogLevel.WARNING, "Error joining server thread on shutdown: " + e.getMessage());
-            }
-        });
-    }
-
-    @Override
-    public void run() {
-        start();
-        do {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                log.log(LogLevel.ERROR, "Got interrupted", e);
-                break;
-            }
-        } while (server.isRunning());
-        down();
     }
 
     public void start() {
-        if (versionState.isUpgraded()) {
-            log.log(LogLevel.INFO, "Configserver upgrading from " + versionState.storedVersion() + " to "
-                    + versionState.currentVersion() + ". Redeploying all applications");
-            try {
-                if ( ! redeployAllApplications()) {
-                    redeployingApplicationsFailed();
-                    return; // Status will not be set to 'up' since we return here
-                }
-                versionState.saveNewVersion();
-                log.log(LogLevel.INFO, "All applications redeployed successfully");
-            } catch (Exception e) {
-                log.log(LogLevel.ERROR, "Redeployment of applications failed", e);
-                redeployingApplicationsFailed();
-                return; // Status will not be set to 'up' since we return here
-            }
-        }
+        redeployAppsIfUpgraded();
         startRpcServer();
         up();
     }
 
     StateMonitor.Status status() {
         return stateMonitor.status();
+    }
+
+    private void redeployAppsIfUpgraded() {
+        if (versionState.isUpgraded()) {
+            log.log(LogLevel.INFO, "Config server upgrading from " + versionState.storedVersion() + " to "
+                    + versionState.currentVersion() + ". Redeploying all applications");
+            try {
+                redeployAllApplications();
+                versionState.saveNewVersion();
+                log.log(LogLevel.INFO, "All applications redeployed successfully");
+            } catch (Exception e) {
+                throw new RuntimeException("Redeployment of applications failed", e);
+            }
+        }
     }
 
     private void up() {
@@ -202,11 +154,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         log.log(LogLevel.INFO, "RPC server started");
     }
 
-    private void redeployingApplicationsFailed() {
-        if (exitIfRedeployingApplicationsFails == EXIT_JVM) System.exit(1);
-    }
-
-    private boolean redeployAllApplications() throws InterruptedException {
+    private void redeployAllApplications() throws InterruptedException {
         Instant end = Instant.now().plus(maxDurationOfRedeployment);
         Set<ApplicationId> applicationsNotRedeployed = applicationRepository.listApplications();
         do {
@@ -217,11 +165,9 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
 
         if ( ! applicationsNotRedeployed.isEmpty()) {
-            log.log(LogLevel.ERROR, "Redeploying applications not finished after " + maxDurationOfRedeployment +
+            throw new RuntimeException("Redeploying applications not finished after " + maxDurationOfRedeployment +
                     ", exiting, applications that failed redeployment: " + applicationsNotRedeployed);
-            return false;
         }
-        return true;
     }
 
     // Returns the set of applications that failed to redeploy
@@ -234,7 +180,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
         for (ApplicationId appId : applicationIds) {
             Optional<Deployment> deploymentOptional = applicationRepository.deployFromLocalActive(appId, true /* bootstrap */);
-            if ( ! deploymentOptional.isPresent()) continue;
+            if (deploymentOptional.isEmpty()) continue;
 
             futures.put(appId, executor.submit(deploymentOptional.get()::activate));
         }

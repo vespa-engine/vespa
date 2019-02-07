@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
+import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -68,7 +69,7 @@ public class ConfigServerBootstrapTest {
         provisioner.allocations().values().iterator().next().remove(0);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
                                                                     versionState, createStateMonitor(), vipStatus,
-                                                                    ConfigServerBootstrap.Mode.INITIALIZE_ONLY);
+                                                                    Mode.INITIALIZE_ONLY);
         assertFalse(vipStatus.isInRotation());
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
@@ -81,7 +82,7 @@ public class ConfigServerBootstrapTest {
         assertFalse(vipStatus.isInRotation());
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void testBootstrapWhenRedeploymentFails() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         DeployTester tester = new DeployTester(configserverConfig);
@@ -102,16 +103,10 @@ public class ConfigServerBootstrapTest {
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
                                                                     createStateMonitor(), vipStatus,
                                                                     ConfigServerBootstrap.Mode.INITIALIZE_ONLY);
+        // Check that it is not in rotation before starting to redeploy applications
         assertFalse(vipStatus.isInRotation());
-        // Call method directly, to be sure that it is finished redeploying all applications and we can check status
+        // Call method directly, this should fail with RuntimeException
         bootstrap.start();
-        // App is invalid, bootstrapping was unsuccessful. Status should be 'initializing',
-        // rpc server should not be running and it should be out of rotation
-        assertEquals(StateMonitor.Status.initializing, bootstrap.status());
-        assertFalse(rpcServer.isRunning());
-        assertFalse(vipStatus.isInRotation());
-
-        bootstrap.deconstruct();
     }
 
     // Tests that we do not try to create the config model version stored in zookeeper when not on hosted vespa, since
@@ -142,8 +137,7 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         VipStatus vipStatus = new VipStatus();
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    createStateMonitor(), vipStatus,
-                                                                    ConfigServerBootstrap.Mode.BOOTSTRAP_IN_SEPARATE_THREAD);
+                                                                    createStateMonitor(), vipStatus);
 
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
