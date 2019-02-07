@@ -12,10 +12,16 @@ namespace storage {
 // converts the monotonically increasing counters to deltas during
 // periodic metric snapshotting.
 class TlsStatisticsMetricsWrapper : public metrics::MetricSet {
-    metrics::LongCountMetric insecure_client_connections_established;
-    metrics::LongCountMetric insecure_server_connections_accepted;
-    metrics::LongCountMetric tls_client_connections_established;
-    metrics::LongCountMetric tls_server_connections_accepted;
+    struct EndpointMetrics : metrics::MetricSet {
+        EndpointMetrics(vespalib::stringref type, metrics::MetricSet* owner);
+        ~EndpointMetrics() override;
+
+        metrics::LongCountMetric tls_connections_established;
+        metrics::LongCountMetric insecure_connections_established;
+    };
+
+    EndpointMetrics client;
+    EndpointMetrics server;
     metrics::LongCountMetric tls_handshakes_failed;
     metrics::LongCountMetric peer_authorization_failures;
     metrics::LongCountMetric tls_connections_broken;

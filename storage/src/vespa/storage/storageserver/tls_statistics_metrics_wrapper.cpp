@@ -4,24 +4,28 @@
 
 namespace storage {
 
+TlsStatisticsMetricsWrapper::EndpointMetrics::EndpointMetrics(vespalib::stringref type, metrics::MetricSet* owner)
+    : metrics::MetricSet(type, {}, "Endpoint type metrics", owner),
+      tls_connections_established("tls-connections-established", {},
+              "Number of secure mTLS connections established", this),
+      insecure_connections_established("insecure-connections-established", {},
+              "Number of insecure (plaintext) connections established", this)
+{}
+
+TlsStatisticsMetricsWrapper::EndpointMetrics::~EndpointMetrics() = default;
+
 TlsStatisticsMetricsWrapper::TlsStatisticsMetricsWrapper(metrics::MetricSet* owner)
     : metrics::MetricSet("network", {}, "Network connection metrics", owner),
-      insecure_client_connections_established("insecure_client_connections_established", {},
-              "Number of insecure (plaintext) client connections established", this),
-      insecure_server_connections_accepted("insecure_server_connections_accepted", {},
-              "Number of insecure (plaintext) server connections accepted", this),
-      tls_client_connections_established("tls_client_connections_established", {},
-              "Number of secure mTLS client connections established", this),
-      tls_server_connections_accepted("tls_server_connections_accepted", {},
-              "Number of secure mTLS server connections accepted", this),
-      tls_handshakes_failed("tls_handshakes_failed", {}, "Number of client or "
+      client("client", this),
+      server("server", this),
+      tls_handshakes_failed("tls-handshakes-failed", {}, "Number of client or "
               "server connection attempts that failed during TLS handshaking", this),
-      peer_authorization_failures("peer_authorization_failures", {},
+      peer_authorization_failures("peer-authorization-failures", {},
               "Number of TLS connection attempts failed due to bad or missing "
               "peer certificate credentials", this),
-      tls_connections_broken("tls_connections_broken", {}, "Number of TLS "
+      tls_connections_broken("tls-connections-broken", {}, "Number of TLS "
               "connections broken due to failures during frame encoding or decoding", this),
-      failed_tls_config_reloads("failed_tls_config_reloads", {}, "Number of times "
+      failed_tls_config_reloads("failed-tls-config-reloads", {}, "Number of times "
               "background reloading of TLS config has failed", this),
       last_client_stats_snapshot(),
       last_server_stats_snapshot(),
@@ -36,10 +40,11 @@ void TlsStatisticsMetricsWrapper::update_metrics_with_snapshot_delta() {
     auto server_delta = server_current.subtract(last_server_stats_snapshot);
     auto client_delta = client_current.subtract(last_client_stats_snapshot);
 
-    insecure_client_connections_established.set(client_delta.insecure_connections);
-    insecure_server_connections_accepted.set(server_delta.insecure_connections);
-    tls_client_connections_established.set(client_delta.tls_connections);
-    tls_server_connections_accepted.set(server_delta.tls_connections);
+    client.insecure_connections_established.set(client_delta.insecure_connections);
+    client.tls_connections_established.set(client_delta.tls_connections);
+    server.insecure_connections_established.set(server_delta.insecure_connections);
+    server.tls_connections_established.set(server_delta.tls_connections);
+
     // We have underlying stats for both server and client here, but for the
     // moment we just aggregate them up into combined metrics. Can be trivially
     // split up into separate metrics later if deemed useful.
