@@ -11,7 +11,7 @@
 #include <vector>
 
 
-namespace searchcorespi { namespace index {class IThreadService; }}
+namespace searchcorespi { namespace index {struct IThreadService; }}
 
 namespace proton {
 

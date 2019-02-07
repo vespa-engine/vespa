@@ -19,9 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.collectingAndThen;
 
 /**
  * Information about OS versions in this system.
@@ -44,12 +43,20 @@ public class OsVersionStatus {
         return versions;
     }
 
-    /** Returns node versions that exist in given cloud */
-    public List<Node> nodeVersionsIn(CloudName cloud) {
+    /** Returns nodes eligible for OS upgrades that exist in given cloud */
+    public List<Node> nodesIn(CloudName cloud) {
         return versions.entrySet().stream()
                        .filter(entry -> entry.getKey().cloud().equals(cloud))
                        .flatMap(entry -> entry.getValue().stream())
-                       .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                       .collect(Collectors.toUnmodifiableList());
+    }
+
+    /** Returns versions that exist in given cloud */
+    public Set<Version> versionsIn(CloudName cloud) {
+        return versions.keySet().stream()
+                       .filter(osVersion -> osVersion.cloud().equals(cloud))
+                       .map(OsVersion::version)
+                       .collect(Collectors.toUnmodifiableSet());
     }
 
     /** Compute the current OS versions in this system. This is expensive and should be called infrequently */
@@ -84,7 +91,7 @@ public class OsVersionStatus {
         return controller.zoneRegistry().osUpgradePolicies().stream()
                          .flatMap(upgradePolicy -> upgradePolicy.asList().stream())
                          .flatMap(Collection::stream)
-                         .collect(Collectors.toList());
+                         .collect(Collectors.toUnmodifiableList());
     }
 
     /** A node in this system and its current OS version */

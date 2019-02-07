@@ -61,7 +61,7 @@ public class OsUpgrader extends InfrastructureUpgrader {
     protected Optional<Version> targetVersion() {
         // Return target if we have nodes in this cloud on a lower version
         return controller().osVersion(cloud)
-                           .filter(target -> controller().osVersionStatus().nodeVersionsIn(cloud).stream()
+                           .filter(target -> controller().osVersionStatus().nodesIn(cloud).stream()
                                                          .anyMatch(node -> node.version().isBefore(target.version())))
                            .map(OsVersion::version);
     }

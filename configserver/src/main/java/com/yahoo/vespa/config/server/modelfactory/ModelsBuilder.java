@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -71,11 +70,12 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
      * @param allocatedHosts the newest version (major and minor) (which is loaded first) decides the allocated hosts
      *                       and assigns to this SettableOptional such that it can be used after this method returns
      */
-    public List<MODELRESULT> buildModels(ApplicationId applicationId, 
-                                         com.yahoo.component.Version wantedNodeVespaVersion, 
+    public List<MODELRESULT> buildModels(ApplicationId applicationId,
+                                         Version wantedNodeVespaVersion,
                                          ApplicationPackage applicationPackage,
                                          SettableOptional<AllocatedHosts> allocatedHosts,
                                          Instant now) {
+        log.log(LogLevel.DEBUG, "Will build models for " + applicationId);
         Set<Version> versions = modelFactoryRegistry.allVersions();
 
         // If the application specifies a major, skip models on a newer major
@@ -87,9 +87,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                        requestedMajorVersion.get() + " are present");
         }
 
-        // Load models by one major version at the time as new major versions are allowed to be non-loadable
-        // in the case where an existing application is incompatible with a new major version
-        // (which is possible by the definition of major)
+        // Load models one major version at a time (in reverse order) as new major versions are allowed
+        // to be non-loadable in the case where an existing application is incompatible with a new
+        // major version (which is possible by the definition of major)
         List<Integer> majorVersions = versions.stream()
                                               .map(Version::getMajor)
                                               .distinct()
@@ -97,15 +97,19 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                               .collect(Collectors.toList());
 
         List<MODELRESULT> allApplicationModels = new ArrayList<>();
+        // Build latest model for latest major only, if that fails build latest model for previous major
+        boolean buildLatestModelForThisMajor = true;
         for (int i = 0; i < majorVersions.size(); i++) {
+            int majorVersion = majorVersions.get(i);
             try {
-                allApplicationModels.addAll(buildModelVersions(keepMajorVersion(majorVersions.get(i), versions),
+                allApplicationModels.addAll(buildModelVersions(keepMajorVersion(majorVersion, versions),
                                                                applicationId, wantedNodeVespaVersion, applicationPackage,
-                                                               allocatedHosts, now));
+                                                               allocatedHosts, now, buildLatestModelForThisMajor, majorVersion));
 
                 // skip old config models if requested after we have found a major version which works
                 if (allApplicationModels.size() > 0 && allApplicationModels.get(0).getModel().skipOldConfigModels(now))
                     break;
+                buildLatestModelForThisMajor = false; // We have successfully built latest model version, do it only for this major
             }
             catch (OutOfCapacityException | ApplicationLockException e) {
                 // Don't wrap this exception, and don't try to load other model versions as this is (most likely)
@@ -123,43 +127,50 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                         throw new IllegalArgumentException(applicationId + ": Error loading model", e);
                     }
                 } else {
-                    log.log(Level.INFO, applicationId + ": Skipping major version " + majorVersions.get(i), e);
+                    log.log(LogLevel.INFO, applicationId + ": Skipping major version " + majorVersions.get(i), e);
                 }
             }
         }
+        log.log(LogLevel.DEBUG, "Done building models for " + applicationId);
         return allApplicationModels;
     }
 
     // versions is the set of versions for one particular major version
     private List<MODELRESULT> buildModelVersions(Set<Version> versions,
                                                  ApplicationId applicationId,
-                                                 com.yahoo.component.Version wantedNodeVespaVersion,
+                                                 Version wantedNodeVespaVersion,
                                                  ApplicationPackage applicationPackage,
                                                  SettableOptional<AllocatedHosts> allocatedHosts,
-                                                 Instant now) {
-        Version latest = findLatest(versions);
-        // load latest application version
-        MODELRESULT latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest), 
-                                                           applicationPackage, 
-                                                           applicationId, 
-                                                           wantedNodeVespaVersion, 
-                                                           allocatedHosts.asOptional(),
-                                                           now);
-        allocatedHosts.set(latestModelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
-        List<MODELRESULT> allApplicationVersions = new ArrayList<>(Collections.singletonList(latestModelVersion));
+                                                 Instant now,
+                                                 boolean buildLatestModelForThisMajor,
+                                                 int majorVersion) {
+        List<MODELRESULT> allApplicationVersions = new ArrayList<>();
+        Optional<Version> latest = Optional.empty();
+        if (buildLatestModelForThisMajor) {
+            latest = Optional.of(findLatest(versions));
+            // load latest application version
+            MODELRESULT latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest.get()),
+                                                               applicationPackage,
+                                                               applicationId,
+                                                               wantedNodeVespaVersion,
+                                                               allocatedHosts.asOptional(),
+                                                               now);
+            allocatedHosts.set(latestModelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
+            allApplicationVersions.add(latestModelVersion);
 
-        if (latestModelVersion.getModel().skipOldConfigModels(now))
-            return allApplicationVersions;
+            if (latestModelVersion.getModel().skipOldConfigModels(now))
+                return allApplicationVersions;
+        }
 
         // load old model versions
-        versions = versionsToBuild(versions, wantedNodeVespaVersion, latest.getMajor(), allocatedHosts.get());
+        versions = versionsToBuild(versions, wantedNodeVespaVersion, majorVersion, allocatedHosts.get());
         // TODO: We use the allocated hosts from the newest version when building older model versions.
         // This is correct except for the case where an old model specifies a cluster which the new version
         // does not. In that case we really want to extend the set of allocated hosts to include those of that
         // cluster as well. To do that, create a new provisioner which uses static provisioning for known
         // clusters and the node repository provisioner as fallback.
         for (Version version : versions) {
-            if (version.equals(latest)) continue; // already loaded
+            if (latest.isPresent() && version.equals(latest.get())) continue; // already loaded
 
             MODELRESULT modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
                                                          applicationPackage,

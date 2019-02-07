@@ -12,25 +12,36 @@ import java.util.Optional;
  */
 class PrioritizableNode implements Comparable<PrioritizableNode> {
 
+    // TODO: Make immutable
     Node node;
 
     /** The free capacity, including retired allocations */
-    ResourceCapacity freeParentCapacity = new ResourceCapacity();
+    final ResourceCapacity freeParentCapacity;
 
     /** The parent host (docker or hypervisor) */
-    Optional<Node> parent = Optional.empty();
+    final Optional<Node> parent;
 
     /** True if the node is allocated to a host that should be dedicated as a spare */
-    boolean violatesSpares;
+    final boolean violatesSpares;
 
     /** True if this is a node that has been retired earlier in the allocation process */
-    boolean isSurplusNode;
+    final boolean isSurplusNode;
 
     /** This node does not exist in the node repository yet */
-    boolean isNewNode;
+    final boolean isNewNode;
 
     /** True if exact flavor is specified by the allocation request and this node has this flavor */
-    boolean preferredOnFlavor;
+    final boolean preferredOnFlavor;
+
+    private PrioritizableNode(Node node, ResourceCapacity freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean preferredOnFlavor) {
+        this.node = node;
+        this.freeParentCapacity = freeParentCapacity;
+        this.parent = parent;
+        this.violatesSpares = violatesSpares;
+        this.isSurplusNode = isSurplusNode;
+        this.isNewNode = isNewNode;
+        this.preferredOnFlavor = preferredOnFlavor;
+    }
 
     /**
      * Compares two prioritizable nodes
@@ -95,4 +106,51 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         return nodePri.node.state().equals(Node.State.reserved);
     }
 
+    static class Builder {
+        public final Node node;
+        private ResourceCapacity freeParentCapacity = ResourceCapacity.NONE;
+        private Optional<Node> parent = Optional.empty();
+        private boolean violatesSpares;
+        private boolean isSurplusNode;
+        private boolean isNewNode;
+        private boolean preferredOnFlavor;
+
+        Builder(Node node) {
+            this.node = node;
+        }
+
+        Builder withFreeParentCapacity(ResourceCapacity freeParentCapacity) {
+            this.freeParentCapacity = freeParentCapacity;
+            return this;
+        }
+
+        Builder withParent(Node parent) {
+            this.parent = Optional.of(parent);
+            return this;
+        }
+
+        Builder withViolatesSpares(boolean violatesSpares) {
+            this.violatesSpares = violatesSpares;
+            return this;
+        }
+
+        Builder withSurplusNode(boolean surplusNode) {
+            isSurplusNode = surplusNode;
+            return this;
+        }
+
+        Builder withNewNode(boolean newNode) {
+            isNewNode = newNode;
+            return this;
+        }
+
+        Builder withPreferredOnFlavor(boolean preferredOnFlavor) {
+            this.preferredOnFlavor = preferredOnFlavor;
+            return this;
+        }
+        
+        PrioritizableNode build() {
+            return new PrioritizableNode(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, preferredOnFlavor);
+        }
+    }
 }

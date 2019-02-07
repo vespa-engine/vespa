@@ -4,17 +4,18 @@ package com.yahoo.vespa.config.proxy;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Spec;
-
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
-import com.yahoo.system.CatchSigTerm;
-import com.yahoo.vespa.config.*;
+import com.yahoo.vespa.config.JRTConnectionPool;
+import com.yahoo.vespa.config.RawConfig;
+import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.filedistribution.FileDistributionRpcServer;
 import com.yahoo.vespa.filedistribution.FileDownloader;
+import com.yahoo.yolean.system.CatchSignals;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -175,8 +176,8 @@ public class ProxyServer implements Runnable {
         return new RpcConfigSourceClient(configSource, clientUpdater, memoryCache, timingValues, delayedResponses);
     }
 
-    private void setupSigTermHandler() {
-        CatchSigTerm.setup(signalCaught); // catch termination signal
+    private void setupSignalHandler() {
+        CatchSignals.setup(signalCaught); // catch termination and interrupt signals
     }
 
     private void waitForShutdown() {
@@ -215,8 +216,8 @@ public class ProxyServer implements Runnable {
         DelayedResponses delayedResponses = new DelayedResponses(statistics);
         ProxyServer proxyServer = new ProxyServer(new Spec(null, port), delayedResponses, configSources, statistics,
                                                   defaultTimingValues(), true, new MemoryCache(), null);
-        // catch termination signal
-        proxyServer.setupSigTermHandler();
+        // catch termination and interrupt signal
+        proxyServer.setupSignalHandler();
         Thread proxyserverThread = new Thread(proxyServer);
         proxyserverThread.setName("configproxy");
         proxyserverThread.start();

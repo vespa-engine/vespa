@@ -74,7 +74,7 @@ private:
 
     /**
      * This method merges the content of all its children, and invokes itself on
-     * the parent node. If not all children are ready for merg, this method does
+     * the parent node. If not all children are ready for merge, this method does
      * nothing. The rationale for this is that the last child to receive a reply
      * will propagate the merge upwards. Once this method reaches the root node,
      * the reply is either scheduled for resending or passed to the owning reply
@@ -421,7 +421,7 @@ public:
      *
      * @return True if an address is set.
      */
-    bool hasServiceAddress() { return _serviceAddress.get() != nullptr; }
+    bool hasServiceAddress() const { return _serviceAddress.get() != nullptr; }
 
     /**
      * Returns the service address of this node. This is attached by the network

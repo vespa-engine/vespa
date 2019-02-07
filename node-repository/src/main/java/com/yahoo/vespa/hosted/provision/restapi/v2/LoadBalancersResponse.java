@@ -60,6 +60,10 @@ public class LoadBalancersResponse extends HttpResponse {
             lbObject.setString("instance", lb.id().application().instance().value());
             lbObject.setString("cluster", lb.id().cluster().value());
             lbObject.setString("hostname", lb.hostname().value());
+            lb.dnsZone().ifPresent(dnsZone -> lbObject.setString("dnsZone", dnsZone.id()));
+
+            Cursor networkArray = lbObject.setArray("networks");
+            lb.networks().forEach(networkArray::addString);
 
             Cursor portArray = lbObject.setArray("ports");
             lb.ports().forEach(portArray::addLong);
@@ -70,6 +74,12 @@ public class LoadBalancersResponse extends HttpResponse {
                 realObject.setString("hostname", real.hostname().value());
                 realObject.setString("ipAddress", real.ipAddress());
                 realObject.setLong("port", real.port());
+            });
+
+            Cursor rotationArray = lbObject.setArray("rotations");
+            lb.rotations().forEach(rotation -> {
+                Cursor rotationObject = rotationArray.addObject();
+                rotationObject.setString("name", rotation.value());
             });
 
             lbObject.setBool("inactive", lb.inactive());

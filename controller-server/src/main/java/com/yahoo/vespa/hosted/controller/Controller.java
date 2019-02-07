@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -48,6 +49,7 @@ import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * API to the controller. This contains the object model of everything the controller cares about, mainly tenants and
@@ -231,7 +233,7 @@ public class Controller extends AbstractComponent {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
         }
-        if (zoneRegistry.zones().all().ids().stream().noneMatch(zone -> cloud.equals(zone.cloud()))) {
+        if (!clouds().contains(cloud)) {
             throw new IllegalArgumentException("Cloud '" + cloud.value() + "' does not exist in this system");
         }
         try (Lock lock = curator.lockOsVersions()) {
@@ -255,6 +257,14 @@ public class Controller extends AbstractComponent {
     /** Replace the current OS version status with a new one */
     public void updateOsVersionStatus(OsVersionStatus newStatus) {
         try (Lock lock = curator.lockOsVersionStatus()) {
+            OsVersionStatus currentStatus = curator.readOsVersionStatus();
+            for (CloudName cloud : clouds()) {
+                Set<Version> newVersions = newStatus.versionsIn(cloud);
+                if (currentStatus.versionsIn(cloud).size() > 1 && newVersions.size() == 1) {
+                    log.info("All nodes in " + cloud + " cloud upgraded to OS version " +
+                             newVersions.iterator().next());
+                }
+            }
             curator.writeOsVersionStatus(newStatus);
         }
     }
@@ -286,6 +296,12 @@ public class Controller extends AbstractComponent {
 
     public CuratorDb curator() {
         return curator;
+    }
+
+    private Set<CloudName> clouds() {
+        return zoneRegistry.zones().all().ids().stream()
+                           .map(ZoneId::cloud)
+                           .collect(Collectors.toUnmodifiableSet());
     }
 
     private static String printableVersion(Optional<VespaVersion> vespaVersion) {

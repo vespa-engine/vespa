@@ -49,6 +49,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFact
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -65,9 +66,11 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
+import com.yahoo.vespa.hosted.controller.maintenance.InfrastructureUpgrader;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
@@ -92,11 +95,13 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 import static java.util.stream.Collectors.joining;
@@ -856,11 +861,39 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
 
+        // Get deployOptions
         Map<String, byte[]> dataParts = new MultipartParser().parse(request);
         if ( ! dataParts.containsKey("deployOptions"))
             return ErrorResponse.badRequest("Missing required form part 'deployOptions'");
-
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
+
+        /*
+         * Special handling of the zone application (the only system application with an application package)
+         * Setting any other deployOptions here is not supported for now (e.g. specifying version), but
+         * this might be handy later to handle emergency downgrades.
+         */
+        boolean isZoneApplication = SystemApplication.zone.id().equals(applicationId);
+        if (isZoneApplication) {
+            // Make it explicit that version is not yet supported here
+            String versionStr = deployOptions.field("vespaVersion").asString();
+            boolean versionPresent = !versionStr.isEmpty() && !versionStr.equals("null");
+            if (versionPresent) {
+                throw new RuntimeException("Version not supported for system applications");
+            }
+            // To avoid second guessing the orchestrated upgrades of system applications
+            // we don't allow to deploy these during an system upgrade (i.e when new vespa is being rolled out)
+            Version version = wantedSystemVersion(zone, SystemApplication.zone);
+            if (!controller.systemVersion().equals(version)) {
+                throw new RuntimeException("Deployment of system applications during a system upgrade is not allowed");
+            }
+            ActivateResult result = controller.applications()
+                    .deploySystemApplicationPackage(SystemApplication.zone, zone, version);
+            return new SlimeJsonResponse(toSlime(result));
+        }
+
+        /*
+         * Normal applications from here
+         */
 
         Optional<ApplicationPackage> applicationPackage = Optional.ofNullable(dataParts.get("applicationZip"))
                                                                   .map(ApplicationPackage::new);
@@ -880,11 +913,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             applicationPackage = Optional.of(controller.applications().getApplicationPackage(controller.applications().require(applicationId), applicationVersion.get()));
         }
 
-
         boolean deployDirectly = deployOptions.field("deployDirectly").asBool();
         Optional<Version> vespaVersion = optional("vespaVersion", deployOptions).map(Version::new);
 
+        /*
+         * Deploy direct is when we want to redeploy the current application - retrieve version
+         * info from the application package before deploying
+         */
         if(deployDirectly && !applicationPackage.isPresent() && !applicationVersion.isPresent() && !vespaVersion.isPresent()) {
+
             // Redeploy the existing deployment with the same versions.
             Optional<Deployment> deployment = controller.applications().get(applicationId)
                     .map(Application::deployments)
@@ -907,13 +944,33 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  vespaVersion,
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
                                                                  deployOptions.field("deployCurrentVersion").asBool());
+
+
         ActivateResult result = controller.applications().deploy(applicationId,
                                                                  zone,
                                                                  applicationPackage,
                                                                  applicationVersion,
                                                                  deployOptionsJsonClass,
                                                                  Optional.of(getUserPrincipal(request).getIdentity()));
+
         return new SlimeJsonResponse(toSlime(result));
+    }
+
+    /** Find the minimum value of a version field in a zone */
+    private Version wantedSystemVersion(ZoneId zone, SystemApplication application) {
+        try {
+            return controller.configServer()
+                    .nodeRepository()
+                    .list(zone, application.id())
+                    .stream()
+                    .filter(node -> node.state().equals(Node.State.active))
+                    .map(Node::wantedVersion)
+                    .min(Comparator.naturalOrder()).orElseThrow(
+                            () -> new RuntimeException("System version not found in node repo"));
+        } catch (Exception e) {
+            throw new RuntimeException(String.format("Failed to get version for %s in %s: %s",
+                    application.id(), zone, Exceptions.toMessageString(e)));
+        }
     }
 
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {

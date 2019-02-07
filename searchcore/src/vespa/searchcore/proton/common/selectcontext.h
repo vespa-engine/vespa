@@ -7,7 +7,7 @@ namespace proton {
 
 class CachedSelect;
 
-namespace select { class Guards; }
+namespace select { struct Guards; }
 
 class SelectContext : public document::select::Context
 {

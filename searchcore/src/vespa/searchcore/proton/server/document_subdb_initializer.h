@@ -5,7 +5,7 @@
 #include "document_subdb_initializer_result.h"
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 
-namespace searchcorespi { namespace index { class IThreadService; } }
+namespace searchcorespi { namespace index { struct IThreadService; } }
 
 namespace proton {
 

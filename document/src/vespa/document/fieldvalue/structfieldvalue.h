@@ -17,7 +17,7 @@ namespace document {
 class Document;
 class DocumentType;
 class DocumentTypeRepo;
-class FieldValueWriter;
+struct FieldValueWriter;
 class FixedTypeRepo;
 class FieldSet;
 class StructDataType;
@@ -123,8 +123,8 @@ private:
     VESPA_DLL_LOCAL const StructDataType & getStructType() const;
 
     // Iterator implementation
-    class FieldIterator;
-    friend class FieldIterator;
+    struct FieldIterator;
+    friend struct FieldIterator;
 
     StructuredIterator::UP getIterator(const Field* toFind) const override;
 

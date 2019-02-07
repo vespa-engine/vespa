@@ -2,46 +2,27 @@
 package com.yahoo.vespa.http.server;
 
 import com.yahoo.collections.Tuple2;
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
-import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
-import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.http.HttpResponse.Status;
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.ReplyHandler;
-import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.http.client.core.Headers;
-import com.yahoo.vespa.http.client.core.OperationStatus;
-import com.yahoo.yolean.Exceptions;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -53,7 +34,9 @@ public class FeedHandler extends LoggingRequestHandler {
 
     protected final ReplyHandler feedReplyHandler;
     private static final List<Integer> serverSupportedVersions = Collections.unmodifiableList(Arrays.asList(3));
+    private static final Pattern USER_AGENT_PATTERN = Pattern.compile("vespa-http-client \\((.+)\\)");
     private final FeedHandlerV3 feedHandlerV3;
+    private final DocumentApiMetrics metricsHelper;
 
     @Inject
     public FeedHandler(
@@ -63,7 +46,7 @@ public class FeedHandler extends LoggingRequestHandler {
             ThreadpoolConfig threadpoolConfig,
             MetricReceiver metricReceiver) throws Exception {
         super(parentCtx);
-        DocumentApiMetrics metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
+        metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
         feedHandlerV3 = new FeedHandlerV3(parentCtx, documentManagerConfig, sessionCache, threadpoolConfig, metricsHelper);
         feedReplyHandler = new FeedReplyReader(parentCtx.getMetric(), metricsHelper);
     }
@@ -121,12 +104,24 @@ public class FeedHandler extends LoggingRequestHandler {
 
     @Override
     public HttpResponse handle(HttpRequest request) {
+        metricsHelper.reportHttpRequest(findClientVersion(request).orElse(null));
         Tuple2<HttpResponse, Integer> protocolVersion = checkProtocolVersion(request);
 
         if (protocolVersion.first != null) {
             return protocolVersion.first;
         }
         return feedHandlerV3.handle(request);
+    }
+
+    private static Optional<String> findClientVersion(HttpRequest request) {
+        String versionHeader = request.getHeader(Headers.CLIENT_VERSION);
+        if (versionHeader != null) {
+            return Optional.of(versionHeader);
+        }
+        return Optional.ofNullable(request.getHeader("User-Agent"))
+                .map(USER_AGENT_PATTERN::matcher)
+                .filter(Matcher::matches)
+                .map(matcher -> matcher.group(1));
     }
 
     // Protected for testing

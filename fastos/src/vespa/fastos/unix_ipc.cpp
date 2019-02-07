@@ -660,7 +660,7 @@ void FastOS_UNIX_IPCHelper::DeliverMessages (FastOS_RingBuffer *buffer)
 
         if((readSpace - sizeof(int)) >= bufferData->_messageSize)
         {
-            _app->OnReceivedIPCMessage(&bufferData->_buffer[sizeof(int)],
+            _app->OnReceivedIPCMessage(&bufferData->_buffer[0] + sizeof(int),
                                        bufferData->_messageSize);
             buffer->Consume(sizeof(int) + bufferData->_messageSize);
             buffer->RepositionDataAt0();

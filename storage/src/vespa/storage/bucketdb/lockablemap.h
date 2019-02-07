@@ -34,10 +34,11 @@ public:
     typedef typename Map::value_type value_type;
     typedef typename Map::size_type size_type;
     using BucketId = document::BucketId;
+    struct WrappedEntry;
 
     /** Responsible for releasing lock in map when out of scope. */
     class LockKeeper {
-        friend class LockableMap<Map>::WrappedEntry;
+        friend struct WrappedEntry;
         LockableMap<Map>& _map;
         key_type _key;
         bool _locked;

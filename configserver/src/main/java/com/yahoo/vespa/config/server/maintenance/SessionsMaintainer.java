@@ -17,7 +17,9 @@ public class SessionsMaintainer extends Maintainer {
     private final boolean hostedVespa;
 
     SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
-        super(applicationRepository, curator, interval);
+        // Start this maintainer immediately. It frees disk space, so if disk goes full and config server
+        // restarts this makes sure that cleanup will happen as early as possible
+        super(applicationRepository, curator, Duration.ZERO, interval);
         this.hostedVespa = applicationRepository.configserverConfig().hostedVespa();
     }
 

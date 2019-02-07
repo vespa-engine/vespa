@@ -31,14 +31,8 @@ public:
      */
     ConfigKeySet & add(const ConfigKeySet & configKeySet);
 private:
-    template<typename... ConfigTypes>
-    struct TypeTag {};
-
-    template<typename ConfigType>
-    void addImpl(const vespalib::string & configId, TypeTag<ConfigType>);
-
     template<typename ConfigType, typename... ConfigTypes>
-    void addImpl(const vespalib::string & configId, TypeTag<ConfigType, ConfigTypes...>);
+    void addImpl(const vespalib::string & configId);
 };
 
 } // namespace config

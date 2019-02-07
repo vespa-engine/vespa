@@ -3,12 +3,11 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.messagebus.routing.RouteSpec;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
-import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.config.content.core.StorServerConfig;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -23,7 +22,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 
 /**
  * Test for using the content model to create indexed search clusters.
@@ -138,12 +140,13 @@ public class IndexedTest extends ContentBaseTest {
     @Test
     public void requireIndexedOnlyServices() {
         VespaModel model = getIndexedVespaModel();
-        HostResource h = model.getHostSystem().getHosts().get(0);
-        String [] expectedServices = {"logserver", "configserver", "adminserver", "slobrok",
-                                      "logd", "configproxy","config-sentinel",
-                                      "qrserver", "fleetcontroller", "topleveldispatch",
-                                      "storagenode", "searchnode", "distributor", "transactionlogserver"};
-        // TODO DomContentBuilderTest.assertServices(h, expectedServices);
+        // TODO
+        // HostResource h = model.getHostSystem().getHosts().get(0);
+        // String [] expectedServices = {"logserver", "configserver", "adminserver", "slobrok",
+        //                               "logd", "configproxy","config-sentinel",
+        //                               "qrserver", "fleetcontroller", "topleveldispatch",
+        //                               "storagenode", "searchnode", "distributor", "transactionlogserver"};
+        // DomContentBuilderTest.assertServices(h, expectedServices);
         Routing routing = model.getRouting();
         assertNotNull(routing);
         assertEquals("[]", routing.getErrors().toString());
@@ -154,42 +157,35 @@ public class IndexedTest extends ContentBaseTest {
         assertEquals("indexing", spec.getHop(0).getName());
         assertEquals("jdisc/chain.indexing", spec.getHop(1).getName());
 
-        RouteSpec r;
-        r = spec.getRoute(0);
-        assertEquals("default", r.getName());
-        assertEquals(1, r.getNumHops());
-        assertEquals("indexing", r.getHop(0));
-        r = spec.getRoute(1);
-        assertEquals("storage/cluster.test", r.getName());
-        assertEquals(1, r.getNumHops());
-        assertEquals("route:test", r.getHop(0));
-        r = spec.getRoute(2);
-        assertEquals("test", r.getName());
-        assertEquals(1, r.getNumHops());
-        assertEquals("[MessageType:test]", r.getHop(0));
-        r = spec.getRoute(3);
-        assertEquals("test-direct", r.getName());
-        assertEquals(1, r.getNumHops());
-        assertEquals("[Content:cluster=test]", r.getHop(0));
-        r = spec.getRoute(4);
-        assertEquals("test-index", r.getName());
-        assertEquals(2, r.getNumHops());
-        assertEquals("jdisc/chain.indexing", r.getHop(0));
-        assertEquals("[Content:cluster=test]", r.getHop(1));
+        assertRoute(spec.getRoute(0), "default", "indexing");
+        assertRoute(spec.getRoute(1), "default-get", "indexing");
+        assertRoute(spec.getRoute(2), "storage/cluster.test", "route:test");
+        assertRoute(spec.getRoute(3), "test", "[MessageType:test]");
+        assertRoute(spec.getRoute(4), "test-direct", "[Content:cluster=test]");
+        assertRoute(spec.getRoute(5), "test-index", "jdisc/chain.indexing", "[Content:cluster=test]");
     }
+
+    private static void assertRoute(RouteSpec r, String name, String... hops) {
+        assertEquals(name, r.getName());
+        assertEquals(hops.length, r.getNumHops());
+        for(int i = 0; i < hops.length; i++) {
+            assertEquals(hops[i], r.getHop(i));
+        }
+    }
+
     @Test
     public void requireProtonStreamingOnly()
     {
         VespaModel model = getStreamingVespaModel();
-        HostResource h = model.getHostSystem().getHosts().get(0);
-        String [] expectedServices = {"logserver", "configserver", "adminserver", "slobrok",
-                                      "logd", "configproxy","config-sentinel",
-                                      "qrserver", "storagenode", "searchnode", "distributor",
-                                      "transactionlogserver"};
-// TODO        DomContentBuilderTest.assertServices(h, expectedServices);
+        // TODO
+        // HostResource h = model.getHostSystem().getHosts().get(0);
+        // String [] expectedServices = {"logserver", "configserver", "adminserver", "slobrok",
+        //                               "logd", "configproxy","config-sentinel",
+        //                               "qrserver", "storagenode", "searchnode", "distributor",
+        //                               "transactionlogserver"};
+        // DomContentBuilderTest.assertServices(h, expectedServices);
         ContentCluster s = model.getContentClusters().get("test");
         assertFalse(s.getSearch().hasIndexedCluster());
-
 
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         s.getStorageNodes().getConfig(builder);
@@ -211,35 +207,35 @@ public class IndexedTest extends ContentBaseTest {
 
     @Test
     public void testContentSummaryStore() {
-        String services= 
+        String services=
                 "<services version='1.0'>" +
                 "<admin version='2.0'><adminserver hostalias='node0' /></admin>" +
-                "<content id='docstore' version='1.0'>\n" + 
-                "    <redundancy>1</redundancy>\n" + 
-                "    <documents>\n" + 
-                "      <document mode='index' type='docstorebench'/>\n" + 
-                "    </documents>\n" + 
+                "<content id='docstore' version='1.0'>\n" +
+                "    <redundancy>1</redundancy>\n" +
+                "    <documents>\n" +
+                "      <document mode='index' type='docstorebench'/>\n" +
+                "    </documents>\n" +
                 "    <group>\n" +
-                "      <node distribution-key='0' hostalias='node0'/>\n" + 
-                "    </group>\n" + 
-                "    <engine>\n" + 
-                "      <proton>\n" + 
-                "        <searchable-copies>1</searchable-copies>\n" + 
-                "        <tuning>\n" + 
-                "          <searchnode>\n" + 
-                "            <summary>\n" + 
-                "              <store>\n" + 
-                "                <logstore>\n" + 
-                "                  <chunk>\n" + 
-                "                    <maxsize>2048</maxsize>\n" + 
-                "                  </chunk>\n" + 
-                "                </logstore>\n" + 
-                "              </store>\n" + 
-                "            </summary>\n" + 
-                "          </searchnode>\n" + 
-                "        </tuning>\n" + 
-                "      </proton>\n" + 
-                "    </engine>\n" + 
+                "      <node distribution-key='0' hostalias='node0'/>\n" +
+                "    </group>\n" +
+                "    <engine>\n" +
+                "      <proton>\n" +
+                "        <searchable-copies>1</searchable-copies>\n" +
+                "        <tuning>\n" +
+                "          <searchnode>\n" +
+                "            <summary>\n" +
+                "              <store>\n" +
+                "                <logstore>\n" +
+                "                  <chunk>\n" +
+                "                    <maxsize>2048</maxsize>\n" +
+                "                  </chunk>\n" +
+                "                </logstore>\n" +
+                "              </store>\n" +
+                "            </summary>\n" +
+                "          </searchnode>\n" +
+                "        </tuning>\n" +
+                "      </proton>\n" +
+                "    </engine>\n" +
                 "  </content>\n" +
                 "  </services>";
 

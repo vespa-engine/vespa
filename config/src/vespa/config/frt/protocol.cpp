@@ -25,7 +25,6 @@ const Memory REQUEST_CLIENT_CONFIGID = "configId";
 const Memory REQUEST_CLIENT_HOSTNAME = "clientHostname";
 const Memory REQUEST_CONFIG_MD5 = "configMD5";
 const Memory REQUEST_CURRENT_GENERATION = "currentGeneration";
-const Memory REQUEST_WANTED_GENERATION = "wantedGeneration";
 const Memory REQUEST_TIMEOUT = "timeout";
 const Memory REQUEST_TRACE = "trace";
 const Memory REQUEST_VESPA_VERSION = "vespaVersion";

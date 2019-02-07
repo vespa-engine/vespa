@@ -17,7 +17,7 @@ public class StateV1HealthMonitorTest {
     public void downThenUpThenDown() throws Exception {
         StateV1HealthClient client = mock(StateV1HealthClient.class);
 
-        StateV1HealthUpdater updater = new StateV1HealthUpdater(client);
+        StateV1HealthUpdater updater = new StateV1HealthUpdater("https://foo/state/v1/health", client);
         RunletExecutor executor = new RunletExecutorImpl(2);
         try (StateV1HealthMonitor monitor = new StateV1HealthMonitor(updater, executor, Duration.ofMillis(10))) {
             assertEquals(ServiceStatus.NOT_CHECKED, monitor.getStatus().serviceStatus());

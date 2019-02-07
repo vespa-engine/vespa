@@ -7,8 +7,8 @@
 #include <cassert>
 
 namespace document {
-class SpanNode;
-class SpanTreeVisitor;
+struct SpanNode;
+struct SpanTreeVisitor;
 
 class SpanTree {
     typedef std::vector<Annotation> AnnotationVector;

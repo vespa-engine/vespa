@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.metrics;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.yahoo.metrics.simple.Counter;
 import com.yahoo.metrics.simple.Gauge;
 import com.yahoo.metrics.simple.MetricReceiver;
@@ -10,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -21,7 +24,9 @@ public class DocumentApiMetrics {
 
     private final Counter feeds;
     private final Gauge feedLatency;
+    private final Counter feedRequests;
     private final Map<DocumentOperationStatus, Map<DocumentOperationType, Point>> points = new HashMap<>();
+    private final Cache<String, Point> versionPointCache = CacheBuilder.newBuilder().maximumSize(256).build();
 
     public DocumentApiMetrics(MetricReceiver metricReceiver, String apiName) {
         Map<String, String> dimensions = new HashMap<>();
@@ -37,6 +42,7 @@ public class DocumentApiMetrics {
 
         feeds = metricReceiver.declareCounter("feed.operations");
         feedLatency = metricReceiver.declareGauge("feed.latency");
+        feedRequests = metricReceiver.declareCounter("feed.http-requests");
     }
 
     public void reportSuccessful(DocumentOperationType documentOperationType, double latencyInSeconds) {
@@ -54,6 +60,19 @@ public class DocumentApiMetrics {
     public void reportFailure(DocumentOperationType documentOperationType, DocumentOperationStatus documentOperationStatus) {
         Point point = points.get(documentOperationStatus).get(documentOperationType);
         feeds.add(point);
+    }
+
+    public void reportHttpRequest(String clientVersion) {
+        if (clientVersion != null) {
+            try {
+                Point point = versionPointCache.get(clientVersion, () -> new Point(Map.of("client-version", clientVersion)));
+                feedRequests.add(point);
+            } catch (ExecutionException e) { // When Point constructor throws an exception
+                throw new RuntimeException(e);
+            }
+        } else {
+            feedRequests.add();
+        }
     }
 
 }

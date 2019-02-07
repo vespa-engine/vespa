@@ -218,11 +218,12 @@ FNET_Connection::handshake()
     bool broken = false;
     switch (_socket->handshake()) {
     case vespalib::CryptoSocket::HandshakeResult::FAIL:
-        LOG(debug, "Connection(%s): handshake failed", GetSpec());
+        LOG(debug, "Connection(%s): handshake failed with peer %s", GetSpec(), GetPeerSpec().c_str());
         SetState(FNET_CLOSED);
         broken = true;
         break;
     case vespalib::CryptoSocket::HandshakeResult::DONE: {
+        LOG(debug, "Connection(%s): handshake done with peer %s", GetSpec(), GetPeerSpec().c_str());
         EnableReadEvent(true);
         EnableWriteEvent(writePendingAfterConnect());
         _flags._framed = (_socket->min_read_buffer_size() > 1);
@@ -751,4 +752,10 @@ FNET_Connection::HandleWriteEvent()
         broken = true;
     }
     return !broken;
+}
+
+vespalib::string
+FNET_Connection::GetPeerSpec() const
+{
+    return vespalib::SocketAddress::peer_address(_socket->get_fd()).spec();
 }

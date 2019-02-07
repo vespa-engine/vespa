@@ -6,8 +6,8 @@
 
 namespace vespalib { class asciistream; }
 namespace search::query {
-class Point;
-class Rectangle;
+struct Point;
+struct Rectangle;
 
 class Location {
     vespalib::string _location_string;

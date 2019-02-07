@@ -51,8 +51,28 @@ public class VespaMetricSet {
 
     private static Set<Metric> getOtherMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
+
         metrics.add(new Metric("slobrok.heartbeats.failed.count"));
         metrics.add(new Metric("logd.processed.lines.count"));
+
+        // Java (JRT) TLS metrics
+        metrics.add(new Metric("jrt.transport.tls-certificate-verification-failures"));
+        metrics.add(new Metric("jrt.transport.peer-authorization-failures"));
+        metrics.add(new Metric("jrt.transport.server.tls-connections-established"));
+        metrics.add(new Metric("jrt.transport.client.tls-connections-established"));
+        metrics.add(new Metric("jrt.transport.server.unencrypted-connections-established"));
+        metrics.add(new Metric("jrt.transport.client.unencrypted-connections-established"));
+
+        // C++ TLS metrics
+        metrics.add(new Metric("vds.server.network.tls-handshakes-failed"));
+        metrics.add(new Metric("vds.server.network.peer-authorization-failures"));
+        metrics.add(new Metric("vds.server.network.client.tls-connections-established"));
+        metrics.add(new Metric("vds.server.network.server.tls-connections-established"));
+        metrics.add(new Metric("vds.server.network.client.insecure-connections-established"));
+        metrics.add(new Metric("vds.server.network.server.insecure-connections-established"));
+        metrics.add(new Metric("vds.server.network.tls-connections-broken"));
+        metrics.add(new Metric("vds.server.network.failed-tls-config-reloads"));
+
         return metrics;
     }
 
@@ -180,6 +200,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("search_connections.average"));
         metrics.add(new Metric("active_queries.average"));
         metrics.add(new Metric("feed.latency.average"));
+        metrics.add(new Metric("feed.http-requests.count"));
+        metrics.add(new Metric("feed.http-requests.rate"));
         metrics.add(new Metric("queries.rate"));
         metrics.add(new Metric("query_container_latency.average"));
         metrics.add(new Metric("query_latency.average"));
@@ -327,6 +349,7 @@ public class VespaMetricSet {
 
         // matching
         metrics.add(new Metric("content.proton.documentdb.matching.queries.rate"));
+        metrics.add(new Metric("content.proton.documentdb.matching.soft_doomed_queries.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_latency.average"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_collateral_time.average"));
         metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.rate"));
@@ -336,6 +359,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.average"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.docs_matched.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.limited_queries.rate"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.soft_doomed_queries.rate"));
 
         return metrics;
     }

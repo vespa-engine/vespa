@@ -95,7 +95,7 @@ public class NodeFailer extends Maintainer {
         int throttledNodeFailures = 0;
 
         // Ready nodes
-        try (Mutex lock = nodeRepository().lockUnallocated()) {
+        try (Mutex lock = nodeRepository().lockAllocation()) {
             updateNodeLivenessEventsForReadyNodes();
 
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
@@ -298,7 +298,7 @@ public class NodeFailer extends Maintainer {
             // the children nodes running on it before we fail the host
             boolean allTenantNodesFailedOutSuccessfully = true;
             String reasonForChildFailure = "Failing due to parent host " + node.hostname() + " failure: " + reason;
-            for (Node failingTenantNode : nodeRepository().list().childrenOf(node).asList()) {
+            for (Node failingTenantNode : nodeRepository().list().childrenOf(node)) {
                 if (failingTenantNode.state() == Node.State.active) {
                     allTenantNodesFailedOutSuccessfully &= failActive(failingTenantNode, reasonForChildFailure);
                 } else {

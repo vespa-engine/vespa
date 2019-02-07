@@ -8,7 +8,7 @@
 namespace vespalib {
 namespace eval {
 
-class TensorEngine;
+struct TensorEngine;
 
 /**
  * Base class for all tensors. Tensor operations are defined by the

@@ -8,8 +8,8 @@
 
 namespace metrics {
 
-class AbstractCountMetric;
-class AbstractValueMetric;
+struct AbstractCountMetric;
+struct AbstractValueMetric;
 class Metric;
 class MetricSet;
 class MetricSnapshot;

@@ -13,7 +13,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -48,11 +47,11 @@ public class InactiveAndFailedExpirerTest {
 
     @Test
     public void inactive_and_failed_times_out() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         List<Node> nodes = tester.makeReadyNodes(2, "default");
 
         // Allocate then deallocate 2 nodes
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Collections.emptySet());
         List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
@@ -86,14 +85,14 @@ public class InactiveAndFailedExpirerTest {
 
     @Test
     public void reboot_generation_is_increased_when_node_moves_to_dirty() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         List<Node> nodes = tester.makeReadyNodes(2, "default");
 
         // Allocate and deallocate a single node
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
-                                                  ClusterSpec.Id.from("test"), 
+                                                  ClusterSpec.Id.from("test"),
                                                   Version.fromString("6.42"),
-                                                  false);
+                                                  false, Collections.emptySet());
         List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
@@ -118,9 +117,9 @@ public class InactiveAndFailedExpirerTest {
 
     @Test
     public void node_that_wants_to_retire_is_moved_to_parked() throws OrchestrationException {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), 
-                                                  Version.fromString("6.42"), false);
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
+                                                  Version.fromString("6.42"), false, Collections.emptySet());
         tester.makeReadyNodes(5, "default");
 
         // Allocate two nodes

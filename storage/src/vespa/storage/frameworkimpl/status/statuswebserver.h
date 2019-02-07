@@ -21,9 +21,9 @@
 namespace storage {
 
 namespace framework {
-    class StatusReporterMap;
-    class ThreadHandle;
-    class ComponentRegister;
+    struct StatusReporterMap;
+    struct ThreadHandle;
+    struct ComponentRegister;
     class Thread;
     class HttpUrlPath;
     class Component;

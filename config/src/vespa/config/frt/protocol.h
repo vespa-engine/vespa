@@ -9,7 +9,7 @@
 namespace vespalib {
     class Slime;
     namespace slime {
-        class Inspector;
+        struct Inspector;
     }
 }
 
@@ -38,7 +38,6 @@ extern const vespalib::Memory REQUEST_CLIENT_CONFIGID;
 extern const vespalib::Memory REQUEST_CLIENT_HOSTNAME;
 extern const vespalib::Memory REQUEST_CONFIG_MD5;
 extern const vespalib::Memory REQUEST_CURRENT_GENERATION;
-extern const vespalib::Memory REQUEST_WANTED_GENERATION;
 extern const vespalib::Memory REQUEST_TIMEOUT;
 extern const vespalib::Memory REQUEST_TRACE;
 extern const vespalib::Memory REQUEST_VESPA_VERSION;

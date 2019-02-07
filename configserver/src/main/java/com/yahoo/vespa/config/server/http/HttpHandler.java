@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -61,6 +62,8 @@ public class HttpHandler extends LoggingRequestHandler {
             return HttpErrorResponse.requestTimeout(getMessage(e, request));
         } catch (ApplicationLockException e) {
             return HttpErrorResponse.applicationLockFailure(getMessage(e, request));
+        } catch (ParentHostUnavailableException e) {
+            return HttpErrorResponse.parentHostNotReady(getMessage(e, request));
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Unexpected exception handling a config server request", e);
             return HttpErrorResponse.internalServerError(getMessage(e, request));

@@ -1,14 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
-
-import java.util.logging.Level;
 
 /**
  * Builder for the tuning config for a search cluster.
@@ -24,7 +21,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             if (equals("dispatch", e)) {
                 handleDispatch(e, tuning);
             } else if (equals("searchnode", e)) {
-                handleSearchNode(deployState.getDeployLogger(), e, tuning);
+                handleSearchNode(e, tuning);
             }
         }
         return tuning;
@@ -59,13 +56,13 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSearchNode(DeployLogger deployLogger, Element spec, Tuning t) {
+    private void handleSearchNode(Element spec, Tuning t) {
         t.searchNode = new Tuning.SearchNode();
         for (Element e : XML.getChildren(spec)) {
             if (equals("requestthreads", e)) {
                handleRequestThreads(e, t.searchNode);
             } else if (equals("flushstrategy", e)) {
-                handleFlushStrategy(deployLogger,e, t.searchNode);
+                handleFlushStrategy(e, t.searchNode);
             } else if (equals("resizing", e)) {
                 handleResizing(e, t.searchNode);
             } else if (equals("index", e)) {
@@ -73,11 +70,13 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             } else if (equals("attribute", e)) {
                 handleAttribute(e, t.searchNode);
             } else if (equals("summary", e)) {
-                handleSummary(deployLogger, e, t.searchNode);
+                handleSummary(e, t.searchNode);
             } else if (equals("initialize", e)) {
                 handleInitialize(e, t.searchNode);
             } else if (equals("feeding", e)) {
                 handleFeeding(e, t.searchNode);
+            } else if (equals("removed-db", e)) {
+                handleRemovedDB(e, t.searchNode);
             }
         }
     }
@@ -96,15 +95,32 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleFlushStrategy(DeployLogger deployLogger, Element spec, Tuning.SearchNode sn) {
+    private void handleRemovedDB(Element spec, Tuning.SearchNode sn) {
+        sn.removedDB = new Tuning.SearchNode.RemovedDB();
         for (Element e : XML.getChildren(spec)) {
-            if (equals("native", e)) {
-                handleNativeStrategy(deployLogger, e, sn);
+            if (equals("prune", e)) {
+                sn.removedDB.prune = new Tuning.SearchNode.RemovedDB.Prune();
+                Tuning.SearchNode.RemovedDB.Prune prune = sn.removedDB.prune;
+                for (Element e2 : XML.getChildren(e)) {
+                    if (equals("age", e2)) {
+                        prune.age = asDouble(e2);
+                    } else if (equals("interval", e2)) {
+                        prune.interval = asDouble(e2);
+                    }
+                }
             }
         }
     }
 
-    private void handleNativeStrategy(DeployLogger deployLogger, Element spec, Tuning.SearchNode sn) {
+    private void handleFlushStrategy(Element spec, Tuning.SearchNode sn) {
+        for (Element e : XML.getChildren(spec)) {
+            if (equals("native", e)) {
+                handleNativeStrategy(e, sn);
+            }
+        }
+    }
+
+    private void handleNativeStrategy(Element spec, Tuning.SearchNode sn) {
         sn.strategy = new Tuning.SearchNode.FlushStrategy();
         Tuning.SearchNode.FlushStrategy fs = sn.strategy;
         for (Element e : XML.getChildren(spec)) {
@@ -149,6 +165,8 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         for (Element e : XML.getChildren(spec)) {
             if (equals("initialdocumentcount", e)) {
                 sn.resizing.initialDocumentCount = asInt(e);
+            } else if (equals("amortize-count", e)) {
+                sn.resizing.amortizeCount = asInt(e);
             }
         }
     }
@@ -166,6 +184,16 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                         io.read = Tuning.SearchNode.IoType.fromString(asString(e2));
                     } else if (equals("search", e2)) {
                         io.search = Tuning.SearchNode.IoType.fromString(asString(e2));
+                    }
+                }
+            } else if (equals("warmup", e)) {
+                sn.index.warmup = new Tuning.SearchNode.Index.Warmup();
+                Tuning.SearchNode.Index.Warmup warmup = sn.index.warmup;
+                for (Element e2 : XML.getChildren(e)) {
+                    if (equals("time", e2)) {
+                        warmup.time = Double.valueOf(asString(e2));
+                    } else if (equals("unpack", e2)) {
+                        warmup.unpack = Boolean.valueOf(asString(e2));
                     }
                 }
             }
@@ -186,7 +214,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSummary(DeployLogger deployLogger, Element spec, Tuning.SearchNode sn) {
+    private void handleSummary(Element spec, Tuning.SearchNode sn) {
         sn.summary = new Tuning.SearchNode.Summary();
         for (Element e : XML.getChildren(spec)) {
             if (equals("io", e)) {
@@ -199,24 +227,24 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                     }
                 }
             } else if (equals("store", e)) {
-                handleSummaryStore(deployLogger, e, sn.summary);
+                handleSummaryStore(e, sn.summary);
             }
         }
     }
 
-    private void handleSummaryStore(DeployLogger deployLogger, Element spec, Tuning.SearchNode.Summary s) {
+    private void handleSummaryStore(Element spec, Tuning.SearchNode.Summary s) {
         s.store = new Tuning.SearchNode.Summary.Store();
         for (Element e : XML.getChildren(spec)) {
             if (equals("cache", e)) {
                 s.store.cache = new Tuning.SearchNode.Summary.Store.Component();
-                handleSummaryStoreComponent(deployLogger, e, s.store.cache);
+                handleSummaryStoreComponent(e, s.store.cache);
             } else if (equals("logstore", e)) {
-                handleSummaryLogStore(deployLogger, e, s.store);
+                handleSummaryLogStore(e, s.store);
             }
         }
     }
 
-    private void handleSummaryStoreComponent(DeployLogger deployLogger, Element spec, Tuning.SearchNode.Summary.Store.Component c) {
+    private void handleSummaryStoreComponent(Element spec, Tuning.SearchNode.Summary.Store.Component c) {
          for (Element e : XML.getChildren(spec)) {
             if (equals("maxsize", e)) {
                 c.maxSize = asLong(e);
@@ -241,7 +269,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSummaryLogStore(DeployLogger deployLogger, Element spec, Tuning.SearchNode.Summary.Store s) {
+    private void handleSummaryLogStore(Element spec, Tuning.SearchNode.Summary.Store s) {
         s.logStore = new Tuning.SearchNode.Summary.Store.LogStore();
         for (Element e : XML.getChildren(spec)) {
             if (equals("maxfilesize", e)) {
@@ -250,7 +278,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 s.logStore.minFileSizeFactor = asDouble(e);
             } else if (equals("chunk", e)) {
                 s.logStore.chunk = new Tuning.SearchNode.Summary.Store.Component(true);
-                handleSummaryStoreComponent(deployLogger, e, s.logStore.chunk);
+                handleSummaryStoreComponent(e, s.logStore.chunk);
             }
         }
     }

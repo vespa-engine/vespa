@@ -3,10 +3,10 @@
 
 namespace metrics {
 
-template class ValueMetricValues<int64_t, int64_t>;
+template struct ValueMetricValues<int64_t, int64_t>;
 template std::ostream & operator << (std::ostream & os, const ValueMetricValues<int64_t, int64_t> & v);
 
-template class ValueMetricValues<double, double>;
+template struct ValueMetricValues<double, double>;
 template std::ostream & operator << (std::ostream & os, const ValueMetricValues<double, double> & v);
 
 } // metrics

@@ -13,15 +13,17 @@ import java.util.Optional;
  * @author hakonhall
  */
 class StateV1HealthUpdater implements HealthUpdater {
+    private final String endpoint;
     private final StateV1HealthClient healthClient;
 
     private volatile ServiceStatusInfo serviceStatusInfo = new ServiceStatusInfo(ServiceStatus.NOT_CHECKED);
 
     StateV1HealthUpdater(URL url, Duration requestTimeout, Duration connectionKeepAlive) {
-        this(new StateV1HealthClient(url, requestTimeout, connectionKeepAlive));
+        this(url.toString(), new StateV1HealthClient(url, requestTimeout, connectionKeepAlive));
     }
 
-    StateV1HealthUpdater(StateV1HealthClient healthClient) {
+    StateV1HealthUpdater(String endpoint, StateV1HealthClient healthClient) {
+        this.endpoint = endpoint;
         this.healthClient = healthClient;
     }
 
@@ -46,7 +48,8 @@ class StateV1HealthUpdater implements HealthUpdater {
         Optional<Instant> newSince = newServiceStatus == serviceStatusInfo.serviceStatus() ?
                 serviceStatusInfo.since() : Optional.of(now);
 
-        serviceStatusInfo = new ServiceStatusInfo(newServiceStatus, newSince, Optional.of(now), healthInfo.getErrorDescription());
+        serviceStatusInfo = new ServiceStatusInfo(newServiceStatus, newSince, Optional.of(now),
+                healthInfo.getErrorDescription(), Optional.of(endpoint));
     }
 
     @Override

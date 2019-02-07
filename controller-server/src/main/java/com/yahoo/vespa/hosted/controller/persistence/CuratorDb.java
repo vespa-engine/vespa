@@ -16,9 +16,9 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
-import com.yahoo.vespa.hosted.controller.application.LoadBalancerAlias;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -63,6 +63,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 public class CuratorDb {
 
     private static final Logger log = Logger.getLogger(CuratorDb.class.getName());
+    private static final Duration deployLockTimeout = Duration.ofMinutes(20);
     private static final Duration defaultLockTimeout = Duration.ofMinutes(5);
     private static final Duration defaultTryLockTimeout = Duration.ofSeconds(1);
 
@@ -72,7 +73,8 @@ public class CuratorDb {
     private static final Path applicationRoot = root.append("applications");
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
-    private static final Path loadBalancerAliasesRoot = root.append("loadBalancerAliases");
+    private static final Path legacyRoutingPoliciesRoot = root.append("loadBalancerAliases");
+    private static final Path routingPoliciesRoot = root.append("routingPolicies");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
@@ -83,7 +85,7 @@ public class CuratorDb {
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
-    private final LoadBalancerAliasSerializer loadBalancerAliasSerializer = new LoadBalancerAliasSerializer();
+    private final RoutingPolicySerializer routingPolicySerializer = new RoutingPolicySerializer();
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -115,7 +117,7 @@ public class CuratorDb {
 
     // -------------- Locks ---------------------------------------------------
 
-    /** Create a reentrant lock */
+    /** Creates a reentrant lock */
     private Lock lock(Path path, Duration timeout) {
         Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator));
         lock.acquire(timeout);
@@ -128,6 +130,13 @@ public class CuratorDb {
 
     public Lock lock(ApplicationId id) {
         return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
+    }
+
+    // Timeout should be higher than the time deployment takes, since there might be deployments wanting
+    // to run in parallel, too low timeout in that case has been seen to lead to deployments not
+    // getting the lock before it times out
+    public Lock lockForDeployment(ApplicationId id) {
+        return lock(lockPath(id), deployLockTimeout);
     }
 
     public Lock lock(ApplicationId id, JobType type) {
@@ -177,8 +186,16 @@ public class CuratorDb {
         return lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
     }
 
-    public Lock lockLoadBalancerAliases() {
-        return lock(lockRoot.append("loadBalancerAliases"), defaultLockTimeout);
+    public Lock lockRoutingPolicies() {
+        Set<Version> clusterVersions = cluster().stream()
+                                                .map(this::readControllerVersion)
+                                                .collect(Collectors.toSet());
+        // TODO: Remove this once cluster has completely upgraded once
+        Path newPath = lockRoot.append("routingPolicies");
+        if (clusterVersions.size() > 1 && !curator.exists(newPath)) {
+            return lock(lockRoot.append("loadBalancerAliases"), defaultLockTimeout);
+        }
+        return lock(newPath, defaultLockTimeout);
     }
     // -------------- Helpers ------------------------------------------
 
@@ -459,22 +476,29 @@ public class CuratorDb {
         curator.set(openStackServerPoolPath(), data);
     }
 
-    // -------------- Load balancer aliases------------------------------------
+    // -------------- Routing policies ----------------------------------------
 
-    public void writeLoadBalancerAliases(ApplicationId application, Set<LoadBalancerAlias> aliases) {
-        curator.set(loadBalancerAliasPath(application), asJson(loadBalancerAliasSerializer.toSlime(aliases)));
+    public void writeRoutingPolicies(ApplicationId application, Set<RoutingPolicy> policies) {
+        curator.set(routingPolicyPath(application), asJson(routingPolicySerializer.toSlime(policies)));
     }
 
-    public Set<LoadBalancerAlias> readLoadBalancerAliases() {
-        return curator.getChildren(loadBalancerAliasesRoot).stream()
-                      .map(ApplicationId::fromSerializedForm)
-                      .flatMap(application -> readLoadBalancerAliases(application).stream())
-                      .collect(Collectors.toUnmodifiableSet());
+    public Set<RoutingPolicy> readRoutingPolicies() {
+        List<String> children;
+        if (curator.exists(routingPoliciesRoot)) {
+            children = curator.getChildren(routingPoliciesRoot);
+            curator.delete(legacyRoutingPoliciesRoot);
+        } else {
+            children = curator.getChildren(legacyRoutingPoliciesRoot); // TODO: Remove after 7.9 has been released
+        }
+        return children.stream()
+                       .map(ApplicationId::fromSerializedForm)
+                       .flatMap(application -> readRoutingPolicies(application).stream())
+                       .collect(Collectors.toUnmodifiableSet());
     }
 
-    public Set<LoadBalancerAlias> readLoadBalancerAliases(ApplicationId application) {
-        return readSlime(loadBalancerAliasPath(application)).map(slime -> loadBalancerAliasSerializer.fromSlime(application, slime))
-                                                            .orElseGet(Collections::emptySet);
+    public Set<RoutingPolicy> readRoutingPolicies(ApplicationId application) {
+        return readSlime(routingPolicyPath(application)).map(slime -> routingPolicySerializer.fromSlime(application, slime))
+                                                        .orElseGet(Collections::emptySet);
     }
 
     // -------------- Paths ---------------------------------------------------
@@ -552,8 +576,8 @@ public class CuratorDb {
         return root.append("versionStatus");
     }
 
-    private static Path loadBalancerAliasPath(ApplicationId application) {
-        return loadBalancerAliasesRoot.append(application.serializedForm());
+    private static Path routingPolicyPath(ApplicationId application) {
+        return routingPoliciesRoot.append(application.serializedForm());
     }
 
     private static Path provisionStatePath() {

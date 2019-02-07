@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -136,7 +137,7 @@ public class SessionPreparerTest {
     @Test
     public void require_that_application_is_prepared() throws Exception {
         prepare(testApp);
-        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(2));
+        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(1)); // Only builds the newest version
         assertTrue(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
@@ -151,6 +152,12 @@ public class SessionPreparerTest {
 
     @Test(expected = InvalidApplicationException.class)
     public void require_that_prepare_fails_if_older_version_fails() throws IOException {
+        ConfigserverConfig config = new ConfigserverConfig.Builder()
+                .buildMinimalSetOfConfigModels(false)
+                .configServerDBDir(folder.newFolder("serverdb").getAbsolutePath())
+                .configDefinitionsDir(folder.newFolder("configdefinitions").getAbsolutePath())
+                .build();
+        componentRegistry = new TestComponentRegistry.Builder().curator(curator).configServerConfig(config).build();
         ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Arrays.asList(
                 new TestModelFactory(version323),
                 new FailingModelFactory(version123, new IllegalArgumentException("BOOHOO"))));

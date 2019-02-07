@@ -72,10 +72,9 @@ public interface NodeSpec {
         private final boolean exclusive;
         private final boolean canFail;
 
-        public CountNodeSpec(int count, Flavor flavor, boolean exclusive, boolean canFail) {
-            Objects.requireNonNull(flavor, "A flavor must be specified");
+        CountNodeSpec(int count, Flavor flavor, boolean exclusive, boolean canFail) {
             this.count = count;
-            this.requestedFlavor = flavor;
+            this.requestedFlavor = Objects.requireNonNull(flavor, "A flavor must be specified");
             this.exclusive = exclusive;
             this.canFail = canFail;
         }
@@ -84,9 +83,6 @@ public interface NodeSpec {
         public Flavor getFlavor() {
             return requestedFlavor;
         }
-
-        // TODO: Remove usage of this
-        public int getCount()  { return count; }
 
         @Override
         public boolean isExclusive() { return exclusive; }

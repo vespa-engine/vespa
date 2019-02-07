@@ -13,7 +13,7 @@ std::unique_ptr<Value>
 ValueNode::defaultTrace(std::unique_ptr<Value> val, std::ostream& out) const
 {
     out << "Returning value " << *val << ".\n";
-    return std::move(val);
+    return val;
 }
 
 }

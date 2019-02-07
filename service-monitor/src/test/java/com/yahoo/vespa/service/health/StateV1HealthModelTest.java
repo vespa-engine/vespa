@@ -2,6 +2,7 @@
 package com.yahoo.vespa.service.health;
 
 import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ClusterId;
@@ -13,7 +14,7 @@ import com.yahoo.vespa.service.duper.TestZoneApplication;
 import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.executor.Cancellable;
 import com.yahoo.vespa.service.executor.RunletExecutor;
-import com.yahoo.vespa.service.model.ServiceId;
+import com.yahoo.vespa.service.monitor.ServiceId;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -23,7 +24,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -87,5 +90,17 @@ public class StateV1HealthModelTest {
         assertEquals(ZoneApplication.getApplicationId(), serviceId.getApplicationId());
         assertEquals(ZoneApplication.getNodeAdminClusterId(), serviceId.getClusterId());
         assertEquals(ZoneApplication.getNodeAdminServiceType(), serviceId.getServiceType());
+    }
+
+    @Test
+    public void caseInsensitiveTagMatching() {
+        PortInfo portInfo = mock(PortInfo.class);
+        when(portInfo.getTags()).thenReturn(List.of("http", "STATE", "foo"));
+        assertTrue(StateV1HealthModel.portTaggedWith(portInfo, StateV1HealthModel.HTTP_HEALTH_PORT_TAGS));
+        assertTrue(StateV1HealthModel.portTaggedWith(portInfo, List.of("HTTP", "state")));
+
+        when(portInfo.getTags()).thenReturn(List.of("http", "foo"));
+        assertFalse(StateV1HealthModel.portTaggedWith(portInfo, StateV1HealthModel.HTTP_HEALTH_PORT_TAGS));
+        assertFalse(StateV1HealthModel.portTaggedWith(portInfo, List.of("HTTP", "state")));
     }
 }

@@ -3,9 +3,11 @@
 #include "dense_tensor_view.h"
 #include "dense_tensor_apply.hpp"
 #include "dense_tensor_reduce.hpp"
+#include "dense_tensor_modify.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/eval/tensor/cell_values.h>
 #include <vespa/eval/tensor/tensor_address_builder.h>
 #include <vespa/eval/tensor/tensor_visitor.h>
 #include <vespa/eval/eval/operation.h>
@@ -278,6 +280,14 @@ DenseTensorView::reduce(join_fun_t op, const std::vector<vespalib::string> &dime
     return dimensions.empty()
             ? reduce_all(op, _typeRef.dimension_names())
             : reduce_all(op, dimensions);
+}
+
+std::unique_ptr<Tensor>
+DenseTensorView::modify(join_fun_t op, const CellValues &cellValues) const
+{
+    DenseTensorModify modifier(op, _typeRef, Cells(_cellsRef.cbegin(), _cellsRef.cend()));
+    cellValues.accept(modifier);
+    return modifier.build();
 }
 
 }

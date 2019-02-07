@@ -8,7 +8,7 @@
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/test.h>
-#include <vespa/searchcore/proton/common/attrupdate.h>
+#include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
 #include <vespa/searchcore/proton/server/commit_and_wait_document_retriever.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
@@ -233,7 +233,7 @@ struct AttrUnitDR : public UnitDR
 
     template <class FieldValType, typename FieldValArg>
     void addAttribute(AttributeVector &av, const FieldValArg &val) {
-        search::AttrUpdate::handleValue(av, docid, FieldValType(val));
+        search::AttributeUpdater::handleValue(av, docid, FieldValType(val));
         av.commit();
     }
 

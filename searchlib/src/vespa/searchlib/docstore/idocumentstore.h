@@ -16,7 +16,7 @@ namespace vespalib { class nbostream; }
 
 namespace search {
 
-class CacheStats;
+struct CacheStats;
 
 class IDocumentStoreReadVisitor
 {

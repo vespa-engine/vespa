@@ -45,6 +45,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * An RPC implementation of the Network interface.
@@ -232,6 +233,16 @@ public class RPCNetwork implements Network, MethodHandler {
         }
     }
 
+    private static String buildRecipientListString(SendContext ctx) {
+        return ctx.recipients.stream().map(r -> {
+            if (!(r.getServiceAddress() instanceof RPCServiceAddress)) {
+                return "<non-RPC service address>";
+            }
+            RPCServiceAddress addr = (RPCServiceAddress)r.getServiceAddress();
+            return String.format("%s at %s", addr.getServiceName(), addr.getConnectionSpec());
+        }).collect(Collectors.joining(", "));
+    }
+
     /**
      * This method is a callback invoked after {@link #send(Message, List)} once the version of all recipients have been
      * resolved. If all versions were resolved ahead of time, this method is invoked by the same thread as the former.
@@ -243,7 +254,9 @@ public class RPCNetwork implements Network, MethodHandler {
         if (destroyed.get()) {
             replyError(ctx, ErrorCode.NETWORK_SHUTDOWN, "Network layer has performed shutdown.");
         } else if (ctx.hasError) {
-            replyError(ctx, ErrorCode.HANDSHAKE_FAILED, "An error occured while resolving version.");
+            replyError(ctx, ErrorCode.HANDSHAKE_FAILED,
+                    String.format("An error occurred while resolving version of recipient(s) [%s] from host '%s'.",
+                                  buildRecipientListString(ctx), identity.getHostname()));
         } else {
             executor.execute(new SendTask(owner.getProtocol(ctx.msg.getProtocol()), ctx));
         }
@@ -295,14 +308,16 @@ public class RPCNetwork implements Network, MethodHandler {
         RPCServiceAddress ret = servicePool.resolve(serviceName);
         if (ret == null) {
             return new Error(ErrorCode.NO_ADDRESS_FOR_SERVICE,
-                             "The address of service '" + serviceName + "' could not be resolved. It is not currently " +
-                             "registered with the Vespa name server. " +
-                             "The service must be having problems, or the routing configuration is wrong.");
+                             String.format("The address of service '%s' could not be resolved. It is not currently " +
+                                           "registered with the Vespa name server. " +
+                                           "The service must be having problems, or the routing configuration is wrong. " +
+                                           "Address resolution attempted from host '%s'", serviceName, identity.getHostname()));
         }
         RPCTarget target = targetPool.getTarget(orb, ret);
         if (target == null) {
             return new Error(ErrorCode.CONNECTION_ERROR,
-                             "Failed to connect to service '" + serviceName + "'.");
+                             String.format("Failed to connect to service '%s' from host '%s'.",
+                                           serviceName, identity.getHostname()));
         }
         ret.setTarget(target); // free by freeServiceAddress()
         recipient.setServiceAddress(ret);

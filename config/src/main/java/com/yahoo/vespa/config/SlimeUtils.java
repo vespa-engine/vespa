@@ -5,6 +5,7 @@ import com.yahoo.slime.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
@@ -111,6 +112,10 @@ public class SlimeUtils {
         Slime slime = new Slime();
         new JsonDecoder().decode(slime, json);
         return slime;
+    }
+
+    public static Slime jsonToSlime(String json) {
+        return jsonToSlime(json.getBytes(StandardCharsets.UTF_8));
     }
 
     public static Optional<String> optionalString(Inspector inspector) {

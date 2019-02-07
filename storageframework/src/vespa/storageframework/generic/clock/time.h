@@ -14,7 +14,7 @@ namespace storage::framework {
 using MonotonicTimePoint = std::chrono::steady_clock::time_point;
 using MonotonicDuration = std::chrono::steady_clock::duration;
 
-class Clock;
+struct Clock;
 
 enum TimeFormat {
     DATETIME               = 0x01, // 2010-04-26 19:23:03
@@ -98,8 +98,8 @@ std::ostream& operator<<(std::ostream& out, const Time<Type, MPU>& t);
 template<typename Type, int MPU>
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const Time<Type, MPU>& t);
 
-class MicroSecTime;
-class MilliSecTime;
+struct MicroSecTime;
+struct MilliSecTime;
 
 /**
  * \class storage::framework::SecondTime

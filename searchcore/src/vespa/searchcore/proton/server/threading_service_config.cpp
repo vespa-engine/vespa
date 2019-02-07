@@ -20,21 +20,20 @@ ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
 namespace {
 
 uint32_t
-calculateIndexingThreads(const ProtonConfig &cfg, const HwInfo::Cpu &cpuInfo)
+calculateIndexingThreads(uint32_t cfgIndexingThreads, double concurrency, const HwInfo::Cpu &cpuInfo)
 {
-    double scaledCores = cpuInfo.cores() * cfg.feeding.concurrency;
-    uint32_t indexingThreads = std::max((uint32_t)std::ceil(scaledCores / 3), (uint32_t)cfg.indexing.threads);
+    double scaledCores = cpuInfo.cores() * concurrency;
+    uint32_t indexingThreads = std::max((uint32_t)std::ceil(scaledCores / 3), cfgIndexingThreads);
     return std::max(indexingThreads, 1u);
 }
 
 }
 
 ThreadingServiceConfig
-ThreadingServiceConfig::make(const ProtonConfig &cfg, const HwInfo::Cpu &cpuInfo)
+ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const HwInfo::Cpu &cpuInfo)
 {
-    uint32_t indexingThreads = calculateIndexingThreads(cfg, cpuInfo);
-    return ThreadingServiceConfig(indexingThreads,
-                                  cfg.indexing.tasklimit,
+    uint32_t indexingThreads = calculateIndexingThreads(cfg.indexing.threads, concurrency, cpuInfo);
+    return ThreadingServiceConfig(indexingThreads, cfg.indexing.tasklimit,
                                   (cfg.indexing.semiunboundtasklimit / indexingThreads));
 }
 

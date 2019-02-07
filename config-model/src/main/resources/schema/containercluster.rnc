@@ -7,7 +7,8 @@ ContainerCluster = element container | jdisc {
     ContainerServices &    
     DocumentBinding* &
     Aliases? &
-    NodesOfContainerCluster?
+    NodesOfContainerCluster? &
+    Rotations?
 }
 
 ContainerServices =
@@ -212,9 +213,11 @@ NodesOfContainerCluster = element nodes {
     attribute jvm-options { text }? &
     attribute jvm-gc-options { text }? &
     attribute preload { text }? &
-    attribute environment-vars { text }? &
     attribute allocated-memory { text }? &
     attribute cpu-socket-affinity { xsd:boolean }? &
+    element environment-variables {
+      anyElement +
+    } ? &
     (
       (
         attribute of { xsd:string } &
@@ -230,10 +233,6 @@ NodesOfContainerCluster = element nodes {
         attribute exclusive { xsd:boolean }? &
         attribute docker-image { xsd:string }?
       )
-      |
-      element environment-variables {
-        anyElement +
-      }
       |
       element node {
         attribute hostalias { xsd:NCName } &

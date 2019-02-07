@@ -9,7 +9,7 @@ namespace proton {
 class PutOperation;
 class RemoveOperation;
 class UpdateOperation;
-class NoopOperation;
+struct NoopOperation;
 class NewConfigOperation;
 class WipeHistoryOperation;
 class DeleteBucketOperation;
@@ -20,7 +20,7 @@ class MoveOperation;
 class CreateBucketOperation;
 class CompactLidSpaceOperation;
 
-namespace feedoperation { class IStreamHandler; }
+namespace feedoperation { struct IStreamHandler; }
 
 /**
  * Interface used to handle the various feed operations during

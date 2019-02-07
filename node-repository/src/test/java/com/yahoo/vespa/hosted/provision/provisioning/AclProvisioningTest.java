@@ -8,11 +8,9 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -25,7 +23,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester.createConfig;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
@@ -36,12 +33,7 @@ import static org.junit.Assert.assertFalse;
  */
 public class AclProvisioningTest {
 
-    private ProvisioningTester tester;
-
-    @Before
-    public void before() {
-        this.tester = new ProvisioningTester(Zone.defaultZone(), createConfig());
-    }
+    private ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
     public void trusted_nodes_for_allocated_node() {
@@ -50,7 +42,9 @@ public class AclProvisioningTest {
         // Populate repo
         tester.makeReadyNodes(10, "default");
         List<Node> dockerHost = tester.makeReadyNodes(1, "default", NodeType.host);
-        tester.makeReadyDockerNodes(1, "default", dockerHost.get(0).hostname());
+        ApplicationId zoneApplication = tester.makeApplicationId();
+        deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.host));
+        tester.makeReadyVirtualDockerNodes(1, "default", dockerHost.get(0).hostname());
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
 
         // Allocate 2 nodes
@@ -143,7 +137,7 @@ public class AclProvisioningTest {
         // Populate repo
         List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
         Node dockerHostNodeUnderTest = dockerHostNodes.get(0);
-        List<Node> dockerNodes = tester.makeReadyDockerNodes(5, "dockerSmall",
+        List<Node> dockerNodes = tester.makeReadyVirtualDockerNodes(5, "dockerSmall",
                                                              dockerHostNodeUnderTest.hostname());
 
         List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodeUnderTest, true);
@@ -209,7 +203,7 @@ public class AclProvisioningTest {
 
     private List<Node> deploy(ApplicationId application, Capacity capacity) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"), false);
+                                                  Version.fromString("6.42"), false, Collections.emptySet());
         List<HostSpec> prepared = tester.prepare(application, cluster, capacity, 1);
         tester.activate(application, new HashSet<>(prepared));
         return tester.getNodes(application, Node.State.active).asList();

@@ -9,14 +9,6 @@
 // reserved in vespa/factory/doc/port-ranges.txt
 static const int PORT0 = 18570;
 static const int PORT1 = 18571;
-static const int PORT2 = 18572;
-static const int PORT3 = 18573;
-static const int PORT4 = 18574;
-static const int PORT5 = 18575;
-static const int PORT6 = 18576;
-static const int PORT7 = 18577;
-static const int PORT8 = 18578;
-static const int PORT9 = 18579;
 
 using vespalib::SlaveProc;
 

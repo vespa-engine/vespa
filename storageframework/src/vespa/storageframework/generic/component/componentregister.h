@@ -15,7 +15,7 @@
 
 namespace storage::framework {
 
-class ManagedComponent;
+struct ManagedComponent;
 
 struct ComponentRegister {
     virtual ~ComponentRegister() {}

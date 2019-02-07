@@ -26,6 +26,7 @@ import com.yahoo.language.process.Segmenter;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
+import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
@@ -947,8 +948,10 @@ public class YqlParser implements Parser {
         String value = fetchConditionWord(ast);
 
         TermItem item;
-        if (value.equals("true") || value.equals("false"))
-            item = new WordItem(value, fetchConditionIndex(ast));
+        if (value.equals("true")) {
+            item = new BoolItem(true, fetchConditionIndex(ast));
+        } else if (value.equals("false"))
+            item = new BoolItem(false, fetchConditionIndex(ast));
         else
             item = new IntItem(value, fetchConditionIndex(ast));
 

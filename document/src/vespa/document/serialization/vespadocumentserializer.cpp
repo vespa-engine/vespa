@@ -567,4 +567,18 @@ void VespaDocumentSerializer::write(const RemoveFieldPathUpdate &value)
     writeFieldPath(_stream, value);
 }
 
+void
+VespaDocumentSerializer::write(const TensorModifyUpdate &value)
+{
+    _stream << TensorModifyUpdate::classId;
+    _stream << static_cast<uint8_t>(value.getOperation());
+    write(value.getTensor());
+}
+
+void
+VespaDocumentSerializer::visit(const TensorModifyUpdate &value)
+{
+    write(value);
+}
+
 }  // namespace document

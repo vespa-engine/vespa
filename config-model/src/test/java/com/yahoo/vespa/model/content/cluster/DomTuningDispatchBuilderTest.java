@@ -45,7 +45,7 @@ public class DomTuningDispatchBuilderTest {
         assertNull(dispatch.getMaxHitsPerPartition());
         assertNull(dispatch.getMinGroupCoverage());
         assertNull(dispatch.getMinActiveDocsCoverage());
-        assertTrue(TuningDispatch.DispatchPolicy.ROUNDROBIN == dispatch.getDispatchPolicy());
+        assertNull(dispatch.getDispatchPolicy());
     }
 
     @Test

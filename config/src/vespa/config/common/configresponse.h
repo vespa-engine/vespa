@@ -7,7 +7,7 @@ namespace config {
 
 class ConfigValue;
 class ConfigKey;
-class ConfigState;
+struct ConfigState;
 class Trace;
 
 /**

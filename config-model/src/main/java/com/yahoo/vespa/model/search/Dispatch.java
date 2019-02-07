@@ -7,7 +7,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.content.SearchCoverage;
-import com.yahoo.vespa.model.content.TuningDispatch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +31,7 @@ public class Dispatch extends AbstractService implements SearchInterface,
     private final int dispatchLevel;
     private final boolean preferLocalRow;
     private final boolean isTopLevel;
+    private boolean useAdaptiveDispatch;
 
     private Dispatch(DispatchGroup dispatchGroup, AbstractConfigProducer parent, String subConfigId,
                      NodeSpec nodeSpec, int dispatchLevel, boolean preferLocalRow, boolean isTopLevel) {
@@ -41,12 +41,18 @@ public class Dispatch extends AbstractService implements SearchInterface,
         this.dispatchLevel = dispatchLevel;
         this.preferLocalRow = preferLocalRow;
         this.isTopLevel = isTopLevel;
+        this.useAdaptiveDispatch = false;
         portsMeta.on(0).tag("rpc").tag("admin");
         portsMeta.on(1).tag("fs4");
         portsMeta.on(2).tag("http").tag("json").tag("health").tag("state");
         setProp("clustertype", "search")
                 .setProp("clustername", dispatchGroup.getClusterName())
                 .setProp("index", nodeSpec.groupIndex());
+    }
+
+    public Dispatch useAdaptiveDispatch(boolean useAdaptiveDispatch) {
+        this.useAdaptiveDispatch = useAdaptiveDispatch;
+        return this;
     }
 
     public static Dispatch createTld(DispatchGroup dispatchGroup, AbstractConfigProducer parent, int rowId) {
@@ -138,6 +144,9 @@ public class Dispatch extends AbstractService implements SearchInterface,
         if (dispatchGroup.useFixedRowInDispatch()) {
             datasetBuilder.querydistribution(PartitionsConfig.Dataset.Querydistribution.Enum.FIXEDROW);
             datasetBuilder.maxnodesdownperfixedrow(dispatchGroup.getMaxNodesDownPerFixedRow());
+        }
+        if (useAdaptiveDispatch) {
+            datasetBuilder.useroundrobinforfixedrow(false);
         }
         SearchCoverage coverage = dispatchGroup.getSearchCoverage();
         if (coverage != null) {

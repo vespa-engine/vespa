@@ -27,7 +27,6 @@ class BucketIdFactory : public document::Printable
     uint16_t _gidBits;
     uint16_t _countBits;
     uint64_t _locationMask;
-    uint64_t _distributionMask;
     uint64_t _gidMask;
     uint64_t _initialCount;
 

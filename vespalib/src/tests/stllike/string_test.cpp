@@ -27,12 +27,27 @@ TEST("test iterator assignment") {
     EXPECT_TRUE(strstr(s.c_str(), "mumbo jumbo.") == nullptr);
 }
 
+namespace {
+
+template <typename S>
+void assign(S &lhs, const S &rhs) __attribute__((noinline));
+
+template <typename S>
+void
+assign(S &lhs, const S &rhs)
+{
+    lhs = rhs;
+}
+
+}
+
+
 TEST("test self assignment of small string") {
     const char * text = "abc";
     string s(text);
     const char * addr(reinterpret_cast<const char *>(&s));
     EXPECT_TRUE((addr < s.c_str()) && (s.c_str() < addr + sizeof(s)));
-    s = s;
+    assign(s, s);
     EXPECT_EQUAL(text, s);
 }
 
@@ -41,7 +56,7 @@ TEST("test self assignment of big string") {
     string s(text);
     const char * addr(reinterpret_cast<const char *>(&s));
     EXPECT_TRUE((addr > s.c_str()) || (s.c_str() > addr + sizeof(s)));
-    s = s;
+    assign(s, s);
     EXPECT_EQUAL(text, s);
 }
 

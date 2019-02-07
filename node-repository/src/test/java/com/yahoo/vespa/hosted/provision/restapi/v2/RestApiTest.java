@@ -30,7 +30,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Test of the nodes/v2 API.
+ * Test of the REST APIs provided by the node repository.
  * 
  * Note: This class is referenced from our operations documentation and must not be renamed/moved without updating that.
  * 
@@ -515,6 +515,68 @@ public class RestApiTest {
         // Clear on quoted "null" report
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
                         Utf8.toBytes("{\"hardwareDivergence\": \"null\"}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated host6.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6.json");
+    }
+
+    @Test
+    public void test_reports_patching() throws IOException {
+        // Add report
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+                        Utf8.toBytes("{" +
+                                "  \"reports\": {" +
+                                "    \"actualCpuCores\": {" +
+                                "      \"createdMillis\": 1, " +
+                                "      \"description\": \"Actual number of CPU cores (2) differs from spec (4)\"," +
+                                "      \"value\":2" +
+                                "    }," +
+                                "    \"diskSpace\": {" +
+                                "      \"createdMillis\": 2, " +
+                                "      \"description\": \"Actual disk space (2TB) differs from spec (3TB)\"," +
+                                "      \"details\": {" +
+                                "        \"inGib\": 3," +
+                                "        \"disks\": [\"/dev/sda1\", \"/dev/sdb3\"]" +
+                                "      }" +
+                                "    }" +
+                                "  }" +
+                                "}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated host6.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6-reports.json");
+
+        // Patching with an empty reports is no-op
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+                        Utf8.toBytes("{\"reports\": {}}"),
+                        Request.Method.PATCH),
+                200,
+                "{\"message\":\"Updated host6.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6-reports.json");
+
+        // Patching existing report overwrites
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+                        Utf8.toBytes("{" +
+                                "  \"reports\": {" +
+                                "    \"actualCpuCores\": {" +
+                                "      \"createdMillis\": 3 " +
+                                "    }" +
+                                "  }" +
+                                "}"),
+                        Request.Method.PATCH),
+                200,
+                "{\"message\":\"Updated host6.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6-reports-2.json");
+
+        // Clearing one report
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+                        Utf8.toBytes("{\"reports\": { \"diskSpace\": null } }"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated host6.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6-reports-3.json");
+
+        // Clearing all reports
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+                        Utf8.toBytes("{\"reports\": null }"),
                         Request.Method.PATCH),
                 "{\"message\":\"Updated host6.yahoo.com\"}");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6.json");

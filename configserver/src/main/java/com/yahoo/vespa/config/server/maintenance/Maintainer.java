@@ -33,12 +33,17 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     protected final Curator curator;
 
     Maintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
+        this(applicationRepository, curator, interval, interval);
+    }
+
+    Maintainer(ApplicationRepository applicationRepository, Curator curator, Duration initialDelay, Duration interval) {
         this.applicationRepository = applicationRepository;
         this.curator = curator;
         this.maintenanceInterval = interval;
         service = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory(name()));
-        service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
+        service.scheduleAtFixedRate(this, initialDelay.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
     }
+
 
     @Override
     @SuppressWarnings({"try", "unused"})

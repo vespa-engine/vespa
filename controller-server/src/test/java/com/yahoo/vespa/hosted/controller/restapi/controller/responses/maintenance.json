@@ -16,7 +16,7 @@
       "name": "CostReportMaintainer"
     },
     {
-      "name":"DefaultOsUpgrader"
+      "name": "DefaultOsUpgrader"
     },
     {
       "name": "DeploymentExpirer"
@@ -34,9 +34,6 @@
       "name": "JobRunner"
     },
     {
-      "name": "LoadBalancerAliasMaintainer"
-    },
-    {
       "name": "MetricsReporter"
     },
     {
@@ -47,6 +44,9 @@
     },
     {
       "name": "ReadyJobsTrigger"
+    },
+    {
+      "name": "RoutingPolicyMaintainer"
     },
     {
       "name": "SystemUpgrader"

@@ -33,10 +33,10 @@ namespace framework {
 }
 
 class FileStorHandlerImpl;
-class FileStorMetrics;
-class MessageSender;
+struct FileStorMetrics;
+struct MessageSender;
 class MountPointList;
-class ServiceLayerComponentRegister;
+struct ServiceLayerComponentRegister;
 class AbortBucketOperationsCommand;
 
 class FileStorHandler : public MessageSender {

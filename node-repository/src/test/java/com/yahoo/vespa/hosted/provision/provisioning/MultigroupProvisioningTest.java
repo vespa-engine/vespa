@@ -35,7 +35,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_provisioning_of_multiple_groups() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -67,7 +67,7 @@ public class MultigroupProvisioningTest {
      */
     @Test @Ignore
     public void test_provisioning_of_groups_with_asymmetry() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -80,7 +80,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_provisioning_of_multiple_groups_after_flavor_migration() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -94,7 +94,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_one_node_and_group_to_two() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -106,7 +106,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_one_node_and_group_to_two_with_flavor_migration() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -119,7 +119,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_provisioning_of_multiple_groups_after_flavor_migration_and_exiration() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -166,7 +166,7 @@ public class MultigroupProvisioningTest {
 
         // Check invariants for all nodes
         Set<Integer> allIndexes = new HashSet<>();
-        for (Node node : tester.getNodes(application, Node.State.active).asList()) {
+        for (Node node : tester.getNodes(application, Node.State.active)) {
             // Node indexes must be unique
             int index = node.allocation().get().membership().index();
             assertFalse("Node indexes are unique", allIndexes.contains(index));
@@ -178,7 +178,7 @@ public class MultigroupProvisioningTest {
         // Count unretired nodes and groups of the requested flavor
         Set<Integer> indexes = new HashSet<>();
         Map<ClusterSpec.Group, Integer> nonretiredGroups = new HashMap<>();
-        for (Node node : tester.getNodes(application, Node.State.active).nonretired().flavor(flavor).asList()) {
+        for (Node node : tester.getNodes(application, Node.State.active).nonretired().flavor(flavor)) {
             indexes.add(node.allocation().get().membership().index());
 
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
@@ -193,14 +193,14 @@ public class MultigroupProvisioningTest {
             assertEquals("Group size", (long)nodeCount / wantedGroups, (long)groupSize);
 
         Map<ClusterSpec.Group, Integer> allGroups = new HashMap<>();
-        for (Node node : tester.getNodes(application, Node.State.active).flavor(flavor).asList()) {
+        for (Node node : tester.getNodes(application, Node.State.active).flavor(flavor)) {
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
             allGroups.put(group, nonretiredGroups.getOrDefault(group, 0) + 1);
         }
         assertEquals("No additional groups are retained containing retired nodes", wantedGroups, allGroups.size());
     }
 
-    private ClusterSpec cluster() { return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false); }
+    private ClusterSpec cluster() { return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Collections.emptySet()); }
 
     private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, int groupCount, ProvisioningTester tester) {
         return new HashSet<>(tester.prepare(application, cluster(), capacity, groupCount));

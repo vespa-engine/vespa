@@ -321,9 +321,9 @@ Document::deserializeDocHeaderAndType(
 }
 
 namespace {
-void versionError(uint16_t version) __attribute__((noinline));
-void mainDocumentError(int64_t len) __attribute__((noinline));
-void notEnoughDocumentError(int32_t len, int64_t remaining) __attribute__((noinline));
+[[noreturn]] void versionError(uint16_t version) __attribute__((noinline));
+[[noreturn]] void mainDocumentError(int64_t len) __attribute__((noinline));
+[[noreturn]] void notEnoughDocumentError(int32_t len, int64_t remaining) __attribute__((noinline));
 
 void versionError(uint16_t version) {
     throw DeserializeException(make_string( "Unrecognized serialization version %d", version), VESPA_STRLOC);

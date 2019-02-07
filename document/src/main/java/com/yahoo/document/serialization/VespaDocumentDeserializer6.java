@@ -653,6 +653,10 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
                 FieldValue fval = ((CollectionDataType) superType).getNestedType().createFieldValue();
                 fval.deserialize(this);
                 return new RemoveValueUpdate(fval);
+            case TENSORMODIFY:
+                return readTensorModifyUpdate(superType);
+            case TENSORADD:
+                return readTensorAddUpdate(superType);
             default:
                 throw new DeserializationException(
                         "Could not deserialize ValueUpdate, unknown valueUpdateClassID type " + vuTypeId);
@@ -875,6 +879,14 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
             spanList.add(readSpanNode());
         }
         return spanList;
+    }
+
+    protected ValueUpdate readTensorModifyUpdate(DataType type) {
+        throw new DeserializationException("Cannot deserialize TensorModifyUpdate, not implemented for Vespa 6");
+    }
+
+    protected ValueUpdate readTensorAddUpdate(DataType type) {
+        throw new DeserializationException("Cannot deserialize TensorAddUpdate, not implemented for Vespa 6");
     }
 
 }

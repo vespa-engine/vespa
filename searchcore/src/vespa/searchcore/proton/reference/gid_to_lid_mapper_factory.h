@@ -4,7 +4,7 @@
 
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 
-namespace search { class IDocumentMetaStoreContext; }
+namespace search { struct IDocumentMetaStoreContext; }
 
 namespace proton {
 

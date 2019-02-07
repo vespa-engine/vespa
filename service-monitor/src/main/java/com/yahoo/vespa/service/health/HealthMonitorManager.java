@@ -14,9 +14,14 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.duper.DuperModelManager;
 import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.executor.RunletExecutorImpl;
+import com.yahoo.vespa.service.manager.HealthMonitorApi;
 import com.yahoo.vespa.service.manager.MonitorManager;
+import com.yahoo.vespa.service.monitor.ServiceId;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -24,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author hakon
  */
-public class HealthMonitorManager implements MonitorManager {
+public class HealthMonitorManager implements MonitorManager, HealthMonitorApi {
     // Weight the following against each other:
     //  - The number of threads N working on health checking
     //  - The health request timeout T
@@ -138,5 +143,20 @@ public class HealthMonitorManager implements MonitorManager {
         }
 
         return false;
+    }
+
+    @Override
+    public List<ApplicationId> getMonitoredApplicationIds() {
+        return Collections.list(healthMonitors.keys());
+    }
+
+    @Override
+    public Map<ServiceId, ServiceStatusInfo> getServices(ApplicationId applicationId) {
+        ApplicationHealthMonitor applicationHealthMonitor = healthMonitors.get(applicationId);
+        if (applicationHealthMonitor == null) {
+            return Collections.emptyMap();
+        }
+
+        return applicationHealthMonitor.getAllServiceStatuses();
     }
 }

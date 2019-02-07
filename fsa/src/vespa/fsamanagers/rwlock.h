@@ -23,7 +23,7 @@ namespace fsa {
 class RWLock
 {
  protected:
-  class Impl;
+  struct Impl;
   Impl *_impl;
 
  public:

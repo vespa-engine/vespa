@@ -3,15 +3,23 @@ package com.yahoo.document.update;
 
 import com.yahoo.document.*;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.serialization.*;
+import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.FileOutputStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
+ * NOTE: Roundtrip serialization (JSON -> DocumentUpdate -> ByteBuffer -> DocumentUpdate -> JSON) of updates is tested in DocumentUpdateJsonSerializerTest.
+ *       Consider adding new test cases to that test class instead.
+ *
  * @author bratseth
  */
 public class SerializationTestCase {

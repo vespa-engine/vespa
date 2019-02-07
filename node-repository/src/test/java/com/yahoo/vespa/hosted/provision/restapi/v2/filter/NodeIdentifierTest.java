@@ -12,11 +12,11 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
-import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.Pkcs10CsrBuilder;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -31,11 +31,11 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.util.Optional;
+import java.util.Collections;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
-import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.*;
+import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.NODE;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.CONFIGSERVER_HOST_IDENTITY;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.PROXY_HOST_IDENTITY;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.TENANT_DOCKER_CONTAINER_IDENTITY;
@@ -176,7 +176,7 @@ public class NodeIdentifierTest {
         String environment = ZONE.environment().value();
         NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
         Node node = createNode(clusterId, clusterIndex, tenant, application);
-        nodeRepositoryDummy.nodeRepository().addDockerNodes(singletonList(node));
+        nodeRepositoryDummy.nodeRepository().addDockerNodes(singletonList(node), nodeRepositoryDummy.nodeRepository().lockAllocation());
         Pkcs10Csr csr = Pkcs10CsrBuilder
                 .fromKeypair(new X500Principal("CN=" + TENANT_DOCKER_CONTAINER_IDENTITY), KEYPAIR, SHA256_WITH_ECDSA)
                 .build();
@@ -232,7 +232,7 @@ public class NodeIdentifierTest {
                         singleton("1.2.3.4"),
                         emptySet(),
                         HOSTNAME,
-                        Optional.of("parenthost"),
+                        "parenthost",
                         new Flavor(createFlavourConfig().flavor(0)),
                         NodeType.tenant)
                 .with(
@@ -244,9 +244,9 @@ public class NodeIdentifierTest {
                                                 new ClusterSpec.Id(clusterId),
                                                 ClusterSpec.Group.from(0),
                                                 Version.emptyVersion,
-                                                false),
+                                                false, Collections.emptySet()),
                                         clusterIndex),
-                                Generation.inital(),
+                                Generation.initial(),
                                 false));
 
     }

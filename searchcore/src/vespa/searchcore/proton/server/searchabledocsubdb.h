@@ -24,8 +24,8 @@
 namespace proton {
 
 class DocumentDBConfig;
-class IDocumentDBReferenceResolver;
-class MetricsWireService;
+struct IDocumentDBReferenceResolver;
+struct MetricsWireService;
 class GidToLidChangeHandler;
 
 /**

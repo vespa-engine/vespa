@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace fnet {
-    class ChannelMap;
+    struct ChannelMap;
 }
 
 class FNET_Channel;

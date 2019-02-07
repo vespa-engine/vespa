@@ -5,10 +5,12 @@ package com.yahoo.prelude.hitfield;
  * Represents an element of a hit property which is markup representing
  * the start of a bolded area.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class BoldOpenFieldPart extends MarkupFieldPart {
+
     public BoldOpenFieldPart(String content) {
         super(content);
     }
+
 }

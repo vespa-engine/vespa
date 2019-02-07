@@ -19,7 +19,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
     public static class Dispatch implements PartitionsConfig.Producer {
 
         public Integer maxHitsPerPartition = null;
-        public TuningDispatch.DispatchPolicy policy = TuningDispatch.DispatchPolicy.ROUNDROBIN;
+        public TuningDispatch.DispatchPolicy policy = null;
         public boolean useLocalNode = false;
         public Double minGroupCoverage = null;
         public Double minActiveDocsCoverage = null;
@@ -41,15 +41,17 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                     dataset.min_activedocs_coverage(minActiveDocsCoverage);
                 }
             }
-            for (PartitionsConfig.Dataset.Builder dataset : builder.dataset) {
-                switch (policy) {
-                    case ADAPTIVE:
-                        dataset.useroundrobinforfixedrow(false);
-                        break;
-                    case ROUNDROBIN:
-                    default:
-                        dataset.useroundrobinforfixedrow(true);
-                        break;
+            if (policy != null) {
+                for (PartitionsConfig.Dataset.Builder dataset : builder.dataset) {
+                    switch (policy) {
+                        case ADAPTIVE:
+                            dataset.useroundrobinforfixedrow(false);
+                            break;
+                        case ROUNDROBIN:
+                        default:
+                            dataset.useroundrobinforfixedrow(true);
+                            break;
+                    }
                 }
             }
         }
@@ -91,6 +93,26 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             }
         }
 
+        public static class RemovedDB implements ProtonConfig.Producer {
+
+            public static class Prune implements ProtonConfig.Producer {
+                public Double age = null;
+                public Double interval = null;
+
+                @Override
+                public void getConfig(ProtonConfig.Builder builder) {
+                    if (age != null) builder.pruneremoveddocumentsage(age);
+                    if (interval != null) builder.pruneremoveddocumentsinterval(interval);
+                }
+            }
+
+            public Prune prune;
+            @Override
+            public void getConfig(ProtonConfig.Builder builder) {
+                if (prune != null) prune.getConfig(builder);
+            }
+        }
+
         public static class FlushStrategy implements ProtonConfig.Producer {
             public Long totalMaxMemoryGain = null;
             public Double totalDiskBloatFactor = null;
@@ -129,12 +151,18 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
         public static class Resizing implements ProtonConfig.Producer {
             public Integer initialDocumentCount = null;
+            public Integer amortizeCount = null;
 
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
                 if (initialDocumentCount!=null) {
                     for (ProtonConfig.Documentdb.Builder db : builder.documentdb) {
                         db.allocation.initialnumdocs(initialDocumentCount);
+                    }
+                }
+                if (amortizeCount !=null) {
+                    for (ProtonConfig.Documentdb.Builder db : builder.documentdb) {
+                        db.allocation.amortizecount(amortizeCount);
                     }
                 }
             }
@@ -156,14 +184,28 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                         builder.indexing.read.io(ProtonConfig.Indexing.Read.Io.Enum.valueOf(read.name));
                     }
                 }
+            }
+            public static class Warmup implements ProtonConfig.Producer {
+                public double time = 0;
+                public boolean unpack = false;
+
+                @Override
+                public void getConfig(ProtonConfig.Builder builder) {
+                    if (time > 0) {
+                        builder.index.warmup.time(time);
+                        builder.index.warmup.unpack(unpack);
+                    }
+                }
 
             }
 
             public Io io;
+            public Warmup warmup;
 
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
                 if (io != null) io.getConfig(builder);
+                if (warmup != null) warmup.getConfig(builder);
             }
         }
 
@@ -355,6 +397,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
         public Summary summary = null;
         public Initialize initialize = null;
         public Feeding feeding = null;
+        public RemovedDB removedDB = null;
 
         @Override
         public void getConfig(ProtonConfig.Builder builder) {
@@ -366,6 +409,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             if (summary != null) summary.getConfig(builder);
             if (initialize != null) initialize.getConfig(builder);
             if (feeding != null) feeding.getConfig(builder);
+            if (removedDB != null) removedDB.getConfig(builder);
         }
     }
 

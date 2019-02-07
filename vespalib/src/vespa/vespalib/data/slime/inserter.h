@@ -13,7 +13,7 @@ class Slime;
 
 namespace slime {
 
-class Cursor;
+struct Cursor;
 
 //-----------------------------------------------------------------------------
 

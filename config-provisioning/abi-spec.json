@@ -235,10 +235,13 @@
       "public com.yahoo.component.Version vespaVersion()",
       "public java.util.Optional group()",
       "public boolean isExclusive()",
+      "public java.util.Set rotations()",
       "public com.yahoo.config.provision.ClusterSpec with(java.util.Optional)",
       "public com.yahoo.config.provision.ClusterSpec exclusive(boolean)",
       "public static com.yahoo.config.provision.ClusterSpec request(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.component.Version, boolean)",
+      "public static com.yahoo.config.provision.ClusterSpec request(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.component.Version, boolean, java.util.Set)",
       "public static com.yahoo.config.provision.ClusterSpec from(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ClusterSpec$Group, com.yahoo.component.Version, boolean)",
+      "public static com.yahoo.config.provision.ClusterSpec from(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ClusterSpec$Group, com.yahoo.component.Version, boolean, java.util.Set)",
       "public java.lang.String toString()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
@@ -523,6 +526,17 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.ParentHostUnavailableException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.provision.ProvisionLogger": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -584,6 +598,25 @@
       "public java.lang.String getId()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.RotationName": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.Comparable"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.lang.String value()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public int compareTo(com.yahoo.config.provision.RotationName)",
+      "public java.lang.String toString()",
+      "public static com.yahoo.config.provision.RotationName from(java.lang.String)",
+      "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields": []
   },

@@ -8,7 +8,7 @@
 #include <vector>
 #include <unordered_map>
 
-namespace vespalib::slime { class Inspector; }
+namespace vespalib::slime { struct Inspector; }
 
 namespace search::predicate {
 

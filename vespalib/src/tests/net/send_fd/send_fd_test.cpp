@@ -74,7 +74,7 @@ void send_fd(SocketHandle &socket, SocketHandle fd) {
     hdr->cmsg_level = SOL_SOCKET;
     hdr->cmsg_type = SCM_RIGHTS;
     hdr->cmsg_len = CMSG_LEN(sizeof(int));
-    int *fd_dst = (int *) CMSG_DATA(hdr);
+    int *fd_dst = (int *) (void *) CMSG_DATA(hdr);
     fd_dst[0] = fd.get();
     ssize_t res = sendmsg(socket.get(), &msg, 0);
     ASSERT_EQUAL(res, 1);
@@ -97,7 +97,7 @@ SocketHandle recv_fd(SocketHandle &socket) {
     bool type_ok = ((hdr->cmsg_level == SOL_SOCKET) &&
                     (hdr->cmsg_type == SCM_RIGHTS));
     ASSERT_TRUE(type_ok);
-    int *fd_src = (int *) CMSG_DATA(hdr);
+    int *fd_src = (int *) (void *) CMSG_DATA(hdr);
     fprintf(stderr, "got fd: %d\n", fd_src[0]);
     return SocketHandle(fd_src[0]);
 }

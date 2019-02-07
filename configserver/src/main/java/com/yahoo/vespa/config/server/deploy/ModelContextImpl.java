@@ -130,6 +130,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isFirstTimeDeployment;
         private final boolean useDedicatedNodeForLogserver;
         private final boolean useFdispatchByDefault;
+        private final boolean useAdaptiveDispatch;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -157,6 +158,8 @@ public class ModelContextImpl implements ModelContext {
             this.useDedicatedNodeForLogserver = Flags.USE_DEDICATED_NODE_FOR_LOGSERVER.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useFdispatchByDefault = Flags.USE_FDISPATCH_BY_DEFAULT.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.useAdaptiveDispatch = Flags.USE_ADAPTIVE_DISPATCH.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
@@ -202,6 +205,8 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
+        @Override
+        public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
     }
 
 }

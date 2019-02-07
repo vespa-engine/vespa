@@ -11,7 +11,7 @@ namespace config {
 class ConfigKey;
 class Connection;
 class Trace;
-class VespaVersion;
+struct VespaVersion;
 
 class FRTConfigRequestV3 : public SlimeConfigRequest {
 public:
@@ -19,7 +19,6 @@ public:
                        const ConfigKey & key,
                        const vespalib::string & configMd5,
                        int64_t currentGeneration,
-                       int64_t wantedGeneration,
                        const vespalib::string & hostName,
                        int64_t serverTimeout,
                        const Trace & trace,

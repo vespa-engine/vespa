@@ -106,7 +106,6 @@ class JDiscHttpServlet extends HttpServlet {
 
     private void dispatchHttpRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
         AccessLogEntry accessLogEntry = new AccessLogEntry();
-        AccessLogRequestLog.populateAccessLogEntryFromHttpServletRequest(request, accessLogEntry);
         request.setAttribute(ATTRIBUTE_NAME_ACCESS_LOG_ENTRY, accessLogEntry);
         try {
             switch (request.getDispatcherType()) {

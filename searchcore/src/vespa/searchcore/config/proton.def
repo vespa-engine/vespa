@@ -325,11 +325,6 @@ pruneremoveddocumentsinterval double default=0.0
 ## Default value is 2 weeks (1209600 seconds).
 pruneremoveddocumentsage double default=1209600.0
 
-## Timeout of recovery rpc calls in rowcolumn mode
-##
-## Default value is 60 seconds
-recoverymanager.rpctimeout double default=60.0 restart
-
 ## Minimum size of packets to compress (0 means no compression)
 ##
 packetcompresslimit int default=1024

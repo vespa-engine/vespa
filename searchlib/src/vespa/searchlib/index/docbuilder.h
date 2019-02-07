@@ -13,7 +13,7 @@
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-namespace vespalib { namespace tensor { class Tensor; } }
+namespace vespalib { namespace tensor { struct Tensor; } }
 namespace search {
 namespace index {
 

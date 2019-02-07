@@ -1,12 +1,8 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
-import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
-import com.yahoo.vespa.curator.transaction.CuratorOperation;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.vespa.curator.transaction.TransactionChanges;
 
 /**
  * CuratorTransaction wrapper which increments a counter, to signal invalidation of node repository caches.

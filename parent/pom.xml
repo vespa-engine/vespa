@@ -720,7 +720,7 @@
         <jna.version>4.5.2</jna.version>
         <tensorflow.version>1.12.0</tensorflow.version>
         <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
-        <athenz.version>1.7.43</athenz.version>
+        <athenz.version>1.8.12</athenz.version>
         <commons-lang.version>2.6</commons-lang.version>
         <!-- WARNING: If you change curator version, you also need to update
                  zkfacade/src/main/java/org/apache/curator/**/package-info.java

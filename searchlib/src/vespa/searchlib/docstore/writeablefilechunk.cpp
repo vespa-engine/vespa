@@ -344,10 +344,9 @@ getAlignedStartPos(FastOS_File & file)
 }
 
 WriteableFileChunk::ProcessedChunkQ
-WriteableFileChunk::drainQ()
+WriteableFileChunk::drainQ(MonitorGuard & guard)
 {
     ProcessedChunkQ newChunks;
-    MonitorGuard guard(_writeMonitor);
     newChunks.swap(_writeQ);
     if ( ! newChunks.empty() ) {
         guard.broadcast();
@@ -433,7 +432,7 @@ WriteableFileChunk::computeChunkMeta(ProcessedChunkQ & chunks, size_t startPos, 
 
     GenerationHandler::Guard bucketizerGuard = _bucketMap.getGuard();
     for (size_t i(0), m(chunks.size()); i < m; i++) {
-        if (chunks[i].get() != 0) {
+        if (chunks[i]) {
             const ProcessedChunk & chunk = *chunks[i];
             const ChunkMeta cmeta(computeChunkMeta(guard, bucketizerGuard, startPos + sz, chunk, *_chunkMap[chunk.getChunkId()]));
             sz += chunk.getBuf().getDataLen();
@@ -496,9 +495,10 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
     LOG(debug, "Starting the filewriter with chunkid = %d", firstChunkId);
     uint32_t nextChunkId(firstChunkId);
     bool done(false);
+    MonitorGuard guard(_writeMonitor);
     {
-        ProcessedChunkQ newChunks(drainQ());
-        if ( ! newChunks.empty()) {
+        for (ProcessedChunkQ newChunks(drainQ(guard)); !newChunks.empty(); newChunks = drainQ(guard)) {
+            guard.unlock();
             insertChunks(_orderedChunks, newChunks, nextChunkId);
             ProcessedChunkQ chunks(fetchNextChain(_orderedChunks, nextChunkId));
             nextChunkId += chunks.size();
@@ -508,30 +508,23 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
             writeData(chunks, sz);
             updateChunkInfo(chunks, cmetaV, sz);
             LOG(spam, "bucket spread = '%3.2f'", getBucketSpread());
+            guard = MonitorGuard(_writeMonitor);
+            if (done) break;
         }
     }
-    LOG(debug,
-        "Stopping the filewriter with startchunkid = %d and ending chunkid = %d done=%d",
-        firstChunkId, nextChunkId, done);
-    MonitorGuard guard(_writeMonitor);
+    LOG(debug, "Stopping the filewriter with startchunkid = %d and ending chunkid = %d done=%d",
+               firstChunkId, nextChunkId, done);
+    assert(_writeQ.empty());
+    _writeTaskIsRunning = false;
     if (done) {
-        assert(_writeQ.empty());
         assert(_chunkMap.empty());
         for (const ChunkInfo & cm : _chunkInfo) {
             (void) cm;
             assert(cm.valid() && cm.getSize() != 0);
         }
-        _writeTaskIsRunning = false;
         guard.broadcast();
     } else {
-        if (_writeQ.empty()) {
-            _firstChunkIdToBeWritten = nextChunkId;
-            _writeTaskIsRunning = false;
-        } else {
-            _writeTaskIsRunning = true;
-            guard.unlock();
-            restart(nextChunkId);
-        }
+        _firstChunkIdToBeWritten = nextChunkId;
     }
 }
 
@@ -925,6 +918,6 @@ PendingChunk::PendingChunk(uint64_t lastSerial, uint64_t dataOffset, uint32_t da
       _dataLen(dataLen)
 { }
 
-PendingChunk::~PendingChunk() { }
+PendingChunk::~PendingChunk() = default;
 
 } // namespace search

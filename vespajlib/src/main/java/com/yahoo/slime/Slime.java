@@ -158,4 +158,20 @@ public final class Slime {
         return wrap(names.insert(name));
     }
 
+    /**
+     * Tests whether this is equal to Inspector.
+     *
+     * Since equality of two Inspectors is subtle, {@link Object#equals(Object)} is not used.
+     *
+     * @param that inspector.
+     * @return true if they are equal.
+     */
+    public boolean equalTo(Slime that) {
+        return get().equalTo(that.get());
+    }
+
+    @Override
+    public String toString() {
+        return get().toString();
+    }
 }

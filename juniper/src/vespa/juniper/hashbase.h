@@ -112,14 +112,6 @@ public:
 };
 
 
-// Basis for specialization
-template <int v>
-struct Int2Type
-{
-    enum { value = v };
-};
-
-
 template <typename Key, typename T, int _tableSize = 0x10,  typename Comparator>
 class Fast_HashTable
 {
@@ -140,19 +132,13 @@ protected:
     element **_lookupTable;
     Comparator _compare;
 
-    inline int HashFunction(Key key, Int2Type<true>)
-    {
-        return key & (_tableSize-1);
-    }
-
-    inline int HashFunction(Key key, Int2Type<false>)
-    {
-        return key % _tableSize;
-    }
-
     inline int HashFunction(Key key)
     {
-        return HasFunction(key, Int2Type<(_tableSize & (_tableSize-1) == _tableSize)>());
+        if constexpr ((_tableSize & (_tableSize - 1)) == 0) {
+            return (key & (_tableSize - 1));
+        } else {
+            return (key % _tableSize);
+        }
     }
 
 public:
@@ -197,7 +183,7 @@ public:
 
     Key Insert(Key key, T item)
     {
-        int pos = HashFunction(key, Int2Type<((_tableSize & (_tableSize-1)) == _tableSize)>());
+        int pos = HashFunction(key);
 
         if (_lookupTable[pos] == NULL || !_compare(item, _lookupTable[pos]->GetItem()))
         {
@@ -226,7 +212,7 @@ public:
         T retVal;
         retVal = NULL;
 
-        int pos = HashFunction(key, Int2Type<(_tableSize & (_tableSize-1) == _tableSize)>());
+        int pos = HashFunction(key);
 
         for (element *curr=_lookupTable[pos]; curr != NULL; curr=curr->GetNext())
         {
@@ -243,7 +229,7 @@ public:
 
     element* FindRef(Key key)
     {
-        int pos = HashFunction(key, Int2Type<((_tableSize & (_tableSize-1)) == _tableSize)>());
+        int pos = HashFunction(key);
 
         for (element *curr=_lookupTable[pos]; curr != NULL; curr=curr->GetNext())
             if (curr->GetKey() == key) return curr;
@@ -255,7 +241,7 @@ public:
     {
         T retVal = NULL;
 
-        int pos = HashFunction(key, Int2Type<(_tableSize & (_tableSize-1) == _tableSize)>());
+        int pos = HashFunction(key);
 
         element *curr=_lookupTable[pos];
         element *prev = NULL;

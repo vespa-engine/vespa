@@ -67,6 +67,8 @@ import static org.junit.Assert.assertNotNull;
  */
 public final class ControllerTester {
 
+    public static final int availableRotations = 10;
+
     private final AthenzDbMock athenzDb;
     private final ManualClock clock;
     private final ConfigServerMock configServer;
@@ -332,7 +334,7 @@ public final class ControllerTester {
 
     private static RotationsConfig defaultRotationsConfig() {
         RotationsConfig.Builder builder = new RotationsConfig.Builder();
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= availableRotations; i++) {
             String id = String.format("%02d", i);
             builder = builder.rotations("rotation-id-" + id, "rotation-fqdn-" + id);
         }

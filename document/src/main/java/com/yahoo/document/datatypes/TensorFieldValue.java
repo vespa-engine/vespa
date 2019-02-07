@@ -44,6 +44,15 @@ public class TensorFieldValue extends FieldValue {
     }
 
     @Override
+    public String toString() {
+        if (tensor.isPresent()) {
+            return tensor.get().toString();
+        } else {
+            return "null";
+        }
+    }
+
+    @Override
     public void printXml(XmlStream xml) {
         // TODO (geirst)
     }

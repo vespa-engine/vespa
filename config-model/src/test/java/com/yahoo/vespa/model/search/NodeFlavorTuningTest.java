@@ -48,9 +48,9 @@ public class NodeFlavorTuningTest {
         assertEquals(3, cfg.documentdb().size());
         assertEquals(1024, cfg.documentdb(0).allocation().initialnumdocs());
         assertEquals("a", cfg.documentdb(0).inputdoctypename());
-        assertEquals(644245094L, cfg.documentdb(1).allocation().initialnumdocs());
+        assertEquals(402653184, cfg.documentdb(1).allocation().initialnumdocs());
         assertEquals("b", cfg.documentdb(1).inputdoctypename());
-        assertEquals(644245094L, cfg.documentdb(2).allocation().initialnumdocs());
+        assertEquals(402653184, cfg.documentdb(2).allocation().initialnumdocs());
         assertEquals("c", cfg.documentdb(2).inputdoctypename());
     }
 

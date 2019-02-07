@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
-
+import org.eclipse.jetty.http.MetaData;
+import org.eclipse.jetty.server.HttpChannel;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.testng.annotations.Test;
-
-import javax.servlet.http.HttpServletRequest;
 
 import java.util.Optional;
 
@@ -24,12 +26,12 @@ import static org.testng.Assert.assertTrue;
 public class AccessLogRequestLogTest {
     @Test
     public void requireThatQueryWithUnquotedSpecialCharactersIsHandled() {
-        final HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
-        when(httpServletRequest.getRequestURI()).thenReturn("/search/");
-        when(httpServletRequest.getQueryString()).thenReturn("query=year:>2010");
         final AccessLogEntry accessLogEntry = new AccessLogEntry();
+        final Request jettyRequest = createRequestMock(accessLogEntry);
+        when(jettyRequest.getRequestURI()).thenReturn("/search/");
+        when(jettyRequest.getQueryString()).thenReturn("query=year:>2010");
 
-        AccessLogRequestLog.populateAccessLogEntryFromHttpServletRequest(httpServletRequest, accessLogEntry);
+        new AccessLogRequestLog(mock(AccessLog.class)).log(jettyRequest, createResponseMock());
 
         assertThat(accessLogEntry.getRawPath(), is(not(nullValue())));
         assertTrue(accessLogEntry.getRawQuery().isPresent());
@@ -37,14 +39,14 @@ public class AccessLogRequestLogTest {
 
     @Test
     public void requireThatDoubleQuotingIsNotPerformed() {
-        final HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
-        final String path = "/search/";
-        when(httpServletRequest.getRequestURI()).thenReturn(path);
-        final String query = "query=year%252010+%3B&customParameter=something";
-        when(httpServletRequest.getQueryString()).thenReturn(query);
         final AccessLogEntry accessLogEntry = new AccessLogEntry();
+        final Request jettyRequest = createRequestMock(accessLogEntry);
+        final String path = "/search/";
+        when(jettyRequest.getRequestURI()).thenReturn(path);
+        final String query = "query=year%252010+%3B&customParameter=something";
+        when(jettyRequest.getQueryString()).thenReturn(query);
 
-        AccessLogRequestLog.populateAccessLogEntryFromHttpServletRequest(httpServletRequest, accessLogEntry);
+        new AccessLogRequestLog(mock(AccessLog.class)).log(jettyRequest, createResponseMock());
 
         assertThat(accessLogEntry.getRawPath(), is(path));
         assertThat(accessLogEntry.getRawQuery().get(), is(query));
@@ -53,14 +55,14 @@ public class AccessLogRequestLogTest {
 
     @Test
     public void raw_path_and_query_are_set_from_request() {
-        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
-        String rawPath = "//search/";
-        when(httpServletRequest.getRequestURI()).thenReturn(rawPath);
-        String rawQuery = "q=%%2";
-        when(httpServletRequest.getQueryString()).thenReturn(rawQuery);
-
         AccessLogEntry accessLogEntry = new AccessLogEntry();
-        AccessLogRequestLog.populateAccessLogEntryFromHttpServletRequest(httpServletRequest, accessLogEntry);
+        Request jettyRequest = createRequestMock(accessLogEntry);
+        String rawPath = "//search/";
+        when(jettyRequest.getRequestURI()).thenReturn(rawPath);
+        String rawQuery = "q=%%2";
+        when(jettyRequest.getQueryString()).thenReturn(rawQuery);
+
+        new AccessLogRequestLog(mock(AccessLog.class)).log(jettyRequest, createResponseMock());
         assertThat(accessLogEntry.getRawPath(), is(rawPath));
         Optional<String> actualRawQuery = accessLogEntry.getRawQuery();
         assertThat(actualRawQuery.isPresent(), is(true));
@@ -69,15 +71,27 @@ public class AccessLogRequestLogTest {
 
     @Test
     public void verify_x_forwarded_for_precedence () {
-        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
-        when(httpServletRequest.getRequestURI()).thenReturn("//search/");
-        when(httpServletRequest.getQueryString()).thenReturn("q=%%2");
-        when(httpServletRequest.getHeader("x-forwarded-for")).thenReturn("1.2.3.4");
-        when(httpServletRequest.getHeader("y-ra")).thenReturn("2.3.4.5");
-
         AccessLogEntry accessLogEntry = new AccessLogEntry();
-        AccessLogRequestLog.populateAccessLogEntryFromHttpServletRequest(httpServletRequest, accessLogEntry);
+        Request jettyRequest = createRequestMock(accessLogEntry);
+        when(jettyRequest.getRequestURI()).thenReturn("//search/");
+        when(jettyRequest.getQueryString()).thenReturn("q=%%2");
+        when(jettyRequest.getHeader("x-forwarded-for")).thenReturn("1.2.3.4");
+        when(jettyRequest.getHeader("y-ra")).thenReturn("2.3.4.5");
+
+        new AccessLogRequestLog(mock(AccessLog.class)).log(jettyRequest, createResponseMock());
         assertThat(accessLogEntry.getRemoteAddress(), is("1.2.3.4"));
     }
 
+    private static Request createRequestMock(AccessLogEntry entry) {
+        Request request = mock(Request.class);
+        when(request.getAttribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY)).thenReturn(entry);
+        return request;
+    }
+
+    private Response createResponseMock() {
+        Response response = mock(Response.class);
+        when(response.getHttpChannel()).thenReturn(mock(HttpChannel.class));
+        when(response.getCommittedMetaData()).thenReturn(mock(MetaData.Response.class));
+        return response;
+    }
 }

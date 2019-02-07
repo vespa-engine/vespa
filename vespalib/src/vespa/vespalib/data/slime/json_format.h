@@ -13,7 +13,7 @@ class Slime;
 
 namespace slime {
 
-class Inspector;
+struct Inspector;
 
 struct JsonFormat {
     static void encode(const Inspector &inspector, Output &output, bool compact);

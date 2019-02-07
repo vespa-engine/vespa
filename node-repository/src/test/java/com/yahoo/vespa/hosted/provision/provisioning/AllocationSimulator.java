@@ -8,16 +8,15 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import javax.swing.JFrame;
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -83,7 +82,8 @@ public class AllocationSimulator {
     private Node node(String hostname, Flavor flavor, Optional<String> parent, Optional<String> tenant) {
         return new Node("fake", Collections.singleton("127.0.0.1"),
                 parent.isPresent() ? Collections.emptySet() : getAdditionalIP(), hostname, parent, flavor, Status.initial(),
-                parent.isPresent() ? Node.State.ready : Node.State.active, allocation(tenant), History.empty(), parent.isPresent() ? NodeType.tenant : NodeType.host);
+                parent.isPresent() ? Node.State.ready : Node.State.active, allocation(tenant), History.empty(),
+                parent.isPresent() ? NodeType.tenant : NodeType.host, new Reports());
     }
 
     private Set<String> getAdditionalIP() {
@@ -96,7 +96,7 @@ public class AllocationSimulator {
         if (tenant.isPresent()) {
             Allocation allocation = new Allocation(app(tenant.get()),
                                                    ClusterMembership.from("container/id1/3", new Version()),
-                                                   Generation.inital(),
+                                                   Generation.initial(),
                                                    false);
             return Optional.of(allocation);
         }
@@ -111,7 +111,7 @@ public class AllocationSimulator {
     }
 
     private ClusterSpec cluster() {
-        return ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), ClusterSpec.Group.from(1), Version.fromString("6.41"), false);
+        return ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), ClusterSpec.Group.from(1), Version.fromString("6.41"), false, Collections.emptySet());
     }
 
     /* ------------ Methods to add events to the system ----------------*/

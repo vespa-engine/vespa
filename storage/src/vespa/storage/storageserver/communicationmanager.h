@@ -37,7 +37,7 @@ namespace mbus {
 }
 namespace storage {
 
-class BucketResolver;
+struct BucketResolver;
 class VisitorMbusSession;
 class Visitor;
 class VisitorThread;
@@ -146,7 +146,7 @@ private:
     void updateMetrics(const MetricLockGuard &) override;
 
     // Test needs access to configure() for live reconfig testing.
-    friend class CommunicationManagerTest;
+    friend struct CommunicationManagerTest;
 
 public:
     CommunicationManager(StorageComponentRegister& compReg,

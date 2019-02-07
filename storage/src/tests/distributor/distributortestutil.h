@@ -13,7 +13,7 @@
 
 namespace storage {
 
-namespace framework { class TickingThreadPool; }
+namespace framework { struct TickingThreadPool; }
 
 namespace distributor {
 

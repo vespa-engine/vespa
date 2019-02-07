@@ -306,7 +306,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         double visibilityDelay = hasIndexedCluster() ? getIndexed().getVisibilityDelay() : 0.0;
-        builder.feeding.concurrency(0.2);
+        builder.feeding.concurrency(0.25); // As if specified 0.5 in services.xml
         boolean hasAnyNonIndexedCluster = false;
         for (NewDocumentType type : TopologicalDocumentTypeSorter.sort(documentDefinitions.values())) {
             ProtonConfig.Documentdb.Builder ddbB = new ProtonConfig.Documentdb.Builder();
@@ -328,6 +328,8 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                     getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
                     if (tuning != null && tuning.searchNode != null && tuning.searchNode.feeding != null) {
                         ddbB.feeding.concurrency(tuning.searchNode.feeding.concurrency / 2);
+                    } else {
+                        ddbB.feeding.concurrency(builder.feeding.build().concurrency());
                     }
                 } else {
                     hasAnyNonIndexedCluster = true;

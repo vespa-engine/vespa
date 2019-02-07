@@ -153,8 +153,13 @@ inline const char *
 fmemchr(const char * s, const char * e)
 {
     while (s+15 < e) {
+#ifdef __clang__
+        v16qi tmpCurrent = __builtin_ia32_lddqu(s);
+        v16qi tmp0       = tmpCurrent == _G_zero;
+#else
         v16qi tmpCurrent = __builtin_ia32_loaddqu(s);
         v16qi tmp0       = __builtin_ia32_pcmpeqb128(tmpCurrent, _G_zero);
+#endif
         uint32_t charMap = __builtin_ia32_pmovmskb128(tmp0); // 1 in charMap equals to '\0' in input buffer
         if (__builtin_expect(charMap, 1)) {
             return s + vespalib::Optimized::lsbIdx(charMap);

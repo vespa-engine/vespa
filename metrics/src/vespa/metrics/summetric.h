@@ -72,7 +72,7 @@ public:
     void addToSnapshot(Metric&, std::vector<Metric::UP> &) const override;
 
 private:
-    friend class MetricManagerTest;
+    friend struct MetricManagerTest;
     std::pair<std::vector<Metric::UP>, Metric::UP> generateSum() const;
 
     virtual void addTo(Metric&, std::vector<Metric::UP> *ownerList) const;

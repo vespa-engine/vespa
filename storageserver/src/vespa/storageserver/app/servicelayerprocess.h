@@ -24,7 +24,7 @@ namespace config { class ConfigUri; }
 
 namespace storage {
 
-namespace spi { class PersistenceProvider; }
+namespace spi { struct PersistenceProvider; }
 
 class ServiceLayerNode;
 

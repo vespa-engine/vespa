@@ -10,32 +10,29 @@ class GrowStrategy
 {
 private:
     uint32_t _docsInitialCapacity;
-    uint32_t _docsGrowPercent;
+    float    _docsGrowFactor;
     uint32_t _docsGrowDelta;
     float    _multiValueAllocGrowFactor;
 public:
     GrowStrategy()
-        : GrowStrategy(1024, 50, 0, 0.2)
+        : GrowStrategy(1024, 0.5, 0, 0.2)
     {}
-    GrowStrategy(uint32_t docsInitialCapacity,
-                 uint32_t docsGrowPercent,
-                 uint32_t docsGrowDelta,
-                 float multiValueAllocGrowFactor)
+    GrowStrategy(uint32_t docsInitialCapacity, float docsGrowPercent,
+                 uint32_t docsGrowDelta, float multiValueAllocGrowFactor)
         : _docsInitialCapacity(docsInitialCapacity),
-          _docsGrowPercent(docsGrowPercent),
+          _docsGrowFactor(docsGrowPercent),
           _docsGrowDelta(docsGrowDelta),
           _multiValueAllocGrowFactor(multiValueAllocGrowFactor)
     {
     }
 
-    static GrowStrategy make(uint32_t docsInitialCapacity,
-                             uint32_t docsGrowPercent,
-                             uint32_t docsGrowDelta) {
-        return GrowStrategy(docsInitialCapacity, docsGrowPercent, docsGrowDelta, 0.2);
+    static GrowStrategy make(uint32_t docsInitialCapacity, float docsGrowFactor, uint32_t docsGrowDelta) {
+        return GrowStrategy(docsInitialCapacity, docsGrowFactor, docsGrowDelta, 0.2);
     }
 
     uint32_t    getDocsInitialCapacity() const { return _docsInitialCapacity; }
-    uint32_t        getDocsGrowPercent() const { return _docsGrowPercent; }
+    uint32_t        getDocsGrowPercent() const { return _docsGrowFactor*100; }
+    float            getDocsGrowFactor() const { return _docsGrowFactor; }
     uint32_t          getDocsGrowDelta() const { return _docsGrowDelta; }
     float getMultiValueAllocGrowFactor() const { return _multiValueAllocGrowFactor; }
     void    setDocsInitialCapacity(uint32_t v) { _docsInitialCapacity = v; }
@@ -43,7 +40,7 @@ public:
 
     bool operator==(const GrowStrategy & rhs) const {
         return _docsInitialCapacity == rhs._docsInitialCapacity &&
-            _docsGrowPercent == rhs._docsGrowPercent &&
+            _docsGrowFactor == rhs._docsGrowFactor &&
             _docsGrowDelta == rhs._docsGrowDelta &&
             _multiValueAllocGrowFactor == rhs._multiValueAllocGrowFactor;
     }

@@ -374,6 +374,4 @@ ConfigParser::convert<vespalib::string>(const vsvector & config)
     return deQuote(value);
 }
 
-template bool ConfigParser::convert<bool>(const vsvector & config);
-
 } // config

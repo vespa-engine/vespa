@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.deploy;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -14,12 +15,13 @@ import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.component.Version;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
@@ -36,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -96,11 +99,14 @@ public class HostedDeployTest {
         assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
     }
 
-    /** Test that only the minimal set of models are created (model versions used on hosts, the wanted version and the latest version) */
+    /**
+     * Test that only the minimal set of models are created (model versions used on hosts, the wanted version
+     * and the latest version for the latest major)
+     */
     @Test
     public void testCreateOnlyNeededModelVersions() {
         List<Host> hosts = Arrays.asList(createHost("host1", "6.0.0"),
-                                         createHost("host2", "6.2.0"),
+                                         createHost("host2", "6.1.0"),
                                          createHost("host3")); //Use a host with no version as well
         InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
 
@@ -124,15 +130,18 @@ public class HostedDeployTest {
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue(factory600.creationCount() > 0);
-        assertFalse(factory610.creationCount() > 0);
-        assertTrue(factory620.creationCount() > 0);
-        assertTrue(factory700.creationCount() > 0);
+        assertTrue(factory610.creationCount() > 0);
+        assertFalse(factory620.creationCount() > 0); // Latest model version on a major, but not for the latest major
+        assertTrue(factory700.creationCount() > 0);  // Wanted version, also needs to be built
         assertFalse(factory710.creationCount() > 0);
         assertTrue("Newest is always included", factory720.creationCount() > 0);
     }
 
 
-    /** Test that only the minimal set of models are created (the wanted version and the latest version per major, since nodes are without version) */
+    /**
+     * Test that only the minimal set of models are created (the wanted version and the latest version for
+     * the latest major, since nodes are without version)
+     */
     @Test
     public void testCreateOnlyNeededModelVersionsNewNodes() {
         List<Host> hosts = Arrays.asList(createHost("host1"), createHost("host2"), createHost("host3"));
@@ -141,9 +150,8 @@ public class HostedDeployTest {
         CountingModelFactory factory600 = DeployTester.createModelFactory(Version.fromString("6.0.0"));
         CountingModelFactory factory610 = DeployTester.createModelFactory(Version.fromString("6.1.0"));
         CountingModelFactory factory700 = DeployTester.createModelFactory(Version.fromString("7.0.0"));
-        CountingModelFactory factory710 = DeployTester.createModelFactory(Version.fromString("7.1.0"));
         CountingModelFactory factory720 = DeployTester.createModelFactory(Version.fromString("7.2.0"));
-        List<ModelFactory> modelFactories = Arrays.asList(factory600, factory610, factory700, factory710, factory720);
+        List<ModelFactory> modelFactories = Arrays.asList(factory600, factory610, factory700, factory720);
 
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
         // Deploy with version that does not exist on hosts, the model for this version should also be created
@@ -151,11 +159,34 @@ public class HostedDeployTest {
         assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
-        assertFalse(factory600.creationCount() > 0); // latest on major version 6
-        assertTrue("Newest per major version is always included", factory610.creationCount() > 0);
         assertTrue(factory700.creationCount() > 0);
-        assertFalse(factory710.creationCount() > 0);
-        assertTrue("Newest per major version is always included", factory720.creationCount() > 0);
+        assertTrue("Newest model for latest major version is always included", factory720.creationCount() > 0);
+    }
+
+    /**
+     * Test that we skip create the minimal set of models are created, but latest model version is created for
+     * previous major if creating latest model version on latest major version fails
+     **/
+    @Test
+    public void testCreateLatestMajorOnPreviousMajorIfItFailsOnNewestMajor() {
+        List<Host> hosts = Arrays.asList(createHost("host1", "6.0.0"),
+                                         createHost("host2", "6.1.0"),
+                                         createHost("host3", "6.1.0"));
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
+
+        CountingModelFactory factory600 = DeployTester.createModelFactory(Version.fromString("6.0.0"));
+        CountingModelFactory factory610 = DeployTester.createModelFactory(Version.fromString("6.1.0"));
+        ModelFactory factory720 = DeployTester.createFailingModelFactory(Version.fromString("7.2.0"));
+        List<ModelFactory> modelFactories = Arrays.asList(factory600, factory610, factory720);
+
+        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
+        tester.deployApp("src/test/apps/hosted/", "6.0.0", Instant.now());
+        assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+
+        // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
+        assertTrue(factory600.creationCount() > 0);
+        assertTrue("Latest model for previous major version is included if latest model for latest major version fails to build",
+                   factory610.creationCount() > 0);
     }
 
     /**
@@ -264,6 +295,24 @@ public class HostedDeployTest {
         List<RestartActions.Entry> actions = prepareResult.configChangeActions().getRestartActions().getEntries();
         assertThat(actions.size(), is(1));
         assertThat(actions.get(0).getMessages(), equalTo(ImmutableSet.of("change", "other change")));
+    }
+
+    @Test
+    public void testDeployWithClusterRotations() {
+        CountingModelFactory modelFactory = DeployTester.createModelFactory(Version.fromString("4.5.6"), Clock.systemUTC());
+        DeployTester tester = new DeployTester(Collections.singletonList(modelFactory), createConfigserverConfig());
+        ApplicationId applicationId = tester.applicationId();
+
+        tester.deployApp("src/test/apps/hosted/", "4.5.6", Instant.now());
+        Set<HostSpec> containers = tester.getAllocatedHostsOf(applicationId).getHosts().stream()
+                                         .filter(h -> h.membership().get().cluster().type() == ClusterSpec.Type.container)
+                                         .collect(Collectors.toSet());
+        assertFalse("Allocated container hosts", containers.isEmpty());
+
+        Set<RotationName> expected = Set.of(RotationName.from("eu-cluster"), RotationName.from("us-cluster"));
+        for (HostSpec container : containers) {
+            assertEquals(expected, container.membership().get().cluster().rotations());
+        }
     }
 
     private static ConfigserverConfig createConfigserverConfig() {

@@ -7,14 +7,13 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -35,20 +34,16 @@ public class LoadBalancerProvisionerTest {
     private final ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
     private final ApplicationId app2 = ApplicationId.from("tenant2", "application2", "default");
 
-    private ProvisioningTester tester;
-
-    @Before
-    public void before() {
-        tester = new ProvisioningTester(Zone.defaultZone());
-    }
+    private ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
     public void provision_load_balancer() {
         ClusterSpec.Id containerCluster1 = ClusterSpec.Id.from("qrs1");
         ClusterSpec.Id contentCluster = ClusterSpec.Id.from("content");
+        Set<RotationName> rotationsCluster1 = Set.of(RotationName.from("r1-1"), RotationName.from("r1-2"));
         tester.nodeRepository().flags().setEnabled(FlagId.exclusiveLoadBalancer, true);
         tester.activate(app1, prepare(app1,
-                                      clusterRequest(ClusterSpec.Type.container, containerCluster1),
+                                      clusterRequest(ClusterSpec.Type.container, containerCluster1, rotationsCluster1),
                                       clusterRequest(ClusterSpec.Type.content, contentCluster)));
         tester.activate(app2, prepare(app2,
                                       clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs"))));
@@ -64,28 +59,32 @@ public class LoadBalancerProvisionerTest {
         assertEquals(4080, get(loadBalancers.get().get(0).reals(), 0).port());
         assertEquals("127.0.0.2", get(loadBalancers.get().get(0).reals(), 1).ipAddress());
         assertEquals(4080, get(loadBalancers.get().get(0).reals(), 1).port());
+        assertEquals(rotationsCluster1, loadBalancers.get().get(0).rotations());
 
         // A container is failed
-        List<Node> containers = tester.getNodes(app1).type(ClusterSpec.Type.container).asList();
-        tester.nodeRepository().fail(containers.get(0).hostname(), Agent.system, this.getClass().getSimpleName());
+        Supplier<List<Node>> containers = () -> tester.getNodes(app1).type(ClusterSpec.Type.container).asList();
+        Node toFail = containers.get().get(0);
+        tester.nodeRepository().fail(toFail.hostname(), Agent.system, this.getClass().getSimpleName());
 
-        // Redeploying replaces failed node
+        // Redeploying replaces failed node and removes it from load balancer
         tester.activate(app1, prepare(app1,
                                       clusterRequest(ClusterSpec.Type.container, containerCluster1),
                                       clusterRequest(ClusterSpec.Type.content, contentCluster)));
-
-        // Redeploy removed replaced failed node in load balancer
-        containers = tester.getNodes(app1).type(ClusterSpec.Type.container).asList();
         LoadBalancer loadBalancer = tester.nodeRepository().loadBalancers().owner(app1).asList().get(0);
         assertEquals(2, loadBalancer.reals().size());
-        assertEquals(containers.get(0).hostname(), get(loadBalancer.reals(), 0).hostname().value());
-        assertEquals(containers.get(1).hostname(), get(loadBalancer.reals(), 1).hostname().value());
+        assertTrue("Failed node is removed", loadBalancer.reals().stream()
+                                                         .map(Real::hostname)
+                                                         .map(HostName::value)
+                                                         .noneMatch(hostname -> hostname.equals(toFail.hostname())));
+        assertEquals(containers.get().get(0).hostname(), get(loadBalancer.reals(), 0).hostname().value());
+        assertEquals(containers.get().get(1).hostname(), get(loadBalancer.reals(), 1).hostname().value());
 
         // Add another container cluster
+        Set<RotationName> rotationsCluster2 = Set.of(RotationName.from("r2-1"), RotationName.from("r2-2"));
         ClusterSpec.Id containerCluster2 = ClusterSpec.Id.from("qrs2");
         tester.activate(app1, prepare(app1,
-                                      clusterRequest(ClusterSpec.Type.container, containerCluster1),
-                                      clusterRequest(ClusterSpec.Type.container, containerCluster2),
+                                      clusterRequest(ClusterSpec.Type.container, containerCluster1, rotationsCluster1),
+                                      clusterRequest(ClusterSpec.Type.container, containerCluster2, rotationsCluster2),
                                       clusterRequest(ClusterSpec.Type.content, contentCluster)));
 
         // Load balancer is provisioned for second container cluster
@@ -102,6 +101,7 @@ public class LoadBalancerProvisionerTest {
                                             .map(Real::hostname)
                                             .sorted()
                                             .collect(Collectors.toList());
+        assertEquals(rotationsCluster2, loadBalancers.get().get(1).rotations());
         assertEquals(activeContainers, reals);
 
         // Application is removed and load balancer is deactivated
@@ -114,7 +114,11 @@ public class LoadBalancerProvisionerTest {
     }
 
     private ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id) {
-        return ClusterSpec.request(type, id, Version.fromString("6.42"), false);
+        return clusterRequest(type, id, Collections.emptySet());
+    }
+
+    private ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id, Set<RotationName> rotations) {
+        return ClusterSpec.request(type, id, Version.fromString("6.42"), false, rotations);
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec... specs) {

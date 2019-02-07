@@ -13,7 +13,7 @@ namespace proton {
 
 class CompactLidSpaceOperation;
 class DeleteBucketOperation;
-class ISimpleDocumentMetaStore;
+struct ISimpleDocumentMetaStore;
 class MoveOperation;
 class PruneRemovedDocumentsOperation;
 class PutOperation;

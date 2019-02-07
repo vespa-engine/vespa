@@ -33,6 +33,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,8 +115,8 @@ public class OperatorChangeApplicationMaintainerTest {
 
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
-        final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
-        final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Collections.emptySet());
+        final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Collections.emptySet());
         final int wantedNodesApp1 = 5;
         final int wantedNodesApp2 = 7;
         MockDeployer deployer; // created on activation
@@ -123,7 +124,7 @@ public class OperatorChangeApplicationMaintainerTest {
         Fixture(Zone zone, NodeRepository nodeRepository, NodeFlavors flavors, Curator curator) {
             this.nodeRepository = nodeRepository;
             this.curator = curator;
-            this.provisioner =  new NodeRepositoryProvisioner(nodeRepository, flavors, zone, new MockProvisionServiceProvider());
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, zone, new MockProvisionServiceProvider());
         }
 
         void activate() {

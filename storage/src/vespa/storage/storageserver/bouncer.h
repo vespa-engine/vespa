@@ -24,7 +24,7 @@ namespace config { class ConfigUri; }
 
 namespace storage {
 
-class BouncerMetrics;
+struct BouncerMetrics;
 
 class Bouncer : public StorageLink,
                 private StateListener,
@@ -89,6 +89,7 @@ private:
     void handleNewState() override;
     const lib::NodeState &getDerivedNodeState(document::BucketSpace bucketSpace) const;
 
+    void append_node_identity(std::ostream& target_stream) const;
 };
 
 } // storage

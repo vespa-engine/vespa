@@ -57,7 +57,7 @@ private:
         }
     };
 
-    class Handler;
+    struct Handler;
 
     SearchServer           &_searchServer;
     DocsumServer           &_docsumServer;

@@ -7,6 +7,7 @@ using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using vespalib::eval::ValueType;
+using search::GrowStrategy;
 
 
 struct Fixture
@@ -98,6 +99,15 @@ TEST("test operator== on attribute config for tensor type")
     EXPECT_EQUAL(sparse_x, cfg3.tensorType());
     EXPECT_TRUE(!cfg3.tensorType().is_error());
     EXPECT_TRUE(cfg1 != cfg3);
+}
+
+TEST("Test GrowStrategy consistency") {
+    GrowStrategy g(1024, 0.5, 17, 0.4f);
+    EXPECT_EQUAL(1024u, g.getDocsInitialCapacity());
+    EXPECT_EQUAL(50u, g.getDocsGrowPercent());
+    EXPECT_EQUAL(0.5, g.getDocsGrowFactor());
+    EXPECT_EQUAL(17u, g.getDocsGrowDelta());
+    EXPECT_EQUAL(0.4f, g.getMultiValueAllocGrowFactor());
 }
 
 

@@ -8,7 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Optional;
+import java.util.Collections;
 
 import static com.yahoo.config.provision.ClusterSpec.Type.admin;
 import static com.yahoo.config.provision.ClusterSpec.Type.container;
@@ -153,7 +153,7 @@ public class HostResourceTest {
     }
 
     private static ClusterSpec clusterSpec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0), Version.fromString("6.42"), false);
+        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0), Version.fromString("6.42"), false, Collections.emptySet());
     }
 
     private HostResource mockHostResource(MockRoot root) {

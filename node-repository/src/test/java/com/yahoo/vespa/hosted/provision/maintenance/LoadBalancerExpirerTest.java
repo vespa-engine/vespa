@@ -5,17 +5,16 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -29,12 +28,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class LoadBalancerExpirerTest {
 
-    private ProvisioningTester tester;
-
-    @Before
-    public void before() {
-        tester = new ProvisioningTester(Zone.defaultZone());
-    }
+    private ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
     public void test_maintain() {
@@ -87,7 +81,7 @@ public class LoadBalancerExpirerTest {
     private void deployApplication(ApplicationId application, ClusterSpec.Id cluster) {
         tester.makeReadyNodes(10, "default");
         List<HostSpec> hosts = tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.container, cluster,
-                                                                               Vtag.currentVersion, false),
+                                                                               Vtag.currentVersion, false, Collections.emptySet()),
                                               2, 1,
                                               "default");
         tester.activate(application, hosts);

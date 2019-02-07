@@ -11,7 +11,7 @@
 
 namespace storage::framework {
 
-class StatusReporter;
+struct StatusReporter;
 
 struct StatusReporterMap {
     virtual ~StatusReporterMap() {}

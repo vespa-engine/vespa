@@ -334,7 +334,7 @@ void ByteBuffer::getNumericNetwork(int16_t & v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        uint16_t val = *(uint16_t *) getBufferAtPos();
+        uint16_t val = *(uint16_t *) (void *) getBufferAtPos();
         v = ntohs(val);
         incPosNoCheck(sizeof(v));
     }
@@ -345,7 +345,7 @@ void ByteBuffer::getNumeric(int16_t & v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        v = *(int16_t *) getBufferAtPos();
+        v = *(int16_t *) (void *) getBufferAtPos();
         incPosNoCheck(sizeof(v));
     }
 }
@@ -356,7 +356,7 @@ void ByteBuffer::putNumericNetwork(int16_t v) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
         uint16_t val = htons(v);
-        *(uint16_t *) getBufferAtPos() = val;
+        *(uint16_t *) (void *) getBufferAtPos() = val;
         incPosNoCheck(sizeof(v));
     }
 }
@@ -366,7 +366,7 @@ void ByteBuffer::putNumeric(int16_t v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        *(int16_t *) getBufferAtPos() = v;
+        *(int16_t *) (void *) getBufferAtPos() = v;
         incPosNoCheck(sizeof(v));
     }
 }
@@ -376,7 +376,7 @@ void ByteBuffer::getNumericNetwork(int32_t & v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        uint32_t val = *(uint32_t *) getBufferAtPos();
+        uint32_t val = *(uint32_t *) (void *) getBufferAtPos();
         v = ntohl(val);
         incPosNoCheck(sizeof(v));
     }
@@ -387,7 +387,7 @@ void ByteBuffer::getNumeric(int32_t & v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        v = *(int32_t *) getBufferAtPos();
+        v = *(int32_t *) (void *) getBufferAtPos();
         incPosNoCheck(sizeof(v));
     }
 }
@@ -399,7 +399,7 @@ void ByteBuffer::putNumericNetwork(int32_t v) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
         uint32_t val = htonl(v);
-        *(uint32_t *) getBufferAtPos() = val;
+        *(uint32_t *) (void *) getBufferAtPos() = val;
         incPosNoCheck(sizeof(v));
     }
 }
@@ -409,7 +409,7 @@ void ByteBuffer::putNumeric(int32_t v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        *(int32_t *) getBufferAtPos() = v;
+        *(int32_t *) (void *) getBufferAtPos() = v;
         incPosNoCheck(sizeof(v));
     }
 }
@@ -428,7 +428,7 @@ void ByteBuffer::getNumeric(float & v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        v = *(float *) getBufferAtPos();
+        v = *(float *) (void *) getBufferAtPos();
         incPosNoCheck(sizeof(v));
     }
 }
@@ -447,7 +447,7 @@ void ByteBuffer::putNumeric(float v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        *(float *) getBufferAtPos() = v;
+        *(float *) (void *) getBufferAtPos() = v;
         incPosNoCheck(sizeof(v));
     }
 }
@@ -456,7 +456,7 @@ void ByteBuffer::getNumeric(int64_t& v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        v = *(int64_t *) getBufferAtPos();
+        v = *(int64_t *) (void *) getBufferAtPos();
         incPosNoCheck(sizeof(v));
     }
 }
@@ -465,7 +465,7 @@ void ByteBuffer::putNumeric(int64_t v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        *(int64_t *) getBufferAtPos() = v;
+        *(int64_t *) (void *) getBufferAtPos() = v;
         incPosNoCheck(sizeof(v));
     }
 }
@@ -474,7 +474,7 @@ void ByteBuffer::getNumeric(double& v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        v = *(double *) getBufferAtPos();
+        v = *(double *) (void *) getBufferAtPos();
         incPosNoCheck(sizeof(v));
     }
 }
@@ -483,7 +483,7 @@ void ByteBuffer::putNumeric(double v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        *(double *) getBufferAtPos() = v;
+        *(double *) (void *) getBufferAtPos() = v;
         incPosNoCheck(sizeof(v));
     }
 }

@@ -10,6 +10,6 @@ struct DummyItem {};
 
 } // namespace vespalib::ws::<unnamed>
 
-template class Handler<DummyItem>;
+template struct Handler<DummyItem>;
 
 } // namespace vespalib::ws

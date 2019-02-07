@@ -24,7 +24,7 @@ namespace document { class DocumentTypeRepo; }
 namespace storage {
 
 class StorageNode;
-class StorageNodeContext;
+struct StorageNodeContext;
 
 class Process : public ApplicationGenerationFetcher {
 protected:

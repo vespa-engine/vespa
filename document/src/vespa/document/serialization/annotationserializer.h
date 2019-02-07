@@ -13,7 +13,7 @@ class Annotation;
 class Span;
 class SpanList;
 class SimpleSpanList;
-class SpanNode;
+struct SpanNode;
 class SpanTree;
 
 class AnnotationSerializer : private SpanTreeVisitor {

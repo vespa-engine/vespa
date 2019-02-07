@@ -45,6 +45,7 @@ bool operator == (const Inspector & a, const Inspector & b)
     if (equal) {
         switch (a.type().getId()) {
         case NIX::ID:
+            equal = a.valid() == b.valid();
             break;
         case BOOL::ID:
             equal = a.asBool() == b.asBool();

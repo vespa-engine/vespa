@@ -10,9 +10,8 @@ namespace config {
 /**
  * Factory for creating config requests depending on protocol version;
  */
-FRTConfigRequestFactory::FRTConfigRequestFactory(int protocolVersion, int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType)
-    : _protocolVersion(protocolVersion),
-      _traceLevel(traceLevel),
+FRTConfigRequestFactory::FRTConfigRequestFactory([[maybe_unused]] int protocolVersion, int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType)
+    : _traceLevel(traceLevel),
       _vespaVersion(vespaVersion),
       _hostName(vespalib::HostName::get()),
       _compressionType(compressionType)
@@ -26,7 +25,7 @@ FRTConfigRequest::UP
 FRTConfigRequestFactory::createConfigRequest(const ConfigKey & key, Connection * connection,
                                              const ConfigState & state, int64_t serverTimeout) const
 {
-    return make_unique<FRTConfigRequestV3>(connection, key, state.md5, state.generation, 0u, _hostName,
+    return make_unique<FRTConfigRequestV3>(connection, key, state.md5, state.generation, _hostName,
                                            serverTimeout, Trace(_traceLevel), _vespaVersion, _compressionType);
 }
 

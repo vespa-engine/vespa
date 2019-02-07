@@ -17,6 +17,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author geirst
@@ -133,8 +134,10 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
     public void requireThatWeCanParseResizingTag() {
         Tuning t = createTuning(parseXml("<resizing>",
                 "<initialdocumentcount>128</initialdocumentcount>",
+                "<amortize-count>13</amortize-count>",
                 "</resizing>"));
         assertEquals(128, t.searchNode.resizing.initialDocumentCount.intValue());
+        assertEquals(13, t.searchNode.resizing.amortizeCount.intValue());
     }
 
     @Test
@@ -143,13 +146,35 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "<write>directio</write>",
                 "<read>normal</read>",
                 "<search>mmap</search>",
-                "</io>", "</index>"));
+                "</io>",
+                "<warmup>" +
+                "<time>178</time>",
+                "<unpack>true</unpack>",
+                "</warmup>",
+                "</index>"));
         assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.index.io.write);
         assertEquals(Tuning.SearchNode.IoType.NORMAL, t.searchNode.index.io.read);
         assertEquals(Tuning.SearchNode.IoType.MMAP, t.searchNode.index.io.search);
+        assertEquals(178, t.searchNode.index.warmup.time, DELTA);
+        assertTrue(t.searchNode.index.warmup.unpack);
         String cfg = getProtonCfg(t);
         assertThat(cfg, containsString("indexing.write.io DIRECTIO"));
         assertThat(cfg, containsString("indexing.read.io NORMAL"));
+        assertThat(cfg, containsString("index.warmup.time 178"));
+        assertThat(cfg, containsString("index.warmup.unpack true"));
+    }
+
+    @Test
+    public void requireThatWeCanParseRemovedDBTag() {
+        Tuning t = createTuning(parseXml("<removed-db>", "<prune>",
+                "<age>19388</age>",
+                "<interval>193</interval>",
+                "</prune>", "</removed-db>"));
+        assertEquals(19388, t.searchNode.removedDB.prune.age, DELTA);
+        assertEquals(193, t.searchNode.removedDB.prune.interval, DELTA);
+        String cfg = getProtonCfg(t);
+        assertThat(cfg, containsString("pruneremoveddocumentsinterval 193"));
+        assertThat(cfg, containsString("pruneremoveddocumentsage 19388"));
     }
 
     @Test

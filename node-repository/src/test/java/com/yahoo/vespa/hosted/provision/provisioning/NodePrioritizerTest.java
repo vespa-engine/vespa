@@ -35,40 +35,40 @@ public class NodePrioritizerTest {
         nodes.add(b);
 
         // Only one node - should be obvious what to prefer
-        Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeReloacted(nodes, b, parent));
+        Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, b, parent));
 
         // Two equal nodes - choose lexically
         Node a = createNode(parent, "a", "d2");
         nodes.add(a);
-        Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeReloacted(nodes, a, parent));
-        Assert.assertFalse(NodePrioritizer.isPreferredNodeToBeReloacted(nodes, b, parent));
+        Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, a, parent));
+        Assert.assertFalse(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, b, parent));
 
         // Smallest node should be preferred
         Node c = createNode(parent, "c", "d1");
         nodes.add(c);
-        Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeReloacted(nodes, c, parent));
+        Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, c, parent));
 
         // Unallocated over allocated
-        ClusterSpec spec = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("mycluster"), ClusterSpec.Group.from(0), Version.fromString("6.142.22"), false);
+        ClusterSpec spec = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("mycluster"), ClusterSpec.Group.from(0), Version.fromString("6.142.22"), false, Collections.emptySet());
         c = c.allocate(ApplicationId.defaultId(), ClusterMembership.from(spec, 0), Instant.now());
         nodes.remove(c);
         nodes.add(c);
         Node d = createNode(parent, "d", "d1");
         nodes.add(d);
-        Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeReloacted(nodes, d, parent));
-        Assert.assertFalse(NodePrioritizer.isPreferredNodeToBeReloacted(nodes, c, parent));
+        Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, d, parent));
+        Assert.assertFalse(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, c, parent));
 
         // Container over content
-        ClusterSpec spec2 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("mycluster"), ClusterSpec.Group.from(0), Version.fromString("6.142.22"), false);
+        ClusterSpec spec2 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("mycluster"), ClusterSpec.Group.from(0), Version.fromString("6.142.22"), false, Collections.emptySet());
         d = d.allocate(ApplicationId.defaultId(), ClusterMembership.from(spec2, 0), Instant.now());
         nodes.remove(d);
         nodes.add(d);
-        Assert.assertFalse(NodePrioritizer.isPreferredNodeToBeReloacted(nodes, c, parent));
-        Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeReloacted(nodes, d, parent));
+        Assert.assertFalse(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, c, parent));
+        Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, d, parent));
     }
 
     private static Node createNode(Node parent, String hostname, String flavor) {
-        return Node.createDockerNode(Collections.singleton("127.0.0.1"), new HashSet<>(), hostname, Optional.of(parent.hostname()),
+        return Node.createDockerNode(Collections.singleton("127.0.0.1"), new HashSet<>(), hostname, parent.hostname(),
                                      flavors.getFlavorOrThrow(flavor), NodeType.tenant);
     }
 

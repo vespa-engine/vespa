@@ -15,7 +15,7 @@ class JrtMetrics {
 
     private final TransportMetrics transportMetrics = TransportMetrics.getInstance();
     private final Metric metric;
-    private Snapshot previousSnapshot = transportMetrics.snapshot();
+    private Snapshot previousSnapshot = Snapshot.EMPTY;
 
     JrtMetrics(Metric metric) {
         this.metric = metric;
@@ -24,12 +24,18 @@ class JrtMetrics {
     void emitMetrics() {
         Snapshot snapshot = transportMetrics.snapshot();
         Snapshot changesSincePrevious = snapshot.changesSince(previousSnapshot);
-        metric.add("jrt.transport.tls-certificate-verification-failures", changesSincePrevious.tlsCertificateVerificationFailures(), null);
-        metric.add("jrt.transport.peer-authorization-failures", changesSincePrevious.peerAuthorizationFailures(), null);
-        metric.add("jrt.transport.server.tls-connections-established", changesSincePrevious.serverTlsConnectionsEstablished(), null);
-        metric.add("jrt.transport.client.tls-connections-established", changesSincePrevious.clientTlsConnectionsEstablished(), null);
-        metric.add("jrt.transport.server.unencrypted-connections-established", changesSincePrevious.serverUnencryptedConnectionsEstablished(), null);
-        metric.add("jrt.transport.client.unencrypted-connections-established", changesSincePrevious.clientUnencryptedConnectionsEstablished(), null);
+        increment("jrt.transport.tls-certificate-verification-failures", changesSincePrevious.tlsCertificateVerificationFailures());
+        increment("jrt.transport.peer-authorization-failures", changesSincePrevious.peerAuthorizationFailures());
+        increment("jrt.transport.server.tls-connections-established", changesSincePrevious.serverTlsConnectionsEstablished());
+        increment("jrt.transport.client.tls-connections-established", changesSincePrevious.clientTlsConnectionsEstablished());
+        increment("jrt.transport.server.unencrypted-connections-established", changesSincePrevious.serverUnencryptedConnectionsEstablished());
+        increment("jrt.transport.client.unencrypted-connections-established", changesSincePrevious.clientUnencryptedConnectionsEstablished());
         previousSnapshot = snapshot;
+    }
+
+    private void increment(String metricName, long countIncrement) {
+        if (countIncrement > 0) {
+            metric.add(metricName, countIncrement, null);
+        }
     }
 }

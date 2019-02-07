@@ -34,7 +34,7 @@
     <intVal>1</intVal>
   </config>
 
-  <jdisc id='qrsCluster_1' version='1.0'>
+  <container id='qrsCluster_1' version='1.0'>
     <secret-store type="oath-ckms">
       <!-- NOTE: when removing (or adding) an environment, the rnc schema must also be updated! -->
       <group name="foo" environment="alpha" />
@@ -206,11 +206,14 @@
     </server>
 
     <nodes jvm-options="-XX:+PrintGCDetails -XX:+PrintGCTimeStamps">
+      <environment-variables>
+        <TEST_VAR>7</TEST_VAR>
+      </environment-variables>
       <node hostalias="host1" />
       <node hostalias="host1">
         <server-port id="myServer" port="4090" />
       </node>
     </nodes>
-  </jdisc>
+  </container>
 
 </services>

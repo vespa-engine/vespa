@@ -10,10 +10,11 @@
 #include <vespa/eval/eval/value_type.h>
 
 namespace vespalib {
-namespace eval { class BinaryOperation; }
+namespace eval { struct BinaryOperation; }
 namespace tensor {
 
 class TensorVisitor;
+class CellValues;
 
 /**
  * Interface for operations on a tensor (sparse multi-dimensional array).
@@ -33,6 +34,12 @@ struct Tensor : public eval::Tensor
     virtual Tensor::UP apply(const CellFunction &func) const = 0;
     virtual Tensor::UP join(join_fun_t function, const Tensor &arg) const = 0;
     virtual Tensor::UP reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const = 0;
+    /*
+     * Creates a new tensor by modifying the underlying cells matching
+     * the given cells applying a join function to determine the new
+     * cell value.
+     */
+    virtual std::unique_ptr<Tensor> modify(join_fun_t op, const CellValues &cellValues) const = 0;
     virtual bool equals(const Tensor &arg) const = 0; // want to remove, but needed by document
     virtual Tensor::UP clone() const = 0; // want to remove, but needed by document
     virtual eval::TensorSpec toSpec() const = 0;

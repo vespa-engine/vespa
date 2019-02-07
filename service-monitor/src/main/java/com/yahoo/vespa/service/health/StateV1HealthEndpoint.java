@@ -3,7 +3,7 @@ package com.yahoo.vespa.service.health;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.service.executor.RunletExecutor;
-import com.yahoo.vespa.service.model.ServiceId;
+import com.yahoo.vespa.service.monitor.ServiceId;
 
 import java.net.URL;
 import java.time.Duration;

@@ -69,10 +69,16 @@ public class AdjustPositionSummaryFields extends Processor {
         summaryField.setTransform(SummaryTransform.GEOPOS);
         summaryField.getSources().clear();
         summaryField.addSource(source);
-        ensureSummaryField(summary, PositionDataType.getPositionSummaryFieldName(summaryField.getName()),
-                DataType.getArray(DataType.STRING), source, SummaryTransform.POSITIONS);
-        ensureSummaryField(summary, PositionDataType.getDistanceSummaryFieldName(summaryField.getName()),
-                DataType.INT, source, SummaryTransform.DISTANCE);
+        ensureSummaryField(summary,
+                           PositionDataType.getPositionSummaryFieldName(summaryField.getName()),
+                           DataType.getArray(DataType.STRING),
+                           source,
+                           SummaryTransform.POSITIONS);
+        ensureSummaryField(summary,
+                           PositionDataType.getDistanceSummaryFieldName(summaryField.getName()),
+                           DataType.INT,
+                           source,
+                           SummaryTransform.DISTANCE);
     }
 
     private void ensureSummaryField(DocumentSummary summary, String fieldName, DataType dataType, Source source, SummaryTransform transform) {

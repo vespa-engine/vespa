@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
 public class ClusterTest {
 
     @Test
-    public void requireThatContentSearchIsApplied() throws ParseException {
+    public void requireThatContentSearchIsApplied() {
         ContentCluster cluster = newContentCluster(joinLines("<search>",
                 "  <query-timeout>1.1</query-timeout>",
                 "  <visibility-delay>2.3</visibility-delay>",
@@ -64,7 +64,7 @@ public class ClusterTest {
     }
 
     @Test
-    public void requireThatDispatchTuningIsApplied() throws ParseException {
+    public void requireThatDispatchTuningIsApplied()  {
         ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
                 joinLines("<tuning>",
                         "</tuning>"));
@@ -79,7 +79,7 @@ public class ClusterTest {
     }
 
     @Test
-    public void requireThatVisibilityDelayIsZeroForGlobalDocumentType() throws ParseException {
+    public void requireThatVisibilityDelayIsZeroForGlobalDocumentType() {
         ContentCluster cluster = newContentCluster(joinLines("<search>",
                 "  <visibility-delay>2.3</visibility-delay>",
                 "</search>"), true);
@@ -87,19 +87,19 @@ public class ClusterTest {
         assertEquals(0.0, proton.documentdb(0).visibilitydelay(), 1E-6);
     }
 
-    private static ContentCluster newContentCluster(String contentSearchXml) throws ParseException {
+    private static ContentCluster newContentCluster(String contentSearchXml) {
         return newContentCluster(contentSearchXml, "", false);
     }
 
-    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml) throws ParseException {
+    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml) {
         return newContentCluster(contentSearchXml, searchNodeTuningXml, false);
     }
 
-    private static ContentCluster newContentCluster(String contentSearchXml, boolean globalDocType) throws ParseException {
+    private static ContentCluster newContentCluster(String contentSearchXml, boolean globalDocType) {
         return newContentCluster(contentSearchXml, "", globalDocType);
     }
 
-    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml, boolean globalDocType) throws ParseException {
+    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml, boolean globalDocType) {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withHosts(joinLines(
                         "<hosts>",

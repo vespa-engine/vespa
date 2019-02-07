@@ -6,7 +6,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
-import com.yahoo.vespa.service.model.ServiceId;
+import com.yahoo.vespa.service.monitor.ServiceId;
 import com.yahoo.vespa.service.monitor.ConfigserverUtil;
 import org.junit.Test;
 

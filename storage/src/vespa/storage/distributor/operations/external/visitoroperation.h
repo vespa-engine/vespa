@@ -11,7 +11,7 @@
 
 namespace document { class Document; }
 
-namespace storage { class VisitorMetricSet; }
+namespace storage { struct VisitorMetricSet; }
 namespace storage::lib { class ClusterState; }
 
 namespace storage::distributor {

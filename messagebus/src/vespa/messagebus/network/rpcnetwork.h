@@ -105,6 +105,8 @@ private:
      */
     void send(SendContext &ctx);
 
+    static vespalib::string buildRecipientListString(const SendContext& ctx);
+
 protected:
     /**
      * Returns the version of this network. This gets called when the

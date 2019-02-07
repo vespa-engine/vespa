@@ -10,7 +10,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/config-attributes.h>
 
-namespace searchcorespi { namespace index { class IThreadService; } }
+namespace searchcorespi { namespace index { struct IThreadService; } }
 
 namespace proton {
 

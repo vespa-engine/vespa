@@ -12,10 +12,15 @@ using namespace document;
 
 namespace {
 
+template <typename S>
+void assign(S &lhs, const S &rhs) {
+    lhs = rhs;
+}
+
 TEST("require that ArrayDataType can be assigned to.") {
     ArrayDataType type1(*DataType::STRING);
     ArrayDataType type2(*DataType::INT);
-    type1 = type1;
+    assign(type1, type1);
     EXPECT_EQUAL(*DataType::STRING, type1.getNestedType());
     type1 = type2;
     EXPECT_EQUAL(*DataType::INT, type1.getNestedType());

@@ -24,7 +24,11 @@ public class DockerHostCapacity {
     private final NodeList allNodes;
 
     public DockerHostCapacity(List<Node> allNodes) {
-        this.allNodes = new NodeList(allNodes);
+        this(new NodeList(allNodes));
+    }
+
+    public DockerHostCapacity(NodeList allNodes) {
+        this.allNodes = allNodes;
     }
 
     /**
@@ -75,14 +79,14 @@ public class DockerHostCapacity {
         return allNodes.asList().stream()
                 .filter(n -> n.type().equals(NodeType.host))
                 .map(n -> freeCapacityOf(n, false))
-                .reduce(new ResourceCapacity(), ResourceCapacity::add);
+                .reduce(ResourceCapacity.NONE, ResourceCapacity::add);
     }
 
     public ResourceCapacity getCapacityTotal() {
         return allNodes.asList().stream()
                 .filter(n -> n.type().equals(NodeType.host))
-                .map(ResourceCapacity::new)
-                .reduce(new ResourceCapacity(), ResourceCapacity::add);
+                .map(ResourceCapacity::of)
+                .reduce(ResourceCapacity.NONE, ResourceCapacity::add);
     }
 
 
@@ -114,16 +118,12 @@ public class DockerHostCapacity {
      */
     public ResourceCapacity freeCapacityOf(Node dockerHost, boolean treatInactiveOrRetiredAsUnusedCapacity) {
         // Only hosts have free capacity
-        if (!dockerHost.type().equals(NodeType.host)) return new ResourceCapacity();
+        if (!dockerHost.type().equals(NodeType.host)) return ResourceCapacity.NONE;
 
-        ResourceCapacity hostCapacity = new ResourceCapacity(dockerHost);
-        for (Node container : allNodes.childrenOf(dockerHost).asList()) {
-            boolean isUsedCapacity = !(treatInactiveOrRetiredAsUnusedCapacity && isInactiveOrRetired(container));
-            if (isUsedCapacity) {
-                hostCapacity.subtract(container);
-            }
-        }
-        return hostCapacity;
+        return allNodes.childrenOf(dockerHost).asList().stream()
+                .filter(container -> !(treatInactiveOrRetiredAsUnusedCapacity && isInactiveOrRetired(container)))
+                .map(ResourceCapacity::of)
+                .reduce(ResourceCapacity.of(dockerHost), ResourceCapacity::subtract);
     }
 
     private boolean isInactiveOrRetired(Node node) {

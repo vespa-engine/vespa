@@ -87,6 +87,8 @@ public class TransportMetrics {
     }
 
     public static class Snapshot {
+        public static final Snapshot EMPTY = new Snapshot(0, 0, 0, 0, 0, 0);
+
         private final long tlsCertificateVerificationFailures;
         private final long peerAuthorizationFailures;
         private final long serverTlsConnectionsEstablished;

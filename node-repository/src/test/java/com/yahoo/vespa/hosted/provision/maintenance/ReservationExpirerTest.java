@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -58,7 +59,7 @@ public class ReservationExpirerTest {
         assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("bar").instanceName("fuz").build();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Collections.emptySet());
         provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1, null);
         assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.reserved).size());
 

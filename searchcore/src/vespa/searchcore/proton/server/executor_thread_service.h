@@ -6,7 +6,7 @@
 
 namespace proton {
 
-namespace internal { class ThreadId; }
+namespace internal { struct ThreadId; }
 /**
  * Implementation of IThreadService using an underlying thread stack executor
  * with a single thread.

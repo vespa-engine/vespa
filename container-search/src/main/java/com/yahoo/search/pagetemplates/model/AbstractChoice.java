@@ -23,7 +23,6 @@ public abstract class AbstractChoice extends FreezableClass implements PageEleme
         this.method=method;
     }
 
-    // TODO: is this really choices between classes in general, or e.g. subclasses of Section?
     /** Returns true if this choice is (partially or completely) a choice between the given type */
     @SuppressWarnings("rawtypes")
     public abstract boolean isChoiceBetween(Class pageTemplateModelClass);

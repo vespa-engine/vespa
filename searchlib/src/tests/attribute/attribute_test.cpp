@@ -2145,7 +2145,7 @@ AttributeTest::testReaderDuringLastUpdate(const Config &config, bool fs, bool co
     string name(ss.str());
     Config cfg = config;
     cfg.setFastSearch(fs);
-    cfg.setGrowStrategy(GrowStrategy::make(100, 50, 0));
+    cfg.setGrowStrategy(GrowStrategy::make(100, 0.5, 0));
 
     LOG(info, "testReaderDuringLastUpdate(%s)", name.c_str());
     AttributePtr attr = AttributeFactory::createAttribute(name, cfg);

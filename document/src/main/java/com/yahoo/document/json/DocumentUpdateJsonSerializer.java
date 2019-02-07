@@ -40,6 +40,8 @@ import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.RemoveValueUpdate;
+import com.yahoo.document.update.TensorAddUpdate;
+import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.objects.FieldBase;
 import com.yahoo.vespa.objects.Serializer;
@@ -102,7 +104,7 @@ public class DocumentUpdateJsonSerializer
                 }
 
                 Optional<Boolean> createIfNotExistent = update.getOptionalCreateIfNonExistent();
-                if (createIfNotExistent.isPresent()) {
+                if (createIfNotExistent.isPresent() && createIfNotExistent.get()) {
                     generator.writeBooleanField("create", createIfNotExistent.get());
                 }
 
@@ -258,6 +260,30 @@ public class DocumentUpdateJsonSerializer
         @Override
         public void write(ClearValueUpdate clearValueUpdate, DataType superType) {
             wrapIOException(() -> generator.writeNullField("assign"));
+        }
+
+        @Override
+        public void write(TensorModifyUpdate update) {
+            wrapIOException(() -> {
+                generator.writeObjectFieldStart("modify");
+                generator.writeFieldName("operation");
+                generator.writeString(update.getOperation().name);
+                if (update.getValue().getTensor().isPresent()) {
+                    serializeTensorCells(generator, update.getValue().getTensor().get());
+                }
+                generator.writeEndObject();
+            });
+        }
+
+        @Override
+        public void write(TensorAddUpdate update) {
+            wrapIOException(() -> {
+                generator.writeObjectFieldStart("add");
+                if (update.getValue().getTensor().isPresent()) {
+                    serializeTensorCells(generator, update.getValue().getTensor().get());
+                }
+                generator.writeEndObject();
+            });
         }
 
         @Override

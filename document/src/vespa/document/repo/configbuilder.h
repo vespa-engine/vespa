@@ -11,7 +11,7 @@
 
 namespace document::config_builder {
 
-class TypeOrId;
+struct TypeOrId;
 
 struct DatatypeConfig : DocumenttypesConfig::Documenttype::Datatype {
     static int32_t id_counter;

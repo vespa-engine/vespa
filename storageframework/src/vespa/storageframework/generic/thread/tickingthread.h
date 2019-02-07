@@ -25,7 +25,7 @@
 
 namespace storage::framework {
 
-class ThreadPool;
+struct ThreadPool;
 typedef uint32_t ThreadIndex;
 
 /**

@@ -17,7 +17,7 @@ template <typename, typename> class Allocator;
 template <typename> class BufferType;
 
 namespace allocator {
-template <typename, typename ...> class Assigner;
+template <typename, typename ...> struct Assigner;
 }
 
 }
@@ -292,7 +292,7 @@ public:
     template <typename, typename>
     friend class datastore::Allocator;
     template <typename, typename...>
-    friend class datastore::allocator::Assigner;
+    friend struct datastore::allocator::Assigner;
     typedef BTreeNode::Ref Ref;
     typedef datastore::Handle<InternalNodeType> RefPair;
     using ParentType::_keys;
@@ -401,7 +401,7 @@ public:
     template <typename, typename>
     friend class datastore::Allocator;
     template <typename, typename...>
-    friend class datastore::allocator::Assigner;
+    friend struct datastore::allocator::Assigner;
     typedef BTreeNode::Ref Ref;
     typedef datastore::Handle<LeafNodeType> RefPair;
     using ParentType::validSlots;

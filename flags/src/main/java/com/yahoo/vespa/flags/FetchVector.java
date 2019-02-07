@@ -24,7 +24,14 @@ public class FetchVector {
      * Note: If this enum is changed, you must also change {@link DimensionHelper}.
      */
     public enum Dimension {
-        /** Value from ZoneId::value of the form environment.region. */
+        /**
+         * WARNING: DO NOT USE
+         *
+         * <p>ALL flags can be set differently in different zones: This dimension is ONLY useful for the controller
+         * that needs to handle multiple zones.
+         *
+         * <p>Value from ZoneId::value is of the form environment.region.
+         */
         ZONE_ID,
         /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
         APPLICATION_ID,

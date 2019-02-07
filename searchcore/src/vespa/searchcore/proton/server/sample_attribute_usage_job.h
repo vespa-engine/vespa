@@ -6,7 +6,7 @@
 
 namespace proton {
 
-class IAttributeManager;
+struct IAttributeManager;
 class AttributeUsageFilter;
 
 /**

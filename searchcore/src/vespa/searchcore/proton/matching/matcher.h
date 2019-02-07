@@ -31,7 +31,7 @@ namespace search::engine {
     class DocsumRequest;
     class SearchReply;
 }
-namespace search { class IDocumentMetaStore; }
+namespace search { struct IDocumentMetaStore; }
 
 namespace proton::matching {
 

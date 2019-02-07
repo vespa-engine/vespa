@@ -7,6 +7,7 @@ import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.List;
@@ -44,26 +45,24 @@ public class GroupPreparer {
                               List<Node> surplusActiveNodes, MutableInteger highestIndex, int spareCount) {
         try (Mutex lock = nodeRepository.lock(application)) {
 
-            // Lock ready pool to ensure that ready nodes are not simultaneously grabbed by others
-            try (Mutex readyLock = nodeRepository.lockUnallocated()) {
+            // Lock ready pool to ensure that the same nodes are not simultaneously allocated by others
+            try (Mutex allocationLock = nodeRepository.lockAllocation()) {
 
                 // Create a prioritized set of nodes
-                NodePrioritizer prioritizer = new NodePrioritizer(nodeRepository.getNodes(),
-                                                                  application,
-                                                                  cluster,
-                                                                  requestedNodes,
-                                                                  spareCount,
-                                                                  nodeRepository.nameResolver());
+                NodeList nodeList = nodeRepository.list();
+                NodePrioritizer prioritizer = new NodePrioritizer(
+                        nodeList, application, cluster, requestedNodes, spareCount, nodeRepository.nameResolver());
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
-                prioritizer.addNewDockerNodes();
+                prioritizer.addNewDockerNodes(allocationLock);
 
                 // Allocate from the prioritized list
-                NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, nodeRepository);
+                NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,
+                        highestIndex, nodeRepository.zone(), nodeRepository.clock());
                 allocation.offer(prioritizer.prioritize());
-                if (! allocation.fullfilled() && requestedNodes.canFail())
+                if (! allocation.fulfilled() && requestedNodes.canFail())
                     throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
                                                      " in " + application.toShortString() +
                                                      outOfCapacityDetails(allocation));
@@ -73,14 +72,14 @@ public class GroupPreparer {
 
                 // Carry out and return allocation
                 nodeRepository.reserve(allocation.reservableNodes());
-                nodeRepository.addDockerNodes(allocation.newNodes());
+                nodeRepository.addDockerNodes(allocation.newNodes(), allocationLock);
                 surplusActiveNodes.removeAll(allocation.surplusNodes());
                 return allocation.finalNodes(surplusActiveNodes);
             }
         }
     }
 
-    private String outOfCapacityDetails(NodeAllocation allocation) {
+    private static String outOfCapacityDetails(NodeAllocation allocation) {
         if (allocation.wouldBeFulfilledWithoutExclusivity())
             return ": Not enough nodes available due to host exclusivity constraints.";
         else if (allocation.wouldBeFulfilledWithClashingParentHost())

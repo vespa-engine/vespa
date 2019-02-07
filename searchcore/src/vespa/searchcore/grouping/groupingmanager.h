@@ -5,7 +5,7 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 
 namespace search {
-    class RankedHit;
+    struct RankedHit;
     class BitVector;
 }
 

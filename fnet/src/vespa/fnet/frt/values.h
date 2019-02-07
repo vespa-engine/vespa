@@ -9,7 +9,7 @@
 namespace fnet {
     char * copyString(char *dst, const char *src, size_t len);
     char * copyData(char *dst, const void *src, size_t len);
-    class BlobRef;
+    struct BlobRef;
 }
 class FNET_DataBuffer;
 

@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace document {
-class PredicateNode;
+struct PredicateNode;
 
 class PredicateBuilder : private PredicateSlimeVisitor {
     std::vector<PredicateNode *>_nodes;

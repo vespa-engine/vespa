@@ -202,7 +202,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
         argumentType.addField(new FieldDescription(OFFSET.toString(), "integer", "offset start"));
         argumentType.addField(new FieldDescription(HITS.toString(), "integer", "hits count"));
-        // TODO: Should this be added to com.yahoo.search.query.properties.QueryProperties? If not, why not?
         argumentType.addField(new FieldDescription(QUERY_PROFILE.toString(), "string"));
         argumentType.addField(new FieldDescription(SEARCH_CHAIN.toString(), "string"));
         argumentType.addField(new FieldDescription(TRACE_LEVEL.toString(), "integer", "tracelevel"));
@@ -386,32 +385,32 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * one of its dependent objects. This will ensure the appropriate setters are called on this and all
      * dependent objects for the appropriate subset of the given property values
      */
-    private void setFieldsFrom(Properties properties, Map<String,String> context) {
-        setFrom(properties,Query.getArgumentType(), context);
-        setFrom(properties,Model.getArgumentType(), context);
-        setFrom(properties,Presentation.getArgumentType(), context);
-        setFrom(properties,Ranking.getArgumentType(), context);
-        setFrom(properties, Select.getArgumentType(), context);
+    private void setFieldsFrom(Properties properties, Map<String, String> context) {
+        setFrom("", properties, Query.getArgumentType(), context);
     }
 
     /**
      * For each field in the given query profile type, take the corresponding value from originalProperties
-     * (if any) set it to properties().
+     * (if any) set it to properties(), recursively.
      */
-    private void setFrom(Properties originalProperties,QueryProfileType arguments,Map<String,String> context) {
-        String prefix = getPrefix(arguments);
+    private void setFrom(String prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
+        prefix = prefix + getPrefix(arguments);
         for (FieldDescription field : arguments.fields().values()) {
             String fullName = prefix + field.getName();
-            if (field.getType() == FieldType.genericQueryProfileType) {
-                for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName,context).entrySet()) {
+            if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
+                for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName, context).entrySet()) {
                     try {
                         properties().set(fullName + "." + entry.getKey(), entry.getValue(), context);
                     } catch (IllegalArgumentException e) {
                         throw new QueryException("Invalid request parameter", e);
                     }
                 }
-            } else {
-                Object value = originalProperties.get(fullName,context);
+            }
+            else if (field.getType() instanceof QueryProfileFieldType) { // Nested arguments
+                setFrom(prefix, originalProperties, ((QueryProfileFieldType)field.getType()).getQueryProfileType(), context);
+            }
+            else {
+                Object value = originalProperties.get(fullName, context);
                 if (value != null) {
                     try {
                         properties().set(fullName, value, context);
@@ -777,11 +776,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * different from default, while linguistics metadata are not added.
      *
      * @return a valid YQL+ query string or a human readable error message
-     * @see Query#yqlRepresentation(Tuple2, boolean)
+     * @see Query#yqlRepresentation(boolean)
      */
     public String yqlRepresentation() {
         try {
-            return yqlRepresentation(null, true);
+            return yqlRepresentation(true);
         } catch (NullItemException e) {
             return "Query currently a placeholder, NullItem encountered.";
         } catch (RuntimeException e) {
@@ -800,23 +799,22 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
     }
 
+    /** @deprecated remove the ignored segmenterVersion argument from invocations */
+    @Deprecated // TODO: Remove on Vespa 8
+    public String yqlRepresentation(Tuple2<String, Version> segmenterVersion, boolean includeHitsAndOffset) {
+        return yqlRepresentation(includeHitsAndOffset);
+    }
+
     /**
      * Serialize this query as YQL+. This will create a string representation
      * which should always be legal YQL+. If a problem occurs, a
      * RuntimeException is thrown.
      *
-     * @param segmenterVersion
-     *            linguistics metadata used in federation, set to null if the
-     *            annotation is not necessary
-     * @param includeHitsAndOffset
-     *            whether to include hits and offset parameters converted to a
-     *            offset/limit slice
+     * @param includeHitsAndOffset whether to include hits and offset parameters converted to a offset/limit slice
      * @return a valid YQL+ query string
      * @throws RuntimeException if there is a problem serializing the query tree
      */
-    public String yqlRepresentation(@Nullable Tuple2<String, Version> segmenterVersion, boolean includeHitsAndOffset) {
-        String q = VespaSerializer.serialize(this);
-
+    public String yqlRepresentation(boolean includeHitsAndOffset) {
         Set<String> sources = getModel().getSources();
         Set<String> fields = getPresentation().getSummaryFields();
         StringBuilder yql = new StringBuilder("select ");
@@ -835,31 +833,20 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             commaSeparated(yql, sources);
         }
         yql.append(" where ");
-        if (segmenterVersion != null) {
-            yql.append("[{\"segmenter\": {\"version\": \"")
-                    .append(segmenterVersion.second.toString())
-                    .append("\", \"backend\": \"")
-                    .append(segmenterVersion.first).append("\"}}](");
-        }
-        yql.append(q);
-        if (segmenterVersion != null) {
-            yql.append(')');
-        }
+        yql.append(VespaSerializer.serialize(this));
         if (getRanking().getSorting() != null && getRanking().getSorting().fieldOrders().size() > 0) {
             serializeSorting(yql);
         }
         if (includeHitsAndOffset) {
             if (getOffset() != 0) {
-                yql.append(" limit ")
-                        .append(Integer.toString(getHits() + getOffset()))
-                        .append(" offset ")
-                        .append(Integer.toString(getOffset()));
+                yql.append(" limit ").append(getHits() + getOffset())
+                   .append(" offset ").append(getOffset());
             } else if (getHits() != 10) {
-                yql.append(" limit ").append(Integer.toString(getHits()));
+                yql.append(" limit ").append(getHits());
             }
         }
         if (getTimeout() != defaultTimeout) {
-            yql.append(" timeout ").append(Long.toString(getTimeout()));
+            yql.append(" timeout ").append(getTimeout());
         }
         yql.append(';');
         return yql.toString();
@@ -872,29 +859,41 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             if (yql.length() > initLen) {
                 yql.append(", ");
             }
-            final Class<? extends AttributeSorter> sorterType = f.getSorter()
-                    .getClass();
+            Class<? extends AttributeSorter> sorterType = f.getSorter().getClass();
             if (sorterType == Sorting.RawSorter.class) {
-                yql.append("[{\"").append(YqlParser.SORTING_FUNCTION)
-                        .append("\": \"").append(Sorting.RAW).append("\"}]");
+                yql.append("[{\"")
+                   .append(YqlParser.SORTING_FUNCTION)
+                   .append("\": \"")
+                   .append(Sorting.RAW)
+                   .append("\"}]");
             } else if (sorterType == Sorting.LowerCaseSorter.class) {
-                yql.append("[{\"").append(YqlParser.SORTING_FUNCTION)
-                        .append("\": \"").append(Sorting.LOWERCASE)
-                        .append("\"}]");
+                yql.append("[{\"")
+                   .append(YqlParser.SORTING_FUNCTION)
+                   .append("\": \"")
+                   .append(Sorting.LOWERCASE)
+                   .append("\"}]");
             } else if (sorterType == Sorting.UcaSorter.class) {
                 Sorting.UcaSorter uca = (Sorting.UcaSorter) f.getSorter();
                 String ucaLocale = uca.getLocale();
                 Sorting.UcaSorter.Strength ucaStrength = uca.getStrength();
-                yql.append("[{\"").append(YqlParser.SORTING_FUNCTION)
-                        .append("\": \"").append(Sorting.UCA).append("\"");
+                yql.append("[{\"")
+                   .append(YqlParser.SORTING_FUNCTION)
+                   .append("\": \"")
+                   .append(Sorting.UCA)
+                   .append("\"");
                 if (ucaLocale != null) {
-                    yql.append(", \"").append(YqlParser.SORTING_LOCALE)
-                            .append("\": \"").append(ucaLocale).append('"');
+                    yql.append(", \"")
+                       .append(YqlParser.SORTING_LOCALE)
+                       .append("\": \"")
+                       .append(ucaLocale)
+                       .append('"');
                 }
                 if (ucaStrength != Sorting.UcaSorter.Strength.UNDEFINED) {
-                    yql.append(", \"").append(YqlParser.SORTING_STRENGTH)
-                            .append("\": \"").append(ucaStrength.name())
-                            .append('"');
+                    yql.append(", \"")
+                       .append(YqlParser.SORTING_STRENGTH)
+                       .append("\": \"")
+                       .append(ucaStrength.name())
+                       .append('"');
                 }
                 yql.append("}]");
             }
@@ -907,8 +906,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Returns the context of this query, possibly creating it if missing. Returns the context, or null */
     public QueryContext getContext(boolean create) {
-        if (context==null && create)
-            context=new QueryContext(getTraceLevel(),this);
+        if (context == null && create)
+            context = new QueryContext(getTraceLevel(),this);
         return context;
     }
 
@@ -921,7 +920,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** Returns whether the given query is equal to this */
     @Override
     public boolean equals(Object other) {
-        if (this==other) return true;
+        if (this == other) return true;
 
         if ( ! (other instanceof Query)) return false;
         Query q = (Query) other;

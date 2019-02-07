@@ -6,6 +6,7 @@ vespa_define_module(
 
     EXTERNAL_DEPENDS
     lz4
+    xxhash
     zstd
 
     APPS
@@ -15,7 +16,6 @@ vespa_define_module(
     src/apps/vespa-drop-file-from-cache
 
     TESTS
-    src/tests/alignedmemory
     src/tests/alloc
     src/tests/approx
     src/tests/array
@@ -106,6 +106,7 @@ vespa_define_module(
     src/tests/text/utf8
     src/tests/thread
     src/tests/time
+    src/tests/time_tracer
     src/tests/time_tracker
     src/tests/trace
     src/tests/traits
@@ -145,5 +146,4 @@ vespa_define_module(
     src/vespa/vespalib/trace
     src/vespa/vespalib/util
     src/vespa/vespalib/websocket
-    src/vespa/vespalib/xxhash
 )

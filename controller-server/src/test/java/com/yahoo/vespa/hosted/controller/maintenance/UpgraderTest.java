@@ -1233,4 +1233,44 @@ public class UpgraderTest {
         assertFalse(tester.application(application.id()).change().hasTargets());
     }
 
+    @Test
+    public void upgradesToLatestAllowedMajor() {
+        DeploymentTester tester = new DeploymentTester();
+        Version version0 = Version.fromString("6.1");
+        tester.upgradeSystem(version0);
+
+        // Apps target 6 by default
+        tester.upgrader().setTargetMajorVersion(Optional.of(6));
+
+        // All applications deploy on current version
+        Application app1 = tester.createAndDeploy("app1", 1, "default");
+        Application app2 = tester.createAndDeploy("app2", 1, "default");
+
+        // Keep app 1 on current version
+        tester.controller().applications().lockIfPresent(app1.id(), app -> tester.controller().applications().store(app.withChange(app.get().change().withPin())));
+
+        // New version is released
+        Version version1 = Version.fromString("6.2");
+        tester.upgradeSystem(version1);
+        tester.upgrader().maintain();
+
+        // App 2 upgrades
+        tester.completeUpgrade(app2, version1, "default");
+
+        // New major version is released
+        Version version2 = Version.fromString("7.1");
+        tester.upgradeSystem(version2);
+
+        // App 2 is allowed on new major and upgrades
+        tester.controller().applications().lockIfPresent(app2.id(), app -> tester.applications().store(app.withMajorVersion(7)));
+        tester.upgrader().maintain();
+        assertEquals(version2, tester.controller().applications().require(app2.id()).change().platform().get());
+
+        // App 1 is unpinned and upgrades to latest 6
+        tester.controller().applications().lockIfPresent(app1.id(), app -> tester.controller().applications().store(app.withChange(app.get().change().withoutPin())));
+        tester.upgrader().maintain();
+        assertEquals("Application upgrades to latest allowed major", version1,
+                     tester.controller().applications().require(app1.id()).change().platform().get());
+    }
+
 }
