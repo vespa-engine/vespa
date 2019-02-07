@@ -23,7 +23,7 @@ StructuredFieldValue::Iterator::Iterator()
 {
 }
 
-StructuredFieldValue::Iterator::Iterator([[maybe_unused]] const StructuredFieldValue& owner, const Field* first)
+StructuredFieldValue::Iterator::Iterator(const StructuredFieldValue& owner, const Field* first)
     : _iterator(owner.getIterator(first).release()),
       _field(_iterator->getNextField())
 {
