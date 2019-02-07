@@ -94,7 +94,7 @@ public class NodeList implements Iterable<Node> {
                        .map(this::parentOf)
                        .filter(Optional::isPresent)
                        .flatMap(Optional::stream)
-                       .collect(collectingAndThen(Collectors.toList(), NodeList::nonCopyNew));
+                       .collect(collectingAndThen(Collectors.toList(), NodeList::wrap));
     }
 
     /** Returns the parent node of the given child node */
@@ -111,7 +111,7 @@ public class NodeList implements Iterable<Node> {
     public List<Node> asList() { return nodes; }
 
     private NodeList filter(Predicate<Node> predicate) {
-        return nodes.stream().filter(predicate).collect(collectingAndThen(Collectors.toList(), NodeList::nonCopyNew));
+        return nodes.stream().filter(predicate).collect(collectingAndThen(Collectors.toList(), NodeList::wrap));
     }
 
     @Override
@@ -119,7 +119,7 @@ public class NodeList implements Iterable<Node> {
         return nodes.iterator();
     }
 
-    private static NodeList nonCopyNew(List<Node> nodes) {
+    private static NodeList wrap(List<Node> nodes) {
         return new NodeList(nodes, false);
     }
 }
