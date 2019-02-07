@@ -91,7 +91,7 @@ public class FS4InvokerFactory {
             }
         }
 
-        if (failed != null && groupId.isPresent()) {
+        if (failed != null) {
             List<Node> success = new ArrayList<>(nodes.size() - failed.size());
             for (Node node : nodes) {
                 if (!failed.contains(node.key())) {
