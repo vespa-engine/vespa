@@ -25,6 +25,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
@@ -130,7 +131,7 @@ public class DnsMaintainerTest {
         }
     }
 
-    private Map<RecordId, Record> records() {
+    private Map<RecordId, Set<Record>> records() {
         return tester.controllerTester().nameService().records();
     }
 

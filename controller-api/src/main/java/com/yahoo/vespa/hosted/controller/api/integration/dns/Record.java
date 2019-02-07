@@ -45,6 +45,7 @@ public class Record {
     public enum Type {
         A,
         AAAA,
+        ALIAS,
         CNAME,
         MX,
         NS,

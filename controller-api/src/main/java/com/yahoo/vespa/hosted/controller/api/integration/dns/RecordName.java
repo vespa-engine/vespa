@@ -35,9 +35,7 @@ public class RecordName {
 
     @Override
     public String toString() {
-        return "RecordName{" +
-               "name='" + name + '\'' +
-               '}';
+        return name;
     }
 
     public static RecordName from(String name) {

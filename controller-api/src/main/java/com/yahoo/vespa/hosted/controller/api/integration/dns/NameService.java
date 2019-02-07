@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * A managed DNS service.
@@ -17,6 +18,9 @@ public interface NameService {
      * @param canonicalName The canonical name which the alias should point to. This must be a FQDN.
      */
     RecordId createCname(RecordName alias, RecordData canonicalName);
+
+    /** Create a non-standard ALIAS record pointing to given targets. Implementations of this are expected to be idempotent */
+    RecordId createAlias(RecordName name, Set<AliasTarget> targets);
 
     /** Find records matching type and name */
     List<Record> findRecords(Record.Type type, RecordName name);

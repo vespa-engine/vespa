@@ -8,6 +8,8 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
@@ -18,6 +20,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -139,7 +142,9 @@ public class RoutingPolicyMaintainerTest {
 
     private Set<String> records() {
         return tester.controllerTester().nameService().records().values().stream()
-                     .map(r -> r.name().asString())
+                     .flatMap(Collection::stream)
+                     .map(Record::name)
+                     .map(RecordName::asString)
                      .collect(Collectors.toSet());
     }
 
