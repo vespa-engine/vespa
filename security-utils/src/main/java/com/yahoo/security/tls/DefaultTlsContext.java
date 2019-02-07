@@ -7,7 +7,7 @@ import com.yahoo.security.tls.policy.AuthorizedPeers;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import java.nio.file.Path;
+import javax.net.ssl.SSLParameters;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -38,7 +38,8 @@ public class DefaultTlsContext implements TlsContext {
     private static final Logger log = Logger.getLogger(DefaultTlsContext.class.getName());
 
     private final SSLContext sslContext;
-    private final List<String> acceptedCiphers;
+    private final String[] validCiphers;
+    private final String[] validProtocols;
 
     public DefaultTlsContext(List<X509Certificate> certificates,
                              PrivateKey privateKey,
@@ -46,50 +47,77 @@ public class DefaultTlsContext implements TlsContext {
                              AuthorizedPeers authorizedPeers,
                              AuthorizationMode mode,
                              List<String> acceptedCiphers) {
-        this.sslContext = createSslContext(certificates, privateKey, caCertificates, authorizedPeers, mode);
-        this.acceptedCiphers = acceptedCiphers;
+        this(createSslContext(certificates, privateKey, caCertificates, authorizedPeers, mode),
+             acceptedCiphers);
     }
 
-    public DefaultTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
-        TransportSecurityOptions options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
-        this.sslContext = createSslContext(options, mode);
-        this.acceptedCiphers = options.getAcceptedCiphers();
+
+    public DefaultTlsContext(SSLContext sslContext, List<String> acceptedCiphers) {
+        this.sslContext = sslContext;
+        this.validCiphers = getAllowedCiphers(sslContext, acceptedCiphers);
+        this.validProtocols = getAllowedProtocols(sslContext);
     }
 
-    @Override
-    public SSLEngine createSslEngine() {
-        SSLEngine sslEngine = sslContext.createSSLEngine();
-        restrictSetOfEnabledCiphers(sslEngine, acceptedCiphers);
-        restrictTlsProtocols(sslEngine);
-        sslEngine.setNeedClientAuth(true);
-        return sslEngine;
-    }
 
-    private static void restrictSetOfEnabledCiphers(SSLEngine sslEngine, List<String> acceptedCiphers) {
-        String[] validCipherSuites = Arrays.stream(sslEngine.getSupportedCipherSuites())
+    private static String[] getAllowedCiphers(SSLContext sslContext, List<String> acceptedCiphers) {
+        String[] supportedCipherSuites = sslContext.getSupportedSSLParameters().getCipherSuites();
+        String[] validCipherSuites = Arrays.stream(supportedCipherSuites)
                 .filter(suite -> ALLOWED_CIPHER_SUITES.contains(suite) && (acceptedCiphers.isEmpty() || acceptedCiphers.contains(suite)))
                 .toArray(String[]::new);
         if (validCipherSuites.length == 0) {
             throw new IllegalStateException(
                     String.format("None of the allowed cipher suites are supported " +
                                           "(allowed-cipher-suites=%s, supported-cipher-suites=%s, accepted-cipher-suites=%s)",
-                                  ALLOWED_CIPHER_SUITES, List.of(sslEngine.getSupportedCipherSuites()), acceptedCiphers));
+                                  ALLOWED_CIPHER_SUITES, List.of(supportedCipherSuites), acceptedCiphers));
         }
-        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", Arrays.toString(validCipherSuites)));
-        sslEngine.setEnabledCipherSuites(validCipherSuites);
+        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", List.of(validCipherSuites)));
+        return validCipherSuites;
     }
 
-    private static void restrictTlsProtocols(SSLEngine sslEngine) {
-        String[] validProtocols = Arrays.stream(sslEngine.getSupportedProtocols())
+    private static String[] getAllowedProtocols(SSLContext sslContext) {
+        String[] supportedProtocols = sslContext.getSupportedSSLParameters().getProtocols();
+        String[] validProtocols = Arrays.stream(supportedProtocols)
                 .filter(ALLOWED_PROTOCOLS::contains)
                 .toArray(String[]::new);
         if (validProtocols.length == 0) {
             throw new IllegalArgumentException(
                     String.format("None of the allowed protocols are supported (allowed-protocols=%s, supported-protocols=%s)",
-                                  ALLOWED_PROTOCOLS, Arrays.toString(sslEngine.getSupportedProtocols())));
+                                  ALLOWED_PROTOCOLS, List.of(supportedProtocols)));
         }
-        log.log(Level.FINE, () -> String.format("Allowed protocols that are supported: %s", Arrays.toString(validProtocols)));
-        sslEngine.setEnabledProtocols(validProtocols);
+        log.log(Level.FINE, () -> String.format("Allowed protocols that are supported: %s", List.of(validProtocols)));
+        return validProtocols;
+    }
+
+    @Override
+    public SSLContext context() {
+        return sslContext;
+    }
+
+    @Override
+    public SSLParameters parameters() {
+        return createSslParameters();
+    }
+
+    @Override
+    public SSLEngine createSslEngine() {
+        SSLEngine sslEngine = sslContext.createSSLEngine();
+        sslEngine.setSSLParameters(createSslParameters());
+        return sslEngine;
+    }
+
+    @Override
+    public SSLEngine createSslEngine(String peerHost, int peerPort) {
+        SSLEngine sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
+        sslEngine.setSSLParameters(createSslParameters());
+        return sslEngine;
+    }
+
+    private SSLParameters createSslParameters() {
+        SSLParameters newParameters = sslContext.getDefaultSSLParameters();
+        newParameters.setCipherSuites(validCiphers);
+        newParameters.setProtocols(validProtocols);
+        newParameters.setNeedClientAuth(true);
+        return newParameters;
     }
 
     private static SSLContext createSslContext(List<X509Certificate> certificates,
@@ -110,16 +138,5 @@ public class DefaultTlsContext implements TlsContext {
         return builder.build();
     }
 
-    private static SSLContext createSslContext(TransportSecurityOptions options, AuthorizationMode mode) {
-        SslContextBuilder builder = new SslContextBuilder();
-        options.getCertificatesFile()
-                .ifPresent(certificates -> builder.withKeyStore(options.getPrivateKeyFile().get(), certificates));
-        options.getCaCertificatesFile().ifPresent(builder::withTrustStore);
-        if (mode != AuthorizationMode.DISABLE) {
-            options.getAuthorizedPeers().ifPresent(
-                    authorizedPeers -> builder.withTrustManagerFactory(new PeerAuthorizerTrustManagersFactory(authorizedPeers, mode)));
-        }
-        return builder.build();
-    }
 
 }
