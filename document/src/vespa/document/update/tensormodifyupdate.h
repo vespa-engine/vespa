@@ -2,7 +2,7 @@
 
 #include "valueupdate.h"
 
-namespace vespalib::tensor { class Tensor; }
+namespace vespalib::tensor { struct Tensor; }
 
 namespace document {
 

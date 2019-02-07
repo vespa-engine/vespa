@@ -57,11 +57,11 @@ void FieldSetTest::testParsing()
 
     FieldSetRepo repo;
 
-    dynamic_cast<AllFields&>(*repo.parse(docRepo, "[all]"));
-    dynamic_cast<NoFields&>(*repo.parse(docRepo, "[none]"));
-    dynamic_cast<DocIdOnly&>(*repo.parse(docRepo, "[id]"));
-    dynamic_cast<HeaderFields&>(*repo.parse(docRepo, "[header]"));
-    dynamic_cast<BodyFields&>(*repo.parse(docRepo, "[body]"));
+    (void) dynamic_cast<AllFields&>(*repo.parse(docRepo, "[all]"));
+    (void) dynamic_cast<NoFields&>(*repo.parse(docRepo, "[none]"));
+    (void) dynamic_cast<DocIdOnly&>(*repo.parse(docRepo, "[id]"));
+    (void) dynamic_cast<HeaderFields&>(*repo.parse(docRepo, "[header]"));
+    (void) dynamic_cast<BodyFields&>(*repo.parse(docRepo, "[body]"));
 
     FieldSet::UP set = repo.parse(docRepo, "testdoctype1:headerval,content");
     FieldCollection& coll = dynamic_cast<FieldCollection&>(*set);
