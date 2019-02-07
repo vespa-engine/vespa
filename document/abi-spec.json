@@ -3112,6 +3112,7 @@
       "public void <init>(com.yahoo.tensor.Tensor)",
       "public java.util.Optional getTensor()",
       "public com.yahoo.document.TensorDataType getDataType()",
+      "public java.lang.String toString()",
       "public void printXml(com.yahoo.document.serialization.XmlStream)",
       "public void clear()",
       "public void assign(java.lang.Object)",
