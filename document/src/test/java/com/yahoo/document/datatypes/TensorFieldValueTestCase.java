@@ -5,6 +5,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -46,5 +47,13 @@ public class TensorFieldValueTestCase {
         assertTrue(field1.equals(field1));
         assertTrue(field1.equals(field2));
         assertTrue(field1.equals(createFieldValue("{{x:0}:2.0}")));
+    }
+
+    @Test
+    public void requireThatToStringWorks() {
+        TensorFieldValue field1 = createFieldValue("{{x:0}:2.0}");
+        assertEquals("tensor(x{}):{{x:0}:2.0}", field1.toString());
+        TensorFieldValue field2 = new TensorFieldValue(TensorType.fromSpec("tensor(x{})"));
+        assertEquals("null", field2.toString());
     }
 }
