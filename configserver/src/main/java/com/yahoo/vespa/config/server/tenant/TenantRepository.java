@@ -67,7 +67,7 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
     private static final Duration checkForRemovedApplicationsInterval = Duration.ofMinutes(1);
     private static final Logger log = Logger.getLogger(TenantRepository.class.getName());
 
-    private final Map<TenantName, Tenant> tenants = new LinkedHashMap<>();
+    private final Map<TenantName, Tenant> tenants = Collections.synchronizedMap(new LinkedHashMap<>());
     private final GlobalComponentRegistry globalComponentRegistry;
     private final List<TenantListener> tenantListeners = Collections.synchronizedList(new ArrayList<>());
     private final Curator curator;
