@@ -10,7 +10,7 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ConnectorConfig.Builder;
 
 import com.yahoo.jdisc.http.server.jetty.ConnectorFactory;
-import com.yahoo.jdisc.http.ssl.impl.DefaultSslContextFactoryProvider;
+import com.yahoo.jdisc.http.ssl.impl.ConfiguredSslContextFactoryProvider;
 
 /**
  * Guice module for test ConnectorFactories
@@ -46,7 +46,7 @@ public class ConnectorFactoryRegistryModule implements Module {
     private static class StaticKeyDbConnectorFactory extends ConnectorFactory {
 
         public StaticKeyDbConnectorFactory(ConnectorConfig connectorConfig) {
-            super(connectorConfig, new DefaultSslContextFactoryProvider(connectorConfig));
+            super(connectorConfig, new ConfiguredSslContextFactoryProvider(connectorConfig));
         }
 
     }

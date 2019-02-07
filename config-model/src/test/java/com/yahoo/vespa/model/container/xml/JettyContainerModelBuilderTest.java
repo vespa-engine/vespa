@@ -9,7 +9,7 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
-import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.ConfiguredSslProvider;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
@@ -150,21 +150,21 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "</jdisc>");
 
         createModel(root, clusterElem);
-        ConnectorConfig minimalCfg = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/minimal/default-ssl-provider@minimal");
+        ConnectorConfig minimalCfg = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/minimal/configured-ssl-provider@minimal");
         assertTrue(minimalCfg.ssl().enabled());
         assertThat(minimalCfg.ssl().privateKeyFile(), is(equalTo("/foo/key")));
         assertThat(minimalCfg.ssl().certificateFile(), is(equalTo("/foo/cert")));
         assertThat(minimalCfg.ssl().caCertificateFile(), is(equalTo("")));
         assertThat(minimalCfg.ssl().clientAuth(), is(equalTo(ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED)));
 
-        ConnectorConfig withCaCerts = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/with-cacerts/default-ssl-provider@with-cacerts");
+        ConnectorConfig withCaCerts = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/with-cacerts/configured-ssl-provider@with-cacerts");
         assertTrue(withCaCerts.ssl().enabled());
         assertThat(withCaCerts.ssl().privateKeyFile(), is(equalTo("/foo/key")));
         assertThat(withCaCerts.ssl().certificateFile(), is(equalTo("/foo/cert")));
         assertThat(withCaCerts.ssl().caCertificateFile(), is(equalTo("/foo/cacerts")));
         assertThat(withCaCerts.ssl().clientAuth(), is(equalTo(ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED)));
 
-        ConnectorConfig needClientAuth = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/need-client-auth/default-ssl-provider@need-client-auth");
+        ConnectorConfig needClientAuth = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/need-client-auth/configured-ssl-provider@need-client-auth");
         assertTrue(needClientAuth.ssl().enabled());
         assertThat(needClientAuth.ssl().privateKeyFile(), is(equalTo("/foo/key")));
         assertThat(needClientAuth.ssl().certificateFile(), is(equalTo("/foo/cert")));
@@ -173,7 +173,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
 
         ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
-        connectorFactories.forEach(connectorFactory -> assertChildComponentExists(connectorFactory, DefaultSslProvider.COMPONENT_CLASS));
+        connectorFactories.forEach(connectorFactory -> assertChildComponentExists(connectorFactory, ConfiguredSslProvider.COMPONENT_CLASS));
     }
 
     @Test
