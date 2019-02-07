@@ -31,6 +31,7 @@ Vespa per second.
 
 ## Install
 
+
 To get started using Vespa pick one of the quick start documents:
 
 - [Run on a Mac or Linux machine using Docker](https://docs.vespa.ai/documentation/vespa-quick-start.html)
