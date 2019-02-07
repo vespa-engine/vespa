@@ -24,7 +24,11 @@ const unsigned char * sse2_foldaa(const unsigned char * toFoldOrg, size_t sz, un
     int nonAscii = __builtin_ia32_pmovmskb128(toFold[i]);
     if (nonAscii)
     {
+#ifdef __clang__
+      v16qi non8Mask = _G_8bit > toFold[i];
+#else
       v16qi non8Mask = __builtin_ia32_pcmpgtb128(_G_8bit, toFold[i]);
+#endif
       int non8bit = __builtin_ia32_pmovmskb128(non8Mask);
       if (non8bit)
       {
@@ -32,6 +36,22 @@ const unsigned char * sse2_foldaa(const unsigned char * toFoldOrg, size_t sz, un
       }
       break;
     }
+#ifdef __clang__
+    v16qi _0     = toFold[i] > _G_0;
+    v16qi _z     = toFold[i] > _G_z;
+    v2di  _0_z   = v2di(_0) ^ v2di(_z);
+    v2di  toLow  = _0_z & v2di(toFold[i]);
+    v16qi low    = v16qi(toLow | _G_lowCase);
+    _0           = low > _G_0;
+    v16qi _9     = low > _G_9;
+    v16qi _a     = low > _G_a;
+    _z           = low > _G_z;
+    v2di  _0_9_m = v2di(_0) ^ v2di(_9);
+    v2di  _a_z_m = v2di(_a) ^ v2di(_z);
+    v2di  _0_9   = _0_9_m & v2di(low);
+    v2di  _a_z   = _a_z_m & v2di(low);
+    folded[i]    = _0_9 | _a_z;
+#else
     v16qi _0     = __builtin_ia32_pcmpgtb128(toFold[i], _G_0);
     v16qi _z     = __builtin_ia32_pcmpgtb128(toFold[i], _G_z);
     v2di  _0_z   = __builtin_ia32_pxor128(v2di(_0), v2di(_z));
@@ -46,6 +66,7 @@ const unsigned char * sse2_foldaa(const unsigned char * toFoldOrg, size_t sz, un
     v2di  _0_9   = __builtin_ia32_pand128(_0_9_m, v2di(low));
     v2di  _a_z   = __builtin_ia32_pand128(_a_z_m, v2di(low));
     folded[i]    = __builtin_ia32_por128(_0_9, _a_z);
+#endif
 #else
 #   warning "Intel's icc compiler does not like __builtin_ia32_pxor128"
     LOG_ABORT("should not be reached");
@@ -70,11 +91,19 @@ const unsigned char * sse2_foldua(const unsigned char * toFoldOrg, size_t sz, un
   for (size_t m=sz/16; i < m; i++)
   {
 #ifndef __INTEL_COMPILER
+#ifdef __clang__
+    v16qi current = __builtin_ia32_lddqu(reinterpret_cast<const char *>(&toFoldOrg[i*16]));
+#else
     v16qi current = __builtin_ia32_loaddqu(reinterpret_cast<const char *>(&toFoldOrg[i*16]));
+#endif
     int nonAscii = __builtin_ia32_pmovmskb128(current);
     if (nonAscii)
     {
+#ifdef __clang__
+      v16qi non8Mask = _G_8bit > current;
+#else
       v16qi non8Mask = __builtin_ia32_pcmpgtb128(_G_8bit, current);
+#endif
       int non8bit = __builtin_ia32_pmovmskb128(non8Mask);
       if (non8bit)
       {
@@ -82,6 +111,22 @@ const unsigned char * sse2_foldua(const unsigned char * toFoldOrg, size_t sz, un
       }
       break;
     }
+#ifdef __clang__
+    v16qi _0     = current > _G_0;
+    v16qi _z     = current > _G_z;
+    v2di  _0_z   = v2di(_0) ^ v2di(_z);
+    v2di  toLow  = _0_z & v2di(current);
+    v16qi low    = v16qi(toLow | _G_lowCase);
+    _0           = low > _G_0;
+    v16qi _9     = low > _G_9;
+    v16qi _a     = low > _G_a;
+    _z           = low > _G_z;
+    v2di  _0_9_m = v2di(_0) ^ v2di(_9);
+    v2di  _a_z_m = v2di(_a) ^ v2di(_z);
+    v2di  _0_9   = _0_9_m & v2di(low);
+    v2di  _a_z   = _a_z_m & v2di(low);
+    folded[i]    = _0_9 | _a_z;
+#else
     v16qi _0     = __builtin_ia32_pcmpgtb128(current, _G_0);
     v16qi _z     = __builtin_ia32_pcmpgtb128(current, _G_z);
     v2di  _0_z   = __builtin_ia32_pxor128(v2di(_0), v2di(_z));
@@ -96,6 +141,7 @@ const unsigned char * sse2_foldua(const unsigned char * toFoldOrg, size_t sz, un
     v2di  _0_9   = __builtin_ia32_pand128(_0_9_m, v2di(low));
     v2di  _a_z   = __builtin_ia32_pand128(_a_z_m, v2di(low));
     folded[i]    = __builtin_ia32_por128(_0_9, _a_z);
+#endif
 #else
 #   warning "Intel's icc compiler does not like __builtin_ia32_pxor128"
     LOG_ABORT("should not be reached");

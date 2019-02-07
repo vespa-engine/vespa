@@ -90,8 +90,13 @@ inline const char * advance(const char * n, const v16qi zero)
     unsigned zeroCountSum = 0;
     do { // find first '\0' character (the end of the word)
 #ifndef __INTEL_COMPILER
+#ifdef __clang__
+        v16qi tmpCurrent = __builtin_ia32_lddqu(n+zeroCountSum);
+        v16qi tmp0       = tmpCurrent == zero;
+#else
         v16qi tmpCurrent = __builtin_ia32_loaddqu(n+zeroCountSum);
         v16qi tmp0       = __builtin_ia32_pcmpeqb128(tmpCurrent, reinterpret_cast<v16qi>(zero));
+#endif
         charMap = __builtin_ia32_pmovmskb128(tmp0); // 1 in charMap equals to '\0' in input buffer
 #else
 #   warning "Intel's icc compiler does not like __builtin_ia32_xxxxx"
@@ -107,8 +112,13 @@ inline const char * advance(const char * n, const v16qi zero)
     if (!zeroMap) { // only '\0' in last 16 bytes (no new word found)
         do { // find first word character (the next word)
 #ifndef __INTEL_COMPILER
+#ifdef __clang__
+            v16qi tmpCurrent = __builtin_ia32_lddqu(n+zeroCountSum);
+            tmpCurrent  = tmpCurrent > zero;
+#else
             v16qi tmpCurrent = __builtin_ia32_loaddqu(n+zeroCountSum);
             tmpCurrent  = __builtin_ia32_pcmpgtb128(tmpCurrent, reinterpret_cast<v16qi>(zero));
+#endif
             zeroMap = __builtin_ia32_pmovmskb128(tmpCurrent); // 1 in zeroMap equals to word character in input buffer
 #else
 #   warning "Intel's icc compiler does not like __builtin_ia32_xxxxx"
