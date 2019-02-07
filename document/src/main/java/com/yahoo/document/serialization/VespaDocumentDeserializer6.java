@@ -655,6 +655,8 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
                 return new RemoveValueUpdate(fval);
             case TENSORMODIFY:
                 return readTensorModifyUpdate(superType);
+            case TENSORADD:
+                return readTensorAddUpdate(superType);
             default:
                 throw new DeserializationException(
                         "Could not deserialize ValueUpdate, unknown valueUpdateClassID type " + vuTypeId);
@@ -880,7 +882,11 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
     }
 
     protected ValueUpdate readTensorModifyUpdate(DataType type) {
-        throw new DeserializationException("Cannot deserialize tensor modify update, not implemented for Vespa 6");
+        throw new DeserializationException("Cannot deserialize TensorModifyUpdate, not implemented for Vespa 6");
+    }
+
+    protected ValueUpdate readTensorAddUpdate(DataType type) {
+        throw new DeserializationException("Cannot deserialize TensorAddUpdate, not implemented for Vespa 6");
     }
 
 }

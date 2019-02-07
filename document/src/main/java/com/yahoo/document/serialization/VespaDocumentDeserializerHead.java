@@ -6,6 +6,7 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
@@ -36,5 +37,16 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
         TensorFieldValue tensor = new TensorFieldValue(TensorModifyUpdate.convertToCompatibleType(tensorDataType.getTensorType()));
         tensor.deserialize(this);
         return new TensorModifyUpdate(operation, tensor);
+    }
+
+    @Override
+    protected ValueUpdate readTensorAddUpdate(DataType type) {
+        if (!(type instanceof TensorDataType)) {
+            throw new DeserializationException("Expected tensor data type, got " + type);
+        }
+        TensorDataType tensorDataType = (TensorDataType)type;
+        TensorFieldValue tensor = new TensorFieldValue(tensorDataType.getTensorType());
+        tensor.deserialize(this);
+        return new TensorAddUpdate(tensor);
     }
 }

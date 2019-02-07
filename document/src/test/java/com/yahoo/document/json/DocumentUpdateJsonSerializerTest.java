@@ -316,6 +316,25 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
+    public void test_tensor_add_update() {
+        roundtripSerializeJsonAndMatch(inputJson(
+                "{",
+                "  'update': 'DOCUMENT_ID',",
+                "  'fields': {",
+                "    'sparse_tensor': {",
+                "      'add': {",
+                "        'cells': [",
+                "          { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 },",
+                "          { 'address': { 'x': '1', 'y': '2' }, 'value': 3.0 }",
+                "        ]",
+                "      }",
+                "    }",
+                "  }",
+                "}"
+        ));
+    }
+
+    @Test
     public void reference_field_id_can_be_update_assigned_non_empty_id() {
         roundtripSerializeJsonAndMatch(inputJson(
                 "{",

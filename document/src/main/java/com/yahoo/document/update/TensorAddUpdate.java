@@ -32,8 +32,7 @@ public class TensorAddUpdate extends ValueUpdate<TensorFieldValue> {
 
     @Override
     public void serialize(DocumentUpdateWriter data, DataType superType) {
-        // TODO: implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        data.write(this);
     }
 
     @Override
