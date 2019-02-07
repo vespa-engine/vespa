@@ -55,12 +55,23 @@ public class VespaMetricSet {
         metrics.add(new Metric("slobrok.heartbeats.failed.count"));
         metrics.add(new Metric("logd.processed.lines.count"));
 
+        // Java (JRT) TLS metrics
         metrics.add(new Metric("jrt.transport.tls-certificate-verification-failures"));
         metrics.add(new Metric("jrt.transport.peer-authorization-failures"));
         metrics.add(new Metric("jrt.transport.server.tls-connections-established"));
         metrics.add(new Metric("jrt.transport.client.tls-connections-established"));
         metrics.add(new Metric("jrt.transport.server.unencrypted-connections-established"));
         metrics.add(new Metric("jrt.transport.client.unencrypted-connections-established"));
+
+        // C++ TLS metrics
+        metrics.add(new Metric("vds.server.network.tls-handshakes-failed"));
+        metrics.add(new Metric("vds.server.network.peer-authorization-failures"));
+        metrics.add(new Metric("vds.server.network.client.tls-connections-established"));
+        metrics.add(new Metric("vds.server.network.server.tls-connections-established"));
+        metrics.add(new Metric("vds.server.network.client.insecure-connections-established"));
+        metrics.add(new Metric("vds.server.network.server.insecure-connections-established"));
+        metrics.add(new Metric("vds.server.network.tls-connections-broken"));
+        metrics.add(new Metric("vds.server.network.failed-tls-config-reloads"));
 
         return metrics;
     }
