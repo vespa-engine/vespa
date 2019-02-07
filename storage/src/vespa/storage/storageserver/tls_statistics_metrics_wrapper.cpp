@@ -7,9 +7,9 @@ namespace storage {
 TlsStatisticsMetricsWrapper::EndpointMetrics::EndpointMetrics(vespalib::stringref type, metrics::MetricSet* owner)
     : metrics::MetricSet(type, {}, "Endpoint type metrics", owner),
       tls_connections_established("tls-connections-established", {},
-              "Number of secure mTLS client connections established", this),
+              "Number of secure mTLS connections established", this),
       insecure_connections_established("insecure-connections-established", {},
-              "Number of insecure (plaintext) client connections established", this)
+              "Number of insecure (plaintext) connections established", this)
 {}
 
 TlsStatisticsMetricsWrapper::EndpointMetrics::~EndpointMetrics() = default;
