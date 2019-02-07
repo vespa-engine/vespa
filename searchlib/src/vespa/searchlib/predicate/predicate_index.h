@@ -14,7 +14,7 @@
 
 namespace search::predicate {
 
-class PredicateTreeAnnotations;
+struct PredicateTreeAnnotations;
 
 /**
  * PredicateIndex keeps an index of boolean constraints for use with

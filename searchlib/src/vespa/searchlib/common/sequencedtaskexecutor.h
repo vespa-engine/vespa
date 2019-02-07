@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace vespalib {
-    class ExecutorStats;
+    struct ExecutorStats;
     class BlockingThreadStackExecutor;
 }
 

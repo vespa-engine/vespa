@@ -45,7 +45,7 @@ namespace search {
     class AttributeSaver;
     class EnumStoreBase;
     class IAttributeSaveTarget;
-    class IDocumentWeightAttribute;
+    struct IDocumentWeightAttribute;
     class QueryTermSimple;
     class QueryTermBase;
 

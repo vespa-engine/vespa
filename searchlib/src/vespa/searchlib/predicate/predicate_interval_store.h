@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace search::predicate {
-class Interval;
+struct Interval;
 
 /**
  * Stores interval entries in a memory-efficient way.

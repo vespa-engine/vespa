@@ -5,7 +5,7 @@
 #include "searchiterator.h"
 #include <vector>
 
-class MultiSearchRemoveTest;
+struct MultiSearchRemoveTest;
 
 namespace search::queryeval {
 
@@ -17,7 +17,7 @@ class MultiBitVectorIteratorBase;
  **/
 class MultiSearch : public SearchIterator
 {
-    friend class ::MultiSearchRemoveTest;
+    friend struct ::MultiSearchRemoveTest;
     friend class ::search::queryeval::MultiBitVectorIteratorBase;
 public:
     /**

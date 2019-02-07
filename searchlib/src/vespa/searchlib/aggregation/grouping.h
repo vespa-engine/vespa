@@ -8,7 +8,7 @@
 namespace search {
 
 class BitVector;
-class IDocumentMetaStore;
+struct IDocumentMetaStore;
 
 namespace aggregation {
 
