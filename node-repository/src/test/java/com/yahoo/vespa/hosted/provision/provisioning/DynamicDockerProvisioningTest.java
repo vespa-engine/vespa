@@ -60,7 +60,7 @@ public class DynamicDockerProvisioningTest {
      */
     @Test
     public void relocate_nodes_from_spare_hosts() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(4, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
@@ -103,7 +103,7 @@ public class DynamicDockerProvisioningTest {
      */
     @Test
     public void relocate_failed_nodes() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
@@ -160,7 +160,7 @@ public class DynamicDockerProvisioningTest {
      */
     @Test
     public void do_not_relocate_nodes_from_spare_if_no_where_to_relocate_them() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(2, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
@@ -187,7 +187,7 @@ public class DynamicDockerProvisioningTest {
 
     @Test(expected = OutOfCapacityException.class)
     public void multiple_groups_are_on_separate_parent_hosts() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
@@ -206,7 +206,7 @@ public class DynamicDockerProvisioningTest {
         // Test should allocate as much capacity as possible, verify that it is not possible to allocate one more unit
         // Verify that there is still capacity (available spare)
         // Fail one node and redeploy, Verify that one less node is empty.
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
 
         // Setup test
         ApplicationId application1 = tester.makeApplicationId();
@@ -242,7 +242,7 @@ public class DynamicDockerProvisioningTest {
 
     @Test
     public void non_prod_zones_do_not_have_spares() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")), flavorsConfig());
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(3, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-3");
@@ -257,7 +257,7 @@ public class DynamicDockerProvisioningTest {
 
     @Test(expected = OutOfCapacityException.class)
     public void allocation_should_fail_when_host_is_not_active() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeProvisionedNodes(3, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
 
@@ -268,7 +268,7 @@ public class DynamicDockerProvisioningTest {
 
     @Test
     public void provision_dual_stack_containers() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(2, "host-large", NodeType.host, 10, true);
         deployZoneApp(tester);
 

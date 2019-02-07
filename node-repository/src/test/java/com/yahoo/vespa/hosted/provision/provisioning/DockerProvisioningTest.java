@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,7 +40,7 @@ public class DockerProvisioningTest {
 
     @Test
     public void docker_application_deployment() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         ApplicationId application1 = tester.makeApplicationId();
 
         for (int i = 1; i < 10; i++)
@@ -72,7 +71,7 @@ public class DockerProvisioningTest {
 
     @Test
     public void refuses_to_activate_on_non_active_host() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId zoneApplication = tester.makeApplicationId();
         List<Node> parents = tester.makeReadyVirtualDockerHosts(10, "large");
@@ -109,7 +108,7 @@ public class DockerProvisioningTest {
     /** Exclusive app first, then non-exclusive: Should give the same result as below */
     @Test
     public void docker_application_deployment_with_exclusive_app_first() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         for (int i = 1; i <= 4; i++)
             tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host1");
         for (int i = 5; i <= 8; i++)
@@ -121,18 +120,18 @@ public class DockerProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
         prepareAndActivate(application1, 2, true, tester);
-        assertEquals(setOf("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
+        assertEquals(Set.of("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
 
         ApplicationId application2 = tester.makeApplicationId();
         prepareAndActivate(application2, 2, false, tester);
         assertEquals("Application is assigned to separate hosts",
-                     setOf("host3", "host4"), hostsOf(tester.getNodes(application2, Node.State.active)));
+                     Set.of("host3", "host4"), hostsOf(tester.getNodes(application2, Node.State.active)));
     }
 
     /** Non-exclusive app first, then an exclusive: Should give the same result as above */
     @Test
     public void docker_application_deployment_with_exclusive_app_last() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         for (int i = 1; i <= 4; i++)
             tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host1");
         for (int i = 5; i <= 8; i++)
@@ -144,18 +143,18 @@ public class DockerProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
         prepareAndActivate(application1, 2, false, tester);
-        assertEquals(setOf("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
+        assertEquals(Set.of("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
 
         ApplicationId application2 = tester.makeApplicationId();
         prepareAndActivate(application2, 2, true, tester);
         assertEquals("Application is assigned to separate hosts",
-                     setOf("host3", "host4"), hostsOf(tester.getNodes(application2, Node.State.active)));
+                     Set.of("host3", "host4"), hostsOf(tester.getNodes(application2, Node.State.active)));
     }
 
     /** Test making an application exclusive */
     @Test
     public void docker_application_deployment_change_to_exclusive_and_back() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         for (int i = 1; i <= 4; i++)
             tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host1");
         for (int i = 5; i <= 8; i++)
@@ -171,12 +170,12 @@ public class DockerProvisioningTest {
             assertFalse(node.allocation().get().membership().cluster().isExclusive());
 
         prepareAndActivate(application1, 2, true, tester);
-        assertEquals(setOf("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
+        assertEquals(Set.of("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
         for (Node node : tester.getNodes(application1, Node.State.active))
             assertTrue(node.allocation().get().membership().cluster().isExclusive());
 
         prepareAndActivate(application1, 2, false, tester);
-        assertEquals(setOf("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
+        assertEquals(Set.of("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
         for (Node node : tester.getNodes(application1, Node.State.active))
             assertFalse(node.allocation().get().membership().cluster().isExclusive());
     }
@@ -184,7 +183,7 @@ public class DockerProvisioningTest {
     /** Non-exclusive app first, then an exclusive: Should give the same result as above */
     @Test
     public void docker_application_deployment_with_exclusive_app_causing_allocation_failure() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         for (int i = 1; i <= 4; i++)
             tester.makeReadyVirtualDockerNode(i, dockerFlavor, "host1");
         for (int i = 5; i <= 8; i++)
@@ -196,7 +195,7 @@ public class DockerProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
         prepareAndActivate(application1, 2, true, tester);
-        assertEquals(setOf("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
+        assertEquals(Set.of("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
 
         try {
             ApplicationId application2 = ApplicationId.from("tenant1", "app1", "default");
@@ -217,7 +216,7 @@ public class DockerProvisioningTest {
     // In dev, test and staging you get nodes with default flavor, but we should get specified flavor for docker nodes
     @Test
     public void get_specified_flavor_not_default_flavor_for_docker() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.test, RegionName.from("corp-us-east-1")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.test, RegionName.from("corp-us-east-1"))).build();
         ApplicationId application1 = tester.makeApplicationId();
         tester.makeReadyVirtualDockerNodes(1, dockerFlavor, "dockerHost");
 
@@ -227,10 +226,6 @@ public class DockerProvisioningTest {
         NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(1, nodes.size());
         assertEquals(dockerFlavor, nodes.asList().get(0).flavor().canonicalName());
-    }
-
-    private Set<String> setOf(String ... strings) {
-        return Stream.of(strings).collect(Collectors.toSet());
     }
 
     private Set<String> hostsOf(NodeList nodes) {

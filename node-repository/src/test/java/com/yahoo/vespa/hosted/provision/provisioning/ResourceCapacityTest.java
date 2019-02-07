@@ -2,13 +2,8 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provisioning.FlavorsConfig;
-import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
-
-import java.util.Collections;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,8 +36,7 @@ public class ResourceCapacityTest {
         Flavor d3MemFlavor = new Flavor(flavors.flavor(6));
         Flavor d3CPUFlavor = new Flavor(flavors.flavor(7));
 
-        Node nodeHostSmall = node(hostSmallFlavor);
-        ResourceCapacity capacityOfHostSmall = new ResourceCapacity(nodeHostSmall);
+        ResourceCapacity capacityOfHostSmall = ResourceCapacity.of(hostSmallFlavor);
 
         // Assert initial capacities
         assertTrue(capacityOfHostSmall.hasCapacityFor(hostSmallFlavor));
@@ -65,7 +59,7 @@ public class ResourceCapacityTest {
         assertEquals(-1, capacityOfHostSmall.compare(nodeCapacity(d3MemFlavor)));
 
         // Change free capacity and assert on rest capacity
-        capacityOfHostSmall.subtract(node(d1Flavor));
+        capacityOfHostSmall = capacityOfHostSmall.subtract(ResourceCapacity.of(d1Flavor));
         assertEquals(0, capacityOfHostSmall.compare(nodeCapacity(d2Flavor)));
 
         // Assert on rest capacity
@@ -80,11 +74,6 @@ public class ResourceCapacityTest {
     }
 
     private ResourceCapacity nodeCapacity(Flavor flavor) {
-        return new ResourceCapacity(node(flavor));
-    }
-
-    private Node node(Flavor flavor) {
-        return Node.create("fake", Collections.singleton("127.0.0.1"), Collections.emptySet(), "hostA",
-                Optional.empty(), flavor, NodeType.host);
+        return ResourceCapacity.of(flavor);
     }
 }

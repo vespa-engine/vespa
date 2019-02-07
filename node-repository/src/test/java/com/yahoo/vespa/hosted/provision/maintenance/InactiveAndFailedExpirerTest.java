@@ -47,7 +47,7 @@ public class InactiveAndFailedExpirerTest {
 
     @Test
     public void inactive_and_failed_times_out() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         List<Node> nodes = tester.makeReadyNodes(2, "default");
 
         // Allocate then deallocate 2 nodes
@@ -85,7 +85,7 @@ public class InactiveAndFailedExpirerTest {
 
     @Test
     public void reboot_generation_is_increased_when_node_moves_to_dirty() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         List<Node> nodes = tester.makeReadyNodes(2, "default");
 
         // Allocate and deallocate a single node
@@ -117,7 +117,7 @@ public class InactiveAndFailedExpirerTest {
 
     @Test
     public void node_that_wants_to_retire_is_moved_to_parked() throws OrchestrationException {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
                                                   Version.fromString("6.42"), false, Collections.emptySet());
         tester.makeReadyNodes(5, "default");

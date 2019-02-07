@@ -8,36 +8,31 @@ import com.yahoo.vespa.hosted.provision.Node;
  * Represent the capacity in terms of physical resources like memory, disk and cpu.
  * Can represent free, aggregate or total capacity of one or several nodes.
  *
+ * Immutable.
+ *
  * @author smorgrav
  */
 public class ResourceCapacity {
 
-    private double memory;
-    private double cpu;
-    private double disk;
+    public static final ResourceCapacity NONE = new ResourceCapacity(0, 0, 0);
 
-    ResourceCapacity() {
-        memory = 0;
-        cpu = 0;
-        disk = 0;
-    }
+    private final double memory;
+    private final double cpu;
+    private final double disk;
 
-    ResourceCapacity(Node node) {
-        memory = node.flavor().getMinMainMemoryAvailableGb();
-        cpu = node.flavor().getMinCpuCores();
-        disk = node.flavor().getMinDiskAvailableGb();
+    private ResourceCapacity(double memory, double cpu, double disk) {
+        this.memory = memory;
+        this.cpu = cpu;
+        this.disk = disk;
     }
 
     static ResourceCapacity of(Flavor flavor) {
-        ResourceCapacity capacity = new ResourceCapacity();
-        capacity.memory = flavor.getMinMainMemoryAvailableGb();
-        capacity.cpu = flavor.getMinCpuCores();
-        capacity.disk = flavor.getMinDiskAvailableGb();
-        return capacity;
+        return new ResourceCapacity(
+                flavor.getMinMainMemoryAvailableGb(), flavor.getMinCpuCores(), flavor.getMinDiskAvailableGb());
     }
 
     static ResourceCapacity of(Node node) {
-        return new ResourceCapacity(node);
+        return ResourceCapacity.of(node.flavor());
     }
 
     public double getMemory() {
@@ -52,27 +47,16 @@ public class ResourceCapacity {
         return disk;
     }
 
-    static ResourceCapacity composite(ResourceCapacity a, ResourceCapacity b) {
-        ResourceCapacity composite = new ResourceCapacity();
-        composite.memory = a.memory + b.memory;
-        composite.cpu -= a.cpu + b.cpu;
-        composite.disk -=  a.disk + b.disk;
-
-        return composite;
+    public ResourceCapacity subtract(ResourceCapacity other) {
+        return new ResourceCapacity(memory - other.memory,
+                cpu - other.cpu,
+                disk - other.disk);
     }
 
-    void subtract(Node node) {
-        memory -= node.flavor().getMinMainMemoryAvailableGb();
-        cpu -= node.flavor().getMinCpuCores();
-        disk -= node.flavor().getMinDiskAvailableGb();
-    }
-
-    public static ResourceCapacity add(ResourceCapacity a, ResourceCapacity b) {
-        ResourceCapacity result = new ResourceCapacity();
-        result.memory = a.memory + b.memory;
-        result.cpu = a.cpu + b.cpu;
-        result.disk = a.disk + b.disk;
-        return result;
+    public ResourceCapacity add(ResourceCapacity other) {
+        return new ResourceCapacity(memory + other.memory,
+                cpu + other.cpu,
+                disk + other.disk);
     }
 
     boolean hasCapacityFor(ResourceCapacity capacity) {
@@ -92,10 +76,7 @@ public class ResourceCapacity {
         double cpuFactor = Math.floor(cpu/flavor.getMinCpuCores());
         double diskFactor =  Math.floor(disk/flavor.getMinDiskAvailableGb());
 
-        double aggregateFactor = Math.min(memoryFactor, cpuFactor);
-        aggregateFactor = Math.min(aggregateFactor, diskFactor);
-
-        return (int)aggregateFactor;
+        return (int) Math.min(Math.min(memoryFactor, cpuFactor), diskFactor);
     }
 
     /**

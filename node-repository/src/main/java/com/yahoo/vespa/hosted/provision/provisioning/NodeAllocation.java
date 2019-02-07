@@ -6,12 +6,14 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -20,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +32,9 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 class NodeAllocation {
+
+    /** List of all nodes in node-repository */
+    private final NodeList allNodes;
 
     /** The application this list is for */
     private final ApplicationId application;
@@ -60,15 +66,19 @@ class NodeAllocation {
     /** The next membership index to assign to a new node */
     private final MutableInteger highestIndex;
 
-    private final NodeRepository nodeRepository;
+    private final Zone zone;
 
-    NodeAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, MutableInteger highestIndex,
-                   NodeRepository nodeRepository) {
+    private final Clock clock;
+
+    NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
+                   MutableInteger highestIndex, Zone zone, Clock clock) {
+        this.allNodes = allNodes;
         this.application = application;
         this.cluster = cluster;
         this.requestedNodes = requestedNodes;
         this.highestIndex = highestIndex;
-        this.nodeRepository = nodeRepository;
+        this.zone = zone;
+        this.clock = clock;
     }
 
     /**
@@ -128,7 +138,7 @@ class NodeAllocation {
                 }
                 offeredPriority.node = offered.allocate(application,
                                                         ClusterMembership.from(cluster, highestIndex.add(1)),
-                                                        nodeRepository.clock().instant());
+                                                        clock.instant());
                 accepted.add(acceptNode(offeredPriority, false));
             }
         }
@@ -142,7 +152,7 @@ class NodeAllocation {
     }
 
     private boolean checkForClashingParentHost() {
-        return nodeRepository.zone().system() == SystemName.main && nodeRepository.zone().environment().isProduction();
+        return zone.system() == SystemName.main && zone.environment().isProduction();
     }
 
     private boolean offeredNodeHasParentHostnameAlreadyAccepted(Collection<PrioritizableNode> accepted, Node offered) {
@@ -161,7 +171,7 @@ class NodeAllocation {
      */
     private boolean exclusiveTo(TenantName tenant, Optional<String> parentHostname) {
         if ( ! parentHostname.isPresent()) return true;
-        for (Node nodeOnHost : nodeRepository.list().childrenOf(parentHostname.get())) {
+        for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
             if ( ! nodeOnHost.allocation().isPresent()) continue;
 
             if ( nodeOnHost.allocation().get().membership().cluster().isExclusive() &&
@@ -174,7 +184,7 @@ class NodeAllocation {
     private boolean hostsOnly(TenantName tenant, Optional<String> parentHostname) {
         if ( ! parentHostname.isPresent()) return true; // yes, as host is exclusive
 
-        for (Node nodeOnHost : nodeRepository.list().childrenOf(parentHostname.get())) {
+        for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
             if ( ! nodeOnHost.allocation().isPresent()) continue;
             if ( ! nodeOnHost.allocation().get().owner().tenant().equals(tenant))
                 return false;
@@ -221,7 +231,7 @@ class NodeAllocation {
         } else {
             ++wasRetiredJustNow;
             // Retire nodes which are of an unwanted flavor, retired flavor or have an overlapping parent host
-            node = node.retire(nodeRepository.clock().instant());
+            node = node.retire(clock.instant());
             prioritizableNode.node = node;
         }
         if ( ! node.allocation().get().membership().cluster().equals(cluster)) {
@@ -246,7 +256,7 @@ class NodeAllocation {
     }
 
     /** Returns true if the content of this list is sufficient to meet the request */
-    boolean fullfilled() {
+    boolean fulfilled() {
         return requestedNodes.fulfilledBy(acceptedOfRequestedFlavor);
     }
 
@@ -278,7 +288,7 @@ class NodeAllocation {
         if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0, prefer to retire higher indexes to minimize redistribution
             for (PrioritizableNode node : byDecreasingIndex(nodes)) {
                 if ( ! node.node.allocation().get().membership().retired() && node.node.state().equals(Node.State.active)) {
-                    node.node = node.node.retire(Agent.application, nodeRepository.clock().instant());
+                    node.node = node.node.retire(Agent.application, clock.instant());
                     surplusNodes.add(node.node); // offer this node to other groups
                     if (--deltaRetiredCount == 0) break;
                 }
@@ -306,24 +316,22 @@ class NodeAllocation {
     }
 
     List<Node> reservableNodes() {
-        return nodes.stream().map(n -> n.node)
-                    .filter(n -> n.state() == Node.State.inactive ||
-                                 n.state() == Node.State.ready)
-                    .collect(Collectors.toList());
+        return nodesFilter(n -> n.node.state() == Node.State.inactive || n.node.state() == Node.State.ready);
     }
 
     List<Node> surplusNodes() {
-        return nodes.stream()
-                    .filter(n -> n.isSurplusNode)
-                    .map(n -> n.node)
-                    .collect(Collectors.toList());
+        return nodesFilter(n -> n.isSurplusNode);
     }
 
     List<Node> newNodes() {
+        return nodesFilter(n -> n.isNewNode);
+    }
+
+    private List<Node> nodesFilter(Predicate<PrioritizableNode> predicate) {
         return nodes.stream()
-                    .filter(n -> n.isNewNode)
-                    .map(n -> n.node)
-                    .collect(Collectors.toList());
+                .filter(predicate)
+                .map(n -> n.node)
+                .collect(Collectors.toList());
     }
 
     private List<PrioritizableNode> byDecreasingIndex(Set<PrioritizableNode> nodes) {

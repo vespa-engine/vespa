@@ -11,7 +11,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -39,14 +38,8 @@ public class VirtualNodeProvisioningTest {
     private static final ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false, Collections.emptySet());
     private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"), false, Collections.emptySet());
 
-    private ProvisioningTester tester;
-    private ApplicationId applicationId;
-
-    @Before
-    public void setup() {
-        tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
-        applicationId = tester.makeApplicationId();
-    }
+    private ProvisioningTester tester = new ProvisioningTester.Builder().build();
+    private ApplicationId applicationId = tester.makeApplicationId();
 
     @Test
     public void distinct_parent_host_for_each_node_in_a_cluster() {
@@ -88,7 +81,7 @@ public class VirtualNodeProvisioningTest {
 
         // Allowed to use same parent host for several nodes in same cluster in dev
         {
-            tester = new ProvisioningTester(new Zone(Environment.dev, RegionName.from("us-east")));
+            tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
             tester.makeReadyVirtualDockerNodes(4, "default", "parentHost1");
 
             List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
@@ -101,7 +94,7 @@ public class VirtualNodeProvisioningTest {
 
         // Allowed to use same parent host for several nodes in same cluster in CD (even if prod env)
         {
-            tester = new ProvisioningTester(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east")));
+            tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east"))).build();
             tester.makeReadyVirtualDockerNodes(4, flavor, "parentHost1");
 
             List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
