@@ -515,17 +515,16 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
     LOG(debug, "Stopping the filewriter with startchunkid = %d and ending chunkid = %d done=%d",
                firstChunkId, nextChunkId, done);
     assert(_writeQ.empty());
+    _writeTaskIsRunning = false;
     if (done) {
         assert(_chunkMap.empty());
         for (const ChunkInfo & cm : _chunkInfo) {
             (void) cm;
             assert(cm.valid() && cm.getSize() != 0);
         }
-        _writeTaskIsRunning = false;
         guard.broadcast();
     } else {
         _firstChunkIdToBeWritten = nextChunkId;
-        _writeTaskIsRunning = false;
     }
 }
 
