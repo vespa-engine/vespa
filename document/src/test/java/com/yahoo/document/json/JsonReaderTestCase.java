@@ -1353,16 +1353,6 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void tensor_modify_update_with_multiply_operation_dense() {
-        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.MULTIPLY, "sparse_tensor",
-                inputJson("{",
-                        "  'operation': 'multiply',",
-                        "  'cells': [",
-                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
-    }
-
-
-    @Test
     public void tensor_modify_update_treats_the_input_tensor_as_sparse() {
         // Note that the type of the tensor in the modify update is sparse (it only has mapped dimensions).
         assertTensorModifyUpdate("tensor(x{},y{}):{{x:0,y:0}:2.0, {x:1,y:2}:3.0}",
