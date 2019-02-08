@@ -15,11 +15,10 @@ namespace search::features {
 
 FieldMatchExecutor::FieldMatchExecutor(const IQueryEnvironment & queryEnv,
                                        const FieldInfo & field,
-                                       const fieldmatch::Params & params) :
+                                       [[maybe_unused]] const fieldmatch::Params & params) :
     FeatureExecutor(),
     _splitter(queryEnv, field.id()),
     _field(field),
-    _params(params),
     _cmp(vespalib::make_string("fieldMatch(%s)", _field.name().c_str()),
          _splitter, field, params)
 {

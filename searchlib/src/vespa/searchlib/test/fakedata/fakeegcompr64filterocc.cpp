@@ -159,12 +159,9 @@ setupT(const FakeWord &fw)
 
     typedef FakeWord FW;
     typedef FW::DocWordFeatureList DWFL;
-    typedef FW::DocWordPosFeatureList DWPFL;
 
     DWFL::const_iterator d(fw._postings.begin());
     DWFL::const_iterator de(fw._postings.end());
-    DWPFL::const_iterator p(fw._wordPosFeatures.begin());
-    DWPFL::const_iterator pe(fw._wordPosFeatures.end());
 
     if (d != de) {
         // Prefix support needs counts embedded in posting list

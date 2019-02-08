@@ -74,7 +74,7 @@ StoreBufferWriter::getSingleBuffer() const
     for (const auto &buf : _bufs) {
         res.insert(res.end(), buf->cbegin(), buf->cend());
     }
-    return std::move(res);
+    return res;
 }
 
 }

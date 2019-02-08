@@ -43,7 +43,6 @@ NativeFieldMatchExecutor::NativeFieldMatchExecutor(const IQueryEnvironment & env
     FeatureExecutor(),
     _params(params),
     _queryTerms(),
-    _totalTermWeight(0),
     _divisor(0),
     _md(nullptr)
 {

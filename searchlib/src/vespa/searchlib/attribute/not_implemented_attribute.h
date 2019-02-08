@@ -9,7 +9,7 @@ namespace search {
 struct NotImplementedAttribute : AttributeVector {
     using AttributeVector::AttributeVector;
 
-    virtual void notImplemented() const ;
+    [[noreturn]] virtual void notImplemented() const ;
 
     uint32_t getValueCount(DocId) const override;
     largeint_t getInt(DocId) const override;

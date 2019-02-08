@@ -709,7 +709,7 @@ Group::Value::operator =(const Value & rhs) {
     return *this;
 }
 
-Group::Value::~Value()
+Group::Value::~Value() noexcept
 {
     destruct(_children, getAllChildrenSize());
     setChildrenSize(0);

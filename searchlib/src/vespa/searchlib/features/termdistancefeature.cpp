@@ -13,9 +13,8 @@ namespace features {
 
 
 TermDistanceExecutor::TermDistanceExecutor(const IQueryEnvironment & env,
-                                           const TermDistanceParams & params) :
+                                           [[maybe_unused]] const TermDistanceParams & params) :
     FeatureExecutor(),
-    _params(params),
     _termA(env.getTerm(params.termX)),
     _termB(env.getTerm(params.termY)),
     _md(nullptr)

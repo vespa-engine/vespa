@@ -370,17 +370,6 @@ equalsHelper(const T &lhs, const T &rhs)
 
 template <>
 inline bool
-equalsHelper<float>(const float &lhs, const float &rhs)
-{
-    if (std::isnan(lhs))
-        return std::isnan(rhs);
-    if (std::isnan(rhs))
-        return false;
-    return lhs == rhs;
-}
-
-template <>
-inline bool
 equalsHelper<double>(const double &lhs, const double &rhs)
 {
     if (std::isnan(lhs))

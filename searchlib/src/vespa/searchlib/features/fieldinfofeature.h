@@ -11,7 +11,6 @@ class IndexFieldInfoExecutor : public fef::FeatureExecutor
 private:
     feature_t _type;     // from index env
     feature_t _isFilter; // from index env
-    uint32_t  _field;
     uint32_t  _fieldHandle;
     const fef::MatchData *_md;
 

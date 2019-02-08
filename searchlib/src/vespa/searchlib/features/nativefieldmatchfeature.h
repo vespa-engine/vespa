@@ -47,7 +47,6 @@ private:
     };
     const NativeFieldMatchParams & _params;
     std::vector<MyQueryTerm>       _queryTerms;
-    uint32_t                       _totalTermWeight;
     feature_t                      _divisor;
     const fef::MatchData          *_md;
 

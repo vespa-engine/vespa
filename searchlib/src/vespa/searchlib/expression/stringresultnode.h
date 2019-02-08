@@ -35,7 +35,8 @@ private:
         new (buf) vespalib::string();
     }
     void destroy(void * buf) const override {
-        static_cast<vespalib::string *>(buf)->vespalib::string::~string();
+        using string = vespalib::string;
+        static_cast<string *>(buf)->string::~string();
     }
 
     void decode(const void * buf) override {

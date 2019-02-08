@@ -94,6 +94,7 @@ private:
     template <typename T>
     void loadAllAtOnce(T & loaded, LoadedBufferUP dataBuffer, uint32_t numDocs, ReaderBase & attrReader, bool hasWeight, bool hasIdx);
 
+protected:
     class StringSearchContext : public SearchContext {
     public:
         StringSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched);
@@ -178,6 +179,7 @@ private:
         mutable WeightedConstChar * _buffer;
         std::unique_ptr<vespalib::Regexp>   _regex;
     };
+private:
     SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 };
 

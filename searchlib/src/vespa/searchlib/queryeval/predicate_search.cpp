@@ -109,8 +109,7 @@ PredicateSearch::PredicateSearch(const uint8_t * minFeatureVector,
       _visited(new bool[max_interval_range+1]),
       _termFieldMatchData(tfmda.valid()? tfmda[0] : nullptr),
       _min_feature_vector(minFeatureVector),
-      _interval_range_vector(interval_range_vector),
-      _max_interval_range(max_interval_range)
+      _interval_range_vector(interval_range_vector)
 {
 
     for (size_t i = 0; i < _posting_lists.size(); ++i) {

@@ -17,7 +17,6 @@ private:
     std::vector<uint8_t> _compressed;
     unsigned int _docIdLimit;
     unsigned int _hitDocs;
-    size_t _bitSize;
 public:
     FakeZcbFilterOcc(const FakeWord &fw);
     ~FakeZcbFilterOcc();

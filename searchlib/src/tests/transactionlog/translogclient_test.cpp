@@ -108,7 +108,7 @@ RPC::Result CallBackManyTest::receive(const Packet & p)
         Packet::Entry e;
         e.deserialize(h);
         assert(e.data().size() == 8);
-        size_t v = *(const size_t*) e.data().c_str();
+        size_t v = *(const size_t*) (const void *)e.data().c_str();
         assert(_count+1 == e.serial());
         assert(v == _value);
         (void) v;

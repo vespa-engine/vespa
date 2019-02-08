@@ -15,7 +15,6 @@ class FieldMatchExecutor : public fef::FeatureExecutor {
 private:
     fef::PhraseSplitter             _splitter;
     const fef::FieldInfo          & _field;
-    const fieldmatch::Params              & _params;
     fieldmatch::Computer                    _cmp;
 
     void handle_bind_match_data(const fef::MatchData &md) override;

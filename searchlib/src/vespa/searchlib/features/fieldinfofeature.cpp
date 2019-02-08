@@ -15,11 +15,10 @@ namespace search {
 namespace features {
 
 IndexFieldInfoExecutor::IndexFieldInfoExecutor(feature_t type, feature_t isFilter,
-                                               uint32_t field, uint32_t fieldHandle)
+                                               [[maybe_unused]] uint32_t field, uint32_t fieldHandle)
     : fef::FeatureExecutor(),
       _type(type),
       _isFilter(isFilter),
-      _field(field),
       _fieldHandle(fieldHandle),
       _md(nullptr)
 {

@@ -56,7 +56,6 @@ Chunk::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const Compre
 
 Chunk::Chunk(uint32_t id, const Config & config) :
     _id(id),
-    _nextOffset(0),
     _lastSerial(static_cast<uint64_t>(-1l)),
     _format(new ChunkFormatV2(config.getMaxBytes()))
 {
@@ -65,7 +64,6 @@ Chunk::Chunk(uint32_t id, const Config & config) :
 
 Chunk::Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc) :
     _id(id),
-    _nextOffset(0),
     _lastSerial(static_cast<uint64_t>(-1l)),
     _format(ChunkFormat::deserialize(buffer, len, skipcrc))
 {

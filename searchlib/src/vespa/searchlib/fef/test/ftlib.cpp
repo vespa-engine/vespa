@@ -68,7 +68,7 @@ FtUtil::tokenize(const vespalib::string & str, const vespalib::string & separato
         }
     } else {
         for (uint32_t i = 0; i < str.size(); ++i) {
-            retval.push_back(vespalib::string("" + str[i]));
+            retval.push_back(str.substr(i, 1));
         }
     }
     return retval;

@@ -8,7 +8,7 @@ namespace search {
 using largeint_t = attribute::IAttributeVector::largeint_t;
 using SearchContext = AttributeVector::SearchContext;
 
-[[noreturn]] void
+void
 NotImplementedAttribute::notImplemented() const {
     throw vespalib::IllegalStateException("The function is not implemented.");
 }
