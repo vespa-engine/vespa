@@ -48,8 +48,7 @@ public class InMemoryStatusService implements StatusService {
     public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
             OrchestratorContext context,
             ApplicationInstanceReference applicationInstanceReference) {
-        Lock lock = instanceLockService.get(applicationInstanceReference);
-        return new InMemoryMutableStatusRegistry(lock, applicationInstanceReference);
+        return new InMemoryMutableStatusRegistry(applicationInstanceReference);
     }
 
     @Override
@@ -62,9 +61,11 @@ public class InMemoryStatusService implements StatusService {
         private final Lock lockHandle;
         private final ApplicationInstanceReference ref;
 
-        public InMemoryMutableStatusRegistry(Lock lockHandle, ApplicationInstanceReference ref) {
-            this.lockHandle = lockHandle;
+        private InMemoryMutableStatusRegistry(ApplicationInstanceReference ref) {
             this.ref = ref;
+
+            this.lockHandle = instanceLockService.get(ref);
+            this.lockHandle.lock();
         }
 
         @Override
@@ -94,7 +95,7 @@ public class InMemoryStatusService implements StatusService {
 
         @Override
         public void close() {
-            //lockHandle.unlock();   TODO this casues illeal state monitor exception - how to use it properly
+            lockHandle.unlock();
         }
     }
 
