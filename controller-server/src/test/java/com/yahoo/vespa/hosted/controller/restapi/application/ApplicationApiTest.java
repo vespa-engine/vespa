@@ -672,6 +672,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST (deploy) a system application with an application package
         HttpEntity noAppEntity = createApplicationDeployData(Optional.empty(), true);
         tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
+                                      .data(noAppEntity)
+                                      .userIdentity(USER_ID),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Deployment of system applications during a system upgrade is not allowed\"}",
+                              400);
+        tester.upgradeSystem(tester.controller().versionStatus().controllerVersion().get().versionNumber());
+        tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
                         .data(noAppEntity)
                         .userIdentity(USER_ID),
                 new File("deploy-result.json"));

@@ -72,6 +72,12 @@ public class VersionStatus {
         return versions().stream().filter(VespaVersion::isSystemVersion).findFirst();
     }
 
+    /** Returns whether the system is currently upgrading */
+    public boolean isUpgrading() {
+        return systemVersion().map(VespaVersion::versionNumber).orElse(Version.emptyVersion)
+                              .isBefore(controllerVersion().map(VespaVersion::versionNumber).orElse(Version.emptyVersion));
+    }
+
     /** 
      * Lists all currently active Vespa versions, with deployment statistics, 
      * sorted from lowest to highest version number.
