@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -24,7 +23,9 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.function.Supplier;
 
+import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
@@ -42,12 +43,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class UpgraderTest {
 
-    private DeploymentTester tester;
-
-    @Before
-    public void before() {
-        tester = new DeploymentTester();
-    }
+    private final DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void testUpgrading() {
@@ -1272,6 +1268,83 @@ public class UpgraderTest {
         tester.upgrader().maintain();
         assertEquals("Application upgrades to latest allowed major", version1,
                      tester.controller().applications().require(app1.id()).change().platform().get());
+    }
+
+    @Test
+    public void testsEachUpgradeCombinationWithFailingDeployments() {
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Supplier<Application> app = () -> tester.application(application.id());
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-central-1")
+                .region("us-west-1")
+                .region("us-east-3")
+                .build();
+
+        // Application deploys on system version
+        Version v1 = Version.fromString("6.1");
+        tester.deployCompletely(application, applicationPackage);
+
+        // Next version is released and 2/3 deployments upgrade
+        Version v2 = Version.fromString("6.2");
+        tester.upgradeSystem(v2);
+        tester.upgrader().maintain();
+        assertEquals(Change.of(v2), app.get().change());
+        tester.deployAndNotify(application, true, systemTest);
+        tester.deployAndNotify(application, true, stagingTest);
+        tester.deployAndNotify(application, true, productionUsCentral1);
+
+        // While second deployment completes upgrade, version confidence becomes broken and upgrade is cancelled
+        tester.upgrader().overrideConfidence(v2, VespaVersion.Confidence.broken);
+        tester.computeVersionStatus();
+        tester.upgrader().maintain();
+        tester.deployAndNotify(application, true, productionUsWest1);
+        assertTrue(app.get().change().isEmpty());
+
+        // Next version is released
+        Version v3 = Version.fromString("6.3");
+        tester.upgradeSystem(v3);
+        tester.upgrader().maintain();
+        assertEquals(Change.of(v3), app.get().change());
+        tester.deployAndNotify(application, true, systemTest);
+        tester.deployAndNotify(application, true, stagingTest);
+
+        // First deployment starts upgrading
+        tester.deploy(productionUsCentral1, application, applicationPackage);
+
+        // Before deployment completes, v1->v3 combination is tested as us-east-3 is still on v1
+        tester.readyJobTrigger().maintain();
+        tester.deployAndNotify(application, true, stagingTest);
+        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastSuccess().get().sourcePlatform().get());
+        assertEquals(v3, app.get().deploymentJobs().jobStatus().get(stagingTest).lastSuccess().get().platform());
+
+        // First deployment fails and then successfully upgrades to v3
+        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
+        tester.jobCompletion(productionUsCentral1).application(application).submit();
+
+        // Deployments are now on 3 versions
+        assertEquals(v3, app.get().deployments().get(productionUsCentral1.zone(main)).version());
+        assertEquals(v2, app.get().deployments().get(productionUsWest1.zone(main)).version());
+        assertEquals(v1, app.get().deployments().get(productionUsEast3.zone(main)).version());
+
+        // Need to test v2->v3 combination again before upgrading second deployment
+        tester.readyJobTrigger().maintain();
+        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().sourcePlatform().get());
+        assertEquals(v3, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
+        tester.deployAndNotify(application, true, stagingTest);
+
+        // Second deployment upgrades
+        tester.deployAndNotify(application, true, productionUsWest1);
+
+        // ... now we have to test v1->v3 again :(
+        tester.readyJobTrigger().maintain();
+        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().sourcePlatform().get());
+        assertEquals(v3, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
+        tester.deployAndNotify(application, true, stagingTest);
+
+        // Upgrade completes
+        tester.deployAndNotify(application, true, productionUsEast3);
+        assertTrue("Upgrade complete", app.get().change().isEmpty());
     }
 
 }
