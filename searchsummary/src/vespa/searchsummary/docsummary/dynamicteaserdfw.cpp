@@ -109,14 +109,13 @@ private:
     KeywordExtractor *_kwExtractor;
     const vespalib::stringref _buf;
     const search::fef::Properties *_highlightTerms;
-    juniper::IQueryVisitor *_visitor;
 
 public:
     JuniperQueryAdapter(const JuniperQueryAdapter&) = delete;
     JuniperQueryAdapter operator= (const JuniperQueryAdapter&) = delete;
     JuniperQueryAdapter(KeywordExtractor *kwExtractor, vespalib::stringref buf,
                         const search::fef::Properties *highlightTerms = nullptr)
-        : _kwExtractor(kwExtractor), _buf(buf), _highlightTerms(highlightTerms), _visitor(nullptr) {}
+        : _kwExtractor(kwExtractor), _buf(buf), _highlightTerms(highlightTerms) {}
 
     // TODO: put this functionality into the stack dump iterator
     bool SkipItem(search::SimpleQueryStackDumpIterator *iterator) const
