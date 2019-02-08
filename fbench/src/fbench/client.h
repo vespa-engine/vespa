@@ -154,7 +154,7 @@ private:
 class Timer;
 class HTTPClient;
 class FileReader;
-class ClientStatus;
+struct ClientStatus;
 /**
  * This class implements a single test client. The clients are run in
  * separate threads to simulate several simultanious users. The
