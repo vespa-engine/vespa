@@ -16,7 +16,7 @@ namespace storage::lib {
 
 class Distribution;
 class Group;
-class NodeData;
+struct NodeData;
 
 class ClusterState : public document::Printable {
     uint32_t _version;
