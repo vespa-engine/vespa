@@ -29,42 +29,17 @@ public class ServiceMonitorInstanceLookupService implements InstanceLookupServic
 
     @Override
     public Optional<ApplicationInstance> findInstanceById(ApplicationInstanceReference applicationInstanceReference) {
-        Map<ApplicationInstanceReference, ApplicationInstance> instanceMap
-                = serviceMonitor.getAllApplicationInstances();
-        return Optional.ofNullable(instanceMap.get(applicationInstanceReference));
+        return serviceMonitor.getServiceModelSnapshot().getApplicationInstance(applicationInstanceReference);
     }
 
     @Override
     public Optional<ApplicationInstance> findInstanceByHost(HostName hostName) {
-        Map<ApplicationInstanceReference, ApplicationInstance> instanceMap 
-                = serviceMonitor.getAllApplicationInstances();
-        List<ApplicationInstance> applicationInstancesUsingHost = instanceMap.entrySet().stream()
-                .filter(entry -> applicationInstanceUsesHost(entry.getValue(), hostName))
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
-        if (applicationInstancesUsingHost.isEmpty()) {
-            return Optional.empty();
-        }
-        if (applicationInstancesUsingHost.size() > 1) {
-            throw new IllegalStateException(
-                    "Major assumption broken: Multiple application instances contain host " + hostName.s()
-                            + ": " + applicationInstancesUsingHost);
-        }
-        return Optional.of(applicationInstancesUsingHost.get(0));
+        return Optional.ofNullable(serviceMonitor.getServiceModelSnapshot().getApplicationsByHostName().get(hostName));
     }
 
     @Override
     public Set<ApplicationInstanceReference> knownInstances() {
-        return serviceMonitor.getAllApplicationInstances().keySet();
-    }
-
-    private static boolean applicationInstanceUsesHost(ApplicationInstance applicationInstance,
-                                                       HostName hostName) {
-        return applicationInstance.serviceClusters().stream()
-                .anyMatch(serviceCluster ->
-                        serviceCluster.serviceInstances().stream()
-                                .anyMatch(serviceInstance ->
-                                        serviceInstance.hostName().equals(hostName)));
+        return serviceMonitor.getServiceModelSnapshot().getAllApplicationInstances().keySet();
     }
 
 }

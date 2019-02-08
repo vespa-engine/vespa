@@ -62,7 +62,11 @@ public class ServiceMonitorStub implements ServiceMonitor {
     }
 
     @Override
-    public Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances() {
+    public ServiceModel getServiceModelSnapshot() {
+        return new ServiceModel(getAllApplicationInstances());
+    }
+
+    private Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances() {
         // Convert apps information to the response payload to return
         Map<ApplicationInstanceReference, ApplicationInstance> status = new HashMap<>();
         for (Map.Entry<ApplicationId, MockDeployer.ApplicationContext> app : apps.entrySet()) {
@@ -84,8 +88,4 @@ public class ServiceMonitorStub implements ServiceMonitor {
         return status;
     }
 
-    @Override
-    public ServiceModel getServiceModelSnapshot() {
-        return new ServiceModel(getAllApplicationInstances());
-    }
 }
