@@ -233,27 +233,26 @@ Distribution::getStorageSeed(
 uint32_t
 Distribution::getDiskSeed(const document::BucketId& bucket, uint16_t nodeIndex) const
 {
-    typedef vespa::config::content::StorDistributionConfig Config;
     switch (_diskDistribution) {
-        case Config::MODULO:
+        case DiskDistribution::MODULO:
         {
             uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
                     & _distributionBitMasks[16]);
             return 0xdeadbeef ^ seed;
         }
-        case Config::MODULO_INDEX:
+        case DiskDistribution::MODULO_INDEX:
         {
             uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
                     & _distributionBitMasks[16]);
             return 0xdeadbeef ^ seed ^ nodeIndex;
         }
-        case Config::MODULO_KNUTH:
+        case DiskDistribution::MODULO_KNUTH:
         {
             uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
                     & _distributionBitMasks[16]);
             return 0xdeadbeef ^ seed ^ (1664525L * nodeIndex + 1013904223L);
         }
-        case Config::MODULO_BID:
+        case DiskDistribution::MODULO_BID:
         {
             uint64_t currentid = bucket.withoutCountBits();
             char ordered[8];
@@ -305,7 +304,7 @@ Distribution::getIdealDisk(const NodeState& nodeState, uint16_t nodeIndex,
     }
     RandomGen randomizer(getDiskSeed(bucket, nodeIndex));
     switch (_diskDistribution) {
-        case vespa::config::content::StorDistributionConfig::MODULO_BID:
+        case DiskDistribution::MODULO_BID:
         {
             double maxScore = 0.0;
             uint16_t idealDisk = 0xffff;
