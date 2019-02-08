@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostStatusMap;
 import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostsUsedByApplicationInstance;
 import static com.yahoo.vespa.orchestrator.OrchestratorUtil.parseAppInstanceReference;
 
@@ -82,11 +81,13 @@ public class InstanceResource {
                 = instanceLookupService.findInstanceById(instanceId)
                 .orElseThrow(() -> new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build()));
 
-        Set<HostName> hostsUsedByApplicationInstance = getHostsUsedByApplicationInstance(applicationInstance);
-        Map<HostName, HostStatus> hostStatusMap = getHostStatusMap(hostsUsedByApplicationInstance,
-                                                                   statusService.forApplicationInstance(instanceId));
-        Map<HostName, String> hostStatusStringMap = OrchestratorUtil.mapValues(hostStatusMap, HostStatus::name);
-        return InstanceStatusResponse.create(applicationInstance, hostStatusStringMap);
+        Set<HostName> suspendedHosts = statusService.getSuspendedHostsByApplication().apply(applicationInstance.reference());
+        Map<HostName, String> hostStatusMap = getHostsUsedByApplicationInstance(applicationInstance)
+                .stream()
+                .collect(Collectors.toMap(hostName -> hostName,
+                                          hostName -> suspendedHosts.contains(hostName) ? HostStatus.ALLOWED_TO_BE_DOWN.name()
+                                                                                        : HostStatus.NO_REMARKS.name()));
+        return InstanceStatusResponse.create(applicationInstance, hostStatusMap);
     }
 
     @GET

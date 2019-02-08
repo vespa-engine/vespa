@@ -68,8 +68,8 @@ public interface StatusService {
     /**
      * Returns a not necessarily consistent mapping from applications to their set of suspended hosts.
      *
-     * If the lock for an application is held when this is acquired, the view of that application's hosts
-     * is consistent and up to date for as long as the lock is held.
+     * If the lock for an application is held when this mapping is acquired, new sets returned for that application
+     * are consistent and up to date for as long as the lock is held. (The sets themselves don't reflect changes.)
      */
     Function<ApplicationInstanceReference, Set<HostName>> getSuspendedHostsByApplication();
 

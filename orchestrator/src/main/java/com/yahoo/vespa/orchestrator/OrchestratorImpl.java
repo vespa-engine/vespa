@@ -35,8 +35,10 @@ import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -104,6 +106,14 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     @Override
+    public Function<HostName, Optional<HostStatus>> getNodeStatuses() {
+        Function<ApplicationInstanceReference, Set<HostName>> suspendedHosts = statusService.getSuspendedHostsByApplication();
+        return hostName -> instanceLookupService.findInstanceByHost(hostName)
+                                                .map(application -> suspendedHosts.apply(application.reference()).contains(hostName)
+                                                                    ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS);
+    }
+
+    @Override
     public void setNodeStatus(HostName hostName, HostStatus status) throws OrchestrationException {
         ApplicationInstanceReference reference = getApplicationInstance(hostName).reference();
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
@@ -141,7 +151,7 @@ public class OrchestratorImpl implements Orchestrator {
 
             ApplicationInstanceStatus appStatus = statusService.forApplicationInstance(appInstance.reference()).getApplicationInstanceStatus();
             if (appStatus == ApplicationInstanceStatus.NO_REMARKS) {
-                policy.releaseSuspensionGrant(context.createSubcontextWithinLock(), appInstance, hostName, statusRegistry);
+                policy.releaseSuspensionGrant(context.createSubcontextWithinLock(), appInstance, hostName, statusRegistry, statusService);
             }
         }
     }
@@ -164,6 +174,7 @@ public class OrchestratorImpl implements Orchestrator {
             ApplicationApi applicationApi = new ApplicationApiImpl(
                     nodeGroup,
                     statusRegistry,
+                    statusService,
                     clusterControllerClientFactory);
 
             policy.acquirePermissionToRemove(context.createSubcontextWithinLock(), applicationApi);
@@ -188,6 +199,7 @@ public class OrchestratorImpl implements Orchestrator {
 
             ApplicationApi applicationApi = new ApplicationApiImpl(nodeGroup,
                                                                    hostStatusRegistry,
+                                                                   statusService,
                                                                    clusterControllerClientFactory);
             policy.grantSuspensionRequest(context.createSubcontextWithinLock(), applicationApi);
         }

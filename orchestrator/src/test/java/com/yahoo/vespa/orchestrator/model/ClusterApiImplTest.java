@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Optional;
 
@@ -24,12 +25,11 @@ public class ClusterApiImplTest {
 
     @Test
     public void testServicesDownAndNotInGroup() {
-        HostName hostName1 = modelUtils.createNode("host1", HostStatus.NO_REMARKS);
-        HostName hostName2 = modelUtils.createNode("host2", HostStatus.NO_REMARKS);
-        HostName hostName3 = modelUtils.createNode("host3", HostStatus.ALLOWED_TO_BE_DOWN);
-        HostName hostName4 = modelUtils.createNode("host4", HostStatus.ALLOWED_TO_BE_DOWN);
-        HostName hostName5 = modelUtils.createNode("host5", HostStatus.NO_REMARKS);
-
+        HostName hostName1 = new HostName("host1");
+        HostName hostName2 = new HostName("host2");
+        HostName hostName3 = new HostName("host3");
+        HostName hostName4 = new HostName("host4");
+        HostName hostName5 = new HostName("host5");
 
         ServiceCluster serviceCluster = modelUtils.createServiceCluster(
                 "cluster",
@@ -42,6 +42,13 @@ public class ClusterApiImplTest {
                         modelUtils.createServiceInstance("service-5", hostName5, ServiceStatus.UP)
                 )
         );
+        modelUtils.createApplicationInstance(Collections.singletonList(serviceCluster));
+
+        modelUtils.createNode(hostName1, HostStatus.NO_REMARKS);
+        modelUtils.createNode(hostName2, HostStatus.NO_REMARKS);
+        modelUtils.createNode(hostName3, HostStatus.ALLOWED_TO_BE_DOWN);
+        modelUtils.createNode(hostName4, HostStatus.ALLOWED_TO_BE_DOWN);
+        modelUtils.createNode(hostName5, HostStatus.NO_REMARKS);
 
         ClusterApiImpl clusterApi = new ClusterApiImpl(
                 applicationApi,
@@ -67,12 +74,11 @@ public class ClusterApiImplTest {
 
     @Test
     public void testNoServices() {
-        HostName hostName1 = modelUtils.createNode("host1", HostStatus.NO_REMARKS);
-        HostName hostName2 = modelUtils.createNode("host2", HostStatus.NO_REMARKS);
-        HostName hostName3 = modelUtils.createNode("host3", HostStatus.ALLOWED_TO_BE_DOWN);
-        HostName hostName4 = modelUtils.createNode("host4", HostStatus.ALLOWED_TO_BE_DOWN);
-        HostName hostName5 = modelUtils.createNode("host5", HostStatus.NO_REMARKS);
-
+        HostName hostName1 = new HostName("host1");
+        HostName hostName2 = new HostName("host2");
+        HostName hostName3 = new HostName("host3");
+        HostName hostName4 = new HostName("host4");
+        HostName hostName5 = new HostName("host5");
 
         ServiceCluster serviceCluster = modelUtils.createServiceCluster(
                 "cluster",
@@ -85,6 +91,13 @@ public class ClusterApiImplTest {
                         modelUtils.createServiceInstance("service-5", hostName5, ServiceStatus.UP)
                 )
         );
+        modelUtils.createApplicationInstance(Collections.singletonList(serviceCluster));
+
+        modelUtils.createNode(hostName1, HostStatus.NO_REMARKS);
+        modelUtils.createNode(hostName2, HostStatus.NO_REMARKS);
+        modelUtils.createNode(hostName3, HostStatus.ALLOWED_TO_BE_DOWN);
+        modelUtils.createNode(hostName4, HostStatus.ALLOWED_TO_BE_DOWN);
+        modelUtils.createNode(hostName5, HostStatus.NO_REMARKS);
 
         verifyNoServices(serviceCluster, false, false, hostName1);
         verifyNoServices(serviceCluster, true, false, hostName2);

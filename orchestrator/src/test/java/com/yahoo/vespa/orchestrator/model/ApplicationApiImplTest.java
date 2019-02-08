@@ -167,8 +167,7 @@ public class ApplicationApiImplTest {
     }
 
     private void verifyUpConditionWith(HostStatus hostStatus, ServiceStatus serviceStatus, boolean expectUp) {
-        HostName hostName1 = modelUtils.createNode("host1", hostStatus);
-
+        HostName hostName1 = new HostName("host1");
         ApplicationInstance applicationInstance =
                 modelUtils.createApplicationInstance(Arrays.asList(
                         modelUtils.createServiceCluster(
@@ -177,6 +176,8 @@ public class ApplicationApiImplTest {
                                 Arrays.asList(modelUtils.createServiceInstance("config-id-1", hostName1, serviceStatus))
                         )
                 ));
+
+        modelUtils.createNode("host1", hostStatus);
 
         ApplicationApiImpl applicationApi = modelUtils.createApplicationApiImpl(applicationInstance, hostName1);
         List<HostName> upStorageNodes = expectUp ? Arrays.asList(hostName1) : new ArrayList<>();
@@ -189,9 +190,9 @@ public class ApplicationApiImplTest {
 
     @Test
     public void testGetNodesInGroupWithStatus() {
-        HostName hostName1 = modelUtils.createNode("host1", HostStatus.NO_REMARKS);
-        HostName hostName2 = modelUtils.createNode("host2", HostStatus.NO_REMARKS);
-        HostName hostName3 = modelUtils.createNode("host3", HostStatus.ALLOWED_TO_BE_DOWN);
+        HostName hostName1 = new HostName("host1");
+        HostName hostName2 = new HostName("host2");
+        HostName hostName3 = new HostName("host3");
 
         ApplicationInstance applicationInstance =
                 modelUtils.createApplicationInstance(Arrays.asList(
@@ -212,6 +213,10 @@ public class ApplicationApiImplTest {
                                 )
                         )
                 ));
+
+        modelUtils.createNode(hostName1, HostStatus.NO_REMARKS);
+        modelUtils.createNode(hostName2, HostStatus.NO_REMARKS);
+        modelUtils.createNode(hostName3, HostStatus.ALLOWED_TO_BE_DOWN);
 
         verifyNodesInGroupWithoutRemarks(
                 modelUtils.createApplicationApiImpl(applicationInstance, hostName1),
@@ -242,13 +247,13 @@ public class ApplicationApiImplTest {
 
     @Test
     public void testGetStorageNodesAllowedToBeDownInGroupInReverseClusterOrder() {
-        HostName allowedToBeDownHost1 = modelUtils.createNode("host1", HostStatus.ALLOWED_TO_BE_DOWN);
-        HostName noRemarksHost2 = modelUtils.createNode("host2", HostStatus.NO_REMARKS);
-        HostName allowedToBeDownHost3 = modelUtils.createNode("host3", HostStatus.ALLOWED_TO_BE_DOWN);
-        HostName allowedToBeDownHost4 = modelUtils.createNode("host4", HostStatus.ALLOWED_TO_BE_DOWN);
-        HostName noRemarksHost5 = modelUtils.createNode("host5", HostStatus.ALLOWED_TO_BE_DOWN);
-        HostName noRemarksHost6 = modelUtils.createNode("host6", HostStatus.NO_REMARKS);
-        HostName allowedToBeDownHost7 = modelUtils.createNode("host7", HostStatus.ALLOWED_TO_BE_DOWN);
+        HostName allowedToBeDownHost1 = new HostName("host1");
+        HostName noRemarksHost2 = new HostName("host2");
+        HostName allowedToBeDownHost3 = new HostName("host3");
+        HostName allowedToBeDownHost4 = new HostName("host4");
+        HostName noRemarksHost5 = new HostName("host5");
+        HostName noRemarksHost6 = new HostName("host6");
+        HostName allowedToBeDownHost7 = new HostName("host7");
 
         ApplicationInstance applicationInstance =
                 modelUtils.createApplicationInstance(Arrays.asList(
@@ -285,6 +290,14 @@ public class ApplicationApiImplTest {
                                 )
                         )
                 ));
+
+        modelUtils.createNode(allowedToBeDownHost1, HostStatus.ALLOWED_TO_BE_DOWN);
+        modelUtils.createNode(noRemarksHost2, HostStatus.NO_REMARKS);
+        modelUtils.createNode(allowedToBeDownHost3, HostStatus.ALLOWED_TO_BE_DOWN);
+        modelUtils.createNode(allowedToBeDownHost4, HostStatus.ALLOWED_TO_BE_DOWN);
+        modelUtils.createNode(noRemarksHost5, HostStatus.ALLOWED_TO_BE_DOWN); // Really?
+        modelUtils.createNode(noRemarksHost6, HostStatus.NO_REMARKS);
+        modelUtils.createNode(allowedToBeDownHost7, HostStatus.ALLOWED_TO_BE_DOWN);
 
         verifyStorageNodesAllowedToBeDown(
                 modelUtils.createApplicationApiImpl(applicationInstance, allowedToBeDownHost1), allowedToBeDownHost1);

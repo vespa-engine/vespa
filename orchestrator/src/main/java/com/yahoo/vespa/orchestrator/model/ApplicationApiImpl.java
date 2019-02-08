@@ -12,6 +12,7 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
+import com.yahoo.vespa.orchestrator.status.StatusService;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -35,12 +36,16 @@ public class ApplicationApiImpl implements ApplicationApi {
 
     public ApplicationApiImpl(NodeGroup nodeGroup,
                               MutableStatusRegistry hostStatusService,
+                              StatusService statusService,
                               ClusterControllerClientFactory clusterControllerClientFactory) {
         this.applicationInstance = nodeGroup.getApplication();
         this.nodeGroup = nodeGroup;
         this.hostStatusService = hostStatusService;
         Collection<HostName> hosts = getHostsUsedByApplicationInstance(applicationInstance);
-        this.hostStatusMap = hosts.stream().collect(Collectors.toMap(Function.identity(), hostStatusService::getHostStatus));
+        Collection<HostName> suspendedHosts = statusService.getSuspendedHostsByApplication().apply(nodeGroup.getApplicationReference());
+        this.hostStatusMap = hosts.stream().collect(Collectors.toMap(Function.identity(),
+                                                                     hostName -> suspendedHosts.contains(hostName)
+                                                                                 ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS));
         this.clusterInOrder = makeClustersInOrder(nodeGroup, hostStatusMap, clusterControllerClientFactory);
     }
 

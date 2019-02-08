@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -90,6 +91,13 @@ public class ZookeeperStatusService implements StatusService {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public Function<ApplicationInstanceReference, Set<HostName>> getSuspendedHostsByApplication() {
+        Map<ApplicationInstanceReference, Set<HostName>> suspendedHostsByApplication = getValidCache();
+        return application -> suspendedHostsByApplication.computeIfAbsent(application, this::hostsDownFor);
+    }
+
 
     /**
      *  1) locks the status service for an application instance.
