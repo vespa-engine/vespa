@@ -21,7 +21,7 @@ class FileHeaderContext;
 
 namespace searchcorespi {
 namespace index {
-class FusionSpec;
+struct FusionSpec;
 
 /**
  * FusionRunner runs fusion on a set of disk indexes, specified as a
