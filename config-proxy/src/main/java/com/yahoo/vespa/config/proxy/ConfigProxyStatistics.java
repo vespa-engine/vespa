@@ -9,7 +9,6 @@ import com.yahoo.log.event.Event;
  * //TODO Use metrics framework
  *
  * @author hmusum
- * @since 5.1.7
  */
 class ConfigProxyStatistics implements Runnable {
     static final long defaultEventInterval = 5 * 60; // in seconds

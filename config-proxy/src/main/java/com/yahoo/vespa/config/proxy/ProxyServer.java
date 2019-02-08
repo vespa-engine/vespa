@@ -60,7 +60,6 @@ public class ProxyServer implements Runnable {
     private static final double timingValuesRatio = 0.8;
     private final static TimingValues defaultTimingValues;
     private final boolean delayedResponseHandling;
-    private final FileDownloader fileDownloader;
 
     private volatile Mode mode = new Mode(DEFAULT);
 
@@ -88,8 +87,7 @@ public class ProxyServer implements Runnable {
         this.rpcServer = createRpcServer(spec);
         clientUpdater = new ClientUpdater(rpcServer, statistics, delayedResponses);
         this.configClient = createClient(clientUpdater, delayedResponses, source, timingValues, memoryCache, configClient);
-        this.fileDownloader = new FileDownloader(new JRTConnectionPool(source));
-        new FileDistributionRpcServer(supervisor, fileDownloader);
+        new FileDistributionRpcServer(supervisor, new FileDownloader(new JRTConnectionPool(source)));
         new UrlDownloadRpcServer(supervisor);
     }
 
@@ -288,7 +286,4 @@ public class ProxyServer implements Runnable {
         configClient = createRpcClient();
     }
 
-    FileDownloader fileDownloader() {
-        return fileDownloader;
-    }
 }

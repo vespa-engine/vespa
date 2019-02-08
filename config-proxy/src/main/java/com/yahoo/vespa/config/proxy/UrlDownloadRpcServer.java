@@ -47,7 +47,7 @@ public class UrlDownloadRpcServer {
     private final ExecutorService rpcDownloadExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
                                                                                      new DaemonThreadFactory("Rpc download executor"));
 
-    public UrlDownloadRpcServer(Supervisor supervisor) {
+    UrlDownloadRpcServer(Supervisor supervisor) {
         supervisor.addMethod(new Method("url.waitFor", "s", "s", this, "download")
                                     .methodDesc("get path to url download")
                                     .paramDesc(0, "url", "url")

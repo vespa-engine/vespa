@@ -7,7 +7,7 @@ import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.RawConfig;
 
-import java.util.Date;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -38,31 +38,24 @@ public class DelayedResponseHandler implements Runnable {
     void checkDelayedResponses() {
         try {
             long start = System.currentTimeMillis();
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Running DelayedResponseHandler. There are " + delayedResponses.size() + " delayed responses. First one is " + delayedResponses.responses().peek());
-            }
+            log.log(LogLevel.SPAM, () -> "Running DelayedResponseHandler. There are " + delayedResponses.size() +
+                    " delayed responses. First one is " + delayedResponses.responses().peek());
             DelayedResponse response;
-            int i = 0;
-
+            AtomicInteger i = new AtomicInteger(0);
             while ((response = delayedResponses.responses().poll()) != null) {
-                if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "Returning with response that has return time " + new Date(response.getReturnTime()));
-                }
                 JRTServerConfigRequest request = response.getRequest();
                 ConfigCacheKey cacheKey = new ConfigCacheKey(request.getConfigKey(), request.getConfigKey().getMd5());
                 RawConfig config = memoryCache.get(cacheKey);
                 if (config != null) {
                     rpcServer.returnOkResponse(request, config);
-                    i++;
+                    i.incrementAndGet();
                 } else {
                     log.log(LogLevel.WARNING, "Timed out (timeout " + request.getTimeout() + ") getting config " +
                             request.getConfigKey() + ", will retry");
                 }
             }
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Finished running DelayedResponseHandler. " + i + " delayed responses sent in " +
-                        (System.currentTimeMillis() - start) + " ms");
-            }
+            log.log(LogLevel.SPAM, () -> "Finished running DelayedResponseHandler. " + i.get() + " delayed responses sent in " +
+                    (System.currentTimeMillis() - start) + " ms");
         } catch (Exception e) {  // To avoid thread throwing exception and executor never running this again
             log.log(LogLevel.WARNING, "Got exception in DelayedResponseHandler: " + Exceptions.toMessageString(e));
         } catch (Throwable e) {
