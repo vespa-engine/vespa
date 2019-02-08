@@ -43,8 +43,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                                            config.getBlockableJobConfig(),
                                            clusterStateChangedNotifier,
                                            (calc ? calc->nodeRetired() : false)));
-        controller.registerJobInMasterThread(std::move(trackJob(tracker,
-                                                                std::move(job))));
+        controller.registerJobInMasterThread(trackJob(tracker, std::move(job)));
     }
 }
 
@@ -76,8 +75,8 @@ injectBucketMoveJob(MaintenanceController &controller,
                                 diskMemUsageNotifier,
                                 blockableConfig,
                                 docTypeName, bucketSpace));
-    controller.registerJobInMasterThread(std::move(trackJob(jobTrackers.getBucketMove(),
-                                                            std::move(bmj))));
+    controller.registerJobInMasterThread(trackJob(jobTrackers.getBucketMove(),
+                                                  std::move(bmj)));
 }
 
 }
@@ -115,7 +114,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
     MUP pruneRDjob(new PruneRemovedDocumentsJob(config.getPruneRemovedDocumentsConfig(), *mRemSubDB._metaStore,
                                                 mRemSubDB._subDbId, docTypeName, prdHandler, fbHandler));
     controller.registerJobInMasterThread(
-            std::move(trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob))));
+            trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob)));
     if (!config.getLidSpaceCompactionConfig().isDisabled()) {
         injectLidSpaceCompactionJobs(controller, config, lscHandlers, opStorer,
                                      fbHandler, jobTrackers.getLidSpaceCompact(),

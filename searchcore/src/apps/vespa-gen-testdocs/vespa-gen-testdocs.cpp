@@ -350,7 +350,6 @@ RandTextFieldGenerator::generateValue(vespalib::asciistream &doc, uint32_t)
 
 class ModTextFieldGenerator : public FieldGenerator
 {
-    search::Rand48 &_rnd;
     std::vector<uint32_t> _mods;
 
 public:
@@ -363,10 +362,9 @@ public:
 
 
 ModTextFieldGenerator::ModTextFieldGenerator(const string &name,
-                                             search::Rand48 &rnd,
+                                             [[maybe_unused]] search::Rand48 &rnd,
                                              const std::vector<uint32_t> &mods)
     : FieldGenerator(name),
-      _rnd(rnd),
       _mods(mods)
 {
 }

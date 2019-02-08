@@ -51,9 +51,10 @@ PersistenceHandlerMap::getHandlerSnapshot() const
             handlers.push_back(handlerItr.second);
         }
     }
+    size_t handlersSize = handlers.size();
     return std::make_unique<HandlerSnapshot>
             (std::make_unique<DocTypeToHandlerMap::Snapshot>(std::move(handlers)),
-             handlers.size());
+             handlersSize);
 }
 
 namespace {

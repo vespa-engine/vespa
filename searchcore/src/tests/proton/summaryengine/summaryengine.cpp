@@ -254,7 +254,7 @@ createSlimeRequestLarger(size_t num,
         array.addData(Memory(GID1, 12));
         array.addData(Memory(GID2, 12));
     }
-    return std::move(r);
+    return r;
 }
 
 Slime

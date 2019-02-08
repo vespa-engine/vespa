@@ -23,9 +23,7 @@ private:
     HandlerMap<ISearchHandler>         _handlers;
     vespalib::ThreadStackExecutor      _executor;
     vespalib::SimpleThreadBundle::Pool _threadBundlePool;
-    bool                               _online;
     bool                               _nodeUp;
-    bool                               _inService;
 
 public:
     /**

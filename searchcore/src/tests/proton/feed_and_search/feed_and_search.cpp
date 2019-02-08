@@ -91,7 +91,6 @@ const string word1 = "foo";
 const string word2 = "bar";
 const DocumentIdT doc_id1 = 1;
 const DocumentIdT doc_id2 = 2;
-const uint32_t field_id = 1;
 
 Schema getSchema() {
     Schema schema;

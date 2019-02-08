@@ -185,10 +185,9 @@ struct MyWorld {
         for (uint32_t i = 0; i < NUM_DOCS; ++i) {
             document::DocumentId docId(vespalib::make_string("doc::%u", i));
             const document::GlobalId &gid = docId.getGlobalId();
-            typedef DocumentMetaStore::Result PutRes;
             document::BucketId bucketId(BucketFactory::getBucketId(docId));
             uint32_t docSize = 1;
-            PutRes putRes(metaStore.put(gid, bucketId, Timestamp(0u), docSize, i));
+            metaStore.put(gid, bucketId, Timestamp(0u), docSize, i);
             metaStore.setBucketState(bucketId, true);
         }
     }

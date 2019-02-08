@@ -34,7 +34,6 @@ private:
     DocumentDBJobTrackers &_jobTrackers;
     matching::SessionManager &_sessionManager;
     const AttributeUsageFilter &_writeFilter;
-    const DDBState &_state;
     // Last updated document store cache statistics. Necessary due to metrics implementation is upside down.
     DocumentStoreCacheStats _lastDocStoreCacheStats;
 

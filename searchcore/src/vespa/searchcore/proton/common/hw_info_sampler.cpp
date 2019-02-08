@@ -60,7 +60,7 @@ std::unique_ptr<HwinfoConfig> readConfig(const vespalib::string &path) {
     ConfigSubscriber s(spec);
     std::unique_ptr<ConfigHandle<HwinfoConfig>> handle = s.subscribe<HwinfoConfig>("hwinfo");
     s.nextConfig(0);
-    return std::move(handle->getConfig());
+    return handle->getConfig();
 }
 
 
