@@ -2,8 +2,9 @@
 
 #pragma once
 
-namespace vespalib {
-namespace tensor {
+#include <vespa/vespalib/stllike/hash_set.h>
+
+namespace vespalib::tensor {
 
 using DimensionsSet = vespalib::hash_set<vespalib::stringref>;
 
@@ -40,5 +41,4 @@ public:
     }
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

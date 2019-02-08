@@ -8,7 +8,7 @@ namespace vespalib {
 namespace tensor {
 
 
-struct Tensor;
+class Tensor;
 class TensorBuilder;
 
 /**

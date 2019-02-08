@@ -5,7 +5,11 @@
 #include "sparse_tensor_address_ref.h"
 #include <vespa/vespalib/stllike/string.h>
 
+namespace vespalib::eval { class ValueType; }
+
 namespace vespalib::tensor {
+
+class TensorAddress;
 
 
 /**
@@ -32,7 +36,7 @@ protected:
         }
     }
 public:
-    SparseTensorAddressBuilder() : _address() {}
+    SparseTensorAddressBuilder();
     void add(vespalib::stringref label) {
         ensure_room(label.size()+1);
         append(label);
@@ -43,6 +47,7 @@ public:
         return SparseTensorAddressRef(&_address[0], _address.size());
     }
     bool empty() const { return _address.empty(); }
+    void populate(const eval::ValueType &type, const TensorAddress &address);
 };
 
 }

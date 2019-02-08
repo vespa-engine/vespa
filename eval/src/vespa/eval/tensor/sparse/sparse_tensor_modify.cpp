@@ -19,16 +19,7 @@ SparseTensorModify::~SparseTensorModify() = default;
 void
 SparseTensorModify::visit(const TensorAddress &address, double value)
 {
-    TensorAddressElementIterator addressElementIterator(address);
-
-    _addressBuilder.clear();
-    for (const auto &dimension : _type.dimensions()) {
-        if (addressElementIterator.skipToDimension(dimension.name)) {
-            _addressBuilder.add(addressElementIterator.label());
-        } else {
-            _addressBuilder.addUndefined();
-        }
-    }
+    _addressBuilder.populate(_type, address);
     auto addressRef = _addressBuilder.getAddressRef();
     auto cellItr = _cells.find(addressRef);
     if (cellItr != _cells.end()) {

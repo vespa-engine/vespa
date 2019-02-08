@@ -46,6 +46,7 @@ public:
     Tensor::UP join(join_fun_t function, const Tensor &arg) const override;
     Tensor::UP reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const override;
     std::unique_ptr<Tensor> modify(join_fun_t op, const CellValues &cellValues) const override;
+    std::unique_ptr<Tensor> add(const Tensor &arg) const override;
     bool equals(const Tensor &arg) const override;
     Tensor::UP clone() const override;
     eval::TensorSpec toSpec() const override;

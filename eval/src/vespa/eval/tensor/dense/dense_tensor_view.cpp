@@ -13,6 +13,9 @@
 #include <vespa/eval/eval/operation.h>
 #include <sstream>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".eval.tensor.dense.dense_tensor_view");
+
 using vespalib::eval::TensorSpec;
 
 namespace vespalib::tensor {
@@ -288,6 +291,12 @@ DenseTensorView::modify(join_fun_t op, const CellValues &cellValues) const
     DenseTensorModify modifier(op, _typeRef, Cells(_cellsRef.cbegin(), _cellsRef.cend()));
     cellValues.accept(modifier);
     return modifier.build();
+}
+
+std::unique_ptr<Tensor>
+DenseTensorView::add(const Tensor &) const
+{
+    LOG_ABORT("should not be reached");
 }
 
 }

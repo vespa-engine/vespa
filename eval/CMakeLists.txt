@@ -36,10 +36,11 @@ vespa_define_module(
     src/tests/tensor/dense_tensor_builder
     src/tests/tensor/dense_xw_product_function
     src/tests/tensor/sparse_tensor_builder
+    src/tests/tensor/tensor_add_operation
     src/tests/tensor/tensor_address
     src/tests/tensor/tensor_conformance
     src/tests/tensor/tensor_mapper
-    src/tests/tensor/tensor_modify
+    src/tests/tensor/tensor_modify_operation
     src/tests/tensor/tensor_performance
     src/tests/tensor/tensor_serialization
     src/tests/tensor/tensor_slime_serialization
