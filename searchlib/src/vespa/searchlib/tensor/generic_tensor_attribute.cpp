@@ -49,7 +49,7 @@ GenericTensorAttribute::~GenericTensorAttribute()
 void
 GenericTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 {
-    RefType ref = _genericTensorStore.setTensor(
+    EntryRef ref = _genericTensorStore.setTensor(
             (_tensorMapper ? *_tensorMapper->map(tensor) : tensor));
     setTensorRef(docId, ref);
 }
@@ -58,7 +58,7 @@ GenericTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 std::unique_ptr<Tensor>
 GenericTensorAttribute::getTensor(DocId docId) const
 {
-    RefType ref;
+    EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
         ref = _refVector[docId];
     }

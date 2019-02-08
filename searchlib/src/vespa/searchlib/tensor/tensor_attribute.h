@@ -16,8 +16,8 @@ namespace search::tensor {
 class TensorAttribute : public NotImplementedAttribute, public ITensorAttribute
 {
 protected:
-    using RefType = TensorStore::EntryRef;
-    using RefVector = attribute::RcuVectorBase<RefType>;
+    using EntryRef = TensorStore::EntryRef;
+    using RefVector = attribute::RcuVectorBase<EntryRef>;
 
     RefVector _refVector; // docId -> ref in data store for serialized tensor
     TensorStore &_tensorStore; // data store for serialized tensors
@@ -26,10 +26,10 @@ protected:
 
     template <typename RefType>
     void doCompactWorst();
-    void setTensorRef(DocId docId, RefType ref);
+    void setTensorRef(DocId docId, EntryRef ref);
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);
-    using RefCopyVector = vespalib::Array<RefType>;
+    using RefCopyVector = vespalib::Array<EntryRef>;
     TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore);
     ~TensorAttribute() override;
     const ITensorAttribute *asTensorAttribute() const override;
