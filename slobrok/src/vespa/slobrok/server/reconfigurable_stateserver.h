@@ -5,9 +5,9 @@
 #include <vespa/config-stateserver.h>
 
 namespace vespalib {
-    class HealthProducer;
-    class MetricsProducer;
-    class ComponentConfigProducer;
+    struct HealthProducer;
+    struct MetricsProducer;
+    struct ComponentConfigProducer;
     class StateServer;
 }
 namespace slobrok {
