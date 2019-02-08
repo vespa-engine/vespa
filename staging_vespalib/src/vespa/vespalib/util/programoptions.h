@@ -63,7 +63,7 @@ struct ProgramOptions {
         virtual void finalizeOptions() = 0;
     };
 
-    class OptionParser;
+    struct OptionParser;
 
     int _argc;
     const char* const* _argv;

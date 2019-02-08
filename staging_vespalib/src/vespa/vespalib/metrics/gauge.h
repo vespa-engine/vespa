@@ -9,7 +9,7 @@ namespace vespalib {
 namespace metrics {
 
 class MetricsManager;
-class GaugeAggregator;
+struct GaugeAggregator;
 
 /**
  * Represents a gauge metric that can be measured.
