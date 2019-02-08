@@ -2,18 +2,18 @@
 package com.yahoo.vespa.orchestrator.status;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 
 import java.util.Set;
+import java.util.function.Function;
 
 /**
- * Service that can produce registries for the suspension of an application
- * and its hosts.
+ * Service that can produce registries for the suspension of an application and its hosts.
  *
- * The registry classes are pr application instance.
- * TODO Remove readonly registry class (replace with actual methods) - only adds complexity.
+ * The registry class is per locked application instance.
  *
- * @author oyving
+ * @author Øyvind Grønnesby
  * @author Tony Vaagenes
  * @author smorgrav
  */
@@ -64,4 +64,13 @@ public interface StatusService {
      * @return A Map between the application instance and its status.
      */
     Set<ApplicationInstanceReference> getAllSuspendedApplications();
+
+    /**
+     * Returns a not necessarily consistent mapping from applications to their set of suspended hosts.
+     *
+     * If the lock for an application is held when this is acquired, the view of that application's hosts
+     * is consistent and up to date for as long as the lock is held.
+     */
+    Function<ApplicationInstanceReference, Set<HostName>> getSuspendedHostsByApplication();
+
 }

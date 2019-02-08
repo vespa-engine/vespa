@@ -33,8 +33,7 @@ import org.mockito.InOrder;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Set;
 
 import static com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
 import static com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus.NO_REMARKS;
@@ -53,7 +52,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.spy;
 
 /**
- * Test Orchestrator with a mock backend (the InMemoryStatusService)
+ * Test Orchestrator with a mock backend (the MockCurator)
  *
  * @author smorgrav
  */
@@ -326,20 +325,17 @@ public class OrchestratorImplTest {
                 new ApplicationInstance(
                         tenantId,
                         applicationInstanceId,
-                        Stream.of(new ServiceCluster(
+                        Set.of(new ServiceCluster(
                                 new ClusterId("clusterId"),
                                 new ServiceType("serviceType"),
-                                Stream.of(
-                                        new ServiceInstance(
-                                                new ConfigId("configId1"),
-                                                hostName,
-                                                ServiceStatus.UP),
-                                new ServiceInstance(
-                                        new ConfigId("configId2"),
-                                        hostName,
-                                        ServiceStatus.NOT_CHECKED))
-                                        .collect(Collectors.toSet())))
-                        .collect(Collectors.toSet()));
+                                Set.of(new ServiceInstance(
+                                               new ConfigId("configId1"),
+                                               hostName,
+                                               ServiceStatus.UP),
+                                       new ServiceInstance(
+                                               new ConfigId("configId2"),
+                                               hostName,
+                                               ServiceStatus.NOT_CHECKED)))));
 
         InstanceLookupService lookupService = new ServiceMonitorInstanceLookupService(
                 () -> new ServiceModel(Map.of(reference, applicationInstance)));
