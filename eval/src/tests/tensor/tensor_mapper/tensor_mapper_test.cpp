@@ -1,32 +1,36 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/simple_tensor.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/tensor/tensor_mapper.h>
+#include <vespa/eval/tensor/test/test_utils.h>
+#include <vespa/eval/tensor/wrapped_simple_tensor.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/eval/tensor/tensor_mapper.h>
-#include <vespa/eval/tensor/wrapped_simple_tensor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/simple_tensor.h>
 
 using vespalib::eval::ValueType;
 using vespalib::eval::Value;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::SimpleTensor;
+using vespalib::tensor::test::makeTensor;
 using namespace vespalib::tensor;
 
-void verify_wrapped(const TensorSpec &source, const vespalib::string &type, const TensorSpec &expect) {
+void
+verify_wrapped(const TensorSpec &source, const vespalib::string &type, const TensorSpec &expect)
+{
     auto tensor = std::make_unique<WrappedSimpleTensor>(SimpleTensor::create(source));
     auto mapped = TensorMapper::mapToWrapped(*tensor, ValueType::from_spec(type));
     TensorSpec actual = mapped->toSpec();
     EXPECT_EQUAL(actual, expect);
 }
 
-void verify(const TensorSpec &source, const vespalib::string &type, const TensorSpec &expect) {
-    Value::UP value = DefaultTensorEngine::ref().from_spec(source);
-    const Tensor *tensor_impl = dynamic_cast<const Tensor *>(value->as_tensor());
-    ASSERT_TRUE(tensor_impl);
+void
+verify(const TensorSpec &source, const vespalib::string &type, const TensorSpec &expect)
+{
+    auto tensor = makeTensor<Tensor>(source);
     TensorMapper mapper(ValueType::from_spec(type));
-    auto mapped = mapper.map(*tensor_impl);
+    auto mapped = mapper.map(*tensor);
     TensorSpec actual = mapped->toSpec();
     EXPECT_EQUAL(actual, expect);
     TEST_DO(verify_wrapped(source, type, expect));
