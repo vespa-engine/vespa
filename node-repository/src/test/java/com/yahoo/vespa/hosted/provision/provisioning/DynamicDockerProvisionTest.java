@@ -126,7 +126,6 @@ public class DynamicDockerProvisionTest {
         doAnswer(invocation -> {
             int numHosts = (int) invocation.getArguments()[0];
             Flavor nodeFlavor = (Flavor) invocation.getArguments()[1];
-            System.out.println(numHosts + " " + nodeFlavor);
             return IntStream.range(0, numHosts)
                     .map(i -> ++numProvisioned[0])
                     .mapToObj(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", nodeFlavor))
