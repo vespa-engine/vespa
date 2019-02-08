@@ -12,7 +12,6 @@ import java.util.TreeMap;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
 /**
  * @author hakonhall
@@ -95,6 +94,13 @@ public class Flags {
             "Should adaptive dispatch be used over round robin",
             "Takes effect at redeployment",
             APPLICATION_ID);
+
+    public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
+            "enable-dynamic-provisioning", false,
+            "Provision a new docker host when we otherwise can't allocate a docker node",
+            "Takes effect on next deployment",
+            APPLICATION_ID);
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

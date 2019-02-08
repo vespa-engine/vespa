@@ -22,6 +22,8 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -79,7 +81,7 @@ public class ProvisioningTester {
     public ProvisioningTester(
             Curator curator, NodeFlavors nodeFlavors, Zone zone, NameResolver nameResolver,
             Orchestrator orchestrator, HostProvisioner hostProvisioner,
-            LoadBalancerServiceMock loadBalancerService) {
+            LoadBalancerServiceMock loadBalancerService, FlagSource flagSource) {
         this.curator = curator;
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();
@@ -87,7 +89,7 @@ public class ProvisioningTester {
                 new DockerImage("docker-registry.domain.tld:8080/dist/vespa"), true);
         this.orchestrator = orchestrator;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
-        this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, provisionServiceProvider);
+        this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, provisionServiceProvider, flagSource);
         this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
         this.provisionLogger = new NullProvisionLogger();
         this.loadBalancerService = loadBalancerService;
@@ -390,6 +392,7 @@ public class ProvisioningTester {
         private Orchestrator orchestrator;
         private HostProvisioner hostProvisioner;
         private LoadBalancerServiceMock loadBalancerService;
+        private FlagSource flagSource;
 
         public Builder curator(Curator curator) {
             this.curator = curator;
@@ -426,6 +429,11 @@ public class ProvisioningTester {
             return this;
         }
 
+        public Builder flagSource(FlagSource flagSource) {
+            this.flagSource = flagSource;
+            return this;
+        }
+
         public ProvisioningTester build() {
             Orchestrator orchestrator = Optional.ofNullable(this.orchestrator)
                     .orElseGet(() -> {
@@ -444,8 +452,9 @@ public class ProvisioningTester {
                     Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
                     Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
                     orchestrator,
-                    Optional.ofNullable(hostProvisioner).orElseGet(() -> null),
-                    Optional.ofNullable(loadBalancerService).orElseGet(LoadBalancerServiceMock::new));
+                    hostProvisioner,
+                    Optional.ofNullable(loadBalancerService).orElseGet(LoadBalancerServiceMock::new),
+                    Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new));
         }
     }
 

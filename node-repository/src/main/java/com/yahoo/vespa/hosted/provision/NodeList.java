@@ -110,7 +110,7 @@ public class NodeList implements Iterable<Node> {
     /** Returns the immutable list of nodes in this */
     public List<Node> asList() { return nodes; }
 
-    private NodeList filter(Predicate<Node> predicate) {
+    public NodeList filter(Predicate<Node> predicate) {
         return nodes.stream().filter(predicate).collect(collectingAndThen(Collectors.toList(), NodeList::wrap));
     }
 

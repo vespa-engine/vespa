@@ -38,13 +38,18 @@ public interface NodeSpec {
     boolean saturatedBy(int count);
 
     /** Returns whether the given node count is sufficient to fulfill this spec */
-    boolean fulfilledBy(int count);
+    default boolean fulfilledBy(int count) {
+        return fulfilledDeficitCount(count) == 0;
+    }
 
     /** Returns whether this should throw an exception if the requested nodes are not fully available */
     boolean canFail();
 
     /** Returns the ideal number of nodes that should be retired to fulfill this spec */
     int idealRetiredCount(int acceptedCount, int currentRetiredCount);
+
+    /** Returns number of additional nodes needed for this spec to be fulfilled given the current node count */
+    int fulfilledDeficitCount(int count);
 
     /** Returns a specification of a fraction of all the nodes of this. It is assumed the argument is a valid divisor. */
     NodeSpec fraction(int divisor);
@@ -106,13 +111,15 @@ public interface NodeSpec {
         public boolean saturatedBy(int count) { return fulfilledBy(count); } // min=max for count specs
 
         @Override
-        public boolean fulfilledBy(int count) { return count >= this.count; }
-
-        @Override
         public boolean canFail() { return canFail; }
 
         @Override
         public int idealRetiredCount(int acceptedCount, int currentRetiredCount) { return acceptedCount - this.count; }
+
+        @Override
+        public int fulfilledDeficitCount(int count) {
+            return Math.max(this.count - count, 0);
+        }
 
         @Override
         public NodeSpec fraction(int divisor) {
@@ -166,9 +173,6 @@ public interface NodeSpec {
         public boolean specifiesNonStockFlavor() { return false; }
 
         @Override
-        public boolean fulfilledBy(int count) { return true; }
-
-        @Override
         public boolean saturatedBy(int count) { return false; }
 
         @Override
@@ -182,6 +186,11 @@ public interface NodeSpec {
              * then continue this way, otherwise allow only 1 node to be retired
              */
             return Math.min(1, currentRetiredCount);
+        }
+
+        @Override
+        public int fulfilledDeficitCount(int count) {
+            return 0;
         }
 
         @Override

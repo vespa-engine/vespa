@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -273,6 +274,22 @@ class NodeAllocation {
     }
 
     /**
+     * Returns {@link FlavorCount} describing the docker node deficit for the given {@link NodeSpec}.
+     *
+     * @return empty if the requested spec is not count based or the requested flavor type is not docker or
+     * the request is already fulfilled. Otherwise returns {@link FlavorCount} containing the required flavor
+     * and node count to cover the deficit.
+     */
+    Optional<FlavorCount> getFulfilledDockerDeficit() {
+        return Optional.of(requestedNodes)
+                .filter(NodeSpec.CountNodeSpec.class::isInstance)
+                .map(NodeSpec.CountNodeSpec.class::cast)
+                .map(spec -> new FlavorCount(spec.getFlavor(), spec.fulfilledDeficitCount(acceptedOfRequestedFlavor)))
+                .filter(flavorCount -> flavorCount.getFlavor().getType() == Flavor.Type.DOCKER_CONTAINER)
+                .filter(flavorCount -> flavorCount.getCount() > 0);
+    }
+
+    /**
      * Make the number of <i>non-retired</i> nodes in the list equal to the requested number
      * of nodes, and retire the rest of the list. Only retire currently active nodes.
      * Prefer to retire nodes of the wrong flavor.
@@ -346,4 +363,21 @@ class NodeAllocation {
         return Comparator.comparing((PrioritizableNode n) -> n.node.allocation().get().membership().index());
     }
 
+    static class FlavorCount {
+        private final Flavor flavor;
+        private final int count;
+
+        private FlavorCount(Flavor flavor, int count) {
+            this.flavor = flavor;
+            this.count = count;
+        }
+
+        Flavor getFlavor() {
+            return flavor;
+        }
+
+        int getCount() {
+            return count;
+        }
+    }
 }

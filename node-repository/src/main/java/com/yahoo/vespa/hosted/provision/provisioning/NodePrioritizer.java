@@ -9,6 +9,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
@@ -114,13 +115,32 @@ class NodePrioritizer {
 
     /**
      * Add a node on each docker host with enough capacity for the requested flavor
+     *
+     * @param allocationLock allocation lock from {@link NodeRepository#lockAllocation()}
+     * @param exclusively Whether the ready docker nodes should only be added on hosts that
+     *                    already have nodes allocated to this tenant
      */
-    // NOTE: This must only be called while holding the allocation lock.
-    void addNewDockerNodes(Mutex allocationLock) {
+    void addNewDockerNodes(Mutex allocationLock, boolean exclusively) {
+        NodeList candidates = allNodes;
+
+        if (exclusively) {
+            Set<String> candidateHostnames = allNodes.asList().stream()
+                    .filter(node -> node.type() == NodeType.tenant)
+                    .filter(node -> node.allocation().map(a -> a.owner().tenant().equals(appId.tenant())).orElse(false))
+                    .flatMap(node -> node.parentHostname().stream())
+                    .collect(Collectors.toSet());
+
+            candidates = candidates.filter(node -> candidateHostnames.contains(node.hostname()));
+        }
+
+        addNewDockerNodesOn(allocationLock, candidates);
+    }
+
+    void addNewDockerNodesOn(Mutex allocationLock, NodeList candidates) {
         if (!isDocker) return;
         ResourceCapacity wantedResourceCapacity = ResourceCapacity.of(getFlavor(requestedNodes));
 
-        for (Node node : allNodes) {
+        for (Node node : candidates) {
             if (node.type() != NodeType.host) continue;
             if (node.state() != Node.State.active) continue;
             if (node.status().wantToRetire()) continue;
