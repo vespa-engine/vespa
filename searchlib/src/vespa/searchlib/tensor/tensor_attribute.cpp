@@ -65,9 +65,9 @@ TensorAttribute::asTensorAttribute() const
 uint32_t
 TensorAttribute::clearDoc(DocId docId)
 {
-    RefType oldRef(_refVector[docId]);
+    EntryRef oldRef(_refVector[docId]);
     updateUncommittedDocIdLimit(docId);
-    _refVector[docId] = RefType();
+    _refVector[docId] = EntryRef();
     if (oldRef.valid()) {
         _tensorStore.holdTensor(oldRef);
         return 1u;
@@ -128,7 +128,7 @@ bool
 TensorAttribute::addDoc(DocId &docId)
 {
     bool incGen = _refVector.isFull();
-    _refVector.push_back(RefType());
+    _refVector.push_back(EntryRef());
     AttributeVector::incNumDocs();
     docId = AttributeVector::getNumDocs() - 1;
     updateUncommittedDocIdLimit(docId);
@@ -142,14 +142,14 @@ TensorAttribute::addDoc(DocId &docId)
 
 
 void
-TensorAttribute::setTensorRef(DocId docId, RefType ref)
+TensorAttribute::setTensorRef(DocId docId, EntryRef ref)
 {
     assert(docId < _refVector.size());
     updateUncommittedDocIdLimit(docId);
     // TODO: validate if following fence is sufficient.
     std::atomic_thread_fence(std::memory_order_release);
-    // TODO: Check if refVector must consist of std::atomic<RefType>
-    RefType oldRef(_refVector[docId]);
+    // TODO: Check if refVector must consist of std::atomic<EntryRef>
+    EntryRef oldRef(_refVector[docId]);
     _refVector[docId] = ref;
     if (oldRef.valid()) {
         _tensorStore.holdTensor(oldRef);
@@ -174,10 +174,10 @@ TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit)
     assert(lidLow <= lidLimit);
     assert(lidLimit <= this->getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
-        RefType &ref = _refVector[lid];
+        EntryRef &ref = _refVector[lid];
         if (ref.valid()) {
             _tensorStore.holdTensor(ref);
-            ref = RefType();
+            ref = EntryRef();
         }
     }
 }

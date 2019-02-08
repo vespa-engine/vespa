@@ -100,7 +100,7 @@ DenseTensorAttribute::~DenseTensorAttribute()
 void
 DenseTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 {
-    RefType ref = _denseTensorStore.setTensor(
+    EntryRef ref = _denseTensorStore.setTensor(
             (_tensorMapper ? *_tensorMapper->map(tensor) : tensor));
     setTensorRef(docId, ref);
 }
@@ -109,7 +109,7 @@ DenseTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 std::unique_ptr<Tensor>
 DenseTensorAttribute::getTensor(DocId docId) const
 {
-    RefType ref;
+    EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
         ref = _refVector[docId];
     }
@@ -122,7 +122,7 @@ DenseTensorAttribute::getTensor(DocId docId) const
 void
 DenseTensorAttribute::getTensor(DocId docId, MutableDenseTensorView &tensor) const
 {
-    RefType ref;
+    EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
         ref = _refVector[docId];
     }
@@ -153,7 +153,7 @@ DenseTensorAttribute::onLoad()
             tensorReader.readTensor(raw.data, rawLen);
             _refVector.push_back(raw.ref);
         } else {
-            _refVector.push_back(RefType());
+            _refVector.push_back(EntryRef());
         }
     }
     setNumDocs(numDocs);

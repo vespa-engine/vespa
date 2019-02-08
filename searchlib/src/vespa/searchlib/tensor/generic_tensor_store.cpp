@@ -107,7 +107,7 @@ GenericTensorStore::getTensor(EntryRef ref) const
                                    "tensor attribute value.",
                                    VESPA_STRLOC);
     }
-    return std::move(tensor);
+    return tensor;
 }
 
 TensorStore::EntryRef
