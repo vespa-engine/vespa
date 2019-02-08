@@ -27,7 +27,7 @@ MatchingStats::MatchingStats()
       _docsRanked(0),
       _docsReRanked(0),
       _softDoomed(0),
-      _leftAtDoom(),
+      _doomOvertime(),
       _softDoomFactor(0.5),
       _queryCollateralTime(),
       _queryLatency(),
@@ -48,7 +48,7 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
     _docsMatched += partition.docsMatched();
     _docsRanked += partition.docsRanked();
     _docsReRanked += partition.docsReRanked();
-    _leftAtDoom.add(Avg().set(partition.timeLeftAtDoom().sec()));
+    _doomOvertime.add(Avg().set(partition.doomOvertime().sec()));
     if (partition.softDoomed()) {
         _softDoomed = 1;
     }
@@ -67,7 +67,7 @@ MatchingStats::add(const MatchingStats &rhs)
     _docsRanked += rhs._docsRanked;
     _docsReRanked += rhs._docsReRanked;
     _softDoomed += rhs.softDoomed();
-    _leftAtDoom.add(rhs._leftAtDoom);
+    _doomOvertime.add(rhs._doomOvertime);
 
 
     _queryCollateralTime.add(rhs._queryCollateralTime);

@@ -150,7 +150,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(0u, all1.docsMatched());
     EXPECT_EQUAL(0u, all1.getNumPartitions());
     EXPECT_EQUAL(0u, all1.softDoomed());
-    EXPECT_EQUAL(0u, all1.timeLeftAtDoom());
+    EXPECT_EQUAL(0u, all1.doomOvertime());
 
     MatchingStats::Partition subPart;
     subPart.docsCovered(7).docsMatched(3).docsRanked(2).docsReRanked(1)
@@ -158,8 +158,8 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(0u, subPart.softDoomed());
     EXPECT_EQUAL(0u, subPart.softDoomed(false).softDoomed());
     EXPECT_EQUAL(1u, subPart.softDoomed(true).softDoomed());
-    EXPECT_EQUAL(0l, subPart.timeLeftAtDoom());
-    EXPECT_EQUAL(1000, subPart.timeLeftAtDoom(1000).timeLeftAtDoom());
+    EXPECT_EQUAL(0l, subPart.doomOvertime());
+    EXPECT_EQUAL(1000, subPart.doomOvertime(1000).doomOvertime());
     EXPECT_EQUAL(7u, subPart.docsCovered());
     EXPECT_EQUAL(3u, subPart.docsMatched());
     EXPECT_EQUAL(2u, subPart.docsRanked());
@@ -180,7 +180,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(1u, all1.docsReRanked());
     EXPECT_EQUAL(1u, all1.getNumPartitions());
     EXPECT_EQUAL(1u, all1.softDoomed());
-    EXPECT_EQUAL(1000, all1.timeLeftAtDoom());
+    EXPECT_EQUAL(1000, all1.doomOvertime());
     EXPECT_EQUAL(7u, all1.getPartition(0).docsCovered());
     EXPECT_EQUAL(3u, all1.getPartition(0).docsMatched());
     EXPECT_EQUAL(2u, all1.getPartition(0).docsRanked());
@@ -194,14 +194,14 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(1.0, all1.getPartition(0).active_time_max());
     EXPECT_EQUAL(0.5, all1.getPartition(0).wait_time_max());
     EXPECT_EQUAL(1u, all1.getPartition(0).softDoomed());
-    EXPECT_EQUAL(1000, all1.getPartition(0).timeLeftAtDoom());
+    EXPECT_EQUAL(1000, all1.getPartition(0).doomOvertime());
 
     MatchingStats::Partition otherSubPart;
     otherSubPart.docsCovered(7).docsMatched(3).docsRanked(2).docsReRanked(1)
-        .active_time(0.5).wait_time(1.0).softDoomed(true).timeLeftAtDoom(-300);
+            .active_time(0.5).wait_time(1.0).softDoomed(true).doomOvertime(-300);
     all1.merge_partition(otherSubPart, 1);
     EXPECT_EQUAL(1u, all1.softDoomed());
-    EXPECT_EQUAL(-300, all1.timeLeftAtDoom());
+    EXPECT_EQUAL(1000, all1.doomOvertime());
     EXPECT_EQUAL(14u, all1.docidSpaceCovered());
     EXPECT_EQUAL(6u, all1.docsMatched());
     EXPECT_EQUAL(4u, all1.docsRanked());
@@ -219,7 +219,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(0.5, all1.getPartition(1).active_time_max());
     EXPECT_EQUAL(1.0, all1.getPartition(1).wait_time_max());
     EXPECT_EQUAL(1u, all1.getPartition(1).softDoomed());
-    EXPECT_EQUAL(-300, all1.getPartition(1).timeLeftAtDoom());
+    EXPECT_EQUAL(-300, all1.getPartition(1).doomOvertime());
 
     MatchingStats all2;
     all2.merge_partition(otherSubPart, 0);
@@ -227,7 +227,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
 
     all1.add(all2);
     EXPECT_EQUAL(2u, all1.softDoomed());
-    EXPECT_EQUAL(-300, all1.timeLeftAtDoom());
+    EXPECT_EQUAL(1000, all1.doomOvertime());
     EXPECT_EQUAL(28u, all1.docidSpaceCovered());
     EXPECT_EQUAL(12u, all1.docsMatched());
     EXPECT_EQUAL(8u, all1.docsRanked());
@@ -245,7 +245,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(1.0, all1.getPartition(0).active_time_max());
     EXPECT_EQUAL(1.0, all1.getPartition(0).wait_time_max());
     EXPECT_EQUAL(2u, all1.getPartition(0).softDoomed());
-    EXPECT_EQUAL(-300, all1.getPartition(0).timeLeftAtDoom());
+    EXPECT_EQUAL(1000, all1.getPartition(0).doomOvertime());
     EXPECT_EQUAL(6u, all1.getPartition(1).docsMatched());
     EXPECT_EQUAL(4u, all1.getPartition(1).docsRanked());
     EXPECT_EQUAL(2u, all1.getPartition(1).docsReRanked());
@@ -258,7 +258,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(1.0, all1.getPartition(1).active_time_max());
     EXPECT_EQUAL(1.0, all1.getPartition(1).wait_time_max());
     EXPECT_EQUAL(2u, all1.getPartition(1).softDoomed());
-    EXPECT_EQUAL(-300, all1.getPartition(1).timeLeftAtDoom());
+    EXPECT_EQUAL(1000, all1.getPartition(1).doomOvertime());
 }
 
 TEST("requireThatSoftDoomIsSetAndAdded") {

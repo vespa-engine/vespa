@@ -62,7 +62,7 @@ public:
         size_t _docsRanked;
         size_t _docsReRanked;
         size_t _softDoomed;
-        Avg    _leftAtDoom;
+        Avg    _doomOvertime;
         Avg    _active_time;
         Avg    _wait_time;
     public:
@@ -72,7 +72,7 @@ public:
               _docsRanked(0),
               _docsReRanked(0),
               _softDoomed(0),
-              _leftAtDoom(),
+              _doomOvertime(),
               _active_time(),
               _wait_time() { }
 
@@ -86,8 +86,8 @@ public:
         size_t docsReRanked() const { return _docsReRanked; }
         Partition &softDoomed(bool v) { _softDoomed += v ? 1 : 0; return *this; }
         size_t softDoomed() const { return _softDoomed; }
-        Partition & timeLeftAtDoom(fastos::TimeStamp leftAtDoom) { _leftAtDoom.set(leftAtDoom.sec()); return *this; }
-        fastos::TimeStamp timeLeftAtDoom() const { return fastos::TimeStamp::fromSec(_leftAtDoom.min()); }
+        Partition & doomOvertime(fastos::TimeStamp overtime) { _doomOvertime.set(overtime.sec()); return *this; }
+        fastos::TimeStamp doomOvertime() const { return fastos::TimeStamp::fromSec(_doomOvertime.max()); }
 
         Partition &active_time(double time_s) { _active_time.set(time_s); return *this; }
         double active_time_avg() const { return _active_time.avg(); }
@@ -106,7 +106,7 @@ public:
             _docsRanked += rhs._docsRanked;
             _docsReRanked += rhs._docsReRanked;
             _softDoomed += rhs._softDoomed;
-            _leftAtDoom.add(rhs._leftAtDoom);
+            _doomOvertime.add(rhs._doomOvertime);
 
             _active_time.add(rhs._active_time);
             _wait_time.add(rhs._wait_time);
@@ -122,7 +122,7 @@ private:
     size_t                 _docsRanked;
     size_t                 _docsReRanked;
     size_t                 _softDoomed;
-    Avg                    _leftAtDoom;
+    Avg                    _doomOvertime;
     double                 _softDoomFactor;
     Avg                    _queryCollateralTime;
     Avg                    _queryLatency;
@@ -160,8 +160,8 @@ public:
     MatchingStats &softDoomed(size_t value) { _softDoomed = value; return *this; }
     size_t softDoomed() const { return _softDoomed; }
 
-    MatchingStats & timeLeftAtDoom(fastos::TimeStamp leftAtDoom) { _leftAtDoom.set(leftAtDoom.sec()); return *this; }
-    fastos::TimeStamp timeLeftAtDoom() const { return fastos::TimeStamp::fromSec(_leftAtDoom.min()); }
+    MatchingStats & doomOvertime(fastos::TimeStamp overtime) { _doomOvertime.set(overtime.sec()); return *this; }
+    fastos::TimeStamp doomOvertime() const { return fastos::TimeStamp::fromSec(_doomOvertime.max()); }
 
     MatchingStats &softDoomFactor(double value) { _softDoomFactor = value; return *this; }
     double softDoomFactor() const { return _softDoomFactor; }

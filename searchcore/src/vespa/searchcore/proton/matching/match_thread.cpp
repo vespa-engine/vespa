@@ -178,7 +178,7 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
 {
     bool softDoomed = false;
     uint32_t docsCovered = 0;
-    fastos::TimeStamp left(0);
+    fastos::TimeStamp overtime(0);
     Context context(matchParams.rankDropLimit, tools, hits, num_threads);
     for (DocidRange docid_range = scheduler.first_range(thread_id);
          !docid_range.empty();
@@ -188,7 +188,7 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
             uint32_t lastCovered = inner_match_loop<Strategy, do_rank, do_limit, do_share_work>(context, tools, docid_range);
             softDoomed = (lastCovered < docid_range.end);
             if (softDoomed) {
-                left = context.timeLeft();
+                overtime = - context.timeLeft();
             }
             docsCovered += std::min(lastCovered, docid_range.end) - docid_range.begin;
         }
@@ -205,9 +205,7 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
     thread_stats.docsMatched(matches);
     thread_stats.softDoomed(softDoomed);
     if (softDoomed) {
-        thread_stats.timeLeftAtDoom(left);
-    } else {
-        thread_stats.timeLeftAtDoom(context.timeLeft());
+        thread_stats.doomOvertime(overtime);
     }
     if (do_rank) {
         thread_stats.docsRanked(matches);

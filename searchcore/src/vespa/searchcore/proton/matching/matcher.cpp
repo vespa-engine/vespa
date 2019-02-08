@@ -316,7 +316,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         _stats.add(my_stats);
         if (my_stats.softDoomed()) {
             double old = _stats.softDoomFactor();
-            fastos::TimeStamp left = my_stats.timeLeftAtDoom();
+            fastos::TimeStamp left = my_stats.doomOvertime();
             fastos::TimeStamp realTimeout = (left >= 0) ? request.getTimeout() : (request.getTimeout() - left);
             fastos::TimeStamp softLimit = uint64_t((1.0 - _rankSetup->getSoftTimeoutTailCost()) * realTimeout);
             _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, duration);
