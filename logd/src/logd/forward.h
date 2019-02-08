@@ -11,7 +11,7 @@ using SeenMap = std::unordered_set<std::string>;
 // Mapping saying if a level should be forwarded or not
 using ForwardMap = std::map<ns_log::Logger::LogLevel, bool>;
 
-class Metrics;
+struct Metrics;
 
 class LevelParser
 {
