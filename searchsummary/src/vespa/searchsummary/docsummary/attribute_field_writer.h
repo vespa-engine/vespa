@@ -5,7 +5,7 @@
 #include <vespa/vespalib/data/memory.h>
 
 namespace search::attribute { class IAttributeVector; }
-namespace vespalib::slime { class Cursor; }
+namespace vespalib::slime { struct Cursor; }
 
 namespace search::docsummary {
 
