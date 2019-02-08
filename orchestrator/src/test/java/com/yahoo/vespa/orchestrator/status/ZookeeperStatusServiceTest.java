@@ -75,8 +75,7 @@ public class ZookeeperStatusServiceTest {
     @Test
     public void host_state_for_unknown_hosts_is_no_remarks() {
         assertThat(
-                zookeeperStatusService.forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
-                        .getHostStatus(TestIds.HOST_NAME1),
+                zookeeperStatusService.getHostStatus(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1),
                 is(HostStatus.NO_REMARKS));
     }
 
@@ -92,8 +91,7 @@ public class ZookeeperStatusServiceTest {
                             TestIds.HOST_NAME1,
                             hostStatus);
 
-                    assertThat(statusRegistry.getHostStatus(
-                            TestIds.HOST_NAME1),
+                    assertThat(zookeeperStatusService.getHostStatus(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1),
                                is(hostStatus));
                 }
             }
@@ -143,8 +141,7 @@ public class ZookeeperStatusServiceTest {
                 killSession(curator.framework(), testingServer);
 
                 //Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
-                zookeeperStatusService2.forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
-                                       .getHostStatus(TestIds.HOST_NAME1);
+                zookeeperStatusService2.getHostStatus(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1);
             });
 
             assertThat(resultOfZkOperationAfterLockFailure, notHoldsException());
@@ -202,8 +199,7 @@ public class ZookeeperStatusServiceTest {
         // Initial state is NO_REMARK
         assertThat(
                 zookeeperStatusService
-                        .forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
-                        .getApplicationInstanceStatus(),
+                        .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
                 is(ApplicationInstanceStatus.NO_REMARKS));
 
         // Suspend
@@ -214,8 +210,7 @@ public class ZookeeperStatusServiceTest {
 
         assertThat(
                 zookeeperStatusService
-                        .forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
-                        .getApplicationInstanceStatus(),
+                        .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
                 is(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN));
 
         // Resume
@@ -226,8 +221,7 @@ public class ZookeeperStatusServiceTest {
 
         assertThat(
                 zookeeperStatusService
-                        .forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
-                        .getApplicationInstanceStatus(),
+                        .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
                 is(ApplicationInstanceStatus.NO_REMARKS));
     }
 

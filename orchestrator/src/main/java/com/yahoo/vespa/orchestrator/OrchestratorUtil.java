@@ -12,8 +12,6 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.TenantId;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
 
 import java.util.Collection;
 import java.util.List;

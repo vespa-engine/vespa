@@ -18,16 +18,6 @@ import java.util.function.Function;
  * @author smorgrav
  */
 public interface StatusService {
-    /**
-     * Returns a readable host status registry for the given application instance. No locking is involved,
-     * so this call will never block. However, since it is possible that mutations are going on simultaneously
-     * with accessing this registry, the view obtained through the returned registry must be considered to be
-     * possibly inconsistent snapshot values. It is not recommended that this method is used for anything other
-     * than monitoring, logging, debugging, etc. It should never be used for multi-step operations (e.g.
-     * read-then-write) where consistency is required. For those cases, use
-     * {@link #lockApplicationInstance_forCurrentThreadOnly(OrchestratorContext, ApplicationInstanceReference)}.
-     */
-    ReadOnlyStatusRegistry forApplicationInstance(ApplicationInstanceReference applicationInstanceReference);
 
     /**
      * Returns a mutable host status registry for a locked application instance. All operations performed on
@@ -66,11 +56,22 @@ public interface StatusService {
     Set<ApplicationInstanceReference> getAllSuspendedApplications();
 
     /**
-     * Returns a not necessarily consistent mapping from applications to their set of suspended hosts.
+     * Returns a fresh, but not necessarily consistent mapping from applications to their set of suspended hosts.
      *
      * If the lock for an application is held when this mapping is acquired, new sets returned for that application
      * are consistent and up to date for as long as the lock is held. (The sets themselves don't reflect changes.)
      */
     Function<ApplicationInstanceReference, Set<HostName>> getSuspendedHostsByApplication();
+
+    /**
+     * Returns the status of the given application. This is consistent if its lock is held.
+     */
+    ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationInstanceReference application);
+
+
+    /**
+     * Returns the status of the given host, for the given application. This is consistent if the application's lock is held.
+     */
+    HostStatus getHostStatus(ApplicationInstanceReference application, HostName host);
 
 }

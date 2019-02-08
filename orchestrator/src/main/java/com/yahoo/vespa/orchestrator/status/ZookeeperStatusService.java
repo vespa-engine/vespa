@@ -56,21 +56,6 @@ public class ZookeeperStatusService implements StatusService {
     }
 
     @Override
-    public ReadOnlyStatusRegistry forApplicationInstance(ApplicationInstanceReference applicationInstanceReference) {
-        return new ReadOnlyStatusRegistry() {
-            @Override
-            public HostStatus getHostStatus(HostName hostName) {
-                return getInternalHostStatus(applicationInstanceReference, hostName);
-            }
-
-            @Override
-            public ApplicationInstanceStatus getApplicationInstanceStatus() {
-                return getInternalApplicationInstanceStatus(applicationInstanceReference);
-            }
-        };
-    }
-
-    @Override
     public Set<ApplicationInstanceReference> getAllSuspendedApplications() {
         try {
             Set<ApplicationInstanceReference> resultSet = new HashSet<>();
@@ -178,7 +163,8 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    private HostStatus getInternalHostStatus(ApplicationInstanceReference applicationInstanceReference, HostName hostName) {
+    @Override
+    public HostStatus getHostStatus(ApplicationInstanceReference applicationInstanceReference, HostName hostName) {
         return getValidCache().computeIfAbsent(applicationInstanceReference, this::hostsDownFor)
                               .contains(hostName) ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS;
     }
@@ -207,8 +193,8 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    /** Common implementation for the two internal classes that sets ApplicationInstanceStatus. */
-    private ApplicationInstanceStatus getInternalApplicationInstanceStatus(ApplicationInstanceReference applicationInstanceReference) {
+    @Override
+    public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationInstanceReference applicationInstanceReference) {
         try {
             Stat statOrNull = curator.framework().checkExists().forPath(
                     applicationInstanceSuspendedPath(applicationInstanceReference));
@@ -217,12 +203,6 @@ public class ZookeeperStatusService implements StatusService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private HostStatus getHostStatusWithLock(
-            final ApplicationInstanceReference applicationInstanceReference,
-            final HostName hostName) {
-        return getInternalHostStatus(applicationInstanceReference, hostName);
     }
 
     private static String applicationInstancePath(ApplicationInstanceReference applicationInstanceReference) {
@@ -288,16 +268,6 @@ public class ZookeeperStatusService implements StatusService {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }
-
-        @Override
-        public HostStatus getHostStatus(final HostName hostName) {
-            return getHostStatusWithLock(applicationInstanceReference, hostName);
-        }
-
-        @Override
-        public ApplicationInstanceStatus getApplicationInstanceStatus() {
-            return getInternalApplicationInstanceStatus(applicationInstanceReference);
         }
 
         @Override
