@@ -139,6 +139,7 @@ public class ZookeeperStatusService implements StatusService {
         }
         finally {
             counter.next();
+            hostsDown.remove(applicationInstanceReference);
         }
     }
 
