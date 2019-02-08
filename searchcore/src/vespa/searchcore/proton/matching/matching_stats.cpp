@@ -48,7 +48,7 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
     _docsMatched += partition.docsMatched();
     _docsRanked += partition.docsRanked();
     _docsReRanked += partition.docsReRanked();
-    _doomOvertime.add(Avg().set(partition.doomOvertime().sec()));
+    _doomOvertime.add(partition._doomOvertime);
     if (partition.softDoomed()) {
         _softDoomed = 1;
     }

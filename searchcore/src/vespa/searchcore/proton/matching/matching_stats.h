@@ -65,6 +65,7 @@ public:
         Avg    _doomOvertime;
         Avg    _active_time;
         Avg    _wait_time;
+        friend MatchingStats;
     public:
         Partition()
             : _docsCovered(0),
