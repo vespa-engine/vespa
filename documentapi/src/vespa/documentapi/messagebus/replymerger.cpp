@@ -170,7 +170,7 @@ ReplyMerger::mergedReply()
 {
     std::unique_ptr<mbus::Reply> generated;
     if (shouldReturnErrorReply()) {
-        generated = std::move(releaseGeneratedErrorReply());
+        generated = releaseGeneratedErrorReply();
     } else if (!successfullyMergedAtLeastOneReply()) {
         return createEmptyReplyResult();
     }
