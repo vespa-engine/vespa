@@ -97,7 +97,7 @@ SlimeBinaryFormat::serialize(const Tensor &tensor)
     auto slime = std::make_unique<Slime>();
     SlimeInserter inserter(*slime);
     serialize(inserter, tensor);
-    return std::move(slime);
+    return slime;
 }
 
 
