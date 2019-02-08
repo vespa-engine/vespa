@@ -124,40 +124,49 @@ public class ZookeeperStatusService implements StatusService {
                                HostStatus status) {
         String path = hostAllowedDownPath(applicationInstanceReference, hostName);
 
+        boolean invalidate = false;
         try {
             switch (status) {
                 case NO_REMARKS:
-                    deleteNode_ignoreNoNodeException(path,"Host already has state NO_REMARKS, path = " + path);
+                    invalidate = deleteNode_ignoreNoNodeException(path, "Host already has state NO_REMARKS, path = " + path);
                     break;
                 case ALLOWED_TO_BE_DOWN:
-                    createNode_ignoreNodeExistsException(path,
-                                                         "Host already has state ALLOWED_TO_BE_DOWN, path = " + path);
+                    invalidate = createNode_ignoreNodeExistsException(path, "Host already has state ALLOWED_TO_BE_DOWN, path = " + path);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected status '" + status + "'.");
             }
         } catch (Exception e) {
-            //TODO: IOException with explanation
+            invalidate = true;
             throw new RuntimeException(e);
         }
         finally {
-            counter.next();
-            hostsDown.remove(applicationInstanceReference);
+            if (invalidate) {
+                counter.next();
+                hostsDown.remove(applicationInstanceReference);
+            }
         }
     }
 
-    private void deleteNode_ignoreNoNodeException(String path, String debugLogMessageIfNotExists) throws Exception {
+    private boolean deleteNode_ignoreNoNodeException(String path, String debugLogMessageIfNotExists) throws Exception {
         try {
             curator.framework().delete().forPath(path);
+            return true;
         } catch (NoNodeException e) {
             log.log(LogLevel.DEBUG, debugLogMessageIfNotExists, e);
+            return false;
         }
     }
 
-    private void createNode_ignoreNodeExistsException(String path, String debugLogMessageIfExists) throws Exception {
+    private boolean createNode_ignoreNodeExistsException(String path, String debugLogMessageIfExists) throws Exception {
         try {
             curator.framework().create()
                     .creatingParentsIfNeeded()
                     .forPath(path);
+            return true;
         } catch (NodeExistsException e) {
             log.log(LogLevel.DEBUG, debugLogMessageIfExists, e);
+            return false;
         }
     }
 
