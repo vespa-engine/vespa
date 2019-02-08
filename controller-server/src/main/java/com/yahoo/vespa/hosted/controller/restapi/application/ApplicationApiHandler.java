@@ -174,6 +174,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.getUri().getQuery());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
@@ -675,6 +677,18 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor response = slime.setObject();
         toSlime(application.rotationStatus(deployment), response);
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse deploying(String tenant, String application, HttpRequest request) {
+        Application app = controller.applications().require(ApplicationId.from(tenant, application, "default"));
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        if (!app.change().isEmpty()) {
+            app.change().platform().ifPresent(version -> root.setString("platform", version.toString()));
+            app.change().application().ifPresent(applicationVersion -> root.setString("application", applicationVersion.id()));
+            root.setBool("pinned", app.change().isPinned());
+        }
         return new SlimeJsonResponse(slime);
     }
 
