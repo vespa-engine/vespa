@@ -4,11 +4,13 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/eval/tensor/cell_values.h>
 #include <vespa/eval/tensor/sparse/sparse_tensor.h>
+#include <vespa/eval/tensor/test/test_utils.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
 
 using vespalib::eval::Value;
 using vespalib::eval::TensorSpec;
+using vespalib::tensor::test::makeTensor;
 using namespace vespalib::tensor;
 
 namespace {
@@ -19,26 +21,18 @@ replace(double, double b)
     return b;
 }
 
-template <typename Tensor>
-const Tensor *asTensor(Value &value)
+}
+
+void
+checkUpdate(const TensorSpec &source, const TensorSpec &update, const TensorSpec &expect)
 {
-    auto *tensor = dynamic_cast<const Tensor *>(value.as_tensor());
-    ASSERT_TRUE(tensor);
-    return tensor;
-}
-
-}
-
-void checkUpdate(const TensorSpec &source, const TensorSpec &update, const TensorSpec &expect) {
-    auto sourceValue = DefaultTensorEngine::ref().from_spec(source);
-    auto sourceTensor = asTensor<Tensor>(*sourceValue);
-    auto updateValue = DefaultTensorEngine::ref().from_spec(update);
-    auto updateTensor = asTensor<SparseTensor>(*updateValue);
+    auto sourceTensor = makeTensor<Tensor>(source);
+    auto updateTensor = makeTensor<SparseTensor>(update);
     const CellValues cellValues(*updateTensor);
+
     auto actualTensor = sourceTensor->modify(replace, cellValues);
     auto actual = actualTensor->toSpec();
-    auto expectValue = DefaultTensorEngine::ref().from_spec(expect);
-    auto expectTensor = asTensor<Tensor>(*expectValue);
+    auto expectTensor = makeTensor<Tensor>(expect);
     auto expectPadded = expectTensor->toSpec();
     EXPECT_EQUAL(actual, expectPadded);
 }
