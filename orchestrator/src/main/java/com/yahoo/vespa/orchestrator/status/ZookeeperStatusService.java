@@ -293,7 +293,6 @@ public class ZookeeperStatusService implements StatusService {
         }
 
         @Override
-        @NoThrow
         public void close()  {
             try {
                 lock.close();

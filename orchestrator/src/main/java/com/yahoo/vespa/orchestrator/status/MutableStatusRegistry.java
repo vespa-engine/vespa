@@ -27,7 +27,6 @@ public interface MutableStatusRegistry extends ReadOnlyStatusRegistry, AutoClose
      * so we override it here to strip the exception from the signature.
      */
     @Override
-    @NoThrow
     void close();
 
 }
