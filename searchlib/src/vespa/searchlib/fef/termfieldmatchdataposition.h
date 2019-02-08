@@ -49,7 +49,6 @@ class TermFieldMatchDataPosition : public TermFieldMatchDataPositionKey
 private:
     int32_t _elementWeight;
     uint32_t _elementLen;
-    uint32_t _matchLength;
     double   _matchExactness; // or possibly _matchWeight
 
 public:
@@ -57,7 +56,6 @@ public:
         : TermFieldMatchDataPositionKey(),
           _elementWeight(1),
           _elementLen(SEARCHLIB_FEF_UNKNOWN_FIELD_LENGTH),
-          _matchLength(1),
           _matchExactness(1.0)
     { }
 
@@ -84,7 +82,6 @@ public:
         : TermFieldMatchDataPositionKey(elementId, position),
           _elementWeight(elementWeight),
           _elementLen(elementLen),
-          _matchLength(1),
           _matchExactness(1.0)
     { }
 

@@ -41,11 +41,11 @@ BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::rebalanceLeafEn
     LeafNodeType *rightNode = nullptr;
     if (parentIdx > 0) {
         leftRef = parentNode->getChild(parentIdx - 1);
-        leftNode = allocator.template mapLeafRef(leftRef);
+        leftNode = allocator.mapLeafRef(leftRef);
     }
     if (parentIdx + 1 < parentNode->validSlots()) {
         rightRef = parentNode->getChild(parentIdx + 1);
-        rightNode = allocator.template mapLeafRef(rightRef);
+        rightNode = allocator.mapLeafRef(rightRef);
     }
     if (leftNode != nullptr && leftNode->validSlots() < LeafNodeType::maxSlots() &&
         (rightNode == nullptr || leftNode->validSlots() < rightNode->validSlots())) {

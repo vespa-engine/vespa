@@ -23,7 +23,6 @@ vespalib::GenerationHandler generation_handler;
 vespalib::GenerationHolder generation_holder;
 DummyDocIdLimitProvider limit_provider;
 SimpleIndexConfig config;
-const uint64_t hash = 0x123;
 
 TEST("require that empty posting list starts at 0.") {
     PredicateIndex index(generation_handler, generation_holder, limit_provider, config, 8);

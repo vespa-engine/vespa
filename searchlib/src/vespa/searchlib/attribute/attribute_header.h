@@ -27,7 +27,6 @@ private:
     bool        _predicateParamsSet;
     PersistentPredicateParams _predicateParams;
     uint32_t    _numDocs;
-    uint32_t    _fixedWidth;
     uint64_t    _uniqueValueCount;
     uint64_t    _totalValueCount;
     uint64_t    _createSerialNum;

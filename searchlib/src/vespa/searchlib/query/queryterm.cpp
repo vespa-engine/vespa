@@ -24,7 +24,7 @@ CharInfo::CharInfo()
     // XXX: Should refactor to reduce number of magic constants.
     memset(_charInfo, 0x01, 128); // All 7 bits are ascii7bit
     memset(_charInfo+128, 0x00, 128); // The rest are not.
-    memset(_charInfo + '0', 0x07, 10);
+    memset(_charInfo + static_cast<uint8_t>('0'), 0x07, 10);
     _charInfo[uint8_t('-')] = 0x07;
     _charInfo[uint8_t('<')] = 0x07;
     _charInfo[uint8_t('>')] = 0x07;

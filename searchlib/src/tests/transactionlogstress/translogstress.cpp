@@ -325,7 +325,6 @@ private:
     SerialNum _from;
     SerialNum _to;
     SerialNum _next;
-    bool _running;
     State _state;
     Monitor _monitor;
 

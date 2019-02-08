@@ -44,13 +44,13 @@ do {                                                                 \
         resop (valI[0] >> 1);                                        \
         valI += 1;                                                   \
     } else if (__builtin_expect((valI[0] & 2) != 0, true)) {         \
-        resop (((*(const uint32_t *) valI) >> 2) & ((1 << 14) - 1)); \
+        resop (((*(const uint32_t *) (const void *)valI) >> 2) & ((1 << 14) - 1)); \
         valI += 2;                                                   \
     } else if (__builtin_expect((valI[0] & 4) != 0, true)) {         \
-        resop (((*(const uint32_t *) valI) >> 3) & ((1 << 21) - 1)); \
+        resop (((*(const uint32_t *) (const void *)valI) >> 3) & ((1 << 21) - 1)); \
         valI += 3;                                                   \
     } else {                                                         \
-        resop ((*(const uint32_t *) valI) >> 4);                     \
+        resop ((*(const uint32_t *) (const void *) valI) >> 4);       \
         valI += 4;                                                   \
     }                                                                \
 } while (0)
@@ -59,8 +59,7 @@ FakeZcbFilterOcc::FakeZcbFilterOcc(const FakeWord &fw)
     : FakePosting(fw.getName() + ".zcbfilterocc"),
       _compressed(),
       _docIdLimit(0),
-      _hitDocs(0),
-      _bitSize(0)
+      _hitDocs(0)
 {
     std::vector<uint8_t> bytes;
     uint32_t lastDocId = 0u;
@@ -68,12 +67,9 @@ FakeZcbFilterOcc::FakeZcbFilterOcc(const FakeWord &fw)
 
     typedef FakeWord FW;
     typedef FW::DocWordFeatureList DWFL;
-    typedef FW::DocWordPosFeatureList DWPFL;
 
     DWFL::const_iterator d(fw._postings.begin());
     DWFL::const_iterator de(fw._postings.end());
-    DWPFL::const_iterator p(fw._wordPosFeatures.begin());
-    DWPFL::const_iterator pe(fw._wordPosFeatures.end());
 
     while (d != de) {
         if (lastDocId == 0u) {

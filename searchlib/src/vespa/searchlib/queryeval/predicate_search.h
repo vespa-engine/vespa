@@ -45,7 +45,6 @@ class PredicateSearch : public SearchIterator {
     fef::TermFieldMatchData *_termFieldMatchData;
     const uint8_t * _min_feature_vector;
     const IntervalRange * _interval_range_vector;
-    const IntervalRange _max_interval_range;
 
     VESPA_DLL_LOCAL bool advanceOneTo(uint32_t doc_id, size_t index);
     VESPA_DLL_LOCAL void advanceAllTo(uint32_t doc_id);

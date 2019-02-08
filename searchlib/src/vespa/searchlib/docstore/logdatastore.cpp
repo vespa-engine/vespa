@@ -863,7 +863,7 @@ LogDataStore::eraseIncompleteCompactedFiles(NameIdSet partList)
         FileChunk::eraseDatFile(name);
     }
 
-    return std::move(partList);
+    return partList;
 }
 
 void
@@ -1183,7 +1183,7 @@ LogDataStore::getFileChunkStats() const
         }
     }
     std::sort(result.begin(), result.end());
-    return std::move(result);
+    return result;
 }
 
 void

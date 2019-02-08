@@ -244,7 +244,7 @@ struct ImportedAttributeFixture {
         reset_with_new_target_attr(create_single_attribute<AttrVecType>(type, fast_search, filter));
         // Fun experiment: rename `auto& mapping` to `auto& m` and watch GCC howl about
         // shadowing a variable... that exists in the set_up_and_map function!
-        set_up_and_map<AttrVecType>(mappings, [this](auto &target_vec, auto &mapping) {
+        set_up_and_map<AttrVecType>(mappings, [](auto &target_vec, auto &mapping) {
             ASSERT_TRUE(target_vec.update(mapping._to_lid, mapping._value_in_target_attr));
         });
     }
@@ -254,7 +254,7 @@ struct ImportedAttributeFixture {
             BasicType type,
             const std::vector<LidToLidMapping<std::vector<ValueType>>> &mappings) {
         reset_with_new_target_attr(create_array_attribute<AttrVecType>(type));
-        set_up_and_map<AttrVecType>(mappings, [this](auto &target_vec, auto &mapping) {
+        set_up_and_map<AttrVecType>(mappings, [](auto &target_vec, auto &mapping) {
             constexpr uint32_t weight = 1;
             for (const auto &v : mapping._value_in_target_attr) {
                 ASSERT_TRUE(target_vec.append(mapping._to_lid, v, weight));
@@ -268,7 +268,7 @@ struct ImportedAttributeFixture {
             const std::vector<LidToLidMapping<std::vector<WeightedValueType>>> &mappings,
             FastSearchConfig fast_search = FastSearchConfig::Default) {
         reset_with_new_target_attr(create_wset_attribute<AttrVecType>(type, fast_search));
-        set_up_and_map<AttrVecType>(mappings, [this](auto &target_vec, auto &mapping) {
+        set_up_and_map<AttrVecType>(mappings, [](auto &target_vec, auto &mapping) {
             for (const auto &v : mapping._value_in_target_attr) {
                 ASSERT_TRUE(target_vec.append(mapping._to_lid, v.value(), v.weight()));
             }
@@ -279,7 +279,7 @@ struct ImportedAttributeFixture {
     void reset_with_tensor_reference_mappings(const vespalib::eval::ValueType &tensorType,
                                               const std::vector<LidToLidMapping<ValueType>> &mappings) {
         reset_with_new_target_attr(create_tensor_attribute<AttrVecType>(tensorType));
-        set_up_and_map<AttrVecType>(mappings, [this](auto &target_vec, auto &mapping) {
+        set_up_and_map<AttrVecType>(mappings, [](auto &target_vec, auto &mapping) {
             target_vec.setTensor(mapping._to_lid, *mapping._value_in_target_attr);
         });
     }

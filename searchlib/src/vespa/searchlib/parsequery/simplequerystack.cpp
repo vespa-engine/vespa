@@ -339,7 +339,7 @@ SimpleQueryStack::ReadString(const char *&p)
 uint64_t
 SimpleQueryStack::ReadUint64(const char *&p)
 {
-    uint64_t l = static_cast<uint64_t>(vespalib::nbo::n2h(*(const uint64_t *)p));
+    uint64_t l = static_cast<uint64_t>(vespalib::nbo::n2h(*(const uint64_t *)(const void *)p));
     p += sizeof(uint64_t);
     return l;
 }

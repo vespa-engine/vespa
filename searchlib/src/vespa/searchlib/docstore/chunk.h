@@ -107,7 +107,6 @@ private:
     vespalib::nbostream & getData();
 
     uint32_t                      _id;
-    uint32_t                      _nextOffset;
     uint64_t                      _lastSerial;
     std::unique_ptr<ChunkFormat>  _format;
     LidList                       _lids;

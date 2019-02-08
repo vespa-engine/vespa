@@ -63,7 +63,6 @@ public:
         vespalib::string       _str;
         int                    _currIndent;
         std::stack<StructType> _stack;
-        uint32_t               _numberWidth;
 
         void addIndent();
         void addText(const vespalib::string &value);

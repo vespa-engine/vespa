@@ -679,7 +679,6 @@ class DumpWordsSubApp : public SubApp
     FieldOptions _fieldOptions;
     uint64_t _minNumDocs;
     bool _verbose;
-    bool _all;
     bool _showWordNum;
 
 public:

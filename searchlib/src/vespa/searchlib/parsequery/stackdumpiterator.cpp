@@ -47,7 +47,7 @@ vespalib::string SimpleQueryStackDumpIterator::readString(const char *&p) {
 
 uint64_t SimpleQueryStackDumpIterator::readUint64(const char *&p) {
     if (p + sizeof(uint64_t) > _bufEnd) throw false;
-    uint64_t l = vespalib::nbo::n2h(*(const uint64_t *)p);
+    uint64_t l = vespalib::nbo::n2h(*(const uint64_t *)(const void *)p);
     p += sizeof(uint64_t);
     return l;
 }

@@ -100,7 +100,6 @@ lookupPosting(const PredicateIndex &index, uint64_t hash) {
 }
 
 const int min_feature = 3;
-const int k = min_feature - 1;
 const uint32_t doc_id = 2;
 const uint64_t hash = 0x12345;
 const uint64_t hash2 = 0x3456;

@@ -49,7 +49,7 @@ size_t
 ChunkFormat::getMaxPackSize(const CompressionConfig & compression) const
 {
     const size_t OVERHEAD(0);
-    const size_t MINSIZE(1 + 1 + 4 + 4 + includeSerializedSize() ? 4 : 0);  // version + type + real length + crc + lastserial
+    const size_t MINSIZE(1 + 1 + 4 + 4 + (includeSerializedSize() ? 4 : 0));  // version + type + real length + crc + lastserial
     const size_t formatSpecificSize(getHeaderSize());
     size_t rawSize(MINSIZE + formatSpecificSize + OVERHEAD);
     const size_t payloadSize(_dataBuf.size() + 8);
