@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -55,6 +56,8 @@ public class NodeSpec {
 
     private final Optional<String> hardwareDivergence;
     private final Optional<String> hardwareFailureDescription;
+    private final NodeReports reports;
+
     private final Optional<String> parentHostname;
 
     public NodeSpec(
@@ -87,6 +90,7 @@ public class NodeSpec {
             Set<String> ipAddresses,
             Optional<String> hardwareDivergence,
             Optional<String> hardwareFailureDescription,
+            NodeReports reports,
             Optional<String> parentHostname) {
         this.hostname = Objects.requireNonNull(hostname);
         this.wantedDockerImage = Objects.requireNonNull(wantedDockerImage);
@@ -117,6 +121,7 @@ public class NodeSpec {
         this.ipAddresses = Objects.requireNonNull(ipAddresses);
         this.hardwareDivergence = Objects.requireNonNull(hardwareDivergence);
         this.hardwareFailureDescription = Objects.requireNonNull(hardwareFailureDescription);
+        this.reports = Objects.requireNonNull(reports);
         this.parentHostname = Objects.requireNonNull(parentHostname);
     }
 
@@ -236,6 +241,8 @@ public class NodeSpec {
         return hardwareFailureDescription;
     }
 
+    public NodeReports getReports() { return reports; }
+
     public Optional<String> getParentHostname() {
         return parentHostname;
     }
@@ -276,6 +283,7 @@ public class NodeSpec {
                 Objects.equals(ipAddresses, that.ipAddresses) &&
                 Objects.equals(hardwareDivergence, that.hardwareDivergence) &&
                 Objects.equals(hardwareFailureDescription, that.hardwareFailureDescription) &&
+                Objects.equals(reports, that.reports) &&
                 Objects.equals(parentHostname, that.parentHostname);
     }
 
@@ -311,6 +319,7 @@ public class NodeSpec {
                 ipAddresses,
                 hardwareDivergence,
                 hardwareFailureDescription,
+                reports,
                 parentHostname);
     }
 
@@ -346,6 +355,7 @@ public class NodeSpec {
                 + " ipAddresses=" + ipAddresses
                 + " hardwareDivergence=" + hardwareDivergence
                 + " hardwareFailureDescription=" + hardwareFailureDescription
+                + " reports=" + reports
                 + " parentHostname=" + parentHostname
                 + " }";
     }
@@ -509,6 +519,7 @@ public class NodeSpec {
         private Set<String> ipAddresses = Collections.emptySet();
         private Optional<String> hardwareDivergence = Optional.empty();
         private Optional<String> hardwareFailureDescription = Optional.empty();
+        private NodeReports reports = new NodeReports();
         private Optional<String> parentHostname = Optional.empty();
 
         public Builder() {}
@@ -527,6 +538,7 @@ public class NodeSpec {
             ipAddresses(node.ipAddresses);
             wantedRebootGeneration(node.wantedRebootGeneration);
             currentRebootGeneration(node.currentRebootGeneration);
+            reports(new NodeReports(node.reports));
 
             node.wantedDockerImage.ifPresent(this::wantedDockerImage);
             node.currentDockerImage.ifPresent(this::currentDockerImage);
@@ -692,6 +704,21 @@ public class NodeSpec {
             return this;
         }
 
+        public Builder reports(NodeReports reports) {
+            this.reports = reports;
+            return this;
+        }
+
+        public Builder report(String reportId, JsonNode report) {
+            this.reports.setReport(reportId, report);
+            return this;
+        }
+
+        public Builder removeReport(String reportId) {
+            reports.removeReport(reportId);
+            return this;
+        }
+
         public Builder parentHostname(String parentHostname) {
             this.parentHostname = Optional.of(parentHostname);
             return this;
@@ -705,6 +732,8 @@ public class NodeSpec {
             attributes.getRestartGeneration().ifPresent(this::currentRestartGeneration);
             attributes.getHardwareFailureDescription().ifPresent(this::hardwareFailureDescription);
             attributes.getWantToDeprovision().ifPresent(this::wantToDeprovision);
+            NodeReports.fromMap(attributes.getReports());
+
             return this;
         }
 
@@ -816,6 +845,10 @@ public class NodeSpec {
             return hardwareFailureDescription;
         }
 
+        public NodeReports getReports() {
+            return reports;
+        }
+
         public Optional<String> getParentHostname() {
             return parentHostname;
         }
@@ -830,7 +863,7 @@ public class NodeSpec {
                     wantedFirmwareCheck, currentFirmwareCheck,
                     minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb,
                     fastDisk, bandwidth, ipAddresses, hardwareDivergence, hardwareFailureDescription,
-                    parentHostname);
+                    reports, parentHostname);
         }
 
     }

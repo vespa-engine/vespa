@@ -1,12 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.*;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetNodesResponse;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeMessageResponse;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -17,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,6 +32,7 @@ import java.util.stream.Stream;
  */
 public class RealNodeRepository implements NodeRepository {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(RealNodeRepository.class);
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final ConfigServerApi configServerApi;
 
@@ -150,7 +157,6 @@ public class RealNodeRepository implements NodeRepository {
         throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
     }
 
-
     private static NodeSpec createNodeSpec(NodeRepositoryNode node) {
         Objects.requireNonNull(node.type, "Unknown node type");
         NodeType nodeType = NodeType.valueOf(node.type);
@@ -176,6 +182,8 @@ public class RealNodeRepository implements NodeRepository {
             membership = new NodeSpec.Membership(node.membership.clusterType, node.membership.clusterId,
                     node.membership.group, node.membership.index, node.membership.retired);
         }
+
+        NodeReports reports = NodeReports.fromMap(node.reports == null ? Collections.emptyMap() : node.reports);
 
         return new NodeSpec(
                 hostName,
@@ -207,6 +215,7 @@ public class RealNodeRepository implements NodeRepository {
                 node.ipAddresses,
                 Optional.ofNullable(node.hardwareDivergence),
                 Optional.ofNullable(node.hardwareFailureDescription),
+                reports,
                 Optional.ofNullable(node.parentHostname));
     }
 
@@ -222,7 +231,7 @@ public class RealNodeRepository implements NodeRepository {
         return node;
     }
 
-    private static NodeRepositoryNode nodeRepositoryNodeFromNodeAttributes(NodeAttributes nodeAttributes) {
+    public static NodeRepositoryNode nodeRepositoryNodeFromNodeAttributes(NodeAttributes nodeAttributes) {
         NodeRepositoryNode node = new NodeRepositoryNode();
         node.currentDockerImage = nodeAttributes.getDockerImage().map(DockerImage::asString).orElse(null);
         node.currentRestartGeneration = nodeAttributes.getRestartGeneration().orElse(null);
@@ -233,6 +242,10 @@ public class RealNodeRepository implements NodeRepository {
         node.hardwareDivergence = nodeAttributes.getHardwareDivergence().orElse(null);
         node.hardwareFailureDescription = nodeAttributes.getHardwareFailureDescription().orElse(null);
         node.wantToDeprovision = nodeAttributes.getWantToDeprovision().orElse(null);
+
+        Map<String, JsonNode> reports = nodeAttributes.getReports();
+        node.reports = reports == null || reports.isEmpty() ? null : new TreeMap<>(reports);
+
         return node;
     }
 }
