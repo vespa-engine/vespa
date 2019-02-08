@@ -198,7 +198,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
 
     MatchingStats::Partition otherSubPart;
     otherSubPart.docsCovered(7).docsMatched(3).docsRanked(2).docsReRanked(1)
-            .active_time(0.5).wait_time(1.0).softDoomed(true).doomOvertime(-300);
+            .active_time(0.5).wait_time(1.0).softDoomed(true).doomOvertime(300);
     all1.merge_partition(otherSubPart, 1);
     EXPECT_EQUAL(1u, all1.softDoomed());
     EXPECT_EQUAL(1000, all1.doomOvertime());
@@ -219,7 +219,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(0.5, all1.getPartition(1).active_time_max());
     EXPECT_EQUAL(1.0, all1.getPartition(1).wait_time_max());
     EXPECT_EQUAL(1u, all1.getPartition(1).softDoomed());
-    EXPECT_EQUAL(-300, all1.getPartition(1).doomOvertime());
+    EXPECT_EQUAL(300, all1.getPartition(1).doomOvertime());
 
     MatchingStats all2;
     all2.merge_partition(otherSubPart, 0);
