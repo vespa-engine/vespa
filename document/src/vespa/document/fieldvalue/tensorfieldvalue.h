@@ -4,7 +4,7 @@
 
 #include "fieldvalue.h"
 
-namespace vespalib { namespace tensor { struct Tensor; } }
+namespace vespalib { namespace tensor { class Tensor; } }
 
 namespace document {
 

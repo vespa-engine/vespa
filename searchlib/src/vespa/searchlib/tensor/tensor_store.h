@@ -6,7 +6,7 @@
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
-namespace vespalib { namespace tensor { struct Tensor; } }
+namespace vespalib { namespace tensor { class Tensor; } }
 
 namespace search {
 

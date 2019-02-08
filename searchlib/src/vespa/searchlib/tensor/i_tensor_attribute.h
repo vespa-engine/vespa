@@ -6,7 +6,7 @@
 
 namespace vespalib::tensor {
 class MutableDenseTensorView;
-struct Tensor;
+class Tensor;
 }
 namespace vespalib::eval { class ValueType; }
 

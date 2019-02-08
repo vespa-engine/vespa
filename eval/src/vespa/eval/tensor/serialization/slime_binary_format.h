@@ -12,7 +12,7 @@ namespace slime { struct Inserter; }
 
 namespace tensor {
 
-struct Tensor;
+class Tensor;
 class TensorBuilder;
 
 /**

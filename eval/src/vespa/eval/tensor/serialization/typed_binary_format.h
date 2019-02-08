@@ -11,7 +11,7 @@ class nbostream;
 
 namespace tensor {
 
-struct Tensor;
+class Tensor;
 class TensorBuilder;
 
 /**

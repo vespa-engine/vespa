@@ -3,7 +3,7 @@
 #pragma once
 
 namespace vespalib::tensor {
-    struct Tensor;
+    class Tensor;
     class SparseTensor;
 }
 
