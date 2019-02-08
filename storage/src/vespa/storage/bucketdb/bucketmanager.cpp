@@ -42,10 +42,10 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
       _firstEqualClusterStateVersion(0),
       _lastClusterStateSeen(0),
       _lastUnifiedClusterState(""),
-      _metrics(new BucketManagerMetrics),
       _doneInitialized(false),
       _requestsCurrentlyProcessing(0),
-      _component(compReg, "bucketmanager")
+      _component(compReg, "bucketmanager"),
+      _metrics(std::make_shared<BucketManagerMetrics>(_component.getBucketSpaceRepo()))
 {
     _metrics->setDisks(_component.getDiskCount());
     _component.registerStatusPage(*this);
@@ -197,6 +197,19 @@ namespace {
 
             return StorBucketDatabase::CONTINUE;
         };
+
+        void add(const MetricsUpdater& rhs) {
+            assert(diskCount == rhs.diskCount);
+            for (uint16_t i = 0; i < diskCount; i++) {
+                auto& d = disk[i];
+                auto& s = rhs.disk[i];
+                d.buckets += s.buckets;
+                d.docs    += s.docs;
+                d.bytes   += s.bytes;
+                d.ready   += s.ready;
+                d.active  += s.active;
+            }
+        }
     };
 
 }   // End of anonymous namespace
@@ -216,18 +229,33 @@ BucketManager::updateMetrics(bool updateDocCount)
         updateDocCount ? "" : ", minusedbits only",
         _doneInitialized ? "" : ", server is not done initializing");
 
-    uint32_t diskCount = _component.getDiskCount();
+    uint16_t diskCount = _component.getDiskCount();
+    assert(diskCount >= 1);
     if (!updateDocCount || _doneInitialized) {
-        MetricsUpdater m(diskCount);
-        _component.getBucketSpaceRepo().forEachBucketChunked(
-                m, "BucketManager::updateMetrics");
+        MetricsUpdater total(diskCount);
+        for (auto& space : _component.getBucketSpaceRepo()) {
+            MetricsUpdater m(diskCount);
+            space.second->bucketDatabase().chunkedAll(m, "BucketManager::updateMetrics");
+            total.add(m);
+            if (updateDocCount) {
+                auto bm = _metrics->bucket_spaces.find(space.first);
+                assert(bm != _metrics->bucket_spaces.end());
+                // No system with multiple bucket spaces has more than 1 "disk"
+                // TODO remove disk concept entirely as it's a VDS relic
+                bm->second->buckets_total.set(m.disk[0].buckets);
+                bm->second->docs.set(m.disk[0].docs);
+                bm->second->bytes.set(m.disk[0].bytes);
+                bm->second->active_buckets.set(m.disk[0].active);
+                bm->second->ready_buckets.set(m.disk[0].ready);
+            }
+        }
         if (updateDocCount) {
             for (uint16_t i = 0; i< diskCount; i++) {
-                _metrics->disks[i]->buckets.addValue(m.disk[i].buckets);
-                _metrics->disks[i]->docs.addValue(m.disk[i].docs);
-                _metrics->disks[i]->bytes.addValue(m.disk[i].bytes);
-                _metrics->disks[i]->active.addValue(m.disk[i].active);
-                _metrics->disks[i]->ready.addValue(m.disk[i].ready);
+                _metrics->disks[i]->buckets.addValue(total.disk[i].buckets);
+                _metrics->disks[i]->docs.addValue(total.disk[i].docs);
+                _metrics->disks[i]->bytes.addValue(total.disk[i].bytes);
+                _metrics->disks[i]->active.addValue(total.disk[i].active);
+                _metrics->disks[i]->ready.addValue(total.disk[i].ready);
             }
         }
     }

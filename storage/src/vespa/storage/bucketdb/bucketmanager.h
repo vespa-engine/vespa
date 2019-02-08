@@ -79,10 +79,10 @@ private:
      * The unified version of the last cluster state.
      */
     std::string _lastUnifiedClusterState;
-    std::shared_ptr<BucketManagerMetrics> _metrics;
     bool _doneInitialized;
     size_t _requestsCurrentlyProcessing;
     ServiceLayerComponent _component;
+    std::shared_ptr<BucketManagerMetrics> _metrics;
     framework::Thread::UP _thread;
 
     BucketManager(const BucketManager&);

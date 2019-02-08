@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmanagermetrics.h"
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <cassert>
 
@@ -23,11 +25,28 @@ DataStoredMetrics::DataStoredMetrics(const std::string& name, metrics::MetricSet
     ready.logOnlyIfSet();
 }
 
-DataStoredMetrics::~DataStoredMetrics() { }
+DataStoredMetrics::~DataStoredMetrics() = default;
 
-BucketManagerMetrics::BucketManagerMetrics()
+BucketSpaceMetrics::BucketSpaceMetrics(const vespalib::string& space_name, metrics::MetricSet* owner)
+        : metrics::MetricSet("bucket_space", {{"name", space_name}}, "", owner),
+          buckets_total("buckets_total", {}, "Total number buckets present in the bucket space (ready + not ready)", this),
+          docs("docs", {}, "Documents stored in the bucket space", this),
+          bytes("bytes", {}, "Bytes stored across all documents in the bucket space", this),
+          active_buckets("active_buckets", {}, "Number of active buckets in the bucket space", this),
+          ready_buckets("ready_buckets", {}, "Number of ready buckets in the bucket space", this)
+{
+    docs.logOnlyIfSet();
+    bytes.logOnlyIfSet();
+    active_buckets.logOnlyIfSet();
+    ready_buckets.logOnlyIfSet();
+}
+
+BucketSpaceMetrics::~BucketSpaceMetrics() = default;
+
+BucketManagerMetrics::BucketManagerMetrics(const ContentBucketSpaceRepo& repo)
     : metrics::MetricSet("datastored", {}, ""),
       disks(),
+      bucket_spaces(),
       total("alldisks", {{"sum"}}, "Sum of data stored metrics for all disks", this),
       simpleBucketInfoRequestSize("simplebucketinforeqsize", {},
             "Amount of buckets returned in simple bucket info requests",
@@ -36,9 +55,14 @@ BucketManagerMetrics::BucketManagerMetrics()
             "Amount of distributors answered at once in full bucket info requests.", this),
       fullBucketInfoLatency("fullbucketinfolatency", {},
             "Amount of time spent to process a full bucket info request", this)
-{ }
+{
+    for (const auto& space : repo) {
+        bucket_spaces.emplace(space.first, std::make_unique<BucketSpaceMetrics>(
+                document::FixedBucketSpaces::to_string(space.first), this));
+    }
+}
 
-BucketManagerMetrics::~BucketManagerMetrics() { }
+BucketManagerMetrics::~BucketManagerMetrics() = default;
 
 void
 BucketManagerMetrics::setDisks(uint16_t numDisks) {
@@ -47,8 +71,7 @@ BucketManagerMetrics::setDisks(uint16_t numDisks) {
         throw IllegalStateException("Cannot initialize disks twice", VESPA_STRLOC);
     }
     for (uint16_t i = 0; i<numDisks; i++) {
-        disks.push_back(DataStoredMetrics::SP(
-                new DataStoredMetrics(make_string("disk%d", i), this)));
+        disks.push_back(std::make_shared<DataStoredMetrics>(make_string("disk%d", i), this));
         total.addMetricToSum(*disks.back());
     }
 }
