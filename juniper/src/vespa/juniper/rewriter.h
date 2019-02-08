@@ -23,7 +23,7 @@ namespace juniper
 {
 
 // Opaque handle only used by implementer:
-class RewriteHandle;
+struct RewriteHandle;
 
 
 class IRewriter

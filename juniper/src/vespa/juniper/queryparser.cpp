@@ -17,9 +17,8 @@ namespace juniper {
 
 // simple syntax tree
 
-class QueryItem
+struct QueryItem
 {
-public:
     QueryItem(const char* name, int p1 = -1) :
         _name(name), _index(""), _child(), _prefix(false), _p1(p1)
     { }
