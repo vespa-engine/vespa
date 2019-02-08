@@ -21,9 +21,9 @@ import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
+import com.yahoo.vespa.service.monitor.ServiceModel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +32,7 @@ import org.mockito.InOrder;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Optional;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,9 +50,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 /**
  * Test Orchestrator with a mock backend (the InMemoryStatusService)
@@ -313,16 +311,8 @@ public class OrchestratorImplTest {
 
     @Test
     public void testGetHost() throws Exception {
-        ClusterControllerClientFactory clusterControllerClientFactory =
-                mock(ClusterControllerClientFactory.class);
-        StatusService statusService = mock(StatusService.class);
-        InstanceLookupService lookupService = mock(InstanceLookupService.class);
-
-        orchestrator = new OrchestratorImpl(
-                clusterControllerClientFactory,
-                statusService,
-                new OrchestratorConfig(new OrchestratorConfig.Builder()),
-                lookupService);
+        ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
+        StatusService statusService = new ZookeeperStatusService(new MockCurator());
 
         HostName hostName = new HostName("host.yahoo.com");
         TenantId tenantId = new TenantId("tenant");
@@ -351,17 +341,18 @@ public class OrchestratorImplTest {
                                         .collect(Collectors.toSet())))
                         .collect(Collectors.toSet()));
 
-        when(lookupService.findInstanceByHost(hostName))
-                .thenReturn(Optional.of(applicationInstance));
+        InstanceLookupService lookupService = new ServiceMonitorInstanceLookupService(
+                () -> new ServiceModel(Map.of(reference, applicationInstance)));
 
-        ReadOnlyStatusRegistry readOnlyStatusRegistry = mock(ReadOnlyStatusRegistry.class);
-        when(statusService.forApplicationInstance(reference))
-                .thenReturn(readOnlyStatusRegistry);
-        when(readOnlyStatusRegistry.getHostStatus(hostName))
-                .thenReturn(HostStatus.ALLOWED_TO_BE_DOWN);
+        orchestrator = new OrchestratorImpl(
+                clusterControllerClientFactory,
+                statusService,
+                new OrchestratorConfig(new OrchestratorConfig.Builder()),
+                lookupService);
+
+        orchestrator.setNodeStatus(hostName, HostStatus.ALLOWED_TO_BE_DOWN);
 
         Host host = orchestrator.getHost(hostName);
-
         assertEquals(reference, host.getApplicationInstanceReference());
         assertEquals(hostName, host.getHostName());
         assertEquals(HostStatus.ALLOWED_TO_BE_DOWN, host.getHostStatus());
