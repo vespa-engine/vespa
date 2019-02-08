@@ -121,7 +121,7 @@ public class NodeSpec {
         this.ipAddresses = Objects.requireNonNull(ipAddresses);
         this.hardwareDivergence = Objects.requireNonNull(hardwareDivergence);
         this.hardwareFailureDescription = Objects.requireNonNull(hardwareFailureDescription);
-        this.reports = reports;
+        this.reports = Objects.requireNonNull(reports);
         this.parentHostname = Objects.requireNonNull(parentHostname);
     }
 
@@ -732,7 +732,7 @@ public class NodeSpec {
             attributes.getRestartGeneration().ifPresent(this::currentRestartGeneration);
             attributes.getHardwareFailureDescription().ifPresent(this::hardwareFailureDescription);
             attributes.getWantToDeprovision().ifPresent(this::wantToDeprovision);
-            NodeReports.fromMap(Optional.of(attributes.getReports()));
+            NodeReports.fromMap(attributes.getReports());
 
             return this;
         }

@@ -28,11 +28,11 @@ public class NodeReports {
     }
 
     private NodeReports(Map<String, JsonNode> reports) {
-        this.reports.putAll(reports);
+        this.reports.putAll(Objects.requireNonNull(reports));
     }
 
-    public static NodeReports fromMap(Optional<Map<String, JsonNode>> reports) {
-        return reports.map(NodeReports::new).orElseGet(NodeReports::new);
+    public static NodeReports fromMap(Map<String, JsonNode> reports) {
+        return new NodeReports(reports);
     }
 
     public void setReport(String reportId, JsonNode jsonNode) {

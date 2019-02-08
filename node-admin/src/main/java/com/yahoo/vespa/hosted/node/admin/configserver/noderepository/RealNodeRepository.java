@@ -183,7 +183,7 @@ public class RealNodeRepository implements NodeRepository {
                     node.membership.group, node.membership.index, node.membership.retired);
         }
 
-        NodeReports reports = NodeReports.fromMap(Optional.ofNullable(node.reports));
+        NodeReports reports = NodeReports.fromMap(node.reports == null ? Collections.emptyMap() : node.reports);
 
         return new NodeSpec(
                 hostName,

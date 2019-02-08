@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.RealNodeRepository;
-import com.yahoo.vespa.hosted.node.admin.configserver.reports.BaseReport;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import org.junit.Test;
 
