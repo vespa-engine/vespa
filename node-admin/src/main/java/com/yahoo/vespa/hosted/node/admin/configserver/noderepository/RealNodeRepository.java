@@ -207,6 +207,7 @@ public class RealNodeRepository implements NodeRepository {
                 node.currentRebootGeneration,
                 Optional.ofNullable(node.wantedFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.currentFirmwareCheck).map(Instant::ofEpochMilli),
+                Optional.ofNullable(node.modelId),
                 node.minCpuCores,
                 node.minMainMemoryAvailableGb,
                 node.minDiskAvailableGb,

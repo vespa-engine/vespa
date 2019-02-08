@@ -64,6 +64,7 @@ public class NodeSerializer {
     private static final String osVersionKey = "osVersion";
     private static final String firmwareCheckKey = "firmwareCheck";
     private static final String reportsKey = "reports";
+    private static final String modelIdKey = "modelId";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -123,6 +124,7 @@ public class NodeSerializer {
         node.status().osVersion().ifPresent(version -> object.setString(osVersionKey, version.toString()));
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
         node.reports().toSlime(object, reportsKey);
+        node.modelId().ifPresent(modelId -> object.setString(modelIdKey, modelId));
     }
 
     private void toSlime(Allocation allocation, Cursor object) {
@@ -170,7 +172,8 @@ public class NodeSerializer {
                         allocationFromSlime(object.field(instanceKey)),
                         historyFromSlime(object.field(historyKey)),
                         nodeTypeFromString(object.field(nodeTypeKey).asString()),
-                        Reports.fromSlime(object.field(reportsKey)));
+                        Reports.fromSlime(object.field(reportsKey)),
+                        modelIdFromSlime(object));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -271,6 +274,13 @@ public class NodeSerializer {
     private Optional<String> hardwareFailureDescriptionFromSlime(Inspector object) {
         if (object.field(hardwareFailureKey).valid()) {
             return Optional.of(object.field(hardwareFailureKey).asString());
+        }
+        return Optional.empty();
+    }
+
+    private Optional<String> modelIdFromSlime(Inspector object) {
+        if (object.field(modelIdKey).valid()) {
+            return Optional.of(object.field(modelIdKey).asString());
         }
         return Optional.empty();
     }

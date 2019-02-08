@@ -40,6 +40,7 @@ public final class Node {
     private final State state;
     private final NodeType type;
     private final Reports reports;
+    private final Optional<String> modelId;
 
     /** Record of the last event of each type happening to this node */
     private final History history;
@@ -71,7 +72,7 @@ public final class Node {
      */
     public Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type,
-                Reports reports) {
+                Reports reports, Optional<String> modelId) {
         Objects.requireNonNull(id, "A node must have an ID");
         requireNonEmptyString(hostname, "A node must have a hostname");
         requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
@@ -98,6 +99,7 @@ public final class Node {
         this.history = history;
         this.type = type;
         this.reports = reports;
+        this.modelId = modelId;
     }
 
     /** Helper for creating and mutating node objects. */
@@ -110,6 +112,7 @@ public final class Node {
         private Flavor flavor;
         private Set<String> ipAddresses;
 
+        private Optional<String> modelId = Optional.empty();
         private Set<String> ipAddressPool = Collections.emptySet();
         private Optional<String> parentHostname = Optional.empty();
         private Status status = Status.initial();
@@ -139,6 +142,11 @@ public final class Node {
 
         public Builder withId(String id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder withModelId(Optional<String> modelId) {
+            this.modelId = modelId;
             return this;
         }
 
@@ -203,7 +211,7 @@ public final class Node {
 
         public Node build() {
             return new Node(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status,
-                    state, allocation, history, type, reports);
+                    state, allocation, history, type, reports, modelId);
         }
     }
 
@@ -261,6 +269,8 @@ public final class Node {
 
     /** Returns all the reports on this node. */
     public Reports reports() { return reports; }
+
+    public Optional<String> modelId() { return modelId; }
 
     /**
      * Returns a copy of this node with wantToRetire set to the given value and updated history.
@@ -331,6 +341,10 @@ public final class Node {
     /** Returns a copy of this with the openStackId set */
     public Node withOpenStackId(String openStackId) {
         return new Builder(this).withId(openStackId).build();
+    }
+
+    public Node withModelId(String modelId) {
+        return new Builder(this).withModelId(Optional.of(modelId)).build();
     }
 
     /** Returns a copy of this with a history record saying it was detected to be down at this instant */
