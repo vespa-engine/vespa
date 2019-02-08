@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 
@@ -50,5 +51,18 @@ public class NodeReports {
 
     public Map<String, JsonNode> getRawMap() {
         return new TreeMap<>(reports);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NodeReports that = (NodeReports) o;
+        return Objects.equals(reports, that.reports);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(reports);
     }
 }
