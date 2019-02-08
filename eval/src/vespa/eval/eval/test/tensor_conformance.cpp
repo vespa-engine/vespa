@@ -234,9 +234,6 @@ struct ImmediateRename : Eval {
 
 //-----------------------------------------------------------------------------
 
-// placeholder used for unused values in a sequence
-const double X = error_value;
-
 // NaN value
 const double my_nan = std::numeric_limits<double>::quiet_NaN();
 

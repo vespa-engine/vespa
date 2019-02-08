@@ -189,7 +189,7 @@ void dump_test(const Inspector &test) {
 
 void verify(Input &in, Output &out) {
     std::map<vespalib::string,size_t> result_map;
-    auto handle_test = [&out,&result_map](Slime &slime)
+    auto handle_test = [&result_map](Slime &slime)
                        {
                            TensorSpec reference_result = eval_expr(slime.get(), SimpleTensorEngine::ref(), false);
                            for (const auto &result: extract_fields(slime["result"])) {
