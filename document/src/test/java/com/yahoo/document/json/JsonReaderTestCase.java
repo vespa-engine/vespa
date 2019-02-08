@@ -1395,6 +1395,16 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_modify_update_with_out_of_bound_cells_throws() {
+        exception.expect(IndexOutOfBoundsException.class);
+        exception.expectMessage("Dimension 'y' has label '3' but type is tensor(x[2],y[3])");
+        createTensorModifyUpdate(inputJson("{",
+                "  'operation': 'replace',",
+                "  'cells': [",
+                "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}"), "dense_tensor");
+    }
+
+    @Test
     public void tensor_modify_update_with_unknown_operation_throws() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Unknown operation 'unknown' in modify update for field 'sparse_tensor'");
