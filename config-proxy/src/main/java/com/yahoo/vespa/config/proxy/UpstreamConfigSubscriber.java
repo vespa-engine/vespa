@@ -66,11 +66,9 @@ public class UpstreamConfigSubscriber implements Subscriber {
 
     private void updateWithNewConfig(GenericConfigHandle handle) {
         RawConfig newConfig = handle.getRawConfig();
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "config to be returned for '" + newConfig.getKey() +
-                    "', generation=" + newConfig.getGeneration() +
-                    ", payload=" + newConfig.getPayload());
-        }
+        log.log(LogLevel.DEBUG, () -> "config to be returned for '" + newConfig.getKey() +
+                "', generation=" + newConfig.getGeneration() +
+                ", payload=" + newConfig.getPayload());
         memoryCache.put(newConfig);
         clientUpdater.updateSubscribers(newConfig);
     }

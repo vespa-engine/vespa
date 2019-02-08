@@ -21,15 +21,15 @@ class Mode {
         DEFAULT, MEMORYCACHE
     }
 
-    public Mode() {
+    Mode() {
         this(ModeName.DEFAULT);
     }
 
-    public Mode(ModeName modeName) {
+    Mode(ModeName modeName) {
         mode = modeName;
     }
 
-    public Mode(String modeString) {
+    Mode(String modeString) {
         switch (modeString.toLowerCase()) {
             case "" :
                 mode = ModeName.DEFAULT;
@@ -45,23 +45,23 @@ class Mode {
         }
     }
 
-    public ModeName getMode() {
+    ModeName getMode() {
         return mode;
     }
 
-    public boolean isDefault() {
+    boolean isDefault() {
         return mode.equals(ModeName.DEFAULT);
     }
 
-    public boolean isMemoryCache() {
+    boolean isMemoryCache() {
         return mode.equals(ModeName.MEMORYCACHE);
     }
 
-    public boolean requiresConfigSource() {
+    boolean requiresConfigSource() {
         return mode.equals(ModeName.DEFAULT);
     }
 
-    public static boolean validModeName(String modeString) {
+    static boolean validModeName(String modeString) {
         return (modeString != null) && modes().contains(modeString);
     }
 
@@ -73,7 +73,7 @@ class Mode {
         return modes;
     }
 
-    public String name() {
+    String name() {
         return mode.name().toLowerCase();
     }
 
