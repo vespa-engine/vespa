@@ -7,7 +7,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.TestIds;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.curator.SessionFailRetryLoop.SessionFailedException;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.test.KillSession;
 import org.apache.curator.test.TestingServer;
@@ -54,10 +53,6 @@ public class ZookeeperStatusServiceTest {
         zookeeperStatusService = new ZookeeperStatusService(curator);
         when(context.getTimeLeft()).thenReturn(Duration.ofSeconds(10));
         when(context.isProbe()).thenReturn(false);
-    }
-
-    private static Curator createConnectedCuratorFramework(TestingServer server) throws InterruptedException {
-        return createConnectedCurator(server);
     }
 
     private static Curator createConnectedCurator(TestingServer server) throws InterruptedException {
@@ -107,56 +102,52 @@ public class ZookeeperStatusServiceTest {
 
     @Test
     public void locks_are_exclusive() throws Exception {
-        try (Curator curator = createConnectedCuratorFramework(testingServer)) {
-            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
+        ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
 
-            final CompletableFuture<Void> lockedSuccessfullyFuture;
-            try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                    .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+        final CompletableFuture<Void> lockedSuccessfullyFuture;
+        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
+                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
-                lockedSuccessfullyFuture = CompletableFuture.runAsync(() -> {
-                    try (MutableStatusRegistry statusRegistry2 = zookeeperStatusService2
-                            .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE))
-                    {
-                    }
-                });
-
-                try {
-                    lockedSuccessfullyFuture.get(3, TimeUnit.SECONDS);
-                    fail("Both zookeeper host status services locked simultaneously for the same application instance");
-                } catch (TimeoutException ignored) {
+            lockedSuccessfullyFuture = CompletableFuture.runAsync(() -> {
+                try (MutableStatusRegistry statusRegistry2 = zookeeperStatusService2
+                        .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE))
+                {
                 }
-            }
+            });
 
-            lockedSuccessfullyFuture.get(1, TimeUnit.MINUTES);
+            try {
+                lockedSuccessfullyFuture.get(3, TimeUnit.SECONDS);
+                fail("Both zookeeper host status services locked simultaneously for the same application instance");
+            } catch (TimeoutException ignored) {
+            }
         }
+
+        lockedSuccessfullyFuture.get(1, TimeUnit.MINUTES);
     }
 
     @Test
     public void failing_to_get_lock_closes_SessionFailRetryLoop() throws Exception {
-        try (Curator curator = createConnectedCuratorFramework(testingServer)) {
-            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
+        ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
 
-            try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                    .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
+                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
-                //must run in separate thread, since having 2 locks in the same thread fails
-                CompletableFuture<Void> resultOfZkOperationAfterLockFailure = CompletableFuture.runAsync(() -> {
-                    try {
-                        zookeeperStatusService2.lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE);
-                        fail("Both zookeeper host status services locked simultaneously for the same application instance");
-                    } catch (RuntimeException e) {
-                    }
+            //must run in separate thread, since having 2 locks in the same thread fails
+            CompletableFuture<Void> resultOfZkOperationAfterLockFailure = CompletableFuture.runAsync(() -> {
+                try {
+                    zookeeperStatusService2.lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE);
+                    fail("Both zookeeper host status services locked simultaneously for the same application instance");
+                } catch (RuntimeException e) {
+                }
 
-                    killSession(curator.framework(), testingServer);
+                killSession(curator.framework(), testingServer);
 
-                    //Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
-                    zookeeperStatusService2.forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
-                            .getHostStatus(TestIds.HOST_NAME1);
-                });
+                //Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
+                zookeeperStatusService2.forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
+                                       .getHostStatus(TestIds.HOST_NAME1);
+            });
 
-                assertThat(resultOfZkOperationAfterLockFailure, notHoldsException());
-            }
+            assertThat(resultOfZkOperationAfterLockFailure, notHoldsException());
         }
     }
 

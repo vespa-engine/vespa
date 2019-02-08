@@ -13,6 +13,7 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
@@ -20,9 +21,9 @@ import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.InMemoryStatusService;
 import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
+import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -79,7 +80,7 @@ public class OrchestratorImplTest {
         clustercontroller = new ClusterControllerClientFactoryMock();
         orchestrator = new OrchestratorImpl(
                 clustercontroller,
-                new InMemoryStatusService(),
+                new ZookeeperStatusService(new MockCurator()),
                 new OrchestratorConfig(new OrchestratorConfig.Builder()),
                 new DummyInstanceLookupService());
 
