@@ -265,6 +265,12 @@ public class ApplicationController {
         if (applicationId.instance().isTester())
             throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
 
+        Version platformVersion;
+        ApplicationVersion applicationVersion;
+        ApplicationPackage applicationPackage;
+        Set<String> rotationNames = new HashSet<>();
+        Set<String> cnames = new HashSet<>();
+
         try (Lock lock = lockForDeployment(applicationId)) {
             LockedApplication application = get(applicationId)
                     .map(app -> new LockedApplication(app, lock))
@@ -274,9 +280,6 @@ public class ApplicationController {
             boolean preferOldestVersion = options.deployCurrentVersion;
 
             // Determine versions to use.
-            Version platformVersion;
-            ApplicationVersion applicationVersion;
-            ApplicationPackage applicationPackage;
             if (canDeployDirectly) {
                 platformVersion = options.vespaVersion.map(Version::new).orElse(application.get().deploymentSpec().majorVersion()
                                                                                            .flatMap(this::lastCompatibleVersion)
@@ -289,17 +292,15 @@ public class ApplicationController {
                 JobType jobType = JobType.from(controller.system(), zone)
                                          .orElseThrow(() -> new IllegalArgumentException("No job is known for " + zone + "."));
                 Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
-                if (    ! job.isPresent()
-                     || ! job.get().lastTriggered().isPresent()
-                     ||   job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
+                if (   ! job.isPresent()
+                    || ! job.get().lastTriggered().isPresent()
+                    ||   job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
                     return unexpectedDeployment(applicationId, zone);
                 JobRun triggered = job.get().lastTriggered().get();
-                platformVersion = preferOldestVersion
-                        ? triggered.sourcePlatform().orElse(triggered.platform())
-                        : triggered.platform();
-                applicationVersion = preferOldestVersion
-                        ? triggered.sourceApplication().orElse(triggered.application())
-                        : triggered.application();
+                platformVersion = preferOldestVersion ? triggered.sourcePlatform().orElse(triggered.platform())
+                                                      : triggered.platform();
+                applicationVersion = preferOldestVersion ? triggered.sourceApplication().orElse(triggered.application())
+                                                         : triggered.application();
 
                 applicationPackage = getApplicationPackage(application.get(), applicationVersion);
                 validateRun(application.get(), zone, platformVersion, applicationVersion);
@@ -308,15 +309,8 @@ public class ApplicationController {
             // TODO: Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
             verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage, deployingIdentity);
 
-            // Update application with information from application package
-            if ( ! preferOldestVersion && ! application.get().deploymentJobs().deployedInternally())
-                // TODO jvenstad: Store only on submissions (not on deployments to dev!!)
-                application = storeWithUpdatedConfig(application, applicationPackage);
-
             // Assign global rotation
             application = withRotation(application, zone);
-            Set<String> rotationNames = new HashSet<>();
-            Set<String> cnames = new HashSet<>();
             Application app = application.get();
             app.globalDnsName(controller.system()).ifPresent(applicationRotation -> {
                 rotationNames.add(app.rotation().orElseThrow(() -> new RuntimeException("Global Dns assigned, but no rotation id present")).asString());
@@ -325,13 +319,20 @@ public class ApplicationController {
                 cnames.add(applicationRotation.oathDnsName());
             });
 
-            // Carry out deployment
-            options = withVersion(platformVersion, options);
-            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, rotationNames, cnames);
-            application = application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant());
-            store(application);
-            return result;
+            // Update application with information from application package
+            if ( ! preferOldestVersion && ! application.get().deploymentJobs().deployedInternally())
+                // TODO jvenstad: Store only on submissions (not on deployments to dev!!)
+                storeWithUpdatedConfig(application, applicationPackage);
+
         }
+
+        // Carry out deployment without holding the application lock.
+        options = withVersion(platformVersion, options);
+        ActivateResult result = deploy(applicationId, applicationPackage, zone, options, rotationNames, cnames);
+
+        lockOrThrow(applicationId, application ->
+                store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant())));
+        return result;
     }
 
     /** Fetches the requested application package from the artifact store(s). */
