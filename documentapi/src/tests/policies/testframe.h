@@ -161,7 +161,7 @@ public:
      */
     mbus::Message::UP setMessage(mbus::Message::UP msg) {
         std::swap(msg, _msg);
-        return std::move(msg);
+        return msg;
     }
 
     /**
