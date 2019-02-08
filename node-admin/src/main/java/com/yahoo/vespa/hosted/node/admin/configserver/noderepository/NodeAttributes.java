@@ -1,14 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * A node in the node repository is modified by setting which attributes to modify in this class,
+ * and then patching the node repository node through {@link NodeRepository#updateNodeAttributes(String, NodeAttributes)}.
+ *
+ * @author Haakon Dybdahl
+ * @author Valerij Fredriksen
+ */
 public class NodeAttributes {
 
     private Optional<Long> restartGeneration = Optional.empty();
@@ -20,6 +30,8 @@ public class NodeAttributes {
     private Optional<String> hardwareDivergence = Optional.empty();
     private Optional<String> hardwareFailureDescription = Optional.empty();
     private Optional<Boolean> wantToDeprovision = Optional.empty();
+    /** The list of reports to patch. A null value is used to remove the report. */
+    private Map<String, JsonNode> reports = new TreeMap<>();
 
     public NodeAttributes() { }
 
@@ -72,6 +84,20 @@ public class NodeAttributes {
         return this;
     }
 
+    public NodeAttributes withReports(Map<String, JsonNode> nodeReports) {
+        this.reports = new TreeMap<>(nodeReports);
+        return this;
+    }
+
+    public NodeAttributes withReport(String reportId, JsonNode jsonNode) {
+        reports.put(reportId, jsonNode);
+        return this;
+    }
+
+    public NodeAttributes withReportRemoved(String reportId) {
+        reports.put(reportId, null);
+        return this;
+    }
 
     public Optional<Long> getRestartGeneration() {
         return restartGeneration;
@@ -109,10 +135,14 @@ public class NodeAttributes {
         return wantToDeprovision;
     }
 
+    public Map<String, JsonNode> getReports() {
+        return reports;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(restartGeneration, rebootGeneration, dockerImage, vespaVersion, currentOsVersion,
-                currentFirmwareCheck, hardwareDivergence, hardwareFailureDescription, wantToDeprovision);
+                currentFirmwareCheck, hardwareDivergence, hardwareFailureDescription, wantToDeprovision, reports);
     }
 
     @Override
@@ -130,6 +160,7 @@ public class NodeAttributes {
                 && Objects.equals(currentFirmwareCheck, other.currentFirmwareCheck)
                 && Objects.equals(hardwareDivergence, other.hardwareDivergence)
                 && Objects.equals(hardwareFailureDescription, other.hardwareFailureDescription)
+                && Objects.equals(reports, other.reports)
                 && Objects.equals(wantToDeprovision, other.wantToDeprovision);
     }
 
@@ -144,6 +175,7 @@ public class NodeAttributes {
                         currentFirmwareCheck.map(at -> "currentFirmwareCheck=" + at),
                         hardwareDivergence.map(hwDivg -> "hardwareDivergence=" + hwDivg),
                         hardwareFailureDescription.map(hwDesc -> "hardwareFailureDescription=" + hwDesc),
+                        Optional.ofNullable(reports.isEmpty() ? null : "reports=" + reports),
                         wantToDeprovision.map(depr -> "wantToDeprovision=" + depr))
                 .filter(Optional::isPresent)
                 .map(Optional::get)

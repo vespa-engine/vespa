@@ -4,7 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -87,10 +89,13 @@ public class NodeRepositoryNode {
     @JsonProperty("allowedToBeDown")
     public Boolean allowedToBeDown;
 
+    @JsonProperty("reports")
+    public Map<String, JsonNode> reports = null;
+
     @Override
     public String toString() {
         return "NodeRepositoryNode{" +
-                "state=" + state +
+                "state='" + state + '\'' +
                 ", hostname='" + hostname + '\'' +
                 ", ipAddresses=" + ipAddresses +
                 ", additionalIpAddresses=" + additionalIpAddresses +
@@ -107,16 +112,16 @@ public class NodeRepositoryNode {
                 ", wantedVespaVersion='" + wantedVespaVersion + '\'' +
                 ", currentOsVersion='" + currentOsVersion + '\'' +
                 ", wantedOsVersion='" + wantedOsVersion + '\'' +
-                ", currentFirmwareCheck='" + currentFirmwareCheck + '\'' +
-                ", wantedFirmwareCheck='" + wantedFirmwareCheck + '\'' +
+                ", currentFirmwareCheck=" + currentFirmwareCheck +
+                ", wantedFirmwareCheck=" + wantedFirmwareCheck +
                 ", failCount=" + failCount +
                 ", fastDisk=" + fastDisk +
                 ", bandwidth=" + bandwidth +
                 ", hardwareFailure=" + hardwareFailure +
                 ", hardwareFailureDescription='" + hardwareFailureDescription + '\'' +
                 ", hardwareDivergence='" + hardwareDivergence + '\'' +
-                ", environment=" + environment +
-                ", type=" + type +
+                ", environment='" + environment + '\'' +
+                ", type='" + type + '\'' +
                 ", wantedDockerImage='" + wantedDockerImage + '\'' +
                 ", currentDockerImage='" + currentDockerImage + '\'' +
                 ", parentHostname='" + parentHostname + '\'' +
@@ -126,6 +131,7 @@ public class NodeRepositoryNode {
                 ", minMainMemoryAvailableGb=" + minMainMemoryAvailableGb +
                 ", minCpuCores=" + minCpuCores +
                 ", allowedToBeDown=" + allowedToBeDown +
+                ", reports=" + reports +
                 '}';
     }
 
