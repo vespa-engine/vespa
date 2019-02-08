@@ -14,11 +14,12 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -29,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.TreeMap;
 
@@ -325,7 +326,7 @@ public class ApplicationSerializer {
         Change outstandingChange = changeFromSlime(root.field(outstandingChangeField));
         Optional<IssueId> ownershipIssueId = optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
         Optional<User> owner = optionalString(root.field(ownerField)).map(User::from);
-        Optional<Integer> majorVersion = optionalInteger(root.field(majorVersionField));
+        OptionalInt majorVersion = optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
         Optional<RotationId> rotation = rotationFromSlime(root.field(rotationField));
@@ -519,8 +520,8 @@ public class ApplicationSerializer {
         return field.valid() ? OptionalLong.of(field.asLong()) : OptionalLong.empty();
     }
 
-    private Optional<Integer> optionalInteger(Inspector field) {
-        return field.valid() ? Optional.of((int)field.asLong()) : Optional.empty();
+    private OptionalInt optionalInteger(Inspector field) {
+        return field.valid() ? OptionalInt.of((int) field.asLong()) : OptionalInt.empty();
     }
 
     private OptionalDouble optionalDouble(Inspector field) {

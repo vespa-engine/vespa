@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
@@ -943,7 +944,7 @@ public class UpgraderTest {
         Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
         Application default0 = tester.createAndDeploy("default0", 2, default0ApplicationPackage);
         tester.applications().lockOrThrow(default0.id(), a -> tester.applications().store(a.withMajorVersion(6)));
-        assertEquals(Optional.of(6), tester.applications().get(default0.id()).get().majorVersion());
+        assertEquals(OptionalInt.of(6), tester.applications().get(default0.id()).get().majorVersion());
 
         // New major version is released
         version = Version.fromString("7.0");

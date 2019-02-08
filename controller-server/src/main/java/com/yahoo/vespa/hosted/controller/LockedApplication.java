@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
@@ -54,7 +55,7 @@ public class LockedApplication {
     private final Change outstandingChange;
     private final Optional<IssueId> ownershipIssueId;
     private final Optional<User> owner;
-    private final Optional<Integer> majorVersion;
+    private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
     private final Optional<RotationId> rotation;
     private final Map<HostName, RotationStatus> rotationStatus;
@@ -78,7 +79,7 @@ public class LockedApplication {
                               DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                               Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                               Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                              Optional<Integer> majorVersion, ApplicationMetrics metrics,
+                              OptionalInt majorVersion, ApplicationMetrics metrics,
                               Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
         this.lock = lock;
         this.id = id;
@@ -231,7 +232,9 @@ public class LockedApplication {
     public LockedApplication withMajorVersion(Integer majorVersion) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs, change, outstandingChange,
-                                     ownershipIssueId, owner, Optional.ofNullable(majorVersion), metrics, rotation, rotationStatus);
+                                     ownershipIssueId, owner,
+                                     majorVersion == null ? OptionalInt.empty() : OptionalInt.of(majorVersion),
+                                     metrics, rotation, rotationStatus);
     }
 
     public LockedApplication with(MetricsService.ApplicationMetrics metrics) {
