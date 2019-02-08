@@ -784,11 +784,11 @@ VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(uint64_t, NumberOptionParser<uint64
 VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(float, NumberOptionParser<float>);
 VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(double, NumberOptionParser<double>);
 
-template class ProgramOptions::NumberOptionParser<int32_t>;
-template class ProgramOptions::NumberOptionParser<uint32_t>;
-template class ProgramOptions::NumberOptionParser<int64_t>;
-template class ProgramOptions::NumberOptionParser<uint64_t>;
-template class ProgramOptions::NumberOptionParser<float>;
-template class ProgramOptions::NumberOptionParser<double>;
+template struct ProgramOptions::NumberOptionParser<int32_t>;
+template struct ProgramOptions::NumberOptionParser<uint32_t>;
+template struct ProgramOptions::NumberOptionParser<int64_t>;
+template struct ProgramOptions::NumberOptionParser<uint64_t>;
+template struct ProgramOptions::NumberOptionParser<float>;
+template struct ProgramOptions::NumberOptionParser<double>;
 
 } // vespalib

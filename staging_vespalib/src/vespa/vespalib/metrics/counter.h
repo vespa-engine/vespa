@@ -9,7 +9,7 @@ namespace vespalib {
 namespace metrics {
 
 class MetricsManager;
-class CounterAggregator;
+struct CounterAggregator;
 
 
 /**
