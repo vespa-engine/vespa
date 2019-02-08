@@ -316,13 +316,11 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         _stats.add(my_stats);
         if (my_stats.softDoomed()) {
             double old = _stats.softDoomFactor();
-            fastos::TimeStamp left = my_stats.doomOvertime();
-            fastos::TimeStamp realTimeout = (left >= 0) ? request.getTimeout() : (request.getTimeout() - left);
-            fastos::TimeStamp softLimit = uint64_t((1.0 - _rankSetup->getSoftTimeoutTailCost()) * realTimeout);
-            _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, duration);
-            LOG(info, "Triggered softtimeout factor adjustment. request=%1.3f, real=%1.3f, limit=%1.3f and duration=%1.3f, rankprofile=%s"
+            fastos::TimeStamp softLimit = uint64_t((1.0 - _rankSetup->getSoftTimeoutTailCost()) * request.getTimeout());
+            _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, duration - my_stats.doomOvertime());
+            LOG(info, "Triggered softtimeout factor adjustment. request=%1.3f, doomOvertime=%1.3f, limit=%1.3f and duration=%1.3f, rankprofile=%s"
                       ", factor adjusted from %1.3f to %1.3f",
-                request.getTimeout().sec(), realTimeout.sec(), softLimit.sec(), duration.sec(),
+                request.getTimeout().sec(), my_stats.doomOvertime().sec(), softLimit.sec(), duration.sec(),
                 request.ranking.c_str(), old, _stats.softDoomFactor());
         }
     }
