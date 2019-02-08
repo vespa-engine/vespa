@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace vespalib::slime { class Inserter; }
+namespace vespalib::slime { struct Inserter; }
 
 namespace search::docsummary {
 
