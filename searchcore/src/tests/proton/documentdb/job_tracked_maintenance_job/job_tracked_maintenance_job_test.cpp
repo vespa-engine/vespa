@@ -22,7 +22,7 @@ getGateVector(size_t size)
 {
     GateVector retval;
     for (size_t i = 0; i < size; ++i) {
-        retval.push_back(std::move(GateUP(new Gate())));
+        retval.push_back(GateUP(new Gate()));
     }
     return retval;
 }

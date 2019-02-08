@@ -80,7 +80,6 @@ private:
     vespalib::eval::ConstantValueCache          _constantValueCache;
     matching::ConstantValueRepo                 _constantValueRepo;
     SearchableDocSubDBConfigurer                _configurer;
-    const size_t                                _numSearcherThreads;
     vespalib::ThreadExecutor                   &_warmupExecutor;
     std::shared_ptr<GidToLidChangeHandler>      _realGidToLidChangeHandler;
     DocumentDBFlushConfig                       _flushConfig;

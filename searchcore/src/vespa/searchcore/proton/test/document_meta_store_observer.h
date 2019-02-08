@@ -120,7 +120,7 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     virtual void setBucketState(const BucketId &bucketId, bool active) override {
         _store.setBucketState(bucketId, active);
     }
-    virtual void populateActiveBuckets(const BucketId::List &buckets) override {
+    virtual void populateActiveBuckets(const document::BucketId::List &buckets) override {
         _store.populateActiveBuckets(buckets);
     }
 

@@ -1003,7 +1003,6 @@ TEST_F("require that bucket move controller is active",
     f._builder.createDocs(3, 1, 3); // 2 docs
     f._builder.createDocs(4, 3, 6); // 3 docs
     test::UserDocuments notReadyDocs(f._builder.getDocs());
-    BucketId bucketId3(notReadyDocs.getBucket(3));
     BucketId bucketId4(notReadyDocs.getBucket(4));
     f.insertDocs(notReadyDocs, f._notReady);
     f._builder.clearDocs();
@@ -1053,15 +1052,12 @@ TEST_F("require that document pruner is active",
     f._builder.createDocs(1, 1, 4); // 3 docs
     f._builder.createDocs(2, 4, 6); // 2 docs
     test::UserDocuments keepDocs(f._builder.getDocs());
-    BucketId bucketId1(keepDocs.getBucket(1));
-    BucketId bucketId2(keepDocs.getBucket(2));
     f.removeDocs(keepDocs, keepTime);
     f._builder.clearDocs();
     f._builder.createDocs(3, 6, 8); // 2 docs
     f._builder.createDocs(4, 8, 11); // 3 docs
     test::UserDocuments removeDocs(f._builder.getDocs());
     BucketId bucketId3(removeDocs.getBucket(3));
-    BucketId bucketId4(removeDocs.getBucket(4));
     f.removeDocs(removeDocs, remTime);
     f.notifyClusterStateChanged();
     EXPECT_TRUE(f._executor.isIdle());

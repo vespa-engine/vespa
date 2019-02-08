@@ -802,7 +802,8 @@ void Test::requireThatWeakAndBlueprintsAreCreatedCorrectly() {
     wand.append(Node::UP(new ProtonStringTerm("foo", field, 0, Weight(3))));
     wand.append(Node::UP(new ProtonStringTerm("bar", field, 0, Weight(7))));
 
-    ResolveViewVisitor resolve_visitor(ViewResolver(), plain_index_env);
+    ViewResolver viewResolver;
+    ResolveViewVisitor resolve_visitor(viewResolver, plain_index_env);
     wand.accept(resolve_visitor);
 
     FakeRequestContext requestContext;
@@ -834,7 +835,8 @@ void Test::requireThatParallelWandBlueprintsAreCreatedCorrectly() {
     wand.append(Node::UP(new ProtonStringTerm("foo", field, 0, Weight(3))));
     wand.append(Node::UP(new ProtonStringTerm("bar", field, 0, Weight(7))));
 
-    ResolveViewVisitor resolve_visitor(ViewResolver(), attribute_index_env);
+    ViewResolver viewResolver;
+    ResolveViewVisitor resolve_visitor(viewResolver, attribute_index_env);
     wand.accept(resolve_visitor);
 
     FakeRequestContext requestContext;

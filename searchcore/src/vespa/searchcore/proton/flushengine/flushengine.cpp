@@ -377,7 +377,7 @@ FlushEngine::putFlushHandler(const DocTypeName &docTypeName, const IFlushHandler
         _pendingPrune.erase(result);
     }
     _pendingPrune.insert(flushHandler);
-    return std::move(result);
+    return result;
 }
 
 IFlushHandler::SP
@@ -386,7 +386,7 @@ FlushEngine::removeFlushHandler(const DocTypeName &docTypeName)
     std::lock_guard<std::mutex> guard(_lock);
     IFlushHandler::SP result(_handlers.removeHandler(docTypeName));
     _pendingPrune.erase(result);
-    return std::move(result);
+    return result;
 }
 
 FlushEngine::FlushMetaSet

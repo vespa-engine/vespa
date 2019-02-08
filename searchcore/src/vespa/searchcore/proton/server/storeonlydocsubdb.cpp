@@ -505,12 +505,11 @@ StoreOnlyDocSubDB::getDocumentDBReference()
 }
 
 StoreOnlySubDBFileHeaderContext::
-StoreOnlySubDBFileHeaderContext(StoreOnlyDocSubDB &owner,
+StoreOnlySubDBFileHeaderContext([[maybe_unused]] StoreOnlyDocSubDB &owner,
                                 const FileHeaderContext & parentFileHeaderContext,
                                 const DocTypeName &docTypeName,
                                 const vespalib::string &baseDir)
     : FileHeaderContext(),
-      _owner(owner),
       _parentFileHeaderContext(parentFileHeaderContext),
       _docTypeName(docTypeName),
       _subDB()

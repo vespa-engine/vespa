@@ -18,8 +18,6 @@ namespace proton {
  */
 class DummyGidToLidChangeHandler : public IGidToLidChangeHandler
 {
-    bool _closed;
-
 public:
     DummyGidToLidChangeHandler();
     virtual ~DummyGidToLidChangeHandler();

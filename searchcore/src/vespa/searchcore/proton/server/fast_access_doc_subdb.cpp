@@ -33,8 +33,6 @@ namespace proton {
 
 namespace {
 
-constexpr search::SerialNum ATTRIBUTE_INIT_SERIAL = 1;
-
 struct AttributeGuardComp
 {
     vespalib::string name;

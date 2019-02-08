@@ -709,10 +709,10 @@ TEST("requireThatWeCanPutAndRemoveBeforeFreeListConstruct")
     EXPECT_EQUAL(2u, dms.getNumUsedLids());
     EXPECT_EQUAL(5u, dms.getNumDocs());
     // gid1 already there with lid 1
-    EXPECT_EXCEPTION(!dms.put(gid1, bucketId1, time1, docSize1, 2).ok(),
+    EXPECT_EXCEPTION(dms.put(gid1, bucketId1, time1, docSize1, 2).ok(),
                      vespalib::IllegalStateException,
                      "gid found, but using another lid");
-    EXPECT_EXCEPTION(!dms.put(gid5, bucketId5, time5, docSize5, 1).ok(),
+    EXPECT_EXCEPTION(dms.put(gid5, bucketId5, time5, docSize5, 1).ok(),
                      vespalib::IllegalStateException,
                      "gid not found, but lid is used by another gid");
     EXPECT_TRUE(assertLid(1, gid1, dms));

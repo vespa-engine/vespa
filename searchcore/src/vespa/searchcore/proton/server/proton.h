@@ -75,7 +75,6 @@ private:
 
     class ProtonFileHeaderContext : public search::common::FileHeaderContext
     {
-        const Proton &_proton;
         vespalib::string _hostName;
         vespalib::string _creator;
         vespalib::string _cluster;
@@ -120,7 +119,6 @@ private:
     matching::QueryLimiter          _queryLimiter;
     vespalib::Clock                 _clock;
     FastOS_ThreadPool               _threadPool;
-    int64_t                         _configGen;
     uint32_t                        _distributionKey;
     bool                            _isInitializing;
     bool                            _isReplayDone;

@@ -227,7 +227,6 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     using RankProfilesConfigSP = DocumentDBConfig::RankProfilesConfigSP;
     using RankingConstantsConfigSP = std::shared_ptr<vespa::config::search::core::RankingConstantsConfig>;
     using IndexschemaConfigSP = DocumentDBConfig::IndexschemaConfigSP;
-    using AttributesConfigSP = DocumentDBConfig::AttributesConfigSP;
     using SummaryConfigSP = DocumentDBConfig::SummaryConfigSP;
     using SummarymapConfigSP = DocumentDBConfig::SummarymapConfigSP;
     using JuniperrcConfigSP = DocumentDBConfig::JuniperrcConfigSP;

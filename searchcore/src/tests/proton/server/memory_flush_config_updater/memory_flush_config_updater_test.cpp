@@ -89,13 +89,13 @@ TEST_F("require that strategy is updated with conservative max tls size value if
 TEST_F("require that strategy is updated with conservative max memory value if memory limit is reached", Fixture)
 {
     f.notifyDiskMemUsage(belowLimit(), aboveLimit());
-    TEST_DO(f.assertStrategyConfig(2, 0.5, 20));
+    TEST_DO(f.assertStrategyConfig(2, 0, 20));
 }
 
 TEST_F("require that strategy is updated with all conservative values if both limits are reached", Fixture)
 {
     f.notifyDiskMemUsage(aboveLimit(), aboveLimit());
-    TEST_DO(f.assertStrategyConfig(2, 0.5, 12));
+    TEST_DO(f.assertStrategyConfig(2, 0, 12));
 }
 
 TEST_F("require that last disk/memory usage state is remembered when setting new config", Fixture)
@@ -129,11 +129,11 @@ TEST_F("require that we must go below low watermark for disk usage before using 
 TEST_F("require that we must go below low watermark for memory usage before using normal max memory value again", Fixture)
 {
     f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.7, 0.8));
-    TEST_DO(f.assertStrategyConfig(2, 0.5, 20));
+    TEST_DO(f.assertStrategyConfig(2, 0, 20));
     f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.7, 0.7));
-    TEST_DO(f.assertStrategyConfig(2, 0.5, 20));
+    TEST_DO(f.assertStrategyConfig(2, 0, 20));
     f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.7, 0.56));
-    TEST_DO(f.assertStrategyConfig(2, 0.5, 20));
+    TEST_DO(f.assertStrategyConfig(2, 0, 20));
     f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.7, 0.55));
     TEST_DO(f.assertStrategyConfig(4, 1, 20));
     f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.7, 0.6));
