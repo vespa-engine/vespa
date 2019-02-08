@@ -1353,6 +1353,16 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_modify_update_with_multiply_operation_dense() {
+        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.MULTIPLY, "sparse_tensor",
+                inputJson("{",
+                        "  'operation': 'multiply',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
+    }
+
+
+    @Test
     public void tensor_modify_update_treats_the_input_tensor_as_sparse() {
         // Note that the type of the tensor in the modify update is sparse (it only has mapped dimensions).
         assertTensorModifyUpdate("tensor(x{},y{}):{{x:0,y:0}:2.0, {x:1,y:2}:3.0}",
@@ -1392,6 +1402,16 @@ public class JsonReaderTestCase {
         createTensorModifyUpdate(inputJson("{",
                 "  'operation': 'replace',",
                 "  'cells': [] }"), "mixed_tensor");
+    }
+
+    @Test
+    public void tensor_modify_update_with_out_of_bound_cells_throws() {
+        exception.expect(IndexOutOfBoundsException.class);
+        exception.expectMessage("Dimension 'y' has label '3' but type is tensor(x[2],y[3])");
+        createTensorModifyUpdate(inputJson("{",
+                "  'operation': 'replace',",
+                "  'cells': [",
+                "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}"), "dense_tensor");
     }
 
     @Test

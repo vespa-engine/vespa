@@ -8,7 +8,10 @@ import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+
+import java.util.Iterator;
 
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
 import static com.yahoo.document.json.readers.TensorReader.TENSOR_CELLS;
@@ -84,8 +87,6 @@ public class TensorModifyUpdateReader {
 
     private static ModifyUpdateResult createModifyUpdateResult(TokenBuffer buffer, Field field) {
         ModifyUpdateResult result = new ModifyUpdateResult();
-        TensorDataType tensorDataType = (TensorDataType)field.getDataType();
-        TensorType convertedType = TensorModifyUpdate.convertToCompatibleType(tensorDataType.getTensorType());
         buffer.next();
         int localNesting = buffer.nesting();
         while (localNesting <= buffer.nesting()) {
@@ -94,7 +95,7 @@ public class TensorModifyUpdateReader {
                     result.operation = createOperation(buffer, field.getName());
                     break;
                 case TENSOR_CELLS:
-                    result.tensor = createTensor(buffer, convertedType);
+                    result.tensor = createTensor(buffer, field);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown JSON string '" + buffer.currentName() + "' in modify update for field '" + field.getName() + "'");
@@ -117,12 +118,39 @@ public class TensorModifyUpdateReader {
         }
     }
 
-    private static TensorFieldValue createTensor(TokenBuffer buffer, TensorType tensorType) {
-        Tensor.Builder tensorBuilder = Tensor.Builder.of(tensorType);
+    private static TensorFieldValue createTensor(TokenBuffer buffer, Field field) {
+        TensorDataType tensorDataType = (TensorDataType)field.getDataType();
+        TensorType originalType = tensorDataType.getTensorType();
+        TensorType convertedType = TensorModifyUpdate.convertToCompatibleType(originalType);
+
+        Tensor.Builder tensorBuilder = Tensor.Builder.of(convertedType);
         readTensorCells(buffer, tensorBuilder);
-        TensorFieldValue result = new TensorFieldValue(tensorType);
-        result.assign(tensorBuilder.build());
+        Tensor tensor = tensorBuilder.build();
+
+        validateBounds(tensor, originalType);
+
+        TensorFieldValue result = new TensorFieldValue(convertedType);
+        result.assign(tensor);
         return result;
+    }
+
+    /** Only validate if original type is indexed bound */
+    private static void validateBounds(Tensor convertedTensor, TensorType originalType) {
+        if ( ! originalType.dimensions().stream().allMatch(d -> d instanceof TensorType.IndexedBoundDimension)) {
+            return;
+        }
+        for (Iterator<Tensor.Cell> iter = convertedTensor.cellIterator(); iter.hasNext(); ) {
+            Tensor.Cell cell = iter.next();
+            TensorAddress address = cell.getKey();
+            for (int i = 0; i < address.size(); ++i) {
+                long label = address.numericLabel(i);
+                long bound = originalType.dimensions().get(i).size().get();  // size is non-optional for indexed bound
+                if (label >= bound) {
+                    throw new IndexOutOfBoundsException("Dimension '" + originalType.dimensions().get(i).name() +
+                            "' has label '" + label + "' but type is " + originalType.toString());
+                }
+            }
+        }
     }
 
 }
