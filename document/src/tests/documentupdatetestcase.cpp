@@ -12,6 +12,7 @@
 #include <vespa/document/update/fieldupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
+#include <vespa/document/update/tensoraddupdate.h>
 #include <vespa/document/update/tensormodifyupdate.h>
 #include <vespa/document/update/valueupdate.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
@@ -60,6 +61,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   void testMapValueUpdate();
   void testTensorAssignUpdate();
   void testTensorClearUpdate();
+  void testTensorAddUpdate();
   void testTensorModifyUpdate();
   void testThatDocumentUpdateFlagsIsWorking();
   void testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50();
@@ -89,6 +91,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testMapValueUpdate);
   CPPUNIT_TEST(testTensorAssignUpdate);
   CPPUNIT_TEST(testTensorClearUpdate);
+  CPPUNIT_TEST(testTensorAddUpdate);
   CPPUNIT_TEST(testTensorModifyUpdate);
   CPPUNIT_TEST(testThatDocumentUpdateFlagsIsWorking);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50);
@@ -179,6 +182,14 @@ FieldValue::UP createTensorFieldValueWith2Cells() {
     auto fv(std::make_unique<TensorFieldValue>());
     *fv = createTensorWith2Cells();
     return std::move(fv);
+}
+
+std::unique_ptr<TensorAddUpdate> createTensorAddUpdate() {
+    auto tensorFieldValue(std::make_unique<TensorFieldValue>());
+    *tensorFieldValue = createTensor({    {{{"x", "8"}, {"y", "8"}}, 2},
+                                          {{{"x", "8"}, {"y", "9"}}, 2} }, {"x", "y"});
+    auto update = std::make_unique<TensorAddUpdate>(std::move(tensorFieldValue));
+    return update;
 }
 
 std::unique_ptr<TensorModifyUpdate> createTensorModifyUpdate() {
@@ -950,6 +961,27 @@ DocumentUpdateTest::testTensorClearUpdate()
     upd.applyTo(updated);
     CPPUNIT_ASSERT(!updated.getValue("tensor"));
     CPPUNIT_ASSERT(*doc == updated);
+}
+
+void
+DocumentUpdateTest::testTensorAddUpdate()
+{
+    TestDocMan docMan;
+    Document::UP doc(docMan.createDocument());
+    Document updated(*doc);
+    auto oldTensor = createTensorFieldValueWith2Cells();
+    updated.setValue(updated.getField("tensor"), *oldTensor);
+    CPPUNIT_ASSERT(*doc != updated);
+    testValueUpdate(*createTensorAddUpdate(), *DataType::TENSOR);
+    DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
+    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(*createTensorAddUpdate()));
+    upd.applyTo(updated);
+    FieldValue::UP fval(updated.getValue("tensor"));
+    CPPUNIT_ASSERT(fval);
+    auto &tensor = asTensor(*fval);
+    // Note: Placeholder value for now
+    auto expectedUpdatedTensor = createTensorWith2Cells();
+    CPPUNIT_ASSERT(tensor.equals(*expectedUpdatedTensor));
 }
 
 void

@@ -581,4 +581,17 @@ VespaDocumentSerializer::visit(const TensorModifyUpdate &value)
     write(value);
 }
 
+void
+VespaDocumentSerializer::write(const TensorAddUpdate &value)
+{
+    _stream << TensorAddUpdate::classId;
+    write(value.getTensor());
+}
+
+void
+VespaDocumentSerializer::visit(const TensorAddUpdate &value)
+{
+    write(value);
+}
+
 }  // namespace document
