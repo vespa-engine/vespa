@@ -77,6 +77,11 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
+    /**
+     * Cache is checked for freshness when this mapping is created, and may be invalidated again later
+     * by other users of the cache. Since this function is backed by the cache, any such invalidations
+     * will be reflected in the returned mapping; all users of the cache collaborate in repopulating it.
+     */
     @Override
     public Function<ApplicationInstanceReference, Set<HostName>> getSuspendedHostsByApplication() {
         Map<ApplicationInstanceReference, Set<HostName>> suspendedHostsByApplication = getValidCache();
