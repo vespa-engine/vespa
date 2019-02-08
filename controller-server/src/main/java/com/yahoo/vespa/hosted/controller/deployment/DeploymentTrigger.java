@@ -11,13 +11,13 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 
@@ -45,7 +45,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.Job
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
@@ -328,7 +327,10 @@ public class DeploymentTrigger {
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
                                 }
                                 if ( ! alreadyTriggered(application, versions)) {
-                                    testJobs = emptyList();
+                                    // Only remove test jobs that target this combination
+                                    if (testJobs == null) testJobs = new ArrayList<>();
+                                    testJobs.removeIf(j -> versions.sourcesMatchIfPresent(j.triggering) &&
+                                                           versions.targetsMatch(j.triggering));
                                 }
                             }
                             else if (testJobs == null) {

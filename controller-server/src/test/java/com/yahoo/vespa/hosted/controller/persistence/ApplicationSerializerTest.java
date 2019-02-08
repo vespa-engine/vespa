@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.TreeMap;
 
@@ -110,7 +111,7 @@ public class ApplicationSerializerTest {
                                                Change.of(ApplicationVersion.from(new SourceRevision("repo", "master", "deadcafe"), 42)),
                                                Optional.of(IssueId.from("1234")),
                                                Optional.of(User.from("by-username")),
-                                               Optional.of(7),
+                                               OptionalInt.of(7),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of(new RotationId("my-rotation")),
                                                rotationStatus);

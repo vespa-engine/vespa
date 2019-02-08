@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.file.Files;
@@ -66,12 +65,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class DeploymentTriggerTest {
 
-    private DeploymentTester tester;
-
-    @Before
-    public void before() {
-        tester = new DeploymentTester();
-    }
+    private final DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void testTriggerFailing() {
@@ -117,7 +111,7 @@ public class DeploymentTriggerTest {
     @Test
     public void abortsInternalJobsOnNewApplicationChange() {
         InternalDeploymentTester iTester = new InternalDeploymentTester();
-        tester = iTester.tester();
+        DeploymentTester tester = iTester.tester();
 
         Application app = iTester.app();
         ApplicationPackage applicationPackage = InternalDeploymentTester.applicationPackage;
@@ -730,7 +724,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, true, systemTest);
         tester.deployAndNotify(application, true, stagingTest);
 
-        // Tests are not re-triggered, because the jobs they were run for has not yet been triggered with the tested versions.
+        // Tests are not re-triggered, because the deployments that were tested have not yet been triggered on the tested versions.
         assertEquals(firstTested, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
         assertEquals(firstTested, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
 

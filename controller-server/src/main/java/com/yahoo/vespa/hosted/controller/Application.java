@@ -10,11 +10,11 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -52,7 +53,7 @@ public class Application {
     private final Change outstandingChange;
     private final Optional<IssueId> ownershipIssueId;
     private final Optional<User> owner;
-    private final Optional<Integer> majorVersion;
+    private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
     private final Optional<RotationId> rotation;
     private final Map<HostName, RotationStatus> rotationStatus;
@@ -61,7 +62,7 @@ public class Application {
     public Application(ApplicationId id, Instant now) {
         this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
              new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty(), false),
-             Change.empty(), Change.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+             Change.empty(), Change.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
              new ApplicationMetrics(0, 0),
              Optional.empty(), Collections.emptyMap());
     }
@@ -70,7 +71,7 @@ public class Application {
     public Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                        Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                       Optional<Integer> majorVersion, ApplicationMetrics metrics,
+                       OptionalInt majorVersion, ApplicationMetrics metrics,
                        Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
         this(id, createdAt, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, d -> d)),
@@ -81,7 +82,7 @@ public class Application {
     Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                 Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                 Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                Optional<Integer> majorVersion, ApplicationMetrics metrics,
+                OptionalInt majorVersion, ApplicationMetrics metrics,
                 Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
@@ -156,7 +157,7 @@ public class Application {
      * Overrides the system major version for this application. This override takes effect if the deployment
      * spec does not specify a major version.
      */
-    public Optional<Integer> majorVersion() { return majorVersion; }
+    public OptionalInt majorVersion() { return majorVersion; }
 
     /** Returns metrics for this */
     public ApplicationMetrics metrics() {
