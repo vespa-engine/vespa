@@ -18,6 +18,9 @@ public interface NodeAdmin {
      */
     void refreshContainersToRun(final List<NodeSpec> containersToRun);
 
+    /** Gather node agent and its docker container metrics and forward them to the {@code MetricReceiverWrapper} */
+    void updateNodeAgentMetrics();
+
     /**
      * Attempts to freeze/unfreeze all NodeAgents and itself. To freeze a NodeAgent means that
      * they will not pick up any changes from NodeRepository.

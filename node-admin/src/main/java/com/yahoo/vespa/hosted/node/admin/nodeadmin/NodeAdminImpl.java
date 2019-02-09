@@ -42,8 +42,6 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final ScheduledExecutorService aclScheduler =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("aclscheduler"));
-    private final ScheduledExecutorService metricsScheduler =
-            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("metricsscheduler"));
 
     private final NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory;
     private final NodeAgentContextFactory nodeAgentContextFactory;
@@ -121,13 +119,15 @@ public class NodeAdminImpl implements NodeAdmin {
         }
     }
 
-    private void updateNodeAgentMetrics() {
+    @Override
+    public void updateNodeAgentMetrics() {
         int numberContainersWaitingImage = 0;
         int numberOfNewUnhandledExceptions = 0;
 
         for (NodeAgentWithScheduler nodeAgentWithScheduler : nodeAgentWithSchedulerByHostname.values()) {
             if (nodeAgentWithScheduler.isDownloadingImage()) numberContainersWaitingImage++;
             numberOfNewUnhandledExceptions += nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions();
+            nodeAgentWithScheduler.updateContainerNodeMetrics();
         }
 
         numberOfContainersInLoadImageState.sample(numberContainersWaitingImage);
@@ -186,15 +186,6 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void start() {
-        metricsScheduler.scheduleAtFixedRate(() -> {
-            try {
-                updateNodeAgentMetrics();
-                nodeAgentWithSchedulerByHostname.values().forEach(NodeAgent::updateContainerNodeMetrics);
-            } catch (Throwable e) {
-                logger.warning("Metric fetcher scheduler failed", e);
-            }
-        }, 10, 55, TimeUnit.SECONDS);
-
         aclMaintainer.ifPresent(maintainer -> {
             int delay = 120; // WARNING: Reducing this will increase the load on config servers.
             aclScheduler.scheduleWithFixedDelay(() -> {
@@ -205,7 +196,6 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void stop() {
-        metricsScheduler.shutdown();
         aclScheduler.shutdown();
 
         // Stop all node-agents in parallel, will block until the last NodeAgent is stopped
@@ -213,12 +203,11 @@ public class NodeAdminImpl implements NodeAdmin {
 
         do {
             try {
-                metricsScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
                 aclScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
             } catch (InterruptedException e) {
                 logger.info("Was interrupted while waiting for metricsScheduler and aclScheduler to shutdown");
             }
-        } while (!metricsScheduler.isTerminated() || !aclScheduler.isTerminated());
+        } while (!aclScheduler.isTerminated());
     }
 
     // Set-difference. Returns minuend minus subtrahend.

@@ -139,7 +139,7 @@ public class DockerTester implements AutoCloseable {
     @Override
     public void close() {
         // First, stop NodeAdmin and all the NodeAgents
-        nodeAdmin.stop();
+        nodeAdminStateUpdater.stop();
 
         terminated = true;
         do {
