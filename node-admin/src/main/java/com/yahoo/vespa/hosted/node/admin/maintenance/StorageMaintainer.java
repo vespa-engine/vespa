@@ -253,8 +253,7 @@ public class StorageMaintainer {
 
     /** Checks if container has any new coredumps, reports and archives them if so */
     public void handleCoreDumpsForContainer(NodeAgentContext context, Optional<Container> container) {
-        final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(context, container);
-        coredumpHandler.converge(context, nodeAttributes);
+        coredumpHandler.converge(context, () -> getCoredumpNodeAttributes(context, container));
     }
 
     private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, Optional<Container> container) {
@@ -264,7 +263,7 @@ public class StorageMaintainer {
         attributes.put("environment", context.zoneId().environment().value());
         attributes.put("flavor", context.node().getFlavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
-        attributes.put("cpu_microcode_version", getMicrocodeVersion(context));
+        attributes.put("cpu_microcode_version", getMicrocodeVersion());
 
         container.map(c -> c.image).ifPresent(image -> attributes.put("docker_image", image.asString()));
         context.node().getParentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
@@ -292,14 +291,11 @@ public class StorageMaintainer {
         new UnixPath(context.pathOnHostFromPathInNode("/")).deleteRecursively();
     }
 
-    private String getMicrocodeVersion(NodeAgentContext context) {
-        String output = terminal.newCommandLine(context)
-                .add("grep", "microcode", "/proc/cpuinfo")
-                .setTimeout(Duration.ofSeconds(60))
-                .executeSilently()
-                .getOutputLinesStream()
+    private String getMicrocodeVersion() {
+        String output = uncheck(() -> Files.readAllLines(Paths.get("/proc/cpuinfo")).stream()
+                .filter(line -> line.startsWith("microcode"))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("No microcode information found in /proc/cpuinfo"));
+                .orElseThrow(() -> new RuntimeException("No microcode information found in /proc/cpuinfo")));
 
         String[] results = output.split(":");
         if (results.length != 2) {
