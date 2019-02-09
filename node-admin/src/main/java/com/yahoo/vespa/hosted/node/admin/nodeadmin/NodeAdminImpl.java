@@ -91,9 +91,8 @@ public class NodeAdminImpl implements NodeAdmin {
         Duration timeBetweenNodeAgents = spread.dividedBy(Math.max(nodeAgentContextsByHostname.size() - 1, 1));
         Instant nextAgentStart = clock.instant();
         // At this point, nodeAgentContextsByHostname and nodeAgentWithSchedulerByHostname should have the same keys
-        for (String hostname : nodeAgentContextsByHostname.keySet()) {
-            NodeAgentContext context = nodeAgentContextsByHostname.get(hostname);
-            nodeAgentWithSchedulerByHostname.get(hostname).scheduleTickWith(context, nextAgentStart);
+        for (Map.Entry<String, NodeAgentContext> entry : nodeAgentContextsByHostname.entrySet()) {
+            nodeAgentWithSchedulerByHostname.get(entry.getKey()).scheduleTickWith(entry.getValue(), nextAgentStart);
             nextAgentStart = nextAgentStart.plus(timeBetweenNodeAgents);
         }
     }
