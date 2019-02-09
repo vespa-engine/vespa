@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
     private static final Duration NODE_AGENT_FREEZE_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration NODE_AGENT_SPREAD = Duration.ofSeconds(3);
 
     private final ScheduledExecutorService aclScheduler =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("aclscheduler"));
@@ -49,6 +50,8 @@ public class NodeAdminImpl implements NodeAdmin {
     private final Optional<AclMaintainer> aclMaintainer;
 
     private final Clock clock;
+    private final Duration freezeTimeout;
+    private final Duration spread;
     private boolean previousWantFrozen;
     private boolean isFrozen;
     private Instant startOfFreezeConvergence;
@@ -64,19 +67,25 @@ public class NodeAdminImpl implements NodeAdmin {
                          MetricReceiverWrapper metricReceiver,
                          Clock clock) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                nodeAgentContextFactory, aclMaintainer, metricReceiver, clock);
+                nodeAgentContextFactory, aclMaintainer, metricReceiver, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD);
+    }
+
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, NodeAgentContextFactory nodeAgentContextFactory,
+                         Optional<AclMaintainer> aclMaintainer, MetricReceiverWrapper metricReceiver, Clock clock, Duration freezeTimeout, Duration spread) {
+        this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
+                nodeAgentContextFactory, aclMaintainer, metricReceiver, clock, freezeTimeout, spread);
     }
 
     NodeAdminImpl(NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory,
-                  NodeAgentContextFactory nodeAgentContextFactory,
-                  Optional<AclMaintainer> aclMaintainer,
-                  MetricReceiverWrapper metricReceiver,
-                  Clock clock) {
+                  NodeAgentContextFactory nodeAgentContextFactory, Optional<AclMaintainer> aclMaintainer, MetricReceiverWrapper metricReceiver,
+                  Clock clock, Duration freezeTimeout, Duration spread) {
         this.nodeAgentWithSchedulerFactory = nodeAgentWithSchedulerFactory;
         this.nodeAgentContextFactory = nodeAgentContextFactory;
         this.aclMaintainer = aclMaintainer;
 
         this.clock = clock;
+        this.freezeTimeout = freezeTimeout;
+        this.spread = spread;
         this.previousWantFrozen = true;
         this.isFrozen = true;
         this.startOfFreezeConvergence = clock.instant();
@@ -102,10 +111,14 @@ public class NodeAdminImpl implements NodeAdmin {
             nodeAgentWithSchedulerByHostname.put(hostname, naws);
         });
 
+        Duration timeBetweenNodeAgents = spread.dividedBy(Math.max(nodeAgentContextsByHostname.size() - 1, 1));
+        Instant nextAgentStart = clock.instant();
         // At this point, nodeAgentContextsByHostname and nodeAgentWithSchedulerByHostname should have the same keys
-        nodeAgentContextsByHostname.forEach((hostname, context) ->
-            nodeAgentWithSchedulerByHostname.get(hostname).scheduleTickWith(context)
-        );
+        for (String hostname : nodeAgentContextsByHostname.keySet()) {
+            NodeAgentContext context = nodeAgentContextsByHostname.get(hostname);
+            nodeAgentWithSchedulerByHostname.get(hostname).scheduleTickWith(context, nextAgentStart);
+            nextAgentStart = nextAgentStart.plus(timeBetweenNodeAgents);
+        }
     }
 
     private void updateNodeAgentMetrics() {
@@ -135,7 +148,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
         // Use filter with count instead of allMatch() because allMatch() will short circuit on first non-match
         boolean allNodeAgentsConverged = nodeAgentWithSchedulerByHostname.values().parallelStream()
-                .filter(nodeAgentScheduler -> !nodeAgentScheduler.setFrozen(wantFrozen, NODE_AGENT_FREEZE_TIMEOUT))
+                .filter(nodeAgentScheduler -> !nodeAgentScheduler.setFrozen(wantFrozen, freezeTimeout))
                 .count() == 0;
 
         if (wantFrozen) {
@@ -232,7 +245,7 @@ public class NodeAdminImpl implements NodeAdmin {
         @Override public boolean isDownloadingImage() { return nodeAgent.isDownloadingImage(); }
         @Override public int getAndResetNumberOfUnhandledExceptions() { return nodeAgent.getAndResetNumberOfUnhandledExceptions(); }
 
-        @Override public void scheduleTickWith(NodeAgentContext context) { nodeAgentScheduler.scheduleTickWith(context); }
+        @Override public void scheduleTickWith(NodeAgentContext context, Instant at) { nodeAgentScheduler.scheduleTickWith(context, at); }
         @Override public boolean setFrozen(boolean frozen, Duration timeout) { return nodeAgentScheduler.setFrozen(frozen, timeout); }
     }
 

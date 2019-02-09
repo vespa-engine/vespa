@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -26,11 +27,24 @@ public class NodeAgentContextManagerTest {
     @Test(timeout = TIMEOUT)
     public void returns_immediately_if_next_context_is_ready() throws InterruptedException {
         NodeAgentContext context1 = generateContext();
-        manager.scheduleTickWith(context1);
+        manager.scheduleTickWith(context1, clock.instant());
 
         assertSame(initialContext, manager.currentContext());
         assertSame(context1, manager.nextContext());
         assertSame(context1, manager.currentContext());
+    }
+
+    @Test(timeout = TIMEOUT)
+    public void returns_no_earlier_than_at_given_time() throws InterruptedException {
+        NodeAgentContext context1 = generateContext();
+        Instant returnAt = clock.instant().plusMillis(500);
+        manager.scheduleTickWith(context1, returnAt);
+
+        assertSame(initialContext, manager.currentContext());
+        assertSame(context1, manager.nextContext());
+        assertSame(context1, manager.currentContext());
+        // Is accurate to a millisecond
+        assertFalse(clock.instant().plusMillis(1).isBefore(returnAt));
     }
 
     @Test(timeout = TIMEOUT)
@@ -41,7 +55,7 @@ public class NodeAgentContextManagerTest {
         assertFalse(async.response.isPresent());
 
         NodeAgentContext context1 = generateContext();
-        manager.scheduleTickWith(context1);
+        manager.scheduleTickWith(context1, clock.instant());
 
         async.awaitResult();
         assertEquals(Optional.of(context1), async.response);
@@ -68,7 +82,7 @@ public class NodeAgentContextManagerTest {
 
         // Generate new context and get it from the supplier, this completes the unfreeze
         NodeAgentContext context1 = generateContext();
-        manager.scheduleTickWith(context1);
+        manager.scheduleTickWith(context1, clock.instant());
         assertSame(context1, manager.nextContext());
 
         assertTrue(manager.setFrozen(false, Duration.ZERO));
@@ -91,7 +105,7 @@ public class NodeAgentContextManagerTest {
         assertFalse(async.response.isPresent());
 
         NodeAgentContext context1 = generateContext();
-        manager.scheduleTickWith(context1);
+        manager.scheduleTickWith(context1, clock.instant());
         assertSame(context1, manager.nextContext());
 
         async.awaitResult();
