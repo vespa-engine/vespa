@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -235,7 +234,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         public NodeAgentContextImpl build() {
             return new NodeAgentContextImpl(
                     nodeSpecBuilder.build(),
-                    Optional.ofNullable(acl).orElseGet(() -> new Acl(Collections.emptySet(), Collections.emptySet())),
+                    Optional.ofNullable(acl).orElse(Acl.EMPTY),
                     Optional.ofNullable(identity).orElseGet(() -> new AthenzService("domain", "service")),
                     Optional.ofNullable(dockerNetworking).orElse(DockerNetworking.HOST_NETWORK),
                     Optional.ofNullable(zoneId).orElseGet(() -> new ZoneId(SystemName.dev, Environment.dev, RegionName.defaultName())),

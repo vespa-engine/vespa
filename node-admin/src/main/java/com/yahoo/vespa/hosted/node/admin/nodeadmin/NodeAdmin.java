@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 
 /**
  * NodeAdmin manages the life cycle of NodeAgents.
@@ -12,11 +13,8 @@ import java.util.List;
  */
 public interface NodeAdmin {
 
-    /**
-     * Calling this will cause NodeAdmin to move to the state containersToRun by adding or removing nodes.
-     * @param containersToRun this is the wanted state.
-     */
-    void refreshContainersToRun(final List<NodeSpec> containersToRun);
+    /** Start/stop NodeAgents and schedule next NodeAgent ticks with the given NodeAgentContexts */
+    void refreshContainersToRun(Set<NodeAgentContext> nodeAgentContexts);
 
     /** Gather node agent and its docker container metrics and forward them to the {@code MetricReceiverWrapper} */
     void updateNodeAgentMetrics();

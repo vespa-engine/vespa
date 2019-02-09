@@ -1,19 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextManager;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentScheduler;
-import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -23,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -31,12 +28,10 @@ import java.util.stream.Collectors;
  * @author stiankri
  */
 public class NodeAdminImpl implements NodeAdmin {
-    private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
     private static final Duration NODE_AGENT_FREEZE_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration NODE_AGENT_SPREAD = Duration.ofSeconds(3);
 
     private final NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory;
-    private final NodeAgentContextFactory nodeAgentContextFactory;
 
     private final Clock clock;
     private final Duration freezeTimeout;
@@ -50,25 +45,20 @@ public class NodeAdminImpl implements NodeAdmin {
     private final GaugeWrapper numberOfContainersInLoadImageState;
     private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
-    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory,
-                         NodeAgentContextFactory nodeAgentContextFactory,
-                         MetricReceiverWrapper metricReceiver,
-                         Clock clock) {
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiverWrapper metricReceiver, Clock clock) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                nodeAgentContextFactory, metricReceiver, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD);
+                metricReceiver, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD);
     }
 
-    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, NodeAgentContextFactory nodeAgentContextFactory,
-                         MetricReceiverWrapper metricReceiver, Clock clock, Duration freezeTimeout, Duration spread) {
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiverWrapper metricReceiver,
+                         Clock clock, Duration freezeTimeout, Duration spread) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                nodeAgentContextFactory, metricReceiver, clock, freezeTimeout, spread);
+                metricReceiver, clock, freezeTimeout, spread);
     }
 
     NodeAdminImpl(NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory,
-                  NodeAgentContextFactory nodeAgentContextFactory, MetricReceiverWrapper metricReceiver,
-                  Clock clock, Duration freezeTimeout, Duration spread) {
+                  MetricReceiverWrapper metricReceiver, Clock clock, Duration freezeTimeout, Duration spread) {
         this.nodeAgentWithSchedulerFactory = nodeAgentWithSchedulerFactory;
-        this.nodeAgentContextFactory = nodeAgentContextFactory;
 
         this.clock = clock;
         this.freezeTimeout = freezeTimeout;
@@ -83,9 +73,9 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public void refreshContainersToRun(List<NodeSpec> containersToRun) {
-        final Map<String, NodeAgentContext> nodeAgentContextsByHostname = containersToRun.stream()
-                .collect(Collectors.toMap(NodeSpec::getHostname, nodeAgentContextFactory::create));
+    public void refreshContainersToRun(Set<NodeAgentContext> nodeAgentContexts) {
+        Map<String, NodeAgentContext> nodeAgentContextsByHostname = nodeAgentContexts.stream()
+                .collect(Collectors.toMap(nac -> nac.hostname().value(), Function.identity()));
 
         // Stop and remove NodeAgents that should no longer be running
         diff(nodeAgentWithSchedulerByHostname.keySet(), nodeAgentContextsByHostname.keySet())

@@ -4,18 +4,28 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -37,6 +47,8 @@ public class NodeAdminStateUpdater {
     private final ScheduledExecutorService metricsScheduler =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("metricsscheduler"));
 
+    private final CachedSupplier<Map<String, Acl>> cachedAclSupplier;
+    private final NodeAgentContextFactory nodeAgentContextFactory;
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final NodeAdmin nodeAdmin;
@@ -47,14 +59,18 @@ public class NodeAdminStateUpdater {
     private volatile State currentState = SUSPENDED_NODE_ADMIN;
 
     public NodeAdminStateUpdater(
+            NodeAgentContextFactory nodeAgentContextFactory,
             NodeRepository nodeRepository,
             Orchestrator orchestrator,
             NodeAdmin nodeAdmin,
-            HostName hostHostname) {
+            HostName hostHostname,
+            Clock clock) {
+        this.nodeAgentContextFactory = nodeAgentContextFactory;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.nodeAdmin = nodeAdmin;
         this.hostHostname = hostHostname.value();
+        this.cachedAclSupplier = new CachedSupplier<>(clock, Duration.ofSeconds(115), () -> nodeRepository.getAcls(this.hostHostname));
     }
 
     public void start() {
@@ -145,11 +161,21 @@ public class NodeAdminStateUpdater {
         currentState = wantedState;
     }
 
-    private void adjustNodeAgentsToRunFromNodeRepository() {
+    void adjustNodeAgentsToRunFromNodeRepository() {
         try {
-            final List<NodeSpec> containersToRun = nodeRepository.getNodes(hostHostname);
-            nodeAdmin.refreshContainersToRun(containersToRun);
-        } catch (Exception e) {
+            Map<String, NodeSpec> nodeSpecByHostname = nodeRepository.getNodes(hostHostname).stream()
+                    .collect(Collectors.toMap(NodeSpec::getHostname, Function.identity()));
+            Map<String, Acl> aclByHostname = Optional.of(cachedAclSupplier.get())
+                    .filter(acls -> acls.keySet().containsAll(nodeSpecByHostname.keySet()))
+                    .orElseGet(cachedAclSupplier::invalidateAndGet);
+
+            Set<NodeAgentContext> nodeAgentContexts = nodeSpecByHostname.keySet().stream()
+                    .map(hostname -> nodeAgentContextFactory.create(
+                            nodeSpecByHostname.get(hostname),
+                            aclByHostname.getOrDefault(hostname, Acl.EMPTY)))
+                    .collect(Collectors.toSet());
+            nodeAdmin.refreshContainersToRun(nodeAgentContexts);
+        } catch (RuntimeException e) {
             log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
         }
     }
@@ -160,5 +186,34 @@ public class NodeAdminStateUpdater {
                              .filter(node -> node.getState() == Node.State.active)
                              .map(NodeSpec::getHostname)
                              .collect(Collectors.toList());
+    }
+
+    private static class CachedSupplier<T> implements Supplier<T> {
+        private final Clock clock;
+        private final Duration expiration;
+        private final Supplier<T> supplier;
+        private Instant refreshAt;
+        private T cachedValue;
+
+        private CachedSupplier(Clock clock, Duration expiration, Supplier<T> supplier) {
+            this.clock = clock;
+            this.expiration = expiration;
+            this.supplier = supplier;
+            this.refreshAt = Instant.MIN;
+        }
+
+        @Override
+        public T get() {
+            if (! clock.instant().isBefore(refreshAt)) {
+                cachedValue = supplier.get();
+                refreshAt = clock.instant().plus(expiration);
+            }
+            return cachedValue;
+        }
+
+        private T invalidateAndGet() {
+            refreshAt = Instant.MIN;
+            return get();
+        }
     }
 }

@@ -5,12 +5,12 @@ import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 
 import java.net.InetAddress;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
  * @author smorgrav
  */
 public class Acl {
+
+    public static final Acl EMPTY = new Acl(Set.of(), Set.of(), Set.of());
 
     private final Set<Node> trustedNodes;
     private final Set<Integer> trustedPorts;
@@ -38,7 +40,7 @@ public class Acl {
     }
 
     public Acl(Set<Integer> trustedPorts, Set<Node> trustedNodes) {
-        this(trustedPorts, trustedNodes, Collections.emptySet());
+        this(trustedPorts, trustedNodes, Set.of());
     }
 
     public List<String> toRules(IPVersion ipVersion) {
@@ -131,10 +133,7 @@ public class Acl {
     }
 
     private static <T> Set<T> copyOfNullable(Set<T> set) {
-        if (set == null) {
-            return Collections.emptySet();
-        }
-        return Set.copyOf(set);
+        return Optional.ofNullable(set).map(Set::copyOf).orElseGet(Set::of);
     }
 
     public static class Node {
@@ -213,7 +212,7 @@ public class Acl {
         }
 
         public Builder withTrustedPorts(Integer... ports) {
-            trustedPorts.addAll(Arrays.asList(ports));
+            trustedPorts.addAll(List.of(ports));
             return this;
         }
 

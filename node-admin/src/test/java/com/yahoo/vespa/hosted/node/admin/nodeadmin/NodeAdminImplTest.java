@@ -15,8 +15,9 @@ import org.mockito.InOrder;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -43,40 +44,40 @@ public class NodeAdminImplTest {
     private final NodeAgentContextFactory nodeAgentContextFactory = mock(NodeAgentContextFactory.class);
     private final ManualClock clock = new ManualClock();
 
-    private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(nodeAgentWithSchedulerFactory, nodeAgentContextFactory,
+    private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(nodeAgentWithSchedulerFactory,
             new MetricReceiverWrapper(MetricReceiver.nullImplementation), clock, Duration.ZERO, Duration.ZERO);
 
     @Test
     public void nodeAgentsAreProperlyLifeCycleManaged() {
-        final NodeSpec nodeSpec1 = createNodeSpec("host1.test.yahoo.com");
-        final NodeSpec nodeSpec2 = createNodeSpec("host2.test.yahoo.com");
-        final NodeAgentWithScheduler nodeAgent1 = mockNodeAgentWithSchedulerFactory(nodeSpec1);
-        final NodeAgentWithScheduler nodeAgent2 = mockNodeAgentWithSchedulerFactory(nodeSpec2);
+        final NodeAgentContext context1 = createNodeAgentContext("host1.test.yahoo.com");
+        final NodeAgentContext context2 = createNodeAgentContext("host2.test.yahoo.com");
+        final NodeAgentWithScheduler nodeAgent1 = mockNodeAgentWithSchedulerFactory(context1);
+        final NodeAgentWithScheduler nodeAgent2 = mockNodeAgentWithSchedulerFactory(context2);
 
         final InOrder inOrder = inOrder(nodeAgentWithSchedulerFactory, nodeAgent1, nodeAgent2);
-        nodeAdmin.refreshContainersToRun(Collections.emptyList());
+        nodeAdmin.refreshContainersToRun(Set.of());
         verifyNoMoreInteractions(nodeAgentWithSchedulerFactory);
 
-        nodeAdmin.refreshContainersToRun(Collections.singletonList(nodeSpec1));
+        nodeAdmin.refreshContainersToRun(Set.of(context1));
         inOrder.verify(nodeAgent1).start();
         inOrder.verify(nodeAgent2, never()).start();
         inOrder.verify(nodeAgent1, never()).stop();
 
-        nodeAdmin.refreshContainersToRun(Collections.singletonList(nodeSpec1));
+        nodeAdmin.refreshContainersToRun(Set.of(context1));
         inOrder.verify(nodeAgentWithSchedulerFactory, never()).create(any());
         inOrder.verify(nodeAgent1, never()).start();
         inOrder.verify(nodeAgent1, never()).stop();
 
-        nodeAdmin.refreshContainersToRun(Collections.emptyList());
+        nodeAdmin.refreshContainersToRun(Set.of());
         inOrder.verify(nodeAgentWithSchedulerFactory, never()).create(any());
         verify(nodeAgent1).stop();
 
-        nodeAdmin.refreshContainersToRun(Collections.singletonList(nodeSpec2));
+        nodeAdmin.refreshContainersToRun(Set.of(context2));
         inOrder.verify(nodeAgent2).start();
         inOrder.verify(nodeAgent2, never()).stop();
         inOrder.verify(nodeAgent1, never()).stop();
 
-        nodeAdmin.refreshContainersToRun(Collections.emptyList());
+        nodeAdmin.refreshContainersToRun(Set.of());
         inOrder.verify(nodeAgentWithSchedulerFactory, never()).create(any());
         inOrder.verify(nodeAgent2, never()).start();
         inOrder.verify(nodeAgent2).stop();
@@ -86,17 +87,17 @@ public class NodeAdminImplTest {
 
     @Test
     public void testSetFrozen() {
-        List<NodeSpec> nodeSpecs = new ArrayList<>();
+        Set<NodeAgentContext> contexts = new HashSet<>();
         List<NodeAgentWithScheduler> nodeAgents = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            NodeSpec nodeSpec = createNodeSpec("host" + i + ".test.yahoo.com");
-            NodeAgentWithScheduler nodeAgent = mockNodeAgentWithSchedulerFactory(nodeSpec);
+            NodeAgentContext context = createNodeAgentContext("host" + i + ".test.yahoo.com");
+            NodeAgentWithScheduler nodeAgent = mockNodeAgentWithSchedulerFactory(context);
 
-            nodeSpecs.add(nodeSpec);
+            contexts.add(context);
             nodeAgents.add(nodeAgent);
         }
 
-        nodeAdmin.refreshContainersToRun(nodeSpecs);
+        nodeAdmin.refreshContainersToRun(contexts);
 
         assertTrue(nodeAdmin.isFrozen()); // Initially everything is frozen to force convergence
         mockNodeAgentSetFrozenResponse(nodeAgents, true, true, true);
@@ -159,19 +160,18 @@ public class NodeAdminImplTest {
         }
     }
 
-    private NodeSpec createNodeSpec(String hostname) {
-        return new NodeSpec.Builder()
+    private NodeAgentContext createNodeAgentContext(String hostname) {
+        NodeSpec nodeSpec = new NodeSpec.Builder()
                 .hostname(hostname)
                 .state(Node.State.active)
                 .nodeType(NodeType.tenant)
                 .flavor("default")
                 .build();
+
+        return new NodeAgentContextImpl.Builder(nodeSpec).build();
     }
 
-    private NodeAgentWithScheduler mockNodeAgentWithSchedulerFactory(NodeSpec nodeSpec) {
-        NodeAgentContext context = new NodeAgentContextImpl.Builder(nodeSpec).build();
-        when(nodeAgentContextFactory.create(eq(nodeSpec))).thenReturn(context);
-
+    private NodeAgentWithScheduler mockNodeAgentWithSchedulerFactory(NodeAgentContext context) {
         NodeAgentWithScheduler nodeAgentWithScheduler = mock(NodeAgentWithScheduler.class);
         when(nodeAgentWithSchedulerFactory.create(eq(context))).thenReturn(nodeAgentWithScheduler);
         return nodeAgentWithScheduler;

@@ -96,11 +96,11 @@ public class DockerTester implements AutoCloseable {
         NodeAgentFactory nodeAgentFactory = contextSupplier -> new NodeAgentImpl(
                 contextSupplier, nodeRepository, orchestrator, dockerOperations, storageMaintainer, flagSource,
                 Optional.empty(), Optional.empty(), Optional.empty());
-        NodeAgentContextFactory nodeAgentContextFactory = nodeSpec ->
-                new NodeAgentContextImpl.Builder(nodeSpec).fileSystem(fileSystem).build();
-        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, nodeAgentContextFactory, mr, Clock.systemUTC(), Duration.ofMillis(10), Duration.ZERO);
-        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, orchestrator,
-                nodeAdmin, HOST_HOSTNAME);
+        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, mr, Clock.systemUTC(), Duration.ofMillis(10), Duration.ZERO);
+        NodeAgentContextFactory nodeAgentContextFactory = (nodeSpec, acl) ->
+                new NodeAgentContextImpl.Builder(nodeSpec).acl(acl).fileSystem(fileSystem).build();
+        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeAgentContextFactory, nodeRepository, orchestrator,
+                nodeAdmin, HOST_HOSTNAME, Clock.systemUTC());
 
         loopThread = new Thread(() -> {
             nodeAdminStateUpdater.start();
