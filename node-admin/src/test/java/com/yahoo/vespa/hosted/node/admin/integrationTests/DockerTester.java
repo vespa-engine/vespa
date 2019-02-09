@@ -98,7 +98,7 @@ public class DockerTester implements AutoCloseable {
                 Optional.empty(), Optional.empty(), Optional.empty());
         NodeAgentContextFactory nodeAgentContextFactory = nodeSpec ->
                 new NodeAgentContextImpl.Builder(nodeSpec).fileSystem(fileSystem).build();
-        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, nodeAgentContextFactory, Optional.empty(), mr, Clock.systemUTC());
+        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, nodeAgentContextFactory, Optional.empty(), mr, Clock.systemUTC(), Duration.ofMillis(10), Duration.ZERO);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, orchestrator,
                 nodeAdmin, HOST_HOSTNAME);
 
@@ -139,7 +139,7 @@ public class DockerTester implements AutoCloseable {
     @Override
     public void close() {
         // First, stop NodeAdmin and all the NodeAgents
-        nodeAdmin.stop();
+        nodeAdminStateUpdater.stop();
 
         terminated = true;
         do {

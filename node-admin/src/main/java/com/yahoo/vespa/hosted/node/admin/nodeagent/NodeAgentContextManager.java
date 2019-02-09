@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -17,6 +18,7 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
 
     private NodeAgentContext currentContext;
     private NodeAgentContext nextContext;
+    private Instant nextContextAt;
     private boolean wantFrozen = false;
     private boolean isFrozen = true;
     private boolean pendingInterrupt = false;
@@ -27,9 +29,10 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     }
 
     @Override
-    public void scheduleTickWith(NodeAgentContext context) {
+    public void scheduleTickWith(NodeAgentContext context, Instant at) {
         synchronized (monitor) {
             nextContext = Objects.requireNonNull(context);
+            nextContextAt = Objects.requireNonNull(at);
             monitor.notifyAll(); // Notify of new context
         }
     }
@@ -58,14 +61,17 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     @Override
     public NodeAgentContext nextContext() throws InterruptedException {
         synchronized (monitor) {
-            while (setAndGetIsFrozen(wantFrozen) || nextContext == null) {
+            Duration untilNextContext = Duration.ZERO;
+            while (setAndGetIsFrozen(wantFrozen) ||
+                    nextContext == null ||
+                    (untilNextContext = Duration.between(Instant.now(), nextContextAt)).toMillis() > 0) {
                 if (pendingInterrupt) {
                     pendingInterrupt = false;
                     throw new InterruptedException("interrupt() was called before next context was scheduled");
                 }
 
                 try {
-                    monitor.wait(); // Wait until scheduler provides a new context
+                    monitor.wait(Math.max(untilNextContext.toMillis(), 0L)); // Wait until scheduler provides a new context
                 } catch (InterruptedException ignored) { }
             }
 

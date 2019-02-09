@@ -2,14 +2,15 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import java.time.Duration;
+import java.time.Instant;
 
 /**
  * @author freva
  */
 public interface NodeAgentScheduler {
 
-    /** Schedule a tick for NodeAgent to run with the given NodeAgentContext */
-     void scheduleTickWith(NodeAgentContext context);
+    /** Schedule a tick for NodeAgent to run with the given NodeAgentContext, at no earlier than given instant */
+     void scheduleTickWith(NodeAgentContext context, Instant at);
 
     /**
      * Will eventually freeze/unfreeze the node agent
