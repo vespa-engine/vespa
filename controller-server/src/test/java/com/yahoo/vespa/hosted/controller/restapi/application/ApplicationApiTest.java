@@ -392,27 +392,39 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .data("6.1.0"),
                               "{\"message\":\"Triggered pin to 6.1 for tenant1.application1\"}");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", GET)
+                                      .userIdentity(USER_ID), "{\"platform\":\"6.1\",\"pinned\":true}");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/pin", GET)
+                                      .userIdentity(USER_ID), "{\"platform\":\"6.1\",\"pinned\":true}");
 
         // DELETE only the pin to a given version
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/pin", DELETE)
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Changed deployment from 'pin to 6.1' to 'upgrade to 6.1' for application 'tenant1.application1'\"}");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", GET)
+                                      .userIdentity(USER_ID), "{\"platform\":\"6.1\",\"pinned\":false}");
 
         // POST pinning again
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/pin", POST)
                                       .userIdentity(USER_ID)
                                       .data("6.1"),
                               "{\"message\":\"Triggered pin to 6.1 for tenant1.application1\"}");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", GET)
+                                      .userIdentity(USER_ID), "{\"platform\":\"6.1\",\"pinned\":true}");
 
         // DELETE only the version, but leave the pin
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/platform", DELETE)
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Changed deployment from 'pin to 6.1' to 'pin to current platform' for application 'tenant1.application1'\"}");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", GET)
+                                      .userIdentity(USER_ID), "{\"pinned\":true}");
 
         // DELETE also the pin to a given version
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/pin", DELETE)
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Changed deployment from 'pin to current platform' to 'no change' for application 'tenant1.application1'\"}");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", GET)
+                                      .userIdentity(USER_ID), "{}");
 
         // POST a pause to a production job
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/production-us-west-1/pause", POST)
@@ -671,6 +683,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST (deploy) a system application with an application package
         HttpEntity noAppEntity = createApplicationDeployData(Optional.empty(), true);
+        tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
+                                      .data(noAppEntity)
+                                      .userIdentity(USER_ID),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Deployment of system applications during a system upgrade is not allowed\"}",
+                              400);
+        tester.upgradeSystem(tester.controller().versionStatus().controllerVersion().get().versionNumber());
         tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
                         .data(noAppEntity)
                         .userIdentity(USER_ID),
