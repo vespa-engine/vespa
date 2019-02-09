@@ -68,7 +68,7 @@ public class CoredumpHandler {
     }
 
 
-    public void converge(NodeAgentContext context, Map<String, Object> nodeAttributes) {
+    public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier) {
         Path containerCrashPathOnHost = context.pathOnHostFromPathInNode(crashPatchInContainer);
         Path containerProcessingPathOnHost = containerCrashPathOnHost.resolve(PROCESSING_DIRECTORY_NAME);
 
@@ -80,7 +80,7 @@ public class CoredumpHandler {
 
         // Check if we have already started to process a core dump or we can enqueue a new core one
         getCoredumpToProcess(containerCrashPathOnHost, containerProcessingPathOnHost)
-                .ifPresent(path -> processAndReportSingleCoredump(context, path, nodeAttributes));
+                .ifPresent(path -> processAndReportSingleCoredump(context, path, nodeAttributesSupplier));
     }
 
     /** @return path to directory inside processing directory that contains a core dump file to process */
@@ -88,8 +88,7 @@ public class CoredumpHandler {
         return FileFinder.directories(containerProcessingPathOnHost).stream()
                 .map(FileFinder.FileAttributes::path)
                 .findAny()
-                .map(Optional::of)
-                .orElseGet(() -> enqueueCoredump(containerCrashPathOnHost, containerProcessingPathOnHost));
+                .or(() -> enqueueCoredump(containerCrashPathOnHost, containerProcessingPathOnHost));
     }
 
     /**
@@ -115,9 +114,9 @@ public class CoredumpHandler {
                 });
     }
 
-    void processAndReportSingleCoredump(NodeAgentContext context, Path coredumpDirectory, Map<String, Object> nodeAttributes) {
+    void processAndReportSingleCoredump(NodeAgentContext context, Path coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) {
         try {
-            String metadata = getMetadata(context, coredumpDirectory, nodeAttributes);
+            String metadata = getMetadata(context, coredumpDirectory, nodeAttributesSupplier);
             String coredumpId = coredumpDirectory.getFileName().toString();
             coredumpReporter.reportCoredump(coredumpId, metadata);
             finishProcessing(context, coredumpDirectory);
@@ -131,13 +130,13 @@ public class CoredumpHandler {
      * @return coredump metadata from metadata.json if present, otherwise attempts to get metadata using
      * {@link CoreCollector} and stores it to metadata.json
      */
-    String getMetadata(NodeAgentContext context, Path coredumpDirectory, Map<String, Object> nodeAttributes) throws IOException {
+    String getMetadata(NodeAgentContext context, Path coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) throws IOException {
         UnixPath metadataPath = new UnixPath(coredumpDirectory.resolve(METADATA_FILE_NAME));
         if (!Files.exists(metadataPath.toPath())) {
             Path coredumpFilePathOnHost = findCoredumpFileInProcessingDirectory(coredumpDirectory);
             Path coredumpFilePathInContainer = context.pathInNodeFromPathOnHost(coredumpFilePathOnHost);
             Map<String, Object> metadata = coreCollector.collect(context, coredumpFilePathInContainer);
-            metadata.putAll(nodeAttributes);
+            metadata.putAll(nodeAttributesSupplier.get());
 
             String metadataFields = objectMapper.writeValueAsString(ImmutableMap.of("fields", metadata));
             metadataPath.writeUtf8File(metadataFields);

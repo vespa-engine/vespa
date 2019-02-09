@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -20,10 +19,8 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -124,9 +121,9 @@ public class CoredumpHandlerTest {
     public void get_metadata_test() throws IOException {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("bin_path", "/bin/bash");
-        metadata.put("backtrace", Arrays.asList("call 1", "function 2", "something something"));
+        metadata.put("backtrace", List.of("call 1", "function 2", "something something"));
 
-        Map<String, Object> attributes = ImmutableMap.of(
+        Map<String, Object> attributes = Map.of(
                 "hostname", "host123.yahoo.com",
                 "vespa_version", "6.48.4",
                 "kernel_version", "3.10.0-862.9.1.el7.x86_64",
@@ -149,17 +146,17 @@ public class CoredumpHandlerTest {
         when(coreCollector.collect(eq(context), eq(coredumpDirectoryInContainer.resolve("dump_core.456"))))
                 .thenReturn(metadata);
 
-        assertEquals(expectedMetadataStr, coredumpHandler.getMetadata(context, coredumpDirectory, attributes));
+        assertEquals(expectedMetadataStr, coredumpHandler.getMetadata(context, coredumpDirectory, () -> attributes));
         verify(coreCollector, times(1)).collect(any(), any());
 
         // Calling it again will simply read the previously generated metadata from disk
-        assertEquals(expectedMetadataStr, coredumpHandler.getMetadata(context, coredumpDirectory, attributes));
+        assertEquals(expectedMetadataStr, coredumpHandler.getMetadata(context, coredumpDirectory, () -> attributes));
         verify(coreCollector, times(1)).collect(any(), any());
     }
 
     @Test(expected = IllegalStateException.class)
     public void cant_get_metadata_if_no_core_file() throws IOException {
-        coredumpHandler.getMetadata(context, fileSystem.getPath("/fake/path"), Collections.emptyMap());
+        coredumpHandler.getMetadata(context, fileSystem.getPath("/fake/path"), Map::of);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -184,7 +181,7 @@ public class CoredumpHandlerTest {
                     uncheck(() -> Files.createFile(fileSystem.getPath(commandLine.getArguments().get(3))));
                     return new TestChildProcess2(0, "");
                 });
-        coredumpHandler.processAndReportSingleCoredump(context, coredumpDirectory, Collections.emptyMap());
+        coredumpHandler.processAndReportSingleCoredump(context, coredumpDirectory, Map::of);
         verify(coreCollector, never()).collect(any(), any());
         verify(coredumpReporter, times(1)).reportCoredump(eq("id-123"), eq("metadata"));
         assertFalse(Files.exists(coredumpDirectory));
@@ -203,7 +200,7 @@ public class CoredumpHandlerTest {
     }
 
     private static void assertFolderContents(Path pathToFolder, String... filenames) {
-        Set<String> expectedContentsOfFolder = new HashSet<>(Arrays.asList(filenames));
+        Set<String> expectedContentsOfFolder = Set.of(filenames);
         Set<String> actualContentsOfFolder = new UnixPath(pathToFolder)
                 .listContentsOfDirectory().stream()
                 .map(unixPath -> unixPath.toPath().getFileName().toString())
