@@ -183,12 +183,15 @@ public class NodeAdminStateUpdaterTest {
 
         updater.adjustNodeAgentsToRunFromNodeRepository();
         verify(nodeRepository, times(1)).getAcls(any());
+        clock.advance(Duration.ofSeconds(30));
 
         updater.adjustNodeAgentsToRunFromNodeRepository();
+        clock.advance(Duration.ofSeconds(30));
         updater.adjustNodeAgentsToRunFromNodeRepository();
+        clock.advance(Duration.ofSeconds(30));
         verify(nodeRepository, times(1)).getAcls(any());
 
-        clock.advance(Duration.ofMinutes(2));
+        clock.advance(Duration.ofSeconds(30));
         updater.adjustNodeAgentsToRunFromNodeRepository();
         verify(nodeRepository, times(2)).getAcls(any());
     }
@@ -200,21 +203,32 @@ public class NodeAdminStateUpdaterTest {
         mockAcl(acl, 1, 2, 3);
 
         updater.adjustNodeAgentsToRunFromNodeRepository();
-        verify(nodeAgentContextFactory).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
-        verify(nodeAgentContextFactory).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(acl));
-        verify(nodeAgentContextFactory).create(argThat(spec -> spec.getHostname().equals("host3.yahoo.com")), eq(acl));
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host3.yahoo.com")), eq(acl));
+        verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
+        verify(nodeRepository, times(1)).getAcls(eq(hostHostname.value()));
     }
 
     @Test
     public void node_spec_and_acl_mismatch_missing_one_acl() {
         Acl acl = new Acl.Builder().withTrustedPorts(22).build();
         mockNodeRepo(Node.State.active, 3);
-        mockAcl(acl, 1, 3); // Acl for 2 is missing
+        mockAcl(acl, 1, 2); // Acl for 3 is missing
 
         updater.adjustNodeAgentsToRunFromNodeRepository();
-        verify(nodeAgentContextFactory).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
-        verify(nodeAgentContextFactory).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(Acl.EMPTY));
-        verify(nodeAgentContextFactory).create(argThat(spec -> spec.getHostname().equals("host3.yahoo.com")), eq(acl));
+        mockNodeRepo(Node.State.active, 2); // Next tick, the spec for 3 is no longer returned
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(1)).create(argThat(spec -> spec.getHostname().equals("host3.yahoo.com")), eq(Acl.EMPTY));
+        verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
+        verify(nodeRepository, times(2)).getAcls(eq(hostHostname.value())); // During the first tick, the cache is invalidated and retried
     }
 
     @Test
@@ -224,8 +238,13 @@ public class NodeAdminStateUpdaterTest {
         mockAcl(acl, 1, 2, 3); // Acl for 3 is extra
 
         updater.adjustNodeAgentsToRunFromNodeRepository();
-        verify(nodeAgentContextFactory).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
-        verify(nodeAgentContextFactory).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(acl));
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(acl));
+        verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
+        verify(nodeRepository, times(1)).getAcls(eq(hostHostname.value()));
     }
 
     private void assertConvergeError(NodeAdminStateUpdater.State targetState, String reason) {
