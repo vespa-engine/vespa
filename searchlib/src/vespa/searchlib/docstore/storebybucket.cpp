@@ -85,3 +85,5 @@ StoreByBucket::drain(IWrite & drainer)
 }
 
 }
+
+VESPALIB_HASH_MAP_INSTANTIATE(uint64_t, vespalib::ConstBufferRef);

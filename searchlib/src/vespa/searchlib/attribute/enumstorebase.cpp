@@ -636,6 +636,6 @@ namespace attribute {
 
 }
 
-template class vespalib::hash_map<search::EnumStoreIndex, search::EnumStoreIndex,
-                                  vespalib::hash<search::EnumStoreIndex>, std::equal_to<search::EnumStoreIndex>,
-                                  vespalib::hashtable_base::and_modulator>;
+VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(search::EnumStoreIndex, search::EnumStoreIndex,
+                                    vespalib::hash<search::EnumStoreIndex>, std::equal_to<search::EnumStoreIndex>,
+                                    vespalib::hashtable_base::and_modulator);
