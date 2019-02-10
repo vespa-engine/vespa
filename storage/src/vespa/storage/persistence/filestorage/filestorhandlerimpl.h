@@ -282,7 +282,6 @@ public:
     void abortQueuedOperations(const AbortBucketOperationsCommand& cmd);
 
 private:
-    const spi::PartitionStateList& _partitions;
     ServiceLayerComponent _component;
     std::vector<Disk> _diskInfo;
     MessageSender& _messageSender;

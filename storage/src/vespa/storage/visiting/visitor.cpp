@@ -1105,8 +1105,6 @@ Visitor::getStatus(std::ostream& out, bool verbose) const
     out << "</table>\n";
 
     out << "<h4>Buckets to visit</h4>";
-    typedef std::pair<api::Timestamp, api::Timestamp> TimePair;
-    TimePair lastTime;
     for (uint32_t i=0; i<_buckets.size(); ++i) {
         out << _buckets[i] << "\n<br>";
     }

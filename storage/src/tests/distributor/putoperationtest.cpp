@@ -209,7 +209,6 @@ PutOperationTest::testBucketDatabaseGetsSpecialEntryWhenCreateBucketSent()
     setupDistributor(2, 1, "storage:1 distributor:1");
 
     Document::SP doc(createDummyDocument("test", "test"));
-    document::BucketId bucketId(getExternalOperationHandler().getBucketId(doc->getId()));
     sendPut(createPut(doc));
 
     // Database updated before CreateBucket is sent

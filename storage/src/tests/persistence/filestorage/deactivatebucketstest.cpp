@@ -44,7 +44,6 @@ DeactivateBucketsTest::bucketsInDatabaseDeactivatedWhenNodeDownInClusterState()
             lib::ClusterState::CSP(new lib::ClusterState(upState)));
 
     document::BucketId bucket(8, 123);
-    spi::Bucket spiBucket(makeSpiBucket(bucket));
 
     createBucket(bucket);
     api::BucketInfo serviceLayerInfo(1, 2, 3, 4, 5, true, true);

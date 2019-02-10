@@ -30,7 +30,6 @@ public:
     void onStart(DistributorMessageSender& sender) override;
     void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
 private:
-    DistributorComponent& _manager;
     DistributorBucketSpace &_bucketSpace;
 
     std::shared_ptr<api::StatBucketCommand> _command;
