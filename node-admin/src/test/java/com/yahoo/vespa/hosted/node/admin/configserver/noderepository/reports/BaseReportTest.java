@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports;
 import com.yahoo.test.json.JsonTestHelper;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -11,11 +12,11 @@ import static org.junit.Assert.assertTrue;
  * @author hakonhall
  */
 public class BaseReportTest {
+    private static final String JSON_1 = "{\"createdMillis\": 1, \"description\": \"desc\"}";
     @Test
     public void testSerialization() {
-        BaseReport report = new BaseReport(1L, "desc");
         JsonTestHelper.assertJsonEquals(new BaseReport(1L, "desc").toJsonNode(),
-                "{\"createdMillis\": 1, \"description\": \"desc\"}");
+                JSON_1);
         JsonTestHelper.assertJsonEquals(new BaseReport(null, "desc").toJsonNode(),
                 "{\"description\": \"desc\"}");
         JsonTestHelper.assertJsonEquals(new BaseReport(1L, null).toJsonNode(),
@@ -34,5 +35,13 @@ public class BaseReportTest {
 
         assertTrue(new BaseReport(1L, "desc 2").updates(report));
         assertTrue(new BaseReport(1L, null).updates(report));
+    }
+
+    @Test
+    public void testJsonSerialization() {
+        BaseReport report = BaseReport.fromJson(JSON_1);
+        assertEquals(1L, (long) report.getCreatedMillisOrNull());
+        assertEquals("desc", report.getDescriptionOrNull());
+        JsonTestHelper.assertJsonEquals(report.toJson(), JSON_1);
     }
 }
