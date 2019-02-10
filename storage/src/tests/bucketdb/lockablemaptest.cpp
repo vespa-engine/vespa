@@ -115,7 +115,6 @@ namespace {
 void
 LockableMapTest::testSimpleUsage() {
         // Tests insert, erase, size, empty, operator[]
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
         // Do some insertions
     CPPUNIT_ASSERT(map.empty());
@@ -154,7 +153,6 @@ LockableMapTest::testSimpleUsage() {
 
 void
 LockableMapTest::testComparison() {
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map1;
     Map map2;
     bool preExisted;
@@ -579,7 +577,6 @@ printBuckets(const std::map<document::BucketId, Map::WrappedEntry>& results) {
 void
 LockableMapTest::testFindBucketsSimple() {
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(17, 0x0ffff);
@@ -608,7 +605,6 @@ LockableMapTest::testFindBucketsSimple() {
 void
 LockableMapTest::testFindBuckets() {
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(16, 0x0ffff);
@@ -637,7 +633,6 @@ LockableMapTest::testFindBuckets() {
 void
 LockableMapTest::testFindBuckets2() { // ticket 3121525
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(16, 0x0ffff);
@@ -666,7 +661,6 @@ LockableMapTest::testFindBuckets2() { // ticket 3121525
 void
 LockableMapTest::testFindBuckets3() { // ticket 3121525
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(16, 0x0ffff);
@@ -689,7 +683,6 @@ LockableMapTest::testFindBuckets3() { // ticket 3121525
 void
 LockableMapTest::testFindBuckets4() { // ticket 3121525
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(16, 0x0ffff);
@@ -714,7 +707,6 @@ LockableMapTest::testFindBuckets4() { // ticket 3121525
 void
 LockableMapTest::testFindBuckets5() { // ticket 3121525
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(16, 0x0ffff);
@@ -739,7 +731,6 @@ LockableMapTest::testFindBuckets5() { // ticket 3121525
 void
 LockableMapTest::testFindNoBuckets() {
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id(16, 0x0ffff);
@@ -753,7 +744,6 @@ LockableMapTest::testFindNoBuckets() {
 void
 LockableMapTest::testFindAll() {
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(16, 0x0aaaa); // contains id2-id7
@@ -815,7 +805,6 @@ LockableMapTest::testFindAll() {
 void
 LockableMapTest::testFindAll2() { // Ticket 3121525
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(17, 0x00001);
@@ -839,7 +828,6 @@ LockableMapTest::testFindAll2() { // Ticket 3121525
 void
 LockableMapTest::testFindAllUnusedBitIsSet() { // ticket 2938896
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(24, 0x000dc7089);
@@ -868,7 +856,6 @@ LockableMapTest::testFindAllUnusedBitIsSet() { // ticket 2938896
 void
 LockableMapTest::testFindAllInconsistentlySplit() { // Ticket 2938896
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(16, 0x00001); // contains id2-id3
@@ -895,7 +882,6 @@ LockableMapTest::testFindAllInconsistentlySplit() { // Ticket 2938896
 void
 LockableMapTest::testFindAllInconsistentlySplit2() { // ticket 3121525
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(17, 0x10000);
@@ -923,7 +909,6 @@ LockableMapTest::testFindAllInconsistentlySplit2() { // ticket 3121525
 void
 LockableMapTest::testFindAllInconsistentlySplit3() { // ticket 3121525
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2
@@ -946,7 +931,6 @@ LockableMapTest::testFindAllInconsistentlySplit3() { // ticket 3121525
 void
 LockableMapTest::testFindAllInconsistentlySplit4() { // ticket 3121525
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2-id3
@@ -972,7 +956,6 @@ LockableMapTest::testFindAllInconsistentlySplit4() { // ticket 3121525
 void
 LockableMapTest::testFindAllInconsistentlySplit5() { // ticket 3121525
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2-id3
@@ -997,7 +980,6 @@ LockableMapTest::testFindAllInconsistentlySplit5() { // ticket 3121525
 
 void
 LockableMapTest::testFindAllInconsistentlySplit6() {
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2-id3
@@ -1022,7 +1004,6 @@ LockableMapTest::testFindAllInconsistentlySplit6() {
 void
 LockableMapTest::testFindAllInconsistentBelow16Bits()
 {
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
 
     document::BucketId id1(1, 0x1); // contains id2-id3
@@ -1048,7 +1029,6 @@ LockableMapTest::testFindAllInconsistentBelow16Bits()
 void
 LockableMapTest::testCreate() {
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
     {
         document::BucketId id1(58, 0x43d6c878000004d2ull);
@@ -1081,7 +1061,6 @@ LockableMapTest::testCreate() {
 void
 LockableMapTest::testCreate2() {
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
     {
         document::BucketId id1(58, 0xeaf77782000004d2);
@@ -1108,7 +1087,6 @@ LockableMapTest::testCreate2() {
 void
 LockableMapTest::testCreate3() {
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
     {
         document::BucketId id1(58, 0xeaf77780000004d2);
@@ -1137,7 +1115,6 @@ LockableMapTest::testCreate3() {
 void
 LockableMapTest::testCreate4() {
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
     {
         document::BucketId id1(16, 0x00000000000004d1);
@@ -1162,7 +1139,6 @@ LockableMapTest::testCreate4() {
 void
 LockableMapTest::testCreate6() {
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
     {
         document::BucketId id1(0x8c000000000004d2);
@@ -1199,7 +1175,6 @@ LockableMapTest::testCreate6() {
 void
 LockableMapTest::testCreate5() {
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
     {
         document::BucketId id1(58, 0xeaf77780000004d2);
@@ -1224,7 +1199,6 @@ LockableMapTest::testCreate5() {
 void
 LockableMapTest::testCreateEmpty() {
 #if __WORDSIZE == 64
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
     {
         document::BucketId id1(58, 0x00000000010004d2);
@@ -1238,7 +1212,6 @@ LockableMapTest::testCreateEmpty() {
 void
 LockableMapTest::testIsConsistent()
 {
-    typedef LockableMap<JudyMultiMap<A> > Map;
     Map map;
     document::BucketId id1(16, 0x00001); // contains id2-id3
     document::BucketId id2(17, 0x00001);

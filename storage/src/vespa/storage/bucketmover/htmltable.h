@@ -47,8 +47,7 @@ struct Column {
         }
         out << ">";
     }
-    virtual void printElementStop(std::ostream& out, uint16_t row) {
-        std::map<uint16_t, Color>::iterator color(_colors.find(row));
+    virtual void printElementStop(std::ostream& out, [[maybe_unused]] uint16_t row) {
         out << "</td>";
     }
 

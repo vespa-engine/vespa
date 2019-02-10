@@ -152,7 +152,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
             toMsg->toString().c_str(), toMsg->getLoadType().getId(),
             fromMsg.getPriority(), toMsg->getPriority());
     }
-    return std::move(toMsg);
+    return toMsg;
 }
 
 std::unique_ptr<api::StorageReply>
@@ -195,7 +195,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentReply& fromReply,
             toMsg->setPriority(_priConverter->toStoragePriority(fromReply.getPriority()));
         }
     }
-    return std::move(toMsg);
+    return toMsg;
 }
 
 std::unique_ptr<mbus::Message>
@@ -318,7 +318,7 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
             toMsg->getTrace().setLevel(9);
         }
     }
-    return std::move(toMsg);
+    return toMsg;
 }
 
 void

@@ -23,10 +23,9 @@ using document::BucketSpace;
 namespace storage {
 
 FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numStripes, MessageSender& sender, FileStorMetrics& metrics,
-                                         const spi::PartitionStateList& partitions,
+                                         [[maybe_unused]] const spi::PartitionStateList& partitions,
                                          ServiceLayerComponentRegister& compReg)
-    : _partitions(partitions),
-      _component(compReg, "filestorhandlerimpl"),
+    : _component(compReg, "filestorhandlerimpl"),
       _diskInfo(),
       _messageSender(sender),
       _bucketIdFactory(_component.getBucketIdFactory()),

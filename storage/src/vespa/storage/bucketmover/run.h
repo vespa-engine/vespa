@@ -38,7 +38,6 @@ class Run : public document::Printable {
     std::shared_ptr<const lib::Distribution> _distribution;
     lib::NodeState _nodeState;
     uint16_t _nodeIndex;
-    uint32_t _maxEntriesToKeep;
     std::list<Move> _entries;
     std::list<Move> _pending;
     bool _iterationDone;
