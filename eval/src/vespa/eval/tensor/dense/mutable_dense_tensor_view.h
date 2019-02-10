@@ -15,8 +15,8 @@ class MutableDenseTensorView : public DenseTensorView
 private:
     struct MutableValueType
     {
-    private:
         eval::ValueType _type;
+    private:
         std::vector<eval::ValueType::Dimension::size_type *> _unboundDimSizes;
 
     public:
