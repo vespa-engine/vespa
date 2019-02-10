@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -21,8 +22,8 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * <p><strong>Subclass requirements</strong>
  *
  * <ol>
- *     <li>A subclass must maintain the property that {@link ObjectMapper} can map an instance to {@link JsonNode},
- *     see {@link #toJsonNode()}.</li>
+ *     <li>A subclass mush be a Jackson class that can be mapped to {@link JsonNode} with {@link #toJsonNode()},
+ *     and from {@link JsonNode} with {@link #fromJsonNode(JsonNode, Class)}.</li>
  *     <li>A subclass must override {@link #updates(BaseReport)} and make sure to return false if
  *     {@code !super.updates(current)}.</li>
  * </ol>
@@ -52,12 +53,12 @@ public class BaseReport {
     }
 
     @JsonGetter(CREATED_FIELD)
-    public Long getCreatedMillisOrNull() {
+    public final Long getCreatedMillisOrNull() {
         return createdMillis;
     }
 
     @JsonGetter(DESCRIPTION_FIELD)
-    public String getDescriptionOrNull() {
+    public final String getDescriptionOrNull() {
         return description;
     }
 
@@ -73,8 +74,36 @@ public class BaseReport {
         return !Objects.equals(description, current.description);
     }
 
+    /** A variant of {@link #updates(BaseReport)} handling possibly absent reports, whether new or old. */
+    public static <TNEW extends BaseReport, TOLD extends BaseReport>
+    boolean updates2(Optional<TNEW> newReport, Optional<TOLD> oldReport) {
+        if (newReport.isPresent() ^ oldReport.isPresent()) return true;
+        return newReport.map(r -> r.updates(oldReport.get())).orElse(false);
+    }
+
+    public static BaseReport fromJsonNode(JsonNode jsonNode) {
+        return fromJsonNode(jsonNode, BaseReport.class);
+    }
+
+    public static <R extends BaseReport> R fromJsonNode(JsonNode jsonNode, Class<R> jacksonClass) {
+        return uncheck(() -> mapper.treeToValue(jsonNode, jacksonClass));
+    }
+
+    public static BaseReport fromJson(String json) {
+        return fromJson(json, BaseReport.class);
+    }
+
+    public static <R extends BaseReport> R fromJson(String json, Class<R> jacksonClass) {
+        return uncheck(() -> mapper.readValue(json, jacksonClass));
+    }
+
     /** Returns {@code this} as a {@link JsonNode}. */
     public JsonNode toJsonNode() {
         return uncheck(() -> mapper.valueToTree(this));
+    }
+
+    /** Returns {@code this} as a compact JSON string. */
+    public String toJson() {
+        return uncheck(() -> mapper.writeValueAsString(this));
     }
 }
