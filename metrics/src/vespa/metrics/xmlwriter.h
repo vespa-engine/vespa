@@ -8,7 +8,6 @@
 namespace metrics {
 
 class XmlWriter : public MetricVisitor {
-    uint32_t _period;
     vespalib::xml::XmlOutputStream& _xos;
     int _verbosity;
 

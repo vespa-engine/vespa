@@ -11,8 +11,8 @@
 namespace metrics {
 
 XmlWriter::XmlWriter(vespalib::xml::XmlOutputStream& xos,
-          uint32_t period, int verbosity)
-    : _period(period), _xos(xos), _verbosity(verbosity) {}
+                     [[maybe_unused]] uint32_t period, int verbosity)
+    : _xos(xos), _verbosity(verbosity) {}
 
 bool
 XmlWriter::visitSnapshot(const MetricSnapshot& snapshot)
