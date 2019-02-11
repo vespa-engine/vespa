@@ -1,6 +1,5 @@
 package com.yahoo.abicheck.mojo;
 
-import com.google.common.collect.Ordering;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -29,6 +28,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.InstantiationStrategy;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -39,13 +39,16 @@ import org.objectweb.asm.ClassReader;
 @Mojo(
     name = "abicheck",
     defaultPhase = LifecyclePhase.PACKAGE,
-    requiresDependencyResolution = ResolutionScope.RUNTIME
+    requiresDependencyResolution = ResolutionScope.RUNTIME,
+    instantiationStrategy = InstantiationStrategy.PER_LOOKUP,
+    threadSafe = true
 )
 public class AbiCheck extends AbstractMojo {
 
   public static final String PACKAGE_INFO_CLASS_FILE_NAME = "package-info.class";
   private static final String DEFAULT_SPEC_FILE = "abi-spec.json";
   private static final String WRITE_SPEC_PROPERTY = "abicheck.writeSpec";
+
   @Parameter(defaultValue = "${project}", readonly = true)
   private MavenProject project = null;
 
