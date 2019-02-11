@@ -82,44 +82,43 @@ MetricsTest::MetricsTest()
 }
 
 void MetricsTest::setUp() {
-    _config.reset(new vdstestlib::DirConfig(getStandardConfig(true, "metricstest")));
+    _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, "metricstest"));
     assert(system(("rm -rf " + getRootFolder(*_config)).c_str()) == 0);
     try {
-        _node.reset(new TestServiceLayerApp(DiskCount(4), NodeIndex(0),
-                    _config->getConfigId()));
+        _node = std::make_unique<TestServiceLayerApp>(
+                DiskCount(4), NodeIndex(0), _config->getConfigId());
         _node->setupDummyPersistence();
         _clock = &_node->getClock();
         _clock->setAbsoluteTimeInSeconds(1000000);
-        _top.reset(new DummyStorageLink);
+        _top = std::make_unique<DummyStorageLink>();
     } catch (config::InvalidConfigException& e) {
         fprintf(stderr, "%s\n", e.what());
     }
-    _metricManager.reset(new metrics::MetricManager(
-            std::unique_ptr<metrics::MetricManager::Timer>(
-                new MetricClock(*_clock))));
+    _metricManager = std::make_unique<metrics::MetricManager>(
+            std::make_unique<MetricClock>(*_clock));
     _topSet.reset(new metrics::MetricSet("vds", {}, ""));
     {
         metrics::MetricLockGuard guard(_metricManager->getMetricLock());
         _metricManager->registerMetric(guard, *_topSet);
     }
 
-    _metricsConsumer.reset(new StatusMetricConsumer(
+    _metricsConsumer = std::make_unique<StatusMetricConsumer>(
             _node->getComponentRegister(),
             *_metricManager,
-            "status"));
+            "status");
 
     uint16_t diskCount = _node->getPartitions().size();
     documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
 
-    _filestorMetrics.reset(new FileStorMetrics(_node->getLoadTypes()->getMetricLoadTypes()));
+    _filestorMetrics = std::make_shared<FileStorMetrics>(_node->getLoadTypes()->getMetricLoadTypes());
     _filestorMetrics->initDiskMetrics(diskCount, loadTypes->getMetricLoadTypes(), 1, 1);
     _topSet->registerMetric(*_filestorMetrics);
 
-    _bucketManagerMetrics.reset(new BucketManagerMetrics);
+    _bucketManagerMetrics = std::make_shared<BucketManagerMetrics>(_node->getComponentRegister().getBucketSpaceRepo());
     _bucketManagerMetrics->setDisks(diskCount);
     _topSet->registerMetric(*_bucketManagerMetrics);
 
-    _visitorMetrics.reset(new VisitorMetrics);
+    _visitorMetrics = std::make_shared<VisitorMetrics>();
     _visitorMetrics->initThreads(4, loadTypes->getMetricLoadTypes());
     _topSet->registerMetric(*_visitorMetrics);
     _metricManager->init(_config->getConfigId(), _node->getThreadPool());
@@ -127,12 +126,12 @@ void MetricsTest::setUp() {
 
 void MetricsTest::tearDown() {
     _metricManager->stop();
-    _metricsConsumer.reset(0);
-    _topSet.reset(0);
-    _metricManager.reset(0);
-    _top.reset(0);
-    _node.reset(0);
-    _config.reset(0);
+    _metricsConsumer.reset();
+    _topSet.reset();
+    _metricManager.reset();
+    _top.reset();
+    _node.reset();
+    _config.reset();
     _filestorMetrics.reset();
     _bucketManagerMetrics.reset();
     _visitorMetrics.reset();

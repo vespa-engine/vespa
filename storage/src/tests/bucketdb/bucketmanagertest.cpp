@@ -67,6 +67,7 @@ public:
     CPPUNIT_TEST(testRemoveLastModifiedFailed);
     CPPUNIT_TEST(testSwallowNotifyBucketChangeReply);
     CPPUNIT_TEST(testMetricsGeneration);
+    CPPUNIT_TEST(metrics_are_tracked_per_bucket_space);
     CPPUNIT_TEST(testSplitReplyOrderedAfterBucketReply);
     CPPUNIT_TEST(testJoinReplyOrderedAfterBucketReply);
     CPPUNIT_TEST(testDeleteReplyOrderedAfterBucketReply);
@@ -136,6 +137,7 @@ public:
 
     void testSwallowNotifyBucketChangeReply();
     void testMetricsGeneration();
+    void metrics_are_tracked_per_bucket_space();
     void testSplitReplyOrderedAfterBucketReply();
     void testJoinReplyOrderedAfterBucketReply();
     void testDeleteReplyOrderedAfterBucketReply();
@@ -152,7 +154,6 @@ public:
     void testConflictSetOnlyClearedAfterAllBucketRequestsDone();
     void testRejectRequestWithMismatchingDistributionHash();
     void testDbNotIteratedWhenAllRequestsRejected();
-    void testReceivedDistributionHashIsNormalized();
 
 public:
     static constexpr uint32_t DIR_SPREAD = 3;
@@ -639,6 +640,51 @@ BucketManagerTest::testMetricsGeneration()
     CPPUNIT_ASSERT_EQUAL(int64_t(600), m.bytes.getLast());
     CPPUNIT_ASSERT_EQUAL(int64_t(1), m.active.getLast());
     CPPUNIT_ASSERT_EQUAL(int64_t(2), m.ready.getLast());
+}
+
+void BucketManagerTest::metrics_are_tracked_per_bucket_space() {
+    setupTestEnvironment();
+    _top->open();
+    auto& repo = _node->getComponentRegister().getBucketSpaceRepo();
+    {
+        bucketdb::StorageBucketInfo entry;
+        entry.disk = 0;
+        api::BucketInfo info(50, 100, 200);
+        info.setReady(true);
+        entry.setBucketInfo(info);
+        repo.get(document::FixedBucketSpaces::default_space()).bucketDatabase()
+                .insert(document::BucketId(16, 1234), entry, "foo");
+    }
+    {
+        bucketdb::StorageBucketInfo entry;
+        entry.disk = 0;
+        api::BucketInfo info(60, 150, 300);
+        info.setActive(true);
+        entry.setBucketInfo(info);
+        repo.get(document::FixedBucketSpaces::global_space()).bucketDatabase()
+                .insert(document::BucketId(16, 1234), entry, "foo");
+    }
+    _node->getDoneInitializeHandler().notifyDoneInitializing();
+    _top->doneInit();
+    vespalib::Monitor l;
+    _manager->updateMetrics(BucketManager::MetricLockGuard(l));
+
+    auto& spaces = _manager->_metrics->bucket_spaces;
+    auto default_m = spaces.find(document::FixedBucketSpaces::default_space());
+    CPPUNIT_ASSERT(default_m != spaces.end());
+    CPPUNIT_ASSERT_EQUAL(int64_t(1),   default_m->second->buckets_total.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(100), default_m->second->docs.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(200), default_m->second->bytes.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(0),   default_m->second->active_buckets.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(1),   default_m->second->ready_buckets.getLast());
+
+    auto global_m = spaces.find(document::FixedBucketSpaces::global_space());
+    CPPUNIT_ASSERT(global_m != spaces.end());
+    CPPUNIT_ASSERT_EQUAL(int64_t(1),   global_m->second->buckets_total.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(150), global_m->second->docs.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(300), global_m->second->bytes.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(1),   global_m->second->active_buckets.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(0),   global_m->second->ready_buckets.getLast());
 }
 
 void
