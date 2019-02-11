@@ -13,6 +13,7 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
@@ -20,9 +21,9 @@ import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.InMemoryStatusService;
-import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
+import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
+import com.yahoo.vespa.service.monitor.ServiceModel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,9 +32,8 @@ import org.mockito.InOrder;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Map;
+import java.util.Set;
 
 import static com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
 import static com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus.NO_REMARKS;
@@ -49,12 +49,10 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 /**
- * Test Orchestrator with a mock backend (the InMemoryStatusService)
+ * Test Orchestrator with a mock backend (the MockCurator)
  *
  * @author smorgrav
  */
@@ -79,7 +77,7 @@ public class OrchestratorImplTest {
         clustercontroller = new ClusterControllerClientFactoryMock();
         orchestrator = new OrchestratorImpl(
                 clustercontroller,
-                new InMemoryStatusService(),
+                new ZookeeperStatusService(new MockCurator()),
                 new OrchestratorConfig(new OrchestratorConfig.Builder()),
                 new DummyInstanceLookupService());
 
@@ -312,16 +310,8 @@ public class OrchestratorImplTest {
 
     @Test
     public void testGetHost() throws Exception {
-        ClusterControllerClientFactory clusterControllerClientFactory =
-                mock(ClusterControllerClientFactory.class);
-        StatusService statusService = mock(StatusService.class);
-        InstanceLookupService lookupService = mock(InstanceLookupService.class);
-
-        orchestrator = new OrchestratorImpl(
-                clusterControllerClientFactory,
-                statusService,
-                new OrchestratorConfig(new OrchestratorConfig.Builder()),
-                lookupService);
+        ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
+        StatusService statusService = new ZookeeperStatusService(new MockCurator());
 
         HostName hostName = new HostName("host.yahoo.com");
         TenantId tenantId = new TenantId("tenant");
@@ -335,32 +325,30 @@ public class OrchestratorImplTest {
                 new ApplicationInstance(
                         tenantId,
                         applicationInstanceId,
-                        Stream.of(new ServiceCluster(
+                        Set.of(new ServiceCluster(
                                 new ClusterId("clusterId"),
                                 new ServiceType("serviceType"),
-                                Stream.of(
-                                        new ServiceInstance(
-                                                new ConfigId("configId1"),
-                                                hostName,
-                                                ServiceStatus.UP),
-                                new ServiceInstance(
-                                        new ConfigId("configId2"),
-                                        hostName,
-                                        ServiceStatus.NOT_CHECKED))
-                                        .collect(Collectors.toSet())))
-                        .collect(Collectors.toSet()));
+                                Set.of(new ServiceInstance(
+                                               new ConfigId("configId1"),
+                                               hostName,
+                                               ServiceStatus.UP),
+                                       new ServiceInstance(
+                                               new ConfigId("configId2"),
+                                               hostName,
+                                               ServiceStatus.NOT_CHECKED)))));
 
-        when(lookupService.findInstanceByHost(hostName))
-                .thenReturn(Optional.of(applicationInstance));
+        InstanceLookupService lookupService = new ServiceMonitorInstanceLookupService(
+                () -> new ServiceModel(Map.of(reference, applicationInstance)));
 
-        ReadOnlyStatusRegistry readOnlyStatusRegistry = mock(ReadOnlyStatusRegistry.class);
-        when(statusService.forApplicationInstance(reference))
-                .thenReturn(readOnlyStatusRegistry);
-        when(readOnlyStatusRegistry.getHostStatus(hostName))
-                .thenReturn(HostStatus.ALLOWED_TO_BE_DOWN);
+        orchestrator = new OrchestratorImpl(
+                clusterControllerClientFactory,
+                statusService,
+                new OrchestratorConfig(new OrchestratorConfig.Builder()),
+                lookupService);
+
+        orchestrator.setNodeStatus(hostName, HostStatus.ALLOWED_TO_BE_DOWN);
 
         Host host = orchestrator.getHost(hostName);
-
         assertEquals(reference, host.getApplicationInstanceReference());
         assertEquals(hostName, host.getHostName());
         assertEquals(HostStatus.ALLOWED_TO_BE_DOWN, host.getHostStatus());

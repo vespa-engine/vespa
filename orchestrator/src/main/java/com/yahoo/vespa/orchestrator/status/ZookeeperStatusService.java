@@ -7,20 +7,23 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
-import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.data.Stat;
 
 import javax.inject.Inject;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Stores instance suspension status and which hosts are allowed to go down in zookeeper.
@@ -34,27 +37,22 @@ public class ZookeeperStatusService implements StatusService {
 
     final static String HOST_STATUS_BASE_PATH = "/vespa/host-status-service";
     final static String APPLICATION_STATUS_BASE_PATH = "/vespa/application-status-service";
+    final static String HOST_STATUS_CACHE_COUNTER_PATH = "/vespa/host-status-service-cache-counter";
 
     private final Curator curator;
+    private final CuratorCounter counter;
+
+    /** A cache of hosts allowed to be down. Access only through {@link #getValidCache()}! */
+    private final Map<ApplicationInstanceReference, Set<HostName>> hostsDown;
+
+    private volatile long cacheRefreshedAt;
 
     @Inject
     public ZookeeperStatusService(@Component Curator curator) {
         this.curator = curator;
-    }
-
-    @Override
-    public ReadOnlyStatusRegistry forApplicationInstance(ApplicationInstanceReference applicationInstanceReference) {
-        return new ReadOnlyStatusRegistry() {
-            @Override
-            public HostStatus getHostStatus(HostName hostName) {
-                return getInternalHostStatus(applicationInstanceReference, hostName);
-            }
-
-            @Override
-            public ApplicationInstanceStatus getApplicationInstanceStatus() {
-                return getInternalApplicationInstanceStatus(applicationInstanceReference);
-            }
-        };
+        this.counter = new CuratorCounter(curator, HOST_STATUS_CACHE_COUNTER_PATH);
+        this.cacheRefreshedAt = counter.get();
+        this.hostsDown = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -78,6 +76,18 @@ public class ZookeeperStatusService implements StatusService {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * Cache is checked for freshness when this mapping is created, and may be invalidated again later
+     * by other users of the cache. Since this function is backed by the cache, any such invalidations
+     * will be reflected in the returned mapping; all users of the cache collaborate in repopulating it.
+     */
+    @Override
+    public Function<ApplicationInstanceReference, Set<HostName>> getSuspendedHostsByApplication() {
+        Map<ApplicationInstanceReference, Set<HostName>> suspendedHostsByApplication = getValidCache();
+        return application -> suspendedHostsByApplication.computeIfAbsent(application, this::hostsDownFor);
+    }
+
 
     /**
      *  1) locks the status service for an application instance.
@@ -107,72 +117,89 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    private InterProcessSemaphoreMutex acquireMutexOrThrow(long timeout, TimeUnit timeoutTimeUnit, String lockPath) throws Exception {
-        InterProcessSemaphoreMutex mutex = new InterProcessSemaphoreMutex(curator.framework(), lockPath);
-
-        log.log(LogLevel.DEBUG, "Waiting for lock on " + lockPath);
-        boolean acquired = mutex.acquire(timeout, timeoutTimeUnit);
-        if (!acquired) {
-            log.log(LogLevel.DEBUG, "Timed out waiting for lock on " + lockPath);
-            throw new TimeoutException("Timed out waiting for lock on " + lockPath);
-        }
-        log.log(LogLevel.DEBUG, "Successfully acquired lock on " + lockPath);
-        return mutex;
-    }
-
     private void setHostStatus(ApplicationInstanceReference applicationInstanceReference,
                                HostName hostName,
                                HostStatus status) {
         String path = hostAllowedDownPath(applicationInstanceReference, hostName);
 
+        boolean invalidate = false;
         try {
             switch (status) {
                 case NO_REMARKS:
-                    deleteNode_ignoreNoNodeException(path,"Host already has state NO_REMARKS, path = " + path);
+                    invalidate = deleteNode_ignoreNoNodeException(path, "Host already has state NO_REMARKS, path = " + path);
                     break;
                 case ALLOWED_TO_BE_DOWN:
-                    createNode_ignoreNodeExistsException(path,
-                                                         "Host already has state ALLOWED_TO_BE_DOWN, path = " + path);
+                    invalidate = createNode_ignoreNodeExistsException(path, "Host already has state ALLOWED_TO_BE_DOWN, path = " + path);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected status '" + status + "'.");
             }
         } catch (Exception e) {
-            //TODO: IOException with explanation
+            invalidate = true;
             throw new RuntimeException(e);
         }
-    }
-
-    private void deleteNode_ignoreNoNodeException(String path, String debugLogMessageIfNotExists) throws Exception {
-        try {
-            curator.framework().delete().forPath(path);
-        } catch (NoNodeException e) {
-            log.log(LogLevel.DEBUG, debugLogMessageIfNotExists, e);
+        finally {
+            if (invalidate) {
+                counter.next();
+                hostsDown.remove(applicationInstanceReference);
+            }
         }
     }
 
-    private void createNode_ignoreNodeExistsException(String path, String debugLogMessageIfExists) throws Exception {
+    private boolean deleteNode_ignoreNoNodeException(String path, String debugLogMessageIfNotExists) throws Exception {
+        try {
+            curator.framework().delete().forPath(path);
+            return true;
+        } catch (NoNodeException e) {
+            log.log(LogLevel.DEBUG, debugLogMessageIfNotExists, e);
+            return false;
+        }
+    }
+
+    private boolean createNode_ignoreNodeExistsException(String path, String debugLogMessageIfExists) throws Exception {
         try {
             curator.framework().create()
                     .creatingParentsIfNeeded()
                     .forPath(path);
+            return true;
         } catch (NodeExistsException e) {
             log.log(LogLevel.DEBUG, debugLogMessageIfExists, e);
+            return false;
         }
     }
 
-    //TODO: Eliminate repeated calls to getHostStatus, replace with bulk operation.
-    private HostStatus getInternalHostStatus(ApplicationInstanceReference applicationInstanceReference, HostName hostName) {
-        try {
-            Stat statOrNull = curator.framework().checkExists().forPath(
-                    hostAllowedDownPath(applicationInstanceReference, hostName));
+    @Override
+    public HostStatus getHostStatus(ApplicationInstanceReference applicationInstanceReference, HostName hostName) {
+        return getValidCache().computeIfAbsent(applicationInstanceReference, this::hostsDownFor)
+                              .contains(hostName) ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS;
+    }
 
-            return (statOrNull == null) ? HostStatus.NO_REMARKS : HostStatus.ALLOWED_TO_BE_DOWN;
-        } catch (Exception e) {
-            //TODO: IOException with explanation - Should we only catch IOExceptions or are they a special case?
+    /** Holding an application's lock ensures the cache is up to date for that application. */
+    private Map<ApplicationInstanceReference, Set<HostName>> getValidCache() {
+        long cacheGeneration = counter.get();
+        if (counter.get() != cacheRefreshedAt) {
+            cacheRefreshedAt = cacheGeneration;
+            hostsDown.clear();
+        }
+        return hostsDown;
+    }
+
+    private Set<HostName> hostsDownFor(ApplicationInstanceReference application) {
+        try {
+            if (curator.framework().checkExists().forPath(hostsAllowedDownPath(application)) == null)
+                return Collections.emptySet();
+
+            return curator.framework().getChildren().forPath(hostsAllowedDownPath(application))
+                          .stream().map(HostName::new)
+                          .collect(Collectors.toUnmodifiableSet());
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    /** Common implementation for the two internal classes that sets ApplicationInstanceStatus. */
-    private ApplicationInstanceStatus getInternalApplicationInstanceStatus(ApplicationInstanceReference applicationInstanceReference) {
+    @Override
+    public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationInstanceReference applicationInstanceReference) {
         try {
             Stat statOrNull = curator.framework().checkExists().forPath(
                     applicationInstanceSuspendedPath(applicationInstanceReference));
@@ -183,12 +210,6 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    private HostStatus getHostStatusWithLock(
-            final ApplicationInstanceReference applicationInstanceReference,
-            final HostName hostName) {
-        return getInternalHostStatus(applicationInstanceReference, hostName);
-    }
-
     private static String applicationInstancePath(ApplicationInstanceReference applicationInstanceReference) {
         return HOST_STATUS_BASE_PATH + '/' +
                 applicationInstanceReference.tenantId() + ":" + applicationInstanceReference.applicationInstanceId();
@@ -196,10 +217,6 @@ public class ZookeeperStatusService implements StatusService {
 
     private static String hostsAllowedDownPath(ApplicationInstanceReference applicationInstanceReference) {
         return applicationInstancePath(applicationInstanceReference) + "/hosts-allowed-down";
-    }
-
-    private static String applicationInstanceLockPath(ApplicationInstanceReference applicationInstanceReference) {
-        return applicationInstancePath(applicationInstanceReference) + "/lock";
     }
 
     private static String applicationInstanceLock2Path(ApplicationInstanceReference applicationInstanceReference) {
@@ -226,6 +243,21 @@ public class ZookeeperStatusService implements StatusService {
             this.lock = lock;
             this.applicationInstanceReference = applicationInstanceReference;
             this.probe = probe;
+        }
+
+        @Override
+        public ApplicationInstanceStatus getStatus() {
+            return getApplicationInstanceStatus(applicationInstanceReference);
+        }
+
+        @Override
+        public HostStatus getHostStatus(HostName hostName) {
+            return ZookeeperStatusService.this.getHostStatus(applicationInstanceReference, hostName);
+        }
+
+        @Override
+        public Set<HostName> getSuspendedHosts() {
+            return getValidCache().computeIfAbsent(applicationInstanceReference, ZookeeperStatusService.this::hostsDownFor);
         }
 
         @Override
@@ -259,17 +291,6 @@ public class ZookeeperStatusService implements StatusService {
         }
 
         @Override
-        public HostStatus getHostStatus(final HostName hostName) {
-            return getHostStatusWithLock(applicationInstanceReference, hostName);
-        }
-
-        @Override
-        public ApplicationInstanceStatus getApplicationInstanceStatus() {
-            return getInternalApplicationInstanceStatus(applicationInstanceReference);
-        }
-
-        @Override
-        @NoThrow
         public void close()  {
             try {
                 lock.close();

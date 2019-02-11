@@ -38,7 +38,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -90,7 +89,7 @@ public class MetricsReporterTest {
 
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getNodeStatus(any())).thenReturn(HostStatus.NO_REMARKS);
+        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostStatus.NO_REMARKS));
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
         when(serviceModel.getServiceInstancesByHostName()).thenReturn(Collections.emptyMap());
@@ -137,7 +136,7 @@ public class MetricsReporterTest {
 
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getNodeStatus(any())).thenReturn(HostStatus.NO_REMARKS);
+        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostStatus.NO_REMARKS));
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
         when(serviceModel.getServiceInstancesByHostName()).thenReturn(Collections.emptyMap());

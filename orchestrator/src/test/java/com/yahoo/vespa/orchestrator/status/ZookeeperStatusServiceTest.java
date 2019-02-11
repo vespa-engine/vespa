@@ -7,7 +7,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.TestIds;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.curator.SessionFailRetryLoop.SessionFailedException;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.test.KillSession;
 import org.apache.curator.test.TestingServer;
@@ -56,10 +55,6 @@ public class ZookeeperStatusServiceTest {
         when(context.isProbe()).thenReturn(false);
     }
 
-    private static Curator createConnectedCuratorFramework(TestingServer server) throws InterruptedException {
-        return createConnectedCurator(server);
-    }
-
     private static Curator createConnectedCurator(TestingServer server) throws InterruptedException {
         Curator curator = Curator.create(server.getConnectString());
         curator.framework().blockUntilConnected(1, TimeUnit.MINUTES);
@@ -80,8 +75,7 @@ public class ZookeeperStatusServiceTest {
     @Test
     public void host_state_for_unknown_hosts_is_no_remarks() {
         assertThat(
-                zookeeperStatusService.forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
-                        .getHostStatus(TestIds.HOST_NAME1),
+                zookeeperStatusService.getHostStatus(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1),
                 is(HostStatus.NO_REMARKS));
     }
 
@@ -92,71 +86,65 @@ public class ZookeeperStatusServiceTest {
 
             //shuffling to catch "clean database" failures for all cases.
             for (HostStatus hostStatus: shuffledList(HostStatus.values())) {
-                doTimes(2, () -> {
+                for (int i = 0; i < 2; i++) {
                     statusRegistry.setHostState(
                             TestIds.HOST_NAME1,
                             hostStatus);
 
-                    assertThat(statusRegistry.getHostStatus(
-                                    TestIds.HOST_NAME1),
-                            is(hostStatus));
-                });
+                    assertThat(statusRegistry.getHostStatus(TestIds.HOST_NAME1),
+                               is(hostStatus));
+                }
             }
         }
     }
 
     @Test
     public void locks_are_exclusive() throws Exception {
-        try (Curator curator = createConnectedCuratorFramework(testingServer)) {
-            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
+        ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
 
-            final CompletableFuture<Void> lockedSuccessfullyFuture;
-            try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                    .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+        final CompletableFuture<Void> lockedSuccessfullyFuture;
+        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
+                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
-                lockedSuccessfullyFuture = CompletableFuture.runAsync(() -> {
-                    try (MutableStatusRegistry statusRegistry2 = zookeeperStatusService2
-                            .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE))
-                    {
-                    }
-                });
-
-                try {
-                    lockedSuccessfullyFuture.get(3, TimeUnit.SECONDS);
-                    fail("Both zookeeper host status services locked simultaneously for the same application instance");
-                } catch (TimeoutException ignored) {
+            lockedSuccessfullyFuture = CompletableFuture.runAsync(() -> {
+                try (MutableStatusRegistry statusRegistry2 = zookeeperStatusService2
+                        .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE))
+                {
                 }
-            }
+            });
 
-            lockedSuccessfullyFuture.get(1, TimeUnit.MINUTES);
+            try {
+                lockedSuccessfullyFuture.get(3, TimeUnit.SECONDS);
+                fail("Both zookeeper host status services locked simultaneously for the same application instance");
+            } catch (TimeoutException ignored) {
+            }
         }
+
+        lockedSuccessfullyFuture.get(1, TimeUnit.MINUTES);
     }
 
     @Test
     public void failing_to_get_lock_closes_SessionFailRetryLoop() throws Exception {
-        try (Curator curator = createConnectedCuratorFramework(testingServer)) {
-            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
+        ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
 
-            try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                    .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
+                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
-                //must run in separate thread, since having 2 locks in the same thread fails
-                CompletableFuture<Void> resultOfZkOperationAfterLockFailure = CompletableFuture.runAsync(() -> {
-                    try {
-                        zookeeperStatusService2.lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE);
-                        fail("Both zookeeper host status services locked simultaneously for the same application instance");
-                    } catch (RuntimeException e) {
-                    }
+            //must run in separate thread, since having 2 locks in the same thread fails
+            CompletableFuture<Void> resultOfZkOperationAfterLockFailure = CompletableFuture.runAsync(() -> {
+                try {
+                    zookeeperStatusService2.lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE);
+                    fail("Both zookeeper host status services locked simultaneously for the same application instance");
+                } catch (RuntimeException e) {
+                }
 
-                    killSession(curator.framework(), testingServer);
+                killSession(curator.framework(), testingServer);
 
-                    //Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
-                    zookeeperStatusService2.forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
-                            .getHostStatus(TestIds.HOST_NAME1);
-                });
+                //Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
+                statusRegistry.getHostStatus(TestIds.HOST_NAME1);
+            });
 
-                assertThat(resultOfZkOperationAfterLockFailure, notHoldsException());
-            }
+            assertThat(resultOfZkOperationAfterLockFailure, notHoldsException());
         }
     }
 
@@ -211,8 +199,7 @@ public class ZookeeperStatusServiceTest {
         // Initial state is NO_REMARK
         assertThat(
                 zookeeperStatusService
-                        .forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
-                        .getApplicationInstanceStatus(),
+                        .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
                 is(ApplicationInstanceStatus.NO_REMARKS));
 
         // Suspend
@@ -223,8 +210,7 @@ public class ZookeeperStatusServiceTest {
 
         assertThat(
                 zookeeperStatusService
-                        .forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
-                        .getApplicationInstanceStatus(),
+                        .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
                 is(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN));
 
         // Resume
@@ -235,8 +221,7 @@ public class ZookeeperStatusServiceTest {
 
         assertThat(
                 zookeeperStatusService
-                        .forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
-                        .getApplicationInstanceStatus(),
+                        .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
                 is(ApplicationInstanceStatus.NO_REMARKS));
     }
 
@@ -262,17 +247,6 @@ public class ZookeeperStatusServiceTest {
         assertThat(suspendedApps, hasItem(TestIds.APPLICATION_INSTANCE_REFERENCE2));
     }
 
-    private static void assertSessionFailed(Runnable statusServiceOperations) {
-        try {
-            statusServiceOperations.run();
-            fail("Expected session expired exception");
-        } catch (RuntimeException e) {
-            if (!(e.getCause() instanceof SessionFailedException)) {
-                throw e;
-            }
-        }
-    }
-
     //TODO: move to vespajlib
     private static <T> List<T> shuffledList(T[] values) {
         //new ArrayList necessary to avoid "write through" behaviour
@@ -281,10 +255,4 @@ public class ZookeeperStatusServiceTest {
         return list;
     }
 
-    //TODO: move to vespajlib
-    private static void doTimes(int numberOfIterations, Runnable runnable) {
-        for (int i = 0; i < numberOfIterations; i++) {
-            runnable.run();
-        }
-    }
 }

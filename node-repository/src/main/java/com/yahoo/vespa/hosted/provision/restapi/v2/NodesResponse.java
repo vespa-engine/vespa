@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
 * @author bratseth
@@ -40,7 +42,7 @@ class NodesResponse extends HttpResponse {
 
     private final NodeFilter filter;
     private final boolean recursive;
-    private final Orchestrator orchestrator;
+    private final Function<HostName, Optional<HostStatus>> orchestrator;
     private final NodeRepository nodeRepository;
     private final Slime slime;
     private final NodeSerializer serializer = new NodeSerializer();
@@ -52,7 +54,7 @@ class NodesResponse extends HttpResponse {
         this.nodeParentUrl = toNodeParentUrl(request);
         filter = NodesApiHandler.toNodeFilter(request);
         this.recursive = request.getBooleanProperty("recursive");
-        this.orchestrator = orchestrator;
+        this.orchestrator = orchestrator.getNodeStatuses();
         this.nodeRepository = nodeRepository;
 
         slime = new Slime();
@@ -158,11 +160,9 @@ class NodesResponse extends HttpResponse {
             object.setLong("currentRestartGeneration", node.allocation().get().restartGeneration().current());
             object.setString("wantedDockerImage", nodeRepository.dockerImage().withTag(node.allocation().get().membership().cluster().vespaVersion()).asString());
             object.setString("wantedVespaVersion", node.allocation().get().membership().cluster().vespaVersion().toFullString());
-            try {
-                object.setBool("allowedToBeDown", 
-                               orchestrator.getNodeStatus(new HostName(node.hostname())) == HostStatus.ALLOWED_TO_BE_DOWN);
-            }
-            catch (HostNameNotFoundException e) {/* ok */ }
+            orchestrator.apply(new HostName(node.hostname()))
+                        .map(status -> status == HostStatus.ALLOWED_TO_BE_DOWN)
+                        .ifPresent(allowedToBeDown -> object.setBool("allowedToBeDown", allowedToBeDown));
         }
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());

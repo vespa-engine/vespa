@@ -13,6 +13,7 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
 import com.yahoo.vespa.orchestrator.Host;
@@ -29,14 +30,13 @@ import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.Policy;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
-import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
-import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
+import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -58,7 +58,6 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -73,21 +72,7 @@ public class HostResourceTest {
     private static final int SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS = 0;
     private static final TenantId TENANT_ID = new TenantId("tenantId");
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
-    private static final ApplicationInstanceReference APPLICATION_INSTANCE_REFERENCE =
-            new ApplicationInstanceReference(TENANT_ID, APPLICATION_INSTANCE_ID);
-
-    private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = mock(StatusService.class);
-    private static final MutableStatusRegistry EVERY_HOST_IS_UP_MUTABLE_HOST_STATUS_REGISTRY = mock(MutableStatusRegistry.class);
-    static {
-        when(EVERY_HOST_IS_UP_HOST_STATUS_SERVICE.forApplicationInstance(eq(APPLICATION_INSTANCE_REFERENCE)))
-                .thenReturn(EVERY_HOST_IS_UP_MUTABLE_HOST_STATUS_REGISTRY);
-        when(EVERY_HOST_IS_UP_HOST_STATUS_SERVICE.lockApplicationInstance_forCurrentThreadOnly(any(), eq(APPLICATION_INSTANCE_REFERENCE)))
-                .thenReturn(EVERY_HOST_IS_UP_MUTABLE_HOST_STATUS_REGISTRY);
-        when(EVERY_HOST_IS_UP_MUTABLE_HOST_STATUS_REGISTRY.getHostStatus(any()))
-                .thenReturn(HostStatus.NO_REMARKS);
-        when(EVERY_HOST_IS_UP_MUTABLE_HOST_STATUS_REGISTRY.getApplicationInstanceStatus())
-                .thenReturn(ApplicationInstanceStatus.NO_REMARKS);
-    }
+    private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZookeeperStatusService(new MockCurator());
 
     private static final InstanceLookupService mockInstanceLookupService = mock(InstanceLookupService.class);
     static {
@@ -98,7 +83,6 @@ public class HostResourceTest {
                                 APPLICATION_INSTANCE_ID,
                                 makeServiceClusterSet())));
     }
-
 
     private static final InstanceLookupService alwaysEmptyInstanceLookUpService = new InstanceLookupService() {
         @Override

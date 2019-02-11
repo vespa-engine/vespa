@@ -35,8 +35,10 @@ import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -104,6 +106,14 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     @Override
+    public Function<HostName, Optional<HostStatus>> getNodeStatuses() {
+        Function<ApplicationInstanceReference, Set<HostName>> suspendedHosts = statusService.getSuspendedHostsByApplication();
+        return hostName -> instanceLookupService.findInstanceByHost(hostName)
+                                                .map(application -> suspendedHosts.apply(application.reference()).contains(hostName)
+                                                                    ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS);
+    }
+
+    @Override
     public void setNodeStatus(HostName hostName, HostStatus status) throws OrchestrationException {
         ApplicationInstanceReference reference = getApplicationInstance(hostName).reference();
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
@@ -133,13 +143,13 @@ public class OrchestratorImpl implements Orchestrator {
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         try (MutableStatusRegistry statusRegistry = statusService
                 .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
-            final HostStatus currentHostState = statusRegistry.getHostStatus(hostName);
+            HostStatus currentHostState = statusRegistry.getHostStatus(hostName);
 
             if (HostStatus.NO_REMARKS == currentHostState) {
                 return;
             }
 
-            ApplicationInstanceStatus appStatus = statusService.forApplicationInstance(appInstance.reference()).getApplicationInstanceStatus();
+            ApplicationInstanceStatus appStatus = statusRegistry.getStatus();
             if (appStatus == ApplicationInstanceStatus.NO_REMARKS) {
                 policy.releaseSuspensionGrant(context.createSubcontextWithinLock(), appInstance, hostName, statusRegistry);
             }
@@ -181,7 +191,7 @@ public class OrchestratorImpl implements Orchestrator {
 
         try (MutableStatusRegistry hostStatusRegistry =
                      statusService.lockApplicationInstance_forCurrentThreadOnly(context, applicationReference)) {
-            ApplicationInstanceStatus appStatus = statusService.forApplicationInstance(applicationReference).getApplicationInstanceStatus();
+            ApplicationInstanceStatus appStatus = hostStatusRegistry.getStatus();
             if (appStatus == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
                 return;
             }
@@ -195,8 +205,8 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationId appId) throws ApplicationIdNotFoundException {
-        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId,instanceLookupService);
-        return statusService.forApplicationInstance(appRef).getApplicationInstanceStatus();
+        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId, instanceLookupService);
+        return statusService.getApplicationInstanceStatus(appRef);
     }
 
     @Override
@@ -305,7 +315,7 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     private HostStatus getNodeStatus(ApplicationInstanceReference applicationRef, HostName hostName) {
-        return statusService.forApplicationInstance(applicationRef).getHostStatus(hostName);
+        return statusService.getHostStatus(applicationRef, hostName);
     }
 
     private void setApplicationStatus(ApplicationId appId, ApplicationInstanceStatus status) 
@@ -316,7 +326,7 @@ public class OrchestratorImpl implements Orchestrator {
                      statusService.lockApplicationInstance_forCurrentThreadOnly(context, appRef)) {
 
             // Short-circuit if already in wanted state
-            if (status == statusRegistry.getApplicationInstanceStatus()) return;
+            if (status == statusRegistry.getStatus()) return;
 
             // Set content clusters for this application in maintenance on suspend
             if (status == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {

@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -11,37 +12,58 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.orchestrator.OrchestrationException;
+import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
+import com.yahoo.vespa.orchestrator.OrchestratorImpl;
+import com.yahoo.vespa.orchestrator.ServiceMonitorInstanceLookupService;
+import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
+import com.yahoo.vespa.orchestrator.config.OrchestratorConfig.Builder;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
+import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
+import com.yahoo.vespa.orchestrator.status.StatusService;
+import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
+import com.yahoo.vespa.service.monitor.ServiceModel;
+import com.yahoo.yolean.Exceptions;
 
+import java.time.Clock;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+class ModelTestUtils {
 
-public class ModelTestUtils {
-    private final MutableStatusRegistry statusRegistry = mock(MutableStatusRegistry.class);
-    private final ClusterControllerClientFactory clusterControllerClientFactory = mock(ClusterControllerClientFactory.class);
+    private final Map<ApplicationInstanceReference, ApplicationInstance> applications = new HashMap<>();
+    private final ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
     private final Map<HostName, HostStatus> hostStatusMap = new HashMap<>();
-
-    ModelTestUtils() {
-        when(statusRegistry.getHostStatus(any())).thenReturn(HostStatus.NO_REMARKS);
-    }
+    private final StatusService statusService = new ZookeeperStatusService(new MockCurator());
+    private final Orchestrator orchestrator = new OrchestratorImpl(clusterControllerClientFactory,
+                                                                   statusService,
+                                                                   new OrchestratorConfig(new Builder()),
+                                                                   new ServiceMonitorInstanceLookupService(() -> new ServiceModel(applications)));
 
     Map<HostName, HostStatus> getHostStatusMap() {
         return hostStatusMap;
     }
 
     HostName createNode(String name, HostStatus hostStatus) {
-        HostName hostName = new HostName(name);
+        return createNode(new HostName(name), hostStatus);
+    }
+
+    HostName createNode(HostName hostName, HostStatus hostStatus) {
         hostStatusMap.put(hostName, hostStatus);
-        when(statusRegistry.getHostStatus(hostName)).thenReturn(hostStatus);
+        try {
+            orchestrator.setNodeStatus(hostName, hostStatus);
+        }
+        catch (OrchestrationException e) {
+            throw new AssertionError("Host '" + hostName + "' not owned by any application — please assign it first: " +
+                                             Exceptions.toMessageString(e));
+        }
         return hostName;
     }
 
@@ -49,26 +71,29 @@ public class ModelTestUtils {
             ApplicationInstance applicationInstance,
             HostName... hostnames) {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance, hostnames);
-        return new ApplicationApiImpl(nodeGroup, statusRegistry, clusterControllerClientFactory);
+        MutableStatusRegistry registry = statusService.lockApplicationInstance_forCurrentThreadOnly(
+                OrchestratorContext.createContextForSingleAppOp(Clock.systemUTC()),
+                applicationInstance.reference());
+        return new ApplicationApiImpl(nodeGroup, registry, clusterControllerClientFactory);
     }
 
     ApplicationInstance createApplicationInstance(
             List<ServiceCluster> serviceClusters) {
-        Set<ServiceCluster> serviceClusterSet = serviceClusters.stream()
-                .collect(Collectors.toSet());
+        Set<ServiceCluster> serviceClusterSet = new HashSet<>(serviceClusters);
 
-        return new ApplicationInstance(
+        ApplicationInstance application = new ApplicationInstance(
                 new TenantId("tenant"),
                 new ApplicationInstanceId("application-name:foo:bar:default"),
                 serviceClusterSet);
+        applications.put(application.reference(), application);
+        return application;
     }
 
     ServiceCluster createServiceCluster(
             String clusterId,
             ServiceType serviceType,
             List<ServiceInstance> serviceInstances) {
-        Set<ServiceInstance> serviceInstanceSet = serviceInstances.stream()
-                .collect(Collectors.toSet());
+        Set<ServiceInstance> serviceInstanceSet = new HashSet<>(serviceInstances);
 
         return new ServiceCluster(
                 new ClusterId(clusterId),
@@ -86,7 +111,8 @@ public class ModelTestUtils {
                 status);
     }
 
-    public ClusterControllerClientFactory getClusterControllerClientFactory() {
+    ClusterControllerClientFactory getClusterControllerClientFactory() {
         return clusterControllerClientFactory;
     }
+
 }

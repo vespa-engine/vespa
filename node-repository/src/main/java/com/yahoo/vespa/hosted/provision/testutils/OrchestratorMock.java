@@ -11,7 +11,9 @@ import com.yahoo.vespa.orchestrator.status.HostStatus;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * @author bratseth
@@ -29,6 +31,11 @@ public class OrchestratorMock implements Orchestrator {
     @Override
     public HostStatus getNodeStatus(HostName hostName) {
         return suspendedHosts.contains(hostName) ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS;
+    }
+
+    @Override
+    public Function<HostName, Optional<HostStatus>> getNodeStatuses() {
+        return hostName -> Optional.of(getNodeStatus(hostName));
     }
 
     @Override

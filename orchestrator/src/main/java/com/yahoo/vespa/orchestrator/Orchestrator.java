@@ -10,7 +10,9 @@ import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * The orchestrator is used to coordinate the need of vespa services to restart or
@@ -45,6 +47,14 @@ public interface Orchestrator {
      * @throws HostNameNotFoundException if hostName is unrecognized (in node repo)
      */
     HostStatus getNodeStatus(HostName hostName) throws HostNameNotFoundException;
+
+    /**
+     * Returns a not necessarily consistent mapping from host names to their statuses, for hosts known by this.
+     *
+     * Prefer this to {@link #getNodeStatus(HostName)} when consistency is not required, and when doing bulk reads.
+     * @return a mapping from host names to their statuses. Unknown hosts map to {@code Optional.empty()}.
+     */
+    Function<HostName, Optional<HostStatus>> getNodeStatuses();
 
     void setNodeStatus(HostName hostName, HostStatus state) throws OrchestrationException;
 

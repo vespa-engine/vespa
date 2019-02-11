@@ -17,6 +17,7 @@ import com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl;
 import java.util.Map;
 
 public class ServiceMonitorImpl implements ServiceMonitor {
+
     private final ServiceModelCache serviceModelProvider;
 
     @Inject
@@ -37,12 +38,8 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     }
 
     @Override
-    public Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances() {
-        return serviceModelProvider.get().getAllApplicationInstances();
-    }
-
-    @Override
     public ServiceModel getServiceModelSnapshot() {
         return serviceModelProvider.get();
     }
+
 }

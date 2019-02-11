@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -34,7 +35,7 @@ import java.util.stream.Collectors;
 public class MetricsReporter extends Maintainer {
 
     private final Metric metric;
-    private final Orchestrator orchestrator;
+    private final Function<HostName, Optional<HostStatus>> orchestrator;
     private final ServiceMonitor serviceMonitor;
     private final Map<Map<String, String>, Metric.Context> contextMap = new HashMap<>();
     private final Supplier<Integer> pendingRedeploymentsSupplier;
@@ -48,7 +49,7 @@ public class MetricsReporter extends Maintainer {
                            JobControl jobControl) {
         super(nodeRepository, interval, jobControl);
         this.metric = metric;
-        this.orchestrator = orchestrator;
+        this.orchestrator = orchestrator.getNodeStatuses();
         this.serviceMonitor = serviceMonitor;
         this.pendingRedeploymentsSupplier = pendingRedeploymentsSupplier;
     }
@@ -129,13 +130,9 @@ public class MetricsReporter extends Maintainer {
                 node.status().hardwareDivergence().isPresent() ? 1 : 0,
                 context);
 
-        try {
-            HostStatus status = orchestrator.getNodeStatus(new HostName(node.hostname()));
-            boolean allowedToBeDown = status == HostStatus.ALLOWED_TO_BE_DOWN;
-            metric.set("allowedToBeDown", allowedToBeDown ? 1 : 0, context);
-        } catch (HostNameNotFoundException e) {
-            // Ignore
-        }
+        orchestrator.apply(new HostName(node.hostname()))
+                    .map(status -> status == HostStatus.ALLOWED_TO_BE_DOWN ? 1 : 0)
+                    .ifPresent(allowedToBeDown -> metric.set("allowedToBeDown", allowedToBeDown, context));
 
         long numberOfServices;
         HostName hostName = new HostName(node.hostname());

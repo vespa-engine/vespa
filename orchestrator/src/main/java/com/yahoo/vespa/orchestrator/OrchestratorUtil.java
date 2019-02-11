@@ -12,20 +12,15 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.TenantId;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -57,14 +52,6 @@ public class OrchestratorUtil {
                 .collect(toSet());
     }
 
-    public static Map<HostName, HostStatus> getHostStatusMap(Collection<HostName> hosts,
-                                                             ReadOnlyStatusRegistry hostStatusService) {
-        return hosts.stream()
-                .collect(Collectors.toMap(
-                        hostName -> hostName,
-                        hostName -> hostStatusService.getHostStatus(hostName)));
-    }
-
     private static boolean hasServiceInstanceOnHost(ServiceCluster serviceCluster, HostName hostName) {
         return serviceInstancesOnHost(serviceCluster, hostName).count() > 0;
     }
@@ -73,11 +60,6 @@ public class OrchestratorUtil {
                                                                         HostName hostName) {
         return serviceCluster.serviceInstances().stream()
                 .filter(instance -> instance.hostName().equals(hostName));
-    }
-
-    public static <K, V1, V2> Map<K, V2> mapValues(Map<K, V1> map, Function<V1, V2> valueConverter) {
-        return map.entrySet().stream()
-                .collect(toMap(Map.Entry::getKey, entry -> valueConverter.apply(entry.getValue())));
     }
 
     private static final Pattern APPLICATION_INSTANCE_REFERENCE_REST_FORMAT_PATTERN = Pattern.compile("^([^:]+):(.+)$");
