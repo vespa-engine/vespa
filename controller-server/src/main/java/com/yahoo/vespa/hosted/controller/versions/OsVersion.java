@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
+import com.yahoo.config.provision.CloudName;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;

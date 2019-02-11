@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;

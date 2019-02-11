@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.os;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -14,7 +15,6 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
@@ -27,11 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 /**
  * This implements the /os/v1 API which provides operators with information about, and scheduling of OS upgrades for

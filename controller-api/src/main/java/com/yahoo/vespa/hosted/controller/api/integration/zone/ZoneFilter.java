@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.zone;
 
+import com.yahoo.config.provision.CloudName;
+
 /**
  * A ZoneId list which can be filtered in various ways; elements can be accessed after at least one filter.
  *

@@ -33,6 +33,7 @@ numParallelTenantLoaders int default=4
 applicationDirectory string default="conf/configserver-app"
 
 # Zone information
+cloud string default="default"
 environment string default="prod"
 region string default="default"
 system string default="main"
