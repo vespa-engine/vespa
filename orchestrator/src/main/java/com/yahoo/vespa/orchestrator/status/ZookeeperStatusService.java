@@ -37,7 +37,7 @@ public class ZookeeperStatusService implements StatusService {
 
     final static String HOST_STATUS_BASE_PATH = "/vespa/host-status-service";
     final static String APPLICATION_STATUS_BASE_PATH = "/vespa/application-status-service";
-    final static String COUNTER_PATH = "/vespa/cache-counter";
+    final static String HOST_STATUS_CACHE_COUNTER_PATH = "/vespa/host-status-service-cache-counter";
 
     private final Curator curator;
     private final CuratorCounter counter;
@@ -50,7 +50,7 @@ public class ZookeeperStatusService implements StatusService {
     @Inject
     public ZookeeperStatusService(@Component Curator curator) {
         this.curator = curator;
-        this.counter = new CuratorCounter(curator, COUNTER_PATH);
+        this.counter = new CuratorCounter(curator, HOST_STATUS_CACHE_COUNTER_PATH);
         this.cacheRefreshedAt = counter.get();
         this.hostsDown = new ConcurrentHashMap<>();
     }
