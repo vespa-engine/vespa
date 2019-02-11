@@ -17,6 +17,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
+#include <vespa/document/update/tensoraddupdate.h>
 #include <vespa/document/update/tensormodifyupdate.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/tensor.h>
@@ -25,6 +26,7 @@
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
+#include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -42,6 +44,8 @@ using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
 using search::tensor::ITensorAttribute;
 using search::tensor::DenseTensorAttribute;
+using search::tensor::GenericTensorAttribute;
+using search::tensor::TensorAttribute;
 using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
 using vespalib::tensor::DefaultTensorEngine;
@@ -373,12 +377,13 @@ TEST_F("require that weighted set attributes are updated", Fixture)
     }
 }
 
-std::unique_ptr<DenseTensorAttribute>
-makeDenseTensorAttribute(const vespalib::string &name, const vespalib::string &tensorType)
+template <typename TensorAttributeType>
+std::unique_ptr<TensorAttributeType>
+makeTensorAttribute(const vespalib::string &name, const vespalib::string &tensorType)
 {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
     cfg.setTensorType(ValueType::from_spec(tensorType));
-    auto result = std::make_unique<DenseTensorAttribute>(name, cfg);
+    auto result = std::make_unique<TensorAttributeType>(name, cfg);
     result->addReservedDoc();
     result->addDocs(1);
     return result;
@@ -400,7 +405,7 @@ makeTensorFieldValue(const TensorSpec &spec)
 }
 
 void
-setTensor(DenseTensorAttribute &attribute, uint32_t lid, const TensorSpec &spec)
+setTensor(TensorAttribute &attribute, uint32_t lid, const TensorSpec &spec)
 {
     auto tensor = makeTensor(spec);
     attribute.setTensor(lid, *tensor);
@@ -410,13 +415,24 @@ setTensor(DenseTensorAttribute &attribute, uint32_t lid, const TensorSpec &spec)
 TEST_F("require that tensor modify update is applied", Fixture)
 {
     vespalib::string type = "tensor(x[2])";
-    auto attribute = makeDenseTensorAttribute("dense_tensor", type);
+    auto attribute = makeTensorAttribute<DenseTensorAttribute>("dense_tensor", type);
     setTensor(*attribute, 1, TensorSpec(type).add({{"x", 0}}, 3).add({{"x", 1}}, 5));
 
-    TensorModifyUpdate update(TensorModifyUpdate::Operation::REPLACE,
-            makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x",0}}, 7)));
-    f.applyValueUpdate(*attribute, 1, update);
-    EXPECT_EQUAL(TensorSpec(type).add({{"x",0}}, 7).add({{"x", 1}}, 5), attribute->getTensor(1)->toSpec());
+    f.applyValueUpdate(*attribute, 1,
+                       TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
+                                          makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", 0}}, 7))));
+    EXPECT_EQUAL(TensorSpec(type).add({{"x", 0}}, 7).add({{"x", 1}}, 5), attribute->getTensor(1)->toSpec());
+}
+
+TEST_F("require that tensor add update is applied", Fixture)
+{
+    vespalib::string type = "tensor(x{})";
+    auto attribute = makeTensorAttribute<GenericTensorAttribute>("dense_tensor", type);
+    setTensor(*attribute, 1, TensorSpec(type).add({{"x", "a"}}, 2));
+
+    f.applyValueUpdate(*attribute, 1,
+                       TensorAddUpdate(makeTensorFieldValue(TensorSpec(type).add({{"x", "a"}}, 3))));
+    EXPECT_EQUAL(TensorSpec(type).add({{"x", "a"}}, 3), attribute->getTensor(1)->toSpec());
 }
 
 }
