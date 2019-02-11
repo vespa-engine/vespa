@@ -15,7 +15,7 @@
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/tensoraddupdate.h>
-#include <vespa/document/update/tensormodifyupdate.h>
+#include <vespa/document/update/tensor_modify_update.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/changevector.hpp>

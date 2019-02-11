@@ -14,7 +14,7 @@ vespa_add_library(document_updates OBJECT
     removefieldpathupdate.cpp
     removevalueupdate.cpp
     tensoraddupdate.cpp
-    tensormodifyupdate.cpp
+    tensor_modify_update.cpp
     valueupdate.cpp
     DEPENDS
     AFTER

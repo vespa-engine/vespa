@@ -18,7 +18,7 @@
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/tensoraddupdate.h>
-#include <vespa/document/update/tensormodifyupdate.h>
+#include <vespa/document/update/tensor_modify_update.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
