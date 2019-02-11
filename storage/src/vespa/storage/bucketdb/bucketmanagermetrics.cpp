@@ -28,7 +28,7 @@ DataStoredMetrics::DataStoredMetrics(const std::string& name, metrics::MetricSet
 DataStoredMetrics::~DataStoredMetrics() = default;
 
 BucketSpaceMetrics::BucketSpaceMetrics(const vespalib::string& space_name, metrics::MetricSet* owner)
-        : metrics::MetricSet("bucket_space", {{"name", space_name}}, "", owner),
+        : metrics::MetricSet("bucket_space", {{"bucketSpace", space_name}}, "", owner),
           buckets_total("buckets_total", {}, "Total number buckets present in the bucket space (ready + not ready)", this),
           docs("docs", {}, "Documents stored in the bucket space", this),
           bytes("bytes", {}, "Bytes stored across all documents in the bucket space", this),
