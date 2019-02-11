@@ -16,7 +16,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.eclipse.jetty.http.HttpStatus;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -59,7 +58,7 @@ public abstract class ClientBase implements AutoCloseable {
     }
 
     protected <T> T readEntity(HttpResponse response, Class<T> entityType) throws IOException {
-        if (HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
+        if (isSuccess(response.getStatusLine().getStatusCode())) {
             if (entityType.equals(Void.class)) {
                 return null;
             } else {
@@ -69,6 +68,10 @@ public abstract class ClientBase implements AutoCloseable {
             ErrorResponseEntity errorEntity = objectMapper.readValue(response.getEntity().getContent(), ErrorResponseEntity.class);
             throw exceptionFactory.createException(errorEntity.code, errorEntity.description);
         }
+    }
+
+    private boolean isSuccess(int statusCode) {
+        return statusCode>=200 && statusCode<300;
     }
 
     private static CloseableHttpClient createHttpClient(String userAgent, Supplier<SSLContext> sslContextSupplier) {
