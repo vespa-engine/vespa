@@ -267,6 +267,27 @@ public class DeploymentSpec {
         return Optional.ofNullable(athenzService);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DeploymentSpec that = (DeploymentSpec) o;
+        return globalServiceId.equals(that.globalServiceId) &&
+               upgradePolicy == that.upgradePolicy &&
+               majorVersion.equals(that.majorVersion) &&
+               changeBlockers.equals(that.changeBlockers) &&
+               steps.equals(that.steps) &&
+               xmlForm.equals(that.xmlForm) &&
+               athenzDomain.equals(that.athenzDomain) &&
+               athenzService.equals(that.athenzService) &&
+               notifications.equals(that.notifications);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(globalServiceId, upgradePolicy, majorVersion, changeBlockers, steps, xmlForm, athenzDomain, athenzService, notifications);
+    }
+
     /** This may be invoked by a continuous build */
     public static void main(String[] args) {
         if (args.length != 2 && args.length != 3) {
