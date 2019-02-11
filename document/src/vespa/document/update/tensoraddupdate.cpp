@@ -81,7 +81,11 @@ TensorAddUpdate::checkCompatibility(const Field& field) const
 std::unique_ptr<Tensor>
 TensorAddUpdate::applyTo(const Tensor &tensor) const
 {
-    return tensor.clone();
+    auto &addTensor = _tensor->getAsTensorPtr();
+    if (addTensor) {
+        return tensor.add(*addTensor);
+    }
+    return std::unique_ptr<Tensor>();
 }
 
 bool
@@ -112,9 +116,11 @@ TensorAddUpdate::printXml(XmlOutputStream& xos) const
 void
 TensorAddUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    (void) verbose;
-    (void) indent;
-    out << "{TensorAddUpdate::print not yet implemented}";
+    out << indent << "TensorAddUpdate(";
+    if (_tensor) {
+        _tensor->print(out, verbose, indent);
+    }
+    out << ")";
 }
 
 void
