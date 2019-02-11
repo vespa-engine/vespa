@@ -139,6 +139,8 @@ public class FieldUpdateAdapter implements UpdateAdapter {
                 }
             } else if (upd instanceof TensorModifyUpdate) {
                 lst.add(upd);
+            } else if (upd instanceof TensorAddUpdate) {
+                lst.add(upd);
             } else {
                 throw new UnsupportedOperationException(
                         "Value update type " + upd.getClass().getName() + " not supported.");
