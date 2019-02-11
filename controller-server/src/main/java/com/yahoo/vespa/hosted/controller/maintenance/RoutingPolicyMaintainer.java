@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
@@ -56,26 +55,25 @@ public class RoutingPolicyMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        Map<DeploymentId, List<LoadBalancer>> loadBalancers = loadBalancers(controller().applications().asList());
+        Map<DeploymentId, List<LoadBalancer>> loadBalancers = findLoadBalancers();
         updateDnsRecords(loadBalancers);
         removeObsoleteDnsRecords(loadBalancers);
     }
 
     /** Find all exclusive load balancers owned by given applications, grouped by deployment */
-    private Map<DeploymentId, List<LoadBalancer>> loadBalancers(List<Application> applications) {
+    private Map<DeploymentId, List<LoadBalancer>> findLoadBalancers() {
         Map<DeploymentId, List<LoadBalancer>> result = new LinkedHashMap<>();
-        for (Application application : applications) {
-            for (ZoneId zone : application.deployments().keySet()) {
-                DeploymentId deployment = new DeploymentId(application.id(), zone);
-                try {
-                    List<LoadBalancer> loadBalancers = findLoadBalancersIn(deployment);
-                    if (loadBalancers.isEmpty()) continue;
-                    result.put(deployment, loadBalancers);
-                } catch (Exception e) {
-                    log.log(LogLevel.WARNING,
-                            String.format("Got exception fetching load balancers for application: %s, in zone: %s. Retrying in %s",
-                                          application.id().toShortString(), zone.value(), maintenanceInterval()),  e);
-                }
+        for (ZoneId zone : controller().zoneRegistry().zones().controllerUpgraded().ids()) {
+            List<LoadBalancer> loadBalancers = findLoadBalancersIn(zone);
+            for (LoadBalancer loadBalancer : loadBalancers) {
+                DeploymentId deployment = new DeploymentId(loadBalancer.application(), zone);
+                result.compute(deployment, (k, existing) -> {
+                    if (existing == null) {
+                        existing = new ArrayList<>();
+                    }
+                    existing.add(loadBalancer);
+                    return existing;
+                });
             }
         }
         return Collections.unmodifiableMap(result);
@@ -123,15 +121,14 @@ public class RoutingPolicyMaintainer extends Maintainer {
                                  loadBalancer.rotations());
     }
 
-    /** Find all load balancers assigned to application in given zone */
-    private List<LoadBalancer> findLoadBalancersIn(DeploymentId deployment) {
+    /** Find all load balancers in given zone */
+    private List<LoadBalancer> findLoadBalancersIn(ZoneId zone) {
         try {
-            return controller().applications().configServer().getLoadBalancers(deployment);
+            return controller().applications().configServer().getLoadBalancers(zone);
         } catch (Exception e) {
             log.log(LogLevel.WARNING,
-                    String.format("Got exception fetching load balancers for application: %s, in zone: %s. Retrying in %s",
-                                  deployment.applicationId().toShortString(), deployment.zoneId().value(),
-                                  maintenanceInterval()),  e);
+                    String.format("Got exception fetching load balancers in zone: %s. Retrying in %s",
+                                  zone.value(), maintenanceInterval()),  e);
         }
         return Collections.emptyList();
     }

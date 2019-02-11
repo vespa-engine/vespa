@@ -7,7 +7,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -120,7 +119,10 @@ public class RoutingPolicyMaintainerTest {
 
         // Remove app2 completely
         tester.controller().applications().require(app2.id()).deployments().keySet()
-              .forEach(zone -> tester.controller().applications().deactivate(app2.id(), zone));
+              .forEach(zone -> {
+                  tester.controller().applications().deactivate(app2.id(), zone);
+                  tester.configServer().removeLoadBalancers(app2.id(), zone);
+              });
         maintainer.maintain();
         expectedRecords = Set.of(
                 "c0--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
@@ -142,15 +144,13 @@ public class RoutingPolicyMaintainerTest {
     }
 
     private void provisionLoadBalancers(Application application, int numberOfClustersPerZone) {
-        tester.controller().applications().get(application.id())
-              .orElseThrow(() -> new RuntimeException("No deployments"))
+        tester.controller().applications().require(application.id())
               .deployments().keySet()
-              .forEach(zone -> tester.configServer().removeLoadBalancers(new DeploymentId(application.id(), zone)));
-        tester.controller().applications().get(application.id())
-              .orElseThrow(() -> new RuntimeException("No deployments"))
+              .forEach(zone -> tester.configServer().removeLoadBalancers(application.id(), zone));
+        tester.controller().applications().require(application.id())
               .deployments().keySet()
               .forEach(zone -> tester.configServer()
-                                     .addLoadBalancers(zone, application.id(), createLoadBalancers(zone, application.id(), numberOfClustersPerZone)));
+                                     .addLoadBalancers(zone, createLoadBalancers(zone, application.id(), numberOfClustersPerZone)));
 
     }
 
