@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_updater.h"
-#include <vespa/eval/tensor/tensor.h>
 #include <vespa/document/base/forcelink.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/literalfieldvalue.h>
@@ -15,7 +14,9 @@
 #include <vespa/document/update/clearvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
-#include <vespa/document/update/tensormodifyupdate.h>
+#include <vespa/document/update/tensor_add_update.h>
+#include <vespa/document/update/tensor_modify_update.h>
+#include <vespa/eval/tensor/tensor.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/changevector.hpp>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
@@ -205,8 +206,9 @@ AttributeUpdater::handleUpdate(PredicateAttribute &vec, uint32_t lid, const Valu
 
 namespace {
 
+template <typename TensorUpdateType>
 void
-applyTensorModifyUpdate(TensorAttribute &vec, uint32_t lid, const TensorModifyUpdate &update)
+applyTensorUpdate(TensorAttribute &vec, uint32_t lid, const TensorUpdateType &update)
 {
     auto oldTensor = vec.getTensor(lid);
     if (oldTensor) {
@@ -233,7 +235,9 @@ AttributeUpdater::handleUpdate(TensorAttribute &vec, uint32_t lid, const ValueUp
             updateValue(vec, lid, assign.getValue());
         }
     } else if (op == ValueUpdate::TensorModifyUpdate) {
-        applyTensorModifyUpdate(vec, lid, static_cast<const TensorModifyUpdate &>(upd));
+        applyTensorUpdate(vec, lid, static_cast<const TensorModifyUpdate &>(upd));
+    } else if (op == ValueUpdate::TensorAddUpdate) {
+        applyTensorUpdate(vec, lid, static_cast<const TensorAddUpdate &>(upd));
     } else if (op == ValueUpdate::Clear) {
         vec.clearDoc(lid);
     } else {

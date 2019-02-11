@@ -12,8 +12,8 @@
 #include <vespa/document/update/fieldupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
-#include <vespa/document/update/tensoraddupdate.h>
-#include <vespa/document/update/tensormodifyupdate.h>
+#include <vespa/document/update/tensor_add_update.h>
+#include <vespa/document/update/tensor_modify_update.h>
 #include <vespa/document/update/valueupdate.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/util/bytebuffer.h>
