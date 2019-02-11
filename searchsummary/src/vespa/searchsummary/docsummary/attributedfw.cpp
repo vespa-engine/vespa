@@ -149,8 +149,12 @@ MultiAttrDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, Inser
     using vespalib::slime::Cursor;
     using vespalib::Memory;
     const IAttributeVector & v = vec(*state);
-    uint32_t entries = v.getValueCount(docid);
     bool isWeightedSet = v.hasWeightedSetType();
+
+    uint32_t entries = v.getValueCount(docid);
+    if (entries == 0) {
+        return;  // Don't insert empty fields
+    }
 
     Cursor &arr = target.insertArray();
     BasicType::Type t = v.getBasicType();
