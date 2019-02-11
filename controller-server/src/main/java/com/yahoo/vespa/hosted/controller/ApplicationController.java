@@ -270,20 +270,20 @@ public class ApplicationController {
                     .map(app -> new LockedApplication(app, lock))
                     .orElseGet(() -> new LockedApplication(createApplication(applicationId, Optional.empty()), lock));
 
-            boolean canDeployDirectly = options.deployDirectly || zone.environment().isManuallyDeployed();
+            boolean manuallyDeployed = options.deployDirectly || zone.environment().isManuallyDeployed();
             boolean preferOldestVersion = options.deployCurrentVersion;
 
             // Determine versions to use.
             Version platformVersion;
             ApplicationVersion applicationVersion;
             ApplicationPackage applicationPackage;
-            if (canDeployDirectly) {
-                platformVersion = options.vespaVersion.map(Version::new).orElse(application.get().deploymentSpec().majorVersion()
-                                                                                           .flatMap(this::lastCompatibleVersion)
-                                                                                           .orElse(controller.systemVersion()));
+            if (manuallyDeployed) {
                 applicationVersion = applicationVersionFromDeployer.orElse(ApplicationVersion.unknown);
                 applicationPackage = applicationPackageFromDeployer.orElseThrow(
                         () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
+                platformVersion = options.vespaVersion.map(Version::new).orElse(applicationPackage.deploymentSpec().majorVersion()
+                                                                                                  .flatMap(this::lastCompatibleVersion)
+                                                                                                  .orElse(controller.systemVersion()));
             }
             else {
                 JobType jobType = JobType.from(controller.system(), zone)
@@ -309,8 +309,9 @@ public class ApplicationController {
             verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage, deployingIdentity);
 
             // Update application with information from application package
-            if ( ! preferOldestVersion && ! application.get().deploymentJobs().deployedInternally())
-                // TODO jvenstad: Store only on submissions (not on deployments to dev!!)
+            if ( ! preferOldestVersion &&
+                 ! application.get().deploymentJobs().deployedInternally() &&
+                 ! zone.environment().isManuallyDeployed())
                 application = storeWithUpdatedConfig(application, applicationPackage);
 
             // Assign global rotation
