@@ -50,7 +50,7 @@ getJoinFunction(TensorModifyUpdate::Operation operation)
     }
 }
 
-const char *
+vespalib::string
 getJoinFunctionName(TensorModifyUpdate::Operation operation)
 {
     using Operation = TensorModifyUpdate::Operation;
