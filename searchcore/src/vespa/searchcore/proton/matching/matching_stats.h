@@ -161,7 +161,6 @@ public:
     MatchingStats &softDoomed(size_t value) { _softDoomed = value; return *this; }
     size_t softDoomed() const { return _softDoomed; }
 
-    MatchingStats & doomOvertime(fastos::TimeStamp overtime) { _doomOvertime.set(overtime.sec()); return *this; }
     fastos::TimeStamp doomOvertime() const { return fastos::TimeStamp::fromSec(_doomOvertime.max()); }
 
     MatchingStats &softDoomFactor(double value) { _softDoomFactor = value; return *this; }
