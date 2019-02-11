@@ -17,15 +17,17 @@ import java.util.Optional;
  */
 public class Zone {
 
+    private final CloudName cloudName;
     private final SystemName systemName;
-    private final FlavorDefaults flavorDefaults;
-    private final Optional<NodeFlavors> nodeFlavors;
     private final Environment environment;
     private final RegionName region;
+    private final FlavorDefaults flavorDefaults;
+    private final Optional<NodeFlavors> nodeFlavors;
 
     @Inject
     public Zone(ConfigserverConfig configserverConfig, NodeFlavors nodeFlavors) {
-        this(SystemName.from(configserverConfig.system()),
+        this(CloudName.from(configserverConfig.cloud()),
+             SystemName.from(configserverConfig.system()),
              Environment.from(configserverConfig.environment()),
              RegionName.from(configserverConfig.region()),
              new FlavorDefaults(configserverConfig),
@@ -39,20 +41,33 @@ public class Zone {
 
     /** Create from system, environment and region. Use for testing. */
     public Zone(SystemName systemName, Environment environment, RegionName region) {
-        this(systemName, environment, region, new FlavorDefaults("default"), null);
+        this(CloudName.defaultName(), systemName, environment, region, new FlavorDefaults("default"), null);
     }
 
-    private Zone(SystemName systemName,
+    /** Create from cloud, system, environment and region. Use for testing. */
+    public Zone(CloudName cloudName, SystemName systemName, Environment environment, RegionName region) {
+        this(cloudName, systemName, environment, region, new FlavorDefaults("default"), null);
+    }
+
+    private Zone(CloudName cloudName,
+                 SystemName systemName,
                  Environment environment,
                  RegionName region,
                  FlavorDefaults flavorDefaults,
                  NodeFlavors nodeFlavors) {
+        this.cloudName = cloudName;
+        this.systemName = systemName;
         this.environment = environment;
         this.region = region;
         this.flavorDefaults = flavorDefaults;
-        this.systemName = systemName;
         this.nodeFlavors = Optional.ofNullable(nodeFlavors);
     }
+
+    /** Returns the current cloud */
+    public CloudName cloud() { return cloudName; }
+
+    /** Returns the current system */
+    public SystemName system() { return systemName; }
 
     /** Returns the current environment */
     public Environment environment() {
@@ -64,9 +79,6 @@ public class Zone {
         return region;
     }
 
-    /** Returns the current system */
-    public SystemName system() { return systemName; }
-
     /** Returns the default hardware flavor to assign in this zone */
     public String defaultFlavor(ClusterSpec.Type clusterType) { return flavorDefaults.flavor(clusterType); }
 
@@ -75,7 +87,7 @@ public class Zone {
 
     /** Do not use */
     public static Zone defaultZone() {
-        return new Zone(SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
+        return new Zone(CloudName.defaultName(), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
     }
 
     @Override
