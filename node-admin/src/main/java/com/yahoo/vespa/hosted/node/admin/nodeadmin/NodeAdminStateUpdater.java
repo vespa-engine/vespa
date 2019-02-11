@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -10,11 +11,17 @@ import com.yahoo.vespa.hosted.provision.Node;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.RESUMED;
+import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED;
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN;
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.TRANSITIONING;
 
@@ -27,6 +34,9 @@ public class NodeAdminStateUpdater {
     private static final Logger log = Logger.getLogger(NodeAdminStateUpdater.class.getName());
     private static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
 
+    private final ScheduledExecutorService metricsScheduler =
+            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("metricsscheduler"));
+
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final NodeAdmin nodeAdmin;
@@ -34,7 +44,7 @@ public class NodeAdminStateUpdater {
 
     public enum State { TRANSITIONING, RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED }
 
-    private State currentState = SUSPENDED_NODE_ADMIN;
+    private volatile State currentState = SUSPENDED_NODE_ADMIN;
 
     public NodeAdminStateUpdater(
             NodeRepository nodeRepository,
@@ -49,6 +59,31 @@ public class NodeAdminStateUpdater {
 
     public void start() {
         nodeAdmin.start();
+
+        EnumSet<State> suspendedStates = EnumSet.of(SUSPENDED_NODE_ADMIN, SUSPENDED);
+        metricsScheduler.scheduleAtFixedRate(() -> {
+            try {
+                if (suspendedStates.contains(currentState)) return;
+                nodeAdmin.updateNodeAgentMetrics();
+            } catch (Throwable e) {
+                log.log(Level.WARNING, "Metric fetcher scheduler failed", e);
+            }
+        }, 10, 55, TimeUnit.SECONDS);
+    }
+
+    public void stop() {
+        metricsScheduler.shutdown();
+
+        // Stop all node-agents in parallel, will block until the last NodeAgent is stopped
+        nodeAdmin.stop();
+
+        do {
+            try {
+                metricsScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException e) {
+                log.info("Was interrupted while waiting for metricsScheduler and shutdown");
+            }
+        } while (!metricsScheduler.isTerminated());
     }
 
     /**

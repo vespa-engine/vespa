@@ -150,7 +150,7 @@ Matcher::getStats()
 {
     std::lock_guard<std::mutex> guard(_statsLock);
     MatchingStats stats = std::move(_stats);
-    _stats = std::move(MatchingStats());
+    _stats = MatchingStats();
     _stats.softDoomFactor(stats.softDoomFactor());
     return stats;
 }

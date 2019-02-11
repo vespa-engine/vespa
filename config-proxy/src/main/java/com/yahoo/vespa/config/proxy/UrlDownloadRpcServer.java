@@ -44,7 +44,7 @@ public class UrlDownloadRpcServer {
     private static final String LAST_MODFIED_FILE_NAME = "lastmodified";
 
     private final File downloadBaseDir;
-    private final ExecutorService rpcDownloadExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
+    private final ExecutorService rpcDownloadExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                                                      new DaemonThreadFactory("Rpc download executor"));
 
     UrlDownloadRpcServer(Supervisor supervisor) {

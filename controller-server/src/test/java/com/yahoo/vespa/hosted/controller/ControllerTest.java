@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
@@ -426,7 +427,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDeployDirectly() {
+    public void testIntegrationTestDeployment() {
         DeploymentTester tester = new DeploymentTester();
         Version six = Version.fromString("6.1");
         tester.upgradeSystem(six);
@@ -458,6 +459,28 @@ public class ControllerTest {
         tester.upgradeSystem(seven);
         tester.controller().applications().deploy(app.id(), zone, Optional.of(applicationPackage), options);
         assertEquals(six, tester.application(app.id()).deployments().get(zone).version());
+    }
+
+    @Test
+    public void testDevDeployment() {
+        DeploymentTester tester = new DeploymentTester();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.dev)
+                .majorVersion(6)
+                .region("us-east-1")
+                .build();
+
+        // Create application
+        Application app = tester.createApplication("app1", "tenant1", 1, 2L);
+        ZoneId zone = ZoneId.from("dev", "us-east-1");
+
+        // Deploy
+        tester.controller().applications().deploy(app.id(), zone, Optional.of(applicationPackage), DeployOptions.none());
+        assertTrue("Application deployed and activated",
+                   tester.controllerTester().configServer().application(app.id()).get().activated());
+        assertTrue("No job status added",
+                   tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
+        assertEquals("DeploymentSpec is not persisted", DeploymentSpec.empty, tester.applications().require(app.id()).deploymentSpec());
     }
 
     @Test

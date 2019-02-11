@@ -105,7 +105,6 @@ public:
         uint32_t _secondPassHits;
         uint64_t _secondPassBytes;
         const document::OrderingSpecification* _ordering;
-        bool _allowFirstPass;
     };
 
     enum VisitorState

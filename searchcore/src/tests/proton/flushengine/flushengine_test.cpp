@@ -108,7 +108,7 @@ public:
             return std::make_unique<WrappedFlushTask>(std::move(task),
                                                       _handler);
         }
-        return std::move(task);
+        return task;
     }
 };
 
@@ -160,7 +160,7 @@ public:
             wrappedTargets.push_back(std::make_shared<WrappedFlushTarget>
                                      (target, *this));
         }
-        return std::move(wrappedTargets);
+        return wrappedTargets;
     }
 
     // Called once by flush engine slave thread for each task done

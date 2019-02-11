@@ -178,6 +178,12 @@ std::unique_ptr<Tensor> createExpectedUpdatedTensorWith2Cells() {
                              {{{"x", "9"}, {"y", "9"}}, 11} }, {"x", "y"});
 }
 
+std::unique_ptr<Tensor> createExpectedAddUpdatedTensorWith3Cells() {
+    return createTensor({    {{{"x", "8"}, {"y", "8"}}, 2},
+                             {{{"x", "8"}, {"y", "9"}}, 2},
+                             {{{"x", "9"}, {"y", "9"}}, 11} }, {"x", "y"});
+}
+
 FieldValue::UP createTensorFieldValueWith2Cells() {
     auto fv(std::make_unique<TensorFieldValue>());
     *fv = createTensorWith2Cells();
@@ -973,14 +979,21 @@ DocumentUpdateTest::testTensorAddUpdate()
     updated.setValue(updated.getField("tensor"), *oldTensor);
     CPPUNIT_ASSERT(*doc != updated);
     testValueUpdate(*createTensorAddUpdate(), *DataType::TENSOR);
+    std::string expTensorAddUpdateString("TensorAddUpdate("
+                                         "{TensorFieldValue: "
+                                         "{\"dimensions\":[\"x\",\"y\"],"
+                                         "\"cells\":["
+                                         "{\"address\":{\"x\":\"8\",\"y\":\"9\"},\"value\":2},"
+                                         "{\"address\":{\"x\":\"8\",\"y\":\"8\"},\"value\":2}"
+                                         "]}})");
+    CPPUNIT_ASSERT_EQUAL(expTensorAddUpdateString, createTensorAddUpdate()->toString());
     DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
     upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(*createTensorAddUpdate()));
     upd.applyTo(updated);
     FieldValue::UP fval(updated.getValue("tensor"));
     CPPUNIT_ASSERT(fval);
     auto &tensor = asTensor(*fval);
-    // Note: Placeholder value for now
-    auto expectedUpdatedTensor = createTensorWith2Cells();
+    auto expectedUpdatedTensor = createExpectedAddUpdatedTensorWith3Cells();
     CPPUNIT_ASSERT(tensor.equals(*expectedUpdatedTensor));
 }
 
@@ -994,6 +1007,13 @@ DocumentUpdateTest::testTensorModifyUpdate()
     updated.setValue(updated.getField("tensor"), *oldTensor);
     CPPUNIT_ASSERT(*doc != updated);
     testValueUpdate(*createTensorModifyUpdate(), *DataType::TENSOR);
+    std::string expTensorModifyUpdateString("TensorModifyUpdate(replace,"
+                                            "{TensorFieldValue: "
+                                            "{\"dimensions\":[\"x\",\"y\"],"
+                                            "\"cells\":["
+                                            "{\"address\":{\"x\":\"8\",\"y\":\"9\"},\"value\":2}"
+                                            "]}})");
+    CPPUNIT_ASSERT_EQUAL(expTensorModifyUpdateString, createTensorModifyUpdate()->toString());
     DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
     upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(*createTensorModifyUpdate()));
     upd.applyTo(updated);

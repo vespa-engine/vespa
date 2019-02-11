@@ -50,6 +50,23 @@ getJoinFunction(TensorModifyUpdate::Operation operation)
     }
 }
 
+vespalib::string
+getJoinFunctionName(TensorModifyUpdate::Operation operation)
+{
+    using Operation = TensorModifyUpdate::Operation;
+    
+    switch (operation) {
+    case Operation::REPLACE:
+        return "replace";
+    case Operation::ADD:
+        return "add";
+    case Operation::MUL:
+        return "multiply";
+    default:
+        throw IllegalArgumentException("Bad operation", VESPA_STRLOC);
+    }
+}
+
 }
 
 IMPLEMENT_IDENTIFIABLE(TensorModifyUpdate, ValueUpdate);
@@ -156,9 +173,11 @@ TensorModifyUpdate::printXml(XmlOutputStream& xos) const
 void
 TensorModifyUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    (void) verbose;
-    (void) indent;
-    out << "{TensorModifyUpdate::print not yet implemented}";
+    out << indent << "TensorModifyUpdate(" << getJoinFunctionName(_operation) << ",";
+    if (_tensor) {
+        _tensor->print(out, verbose, indent);
+    }
+    out << ")";
 }
 
 void

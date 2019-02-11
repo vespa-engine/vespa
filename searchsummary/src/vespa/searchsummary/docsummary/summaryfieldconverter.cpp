@@ -231,10 +231,6 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
     FieldValue::UP       _field_value;
     FieldValueConverter &_structuredFieldConverter;
 
-    void visit(const ArrayFieldValue &value) override {
-        _field_value = _structuredFieldConverter.convert(value);
-    }
-
     template <typename T>
     void visitPrimitive(const T &t) {
         _field_value.reset(t.clone());
@@ -274,8 +270,16 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
         visitPrimitive(value);
     }
 
-    void visit(const MapFieldValue & v) override {
-        _field_value = _structuredFieldConverter.convert(v);
+    void visit(const ArrayFieldValue &value) override {
+        if (value.size() > 0) {
+            _field_value = _structuredFieldConverter.convert(value);
+        } // else: implicit empty string
+    }
+
+    void visit(const MapFieldValue & value) override {
+        if (value.size() > 0) {
+            _field_value = _structuredFieldConverter.convert(value);
+        } // else: implicit empty string
     }
 
     void visit(const StructFieldValue &value) override {
@@ -292,7 +296,9 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
     }
 
     void visit(const WeightedSetFieldValue &value) override {
-        _field_value = _structuredFieldConverter.convert(value);
+        if (value.size() > 0) {
+            _field_value = _structuredFieldConverter.convert(value);
+        } // else: implicit empty string
     }
 
     void visit(const TensorFieldValue &value) override {

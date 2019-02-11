@@ -353,7 +353,7 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
     summaryExecutor().execute(
             makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), onDone, this] () mutable {
                 (void) onDone;
-                vespalib::nbostream os = std::move(futureStream.get());
+                vespalib::nbostream os = futureStream.get();
                 if (!os.empty()) {
                     _summaryAdapter->put(serialNum, lid, os);
                 }

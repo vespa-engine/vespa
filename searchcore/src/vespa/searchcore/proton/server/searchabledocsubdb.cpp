@@ -46,7 +46,6 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
       _constantValueRepo(_constantValueCache),
       _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueRepo, ctx._clock,
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
-      _numSearcherThreads(cfg._numSearcherThreads),
       _warmupExecutor(ctx._warmupExecutor),
       _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>()),
       _flushConfig(),

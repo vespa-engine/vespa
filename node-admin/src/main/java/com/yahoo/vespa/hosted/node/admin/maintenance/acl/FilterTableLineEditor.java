@@ -11,6 +11,8 @@ import java.util.List;
 
 /**
  * An editor that assumes all rules in the filter table are exactly as the the wanted rules
+ *
+ * @author smorgrav
  */
 class FilterTableLineEditor implements LineEditor {
 

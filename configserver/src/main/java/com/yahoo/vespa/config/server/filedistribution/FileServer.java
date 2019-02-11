@@ -85,8 +85,8 @@ public class FileServer {
     private FileServer(ConnectionPool connectionPool, File rootDir) {
         this.downloader = new FileDownloader(connectionPool);
         this.root = new FileDirectory(rootDir);
-        this.pushExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        this.pullExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        this.pushExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()));
+        this.pullExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()));
     }
 
     boolean hasFile(String fileReference) {

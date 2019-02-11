@@ -15,7 +15,6 @@ private:
     uint32_t                          _taskId;
     FlushEngine                      &_engine;
     FlushContext::SP                  _context;
-    search::SerialNum _serial;
 
 public:
     FlushTask(const FlushTask &) = delete;

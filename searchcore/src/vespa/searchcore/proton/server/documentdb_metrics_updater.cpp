@@ -35,13 +35,12 @@ DocumentDBMetricsUpdater::DocumentDBMetricsUpdater(const DocumentSubDBCollection
                                                    DocumentDBJobTrackers &jobTrackers,
                                                    matching::SessionManager &sessionManager,
                                                    const AttributeUsageFilter &writeFilter,
-                                                   const DDBState &state)
+                                                   [[maybe_unused]] const DDBState &state)
     : _subDBs(subDBs),
       _writeService(writeService),
       _jobTrackers(jobTrackers),
       _sessionManager(sessionManager),
-      _writeFilter(writeFilter),
-      _state(state)
+      _writeFilter(writeFilter)
 {
 }
 

@@ -145,6 +145,10 @@ public class NodeAttributes {
                 currentFirmwareCheck, hardwareDivergence, hardwareFailureDescription, wantToDeprovision, reports);
     }
 
+    public boolean isEmpty() {
+        return equals(new NodeAttributes());
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (!(o instanceof NodeAttributes)) {

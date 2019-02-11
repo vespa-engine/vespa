@@ -191,13 +191,12 @@ private:
     public:
         NodeRemover(const lib::ClusterState& oldState,
                     const lib::ClusterState& s,
-                    const document::BucketIdFactory& factory,
+                    [[maybe_unused]] const document::BucketIdFactory& factory,
                     uint16_t localIndex,
                     const lib::Distribution& distribution,
                     const char* upStates)
             : _oldState(oldState),
               _state(s),
-              _factory(factory),
               _localIndex(localIndex),
               _distribution(distribution),
               _upStates(upStates) {}
@@ -218,7 +217,6 @@ private:
         const lib::ClusterState _state;
         std::vector<document::BucketId> _removedBuckets;
 
-        const document::BucketIdFactory& _factory;
         uint16_t _localIndex;
         const lib::Distribution& _distribution;
         const char* _upStates;

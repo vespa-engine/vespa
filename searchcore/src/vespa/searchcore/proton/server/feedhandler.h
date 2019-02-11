@@ -74,7 +74,6 @@ private:
 
     IThreadingService                     &_writeService;
     DocTypeName                            _docTypeName;
-    DDBState                              &_state;
     IFeedHandlerOwner                     &_owner;
     const IResourceWriteFilter            &_writeFilter;
     IReplayConfig                         &_replayConfig;

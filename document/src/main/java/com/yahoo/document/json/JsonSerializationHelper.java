@@ -152,8 +152,11 @@ public class JsonSerializationHelper {
     }
 
     public static <T extends FieldValue> void serializeWeightedSet(JsonGenerator generator, FieldBase field, WeightedSet<T> value) {
+        // Hide empty fields
+        if (value.size() == 0) {
+            return;
+        }
         fieldNameIfNotNull(generator, field);
-
         wrapIOException(() -> {
             generator.writeStartObject();
 
@@ -168,8 +171,11 @@ public class JsonSerializationHelper {
     }
 
     public static <T extends FieldValue> void serializeCollectionField(FieldWriter fieldWriter, JsonGenerator generator, FieldBase field, CollectionFieldValue<T> value) {
+        // Hide empty fields
+        if (value.size() == 0) {
+            return;
+        }
         fieldNameIfNotNull(generator, field);
-
         wrapIOException(() -> {
             generator.writeStartArray();
             Iterator<T> i = value.iterator();
@@ -184,6 +190,10 @@ public class JsonSerializationHelper {
 
 
     public static <K extends FieldValue, V extends FieldValue> void serializeMapField(FieldWriter fieldWriter, JsonGenerator generator, FieldBase field, MapFieldValue<K, V> map) {
+        // Hide empty fields
+        if (map.size() == 0) {
+            return;
+        }
         fieldNameIfNotNull(generator, field);
         wrapIOException(() -> {
             generator.writeStartObject();
@@ -203,6 +213,10 @@ public class JsonSerializationHelper {
     }
 
     public static <T extends FieldValue> void serializeArrayField(FieldWriter fieldWriter, JsonGenerator generator, FieldBase field, Array<T> value) {
+        // Hide empty fields
+        if (value.size() == 0) {
+            return;
+        }
         wrapIOException(() -> {
             fieldNameIfNotNull(generator, field);
             generator.writeStartArray();

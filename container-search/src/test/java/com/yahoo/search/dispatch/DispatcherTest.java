@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
 import static org.hamcrest.Matchers.is;
@@ -112,7 +113,7 @@ public class DispatcherTest {
         }
 
         @Override
-        public Optional<SearchInvoker> getSearchInvoker(Query query, int groupId, List<Node> nodes, boolean acceptIncompleteCoverage) {
+        public Optional<SearchInvoker> getSearchInvoker(Query query, OptionalInt groupId, List<Node> nodes, boolean acceptIncompleteCoverage) {
             if (step >= events.length) {
                 throw new RuntimeException("Was not expecting more calls to getSearchInvoker");
             }

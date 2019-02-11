@@ -107,9 +107,8 @@ VESPA_THREAD_STACK_TAG(close_executor)
 
 }
 
-Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const Proton &proton_, const vespalib::string &creator)
-    : _proton(proton_),
-      _hostName(),
+Proton::ProtonFileHeaderContext::ProtonFileHeaderContext([[maybe_unused]] const Proton &proton_, const vespalib::string &creator)
+    : _hostName(),
       _creator(creator),
       _cluster(),
       _pid(getpid())
@@ -204,7 +203,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       _queryLimiter(),
       _clock(0.010),
       _threadPool(128 * 1024),
-      _configGen(0),
       _distributionKey(-1),
       _isInitializing(true),
       _isReplayDone(false),

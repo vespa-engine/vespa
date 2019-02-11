@@ -212,6 +212,8 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         do {
             applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
             if ( ! applicationsNotRedeployed.isEmpty()) {
+                log.log(LogLevel.INFO, "Redeployment of " + applicationsNotRedeployed +
+                        " failed, will retry in " + sleepTimeWhenRedeployingFails);
                 Thread.sleep(sleepTimeWhenRedeployingFails.toMillis());
             }
         } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));

@@ -12,11 +12,10 @@ namespace storage {
 namespace distributor {
 
 StatBucketOperation::StatBucketOperation(
-        DistributorComponent& manager,
+        [[maybe_unused]] DistributorComponent& manager,
         DistributorBucketSpace &bucketSpace,
         const std::shared_ptr<api::StatBucketCommand> & cmd)
     : Operation(),
-      _manager(manager),
       _bucketSpace(bucketSpace),
       _command(cmd)
 {

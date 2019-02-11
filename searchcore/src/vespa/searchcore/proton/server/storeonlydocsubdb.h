@@ -64,7 +64,6 @@ class StoreOnlyDocSubDB;
  */
 class StoreOnlySubDBFileHeaderContext : public search::common::FileHeaderContext
 {
-    StoreOnlyDocSubDB &_owner;
     const search::common::FileHeaderContext &_parentFileHeaderContext;
     const DocTypeName &_docTypeName;
     vespalib::string _subDB;

@@ -230,7 +230,7 @@ auto readFile(const std::string & filename) {
     off_t read = file.read(&buf[0], buf.size(), 0);
 
     CPPUNIT_ASSERT_EQUAL(read, file.getFileSize());
-    return std::move(buf);
+    return buf;
 }
 
 void
