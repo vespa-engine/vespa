@@ -31,22 +31,18 @@ public class ApplicationApiImpl implements ApplicationApi {
     private final ApplicationInstance applicationInstance;
     private final NodeGroup nodeGroup;
     private final MutableStatusRegistry hostStatusService;
-    private final StatusService statusService;
     private final List<ClusterApi> clusterInOrder;
     private final Map<HostName, HostStatus> hostStatusMap;
 
     public ApplicationApiImpl(NodeGroup nodeGroup,
                               MutableStatusRegistry hostStatusService,
-                              StatusService statusService,
                               ClusterControllerClientFactory clusterControllerClientFactory) {
         this.applicationInstance = nodeGroup.getApplication();
         this.nodeGroup = nodeGroup;
         this.hostStatusService = hostStatusService;
-        this.statusService = statusService;
         Collection<HostName> hosts = getHostsUsedByApplicationInstance(applicationInstance);
-        Collection<HostName> suspendedHosts = statusService.getSuspendedHostsByApplication().apply(nodeGroup.getApplicationReference());
         this.hostStatusMap = hosts.stream().collect(Collectors.toMap(Function.identity(),
-                                                                     hostName -> suspendedHosts.contains(hostName)
+                                                                     hostName -> hostStatusService.getSuspendedHosts().contains(hostName)
                                                                                  ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS));
         this.clusterInOrder = makeClustersInOrder(nodeGroup, hostStatusMap, clusterControllerClientFactory);
     }
@@ -98,7 +94,7 @@ public class ApplicationApiImpl implements ApplicationApi {
 
     @Override
     public ApplicationInstanceStatus getApplicationStatus() {
-        return statusService.getApplicationInstanceStatus(nodeGroup.getApplicationReference());
+        return hostStatusService.getStatus();
     }
 
     @Override

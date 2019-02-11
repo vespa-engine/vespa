@@ -3,6 +3,8 @@ package com.yahoo.vespa.orchestrator.status;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 
+import java.util.Set;
+
 /**
  * Registry of the suspension and host statuses for an application instance.
  *
@@ -11,6 +13,21 @@ import com.yahoo.vespa.applicationmodel.HostName;
  * @author bakksjo
  */
 public interface MutableStatusRegistry extends AutoCloseable {
+
+    /**
+     * Returns the status of this application.
+     */
+    ApplicationInstanceStatus getStatus();
+
+    /**
+     * Returns the status of the given host.
+     */
+    HostStatus getHostStatus(HostName hostName);
+
+    /**
+     * Returns the set of all suspended hosts for this application.
+     */
+    Set<HostName> getSuspendedHosts();
 
     /**
      * Sets the state for the given host.

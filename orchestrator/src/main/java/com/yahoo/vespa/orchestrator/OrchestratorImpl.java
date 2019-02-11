@@ -143,15 +143,15 @@ public class OrchestratorImpl implements Orchestrator {
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         try (MutableStatusRegistry statusRegistry = statusService
                 .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
-            HostStatus currentHostState = statusService.getHostStatus(appInstance.reference(), hostName);
+            HostStatus currentHostState = statusRegistry.getHostStatus(hostName);
 
             if (HostStatus.NO_REMARKS == currentHostState) {
                 return;
             }
 
-            ApplicationInstanceStatus appStatus = statusService.getApplicationInstanceStatus(appInstance.reference());
+            ApplicationInstanceStatus appStatus = statusRegistry.getStatus();
             if (appStatus == ApplicationInstanceStatus.NO_REMARKS) {
-                policy.releaseSuspensionGrant(context.createSubcontextWithinLock(), appInstance, hostName, statusRegistry, statusService);
+                policy.releaseSuspensionGrant(context.createSubcontextWithinLock(), appInstance, hostName, statusRegistry);
             }
         }
     }
@@ -174,7 +174,6 @@ public class OrchestratorImpl implements Orchestrator {
             ApplicationApi applicationApi = new ApplicationApiImpl(
                     nodeGroup,
                     statusRegistry,
-                    statusService,
                     clusterControllerClientFactory);
 
             policy.acquirePermissionToRemove(context.createSubcontextWithinLock(), applicationApi);
@@ -192,14 +191,13 @@ public class OrchestratorImpl implements Orchestrator {
 
         try (MutableStatusRegistry hostStatusRegistry =
                      statusService.lockApplicationInstance_forCurrentThreadOnly(context, applicationReference)) {
-            ApplicationInstanceStatus appStatus = statusService.getApplicationInstanceStatus(applicationReference);
+            ApplicationInstanceStatus appStatus = hostStatusRegistry.getStatus();
             if (appStatus == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
                 return;
             }
 
             ApplicationApi applicationApi = new ApplicationApiImpl(nodeGroup,
                                                                    hostStatusRegistry,
-                                                                   statusService,
                                                                    clusterControllerClientFactory);
             policy.grantSuspensionRequest(context.createSubcontextWithinLock(), applicationApi);
         }
@@ -207,7 +205,7 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationId appId) throws ApplicationIdNotFoundException {
-        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId,instanceLookupService);
+        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId, instanceLookupService);
         return statusService.getApplicationInstanceStatus(appRef);
     }
 
@@ -328,7 +326,7 @@ public class OrchestratorImpl implements Orchestrator {
                      statusService.lockApplicationInstance_forCurrentThreadOnly(context, appRef)) {
 
             // Short-circuit if already in wanted state
-            if (status == statusService.getApplicationInstanceStatus(appRef)) return;
+            if (status == statusRegistry.getStatus()) return;
 
             // Set content clusters for this application in maintenance on suspend
             if (status == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {

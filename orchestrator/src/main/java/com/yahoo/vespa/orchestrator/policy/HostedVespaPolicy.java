@@ -105,10 +105,9 @@ public class HostedVespaPolicy implements Policy {
             OrchestratorContext context,
             ApplicationInstance applicationInstance,
             HostName hostName,
-            MutableStatusRegistry hostStatusService,
-            StatusService statusService) throws HostStateChangeDeniedException {
+            MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance, hostName);
-        ApplicationApi applicationApi = new ApplicationApiImpl(nodeGroup, hostStatusService, statusService, clusterControllerClientFactory);
+        ApplicationApi applicationApi = new ApplicationApiImpl(nodeGroup, hostStatusService, clusterControllerClientFactory);
         releaseSuspensionGrant(context, applicationApi);
     }
 

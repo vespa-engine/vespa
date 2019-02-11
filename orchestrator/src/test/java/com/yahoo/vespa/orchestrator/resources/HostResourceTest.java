@@ -119,8 +119,7 @@ public class HostResourceTest {
         public void releaseSuspensionGrant(
                 OrchestratorContext context, ApplicationInstance applicationInstance,
                 HostName hostName,
-                MutableStatusRegistry hostStatusRegistry,
-                StatusService statusService) {
+                MutableStatusRegistry hostStatusRegistry) {
         }
     }
 
@@ -221,8 +220,7 @@ public class HostResourceTest {
         public void releaseSuspensionGrant(
                 OrchestratorContext context, ApplicationInstance applicationInstance,
                 HostName hostName,
-                MutableStatusRegistry hostStatusRegistry,
-                StatusService statusService) throws HostStateChangeDeniedException {
+                MutableStatusRegistry hostStatusRegistry) throws HostStateChangeDeniedException {
             doThrow();
         }
 

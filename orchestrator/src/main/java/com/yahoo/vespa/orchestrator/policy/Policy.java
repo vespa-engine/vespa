@@ -33,7 +33,6 @@ public interface Policy {
     void releaseSuspensionGrant(
             OrchestratorContext context, ApplicationInstance applicationInstance,
             HostName hostName,
-            MutableStatusRegistry hostStatusService,
-            StatusService statusService) throws HostStateChangeDeniedException;
+            MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException;
 
 }

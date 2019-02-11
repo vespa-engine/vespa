@@ -246,6 +246,21 @@ public class ZookeeperStatusService implements StatusService {
         }
 
         @Override
+        public ApplicationInstanceStatus getStatus() {
+            return getApplicationInstanceStatus(applicationInstanceReference);
+        }
+
+        @Override
+        public HostStatus getHostStatus(HostName hostName) {
+            return ZookeeperStatusService.this.getHostStatus(applicationInstanceReference, hostName);
+        }
+
+        @Override
+        public Set<HostName> getSuspendedHosts() {
+            return getValidCache().computeIfAbsent(applicationInstanceReference, ZookeeperStatusService.this::hostsDownFor);
+        }
+
+        @Override
         public void setHostState(final HostName hostName, final HostStatus status) {
             if (probe) return;
             log.log(LogLevel.INFO, "Setting host " + hostName + " to status " + status);

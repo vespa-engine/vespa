@@ -74,7 +74,7 @@ class ModelTestUtils {
         MutableStatusRegistry registry = statusService.lockApplicationInstance_forCurrentThreadOnly(
                 OrchestratorContext.createContextForSingleAppOp(Clock.systemUTC()),
                 applicationInstance.reference());
-        return new ApplicationApiImpl(nodeGroup, registry, statusService, clusterControllerClientFactory);
+        return new ApplicationApiImpl(nodeGroup, registry, clusterControllerClientFactory);
     }
 
     ApplicationInstance createApplicationInstance(
