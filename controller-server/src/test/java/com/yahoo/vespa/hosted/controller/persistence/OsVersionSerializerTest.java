@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import org.junit.Test;
 

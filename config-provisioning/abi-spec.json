@@ -145,6 +145,27 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.CloudName": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.Comparable"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.lang.String value()",
+      "public boolean isDefault()",
+      "public static com.yahoo.config.provision.CloudName defaultName()",
+      "public static com.yahoo.config.provision.CloudName from(java.lang.String)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "public int compareTo(com.yahoo.config.provision.CloudName)",
+      "public bridge synthetic int compareTo(java.lang.Object)"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.provision.ClusterMembership": {
     "superClass": "java.lang.Object",
     "interfaces": [],

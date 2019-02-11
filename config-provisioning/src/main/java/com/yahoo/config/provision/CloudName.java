@@ -1,7 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.api.integration.zone;
-
-import org.jetbrains.annotations.NotNull;
+package com.yahoo.config.provision;
 
 import java.util.Objects;
 
@@ -55,7 +53,7 @@ public class CloudName implements Comparable<CloudName> {
     }
 
     @Override
-    public int compareTo(@NotNull CloudName o) {
+    public int compareTo(CloudName o) {
         return cloud.compareTo(o.cloud);
     }
 
