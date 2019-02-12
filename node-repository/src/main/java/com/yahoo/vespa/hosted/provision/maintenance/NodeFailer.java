@@ -230,7 +230,13 @@ public class NodeFailer extends Maintainer {
     }
 
     private static List<String> reasonsToRetireActiveParentHost(Node hostNode) {
-        return Stream.of("badTotalMemorySize", "badTotalDiskSize")
+        return Stream.of(
+                "badTotalMemorySize",
+                "badTotalDiskSize",
+                "badDiskType",
+                "badInterfaceSpeed",
+                "badCpuCount"
+        )
                 .map(reportId -> baseReportToString(hostNode, reportId))
                 .flatMap(Optional::stream)
                 .collect(Collectors.toList());
