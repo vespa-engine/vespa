@@ -3,15 +3,21 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -22,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -37,13 +44,15 @@ import static org.mockito.Mockito.when;
  * @author freva
  */
 public class NodeAdminStateUpdaterTest {
+    private final NodeAgentContextFactory nodeAgentContextFactory = mock(NodeAgentContextFactory.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
     private final HostName hostHostname = HostName.from("basehost1.test.yahoo.com");
+    private final ManualClock clock = new ManualClock();
 
     private final NodeAdminStateUpdater updater = spy(new NodeAdminStateUpdater(
-            nodeRepository, orchestrator, nodeAdmin, hostHostname));
+            nodeAgentContextFactory, nodeRepository, orchestrator, nodeAdmin, hostHostname, clock));
 
 
     @Test
@@ -167,6 +176,77 @@ public class NodeAdminStateUpdaterTest {
         verify(orchestrator, times(1)).suspend(eq(hostHostname.value()), eq(activeHostnames));
     }
 
+    @Test
+    public void uses_cached_acl() {
+        mockNodeRepo(Node.State.active, 1);
+        mockAcl(Acl.EMPTY, 1);
+
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        verify(nodeRepository, times(1)).getAcls(any());
+        clock.advance(Duration.ofSeconds(30));
+
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        clock.advance(Duration.ofSeconds(30));
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        clock.advance(Duration.ofSeconds(30));
+        verify(nodeRepository, times(1)).getAcls(any());
+
+        clock.advance(Duration.ofSeconds(30));
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        verify(nodeRepository, times(2)).getAcls(any());
+    }
+
+    @Test
+    public void node_spec_and_acl_aligned() {
+        Acl acl = new Acl.Builder().withTrustedPorts(22).build();
+        mockNodeRepo(Node.State.active, 3);
+        mockAcl(acl, 1, 2, 3);
+
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host3.yahoo.com")), eq(acl));
+        verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
+        verify(nodeRepository, times(1)).getAcls(eq(hostHostname.value()));
+    }
+
+    @Test
+    public void node_spec_and_acl_mismatch_missing_one_acl() {
+        Acl acl = new Acl.Builder().withTrustedPorts(22).build();
+        mockNodeRepo(Node.State.active, 3);
+        mockAcl(acl, 1, 2); // Acl for 3 is missing
+
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        mockNodeRepo(Node.State.active, 2); // Next tick, the spec for 3 is no longer returned
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(1)).create(argThat(spec -> spec.getHostname().equals("host3.yahoo.com")), eq(Acl.EMPTY));
+        verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
+        verify(nodeRepository, times(2)).getAcls(eq(hostHostname.value())); // During the first tick, the cache is invalidated and retried
+    }
+
+    @Test
+    public void node_spec_and_acl_mismatch_additional_acl() {
+        Acl acl = new Acl.Builder().withTrustedPorts(22).build();
+        mockNodeRepo(Node.State.active, 2);
+        mockAcl(acl, 1, 2, 3); // Acl for 3 is extra
+
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(acl));
+        verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
+        verify(nodeRepository, times(1)).getAcls(eq(hostHostname.value()));
+    }
+
     private void assertConvergeError(NodeAdminStateUpdater.State targetState, String reason) {
         try {
             updater.converge(targetState);
@@ -177,9 +257,9 @@ public class NodeAdminStateUpdaterTest {
     }
 
     private void mockNodeRepo(Node.State hostState, int numberOfNodes) {
-        List<NodeSpec> containersToRun = IntStream.range(0, numberOfNodes)
+        List<NodeSpec> containersToRun = IntStream.range(1, numberOfNodes + 1)
                 .mapToObj(i -> new NodeSpec.Builder()
-                        .hostname("host" + i + ".test.yahoo.com")
+                        .hostname("host" + i + ".yahoo.com")
                         .state(Node.State.active)
                         .nodeType(NodeType.tenant)
                         .flavor("docker")
@@ -200,5 +280,13 @@ public class NodeAdminStateUpdaterTest {
                 .minMainMemoryAvailableGb(1)
                 .minDiskAvailableGb(1)
                 .build());
+    }
+
+    private void mockAcl(Acl acl, int... nodeIds) {
+        Map<String, Acl> aclByHostname = Arrays.stream(nodeIds)
+                .mapToObj(i -> "host" + i + ".yahoo.com")
+                .collect(Collectors.toMap(Function.identity(), h -> acl));
+
+        when(nodeRepository.getAcls(eq(hostHostname.value()))).thenReturn(aclByHostname);
     }
 }

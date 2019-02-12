@@ -1,236 +1,263 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
-import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
+import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.nio.file.FileSystem;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Function;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.endsWith;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class AclMaintainerTest {
 
-    private final HostName hostHostname = HostName.from("node-admin.region-1.yahoo.com");
-    private final IPAddressesMock ipAddresses = new IPAddressesMock();
+    private static final String EMPTY_FILTER_TABLE = "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n-P OUTPUT ACCEPT\n";
+    private static final String EMPTY_NAT_TABLE = "-P PREROUTING ACCEPT\n-P INPUT ACCEPT\n-P OUTPUT ACCEPT\n-P POSTROUTING ACCEPT\n";
+
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
-    private final NodeRepository nodeRepository = mock(NodeRepository.class);
-    private final Map<String, Container> containers = new HashMap<>();
-    private final List<Container> containerList = new ArrayList<>();
-    private final AclMaintainer aclMaintainer =
-            new AclMaintainer(dockerOperations, nodeRepository, hostHostname, ipAddresses);
+    private final IPAddressesMock ipAddresses = new IPAddressesMock();
+    private final AclMaintainer aclMaintainer = new AclMaintainer(dockerOperations, ipAddresses);
 
-    @Before
-    public void before() {
-        when(dockerOperations.getAllManagedContainers()).thenReturn(containerList);
-    }
+    private final FileSystem fileSystem = TestFileSystem.create();
+    private final Function<Acl, NodeAgentContext> contextGenerator =
+            acl -> new NodeAgentContextImpl.Builder("container1.host.com").fileSystem(fileSystem).acl(acl).build();
+    private final List<String> writtenFileContents = new ArrayList<>();
 
     @Test
-    public void empty_trusted_ports_are_handled() {
-        Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
-        Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
+    public void configures_full_container_acl_from_empty() {
+        Acl acl = new Acl.Builder().withTrustedPorts(22, 4443)
+                .withTrustedNode("hostname1", "3001::abcd")
+                .withTrustedNode("hostname2", "3001::1234")
+                .withTrustedNode("hostname1", "192.168.0.5")
+                .withTrustedNode("hostname4", "172.16.5.234").build();
+        NodeAgentContext context = contextGenerator.apply(acl);
 
-        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
+        ipAddresses.addAddress(context.hostname().value(), "2001::1");
+        ipAddresses.addAddress(context.hostname().value(), "10.0.0.1");
 
-        whenListRules(container.name, "filter", IPVersion.IPv6, "");
-        whenListRules(container.name, "filter", IPVersion.IPv4, "");
-        whenListRules(container.name, "nat", IPVersion.IPv4, "");
-        whenListRules(container.name, "nat", IPVersion.IPv6, "");
+        whenListRules(context, "filter", IPVersion.IPv4, EMPTY_FILTER_TABLE);
+        whenListRules(context, "filter", IPVersion.IPv6, EMPTY_FILTER_TABLE);
+        whenListRules(context, "nat", IPVersion.IPv4, EMPTY_NAT_TABLE);
+        whenListRules(context, "nat", IPVersion.IPv6, EMPTY_NAT_TABLE);
 
-        aclMaintainer.converge();
+        aclMaintainer.converge(context);
 
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), any()); //we don;t have a ip4 address for the container so no redirect either
-        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), any());
-    }
+        verify(dockerOperations, times(4)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
+        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any());
+        verifyNoMoreInteractions(dockerOperations);
 
-    @Test
-    public void configures_container_acl_when_iptables_differs() {
-        Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
-        Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
-
-        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
-
-        whenListRules(container.name, "filter", IPVersion.IPv6, "");
-        whenListRules(container.name, "filter", IPVersion.IPv4, "");
-        whenListRules(container.name, "nat", IPVersion.IPv4, "");
-        whenListRules(container.name, "nat", IPVersion.IPv6, "");
-
-        aclMaintainer.converge();
-
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), any()); //we don;t have a ip4 address for the container so no redirect either
-        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), any());
-    }
-
-    @Test
-    public void ignore_containers_not_running() {
-        Container container = addContainer("container1", "container1.host.com", Container.State.EXITED);
-        Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
-
-        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
-
-        aclMaintainer.converge();
-
-        verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(container.name), any());
-    }
-
-    @Test
-    public void only_configure_iptables_for_ipversion_that_differs() {
-        Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
-        Map<String, Acl> acls = makeAcl(container.hostname, "4321,2345,22", "2001::1", "fd01:1234::4321");
-
-        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
-
-        String IPV6 = "-P INPUT ACCEPT\n" +
-                "-P FORWARD ACCEPT\n" +
-                "-P OUTPUT ACCEPT\n" +
-                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
-                "-A INPUT -i lo -j ACCEPT\n" +
-                "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp -m multiport --dports 22,2345,4321 -j ACCEPT\n" +
-                "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
-                "-A INPUT -s fd01:1234::4321/128 -j ACCEPT\n" +
-                "-A INPUT -j REJECT --reject-with icmp6-port-unreachable";
-
-        String NATv6 = "-P PREROUTING ACCEPT\n" +
+        List<String> expected = Arrays.asList(
+                // IPv4 filter table restore
+                "*filter\n" +
                 "-P INPUT ACCEPT\n" +
-                "-P OUTPUT ACCEPT\n" +
-                "-P POSTROUTING ACCEPT\n" +
-                "-A OUTPUT -d 3001::1/128 -j REDIRECT";
-
-        whenListRules(container.name, "filter", IPVersion.IPv6, IPV6);
-        whenListRules(container.name, "filter", IPVersion.IPv4, ""); //IPv4 will then differ from wanted
-        whenListRules(container.name, "nat", IPVersion.IPv6, NATv6);
-
-        aclMaintainer.converge();
-
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), any());
-        verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), any());
-    }
-
-    @Test
-    public void does_not_configure_acl_if_iptables_dualstack_are_ok() {
-        Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
-        Map<String, Acl> acls = makeAcl(container.hostname, "22,4443,2222", "2001::1", "192.64.13.2");
-
-        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
-
-        String IPV4_FILTER = "-P INPUT ACCEPT\n" +
                 "-P FORWARD ACCEPT\n" +
                 "-P OUTPUT ACCEPT\n" +
                 "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
                 "-A INPUT -i lo -j ACCEPT\n" +
                 "-A INPUT -p icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp -m multiport --dports 22,2222,4443 -j ACCEPT\n" +
-                "-A INPUT -s 192.64.13.2/32 -j ACCEPT\n" +
-                "-A INPUT -j REJECT --reject-with icmp-port-unreachable";
+                "-A INPUT -p tcp -m multiport --dports 22,4443 -j ACCEPT\n" +
+                "-A INPUT -s 172.16.5.234/32 -j ACCEPT\n" +
+                "-A INPUT -s 192.168.0.5/32 -j ACCEPT\n" +
+                "-A INPUT -j REJECT --reject-with icmp-port-unreachable\n" +
+                "COMMIT\n",
 
-        String IPV6_FILTER = "-P INPUT ACCEPT\n" +
+                // IPv6 filter table restore
+                "*filter\n" +
+                "-P INPUT ACCEPT\n" +
                 "-P FORWARD ACCEPT\n" +
                 "-P OUTPUT ACCEPT\n" +
                 "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
                 "-A INPUT -i lo -j ACCEPT\n" +
                 "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp -m multiport --dports 22,2222,4443 -j ACCEPT\n" +
-                "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
-                "-A INPUT -j REJECT --reject-with icmp6-port-unreachable";
+                "-A INPUT -p tcp -m multiport --dports 22,4443 -j ACCEPT\n" +
+                "-A INPUT -s 3001::1234/128 -j ACCEPT\n" +
+                "-A INPUT -s 3001::abcd/128 -j ACCEPT\n" +
+                "-A INPUT -j REJECT --reject-with icmp6-port-unreachable\n" +
+                "COMMIT\n",
 
-        String IPV6_NAT = "-P PREROUTING ACCEPT\n" +
+                // IPv4 nat table restore
+                "*nat\n" +
+                "-P PREROUTING ACCEPT\n" +
                 "-P INPUT ACCEPT\n" +
                 "-P OUTPUT ACCEPT\n" +
                 "-P POSTROUTING ACCEPT\n" +
-                "-A OUTPUT -d 3001::1/128 -j REDIRECT";
+                "-A OUTPUT -d 10.0.0.1/32 -j REDIRECT\n" +
+                "COMMIT\n",
 
-        whenListRules(container.name, "filter", IPVersion.IPv6, IPV6_FILTER);
-        whenListRules(container.name, "nat", IPVersion.IPv6, IPV6_NAT);
-        whenListRules(container.name, "filter", IPVersion.IPv4, IPV4_FILTER);
-
-        aclMaintainer.converge();
-
-        verify(dockerOperations, never()).executeCommandInNetworkNamespace(any(), eq("ip6tables-restore"), any());
-        verify(dockerOperations, never()).executeCommandInNetworkNamespace(any(), eq("iptables-restore"), any());
+                // IPv6 nat table restore
+                "*nat\n" +
+                "-P PREROUTING ACCEPT\n" +
+                "-P INPUT ACCEPT\n" +
+                "-P OUTPUT ACCEPT\n" +
+                "-P POSTROUTING ACCEPT\n" +
+                "-A OUTPUT -d 2001::1/128 -j REDIRECT\n" +
+                "COMMIT\n");
+        assertEquals(expected, writtenFileContents);
     }
 
+    @Test
+    public void configures_minimal_container_acl_from_empty() {
+        // The ACL spec is empty and our this node's addresses do not resolve
+        Acl acl = new Acl.Builder().withTrustedPorts().build();
+        NodeAgentContext context = contextGenerator.apply(acl);
+
+        whenListRules(context, "filter", IPVersion.IPv4, EMPTY_FILTER_TABLE);
+        whenListRules(context, "filter", IPVersion.IPv6, EMPTY_FILTER_TABLE);
+        whenListRules(context, "nat", IPVersion.IPv4, EMPTY_NAT_TABLE);
+        whenListRules(context, "nat", IPVersion.IPv6, EMPTY_NAT_TABLE);
+
+        aclMaintainer.converge(context);
+
+        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any());
+        verifyNoMoreInteractions(dockerOperations);
+
+        List<String> expected = Arrays.asList(
+                // IPv4 filter table restore
+                "*filter\n" +
+                "-P INPUT ACCEPT\n" +
+                "-P FORWARD ACCEPT\n" +
+                "-P OUTPUT ACCEPT\n" +
+                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
+                "-A INPUT -i lo -j ACCEPT\n" +
+                "-A INPUT -p icmp -j ACCEPT\n" +
+                "-A INPUT -j REJECT --reject-with icmp-port-unreachable\n" +
+                "COMMIT\n",
+
+                // IPv6 filter table restore
+                "*filter\n" +
+                "-P INPUT ACCEPT\n" +
+                "-P FORWARD ACCEPT\n" +
+                "-P OUTPUT ACCEPT\n" +
+                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
+                "-A INPUT -i lo -j ACCEPT\n" +
+                "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
+                "-A INPUT -j REJECT --reject-with icmp6-port-unreachable\n" +
+                "COMMIT\n");
+        assertEquals(expected, writtenFileContents);
+    }
+
+    @Test
+    public void only_configure_iptables_for_ipversion_that_differs() {
+        Acl acl = new Acl.Builder().withTrustedPorts(22, 4443).withTrustedNode("hostname1", "3001::abcd").build();
+        NodeAgentContext context = contextGenerator.apply(acl);
+
+        ipAddresses.addAddress(context.hostname().value(), "2001::1");
+
+        whenListRules(context, "filter", IPVersion.IPv4, EMPTY_FILTER_TABLE);
+        whenListRules(context, "filter", IPVersion.IPv6,
+                "-P INPUT ACCEPT\n" +
+                "-P FORWARD ACCEPT\n" +
+                "-P OUTPUT ACCEPT\n" +
+                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
+                "-A INPUT -i lo -j ACCEPT\n" +
+                "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
+                "-A INPUT -p tcp -m multiport --dports 22,4443 -j ACCEPT\n" +
+                "-A INPUT -s 3001::abcd/128 -j ACCEPT\n" +
+                "-A INPUT -j REJECT --reject-with icmp6-port-unreachable\n");
+        whenListRules(context, "nat", IPVersion.IPv6,
+                "-P PREROUTING ACCEPT\n" +
+                "-P INPUT ACCEPT\n" +
+                "-P OUTPUT ACCEPT\n" +
+                "-P POSTROUTING ACCEPT\n" +
+                "-A OUTPUT -d 2001::1/128 -j REDIRECT\n");
+
+        aclMaintainer.converge(context);
+
+        verify(dockerOperations, times(3)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
+        verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any()); //we don't have a ip4 address for the container so no redirect
+        verifyNoMoreInteractions(dockerOperations);
+
+        List<String> expected = Collections.singletonList(
+                "*filter\n" +
+                "-P INPUT ACCEPT\n" +
+                "-P FORWARD ACCEPT\n" +
+                "-P OUTPUT ACCEPT\n" +
+                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
+                "-A INPUT -i lo -j ACCEPT\n" +
+                "-A INPUT -p icmp -j ACCEPT\n" +
+                "-A INPUT -p tcp -m multiport --dports 22,4443 -j ACCEPT\n" +
+                "-A INPUT -j REJECT --reject-with icmp-port-unreachable\n" +
+                "COMMIT\n");
+        assertEquals(expected, writtenFileContents);
+    }
 
     @Test
     public void rollback_is_attempted_when_applying_acl_fail() {
-        Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
-        Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
-        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
+        Acl acl = new Acl.Builder().withTrustedPorts(22, 4443).withTrustedNode("hostname1", "3001::abcd").build();
+        NodeAgentContext context = contextGenerator.apply(acl);
 
-        String IPV6_NAT = "-P PREROUTING ACCEPT\n" +
+        ipAddresses.addAddress(context.hostname().value(), "2001::1");
+
+        whenListRules(context, "filter", IPVersion.IPv4, EMPTY_FILTER_TABLE);
+        whenListRules(context, "filter", IPVersion.IPv6,
+                "-P INPUT ACCEPT\n" +
+                "-P FORWARD ACCEPT\n" +
+                "-P OUTPUT ACCEPT\n" +
+                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
+                "-A INPUT -i lo -j ACCEPT\n" +
+                "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
+                "-A INPUT -p tcp -m multiport --dports 22,4443 -j ACCEPT\n" +
+                "-A INPUT -s 3001::abcd/128 -j ACCEPT\n" +
+                "-A INPUT -j REJECT --reject-with icmp6-port-unreachable\n");
+        whenListRules(context, "nat", IPVersion.IPv6,
+                "-P PREROUTING ACCEPT\n" +
                 "-P INPUT ACCEPT\n" +
                 "-P OUTPUT ACCEPT\n" +
                 "-P POSTROUTING ACCEPT\n" +
-                "-A OUTPUT -d 3001::1/128 -j REDIRECT";
+                "-A OUTPUT -d 2001::1/128 -j REDIRECT\n");
 
-        whenListRules(container.name, "filter", IPVersion.IPv6, "");
-        whenListRules(container.name, "filter", IPVersion.IPv4, "");
-        whenListRules(container.name, "nat", IPVersion.IPv6, IPV6_NAT);
+        when(dockerOperations.executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any()))
+                .thenThrow(new RuntimeException("iptables restore failed"));
 
-        when(dockerOperations.executeCommandInNetworkNamespace(
-                eq(container.name),
-                eq("ip6tables-restore"), any())).thenThrow(new RuntimeException("iptables restore failed"));
+        aclMaintainer.converge(context);
 
-        when(dockerOperations.executeCommandInNetworkNamespace(
-                eq(container.name),
-                eq("iptables-restore"), any())).thenThrow(new RuntimeException("iptables restore failed"));
+        verify(dockerOperations, times(3)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables"), eq("-F"), eq("-t"), eq("filter"));
+        verifyNoMoreInteractions(dockerOperations);
 
-        aclMaintainer.converge();
-
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name),
-                eq("ip6tables"), eq("-F"), eq("-t"), eq("filter"));
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name),
-                eq("iptables"), eq("-F"),  eq("-t"), eq("filter"));
+        aclMaintainer.converge(context);
     }
 
-    private void whenListRules(ContainerName name, String table, IPVersion ipVersion, String result) {
+    @Before
+    public void setup() {
+        doAnswer(invoc -> {
+            String path = invoc.getArgument(2);
+            writtenFileContents.add(new UnixPath(path).readUtf8File());
+            return new ProcessResult(0, "", "");
+        }).when(dockerOperations).executeCommandInNetworkNamespace(any(), endsWith("-restore"), any());
+    }
+
+    private void whenListRules(NodeAgentContext context, String table, IPVersion ipVersion, String result) {
         when(dockerOperations.executeCommandInNetworkNamespace(
-                eq(name),
-                eq(ipVersion.iptablesCmd()), eq("-S"), eq("-t"), eq(table)))
+                eq(context), eq(ipVersion.iptablesCmd()), eq("-S"), eq("-t"), eq(table)))
                 .thenReturn(new ProcessResult(0, result, ""));
-    }
-
-    private Container addContainer(String name, String hostname, Container.State state) {
-        final ContainerName containerName = new ContainerName(name);
-        final Container container = new Container(hostname, new DockerImage("mock"), null,
-                containerName, state, 2);
-        containers.put(name, container);
-        containerList.add(container);
-        ipAddresses.addAddress(hostname, "3001::" + containers.size());
-        return container;
-    }
-
-    private Map<String, Acl> makeAcl(String containerHostname, String portsCommaSeparated, String... addresses) {
-        Acl.Builder aclBuilder = new Acl.Builder();
-
-        Arrays.stream(portsCommaSeparated.split(","))
-                .map(Integer::valueOf)
-                .forEach(aclBuilder::withTrustedPorts);
-
-        Arrays.stream(addresses)
-                .forEach(address -> aclBuilder.withTrustedNode(new Acl.Node("hostname", address)));
-
-        Map<String, Acl> map = new HashMap<>();
-        map.put(containerHostname, aclBuilder.build());
-        return map;
     }
 }

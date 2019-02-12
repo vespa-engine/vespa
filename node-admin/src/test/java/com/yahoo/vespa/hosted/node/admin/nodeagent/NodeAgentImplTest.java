@@ -199,7 +199,7 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
         inOrder.verify(dockerOperations, times(1)).createContainer(eq(context), any());
         inOrder.verify(dockerOperations, times(1)).startContainer(eq(context));
-        inOrder.verify(aclMaintainer, times(1)).converge();
+        inOrder.verify(aclMaintainer, times(1)).converge(eq(context));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(healthChecker, times(1)).verifyHealth(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
@@ -742,7 +742,7 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
         inOrder.verify(dockerOperations, times(1)).createContainer(eq(context), any());
         inOrder.verify(dockerOperations, times(1)).startContainer(eq(context));
-        inOrder.verify(aclMaintainer, times(1)).converge();
+        inOrder.verify(aclMaintainer, times(1)).converge(eq(context));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes().withDockerImage(dockerImage));
