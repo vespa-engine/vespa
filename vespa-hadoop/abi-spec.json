@@ -1431,6 +1431,7 @@
       "public abstract java.util.Map cells()",
       "public double asDouble()",
       "public abstract com.yahoo.tensor.Tensor withType(com.yahoo.tensor.TensorType)",
+      "public com.yahoo.tensor.Tensor modify(java.util.function.DoubleBinaryOperator, java.util.Map)",
       "public com.yahoo.tensor.Tensor map(java.util.function.DoubleUnaryOperator)",
       "public varargs com.yahoo.tensor.Tensor reduce(com.yahoo.tensor.functions.Reduce$Aggregator, java.lang.String[])",
       "public com.yahoo.tensor.Tensor reduce(com.yahoo.tensor.functions.Reduce$Aggregator, java.util.List)",
