@@ -4,6 +4,8 @@
 #include "service.h"
 #include "metrics.h"
 #include "state-api.h"
+#include "cmdq.h"
+#include "rpcserver.h"
 #include <vespa/config-sentinel.h>
 #include <vespa/config/config.h>
 #include <sys/types.h>
@@ -29,6 +31,8 @@ private:
     ServiceMap _services;
     std::list<CommandConnection *> _connections;
     std::list<OutputConnection *> _outputConnections;
+    CommandQueue _cmdQ;
+    std::unique_ptr<RpcServer> _rpcServer;
     int _boundPort;
     int _commandSocket;
     StartMetrics _startMetrics;
@@ -41,6 +45,7 @@ private:
     Service *serviceByName(const vespalib::string & name);
     void handleCommands();
     void handleCommand(CommandConnection *c);
+    void handleCmd(const Cmd& cmd);
     void handleOutputs();
     void handleChildDeaths();
 
