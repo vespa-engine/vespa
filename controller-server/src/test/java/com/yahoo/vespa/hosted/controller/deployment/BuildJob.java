@@ -3,12 +3,13 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
+import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -18,7 +19,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 
 /**
  * Create a build job for testing purposes. In most cases this should be constructed by calling
- * DeploymentTester.jobCompletion.
+ * {@link DeploymentTester#jobCompletion(JobType)} or {@link ContainerControllerTester#jobCompletion(JobType)}.
  *
  * @author mpolden
  */
@@ -74,12 +75,12 @@ public class BuildJob {
     }
 
     public BuildJob buildNumber(long buildNumber) {
-        this.buildNumber = buildNumber;
+        this.buildNumber = requireBuildNumber(buildNumber);
         return this;
     }
 
     public BuildJob nextBuildNumber(int increment) {
-        return buildNumber(buildNumber + increment);
+        return buildNumber(buildNumber + requireBuildNumber(increment));
     }
 
     public BuildJob nextBuildNumber() {
@@ -124,6 +125,13 @@ public class BuildJob {
             throw new IllegalStateException(job + " must upload artifact before reporting completion");
         }
         reportConsumer.accept(report());
+    }
+
+    private static long requireBuildNumber(long n) {
+        if (n <= 0) {
+            throw new IllegalArgumentException("Build number must be positive");
+        }
+        return n;
     }
 
 }
