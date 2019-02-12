@@ -5,9 +5,12 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.api.AwsRole;
+import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.client.common.ClientBase;
+import com.yahoo.vespa.athenz.client.zts.bindings.AwsTemporaryCredentialsResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.IdentityRefreshRequestEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.IdentityResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceIdentityCredentials;
@@ -31,6 +34,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toList;
@@ -168,6 +172,23 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
         return execute(request, response -> {
             TenantDomainsResponseEntity entity = readEntity(response, TenantDomainsResponseEntity.class);
             return entity.tenantDomainNames.stream().map(AthenzDomain::new).collect(toList());
+        });
+    }
+
+    @Override
+    public AwsTemporaryCredentials getAwsTemporaryCredentials(AthenzDomain athenzDomain, AwsRole awsRole, Duration duration, String externalId) {
+        URI uri = ztsUrl.resolve(
+                String.format("domain/%s/role/%s/creds", athenzDomain.getName(), awsRole.encodedName()));
+        RequestBuilder requestBuilder = RequestBuilder.get(uri);
+
+        // Add optional durationSeconds and externalId parameters
+        Optional.ofNullable(duration).ifPresent(d -> requestBuilder.addParameter("durationSeconds", Long.toString(duration.getSeconds())));
+        Optional.ofNullable(externalId).ifPresent(s -> requestBuilder.addParameter("externalId", s));
+
+        HttpUriRequest request = requestBuilder.build();
+        return execute(request, response -> {
+            AwsTemporaryCredentialsResponseEntity entity = readEntity(response, AwsTemporaryCredentialsResponseEntity.class);
+            return entity.credentials();
         });
     }
 

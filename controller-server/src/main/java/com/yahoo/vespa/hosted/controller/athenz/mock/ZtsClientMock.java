@@ -5,6 +5,8 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.api.AwsRole;
+import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.client.zts.Identity;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
@@ -79,6 +81,11 @@ public class ZtsClientMock implements ZtsClient {
 
     @Override
     public X509Certificate getRoleCertificate(AthenzRole role, Pkcs10Csr csr) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AwsTemporaryCredentials getAwsTemporaryCredentials(AthenzDomain athenzDomain, AwsRole awsRole, Duration duration, String externalId) {
         throw new UnsupportedOperationException();
     }
 

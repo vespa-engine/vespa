@@ -1,12 +1,14 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zts;
 
+import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.api.AwsRole;
+import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.ZToken;
-import com.yahoo.security.Pkcs10Csr;
 
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -107,6 +109,37 @@ public interface ZtsClient extends AutoCloseable {
      * @return List of domains
      */
     List<AthenzDomain> getTenantDomains(AthenzIdentity providerIdentity, AthenzIdentity userIdentity, String roleName);
+
+    /**
+     * Get aws temporary credentials
+     *
+     * @param awsRole AWS role to get credentials for
+     * @return AWS temporary credentials
+     */
+    default AwsTemporaryCredentials getAwsTemporaryCredentials(AthenzDomain athenzDomain, AwsRole awsRole) {
+        return getAwsTemporaryCredentials(athenzDomain, awsRole, null, null);
+    }
+
+    /**
+     * Get aws temporary credentials
+     *
+     * @param awsRole AWS role to get credentials for
+     * @param externalId External Id to get credentials, or <code>null</code> if not required
+     * @return AWS temporary credentials
+     */
+    default AwsTemporaryCredentials getAwsTemporaryCredentials(AthenzDomain athenzDomain, AwsRole awsRole, String externalId) {
+        return getAwsTemporaryCredentials(athenzDomain, awsRole, null, externalId);
+    }
+
+    /**
+     * Get aws temporary credentials
+     *
+     * @param awsRole AWS role to get credentials for
+     * @param duration Duration for which the credentials should be valid, or <code>null</code> to use default
+     * @param externalId External Id to get credentials, or <code>null</code> if not required
+     * @return AWS temporary credentials
+     */
+    AwsTemporaryCredentials getAwsTemporaryCredentials(AthenzDomain athenzDomain, AwsRole awsRole, Duration duration, String externalId);
 
     void close();
 }
