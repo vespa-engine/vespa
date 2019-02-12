@@ -20,21 +20,24 @@ import java.util.stream.Collectors;
  * Represents the DNS routing policy for a load balancer.
  *
  * @author mortent
+ * @author mpolden
  */
 public class RoutingPolicy {
 
     private static final String ignoredEndpointPart = "default";
 
     private final ApplicationId owner;
+    private final ZoneId zone;
     private final String recordId;
     private final HostName alias;
     private final HostName canonicalName;
     private final Optional<String> dnsZone;
     private final Set<RotationName> rotations;
 
-    public RoutingPolicy(ApplicationId owner, String recordId, HostName alias, HostName canonicalName,
+    public RoutingPolicy(ApplicationId owner, ZoneId zone, String recordId, HostName alias, HostName canonicalName,
                          Optional<String> dnsZone, Set<RotationName> rotations) {
         this.owner = Objects.requireNonNull(owner, "owner must be non-null");
+        this.zone = Objects.requireNonNull(zone, "zone must be non-null");
         this.recordId = Objects.requireNonNull(recordId, "recordId must be non-null");
         this.alias = Objects.requireNonNull(alias, "alias must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
@@ -47,17 +50,22 @@ public class RoutingPolicy {
         return owner;
     }
 
+    /** The zone this applies to */
+    public ZoneId zone() {
+        return zone;
+    }
+
     /** The ID of the DNS record identifying this */
     public String recordId() {
         return recordId;
     }
 
-    /** This alias (lhs of a CNAME record) */
+    /** This alias (lhs of a CNAME or ALIAS record) */
     public HostName alias() {
         return alias;
     }
 
-    /** The canonical name for this (rhs of a CNAME record) */
+    /** The canonical name for this (rhs of a CNAME or ALIAS record) */
     public HostName canonicalName() {
         return canonicalName;
     }
@@ -78,6 +86,7 @@ public class RoutingPolicy {
         if (o == null || getClass() != o.getClass()) return false;
         RoutingPolicy that = (RoutingPolicy) o;
         return owner.equals(that.owner) &&
+               zone.equals(that.zone) &&
                recordId.equals(that.recordId) &&
                alias.equals(that.alias) &&
                canonicalName.equals(that.canonicalName) &&
@@ -87,13 +96,14 @@ public class RoutingPolicy {
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, recordId, alias, canonicalName, dnsZone, rotations);
+        return Objects.hash(owner, zone, recordId, alias, canonicalName, dnsZone, rotations);
     }
 
     @Override
     public String toString() {
-        return String.format("%s: %s -> %s [rotations: %s%s], owned by %s", recordId, alias, canonicalName, rotations,
-                             dnsZone.map(z -> ", DNS zone: " + z).orElse(""), owner.toShortString());
+        return String.format("%s: %s -> %s [rotations: %s%s], owned by %s, in %s", recordId, alias, canonicalName, rotations,
+                             dnsZone.map(z -> ", DNS zone: " + z).orElse(""), owner.toShortString(),
+                             zone.value());
     }
 
     public static String createAlias(ClusterSpec.Id clusterId, ApplicationId applicationId, ZoneId zoneId) {

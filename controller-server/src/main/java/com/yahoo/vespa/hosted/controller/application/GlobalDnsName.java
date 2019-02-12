@@ -2,9 +2,11 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.SystemName;
 
 import java.net.URI;
+import java.util.Objects;
 
 /**
  * Represents an application's global rotation.
@@ -24,30 +26,34 @@ public class GlobalDnsName {
     private final URI oathUrl;
 
     public GlobalDnsName(ApplicationId application, SystemName system) {
-        this.url = URI.create(String.format("http://%s%s.%s.%s:%d/",
-                                            getSystemPart(system, "."),
+        this(application, system, null);
+    }
+
+    public GlobalDnsName(ApplicationId application, SystemName system, RotationName rotation) {
+        Objects.requireNonNull(application, "application must be non-null");
+        Objects.requireNonNull(system, "system must be non-null");
+
+        this.url = URI.create(String.format("http://%s%s%s.%s.%s:%d/",
+                                            clusterPart(rotation, "."),
+                                            systemPart(system, "."),
                                             sanitize(application.application().value()),
                                             sanitize(application.tenant().value()),
                                             DNS_SUFFIX,
                                             port));
-        this.secureUrl = URI.create(String.format("https://%s%s--%s.%s:%d/",
-                                                  getSystemPart(system, "--"),
+        this.secureUrl = URI.create(String.format("https://%s%s%s--%s.%s:%d/",
+                                                  clusterPart(rotation, "--"),
+                                                  systemPart(system, "--"),
                                                   sanitize(application.application().value()),
                                                   sanitize(application.tenant().value()),
                                                   DNS_SUFFIX,
                                                   securePort));
-        this.oathUrl = URI.create(String.format("https://%s%s--%s.%s:%d/",
-                                                getSystemPart(system, "--"),
+        this.oathUrl = URI.create(String.format("https://%s%s%s--%s.%s:%d/",
+                                                clusterPart(rotation, "--"),
+                                                systemPart(system, "--"),
                                                 sanitize(application.application().value()),
                                                 sanitize(application.tenant().value()),
                                                 OATH_DNS_SUFFIX,
                                                 securePort));
-    }
-
-    private String getSystemPart(SystemName system, String separator) {
-        return SystemName.main.equals(system)
-                ? ""
-                : system.name() + separator;
     }
 
     /** URL to this rotation */
@@ -83,6 +89,14 @@ public class GlobalDnsName {
     /** Sanitize by translating '_' to '-' as the former is not allowed in a DNS name */
     private static String sanitize(String s) {
         return s.replace('_', '-');
+    }
+
+    private static String clusterPart(RotationName rotation, String separator) {
+        return rotation == null ? "" : rotation.value() + separator;
+    }
+
+    private static String systemPart(SystemName system, String separator) {
+        return SystemName.main == system ? "" : system.name() + separator;
     }
 
 }

@@ -2,12 +2,15 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 
 import java.util.Collections;
@@ -29,6 +32,7 @@ public class RoutingPolicySerializer {
     private static final String recordIdField = "recordId";
     private static final String aliasField = "alias";
     private static final String canonicalNameField = "canonicalName";
+    private static final String zoneField = "zone";
     private static final String dnsZoneField = "dnsZone";
     private static final String rotationsField = "rotations";
 
@@ -40,6 +44,7 @@ public class RoutingPolicySerializer {
             Cursor policyObject = policyArray.addObject();
             policyObject.setString(recordIdField, policy.recordId());
             policyObject.setString(aliasField, policy.alias().value());
+            policyObject.setString(zoneField, policy.zone().value());
             policyObject.setString(canonicalNameField, policy.canonicalName().value());
             policy.dnsZone().ifPresent(dnsZone -> policyObject.setString(dnsZoneField, dnsZone));
             Cursor rotationArray = policyObject.setArray(rotationsField);
@@ -65,6 +70,8 @@ public class RoutingPolicySerializer {
                 recordId = inspect.field(idField); // TODO: Remove after 7.9 has been released
             }
             policies.add(new RoutingPolicy(owner,
+                                           // TODO: Remove fallback after 7.13 has been released
+                                           optionalField(inspect.field(zoneField), ZoneId::from).orElse(ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName())),
                                            recordId.asString(),
                                            HostName.from(inspect.field(aliasField).asString()),
                                            HostName.from(inspect.field(canonicalNameField).asString()),
