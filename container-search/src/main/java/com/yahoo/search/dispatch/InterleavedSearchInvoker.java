@@ -105,8 +105,8 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     log.fine(() -> "Search timed out with " + askedNodes + " requests made, " + answeredNodes + " responses received");
                     break;
                 } else {
-                    invokers.remove(invoker);
                     mergeResult(invoker.getSearchResult(cacheKey, execution));
+                    ejectInvoker(invoker);
                 }
                 nextTimeout = nextTimeout();
             }
@@ -239,6 +239,11 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                 }
             }
         }
+    }
+
+    private void ejectInvoker(SearchInvoker invoker) {
+        invokers.remove(invoker);
+        invoker.release();
     }
 
     @Override
