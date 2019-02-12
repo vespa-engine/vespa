@@ -99,7 +99,7 @@ public class FailedExpirer extends Maintainer {
     private void recycle(List<Node> nodes) {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node candidate : nodes) {
-            if (hasHardwareIssue(candidate)) {
+            if (NodeFailer.hasHardwareIssue(candidate, nodes)) {
                 List<String> unparkedChildren = !candidate.type().isDockerHost() ? Collections.emptyList() :
                         nodeRepository.list().childrenOf(candidate).asList().stream()
                                       .filter(node -> node.state() != Node.State.parked)
@@ -127,11 +127,4 @@ public class FailedExpirer extends Maintainer {
         return (zone.environment() == Environment.prod || zone.environment() == Environment.staging) &&
                node.status().failCount() >= maxAllowedFailures;
     }
-
-    /** Returns whether node has any kind of hardware issue */
-    private static boolean hasHardwareIssue(Node node) {
-        return node.status().hardwareFailureDescription().isPresent() ||
-               node.status().hardwareDivergence().isPresent();
-    }
-
 }

@@ -8,9 +8,11 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Report;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -92,6 +94,50 @@ public class NodeFailerTest {
         tester.failer.run();
         assertEquals(Node.State.failed, tester.nodeRepository.getNode(hostWithHwFailure).get().state());
         assertEquals(4, tester.nodeRepository.getNodes(Node.State.failed).size());
+    }
+
+    @Test
+    public void set_want_to_retire_if_failure_report() {
+        NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(6);
+        String dockerHostWithFailureReport = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2);
+
+        // Set failure report to the parent and all its children.
+        Report badTotalMemorySizeReport = Report.basicReport("badTotalMemorySize", Instant.now(), "too low");
+        tester.nodeRepository.getNodes().stream()
+                .filter(node -> node.hostname().equals(dockerHostWithFailureReport))
+                .forEach(node -> {
+                    Node updatedNode = node.with(node.reports().withReport(badTotalMemorySizeReport));
+                    tester.nodeRepository.write(updatedNode);
+                });
+
+        {
+            // The host should have 2 nodes in active and 1 ready
+            List<Node> childNodes = tester.nodeRepository.list().childrenOf(dockerHostWithFailureReport).asList();
+            Map<Node.State, List<String>> hostnamesByState = childNodes.stream()
+                    .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
+            assertEquals(2, hostnamesByState.get(Node.State.active).size());
+            assertEquals(1, hostnamesByState.get(Node.State.ready).size());
+        }
+
+        tester.failer.run();
+        tester.clock.advance(Duration.ofHours(25));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+
+        {
+            List<Node> childNodes = tester.nodeRepository.list().childrenOf(dockerHostWithFailureReport).asList();
+            assertEquals(3, childNodes.size());
+
+            // The active nodes -> wantToRetire
+            List<Node> activeChildNodes = childNodes.stream().filter(n -> n.state() == Node.State.active).collect(Collectors.toList());
+            assertEquals(2, activeChildNodes.size());
+            assertTrue(activeChildNodes.stream().allMatch(n -> n.status().wantToRetire()));
+
+            // The ready node -> failed
+            List<Node> failedChildNodes = childNodes.stream().filter(n -> n.state() == Node.State.failed).collect(Collectors.toList());
+            assertEquals(1, failedChildNodes.size());
+            assertTrue(activeChildNodes.stream().allMatch(n -> n.status().wantToRetire()));
+        }
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
@@ -135,7 +136,7 @@ public class NodePatcher {
             case "additionalIpAddresses" :
                 return node.withIpAddressPool(asStringSet(value));
             case WANT_TO_RETIRE :
-                return node.withWantToRetire(asBoolean(value), nodeRepository.clock().instant());
+                return node.withWantToRetire(asBoolean(value), Agent.operator, nodeRepository.clock().instant());
             case WANT_TO_DEPROVISION :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
             case "hardwareDivergence" :

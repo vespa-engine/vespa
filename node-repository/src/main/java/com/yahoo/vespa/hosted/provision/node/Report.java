@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.node;
 
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 
 import java.time.Instant;
@@ -22,14 +23,16 @@ public class Report {
 
     private final String reportId;
     private final Instant createdTime;
+    private final String description;
 
     // This is the serialized report which is typically richer than we know of in this class. It's up to
     // clients of specific reports to query the details.
     private final Inspector reportInspector;
 
-    private Report(String reportId, Instant createdTime, Inspector reportInspector) {
+    private Report(String reportId, Instant createdTime, String description, Inspector reportInspector) {
         this.reportId = reportId;
         this.createdTime = createdTime;
+        this.description = description;
         this.reportInspector = reportInspector;
     }
 
@@ -45,11 +48,16 @@ public class Report {
     public boolean shouldFailNode() { return !getDescription().isEmpty(); }
 
     /** A textual summary of the report. */
-    public String getDescription() { return reportInspector.field(DESCRIPTION_FIELD).asString(); }
+    public String getDescription() { return description; }
 
     /** For exploring the JSON (Slime) of the report. */
     public Inspector getInspector() {
         return reportInspector;
+    }
+
+    /** Create the simplest possible report. */
+    public static Report basicReport(String reportId, Instant createdTime, String description) {
+        return new Report(reportId, createdTime, description,  new Slime().setObject());
     }
 
     /** The reportInspector will be used to serialize the full report later, including any createdTime and description. */
@@ -61,14 +69,18 @@ public class Report {
         }
         Instant createdTime = Instant.ofEpochMilli(millisSinceEpoch);
 
-        return new Report(reportId, createdTime, reportInspector);
+        String description = reportInspector.field(DESCRIPTION_FIELD).asString();
+
+        return new Report(reportId, createdTime, description, reportInspector);
     }
 
     public void toSlime(Cursor reportCursor) {
         SlimeUtils.copyObject(reportInspector, reportCursor);
 
-        // If the above inject inserted the created timestamp field, this is a no-op, which is what we want:
-        // We'd like the created field to be set the first time we see it, if it is not already set then.
+        // In Slime, trying to overwrite an already existing field is a no-op.
+        // We'll write the required fields now. If they weren't already set by the above copyObject,
+        // in particular the created field, the below will be set it to the current timestamp which is what we want.
         reportCursor.setLong(CREATED_FIELD, createdTime.toEpochMilli());
+        if (!description.isEmpty()) reportCursor.setString(DESCRIPTION_FIELD, description);
     }
 }

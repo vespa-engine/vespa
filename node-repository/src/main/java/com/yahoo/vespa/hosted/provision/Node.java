@@ -266,13 +266,13 @@ public final class Node {
      * Returns a copy of this node with wantToRetire set to the given value and updated history.
      * If given wantToRetire is equal to the current, the method is no-op.
      */
-    public Node withWantToRetire(boolean wantToRetire, Instant at) {
+    public Node withWantToRetire(boolean wantToRetire, Agent agent, Instant at) {
         if (wantToRetire == status.wantToRetire()) return this;
         return new Builder(this)
                 .withStatus(status.withWantToRetire(wantToRetire))
                 // Also update history when we un-wantToRetire so the OperatorChangeApplicationMaintainer picks it
                 // up quickly
-                .withHistoryEvent(History.Event.Type.wantToRetire, Agent.operator, at)
+                .withHistoryEvent(History.Event.Type.wantToRetire, agent, at)
                 .build();
     }
 
