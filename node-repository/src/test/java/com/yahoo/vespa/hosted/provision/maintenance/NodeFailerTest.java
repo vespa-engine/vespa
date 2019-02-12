@@ -111,20 +111,34 @@ public class NodeFailerTest {
                 });
 
         {
-            // The host should have 2 nodes in active and 1 ready
+            // The host is active
+            Node parentNode = tester.nodeRepository.getNode(dockerHostWithFailureReport).orElseThrow();
+            assertEquals(Node.State.active, parentNode.state());
+            assertEquals(1, parentNode.reports().getReports().size());
+            assertFalse(parentNode.status().wantToRetire());
+
             List<Node> childNodes = tester.nodeRepository.list().childrenOf(dockerHostWithFailureReport).asList();
-            Map<Node.State, List<String>> hostnamesByState = childNodes.stream()
-                    .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
-            assertEquals(2, hostnamesByState.get(Node.State.active).size());
-            assertEquals(1, hostnamesByState.get(Node.State.ready).size());
+            assertEquals(3, childNodes.size());
+
+            // The 2 active child nodes
+            List<Node> activeChildNodes = childNodes.stream().filter(n -> n.state() == Node.State.active).collect(Collectors.toList());
+            assertEquals(2, activeChildNodes.size());
+            assertTrue(activeChildNodes.stream().noneMatch(n -> n.status().wantToRetire()));
+
+            // The ready child node
+            List<Node> failedChildNodes = childNodes.stream().filter(n -> n.state() == Node.State.ready).collect(Collectors.toList());
+            assertEquals(1, failedChildNodes.size());
+            assertTrue(activeChildNodes.stream().noneMatch(n -> n.status().wantToRetire()));
         }
 
         tester.failer.run();
-        tester.clock.advance(Duration.ofHours(25));
-        tester.allNodesMakeAConfigRequestExcept();
-        tester.failer.run();
 
         {
+            // The host is active with wantToRetire
+            Node parentNode = tester.nodeRepository.getNode(dockerHostWithFailureReport).orElseThrow();
+            assertEquals(Node.State.active, parentNode.state());
+            assertTrue(parentNode.status().wantToRetire());
+
             List<Node> childNodes = tester.nodeRepository.list().childrenOf(dockerHostWithFailureReport).asList();
             assertEquals(3, childNodes.size());
 
@@ -133,10 +147,42 @@ public class NodeFailerTest {
             assertEquals(2, activeChildNodes.size());
             assertTrue(activeChildNodes.stream().allMatch(n -> n.status().wantToRetire()));
 
-            // The ready node -> failed
+            // The ready node -> failed with wantToRetire
             List<Node> failedChildNodes = childNodes.stream().filter(n -> n.state() == Node.State.failed).collect(Collectors.toList());
             assertEquals(1, failedChildNodes.size());
             assertTrue(activeChildNodes.stream().allMatch(n -> n.status().wantToRetire()));
+        }
+
+        // Set wantToRetire on the second host. Rate limiting will keep it from becoming wantToRetire
+
+        String dockerHost2 = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2, dockerHostWithFailureReport);
+        tester.nodeRepository.getNodes().stream()
+                .filter(node -> node.hostname().equals(dockerHost2))
+                .forEach(node -> {
+                    Node updatedNode = node.with(node.reports().withReport(badTotalMemorySizeReport));
+                    tester.nodeRepository.write(updatedNode);
+                });
+
+        {
+            // dockerHost2 is active and with reports
+            Node parentNode = tester.nodeRepository.getNode(dockerHost2).orElseThrow();
+            assertEquals(Node.State.active, parentNode.state());
+            assertEquals(1, parentNode.reports().getReports().size());
+            assertFalse(parentNode.status().wantToRetire());
+
+            List<Node> childNodes = tester.nodeRepository.list().childrenOf(dockerHost2).asList();
+            assertEquals(3, childNodes.size());
+        }
+
+        tester.clock.advance(Duration.ofHours(25));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+
+        {
+            // dockerHost2 is active with wantToRetire
+            Node parentNode = tester.nodeRepository.getNode(dockerHost2).orElseThrow();
+            assertEquals(Node.State.active, parentNode.state());
+            assertFalse(parentNode.status().wantToRetire());
         }
     }
 

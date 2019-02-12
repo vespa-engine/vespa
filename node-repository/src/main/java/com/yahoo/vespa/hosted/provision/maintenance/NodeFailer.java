@@ -133,14 +133,23 @@ public class NodeFailer extends Maintainer {
             failActive(node, reason);
         }
 
-        // Retire active nodes
-        for (Node node : activeNodes) {
-            if (!failAllowedFor(node.type())) continue;
-            if (nodesWithFailureReason.contains(node)) continue;
-            if (node.parentHostname().isPresent()) continue; // Defer to parent host (it should be active too)
+        // Retire active nodes. Only allow 1 active host to be wantToRetire at a time for rate limiting.
+        final long maxWantToRetireHosts = 1;
+        List<Node> candidateNodes = activeNodes.stream()
+                .filter(node -> failAllowedFor(node.type()))
+                .filter(node -> !nodesWithFailureReason.contains(node))
+                // Defer to parent host (it should also be active)
+                .filter(node -> node.parentHostname().isEmpty())
+                .collect(Collectors.toList());
+        long currentWantToRetireHosts = candidateNodes.stream().filter(node -> node.status().wantToRetire()).count();
+
+        for (int i = 0; i < candidateNodes.size() && currentWantToRetireHosts < maxWantToRetireHosts; ++i) {
+            Node node = candidateNodes.get(i);
             List<String> reasons = reasonsToRetireActiveParentHost(node);
-            if (reasons.isEmpty()) continue;
-            retireRecursively(node, reasons, activeNodes);
+            if (reasons.size() > 0) {
+                retireRecursively(node, reasons, activeNodes);
+                ++currentWantToRetireHosts;
+            }
         }
 
         metric.set(throttlingActiveMetric, Math.min( 1, throttledNodeFailures), null);
@@ -286,14 +295,12 @@ public class NodeFailer extends Maintainer {
     }
 
     /** Returns whether node has any kind of hardware issue */
-    public static boolean hasHardwareIssue(Node node, List<Node> nodes) {
+    public static boolean hasHardwareIssue(Node node, NodeRepository nodeRepository) {
         if (node.status().hardwareFailureDescription().isPresent() || node.status().hardwareDivergence().isPresent()) {
             return true;
         }
 
-        Node hostNode = node.parentHostname()
-                .flatMap(parent -> nodes.stream().filter(n -> n.hostname().equals(parent)).findFirst())
-                .orElse(node);
+        Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository.getNode(parent)).orElse(node);
         return reasonsToRetireActiveParentHost(hostNode).size() > 0;
     }
 
