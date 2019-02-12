@@ -10,7 +10,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -28,13 +27,11 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
-import java.util.stream.Collectors;
 
 /**
  * An application that has been locked for modification. Provides methods for modifying an application's fields.
@@ -150,8 +147,7 @@ public class LockedApplication {
                                                   previousDeployment.clusterUtils(),
                                                   previousDeployment.clusterInfo(),
                                                   previousDeployment.metrics(),
-                                                  previousDeployment.activity(),
-                                                  previousDeployment.loadBalancers());
+                                                  previousDeployment.activity());
         return with(newDeployment);
     }
 
@@ -252,13 +248,6 @@ public class LockedApplication {
     public LockedApplication withRotationStatus(Map<HostName, RotationStatus> rotationStatus) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs, change,
                                      outstandingChange, ownershipIssueId, owner, majorVersion, metrics, rotation, rotationStatus);
-    }
-
-    public LockedApplication withLoadBalancersIn(ZoneId zoneId, List<LoadBalancer> loadBalancers) {
-        Map<ClusterSpec.Id, HostName> loadBalancersByCluster = loadBalancers.stream()
-                                                                            .collect(Collectors.toUnmodifiableMap(LoadBalancer::cluster,
-                                                                                                                  LoadBalancer::hostname));
-        return with(deployments.get(zoneId).withLoadBalancers(loadBalancersByCluster));
     }
 
     /** Don't expose non-leaf sub-objects. */

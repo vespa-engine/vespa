@@ -52,7 +52,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
     private final Version initialVersion = new Version(6, 1, 0);
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
-    private final Map<DeploymentId, List<LoadBalancer>> loadBalancers = new HashMap<>();
+    private final Map<ZoneId, List<LoadBalancer>> loadBalancers = new HashMap<>();
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
@@ -171,16 +171,22 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public List<LoadBalancer> getLoadBalancers(DeploymentId deployment) {
-        return loadBalancers.getOrDefault(deployment, Collections.emptyList());
+    public List<LoadBalancer> getLoadBalancers(ZoneId zone) {
+        return loadBalancers.getOrDefault(zone, Collections.emptyList());
     }
 
-    public void addLoadBalancers(ZoneId zoneId, ApplicationId applicationId, List<LoadBalancer> loadBalancers) {
-        this.loadBalancers.put(new DeploymentId(applicationId, zoneId), loadBalancers);
+    public void addLoadBalancers(ZoneId zone, List<LoadBalancer> loadBalancers) {
+        this.loadBalancers.compute(zone, (k, existing) -> {
+           if (existing == null) {
+               existing = new ArrayList<>();
+           }
+           existing.addAll(loadBalancers);
+           return existing;
+        });
     }
 
-    public void removeLoadBalancers(DeploymentId deployment) {
-        this.loadBalancers.remove(deployment);
+    public void removeLoadBalancers(ApplicationId application, ZoneId zone) {
+        getLoadBalancers(zone).removeIf(lb -> lb.application().equals(application));
     }
 
     @Override

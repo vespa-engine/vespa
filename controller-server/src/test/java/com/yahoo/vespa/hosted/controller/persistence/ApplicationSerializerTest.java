@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -80,7 +79,7 @@ public class ApplicationSerializerTest {
                                        createClusterUtils(3, 0.2), createClusterInfo(3, 4),
                                        new DeploymentMetrics(2, 3, 4, 5, 6, Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS))),
                                        DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
-                                                                 OptionalDouble.of(200), OptionalDouble.of(10)), createLoadBalancers("default", "foo.bar")));
+                                                                 OptionalDouble.of(200), OptionalDouble.of(10))));
 
         OptionalLong projectId = OptionalLong.of(123L);
         List<JobStatus> statusList = new ArrayList<>();
@@ -200,9 +199,6 @@ public class ApplicationSerializerTest {
             Application original6 = writable(original).withOutstandingChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
             Application serialized6 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original6));
             assertEquals(original6.outstandingChange(), serialized6.outstandingChange());
-
-            assertEquals(1, serialized.deployments().get(zone2).loadBalancers().size());
-            assertEquals(original.deployments().get(zone2).loadBalancers(), serialized.deployments().get(zone2).loadBalancers());
         }
     }
 
@@ -234,10 +230,6 @@ public class ApplicationSerializerTest {
                     util.getDiskBusy() + agg));
         }
         return result;
-    }
-
-    private Map<ClusterSpec.Id, HostName> createLoadBalancers(String clusterId, String hostName) {
-        return ImmutableMap.of(ClusterSpec.Id.from(clusterId), HostName.from(hostName));
     }
 
     @Test

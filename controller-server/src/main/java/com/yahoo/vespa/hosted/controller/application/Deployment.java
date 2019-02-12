@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ClusterSpec.Id;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
@@ -30,17 +29,16 @@ public class Deployment {
     private final Map<Id, ClusterInfo> clusterInfo;
     private final DeploymentMetrics metrics;
     private final DeploymentActivity activity;
-    private final Map<Id, HostName> loadBalancers;
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime) {
         this(zone, applicationVersion, version, deployTime, Collections.emptyMap(), Collections.emptyMap(),
-             DeploymentMetrics.none, DeploymentActivity.none, Collections.emptyMap());
+             DeploymentMetrics.none, DeploymentActivity.none);
     }
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime,
                       Map<Id, ClusterUtilization> clusterUtilization, Map<Id, ClusterInfo> clusterInfo,
                       DeploymentMetrics metrics,
-                      DeploymentActivity activity, Map<Id, HostName> loadBalancers) {
+                      DeploymentActivity activity) {
         this.zone = Objects.requireNonNull(zone, "zone cannot be null");
         this.applicationVersion = Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
         this.version = Objects.requireNonNull(version, "version cannot be null");
@@ -49,7 +47,6 @@ public class Deployment {
         this.clusterInfo = ImmutableMap.copyOf(Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null"));
         this.metrics = Objects.requireNonNull(metrics, "deploymentMetrics cannot be null");
         this.activity = Objects.requireNonNull(activity, "activity cannot be null");
-        this.loadBalancers = ImmutableMap.copyOf(Objects.requireNonNull(loadBalancers, "loadBalancers cannot be null"));
     }
 
     /** Returns the zone this was deployed to */
@@ -82,33 +79,24 @@ public class Deployment {
         return clusterUtilization;
     }
 
-    public Map<Id, HostName> loadBalancers() {
-        return loadBalancers;
-    }
-
     public Deployment recordActivityAt(Instant instant) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
-                              activity.recordAt(instant, metrics), loadBalancers);
+                              activity.recordAt(instant, metrics));
     }
 
     public Deployment withClusterUtils(Map<Id, ClusterUtilization> clusterUtilization) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
-                              activity, loadBalancers);
+                              activity);
     }
 
     public Deployment withClusterInfo(Map<Id, ClusterInfo> newClusterInfo) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, newClusterInfo, metrics,
-                              activity, loadBalancers);
+                              activity);
     }
 
     public Deployment withMetrics(DeploymentMetrics metrics) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
-                              activity, loadBalancers);
-    }
-
-    public Deployment withLoadBalancers(Map<Id, HostName> loadBalancers) {
-        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
-                              activity, loadBalancers);
+                              activity);
     }
 
     /**
