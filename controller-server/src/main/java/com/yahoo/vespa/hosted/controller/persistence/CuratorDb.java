@@ -120,6 +120,7 @@ public class CuratorDb {
 
     /** Creates a reentrant lock */
     private Lock lock(Path path, Duration timeout) {
+        curator.create(path);
         Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator));
         lock.acquire(timeout);
         return lock;
@@ -502,59 +503,36 @@ public class CuratorDb {
     // -------------- Paths ---------------------------------------------------
 
     private Path lockPath(TenantName tenant) {
-        Path lockPath = lockRoot
+        return lockRoot
                 .append(tenant.value());
-        curator.create(lockPath);
-        return lockPath;
     }
 
     private Path lockPath(ApplicationId application) {
-        Path lockPath = lockRoot
-                .append(application.tenant().value())
+        return lockPath(application.tenant())
                 .append(application.application().value())
                 .append(application.instance().value());
-        curator.create(lockPath);
-        return lockPath;
     }
 
     private Path lockPath(ApplicationId application, ZoneId zone) {
-        Path lockPath = lockRoot
-                .append(application.tenant().value())
-                .append(application.application().value())
-                .append(application.instance().value())
+        return lockPath(application)
                 .append(zone.environment().value())
                 .append(zone.region().value());
-        curator.create(lockPath);
-        return lockPath;
     }
 
     private Path lockPath(ApplicationId application, JobType type) {
-        Path lockPath = lockRoot
-                .append(application.tenant().value())
-                .append(application.application().value())
-                .append(application.instance().value())
+        return lockPath(application)
                 .append(type.jobName());
-        curator.create(lockPath);
-        return lockPath;
     }
 
     private Path lockPath(ApplicationId application, JobType type, Step step) {
-        Path lockPath = lockRoot
-                .append(application.tenant().value())
-                .append(application.application().value())
-                .append(application.instance().value())
-                .append(type.jobName())
+        return lockPath(application, type)
                 .append(step.name());
-        curator.create(lockPath);
-        return lockPath;
     }
 
     private Path lockPath(String provisionId) {
-        Path lockPath = lockRoot
+        return lockRoot
                 .append(provisionStatePath())
                 .append(provisionId);
-        curator.create(lockPath);
-        return lockPath;
     }
 
     private static Path inactiveJobsPath() {
