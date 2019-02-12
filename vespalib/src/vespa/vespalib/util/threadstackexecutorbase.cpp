@@ -43,6 +43,10 @@ ThreadStackExecutorBase::BlockedThread::unblock()
 
 //-----------------------------------------------------------------------------
 
+thread_local ThreadStackExecutorBase *ThreadStackExecutorBase::_master = nullptr;
+
+//-----------------------------------------------------------------------------
+
 void
 ThreadStackExecutorBase::block_thread(const LockGuard &, BlockedThread &blocked_thread)
 {
@@ -114,6 +118,7 @@ void
 ThreadStackExecutorBase::run()
 {
     Worker worker;
+    _master = this;
     worker.verify(/* idle: */ true);
     while (obtainTask(worker)) {
         worker.verify(/* idle: */ false);
@@ -122,6 +127,7 @@ ThreadStackExecutorBase::run()
     }
     _executorCompletion.await(); // to allow unsafe signaling
     worker.verify(/* idle: */ true);
+    _master = nullptr;
 }
 
 //-----------------------------------------------------------------------------
