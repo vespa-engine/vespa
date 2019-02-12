@@ -181,6 +181,12 @@ void
 GroupTest::testStarConversion()
 {
     {
+        MAKEGROUP(g, "group", 0, "*");
+        std::vector<double> distribution = g.getDistribution(3);
+        CPPUNIT_ASSERT_EQUAL((size_t) 1, distribution.size());
+        CPPUNIT_ASSERT_EQUAL((double) 3, distribution[0]);
+    }
+    {
         MAKEGROUP(g, "group", 0, "1|*|*");
         std::vector<double> distribution = g.getDistribution(5);
         CPPUNIT_ASSERT_EQUAL((size_t) 3, distribution.size());
@@ -243,6 +249,14 @@ GroupTest::testStarConversion()
         CPPUNIT_ASSERT_EQUAL((double) 2, distribution[0]);
         CPPUNIT_ASSERT_EQUAL((double) 2, distribution[1]);
         CPPUNIT_ASSERT_EQUAL((double) 1, distribution[2]);
+    }
+    {
+        MAKEGROUP(g, "group", 0, "*|*|*");
+        std::vector<double> distribution = g.getDistribution(12); // Shall be evenly divided
+        CPPUNIT_ASSERT_EQUAL((size_t) 3, distribution.size());
+        CPPUNIT_ASSERT_EQUAL((double) 4, distribution[0]);
+        CPPUNIT_ASSERT_EQUAL((double) 4, distribution[1]);
+        CPPUNIT_ASSERT_EQUAL((double) 4, distribution[2]);
     }
     {
         MAKEGROUP(g, "group", 0, "*|*|*|*");
