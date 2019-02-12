@@ -83,7 +83,7 @@ public class AllocationSimulator {
         return new Node("fake", Collections.singleton("127.0.0.1"),
                 parent.isPresent() ? Collections.emptySet() : getAdditionalIP(), hostname, parent, flavor, Status.initial(),
                 parent.isPresent() ? Node.State.ready : Node.State.active, allocation(tenant), History.empty(),
-                parent.isPresent() ? NodeType.tenant : NodeType.host, new Reports());
+                parent.isPresent() ? NodeType.tenant : NodeType.host, new Reports(), Optional.empty());
     }
 
     private Set<String> getAdditionalIP() {

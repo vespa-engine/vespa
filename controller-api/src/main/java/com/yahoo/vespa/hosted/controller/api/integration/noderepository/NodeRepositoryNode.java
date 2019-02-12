@@ -427,7 +427,7 @@ public class NodeRepositoryNode {
                ", description='" + description + '\'' +
                ", history=" + Arrays.toString(history) +
                ", allowedToBeDown=" + allowedToBeDown +
-                ",modelId=" + modelId +
+               ", modelId=" + modelId +
                '}';
     }
 }
