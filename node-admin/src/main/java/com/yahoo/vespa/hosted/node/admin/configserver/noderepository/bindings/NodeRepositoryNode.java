@@ -54,7 +54,7 @@ public class NodeRepositoryNode {
     public Long currentFirmwareCheck;
     @JsonProperty("wantedFirmwareCheck")
     public Long wantedFirmwareCheck;
-    @JsonProperty("ModelId")
+    @JsonProperty("modelId")
     public String modelId;
     @JsonProperty("failCount")
     public Integer failCount;

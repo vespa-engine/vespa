@@ -83,6 +83,7 @@ public final class Node {
         Objects.requireNonNull(history, "A null node history is not permitted");
         Objects.requireNonNull(type, "A null node type is not permitted");
         Objects.requireNonNull(reports, "A null reports is not permitted");
+        Objects.requireNonNull(modelId, "A null modelId is not permitted");
 
         if (state == State.active)
             requireNonEmpty(ipAddresses, "An active node must have at least one valid IP address");
@@ -270,6 +271,7 @@ public final class Node {
     /** Returns all the reports on this node. */
     public Reports reports() { return reports; }
 
+    /** Returns the hardware model of this node */
     public Optional<String> modelId() { return modelId; }
 
     /**
