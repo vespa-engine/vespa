@@ -148,6 +148,7 @@ public class ConfigServerBootstrapTest {
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
+        bootstrap.deconstruct();
     }
 
     private void waitUntil(BooleanSupplier booleanSupplier, String messageIfWaitingFails) throws InterruptedException {
