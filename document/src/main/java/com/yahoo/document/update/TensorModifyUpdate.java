@@ -6,9 +6,11 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Objects;
+import java.util.function.DoubleBinaryOperator;
 
 /*
  *  An update for the subset of the cells in a tensor.
@@ -46,11 +48,23 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
     public TensorFieldValue getValue() { return tensor; }
     public void setValue(TensorFieldValue value) { tensor = value; }
 
-
     @Override
     public FieldValue applyTo(FieldValue oldValue) {
         if (oldValue instanceof TensorFieldValue) {
-            // TODO: implement
+            Tensor oldTensor = ((TensorFieldValue)oldValue).getTensor().orElseThrow(
+                    () -> new IllegalArgumentException("No existing tensor to apply update on"));
+            if (tensor.getTensor().isPresent()) {
+                DoubleBinaryOperator modifier;
+                switch (operation) {
+                    case REPLACE:  modifier = (left, right) -> right; break;
+                    case ADD:      modifier = (left, right) -> left + right; break;
+                    case MULTIPLY: modifier = (left, right) -> left * right; break;
+                    default:
+                        throw new UnsupportedOperationException("Unknown operation: " + operation);
+                }
+                Tensor modified = oldTensor.modify(modifier, tensor.getTensor().get().cells());
+                return new TensorFieldValue(modified);
+            }
         } else {
             throw new IllegalStateException("Cannot use tensor modify update on non-tensor datatype "+oldValue.getClass().getName());
         }
