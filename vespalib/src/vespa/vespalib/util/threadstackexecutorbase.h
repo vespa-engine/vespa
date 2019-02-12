@@ -106,6 +106,7 @@ private:
     uint32_t                             _taskLimit;
     bool                                 _closed;
     std::unique_ptr<thread::ThreadInit>  _thread_init;
+    static thread_local ThreadStackExecutorBase *_master;
 
     void block_thread(const LockGuard &, BlockedThread &blocked_thread);
     void unblock_threads(const MonitorGuard &);
@@ -183,6 +184,11 @@ protected:
      * @param threads number of worker threads (concurrent tasks)
      */
     void start(uint32_t threads);
+
+    /**
+     * Returns true if the current thread is owned by this executor.
+     **/
+    bool owns_this_thread() const { return (_master == this); }
 
     /**
      * Sets a new upper limit for accepted number of tasks.

@@ -137,4 +137,33 @@ TEST_F("require that executor thread stack tag can be set", BlockingThreadStackE
     }
 }
 
+TEST_F("require that tasks posted from internal worker thread will not block executor", TimeBomb(60)) {
+    size_t cnt = 0;
+    Gate fork_done;
+    BlockingThreadStackExecutor executor(1, 128*1024, 10);
+    struct IncTask : Executor::Task {
+        size_t &cnt;
+        IncTask(size_t &cnt_in) : cnt(cnt_in) {}
+        void run() override { ++cnt; }
+    };
+    struct ForkTask : Executor::Task {
+        Executor &executor;
+        Gate &fork_done;
+        size_t &cnt;
+        ForkTask(Executor &executor_in, Gate &fork_done_in, size_t &cnt_in)
+            : executor(executor_in), fork_done(fork_done_in), cnt(cnt_in) {}
+        void run() override {
+            for (size_t i = 0; i < 32; ++i) {
+                executor.execute(std::make_unique<IncTask>(cnt));
+            }
+            fork_done.countDown();
+        }
+    };
+    // post 32 internal tasks on a blocking executor with tasklimit 10
+    executor.execute(std::make_unique<ForkTask>(executor, fork_done, cnt));
+    fork_done.await();
+    executor.sync();
+    EXPECT_EQUAL(cnt, 32u);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

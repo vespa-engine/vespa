@@ -9,7 +9,7 @@ VESPA_THREAD_STACK_TAG(unnamed_blocking_executor);
 bool
 BlockingThreadStackExecutor::acceptNewTask(MonitorGuard & guard)
 {
-    while (!closed() && !isRoomForNewTask()) {
+    while (!closed() && !isRoomForNewTask() && !owns_this_thread()) {
         guard.wait();
     }
     return (!closed());
