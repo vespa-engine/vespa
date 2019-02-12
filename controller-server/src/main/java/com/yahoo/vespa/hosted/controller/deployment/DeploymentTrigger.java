@@ -45,6 +45,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.Job
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
@@ -326,11 +327,8 @@ public class DeploymentTrigger {
                                 if (completedAt.isPresent() && canTrigger(job, versions, application, stepJobs)) {
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
                                 }
-                                if ( ! alreadyTriggered(application, versions)) {
-                                    // Only remove test jobs that target this combination
-                                    if (testJobs == null) testJobs = new ArrayList<>();
-                                    testJobs.removeIf(j -> versions.sourcesMatchIfPresent(j.triggering) &&
-                                                           versions.targetsMatch(j.triggering));
+                                if ( ! alreadyTriggered(application, versions) && testJobs == null) {
+                                    testJobs = emptyList();
                                 }
                             }
                             else if (testJobs == null) {
