@@ -16,6 +16,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -63,7 +64,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 public class CuratorDb {
 
     private static final Logger log = Logger.getLogger(CuratorDb.class.getName());
-    private static final Duration deployLockTimeout = Duration.ofMinutes(20);
+    private static final Duration deployLockTimeout = Duration.ofMinutes(30);
     private static final Duration defaultLockTimeout = Duration.ofMinutes(5);
     private static final Duration defaultTryLockTimeout = Duration.ofSeconds(1);
 
@@ -132,11 +133,8 @@ public class CuratorDb {
         return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
     }
 
-    // Timeout should be higher than the time deployment takes, since there might be deployments wanting
-    // to run in parallel, too low timeout in that case has been seen to lead to deployments not
-    // getting the lock before it times out
-    public Lock lockForDeployment(ApplicationId id) {
-        return lock(lockPath(id), deployLockTimeout);
+    public Lock lockForDeployment(ApplicationId id, ZoneId zone) {
+        return lock(lockPath(id, zone), deployLockTimeout);
     }
 
     public Lock lock(ApplicationId id, JobType type) {
@@ -515,6 +513,17 @@ public class CuratorDb {
                 .append(application.tenant().value())
                 .append(application.application().value())
                 .append(application.instance().value());
+        curator.create(lockPath);
+        return lockPath;
+    }
+
+    private Path lockPath(ApplicationId application, ZoneId zone) {
+        Path lockPath = lockRoot
+                .append(application.tenant().value())
+                .append(application.application().value())
+                .append(application.instance().value())
+                .append(zone.environment().value())
+                .append(zone.region().value());
         curator.create(lockPath);
         return lockPath;
     }

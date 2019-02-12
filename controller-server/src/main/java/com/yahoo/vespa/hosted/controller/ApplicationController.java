@@ -265,76 +265,77 @@ public class ApplicationController {
         if (applicationId.instance().isTester())
             throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
 
-        Version platformVersion;
-        ApplicationVersion applicationVersion;
-        ApplicationPackage applicationPackage;
-        Set<String> rotationNames = new HashSet<>();
-        Set<String> cnames = new HashSet<>();
+        try (Lock deploymentLock = lockForDeployment(applicationId, zone)) {
+            Version platformVersion;
+            ApplicationVersion applicationVersion;
+            ApplicationPackage applicationPackage;
+            Set<String> rotationNames = new HashSet<>();
+            Set<String> cnames = new HashSet<>();
 
-        try (Lock lock = lockForDeployment(applicationId)) {
-            LockedApplication application = get(applicationId)
-                    .map(app -> new LockedApplication(app, lock))
-                    .orElseGet(() -> new LockedApplication(createApplication(applicationId, Optional.empty()), lock));
+            try (Lock lock = lock(applicationId)) {
+                LockedApplication application = get(applicationId)
+                        .map(app -> new LockedApplication(app, lock))
+                        .orElseGet(() -> new LockedApplication(createApplication(applicationId, Optional.empty()), lock));
 
-            boolean manuallyDeployed = options.deployDirectly || zone.environment().isManuallyDeployed();
-            boolean preferOldestVersion = options.deployCurrentVersion;
+                boolean manuallyDeployed = options.deployDirectly || zone.environment().isManuallyDeployed();
+                boolean preferOldestVersion = options.deployCurrentVersion;
 
-            // Determine versions to use.
-            if (manuallyDeployed) {
-                applicationVersion = applicationVersionFromDeployer.orElse(ApplicationVersion.unknown);
-                applicationPackage = applicationPackageFromDeployer.orElseThrow(
-                        () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
-                platformVersion = options.vespaVersion.map(Version::new).orElse(applicationPackage.deploymentSpec().majorVersion()
-                                                                                                  .flatMap(this::lastCompatibleVersion)
-                                                                                                  .orElse(controller.systemVersion()));
-            }
-            else {
-                JobType jobType = JobType.from(controller.system(), zone)
-                                         .orElseThrow(() -> new IllegalArgumentException("No job is known for " + zone + "."));
-                Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
-                if (   ! job.isPresent()
-                    || ! job.get().lastTriggered().isPresent()
-                    ||   job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
-                    return unexpectedDeployment(applicationId, zone);
-                JobRun triggered = job.get().lastTriggered().get();
-                platformVersion = preferOldestVersion ? triggered.sourcePlatform().orElse(triggered.platform())
-                                                      : triggered.platform();
-                applicationVersion = preferOldestVersion ? triggered.sourceApplication().orElse(triggered.application())
-                                                         : triggered.application();
+                // Determine versions to use.
+                if (manuallyDeployed) {
+                    applicationVersion = applicationVersionFromDeployer.orElse(ApplicationVersion.unknown);
+                    applicationPackage = applicationPackageFromDeployer.orElseThrow(
+                            () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
+                    platformVersion = options.vespaVersion.map(Version::new).orElse(applicationPackage.deploymentSpec().majorVersion()
+                                                                                                      .flatMap(this::lastCompatibleVersion)
+                                                                                                      .orElse(controller.systemVersion()));
+                }
+                else {
+                    JobType jobType = JobType.from(controller.system(), zone)
+                                             .orElseThrow(() -> new IllegalArgumentException("No job is known for " + zone + "."));
+                    Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
+                    if (   ! job.isPresent()
+                        || ! job.get().lastTriggered().isPresent()
+                        ||   job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
+                        return unexpectedDeployment(applicationId, zone);
+                    JobRun triggered = job.get().lastTriggered().get();
+                    platformVersion = preferOldestVersion ? triggered.sourcePlatform().orElse(triggered.platform())
+                                                          : triggered.platform();
+                    applicationVersion = preferOldestVersion ? triggered.sourceApplication().orElse(triggered.application())
+                                                             : triggered.application();
 
-                applicationPackage = getApplicationPackage(application.get(), applicationVersion);
-                validateRun(application.get(), zone, platformVersion, applicationVersion);
-            }
+                    applicationPackage = getApplicationPackage(application.get(), applicationVersion);
+                    validateRun(application.get(), zone, platformVersion, applicationVersion);
+                }
 
-            // TODO: Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
-            verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage, deployingIdentity);
+                // TODO: Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
+                verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage, deployingIdentity);
 
-            // Assign global rotation
-            application = withRotation(application, zone);
-            Application app = application.get();
-            app.globalDnsName(controller.system()).ifPresent(applicationRotation -> {
-                rotationNames.add(app.rotation().orElseThrow(() -> new RuntimeException("Global Dns assigned, but no rotation id present")).asString());
-                cnames.add(applicationRotation.dnsName());
-                cnames.add(applicationRotation.secureDnsName());
-                cnames.add(applicationRotation.oathDnsName());
-            });
+                // Assign global rotation
+                application = withRotation(application, zone);
+                Application app = application.get();
+                app.globalDnsName(controller.system()).ifPresent(applicationRotation -> {
+                    rotationNames.add(app.rotation().orElseThrow(() -> new RuntimeException("Global Dns assigned, but no rotation id present")).asString());
+                    cnames.add(applicationRotation.dnsName());
+                    cnames.add(applicationRotation.secureDnsName());
+                    cnames.add(applicationRotation.oathDnsName());
+                });
 
-            // Update application with information from application package
-            if (   ! preferOldestVersion
-                && ! application.get().deploymentJobs().deployedInternally()
-                && ! zone.environment().isManuallyDeployed())
-                // TODO jvenstad: Store only on submissions
-                storeWithUpdatedConfig(application, applicationPackage);
+                // Update application with information from application package
+                if (   ! preferOldestVersion
+                    && ! application.get().deploymentJobs().deployedInternally()
+                    && ! zone.environment().isManuallyDeployed())
+                    // TODO jvenstad: Store only on submissions
+                    storeWithUpdatedConfig(application, applicationPackage);
+            } // Release application lock while doing the deployment, which is a lengthy task.
 
+            // Carry out deployment without holding the application lock.
+            options = withVersion(platformVersion, options);
+            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, rotationNames, cnames);
+
+            lockOrThrow(applicationId, application ->
+                    store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant())));
+            return result;
         }
-
-        // Carry out deployment without holding the application lock.
-        options = withVersion(platformVersion, options);
-        ActivateResult result = deploy(applicationId, applicationPackage, zone, options, rotationNames, cnames);
-
-        lockOrThrow(applicationId, application ->
-                store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant())));
-        return result;
     }
 
     /** Fetches the requested application package from the artifact store(s). */
@@ -670,13 +671,10 @@ public class ApplicationController {
     }
 
     /**
-     * Returns a lock which provides exclusive rights to changing this application, with a timeout that
-     * is suitable for deployments.
-     * Any operation which stores an application need to first acquire this lock, then read, modify
-     * and store the application, and finally release (close) the lock.
+     * Returns a lock which provides exclusive rights to deploying this application to the given zone.
      */
-    private Lock lockForDeployment(ApplicationId application) {
-        return curator.lockForDeployment(application);
+    private Lock lockForDeployment(ApplicationId application, ZoneId zone) {
+        return curator.lockForDeployment(application, zone);
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system. */
