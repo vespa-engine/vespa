@@ -51,7 +51,9 @@ public class AclMaintainer {
         this.ipAddresses = ipAddresses;
     }
 
-    public void converge(NodeAgentContext context) {
+    // ip(6)tables operate while having the xtables lock, run with synchronized to prevent multiple NodeAgents
+    // invoking ip(6)tables concurrently.
+    public synchronized void converge(NodeAgentContext context) {
         // Apply acl to the filter table
         editFlushOnError(context, IPVersion.IPv4, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv4));
         editFlushOnError(context, IPVersion.IPv6, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv6));
