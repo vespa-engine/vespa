@@ -37,8 +37,10 @@ import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApp
  * Main component that bootstraps and starts config server threads.
  *
  * If config server has been upgraded to a new version since the last time it was running it will redeploy all
- * applications. If that is done successfully the RPC server will start and the health status code will change from
- * 'initializing' to 'up' and the config server will be put into rotation (start serving status.html with 200 OK)
+ * applications. If that is done successfully the RPC server the health status code will change from
+ * 'initializing' to 'up'. If VIP status mode is VIP_STATUS_PROGRAMMATICALLY the config server
+ * will be put into rotation (start serving status.html with 200 OK), if the mode is VIP_STATUS_FILE a VIP status
+ * file is created or removed ny some external pgrogram based on the health status code.
  *
  * @author Ulf Lilleengen
  * @author hmusum
@@ -50,6 +52,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     // INITIALIZE_ONLY is for testing only
     enum Mode {BOOTSTRAP_IN_CONSTRUCTOR, BOOTSTRAP_IN_SEPARATE_THREAD, INITIALIZE_ONLY}
     enum RedeployingApplicationsFails {EXIT_JVM, CONTINUE}
+    enum VipStatusMode {VIP_STATUS_FILE, VIP_STATUS_PROGRAMMATICALLY}
 
     private final ApplicationRepository applicationRepository;
     private final RpcServer server;
@@ -72,18 +75,22 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                 Flags.CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD.bindTo(flagSource).value()
                      ? Mode.BOOTSTRAP_IN_SEPARATE_THREAD
                      : Mode.BOOTSTRAP_IN_CONSTRUCTOR,
-             EXIT_JVM);
+             EXIT_JVM,
+             applicationRepository.configserverConfig().hostedVespa()
+                     ? VipStatusMode.VIP_STATUS_FILE
+                     : VipStatusMode.VIP_STATUS_PROGRAMMATICALLY);
     }
 
     // For testing only
     ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server, VersionState versionState,
-                          StateMonitor stateMonitor, VipStatus vipStatus, Mode mode) {
-        this(applicationRepository, server, versionState, stateMonitor, vipStatus, mode, CONTINUE);
+                          StateMonitor stateMonitor, VipStatus vipStatus, Mode mode,  VipStatusMode vipStatusMode) {
+        this(applicationRepository, server, versionState, stateMonitor, vipStatus, mode, CONTINUE, vipStatusMode);
     }
 
     private ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
                                   VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
-                                  Mode mode, RedeployingApplicationsFails exitIfRedeployingApplicationsFails) {
+                                  Mode mode, RedeployingApplicationsFails exitIfRedeployingApplicationsFails,
+                                  VipStatusMode vipStatusMode) {
         this.applicationRepository = applicationRepository;
         this.server = server;
         this.versionState = versionState;
@@ -94,8 +101,8 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(configserverConfig.sleepTimeWhenRedeployingFails());
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
-        initializing(); // Initially take server out of rotation
-        log.log(LogLevel.INFO, "Mode: " + mode);
+        log.log(LogLevel.INFO, "Bootstrap mode: " + mode + ", VIP status mode: " + vipStatusMode);
+        initializing(vipStatusMode);
         switch (mode) {
             case BOOTSTRAP_IN_SEPARATE_THREAD:
                 this.serverThread = Optional.of(new Thread(this, "config server bootstrap thread"));
@@ -109,7 +116,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                 this.serverThread = Optional.empty();
                 break;
             default:
-                throw new IllegalArgumentException("Unknown mode " + mode + ", legal values: " + Arrays.toString(Mode.values()));
+                throw new IllegalArgumentException("Unknown bootstrap mode " + mode + ", legal values: " + Arrays.toString(Mode.values()));
         }
     }
 
@@ -145,7 +152,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     public void start() {
         if (versionState.isUpgraded()) {
-            log.log(LogLevel.INFO, "Configserver upgrading from " + versionState.storedVersion() + " to "
+            log.log(LogLevel.INFO, "Config server upgrading from " + versionState.storedVersion() + " to "
                     + versionState.currentVersion() + ". Redeploying all applications");
             try {
                 if ( ! redeployAllApplications()) {
@@ -178,10 +185,10 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         vipStatus.setInRotation(false);
     }
 
-    private void initializing() {
-        // This is default value (from config), so not strictly necessary
+    private void initializing(VipStatusMode vipStatusMode) {
         stateMonitor.status(StateMonitor.Status.initializing);
-        vipStatus.setInRotation(false);
+        if (vipStatusMode == VipStatusMode.VIP_STATUS_PROGRAMMATICALLY)
+            vipStatus.setInRotation(false);
     }
 
     private void startRpcServer() {
