@@ -4,7 +4,6 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/config/config.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <random>
 
 namespace storage {
 
@@ -119,7 +118,7 @@ distributor_auto_ownership_transfer_on_whole_group_down true
 group[0].index "invalid"
 group[0].name "invalid"
 group[0].capacity 1
-group[0].partitions "3|3|*"
+group[0].partitions "*|*"
 group[1].index "0"
 group[1].name "rack0"
 group[1].capacity 1
@@ -165,7 +164,7 @@ group[3].name rack1
 group[3].index 0.1
 group[3].nodes[1]
 group[3].nodes[0].index 1
-group[4].name switch0
+group[4].name switch1
 group[4].index 1
 group[4].partitions *
 group[4].nodes[0]
@@ -190,11 +189,11 @@ distributor_auto_ownership_transfer_on_whole_group_down true
 group[0].index "invalid"
 group[0].name "invalid"
 group[0].capacity 1
-group[0].partitions "2|2|*"
+group[0].partitions "*|*"
 group[1].index "0"
 group[1].name "switch0"
 group[1].capacity 1
-group[1].partitions "1|1|*"
+group[1].partitions "*|*"
 group[2].index "0.0"
 group[2].name "rack0"
 group[2].capacity 1
@@ -208,9 +207,9 @@ group[3].partitions ""
 group[3].nodes[0].index 1
 group[3].nodes[0].retired false
 group[4].index "1"
-group[4].name "switch0"
+group[4].name "switch1"
 group[4].capacity 1
-group[4].partitions "1|1|*"
+group[4].partitions "*|*"
 group[5].index "1.0"
 group[5].name "rack0"
 group[5].capacity 1
@@ -228,6 +227,9 @@ disk_distribution MODULO_BID
     CPPUNIT_ASSERT_EQUAL(expected_global_config, default_to_global_config(default_config));
 }
 
+// FIXME partition specs are order-invariant with regards to groups, so heterogenous
+// setups will not produce the expected replica distribution.
+// TODO Consider disallowing entirely when using global docs.
 void GlobalBucketSpaceDistributionConverterTest::can_transform_heterogenous_multi_group_config() {
     vespalib::string default_config(
 R"(redundancy 2
@@ -235,16 +237,16 @@ ready_copies 2
 group[3]
 group[0].name "invalid"
 group[0].index "invalid"
-group[0].partitions 1|*
+group[0].partitions "1|*"
 group[0].nodes[0]
 group[1].name rack0
 group[1].index 0
-group[1].nodes[1]
+group[1].nodes[2]
 group[1].nodes[0].index 0
+group[1].nodes[1].index 1
 group[2].name rack1
 group[2].index 1
-group[2].nodes[2]
-group[2].nodes[0].index 1
+group[2].nodes[1]
 group[2].nodes[1].index 2
 )");
 
@@ -258,21 +260,21 @@ distributor_auto_ownership_transfer_on_whole_group_down true
 group[0].index "invalid"
 group[0].name "invalid"
 group[0].capacity 1
-group[0].partitions "1|2|*"
+group[0].partitions "*|*"
 group[1].index "0"
 group[1].name "rack0"
 group[1].capacity 1
 group[1].partitions ""
 group[1].nodes[0].index 0
 group[1].nodes[0].retired false
+group[1].nodes[1].index 1
+group[1].nodes[1].retired false
 group[2].index "1"
 group[2].name "rack1"
 group[2].capacity 1
 group[2].partitions ""
-group[2].nodes[0].index 1
+group[2].nodes[0].index 2
 group[2].nodes[0].retired false
-group[2].nodes[1].index 2
-group[2].nodes[1].retired false
 disk_distribution MODULO_BID
 )");
     CPPUNIT_ASSERT_EQUAL(expected_global_config, default_to_global_config(default_config));
@@ -367,10 +369,8 @@ group[2].nodes[1].index 2
     lib::Distribution global_distr(*global_cfg);
     lib::ClusterState state("distributor:6 storage:6");
 
-    std::mt19937 rng;
-    std::uniform_int_distribution<uint64_t> d(0, UINT64_MAX);
-    for (int i = 0; i < 100; ++i) {
-        document::BucketId bucket(16, d(rng));
+    for (unsigned int i = 0; i < UINT16_MAX; ++i) {
+        document::BucketId bucket(16, i);
         const auto default_index = default_distr.getIdealDistributorNode(state, bucket, "ui");
         const auto global_index = global_distr.getIdealDistributorNode(state, bucket, "ui");
         CPPUNIT_ASSERT_EQUAL(default_index, global_index);

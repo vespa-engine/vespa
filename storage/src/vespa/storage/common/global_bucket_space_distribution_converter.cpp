@@ -44,15 +44,19 @@ const Group& find_non_root_group_by_index(const vespalib::string& index, const G
 }
 
 vespalib::string sub_groups_to_partition_spec(const Group& parent) {
-    vespalib::asciistream partitions;
-    // In case of a flat cluster config, this ends up with a partition spec of '*',
-    // which is fine. It basically means "put all replicas in this group", which
-    // happens to be exactly what we want.
-    for (auto& child : parent.sub_groups) {
-        partitions << child.second->nested_leaf_count << '|';
+    if (parent.sub_groups.empty()) {
+        return "*";
     }
-    partitions << '*';
-    return partitions.str();
+    vespalib::asciistream spec;
+    // We simplify the generated partition spec by only emitting wildcard entries.
+    // These will have replicas evenly divided amongst them.
+    for (size_t i = 0; i < parent.sub_groups.size(); ++i) {
+        if (i != 0) {
+            spec << '|';
+        }
+        spec << '*';
+    }
+    return spec.str();
 }
 
 bool is_leaf_group(const DistributionConfigBuilder::Group& g) noexcept {
