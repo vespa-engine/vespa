@@ -28,6 +28,7 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -133,24 +134,27 @@ public class NodeFailer extends Maintainer {
             failActive(node, reason);
         }
 
-        // Retire active nodes. Only allow 1 active host to be wantToRetire at a time for rate limiting.
-        final long maxWantToRetireHosts = 1;
-        List<Node> candidateNodes = activeNodes.stream()
+        // Retire active hosts and their children.
+        activeNodes.stream()
                 .filter(node -> failAllowedFor(node.type()))
                 .filter(node -> !nodesWithFailureReason.contains(node))
                 // Defer to parent host (it should also be active)
                 .filter(node -> node.parentHostname().isEmpty())
-                .collect(Collectors.toList());
-        long currentWantToRetireHosts = candidateNodes.stream().filter(node -> node.status().wantToRetire()).count();
-
-        for (int i = 0; i < candidateNodes.size() && currentWantToRetireHosts < maxWantToRetireHosts; ++i) {
-            Node node = candidateNodes.get(i);
-            List<String> reasons = reasonsToRetireActiveParentHost(node);
-            if (reasons.size() > 0) {
-                retireRecursively(node, reasons, activeNodes);
-                ++currentWantToRetireHosts;
-            }
-        }
+                // This will sort those with wantToRetire first
+                .sorted(Comparator.comparing(node -> node.status().wantToRetire(), Comparator.reverseOrder()))
+                .filter(node -> {
+                    if (node.status().wantToRetire()) return true;
+                    if (node.allocation().map(a -> a.membership().retired()).orElse(false)) return true;
+                    List<String> reasons = reasonsToRetireActiveParentHost(node);
+                    if (reasons.size() > 0) {
+                        retireRecursively(node, reasons, activeNodes);
+                        return true;
+                    }
+                    return false;
+                })
+                //  Only allow 1 active host to be wantToRetire at a time for rate limiting.
+                .limit(1)
+                .count();
 
         metric.set(throttlingActiveMetric, Math.min( 1, throttledNodeFailures), null);
         metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
