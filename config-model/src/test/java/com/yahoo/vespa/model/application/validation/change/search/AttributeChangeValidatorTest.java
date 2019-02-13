@@ -112,33 +112,28 @@ public class AttributeChangeValidatorTest {
     @Test
     public void changing_tensor_type_of_tensor_field_requires_refeed() throws Exception {
         new Fixture(
-                "field f1 type tensor(x[]) { indexing: attribute \n attribute: tensor(x[100]) }",
-                "field f1 type tensor(y[]) { indexing: attribute \n attribute: tensor(y[]) }")
+                "field f1 type tensor(x[2]) { indexing: attribute }",
+                "field f1 type tensor(x[3]) { indexing: attribute }")
                 .assertValidation(newRefeedAction(
                         "tensor-type-change",
                         ValidationOverrides.empty,
-                        "Field 'f1' changed: tensor type: 'tensor(x[100])' -> 'tensor(y[])'", Instant.now()));
-    }
+                        "Field 'f1' changed: tensor type: 'tensor(x[2])' -> 'tensor(x[3])'", Instant.now()));
 
-    @Test
-    public void compatible_tensor_type_change_is_ok() throws Exception {
         new Fixture(
-                "field f1 type tensor(x[],y[]) { indexing: attribute \n attribute: tensor(x[104], y[52]) }",
-                "field f1 type tensor(x[200],y[]) { indexing: attribute \n attribute: tensor(x[104], y[52]) }")
-                .assertValidation();
+                "field f1 type tensor(x[]) { indexing: attribute }",
+                "field f1 type tensor(x[3]) { indexing: attribute }")
+                .assertValidation(newRefeedAction(
+                        "tensor-type-change",
+                        ValidationOverrides.empty,
+                        "Field 'f1' changed: tensor type: 'tensor(x[])' -> 'tensor(x[3])'", Instant.now()));
     }
 
     @Test
-    public void incompatible_tensor_type_change_is_not_ok() throws Exception {
-        try {
-            new Fixture(
-                    "field f1 type tensor(x[],y[]) { indexing: attribute \n attribute: tensor(x[104], y[52]) }",
-                    "field f1 type tensor(x[100],y[]) { indexing: attribute \n attribute: tensor(x[104], y[52]) }")
-                    .assertValidation();
-        }
-        catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'f1': Incompatible types. Expected tensor(x[100],y[]) for attribute 'f1', got tensor(x[104],y[52]).", e.getMessage());
-        }
+    public void not_changing_tensor_type_of_tensor_field_is_ok() throws Exception {
+        new Fixture(
+                "field f1 type tensor(x[2]) { indexing: attribute }",
+                "field f1 type tensor(x[2]) { indexing: attribute }")
+                .assertValidation();
     }
 
     @Test

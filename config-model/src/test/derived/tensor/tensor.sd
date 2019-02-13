@@ -11,9 +11,8 @@ search tensor {
     field f3 type tensor(x{}) {
       indexing: attribute | summary
     }
-    field f4 type tensor(x[],y[]) {
+    field f4 type tensor(x[10],y[20]) {
       indexing: attribute | summary
-      attribute: tensor(x[10],y[20])
     }
   }
   

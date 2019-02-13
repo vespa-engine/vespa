@@ -1225,13 +1225,13 @@ Object attributeSetting(FieldOperationContainer field, AttributeOperation attrib
  */
 Object attributeTensorType(AttributeOperation attribute) :
 {
-    String tensorTypeString;
     TensorType tensorType;
 }
 {
     tensorType = tensorType("For attribute field '" + attribute.getName() + "'")
     {
-        attribute.setTensorType(tensorType);
+        // TODO: Remove on Vespa 8
+        deployLogger.log(Level.WARNING, "In field '" + attribute.getName() + "': Specifying tensor type on the attribute is deprecated and has no effect.");
     }
     { return null; }
 }
