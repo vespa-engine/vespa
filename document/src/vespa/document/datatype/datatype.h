@@ -96,7 +96,6 @@ public:
     static const DataType *const TAG;
     static const DataType *const URI;
     static const DataType *const PREDICATE;
-    static const DataType *const TENSOR;
 
     /** Used by type manager to fetch default types to register. */
     static std::vector<const DataType *> getDefaultDataTypes();

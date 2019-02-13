@@ -10,6 +10,7 @@
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/datatype/referencedatatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/config/config-documenttypes.h>
@@ -66,6 +67,7 @@ void DeleteMapContent(Map &m) {
 class Repo {
     vector<const DataType *> _owned_types;
     hash_map<int32_t, const DataType *> _types;
+    hash_map<string, const DataType *> _tensorTypes;
     hash_map<string, const DataType *> _name_map;
 
 public:
@@ -75,13 +77,16 @@ public:
     bool addDataType(const DataType &type);
     template <typename T> void addDataType(unique_ptr<T> type);
 
+    const DataType &addTensorType(const string &spec);
     const DataType *lookup(int32_t id) const;
     const DataType *lookup(stringref name) const;
     const DataType &findOrThrow(int32_t id) const;
+    const DataType &findOrThrowOrCreate(int32_t id, const string &detailedType);
 };
 
 void Repo::inherit(const Repo &parent) {
     _types.insert(parent._types.begin(), parent._types.end());
+    _tensorTypes.insert(parent._tensorTypes.begin(), parent._tensorTypes.end());
     _name_map.insert(parent._name_map.begin(), parent._name_map.end());
 }
 
@@ -114,6 +119,18 @@ void Repo::addDataType(unique_ptr<T> type) {
     }
 }
 
+
+const DataType &
+Repo::addTensorType(const string &spec)
+{
+    auto type = TensorDataType::fromSpec(spec);
+    auto insres = _tensorTypes.insert(std::make_pair(spec, type.get()));
+    if (insres.second) {
+        _owned_types.push_back(type.release());
+    }
+    return *insres.first->second;
+}
+
 template <typename Map>
 typename Map::mapped_type FindPtr(const Map &m, typename Map::key_type key) {
     typename Map::const_iterator it = m.find(key);
@@ -137,6 +154,15 @@ const DataType &Repo::findOrThrow(int32_t id) const {
         return *type;
     }
     throw IllegalArgumentException(make_string("Unknown datatype %d", id));
+}
+
+const DataType &
+Repo::findOrThrowOrCreate(int32_t id, const string &detailedType)
+{
+    if (id != DataType::T_TENSOR) {
+        return findOrThrow(id);
+    }
+    return addTensorType(detailedType);
 }
 
 class AnnotationTypeRepo {
@@ -231,11 +257,11 @@ void setAnnotationDataTypes(const vector<DocumenttypesConfig::Documenttype::Anno
 
 typedef DocumenttypesConfig::Documenttype::Datatype Datatype;
 
-void addField(const Datatype::Sstruct::Field &field, const Repo &repo, StructDataType &struct_type, bool isHeaderField)
+void addField(const Datatype::Sstruct::Field &field, Repo &repo, StructDataType &struct_type, bool isHeaderField)
 {
     LOG(spam, "Adding field %s to %s (header: %s)",
         field.name.c_str(), struct_type.getName().c_str(), isHeaderField ? "yes" : "no");
-    const DataType &field_type = repo.findOrThrow(field.datatype);
+    const DataType &field_type = repo.findOrThrowOrCreate(field.datatype, field.detailedtype);
     struct_type.addField(Field(field.name, field.id, field_type, isHeaderField));
 }
 

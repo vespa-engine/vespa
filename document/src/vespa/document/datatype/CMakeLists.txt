@@ -13,6 +13,7 @@ vespa_add_library(document_datatypes OBJECT
     primitivedatatype.cpp
     structdatatype.cpp
     structureddatatype.cpp
+    tensor_data_type.cpp
     urldatatype.cpp
     weightedsetdatatype.cpp
     referencedatatype.cpp

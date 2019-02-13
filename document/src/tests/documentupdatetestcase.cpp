@@ -3,6 +3,7 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
@@ -944,7 +945,8 @@ DocumentUpdateTest::testTensorAssignUpdate()
     CPPUNIT_ASSERT(!doc->getValue("tensor"));
     Document updated(*doc);
     FieldValue::UP new_value(createTensorFieldValue());
-    testValueUpdate(AssignValueUpdate(*new_value), *DataType::TENSOR);
+    auto tensorDataType = std::make_unique<TensorDataType>();
+    testValueUpdate(AssignValueUpdate(*new_value), *tensorDataType);
     DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
     upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(AssignValueUpdate(*new_value)));
     upd.applyTo(updated);
@@ -978,7 +980,8 @@ DocumentUpdateTest::testTensorAddUpdate()
     auto oldTensor = createTensorFieldValueWith2Cells();
     updated.setValue(updated.getField("tensor"), *oldTensor);
     CPPUNIT_ASSERT(*doc != updated);
-    testValueUpdate(*createTensorAddUpdate(), *DataType::TENSOR);
+    auto tensorDataType = std::make_unique<TensorDataType>();
+    testValueUpdate(*createTensorAddUpdate(), *tensorDataType);
     std::string expTensorAddUpdateString("TensorAddUpdate("
                                          "{TensorFieldValue: "
                                          "{\"dimensions\":[\"x\",\"y\"],"
@@ -1006,7 +1009,8 @@ DocumentUpdateTest::testTensorModifyUpdate()
     auto oldTensor = createTensorFieldValueWith2Cells();
     updated.setValue(updated.getField("tensor"), *oldTensor);
     CPPUNIT_ASSERT(*doc != updated);
-    testValueUpdate(*createTensorModifyUpdate(), *DataType::TENSOR);
+    auto tensorDataType = std::make_unique<TensorDataType>();
+    testValueUpdate(*createTensorModifyUpdate(), *tensorDataType);
     std::string expTensorModifyUpdateString("TensorModifyUpdate(replace,"
                                             "{TensorFieldValue: "
                                             "{\"dimensions\":[\"x\",\"y\"],"

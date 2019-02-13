@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensorfieldvalue.h"
-#include <vespa/document/datatype/datatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/serialization/slime_binary_format.h>
@@ -16,8 +16,20 @@ using namespace vespalib::xml;
 
 namespace document {
 
+namespace {
+
+TensorDataType emptyTensorDataType;
+
+}
+
 TensorFieldValue::TensorFieldValue()
+    : TensorFieldValue(&emptyTensorDataType)
+{
+}
+
+TensorFieldValue::TensorFieldValue(const TensorDataType *dataType)
     : FieldValue(),
+      _dataType(dataType),
       _tensor(),
       _altered(true)
 {
@@ -25,6 +37,7 @@ TensorFieldValue::TensorFieldValue()
 
 TensorFieldValue::TensorFieldValue(const TensorFieldValue &rhs)
     : FieldValue(),
+      _dataType(rhs._dataType),
       _tensor(),
       _altered(true)
 {
@@ -36,6 +49,7 @@ TensorFieldValue::TensorFieldValue(const TensorFieldValue &rhs)
 
 TensorFieldValue::TensorFieldValue(TensorFieldValue &&rhs)
     : FieldValue(),
+      _dataType(rhs._dataType),
       _tensor(),
       _altered(true)
 {
@@ -52,6 +66,7 @@ TensorFieldValue &
 TensorFieldValue::operator=(const TensorFieldValue &rhs)
 {
     if (this != &rhs) {
+        _dataType = rhs._dataType;
         if (rhs._tensor) {
             _tensor = rhs._tensor->clone();
         } else {
@@ -90,7 +105,7 @@ TensorFieldValue::accept(ConstFieldValueVisitor &visitor) const
 const DataType *
 TensorFieldValue::getDataType() const
 {
-    return DataType::TENSOR;
+    return _dataType;
 }
 
 

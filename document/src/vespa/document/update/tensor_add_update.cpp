@@ -3,6 +3,7 @@
 #include "tensor_add_update.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/field.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
@@ -71,7 +72,7 @@ TensorAddUpdate::operator==(const ValueUpdate &other) const
 void
 TensorAddUpdate::checkCompatibility(const Field& field) const
 {
-    if (field.getDataType() != *DataType::TENSOR) {
+    if (field.getDataType().getClass().id() != TensorDataType::classId) {
         throw IllegalArgumentException(make_string(
                 "Can not perform tensor add update on non-tensor field '%s'.",
                 field.getName().data()), VESPA_STRLOC);

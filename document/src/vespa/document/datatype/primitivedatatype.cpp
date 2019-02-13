@@ -69,7 +69,6 @@ PrimitiveDataType::createFieldValue() const
         case T_BOOL: return std::make_unique<BoolFieldValue>();
         case T_BYTE: return std::make_unique<ByteFieldValue>();
         case T_PREDICATE: return std::make_unique<PredicateFieldValue>();
-        case T_TENSOR: return std::make_unique<TensorFieldValue>();
     }
     LOG_ABORT("getId() returned value out of range");
 }
