@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
+import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
@@ -56,6 +57,10 @@ public class MockRoot extends AbstractConfigProducerRoot {
 
     public MockRoot(String rootConfigId, ApplicationPackage applicationPackage) {
         this(rootConfigId, new DeployState.Builder().applicationPackage(applicationPackage).build());
+    }
+    public MockRoot(String rootConfigId, ApplicationPackage applicationPackage, HostProvisioner provisioner) {
+        this(rootConfigId, new DeployState.Builder().applicationPackage(applicationPackage)
+                                                    .modelHostProvisioner(provisioner).build());
     }
 
     public MockRoot(String rootConfigId, DeployState deployState) {

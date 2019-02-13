@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
+import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
@@ -70,9 +72,5 @@ public abstract class ContentNode extends AbstractService
     @Override
     public int getHealthPort()  {
         return getRelativePort(2);
-    }
-
-    public String getRootDirectory() {
-        return rootDirectory;
     }
 }

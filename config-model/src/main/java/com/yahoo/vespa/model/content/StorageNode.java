@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -19,12 +20,13 @@ import org.w3c.dom.Element;
  * Class to provide config related to a specific storage node.
  */
 @RestartConfigs({StorFilestorConfig.class, StorBucketmoverConfig.class})
-public class StorageNode extends ContentNode implements StorServerConfig.Producer {
+public class StorageNode extends ContentNode implements StorServerConfig.Producer, StorFilestorConfig.Producer {
 
     static final String rootFolder = Defaults.getDefaults().underVespaHome("var/db/vespa/search/");
 
     private final Double capacity;
     private final boolean retired;
+    private final StorageCluster cluster;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<StorageNode> {
         @Override
@@ -41,6 +43,7 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
               distributionKey);
         this.retired = retired;
         this.capacity = capacity;
+        this.cluster = cluster;
     }
 
     @Override
@@ -79,6 +82,15 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
         for (AbstractConfigProducer producer : getChildren().values()) {
             ((PersistenceEngine)producer).getConfig(builder);
         }
+    }
+
+    @Override
+    public void getConfig(StorFilestorConfig.Builder builder) {
+        if (getHostResource() != null && getHostResource().getFlavor().isPresent()) {
+            Flavor nodeFlavor = getHostResource().getFlavor().get();
+            builder.num_threads(Math.max(4, (int)nodeFlavor.getMinCpuCores()));
+        }
+        cluster.getConfig(builder);
     }
 
 }
