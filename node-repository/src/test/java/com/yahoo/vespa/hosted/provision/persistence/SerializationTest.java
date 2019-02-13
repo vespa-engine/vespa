@@ -361,6 +361,16 @@ public class SerializationTest {
         assertEquals(Type.NIX, report.getInspector().field("bogus").type());
     }
 
+    @Test
+    public void model_id_serialization() {
+        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        assertFalse(node.modelId().isPresent());
+
+        node = node.withModelId("some model");
+        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+        assertEquals("some model", node.modelId().get());
+    }
+
     private byte[] createNodeJson(String hostname, String... ipAddress) {
         String ipAddressJsonPart = "";
         if (ipAddress.length > 0) {

@@ -144,6 +144,8 @@ public class NodePatcher {
                 return nodeWithPatchedReports(node, value);
             case "openStackId" :
                 return node.withOpenStackId(asString(value));
+            case "modelId":
+                return node.withModelId(asString(value));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }

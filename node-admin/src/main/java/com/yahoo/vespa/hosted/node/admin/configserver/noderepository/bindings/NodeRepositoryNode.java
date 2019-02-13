@@ -54,6 +54,8 @@ public class NodeRepositoryNode {
     public Long currentFirmwareCheck;
     @JsonProperty("wantedFirmwareCheck")
     public Long wantedFirmwareCheck;
+    @JsonProperty("modelId")
+    public String modelId;
     @JsonProperty("failCount")
     public Integer failCount;
     @JsonProperty("fastDisk")
@@ -100,6 +102,7 @@ public class NodeRepositoryNode {
                 ", ipAddresses=" + ipAddresses +
                 ", additionalIpAddresses=" + additionalIpAddresses +
                 ", openStackId='" + openStackId + '\'' +
+                ", modelId='" + modelId + '\'' +
                 ", flavor='" + flavor + '\'' +
                 ", canonicalFlavor='" + canonicalFlavor + '\'' +
                 ", membership=" + membership +
