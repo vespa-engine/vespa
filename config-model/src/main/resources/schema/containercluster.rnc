@@ -237,16 +237,11 @@ NodesOfContainerCluster = element nodes {
       element node {
         attribute hostalias { xsd:NCName } &
         attribute cpu-socket { xsd:positiveInteger }? &
-        ServerPort* &
         GenericConfig*
       }+
     )
 }
 
-ServerPort = element server-port {
-    ComponentId &
-    attribute port { xsd:positiveInteger }
-}
 
 
 #DOCUMENT BINDINGS:

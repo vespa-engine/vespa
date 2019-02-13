@@ -210,9 +210,6 @@
         <TEST_VAR>7</TEST_VAR>
       </environment-variables>
       <node hostalias="host1" />
-      <node hostalias="host1">
-        <server-port id="myServer" port="4090" />
-      </node>
     </nodes>
   </container>
 
