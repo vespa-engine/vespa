@@ -278,7 +278,7 @@ public class NodeFailer extends Maintainer {
     private void retireActive(String hostname, ApplicationId owner, List<String> reasons) {
         // Getting the application lock can take a very long time for the largest applications.
         // Don't bother waiting for too long since retries is automatic with maintainers.
-        Duration lockWait = Duration.ofMinutes(1);
+        Duration lockWait = Duration.ofSeconds(10);
         try (Mutex lock = nodeRepository().lock(owner, lockWait)) {
             // Recheck all conditions in case anything has changed
             Optional<Node> node = nodeRepository().getNode(hostname);
