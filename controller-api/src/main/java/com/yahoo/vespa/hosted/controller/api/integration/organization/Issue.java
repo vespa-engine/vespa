@@ -67,6 +67,10 @@ public class Issue {
         return new Issue(summary, description, labels, assignee, type, queue, component);
     }
 
+    public Issue in(String queue) {
+        return new Issue(summary, description, labels, assignee, type, queue, Optional.empty());
+    }
+
     public String summary() {
         return summary;
     }
