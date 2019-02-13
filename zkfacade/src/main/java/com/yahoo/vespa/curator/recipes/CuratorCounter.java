@@ -21,39 +21,32 @@ public class CuratorCounter {
         this.counterPath = counterPath;
     }
 
-    /**
-     * Atomically increment and return resulting value.
-     *
-     * @return the resulting value
-     * @throws IllegalStateException if increment fails
-     */
-    public synchronized long next() {
-        try {
-            AtomicValue<Long> value = counter.increment();
-            if (!value.succeeded()) {
-                throw new IllegalStateException("Increment did not succeed");
-            }
-            return value.postValue();
-        } catch (Exception e) {
-            throw new IllegalStateException("Unable to get next value", e);
-        }
+    /** Convenience method for {@link #add(long)} with 1 */
+    public long next() {
+        return add(1L);
+    }
+
+    /** Convenience method for {@link #add(long)} with -1 */
+    public long previous() {
+        return add(-1L);
     }
 
     /**
-     * Atomically decrement and return the resulting value.
+     * Atomically add and return resulting value.
      *
+     * @param delta value to add, may be negative
      * @return the resulting value
-     * @throws IllegalStateException if decrement fails
+     * @throws IllegalStateException if addition fails
      */
-    public synchronized long previous() {
+    public synchronized long add(long delta) {
         try {
-            AtomicValue<Long> value = counter.subtract(1L);
+            AtomicValue<Long> value = counter.add(delta);
             if (!value.succeeded()) {
-                throw new IllegalStateException("Decrement did not succeed");
+                throw new IllegalStateException("Add did not succeed");
             }
             return value.postValue();
         } catch (Exception e) {
-            throw new IllegalStateException("Unable to get previous value", e);
+            throw new IllegalStateException("Unable to add value", e);
         }
     }
 

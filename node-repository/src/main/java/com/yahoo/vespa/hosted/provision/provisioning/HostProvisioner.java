@@ -17,12 +17,13 @@ public interface HostProvisioner {
     /**
      * Schedule provisioning of a given number of hosts.
      *
-     * @param numHosts number of hosts to provision
+     * @param provisionIndexes List of unique provision indexes which will be used to generate the host hostnames
+     *                         on the form of <code>[prefix][index].[domain]</code>
      * @param nodeFlavor Vespa flavor of the node that will run on this host. The resulting provisioned host
      *                   will be of a flavor that is at least as big or bigger than this.
      * @return list of {@link ProvisionedHost} describing the provisioned hosts and nodes on them.
      */
-    List<ProvisionedHost> provisionHosts(int numHosts, Flavor nodeFlavor);
+    List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, Flavor nodeFlavor);
 
     /**
      * Continue provisioning of given list of Nodes.

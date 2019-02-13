@@ -20,11 +20,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -50,13 +48,13 @@ public class DynamicDockerProvisionTest {
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
         List<HostSpec> hostSpec = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 4, 1, flavor.canonicalName());
-        verify(hostProvisioner).provisionHosts(4, flavor);
+        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), flavor);
 
         // Total of 8 nodes should now be in node-repo, 4 hosts in state provisioned, and 4 reserved nodes
         assertEquals(8, tester.nodeRepository().list().size());
         assertEquals(4, tester.nodeRepository().getNodes(NodeType.host, Node.State.provisioned).size());
         assertEquals(4, tester.nodeRepository().getNodes(NodeType.tenant, Node.State.reserved).size());
-        assertEquals(List.of("host-1-1", "host-2-1", "host-3-1", "host-4-1"),
+        assertEquals(List.of("host-100-1", "host-101-1", "host-102-1", "host-103-1"),
                 hostSpec.stream().map(HostSpec::hostname).collect(Collectors.toList()));
     }
 
@@ -70,7 +68,7 @@ public class DynamicDockerProvisionTest {
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor.canonicalName());
-        verify(hostProvisioner).provisionHosts(2, flavor);
+        verify(hostProvisioner).provisionHosts(List.of(100, 101), flavor);
     }
 
     @Test
@@ -78,12 +76,13 @@ public class DynamicDockerProvisionTest {
         ApplicationId application = tester.makeApplicationId();
         Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("dockerSmall");
 
+        List<Integer> expectedProvisionIndexes = List.of(100, 101);
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("large"));
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor.canonicalName());
-        verify(hostProvisioner).provisionHosts(2, flavor);
+        verify(hostProvisioner).provisionHosts(expectedProvisionIndexes, flavor);
 
         // Ready the provisioned hosts, add an IP addreses to pool and activate them
-        for (int i = 1; i < 3; i++) {
+        for (Integer i : expectedProvisionIndexes) {
             String hostname = "host-" + i;
             Node host = tester.nodeRepository().getNode(hostname).orElseThrow()
                     .withIpAddressPool(Set.of("::" + i + ":2")).withIpAddresses(Set.of("::" + i + ":0"));
@@ -95,7 +94,7 @@ public class DynamicDockerProvisionTest {
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
         tester.prepare(application, clusterSpec("another-id"), 2, 1, flavor.canonicalName());
         // Verify there was only 1 call to provision hosts (during the first prepare)
-        verify(hostProvisioner).provisionHosts(anyInt(), any());
+        verify(hostProvisioner).provisionHosts(any(), any());
 
         // Node-repo should now consist of 2 active hosts with 2 reserved nodes on each
         assertEquals(6, tester.nodeRepository().list().size());
@@ -121,15 +120,14 @@ public class DynamicDockerProvisionTest {
         return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false, Collections.emptySet());
     }
 
+    @SuppressWarnings("unchecked")
     private static void mockHostProvisioner(HostProvisioner hostProvisioner, Flavor hostFlavor) {
-        final int[] numProvisioned = { 0 };
         doAnswer(invocation -> {
-            int numHosts = (int) invocation.getArguments()[0];
+            List<Integer> provisionIndexes = (List<Integer>) invocation.getArguments()[0];
             Flavor nodeFlavor = (Flavor) invocation.getArguments()[1];
-            return IntStream.range(0, numHosts)
-                    .map(i -> ++numProvisioned[0])
-                    .mapToObj(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", nodeFlavor))
+            return provisionIndexes.stream()
+                    .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", nodeFlavor))
                     .collect(Collectors.toList());
-        }).when(hostProvisioner).provisionHosts(anyInt(), any());
+        }).when(hostProvisioner).provisionHosts(any(), any());
     }
 }

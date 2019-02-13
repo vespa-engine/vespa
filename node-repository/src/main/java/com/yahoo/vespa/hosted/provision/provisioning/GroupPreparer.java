@@ -77,8 +77,11 @@ public class GroupPreparer {
                 allocation.offer(prioritizer.prioritize());
 
                 if (dynamicProvisioningEnabled) {
-                    List<ProvisionedHost> provisionedHosts = allocation.getFulfilledDockerDeficit().map(deficit ->
-                            hostProvisioner.get().provisionHosts(deficit.getCount(), deficit.getFlavor())).orElseGet(List::of);
+                    List<ProvisionedHost> provisionedHosts = allocation.getFulfilledDockerDeficit()
+                            .map(deficit -> hostProvisioner.get().provisionHosts(
+                                    nodeRepository.database().getProvisionIndexes(deficit.getCount()),
+                                    deficit.getFlavor()))
+                            .orElseGet(List::of);
 
                     // At this point we have started provisioning of the hosts, the first priority is to make sure that
                     // the returned hosts are added to the node-repo so that they are tracked by the provision maintainers
