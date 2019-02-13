@@ -24,6 +24,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
+import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -164,7 +165,7 @@ public class HostedDeployTest {
     }
 
     /**
-     * Test that we skip create the minimal set of models are created, but latest model version is created for
+     * Tests that we create the minimal set of models, but latest model version is created for
      * previous major if creating latest model version on latest major version fails
      **/
     @Test
@@ -187,6 +188,24 @@ public class HostedDeployTest {
         assertTrue(factory600.creationCount() > 0);
         assertTrue("Latest model for previous major version is included if latest model for latest major version fails to build",
                    factory610.creationCount() > 0);
+    }
+
+    /**
+     * Tests that we fail deployment if a needed model version fails to be created
+     **/
+    @Test(expected = InvalidApplicationException.class)
+    public void testDeploymentFailsIfNeededModelVersionFails() {
+        List<Host> hosts = Arrays.asList(createHost("host1", "7.0.0"),
+                                         createHost("host2", "7.0.0"),
+                                         createHost("host3", "7.0.0"));
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
+
+        ModelFactory factory700 = DeployTester.createFailingModelFactory(Version.fromString("7.0.0"));
+        CountingModelFactory factory710 = DeployTester.createModelFactory(Version.fromString("7.1.0"));
+        List<ModelFactory> modelFactories = Arrays.asList(factory700, factory710);
+
+        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
+        tester.deployApp("src/test/apps/hosted/", "7.1.0", Instant.now());
     }
 
     /**
@@ -324,7 +343,7 @@ public class HostedDeployTest {
     }
 
     private Host createHost(String hostname, String version) {
-        return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.of(com.yahoo.component.Version.fromString(version)));
+        return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.of(Version.fromString(version)));
     }
 
     private Host createHost(String hostname) {

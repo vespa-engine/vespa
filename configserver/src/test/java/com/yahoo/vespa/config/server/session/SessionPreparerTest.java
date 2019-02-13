@@ -1,11 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.ModelCreateResult;
-import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationName;
@@ -23,7 +20,6 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudgetTest;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
-import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
@@ -66,7 +62,6 @@ public class SessionPreparerTest {
     private static final File invalidTestApp = new File("src/test/apps/illegalApp");
     private static final Version version123 = new Version(1, 2, 3);
     private static final Version version321 = new Version(3, 2, 1);
-    private static final Version version323 = new Version(3, 2, 3);
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private MockCurator curator;
@@ -141,30 +136,6 @@ public class SessionPreparerTest {
         assertTrue(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
-    @Test
-    public void require_that_prepare_succeeds_if_newer_version_fails() throws IOException {
-        ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Arrays.asList(
-                new TestModelFactory(version123),
-                new FailingModelFactory(version321, new IllegalArgumentException("BOOHOO"))));
-        preparer = createPreparer(modelFactoryRegistry, HostProvisionerProvider.empty());
-        prepare(testApp);
-    }
-
-    @Test(expected = InvalidApplicationException.class)
-    public void require_that_prepare_fails_if_older_version_fails() throws IOException {
-        ConfigserverConfig config = new ConfigserverConfig.Builder()
-                .buildMinimalSetOfConfigModels(false)
-                .configServerDBDir(folder.newFolder("serverdb").getAbsolutePath())
-                .configDefinitionsDir(folder.newFolder("configdefinitions").getAbsolutePath())
-                .build();
-        componentRegistry = new TestComponentRegistry.Builder().curator(curator).configServerConfig(config).build();
-        ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Arrays.asList(
-                new TestModelFactory(version323),
-                new FailingModelFactory(version123, new IllegalArgumentException("BOOHOO"))));
-        preparer = createPreparer(modelFactoryRegistry, HostProvisionerProvider.empty());
-        prepare(testApp);
-    }
-
     @Test(expected = InvalidApplicationException.class)
     public void require_exception_for_overlapping_host() throws IOException {
         SessionContext ctx = getContext(getApplicationPackage(testApp));
@@ -214,7 +185,7 @@ public class SessionPreparerTest {
     @Test
     public void require_that_rotations_are_read_from_zookeeper_and_used() throws IOException {
         final TestModelFactory modelFactory = new TestModelFactory(version123);
-        preparer = createPreparer(new ModelFactoryRegistry(Arrays.asList(modelFactory)),
+        preparer = createPreparer(new ModelFactoryRegistry(Collections.singletonList(modelFactory)),
                 HostProvisionerProvider.empty());
 
         final String rotations = "foo.msbe.global.vespa.yahooapis.com";
@@ -233,12 +204,12 @@ public class SessionPreparerTest {
         assertThat(readRotationsFromZK(applicationId), contains(new Rotation(rotations)));
     }
 
-    private ConfigChangeActions prepare(File app) throws IOException {
-        return prepare(app, new PrepareParams.Builder().build());
+    private void prepare(File app) throws IOException {
+        prepare(app, new PrepareParams.Builder().build());
     }
 
-    private ConfigChangeActions prepare(File app, PrepareParams params) throws IOException {
-        return preparer.prepare(getContext(getApplicationPackage(app)), getLogger(), params, Optional.empty(), tenantPath, Instant.now());
+    private void prepare(File app, PrepareParams params) throws IOException {
+        preparer.prepare(getContext(getApplicationPackage(app)), getLogger(), params, Optional.empty(), tenantPath, Instant.now());
     }
 
     private SessionContext getContext(FilesApplicationPackage app) throws IOException {
@@ -257,25 +228,8 @@ public class SessionPreparerTest {
     }
 
     private DeployHandlerLogger getLogger() {
-        return getLogger(false);
-    }
-
-    private DeployHandlerLogger getLogger(boolean verbose) {
-        return new DeployHandlerLogger(new Slime().get(), verbose,
+        return new DeployHandlerLogger(new Slime().get(), false /*verbose */,
                                        new ApplicationId.Builder().tenant("testtenant").applicationName("testapp").build());
-    }
-
-    private static class FailingModelFactory extends TestModelFactory {
-        private final RuntimeException exception;
-        FailingModelFactory(Version vespaVersion, RuntimeException exception) {
-            super(vespaVersion);
-            this.exception = exception;
-        }
-
-        @Override
-        public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
-            throw exception;
-        }
     }
 
     private ApplicationId applicationId(String applicationName) {
