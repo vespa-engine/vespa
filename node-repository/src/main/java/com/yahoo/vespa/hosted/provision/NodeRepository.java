@@ -452,7 +452,7 @@ public class NodeRepository extends AbstractComponent {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node fail(String hostname, Agent agent, String reason) {
-        return move(hostname, Node.State.failed, agent, Optional.of(reason));
+        return move(hostname, Node.State.failed, agent, Optional.of(reason), true);
     }
 
     /**
@@ -470,12 +470,13 @@ public class NodeRepository extends AbstractComponent {
      * @return the node in its new state
      * @throws NoSuchNodeException if the node is not found
      */
-    public Node park(String hostname, Agent agent, String reason) {
-        return move(hostname, Node.State.parked, agent, Optional.of(reason));
+    public Node park(String hostname, boolean keepAllocation, Agent agent, String reason) {
+        return move(hostname, Node.State.parked, agent, Optional.of(reason), keepAllocation);
     }
 
     /**
      * Parks all the nodes that are children of hostname before finally parking the hostname itself.
+     * Any allocation is kept.
      *
      * @return List of all the parked nodes in their new state
      */
@@ -490,7 +491,7 @@ public class NodeRepository extends AbstractComponent {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node reactivate(String hostname, Agent agent, String reason) {
-        return move(hostname, Node.State.active, agent, Optional.of(reason));
+        return move(hostname, Node.State.active, agent, Optional.of(reason), true);
     }
 
     private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
@@ -498,13 +499,19 @@ public class NodeRepository extends AbstractComponent {
                                          .map(child -> move(child, toState, agent, reason))
                                          .collect(Collectors.toList());
 
-        moved.add(move(hostname, toState, agent, reason));
+        moved.add(move(hostname, toState, agent, reason, true));
         return moved;
     }
 
-    private Node move(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
-        Node node = getNode(hostname).orElseThrow(() ->
+    private Node move(String hostname, Node.State toState, Agent agent, Optional<String> reason, boolean keepAllocation) {
+        Node node = getNode(hostname)
+                .orElseThrow(() ->
                 new NoSuchNodeException("Could not move " + hostname + " to " + toState + ": Node not found"));
+
+        if (!keepAllocation) {
+            node = node.withoutAllocation();
+        }
+
         return move(node, toState, agent, reason);
     }
 

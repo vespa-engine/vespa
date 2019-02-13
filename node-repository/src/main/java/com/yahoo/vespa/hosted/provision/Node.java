@@ -196,6 +196,11 @@ public final class Node {
             return this;
         }
 
+        public Builder withoutAllocation() {
+            this.allocation = Optional.empty();
+            return this;
+        }
+
         public Builder withReports(Reports reports) {
             this.reports = reports;
             return this;
@@ -357,6 +362,11 @@ public final class Node {
      */
     public Node with(Allocation allocation) {
         return new Builder(this).withAllocation(allocation).build();
+    }
+
+    /** Returns this if there is no allocation, or otherwise a copy of this node without allocation. */
+    public Node withoutAllocation() {
+        return allocation.map(__ -> new Builder(this).withoutAllocation().build()).orElse(this);
     }
 
     /** Returns a copy of this node with the IP addresses set to the given value. */
