@@ -58,6 +58,7 @@ struct Struct : DatatypeConfig {
         sstruct.field.back().datatype = data_type.id;
         return *this;
     }
+    Struct &addTensorField(const vespalib::string &name, const vespalib::string &spec);
     Struct &setId(int32_t i) { DatatypeConfig::setId(i); return *this; }
 };
 
