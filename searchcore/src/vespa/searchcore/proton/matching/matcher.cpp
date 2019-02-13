@@ -311,16 +311,21 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
     total_matching_time.stop();
     my_stats.queryCollateralTime(total_matching_time.elapsed().sec() - my_stats.queryLatencyAvg());
     {
-        fastos::TimeStamp softLimit = uint64_t((1.0 - _rankSetup->getSoftTimeoutTailCost()) * request.getTimeout());
         fastos::TimeStamp duration = request.getTimeUsed();
         std::lock_guard<std::mutex> guard(_statsLock);
         _stats.add(my_stats);
         if (my_stats.softDoomed()) {
             double old = _stats.softDoomFactor();
-            _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, duration);
-            LOG(info, "Triggered softtimeout factor adjustment. limit=%1.3f and duration=%1.3f, rankprofile=%s"
+            fastos::TimeStamp softLimit = uint64_t((1.0 - _rankSetup->getSoftTimeoutTailCost()) * request.getTimeout());
+            fastos::TimeStamp adjustedDuration = duration - my_stats.doomOvertime();
+            if (adjustedDuration < 0) {
+                adjustedDuration = 0;
+            }
+            _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, adjustedDuration);
+            LOG(info, "Triggered softtimeout factor adjustment. request=%1.3f, doomOvertime=%1.3f, limit=%1.3f and duration=%1.3f, rankprofile=%s"
                       ", factor adjusted from %1.3f to %1.3f",
-                softLimit.sec(), duration.sec(), request.ranking.c_str(), old, _stats.softDoomFactor());
+                request.getTimeout().sec(), my_stats.doomOvertime().sec(), softLimit.sec(), duration.sec(),
+                request.ranking.c_str(), old, _stats.softDoomFactor());
         }
     }
     return reply;

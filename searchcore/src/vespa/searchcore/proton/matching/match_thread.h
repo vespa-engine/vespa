@@ -58,6 +58,7 @@ private:
         bool isBelowLimit() const { return matches < _matches_limit; }
         bool    isAtLimit() const { return matches == _matches_limit; }
         bool   atSoftDoom() const { return _softDoom.doom(); }
+        fastos::TimeStamp timeLeft() const { return _softDoom.left(); }
         uint32_t                 matches;
     private:
         uint32_t                 _matches_limit;
