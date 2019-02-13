@@ -10,4 +10,11 @@ VERSION="$1"
 
 mkdir -p ~/rpmbuild/{SOURCES,SPECS}
 GZIP=-1 tar -zcf ~/rpmbuild/SOURCES/vespa-$VERSION.tar.gz --exclude target --exclude cmake-build-debug --transform "flags=r;s,^,vespa-$VERSION/," *
-sed -e "s,_VESPA_VERSION_,$VERSION,"  < dist/vespa.spec > ~/rpmbuild/SPECS/vespa-$VERSION.spec
+
+DIST_FILE="dist/vespa.spec"
+# When checking out relase tags, the vespa.spec is in the source root folder. This is a workaround to be able to build rpms from a release tag.
+if [ ! -e "$DIST_FILE" ]; then
+  DIST_FILE="vespa.spec"
+fi
+
+sed -e "s,_VESPA_VERSION_,$VERSION,"  < "$DIST_FILE" > ~/rpmbuild/SPECS/vespa-$VERSION.spec
