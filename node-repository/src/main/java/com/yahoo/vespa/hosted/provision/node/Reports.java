@@ -25,6 +25,7 @@ public class Reports {
     public boolean isEmpty() { return reports.isEmpty(); }
     public Optional<Report> getReport(String id) { return Optional.ofNullable(reports.get(id)); }
     public List<Report> getReports() { return List.copyOf(reports.values()); }
+    public Reports withReport(Report report) { return new Builder(this).setReport(report).build(); }
 
     public void toSlime(Cursor reportsParentObjectCursor, String reportsName) {
         if (reports.isEmpty()) return;

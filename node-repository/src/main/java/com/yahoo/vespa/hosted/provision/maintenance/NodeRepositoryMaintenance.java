@@ -196,7 +196,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
             if (zone.environment().equals(Environment.prod) && zone.system() != SystemName.cd) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
-                retiredInterval = Duration.ofMinutes(29);
+                retiredInterval = Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
                 retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
             } else {
