@@ -37,7 +37,7 @@ import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApp
  * Main component that bootstraps and starts config server threads.
  *
  * If config server has been upgraded to a new version since the last time it was running it will redeploy all
- * applications. If that is done successfully the RPC server the health status code will change from
+ * applications. If that is done successfully the RPC server will start and the health status code will change from
  * 'initializing' to 'up'. If VIP status mode is VIP_STATUS_PROGRAMMATICALLY the config server
  * will be put into rotation (start serving status.html with 200 OK), if the mode is VIP_STATUS_FILE a VIP status
  * file is created or removed ny some external pgrogram based on the health status code.

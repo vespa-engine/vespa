@@ -364,22 +364,22 @@ public class StandaloneContainerApplication implements Application {
 
         @Override
         public List<ConfigServerSpec> configServerSpecs() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public HostName loadBalancerName() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public URI ztsUrl() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public String athenzDnsSuffix() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -389,37 +389,37 @@ public class StandaloneContainerApplication implements Application {
 
         @Override
         public Zone zone() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public Set<Rotation> rotations() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean isBootstrap() {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean isFirstTimeDeployment() {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean useDedicatedNodeForLogserver() {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean useFdispatchByDefault() {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean useAdaptiveDispatch() {
-            return false;
+            throw new UnsupportedOperationException();
         }
     }
 
