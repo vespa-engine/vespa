@@ -189,7 +189,7 @@ public class DeploymentTester {
     }
 
     private void completeDeployment(Application application, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
-        assertTrue(applications().require(application.id()).change().hasTargets());
+        assertTrue(application.id() + " has pending changes to deploy", applications().require(application.id()).change().hasTargets());
         DeploymentSteps steps = controller().applications().deploymentTrigger().steps(applicationPackage.deploymentSpec());
         List<JobType> jobs = steps.jobs();
         for (JobType job : jobs) {

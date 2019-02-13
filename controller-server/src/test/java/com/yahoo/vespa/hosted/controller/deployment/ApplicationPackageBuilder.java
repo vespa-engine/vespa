@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
@@ -17,10 +16,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -38,7 +35,7 @@ public class ApplicationPackageBuilder {
                                                                 "<notifications>\n  <email ",
                                                                 "/>\n</notifications>\n").setEmptyValue("");
 
-    private Optional<Integer> majorVersion = Optional.empty();
+    private OptionalInt majorVersion = OptionalInt.empty();
     private String upgradePolicy = null;
     private Environment environment = Environment.prod;
     private String globalServiceId = null;
@@ -46,7 +43,7 @@ public class ApplicationPackageBuilder {
     private String searchDefinition = "search test { }";
 
     public ApplicationPackageBuilder majorVersion(int majorVersion) {
-        this.majorVersion = Optional.of(majorVersion);
+        this.majorVersion = OptionalInt.of(majorVersion);
         return this;
     }
 

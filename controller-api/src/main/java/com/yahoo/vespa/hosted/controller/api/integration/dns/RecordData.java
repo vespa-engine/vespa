@@ -37,9 +37,7 @@ public class RecordData {
 
     @Override
     public String toString() {
-        return "RecordValue{" +
-               "value='" + data + '\'' +
-               '}';
+        return data;
     }
 
     /** Create a new record containing the given data */

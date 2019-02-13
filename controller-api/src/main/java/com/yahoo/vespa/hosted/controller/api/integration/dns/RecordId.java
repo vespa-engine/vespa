@@ -22,9 +22,7 @@ public class RecordId {
 
     @Override
     public String toString() {
-        return "RecordId{" +
-                "id='" + id + '\'' +
-                '}';
+        return id;
     }
 
     @Override

@@ -74,7 +74,7 @@ public class Application {
                        OptionalInt majorVersion, ApplicationMetrics metrics,
                        Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
         this(id, createdAt, deploymentSpec, validationOverrides,
-             deployments.stream().collect(Collectors.toMap(Deployment::zone, d -> d)),
+             deployments.stream().collect(Collectors.toMap(Deployment::zone, Function.identity())),
              deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
              metrics, rotation, rotationStatus);
     }
