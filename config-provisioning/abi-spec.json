@@ -458,6 +458,7 @@
       "public void <init>(java.lang.String, java.util.Optional)",
       "public void <init>(java.lang.String, com.yahoo.config.provision.ClusterMembership, com.yahoo.config.provision.Flavor, java.util.Optional)",
       "public void <init>(java.lang.String, java.util.List)",
+      "public void <init>(java.lang.String, java.util.List, com.yahoo.config.provision.Flavor)",
       "public void <init>(java.lang.String, java.util.List, com.yahoo.config.provision.ClusterMembership)",
       "public void <init>(java.lang.String, java.util.List, java.util.Optional, java.util.Optional)",
       "public void <init>(java.lang.String, java.util.List, java.util.Optional, java.util.Optional, java.util.Optional)",
