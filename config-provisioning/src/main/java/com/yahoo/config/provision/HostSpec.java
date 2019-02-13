@@ -40,6 +40,9 @@ public class HostSpec implements Comparable<HostSpec> {
     public HostSpec(String hostname, List<String> aliases) {
         this(hostname, aliases, Optional.empty(), Optional.empty());
     }
+    public HostSpec(String hostname, List<String> aliases, Flavor flavor) {
+        this(hostname, aliases, Optional.of(flavor), Optional.empty());
+    }
 
     public HostSpec(String hostname, List<String> aliases, ClusterMembership membership) {
         this(hostname, aliases, Optional.empty(), Optional.of(membership));
