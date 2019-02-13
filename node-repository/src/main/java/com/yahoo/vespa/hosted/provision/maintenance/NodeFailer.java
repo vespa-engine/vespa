@@ -261,9 +261,9 @@ public class NodeFailer extends Maintainer {
      * There are reasons why this node should be parked, and we'd like to do it through retiring,
      * including any child nodes.
      */
-    private void retireRecursively(Node node, List<String> reasons, List<Node> activeNodesIfMaybeParent) {
-        if (activeNodesIfMaybeParent != null) {
-            List<Node> childNodesToRetire = activeNodesIfMaybeParent.stream()
+    private void retireRecursively(Node node, List<String> reasons, List<Node> activeNodes) {
+        if (activeNodes != null) {
+            List<Node> childNodesToRetire = activeNodes.stream()
                     .filter(n -> n.parentHostname().equals(Optional.of(node.hostname())))
                     .collect(Collectors.toList());
             for (Node childNode : childNodesToRetire) {
