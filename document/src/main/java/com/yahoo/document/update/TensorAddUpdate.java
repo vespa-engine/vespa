@@ -9,11 +9,8 @@ import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  *  An update used to add cells to a sparse tensor (has only mapped dimensions).
