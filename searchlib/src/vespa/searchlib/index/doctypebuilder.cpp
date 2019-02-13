@@ -2,12 +2,15 @@
 
 #include "doctypebuilder.h"
 #include <vespa/document/datatype/urldatatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/repo/configbuilder.h>
 
 using namespace document;
 
 namespace search::index {
 namespace {
+
+TensorDataType tensorDataType;
 
 const DataType *convert(Schema::DataType type) {
     switch (type) {
@@ -33,7 +36,7 @@ const DataType *convert(Schema::DataType type) {
     case schema::DataType::BOOLEANTREE:
         return DataType::PREDICATE;
     case schema::DataType::TENSOR:
-        return DataType::TENSOR;
+        return &tensorDataType;
     default:
         break;
     }

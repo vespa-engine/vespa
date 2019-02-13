@@ -8,15 +8,19 @@ namespace vespalib { namespace tensor { class Tensor; } }
 
 namespace document {
 
+class TensorDataType;
+
 /**
  * Field value representing a tensor.
  */
 class TensorFieldValue : public FieldValue {
 private:
+    const TensorDataType *_dataType;
     std::unique_ptr<vespalib::tensor::Tensor> _tensor;
     bool _altered;
 public:
     TensorFieldValue();
+    TensorFieldValue(const TensorDataType *dataType);
     TensorFieldValue(const TensorFieldValue &rhs);
     TensorFieldValue(TensorFieldValue &&rhs);
     ~TensorFieldValue();
