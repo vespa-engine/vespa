@@ -154,11 +154,9 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                 "        }\n" +
                 "        field tensor_field_1 type tensor(x{}) { \n" +
                 "            indexing: summary | attribute \n" +
-                "            attribute: tensor(x{}) \n" +
                 "        }\n" +
                 "        field tensor_field_2 type tensor(x[3],y[3]) { \n" +
                 "            indexing: summary | attribute \n" +
-                "            attribute: tensor(x[3],y[3]) \n" +
                 "        }\n" +
                 "    }\n" +
                 "    constant file_constant_tensor {\n" +

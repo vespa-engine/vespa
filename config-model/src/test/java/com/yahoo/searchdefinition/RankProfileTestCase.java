@@ -108,8 +108,8 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         SearchBuilder builder = new SearchBuilder(registry);
         builder.importString("search test {\n" +
                 "  document test { \n" +
-                "    field a type tensor(x[]) { indexing: attribute \n attribute: tensor(x[10]) }\n" +
-                "    field b type tensor(y{}) { indexing: attribute \n attribute: tensor(y{}) }\n" +
+                "    field a type tensor(x[10]) { indexing: attribute }\n" +
+                "    field b type tensor(y{}) { indexing: attribute }\n" +
                 "    field c type tensor(x[]) { indexing: attribute }\n" +
                 "  }\n" +
                 "  rank-profile p1 {}\n" +

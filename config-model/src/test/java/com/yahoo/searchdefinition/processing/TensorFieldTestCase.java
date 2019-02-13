@@ -39,8 +39,8 @@ public class TensorFieldTestCase {
     @Test
     public void requireThatIllegalTensorTypeSpecThrowsException() throws ParseException {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For attribute field 'f1': Illegal tensor type spec: Failed parsing element 'invalid' in type spec 'tensor(invalid)'");
-        SearchBuilder.createFromString(getSd("field f1 type tensor(x{}) { indexing: attribute \n attribute: tensor(invalid) }"));
+        exception.expectMessage("Field type: Illegal tensor type spec: Failed parsing element 'invalid' in type spec 'tensor(invalid)'");
+        SearchBuilder.createFromString(getSd("field f1 type tensor(invalid) { indexing: attribute }"));
     }
 
     private static String getSd(String field) {
