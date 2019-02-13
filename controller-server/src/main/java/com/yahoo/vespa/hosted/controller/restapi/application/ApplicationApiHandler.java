@@ -789,10 +789,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    /**
-     *  Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9",
-     *  optionally pinning to that version if.
-     */
+    /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
     private HttpResponse deployPlatform(String tenantName, String applicationName, String versionString, boolean pin) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         StringBuilder response = new StringBuilder();
