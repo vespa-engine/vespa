@@ -68,7 +68,7 @@ public class NodePrioritizerTest {
     }
 
     private static Node createNode(Node parent, String hostname, String flavor) {
-        return Node.createDockerNode(Collections.singleton("127.0.0.1"), new HashSet<>(), hostname, parent.hostname(),
+        return Node.createDockerNode(Collections.singleton("127.0.0.1"), new HashSet<>(), hostname, Optional.of(parent.hostname()),
                                      flavors.getFlavorOrThrow(flavor), NodeType.tenant);
     }
 

@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -49,27 +48,24 @@ public final class Node {
     private Optional<Allocation> allocation;
 
     /** Temporary method until we can merge it with the other create method */
-    public static Node createDockerNode(Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, String parentHostname, Flavor flavor, NodeType type) {
-        return new Builder("fake-" + hostname, ipAddresses, hostname, flavor, type)
-                .withIpAddressPool(ipAddressPool)
-                .withParentHostname(parentHostname)
-                .withState(State.reserved)
-                .build();
+    public static Node createDockerNode(Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
+        return new Node("fake-" + hostname, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.reserved,
+                Optional.empty(), History.empty(), type, new Reports(), Optional.empty());
     }
 
     /** Creates a node in the initial state (provisioned) */
     public static Node create(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
-        return new Builder(openStackId, ipAddresses, hostname, flavor, type)
-                .withIpAddressPool(ipAddressPool)
-                .withParentHostname(parentHostname)
-                .build();
+        return new Node(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
+                Optional.empty(), History.empty(), type, new Reports(), Optional.empty());
     }
 
-    /**
-     * Creates a node with all fields specified, necessary for serialization code.
-     *
-     * Others should use the {@code create} methods to create nodes, or the Builder to modify nodes.
-     */
+    /** Do not use. Construct nodes by calling {@link NodeRepository#createNode} */
+    private Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
+                 Flavor flavor, Status status, State state, Allocation allocation, History history, NodeType type) {
+        this(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type, new Reports(), Optional.empty());
+    }
+
+    /** Creates a node. See also the {@code create} helper methods. */
     public Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type,
                 Reports reports, Optional<String> modelId) {
@@ -101,119 +97,6 @@ public final class Node {
         this.type = type;
         this.reports = reports;
         this.modelId = modelId;
-    }
-
-    /** Helper for creating and mutating node objects. */
-    private static class Builder {
-        private final String hostname;
-
-        // Required but mutable fields
-        private String id;
-        private NodeType type;
-        private Flavor flavor;
-        private Set<String> ipAddresses;
-
-        private Optional<String> modelId = Optional.empty();
-        private Set<String> ipAddressPool = Collections.emptySet();
-        private Optional<String> parentHostname = Optional.empty();
-        private Status status = Status.initial();
-        private State state = State.provisioned;
-        private History history = History.empty();
-        private Optional<Allocation> allocation = Optional.empty();
-        private Reports reports = new Reports();
-
-        /** Creates a builder fairly well suited for a newly provisioned node (but see {@code create} and {@code createDockerNode}). */
-        private Builder(String id, Set<String> ipAddresses, String hostname, Flavor flavor, NodeType type) {
-            this.id = id;
-            this.ipAddresses = ipAddresses;
-            this.hostname = hostname;
-            this.flavor = flavor;
-            this.type = type;
-        }
-
-        private Builder(Node node) {
-            this(node.id, node.ipAddresses, node.hostname, node.flavor, node.type);
-            withIpAddressPool(node.ipAddressPool.asSet());
-            node.parentHostname.ifPresent(this::withParentHostname);
-            withStatus(node.status);
-            withState(node.state);
-            withHistory(node.history);
-            node.allocation.ifPresent(this::withAllocation);
-        }
-
-        public Builder withId(String id) {
-            this.id = id;
-            return this;
-        }
-
-        public Builder withModelId(Optional<String> modelId) {
-            this.modelId = modelId;
-            return this;
-        }
-
-        public Builder withType(NodeType nodeType) {
-            this.type = nodeType;
-            return this;
-        }
-
-        public Builder withFlavor(Flavor flavor) {
-            this.flavor = flavor;
-            return this;
-        }
-
-        public Builder withIpAddresses(Set<String> ipAddresses) {
-            this.ipAddresses = ipAddresses;
-            return this;
-        }
-
-        public Builder withIpAddressPool(Set<String> ipAddressPool) {
-            this.ipAddressPool = ipAddressPool;
-            return this;
-        }
-
-        public Builder withParentHostname(String parentHostname) {
-            this.parentHostname = Optional.of(parentHostname);
-            return this;
-        }
-
-        public Builder withParentHostname(Optional<String> parentHostname) {
-            parentHostname.ifPresent(this::withParentHostname);
-            return this;
-        }
-
-        public Builder withStatus(Status status) {
-            this.status = status;
-            return this;
-        }
-
-        public Builder withState(State state) {
-            this.state = state;
-            return this;
-        }
-
-        public Builder withHistory(History history) {
-            this.history = history;
-            return this;
-        }
-
-        public Builder withHistoryEvent(History.Event.Type type, Agent agent, Instant at) {
-            return withHistory(history.with(new History.Event(type, agent, at)));
-        }
-
-        public Builder withAllocation(Allocation allocation) {
-            this.allocation = Optional.of(allocation);
-            return this;
-        }
-
-        public Builder withReports(Reports reports) {
-            this.reports = reports;
-            return this;
-        }
-
-        public Node build() {
-            return new Node(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status,
-                    state, allocation, history, type, reports, modelId);
-        }
     }
 
     /** Returns the IP addresses of this node */
@@ -280,12 +163,8 @@ public final class Node {
      */
     public Node withWantToRetire(boolean wantToRetire, Agent agent, Instant at) {
         if (wantToRetire == status.wantToRetire()) return this;
-        return new Builder(this)
-                .withStatus(status.withWantToRetire(wantToRetire))
-                // Also update history when we un-wantToRetire so the OperatorChangeApplicationMaintainer picks it
-                // up quickly
-                .withHistoryEvent(History.Event.Type.wantToRetire, agent, at)
-                .build();
+        return with(status.withWantToRetire(wantToRetire))
+                .with(history.with(new History.Event(History.Event.Type.wantToRetire, Agent.operator, at)));
     }
 
     /**
@@ -295,10 +174,8 @@ public final class Node {
     public Node retire(Agent agent, Instant retiredAt) {
         Allocation allocation = requireAllocation("Cannot retire");
         if (allocation.membership().retired()) return this;
-        return new Builder(this)
-                .withAllocation(allocation.retire())
-                .withHistoryEvent(History.Event.Type.retired, agent, retiredAt)
-                .build();
+        return with(allocation.retire())
+                .with(history.with(new History.Event(History.Event.Type.retired, agent, retiredAt)));
     }
 
     /** Returns a copy of this node which is retired */
@@ -317,54 +194,52 @@ public final class Node {
     /** Returns a copy of this with the restart generation set to generation */
     public Node withRestart(Generation generation) {
         Allocation allocation = requireAllocation("Cannot set restart generation");
-        return new Builder(this).withAllocation(allocation.withRestart(generation)).build();
+        return with(allocation.withRestart(generation));
     }
 
     /** Returns a node with the status assigned to the given value */
     public Node with(Status status) {
-        return new Builder(this).withStatus(status).build();
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelId);
     }
 
     /** Returns a node with the type assigned to the given value */
     public Node with(NodeType type) {
-        return new Builder(this).withType(type).build();
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelId);
     }
 
     /** Returns a node with the flavor assigned to the given value */
     public Node with(Flavor flavor) {
-        return new Builder(this).withFlavor(flavor).build();
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelId);
     }
 
     /** Returns a copy of this with the reboot generation set to generation */
     public Node withReboot(Generation generation) {
-        return new Builder(this).withStatus(status.withReboot(generation)).build();
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status.withReboot(generation), state, allocation, history, type, reports, modelId);
     }
 
     /** Returns a copy of this with the openStackId set */
     public Node withOpenStackId(String openStackId) {
-        return new Builder(this).withId(openStackId).build();
+        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelId);
     }
 
     public Node withModelId(String modelId) {
-        return new Builder(this).withModelId(Optional.of(modelId)).build();
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, Optional.of(modelId));
     }
 
     /** Returns a copy of this with a history record saying it was detected to be down at this instant */
     public Node downAt(Instant instant) {
-        return new Builder(this).withHistoryEvent(History.Event.Type.down, Agent.system, instant).build();
+        return with(history.with(new History.Event(History.Event.Type.down, Agent.system, instant)));
     }
 
     /** Returns a copy of this with any history record saying it has been detected down removed */
     public Node up() {
-        return new Builder(this).withHistory(history.without(History.Event.Type.down)).build();
+        return with(history.without(History.Event.Type.down));
     }
 
     /** Returns a copy of this with allocation set as specified. <code>node.state</code> is *not* changed. */
     public Node allocate(ApplicationId owner, ClusterMembership membership, Instant at) {
-        return new Builder(this)
-                .withAllocation(new Allocation(owner, membership, new Generation(0, 0), false))
-                .withHistoryEvent(History.Event.Type.reserved, Agent.application, at)
-                .build();
+        return this.with(new Allocation(owner, membership, new Generation(0, 0), false))
+                .with(history.with(new History.Event(History.Event.Type.reserved, Agent.application, at)));
     }
 
     /**
@@ -372,40 +247,43 @@ public final class Node {
      * Do not use this to allocate a node.
      */
     public Node with(Allocation allocation) {
-        return new Builder(this).withAllocation(allocation).build();
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this node with the IP addresses set to the given value. */
     public Node withIpAddresses(Set<String> ipAddresses) {
-        return new Builder(this).withIpAddresses(ipAddresses).build();
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state,
+                allocation, history, type, reports, modelId);
     }
 
     /** Returns a copy of this node with IP address pool set to the given value. */
     public Node withIpAddressPool(Set<String> ipAddressPool) {
-        return new Builder(this).withIpAddressPool(ipAddressPool).build();
+        return new Node(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state,
+                allocation, history, type, reports, modelId);
     }
 
     /** Returns a copy of this node with the parent hostname assigned to the given value. */
     public Node withParentHostname(String parentHostname) {
-        return new Builder(this).withParentHostname(parentHostname).build();
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, Optional.of(parentHostname), flavor, status, state,
+                allocation, history, type, reports, modelId);
     }
 
     /** Returns a copy of this node with the current reboot generation set to the given number at the given instant */
     public Node withCurrentRebootGeneration(long generation, Instant instant) {
-        Builder builder = new Builder(this)
-                .withStatus(status().withReboot(status().reboot().withCurrent(generation)));
+        Status newStatus = status().withReboot(status().reboot().withCurrent(generation));
+        History newHistory = history();
         if (generation > status().reboot().current())
-            builder.withHistoryEvent(History.Event.Type.rebooted, Agent.system, instant);
-        return builder.build();
+            newHistory = history.with(new History.Event(History.Event.Type.rebooted, Agent.system, instant));
+        return this.with(newStatus).with(newHistory);
     }
 
     /** Returns a copy of this node with the given history. */
     public Node with(History history) {
-        return new Builder(this).withHistory(history).build();
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelId);
     }
 
     public Node with(Reports reports) {
-        return new Builder(this).withReports(reports).build();
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelId);
     }
 
     private static void requireNonEmptyString(Optional<String> value, String message) {
