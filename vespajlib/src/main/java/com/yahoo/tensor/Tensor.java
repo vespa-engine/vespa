@@ -93,6 +93,26 @@ public interface Tensor {
      */
     Tensor withType(TensorType type);
 
+    /**
+     * Returns a new tensor where existing cells in this tensor have been
+     * modified according to the given operation and cells in the given map.
+     * Cells in the map outside of existing cells are thus ignored.
+     *
+     * @param op the modifying function
+     * @param cells the cells to modify
+     * @return a new tensor with modified cells
+     */
+    default Tensor modify(DoubleBinaryOperator op, Map<TensorAddress, Double> cells) {
+        Tensor.Builder builder = Tensor.Builder.of(type());
+        for (Iterator<Cell> i = cellIterator(); i.hasNext(); ) {
+            Cell cell = i.next();
+            TensorAddress address = cell.getKey();
+            double value = cell.getValue();
+            builder.cell(address, cells.containsKey(address) ? op.applyAsDouble(value, cells.get(address)) : value);
+        }
+        return builder.build();
+    }
+
     // ----------------- Primitive tensor functions
 
     default Tensor map(DoubleUnaryOperator mapper) {

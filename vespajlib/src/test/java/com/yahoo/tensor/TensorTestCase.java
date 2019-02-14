@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.DoubleBinaryOperator;
 
 import static com.yahoo.tensor.TensorType.Dimension.Type;
 import static org.junit.Assert.assertEquals;
@@ -134,6 +135,26 @@ public class TensorTestCase {
         Tensor vectorInJSpace = vector(Type.mapped).multiply(unitJ);
         Tensor matrixInKSpace = matrix(Type.mapped, 2).get(0).multiply(unitK);
         assertEquals("Generic computation implementation", 42, (int)dotProduct(vectorInJSpace, Collections.singletonList(matrixInKSpace)));
+    }
+
+    @Test
+    public void testTensorModify() {
+        assertTensorModify((left, right) -> right,
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1, {x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:1}:0}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1,{x:0,y:1}:0}"));
+        assertTensorModify((left, right) -> left + right,
+                Tensor.from("tensor(x[1],y[2])", "{{x:0,y:0}:1, {x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:1}:3}"),
+                Tensor.from("tensor(x[1],y[2])", "{{x:0,y:0}:1,{x:0,y:1}:5}"));
+        assertTensorModify((left, right) -> left * right,
+                Tensor.from("tensor(x[1],y[2])", "{{x:0,y:0}:1, {x:0,y:1}:2}"),
+                Tensor.from("tensor(x[1],y[3])", "{}"),
+                Tensor.from("tensor(x[1],y[2])", "{{x:0,y:0}:0,{x:0,y:1}:0}"));
+    }
+
+    private void assertTensorModify(DoubleBinaryOperator op, Tensor init, Tensor update, Tensor expected) {
+        assertEquals(expected, init.modify(op, update.cells()));
     }
 
     private double dotProduct(Tensor tensor, List<Tensor> tensors) {
