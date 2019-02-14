@@ -274,7 +274,12 @@ public class SearchCluster implements NodeManager<Node> {
         if (numGroups == 1) {
             Group group = groups.values().iterator().next();
             group.aggregateActiveDocuments();
-            updateSufficientCoverage(group, true); // by definition
+            // With just one group sufficient coverage may not be the same as full coverage, as the
+            // group will always be marked sufficient for use.
+            updateSufficientCoverage(group, true);
+            boolean fullCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), group.getActiveDocuments(),
+                    group.getActiveDocuments());
+            trackGroupCoverageChanges(0, group, fullCoverage, group.getActiveDocuments());
             return;
         }
 
@@ -296,6 +301,7 @@ public class SearchCluster implements NodeManager<Node> {
             boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), activeDocuments,
                     averageDocumentsInOtherGroups);
             updateSufficientCoverage(group, sufficientCoverage);
+            trackGroupCoverageChanges(i, group, sufficientCoverage, averageDocumentsInOtherGroups);
         }
     }
 
@@ -332,21 +338,12 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    private void logIfInsufficientCoverage(boolean sufficient, OptionalInt groupId, int nodes) {
-        if (!sufficient) {
-            String group = groupId.isPresent()? Integer.toString(groupId.getAsInt()) : "(unspecified)";
-            log.warning(() -> String.format("Coverage of group %s is only %d/%d (requires %d)", group, nodes, groupSize(),
-                    groupSize() - dispatchConfig.maxNodesDownPerGroup()));
-        }
-    }
-
     /**
      * Calculate whether a subset of nodes in a group has enough coverage
      */
     public boolean isPartialGroupCoverageSufficient(OptionalInt knownGroupId, List<Node> nodes) {
         if (orderedGroups.size() == 1) {
             boolean sufficient = nodes.size() >= groupSize() - dispatchConfig.maxNodesDownPerGroup();
-            logIfInsufficientCoverage(sufficient, knownGroupId, nodes.size());
             return sufficient;
         }
 
@@ -373,7 +370,21 @@ public class SearchCluster implements NodeManager<Node> {
         }
         long averageDocumentsInOtherGroups = sumOfActiveDocuments / otherGroups;
         boolean sufficient = isGroupCoverageSufficient(nodes.size(), nodesInGroup, activeDocuments, averageDocumentsInOtherGroups);
-        logIfInsufficientCoverage(sufficient, knownGroupId, nodes.size());
         return sufficient;
     }
+
+    private void trackGroupCoverageChanges(int index, Group group, boolean fullCoverage, long averageDocuments) {
+        boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
+        if(changed) {
+            int requiredNodes = groupSize() - dispatchConfig.maxNodesDownPerGroup();
+            if (fullCoverage) {
+                log.info(() -> String.format("Group %d is now good again (%d/%d active docs, coverage %d/%d)", index, group.getActiveDocuments(), group.workingNodes(), groupSize(),
+                        requiredNodes));
+            } else {
+                log.warning(() -> String.format("Coverage of group %d is only %d/%d (requires %d)", index, group.workingNodes(), groupSize(),
+                        requiredNodes));
+            }
+        }
+    }
+
 }
