@@ -161,7 +161,7 @@ public class NodeSerializer {
     }
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
-        return new Node(object.field(idKey).asString(),
+        return new Node.Builder(object.field(idKey).asString(),
                         ipAddressesFromSlime(object, ipAddressesKey),
                         ipAddressesFromSlime(object, ipAddressPoolKey),
                         object.field(hostnameKey).asString(),
@@ -173,7 +173,7 @@ public class NodeSerializer {
                         historyFromSlime(object.field(historyKey)),
                         nodeTypeFromString(object.field(nodeTypeKey).asString()),
                         Reports.fromSlime(object.field(reportsKey)),
-                        modelIdFromSlime(object));
+                        modelIdFromSlime(object)).build();
     }
 
     private Status statusFromSlime(Inspector object) {

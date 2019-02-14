@@ -143,8 +143,9 @@ public class HostProvisionMaintainerTest {
                             Generation.initial(),
                             false));
             Set<String> ips = state == Node.State.active ? Set.of("::1") : Set.of();
-            return new Node("fake-id-" + hostname, ips, Set.of(), hostname,
-                    parentHostname, flavor, Status.initial(), state, allocation, History.empty(), nodeType, new Reports(), Optional.empty());
+            return new Node.Builder("fake-id-" + hostname, ips, Set.of(), hostname,
+                    parentHostname, flavor, Status.initial(), state, allocation, History.empty(), nodeType,
+                    new Reports(), Optional.empty()).build();
         }
 
         NodeRepository nodeRepository() {

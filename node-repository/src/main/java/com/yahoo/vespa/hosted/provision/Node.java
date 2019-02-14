@@ -65,14 +65,10 @@ public final class Node {
                 .build();
     }
 
-    /**
-     * Creates a node with all fields specified, necessary for serialization code.
-     *
-     * Others should use the {@code create} methods to create nodes, or the Builder to modify nodes.
-     */
-    public Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
-                Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type,
-                Reports reports, Optional<String> modelId) {
+    /** Creates an immutable node. Clients should create nodes through the create methods or the Builder. */
+    private Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
+                 Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type,
+                 Reports reports, Optional<String> modelId) {
         Objects.requireNonNull(id, "A node must have an ID");
         requireNonEmptyString(hostname, "A node must have a hostname");
         requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
@@ -103,8 +99,8 @@ public final class Node {
         this.modelId = modelId;
     }
 
-    /** Helper for creating and mutating node objects. */
-    private static class Builder {
+    /** Builds a node object. */
+    public static class Builder {
         private final String hostname;
 
         // Required but mutable fields
@@ -132,13 +128,29 @@ public final class Node {
         }
 
         private Builder(Node node) {
-            this(node.id, node.ipAddresses, node.hostname, node.flavor, node.type);
-            withIpAddressPool(node.ipAddressPool.asSet());
-            node.parentHostname.ifPresent(this::withParentHostname);
-            withStatus(node.status);
-            withState(node.state);
-            withHistory(node.history);
-            node.allocation.ifPresent(this::withAllocation);
+            this(node.id, node.ipAddresses, node.ipAddressPool.asSet(), node.hostname, node.parentHostname,
+                    node.flavor, node.status, node.state, node.allocation, node.history, node.type, node.reports,
+                    node.modelId);
+        }
+
+        /** Create a Builder with ALL fields set, useful for e.g. serialization code. */
+        public Builder(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname,
+                       Optional<String> parentHostname, Flavor flavor, Status status, State state,
+                       Optional<Allocation> allocation, History history, NodeType type, Reports reports,
+                       Optional<String> modelId) {
+            this.id = id;
+            this.ipAddresses = ipAddresses;
+            this.hostname = hostname;
+            this.flavor = flavor;
+            this.type = type;
+            this.ipAddressPool = ipAddressPool;
+            this.parentHostname = parentHostname;
+            this.status = status;
+            this.state = state;
+            this.history = history;
+            this.allocation = allocation;
+            this.reports = reports;
+            this.modelId = modelId;
         }
 
         public Builder withId(String id) {

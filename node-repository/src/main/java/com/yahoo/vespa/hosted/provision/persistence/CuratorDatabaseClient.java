@@ -206,13 +206,13 @@ public class CuratorDatabaseClient {
 
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
-            Node newNode = new Node(node.id(), node.ipAddresses(), node.ipAddressPool().asSet(), node.hostname(),
+            Node newNode = new Node.Builder(node.id(), node.ipAddresses(), node.ipAddressPool().asSet(), node.hostname(),
                                     node.parentHostname(), node.flavor(),
                                     newNodeStatus(node, toState),
                                     toState,
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
                                     node.history().recordStateTransition(node.state(), toState, agent, clock.instant()),
-                                    node.type(), node.reports(), node.modelId());
+                                    node.type(), node.reports(), node.modelId()).build();
             curatorTransaction.add(CuratorOperations.delete(toPath(node).getAbsolute()))
                               .add(CuratorOperations.create(toPath(toState, newNode.hostname()).getAbsolute(), nodeSerializer.toJson(newNode)));
             writtenNodes.add(newNode);
