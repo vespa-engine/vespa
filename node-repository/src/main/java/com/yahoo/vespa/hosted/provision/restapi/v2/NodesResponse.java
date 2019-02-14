@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
-import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
@@ -187,7 +186,7 @@ class NodesResponse extends HttpResponse {
         ipAddressesToSlime(node.ipAddressPool().asSet(), object.setArray("additionalIpAddresses"));
         node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString("hardwareDivergence", hardwareDivergence));
         node.reports().toSlime(object, "reports");
-        node.modelId().ifPresent(modelId -> object.setString("modelId", modelId));
+        node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));
     }
 
     private void toSlime(ApplicationId id, Cursor object) {

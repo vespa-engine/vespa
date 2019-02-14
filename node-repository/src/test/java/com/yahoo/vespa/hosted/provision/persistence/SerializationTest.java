@@ -364,11 +364,11 @@ public class SerializationTest {
     @Test
     public void model_id_serialization() {
         Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
-        assertFalse(node.modelId().isPresent());
+        assertFalse(node.modelName().isPresent());
 
-        node = node.withModelId("some model");
+        node = node.withModelName("some model");
         node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
-        assertEquals("some model", node.modelId().get());
+        assertEquals("some model", node.modelName().get());
     }
 
     private byte[] createNodeJson(String hostname, String... ipAddress) {

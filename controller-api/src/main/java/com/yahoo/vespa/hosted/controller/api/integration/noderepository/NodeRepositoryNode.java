@@ -86,8 +86,8 @@ public class NodeRepositoryNode {
     private NodeHistory[] history;
     @JsonProperty("allowedToBeDown")
     private Boolean allowedToBeDown;
-    @JsonProperty("modelId")
-    private String modelId;
+    @JsonProperty("modelName")
+    private String modelName;
 
     public String getUrl() {
         return url;
@@ -379,12 +379,12 @@ public class NodeRepositoryNode {
         this.wantedOsVersion = wantedOsVersion;
     }
 
-    public String getModelId() {
-        return modelId;
+    public String getModelName() {
+        return modelName;
     }
 
-    public void setModelId(String modelId) {
-        this.modelId = modelId;
+    public void setModelName(String modelName) {
+        this.modelName = modelName;
     }
 
     @Override
@@ -427,7 +427,7 @@ public class NodeRepositoryNode {
                ", description='" + description + '\'' +
                ", history=" + Arrays.toString(history) +
                ", allowedToBeDown=" + allowedToBeDown +
-               ", modelId=" + modelId +
+               ", modelName=" + modelName +
                '}';
     }
 }
