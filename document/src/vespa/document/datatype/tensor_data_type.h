@@ -21,6 +21,8 @@ public:
     static std::unique_ptr<const TensorDataType> fromSpec(const vespalib::string &spec);
     
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorDataType);
+
+    const vespalib::eval::ValueType &getTensorType() const { return _tensorType; }
 };
 
 }

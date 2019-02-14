@@ -20,7 +20,7 @@ private:
     bool _altered;
 public:
     TensorFieldValue();
-    TensorFieldValue(const TensorDataType *dataType);
+    explicit TensorFieldValue(const TensorDataType &dataType);
     TensorFieldValue(const TensorFieldValue &rhs);
     TensorFieldValue(TensorFieldValue &&rhs);
     ~TensorFieldValue();

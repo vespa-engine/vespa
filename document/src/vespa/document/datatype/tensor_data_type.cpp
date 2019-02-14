@@ -25,7 +25,7 @@ TensorDataType::TensorDataType(ValueType tensorType)
 FieldValue::UP
 TensorDataType::createFieldValue() const
 {
-    return std::make_unique<TensorFieldValue>();
+    return std::make_unique<TensorFieldValue>(*this);
 }
 
 TensorDataType*

@@ -163,8 +163,10 @@ createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
     return vespalib::tensor::TensorFactory::create(cells, dimensions, builder);
 }
 
+TensorDataType tensorDataType2DMapped(vespalib::eval::ValueType::from_spec("tensor(x{},y{})"));
+
 FieldValue::UP createTensorFieldValue() {
-    auto fv(std::make_unique<TensorFieldValue>());
+    auto fv(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
     *fv = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} }, {"x", "y"});
     return std::move(fv);
 }
@@ -186,13 +188,13 @@ std::unique_ptr<Tensor> createExpectedAddUpdatedTensorWith3Cells() {
 }
 
 FieldValue::UP createTensorFieldValueWith2Cells() {
-    auto fv(std::make_unique<TensorFieldValue>());
+    auto fv(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
     *fv = createTensorWith2Cells();
     return std::move(fv);
 }
 
 std::unique_ptr<TensorAddUpdate> createTensorAddUpdate() {
-    auto tensorFieldValue(std::make_unique<TensorFieldValue>());
+    auto tensorFieldValue(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
     *tensorFieldValue = createTensor({    {{{"x", "8"}, {"y", "8"}}, 2},
                                           {{{"x", "8"}, {"y", "9"}}, 2} }, {"x", "y"});
     auto update = std::make_unique<TensorAddUpdate>(std::move(tensorFieldValue));
@@ -200,7 +202,7 @@ std::unique_ptr<TensorAddUpdate> createTensorAddUpdate() {
 }
 
 std::unique_ptr<TensorModifyUpdate> createTensorModifyUpdate() {
-    auto tensorFieldValue(std::make_unique<TensorFieldValue>());
+    auto tensorFieldValue(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
     *tensorFieldValue = createTensor({ {{{"x", "8"}, {"y", "9"}}, 2} }, {"x", "y"});
     auto update = std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::REPLACE, std::move(tensorFieldValue));
     return update;
@@ -945,8 +947,7 @@ DocumentUpdateTest::testTensorAssignUpdate()
     CPPUNIT_ASSERT(!doc->getValue("tensor"));
     Document updated(*doc);
     FieldValue::UP new_value(createTensorFieldValue());
-    auto tensorDataType = std::make_unique<TensorDataType>();
-    testValueUpdate(AssignValueUpdate(*new_value), *tensorDataType);
+    testValueUpdate(AssignValueUpdate(*new_value), tensorDataType2DMapped);
     DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
     upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(AssignValueUpdate(*new_value)));
     upd.applyTo(updated);
@@ -980,8 +981,7 @@ DocumentUpdateTest::testTensorAddUpdate()
     auto oldTensor = createTensorFieldValueWith2Cells();
     updated.setValue(updated.getField("tensor"), *oldTensor);
     CPPUNIT_ASSERT(*doc != updated);
-    auto tensorDataType = std::make_unique<TensorDataType>();
-    testValueUpdate(*createTensorAddUpdate(), *tensorDataType);
+    testValueUpdate(*createTensorAddUpdate(), tensorDataType2DMapped);
     std::string expTensorAddUpdateString("TensorAddUpdate("
                                          "{TensorFieldValue: "
                                          "{\"dimensions\":[\"x\",\"y\"],"
@@ -1009,8 +1009,7 @@ DocumentUpdateTest::testTensorModifyUpdate()
     auto oldTensor = createTensorFieldValueWith2Cells();
     updated.setValue(updated.getField("tensor"), *oldTensor);
     CPPUNIT_ASSERT(*doc != updated);
-    auto tensorDataType = std::make_unique<TensorDataType>();
-    testValueUpdate(*createTensorModifyUpdate(), *tensorDataType);
+    testValueUpdate(*createTensorModifyUpdate(), tensorDataType2DMapped);
     std::string expTensorModifyUpdateString("TensorModifyUpdate(replace,"
                                             "{TensorFieldValue: "
                                             "{\"dimensions\":[\"x\",\"y\"],"

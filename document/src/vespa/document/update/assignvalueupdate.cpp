@@ -65,7 +65,9 @@ AssignValueUpdate::print(std::ostream& out, bool verbose, const std::string& ind
 bool
 AssignValueUpdate::applyTo(FieldValue& value) const
 {
-    if (_value && (_value->getDataType() != value.getDataType())) {
+    if (_value && (_value->getDataType() != value.getDataType()) &&
+        ((value.getDataType() == nullptr) ||
+         !value.getDataType()->isValueType(*_value))) {
         vespalib::string err = vespalib::make_string(
                 "Unable to assign a \"%s\" value to a \"%s\" field value.",
                 _value->getClass().name(), value.getClass().name());
