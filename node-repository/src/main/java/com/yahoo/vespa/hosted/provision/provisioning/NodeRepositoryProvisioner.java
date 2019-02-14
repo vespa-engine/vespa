@@ -9,10 +9,11 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
@@ -107,6 +108,13 @@ public class NodeRepositoryProvisioner implements Provisioner {
         }
 
         return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups));
+    }
+
+    @Override
+    public NetworkPorts getNetworkPorts(HostSpec host) {
+         Optional<Node> node = nodeRepository.getNode(host.hostname());
+         Optional<NetworkPorts> ports = node.map(n -> n.getNetworkPorts());
+         return ports.orElse(new NetworkPorts());
     }
 
     @Override

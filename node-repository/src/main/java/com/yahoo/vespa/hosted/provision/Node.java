@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -48,6 +49,9 @@ public final class Node {
     /** The current allocation of this node, if any */
     private Optional<Allocation> allocation;
 
+    /** The current set of allocated network ports on this node */
+    private Optional<NetworkPorts> networkPorts;
+
     /** Temporary method until we can merge it with the other create method */
     public static Node createDockerNode(Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, String parentHostname, Flavor flavor, NodeType type) {
         return new Builder("fake-" + hostname, ipAddresses, hostname, flavor, type)
@@ -72,7 +76,7 @@ public final class Node {
      */
     public Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type,
-                Reports reports, Optional<String> modelId) {
+                Reports reports, Optional<String> modelId, Optional<NetworkPorts> networkPorts) {
         Objects.requireNonNull(id, "A node must have an ID");
         requireNonEmptyString(hostname, "A node must have a hostname");
         requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
@@ -101,6 +105,7 @@ public final class Node {
         this.type = type;
         this.reports = reports;
         this.modelId = modelId;
+        this.networkPorts = networkPorts;
     }
 
     /** Helper for creating and mutating node objects. */
@@ -121,6 +126,7 @@ public final class Node {
         private History history = History.empty();
         private Optional<Allocation> allocation = Optional.empty();
         private Reports reports = new Reports();
+        private Optional<NetworkPorts> networkPorts = Optional.empty();
 
         /** Creates a builder fairly well suited for a newly provisioned node (but see {@code create} and {@code createDockerNode}). */
         private Builder(String id, Set<String> ipAddresses, String hostname, Flavor flavor, NodeType type) {
@@ -210,9 +216,14 @@ public final class Node {
             return this;
         }
 
+        public Builder withNetworkPorts(NetworkPorts networkPorts) {
+            this.networkPorts = Optional.of(networkPorts);
+            return this;
+        }
+
         public Node build() {
             return new Node(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status,
-                    state, allocation, history, type, reports, modelId);
+                    state, allocation, history, type, reports, modelId, networkPorts);
         }
     }
 
@@ -263,6 +274,17 @@ public final class Node {
             throw new IllegalStateException(message + " for  " + hostname() + ": The node is unallocated");
 
         return allocation.get();
+    }
+
+    /** Return the current port allocator for this node, if any */
+    public Optional<NetworkPorts> networkPorts() { return networkPorts; }
+
+    /** Return a network port allocator for this node */
+    public NetworkPorts getNetworkPorts() {
+        if (! networkPorts.isPresent()) {
+            networkPorts = Optional.of(new NetworkPorts());
+        }
+        return networkPorts.get();
     }
 
     /** Returns a history of the last events happening to this node */
