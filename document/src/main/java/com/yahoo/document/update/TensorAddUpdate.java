@@ -6,7 +6,10 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -37,8 +40,32 @@ public class TensorAddUpdate extends ValueUpdate<TensorFieldValue> {
 
     @Override
     public FieldValue applyTo(FieldValue oldValue) {
-        // TODO: implement
-        return null;
+        if ( ! (oldValue instanceof TensorFieldValue)) {
+            throw new IllegalStateException("Cannot use tensor add update on non-tensor datatype " + oldValue.getClass().getName());
+        }
+        if ( ! ((TensorFieldValue) oldValue).getTensor().isPresent()) {
+            throw new IllegalArgumentException("No existing tensor to apply update to");
+        }
+        if ( ! tensor.getTensor().isPresent()) {
+            return oldValue;
+        }
+
+        Tensor oldTensor = ((TensorFieldValue) oldValue).getTensor().get();
+        Map<TensorAddress, Double> oldCells = oldTensor.cells();
+        Map<TensorAddress, Double> addCells = tensor.getTensor().get().cells();
+
+        // currently, underlying implementation disallows multiple entries with the same key
+
+        Tensor.Builder builder = Tensor.Builder.of(oldTensor.type());
+        for (Map.Entry<TensorAddress, Double> oldCell : oldCells.entrySet()) {
+            builder.cell(oldCell.getKey(), addCells.getOrDefault(oldCell.getKey(), oldCell.getValue()));
+        }
+        for (Map.Entry<TensorAddress, Double> addCell : addCells.entrySet()) {
+            if ( ! oldCells.containsKey(addCell.getKey())) {
+                builder.cell(addCell.getKey(), addCell.getValue());
+            }
+        }
+        return new TensorFieldValue(builder.build());
     }
 
     @Override
