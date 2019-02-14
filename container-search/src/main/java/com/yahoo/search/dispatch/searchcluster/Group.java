@@ -19,6 +19,7 @@ public class Group {
     private final ImmutableList<Node> nodes;
 
     private final AtomicBoolean hasSufficientCoverage = new AtomicBoolean(true);
+    private final AtomicBoolean hasFullCoverage = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
 
     public Group(int id, List<Node> nodes) {
@@ -81,5 +82,10 @@ public class Group {
         if (other == this) return true;
         if (!(other instanceof Group)) return false;
         return ((Group) other).id == this.id;
+    }
+
+    public boolean isFullCoverageStatusChanged(boolean hasFullCoverageNow) {
+        boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);
+        return previousState != hasFullCoverageNow;
     }
 }
