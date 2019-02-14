@@ -530,4 +530,23 @@ TEST("Reference fields are resolved to correct reference type") {
     EXPECT_EQUAL(*ref1_type, type->getFieldsType().getField("ref3").getDataType());
 }
 
+TEST("Tensor fields have tensor types") {
+    DocumenttypesConfigBuilderHelper builder;
+    builder.document(doc_type_id, type_name, 
+                     Struct(header_name),
+                     Struct(body_name).
+                     addTensorField("tensor1", "tensor(x[3])").
+                     addTensorField("tensor2", "tensor(y{})").
+                     addTensorField("tensor3", "tensor(x[3])"));
+    DocumentTypeRepo repo(builder.config());
+    auto *docType = repo.getDocumentType(doc_type_id);
+    ASSERT_TRUE(docType != nullptr);
+    auto &tensorField1 = docType->getField("tensor1");
+    auto &tensorField2 = docType->getField("tensor2");
+    EXPECT_EQUAL("TensorDataType(tensor(x[3]))", tensorField1.getDataType().toString());
+    EXPECT_EQUAL("TensorDataType(tensor(y{}))", tensorField2.getDataType().toString());
+    auto &tensorField3 = docType->getField("tensor3");
+    EXPECT_TRUE(&tensorField1.getDataType() == &tensorField3.getDataType());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

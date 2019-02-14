@@ -5,12 +5,20 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
 
+using vespalib::eval::ValueType;
+
 namespace document {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(TensorDataType, DataType);
 
 TensorDataType::TensorDataType()
-    : PrimitiveDataType(DataType::T_TENSOR)
+    : TensorDataType(ValueType::error_type())
+{
+}
+
+TensorDataType::TensorDataType(ValueType tensorType)
+    : PrimitiveDataType(DataType::T_TENSOR),
+      _tensorType(std::move(tensorType))
 {
 }
 
@@ -30,13 +38,13 @@ void
 TensorDataType::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
-    out << "TensorDataType()";
+    out << "TensorDataType(" << _tensorType << ")";
 }
 
 std::unique_ptr<const TensorDataType>
-TensorDataType::fromSpec([[maybe_unused]] const vespalib::string &spec)
+TensorDataType::fromSpec(const vespalib::string &spec)
 {
-    return std::make_unique<const TensorDataType>();
+    return std::make_unique<const TensorDataType>(ValueType::from_spec(spec));
 }
 
 } // document

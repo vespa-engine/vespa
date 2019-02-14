@@ -28,6 +28,17 @@ void DatatypeConfig::addNestedType(const TypeOrId &t) {
     }
 }
 
+Struct &
+Struct::addTensorField(const vespalib::string &name, const vespalib::string &spec) {
+    sstruct.field.resize(sstruct.field.size() + 1);
+    auto &field = sstruct.field.back();
+    field.name = name;
+    field.id = createFieldId(name, DataType::T_TENSOR);
+    field.datatype = DataType::T_TENSOR;
+    field.detailedtype = spec;
+    return *this;
+}
+
 namespace {
 
 void addType(const DatatypeConfig &type,

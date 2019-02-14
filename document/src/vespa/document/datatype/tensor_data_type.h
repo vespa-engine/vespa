@@ -2,6 +2,7 @@
 #pragma once
 
 #include "primitivedatatype.h"
+#include <vespa/eval/eval/value_type.h>
 
 namespace document {
 
@@ -9,8 +10,10 @@ namespace document {
  * This class describes a tensor type.
  */
 class TensorDataType : public PrimitiveDataType {
+    vespalib::eval::ValueType _tensorType;
 public:
     TensorDataType();
+    TensorDataType(vespalib::eval::ValueType tensorType);
     
     std::unique_ptr<FieldValue> createFieldValue() const override;
     TensorDataType* clone() const override;
