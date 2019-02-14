@@ -15,19 +15,14 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.config.model.api.ConfigServerSpec;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.StaticConfigDefinitionRepo;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.di.config.SubscriberFactory;
@@ -48,14 +43,12 @@ import org.w3c.dom.Element;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.collections.CollectionUtil.first;
@@ -88,7 +81,6 @@ public class StandaloneContainerApplication implements Application {
     private final Application configuredApplication;
     private final Container container;
 
-    @SuppressWarnings("WeakerAccess")
     @Inject
     public StandaloneContainerApplication(Injector injector) {
         this.injector = injector;
@@ -220,9 +212,9 @@ public class StandaloneContainerApplication implements Application {
         }
     }
 
-    private static ContainerModelBuilder newContainerModelBuilder(Networking networkingOption, CloudConfigInstallVariables cloudConfigInstallVariables) {
+    private static ContainerModelBuilder newContainerModelBuilder(Networking networkingOption) {
         return isConfigServer() ?
-                new ConfigServerContainerModelBuilder(cloudConfigInstallVariables) :
+                new ConfigServerContainerModelBuilder(new CloudConfigInstallVariables()) :
                 new ContainerModelBuilder(true, networkingOption);
     }
 
@@ -246,16 +238,14 @@ public class StandaloneContainerApplication implements Application {
                 .includeSourceFiles(true).preprocessedDir(preprocessedApplicationDir).build();
         ApplicationPackage applicationPackage = rawApplicationPackage.preprocess(getZone(), logger);
         validateApplication(applicationPackage);
-        CloudConfigInstallVariables cloudConfigInstallVariables = new CloudConfigInstallVariables();
-        DeployState deployState = createDeployState(applicationPackage, fileRegistry, logger, cloudConfigInstallVariables);
+        DeployState deployState = createDeployState(applicationPackage, fileRegistry, logger);
 
         VespaModel root = VespaModel.createIncomplete(deployState);
         ApplicationConfigProducerRoot vespaRoot = new ApplicationConfigProducerRoot(root, "vespa", deployState.getDocumentModel(),
                 deployState.getVespaVersion(), deployState.getProperties().applicationId());
 
         Element spec = containerRootElement(applicationPackage);
-        ContainerModel containerModel = newContainerModelBuilder(networkingOption, cloudConfigInstallVariables)
-                .build(deployState, root, configModelRepo, vespaRoot, spec);
+        ContainerModel containerModel = newContainerModelBuilder(networkingOption).build(deployState, root, configModelRepo, vespaRoot, spec);
         containerModel.getCluster().prepare(deployState);
         initializeContainerModel(containerModel, configModelRepo);
         Container container = first(containerModel.getCluster().getContainers());
@@ -284,14 +274,19 @@ public class StandaloneContainerApplication implements Application {
         return new Zone(system, environment, region);
     }
 
-    private static DeployState createDeployState(ApplicationPackage applicationPackage, FileRegistry fileRegistry,
-                                                 DeployLogger logger, CloudConfigInstallVariables cloudConfigInstallVariables) {
+    private static DeployState createDeployState(ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger logger) {
         DeployState.Builder builder = new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .fileRegistry(fileRegistry)
                 .deployLogger(logger)
-                .configDefinitionRepo(configDefinitionRepo)
-                .properties(new StandaloneContainerModelContextProperties(cloudConfigInstallVariables));
+                .configDefinitionRepo(configDefinitionRepo);
+
+        /* Temporarily disable until we know how status.html is updated for config servers/controllers
+        if (isConfigServer())
+            builder.properties(new DeployProperties.Builder()
+                                       .hostedVespa(new CloudConfigInstallVariables().hostedVespa().orElse(Boolean.FALSE))
+                                       .build());
+        */
 
         return builder.build();
     }
@@ -343,84 +338,6 @@ public class StandaloneContainerApplication implements Application {
             return fromEnv;
         }
         return Optional.ofNullable(System.getProperty(name)); // for unit testing
-    }
-
-    private static class StandaloneContainerModelContextProperties implements ModelContext.Properties {
-        private final CloudConfigInstallVariables cloudConfigInstallVariables;
-
-        StandaloneContainerModelContextProperties(CloudConfigInstallVariables cloudConfigInstallVariables) {
-            this.cloudConfigInstallVariables = cloudConfigInstallVariables;
-        }
-
-        @Override
-        public boolean multitenant() {
-            return cloudConfigInstallVariables.multiTenant().orElse(Boolean.FALSE);
-        }
-
-        @Override
-        public ApplicationId applicationId() {
-            return ApplicationId.defaultId();
-        }
-
-        @Override
-        public List<ConfigServerSpec> configServerSpecs() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public HostName loadBalancerName() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public URI ztsUrl() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String athenzDnsSuffix() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean hostedVespa() {
-            return cloudConfigInstallVariables.hostedVespa().orElse(Boolean.FALSE);
-        }
-
-        @Override
-        public Zone zone() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Set<Rotation> rotations() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isBootstrap() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isFirstTimeDeployment() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean useDedicatedNodeForLogserver() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean useFdispatchByDefault() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean useAdaptiveDispatch() {
-            throw new UnsupportedOperationException();
-        }
     }
 
 }
