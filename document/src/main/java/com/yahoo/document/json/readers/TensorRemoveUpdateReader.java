@@ -56,7 +56,7 @@ public class TensorRemoveUpdateReader {
                 expectArrayStart(buffer.currentToken());
                 int nesting = buffer.nesting();
                 for (buffer.next(); buffer.nesting() >= nesting; buffer.next()) {
-                    readTensorAddress(buffer, type, addresses);
+                    addresses.add(readTensorAddress(buffer, type));
                 }
                 expectCompositeEnd(buffer.currentToken());
             }
@@ -65,7 +65,7 @@ public class TensorRemoveUpdateReader {
         return addresses;
     }
 
-    private static void readTensorAddress(TokenBuffer buffer, TensorType type, Set<TensorAddress> addresses) {
+    private static TensorAddress readTensorAddress(TokenBuffer buffer, TensorType type) {
         TensorAddress.Builder builder = new TensorAddress.Builder(type);
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
@@ -75,7 +75,7 @@ public class TensorRemoveUpdateReader {
             builder.add(dimension, label);
         }
         expectObjectEnd(buffer.currentToken());
-        addresses.add(builder.build());
+        return builder.build();
     }
 
 }
