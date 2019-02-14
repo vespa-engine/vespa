@@ -15,6 +15,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -41,6 +42,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toMap;
@@ -69,12 +71,14 @@ public class CuratorDatabaseClient {
     private final CuratorDatabase curatorDatabase;
     private final Clock clock;
     private final Zone zone;
+    private final CuratorCounter provisionIndexCounter;
 
     public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache) {
         this.nodeSerializer = new NodeSerializer(flavors);
         this.zone = zone;
         this.curatorDatabase = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
+        this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter").getAbsolute());
         initZK();
     }
 
@@ -92,6 +96,7 @@ public class CuratorDatabaseClient {
         curatorDatabase.create(firmwareCheckPath());
         curatorDatabase.create(loadBalancersRoot);
         curatorDatabase.create(flagsRoot);
+        provisionIndexCounter.initialize(100);
     }
 
     /**
@@ -515,4 +520,14 @@ public class CuratorDatabaseClient {
         return CuratorOperations.create(path.getAbsolute(), data);
     }
 
+    /** Returns a given number of unique provision indexes */
+    public List<Integer> getProvisionIndexes(int numIndexes) {
+        if (numIndexes < 1)
+            throw new IllegalArgumentException("numIndexes must be a positive integer, was " + numIndexes);
+
+        int firstProvisionIndex = (int) provisionIndexCounter.add(numIndexes) - numIndexes;
+        return IntStream.range(0, numIndexes)
+                .mapToObj(i -> firstProvisionIndex + i)
+                .collect(Collectors.toList());
+    }
 }
