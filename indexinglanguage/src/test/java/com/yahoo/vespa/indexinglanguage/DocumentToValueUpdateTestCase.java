@@ -4,6 +4,8 @@ package com.yahoo.vespa.indexinglanguage;
 import com.yahoo.document.*;
 import com.yahoo.document.datatypes.*;
 import com.yahoo.document.update.*;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -337,4 +339,64 @@ public class DocumentToValueUpdateTestCase {
         assertTrue(valueUpd instanceof RemoveValueUpdate);
         assertEquals(new StringFieldValue("bar"), valueUpd.getValue());
     }
+
+    private static class TensorFixture {
+
+        private DocumentType docType = new DocumentType("test");
+        private String tensorField;
+
+        public TensorFixture() {
+            this("sparse_tensor", "tensor(x{})");
+        }
+
+        public TensorFixture(String tensorField, String typeSpec) {
+            this.tensorField = tensorField;
+            docType.addField(new Field(tensorField, DataType.getTensor(TensorType.fromSpec(typeSpec))));
+        }
+
+        Document assertTensorUpdateNotApplied(ValueUpdate tensorUpdate) {
+            Document result = FieldUpdateHelper.newPartialDocument(docType, null, docType.getField(tensorField), tensorUpdate);
+            assertNotNull(result);
+
+            TensorFieldValue tensor = (TensorFieldValue) result.getFieldValue(tensorField);
+            assertTrue(tensor.getTensor().isEmpty());
+
+            return result;
+        }
+
+        public <T extends ValueUpdate> void assertTensorUpdatePassesThrough(T tensorUpdate, Document doc) {
+            UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), tensorUpdate);
+
+            DocumentUpdate docUpdate = adapter.getOutput();
+            assertNotNull(docUpdate);
+            assertEquals(1, docUpdate.fieldUpdates().size());
+
+            FieldUpdate fieldUpdate = docUpdate.fieldUpdates().iterator().next();
+            assertNotNull(fieldUpdate);
+            assertEquals(1, fieldUpdate.getValueUpdates().size());
+            ValueUpdate valueUpdate = fieldUpdate.getValueUpdate(0);
+            T actValueUpdate = (T) valueUpdate;
+            assertEquals(tensorUpdate, actValueUpdate);
+        }
+    }
+
+    @Test
+    public void tensor_modify_update_passes_through_unmodified() {
+        TensorFixture f = new TensorFixture();
+        TensorModifyUpdate modifyUpdate = new TensorModifyUpdate(TensorModifyUpdate.Operation.REPLACE,
+                new TensorFieldValue(Tensor.from("tensor(x{})", "{{x:a}:3}")));
+
+        Document doc = f.assertTensorUpdateNotApplied(modifyUpdate);
+        f.assertTensorUpdatePassesThrough(modifyUpdate, doc);
+    }
+
+    @Test
+    public void tensor_add_update_passes_through_unmodified() {
+        TensorFixture f = new TensorFixture();
+        TensorAddUpdate addUpdate = new TensorAddUpdate(new TensorFieldValue(Tensor.from("tensor(x{})", "{{x:a}:3}")));
+
+        Document doc = f.assertTensorUpdateNotApplied(addUpdate);
+        f.assertTensorUpdatePassesThrough(addUpdate, doc);
+    }
+
 }
