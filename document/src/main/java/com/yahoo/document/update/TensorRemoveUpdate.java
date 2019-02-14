@@ -1,32 +1,26 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.update;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.document.DataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
-import com.yahoo.tensor.TensorAddress;
-import com.yahoo.tensor.TensorType;
 
 import java.util.Objects;
-import java.util.Set;
-import java.util.StringJoiner;
 
 /**
  *  An update used to remove cells from a sparse tensor (has only mapped dimensions).
  *
  *  The cells to remove are contained in a set of addresses.
  */
-public class TensorRemoveUpdate extends ValueUpdate {
+public class TensorRemoveUpdate extends ValueUpdate<TensorFieldValue> {
 
-    private TensorType tensorType;
-    private ImmutableSet<TensorAddress> addresses;
+    private TensorFieldValue tensor;
 
-    public TensorRemoveUpdate(TensorType tensorType, Set<TensorAddress> addresses) {
+    public TensorRemoveUpdate(TensorFieldValue value) {
         super(ValueUpdateClassID.TENSORREMOVE);
-        this.tensorType = tensorType;
-        this.addresses = ImmutableSet.copyOf(addresses);
+        this.tensor = value;
     }
 
     @Override
@@ -49,39 +43,32 @@ public class TensorRemoveUpdate extends ValueUpdate {
     }
 
     @Override
-    public FieldValue getValue() {
-        return null;
-    }
-
-    public TensorType getTensorType() {
-        return tensorType;
-    }
-
-    public Set<TensorAddress> getAddresses() {
-        return addresses;
+    public TensorFieldValue getValue() {
+        return tensor;
     }
 
     @Override
-    public void setValue(FieldValue value) {
-        // Ignore
+    public void setValue(TensorFieldValue value) {
+        tensor = value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        TensorRemoveUpdate that = (TensorRemoveUpdate) o;
+        return tensor.equals(that.tensor);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), addresses);
+        return Objects.hash(super.hashCode(), tensor);
     }
 
     @Override
     public String toString() {
-        return super.toString() + " " + toStringWithType();
-    }
-
-    public String toStringWithType() {
-        StringJoiner sj = new StringJoiner(",", "[", "]");
-        for (TensorAddress address : addresses) {
-            sj.add(address.toString(tensorType));
-        }
-        return sj.toString();
+        return super.toString() + " " + tensor;
     }
 
 }

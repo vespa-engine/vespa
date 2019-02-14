@@ -1474,7 +1474,7 @@ public class JsonReaderTestCase {
 
     @Test
     public void tensor_remove_update_on_sparse_tensor() {
-        assertTensorRemoveUpdate("[{x:a,y:b},{x:c,y:d}]", "sparse_tensor",
+        assertTensorRemoveUpdate("{{x:a,y:b}:1.0,{x:c,y:d}:1.0}", "sparse_tensor",
                 inputJson("{",
                         "  'addresses': [",
                         "    { 'x': 'a', 'y': 'b' },",
@@ -1620,8 +1620,7 @@ public class JsonReaderTestCase {
         assertEquals("testtensor", update.getId().getDocType());
         assertEquals(TENSOR_DOC_ID, update.getId().toString());
         assertEquals(1, update.fieldUpdates().size());
-        FieldUpdate fieldUpdate = update.getFieldUpdate(tensorFieldName);
-        assertEquals(1, fieldUpdate.size());
+        assertEquals(1, update.getFieldUpdate(tensorFieldName).size());
     }
 
     private static void assertTensorAssignUpdate(String expectedTensor, DocumentUpdate update) {
@@ -1678,14 +1677,14 @@ public class JsonReaderTestCase {
         assertEquals(Tensor.from(expectedTensor), addUpdate.getValue().getTensor().get());
     }
 
-    private void assertTensorRemoveUpdate(String expected, String tensorFieldName, String tensorJson) {
-        assertTensorRemoveUpdate(expected, tensorFieldName, createTensorRemoveUpdate(tensorJson, tensorFieldName));
+    private void assertTensorRemoveUpdate(String expectedTensor, String tensorFieldName, String tensorJson) {
+        assertTensorRemoveUpdate(expectedTensor, tensorFieldName, createTensorRemoveUpdate(tensorJson, tensorFieldName));
     }
 
-    private static void assertTensorRemoveUpdate(String expected, String tensorFieldName, DocumentUpdate update) {
+    private static void assertTensorRemoveUpdate(String expectedTensor, String tensorFieldName, DocumentUpdate update) {
         assertTensorFieldUpdate(update, tensorFieldName);
         TensorRemoveUpdate removeUpdate = (TensorRemoveUpdate) update.getFieldUpdate(tensorFieldName).getValueUpdate(0);
-        assertEquals(expected, removeUpdate.toStringWithType());
+        assertEquals(Tensor.from(expectedTensor), removeUpdate.getValue().getTensor().get());
     }
 
     private static FieldUpdate getTensorField(DocumentUpdate update) {

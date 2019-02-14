@@ -3,13 +3,12 @@ package com.yahoo.document.json.readers;
 
 import com.yahoo.document.Field;
 import com.yahoo.document.TensorDataType;
+import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.TensorRemoveUpdate;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-
-import java.util.HashSet;
-import java.util.Set;
 
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectCompositeEnd;
@@ -26,11 +25,15 @@ public class TensorRemoveUpdateReader {
     static TensorRemoveUpdate createTensorRemoveUpdate(TokenBuffer buffer, Field field) {
         expectObjectStart(buffer.currentToken());
         expectTensorTypeIsSparse(field);
+
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
         TensorType tensorType = tensorDataType.getTensorType();
-        Set<TensorAddress> addresses = readTensorAddresses(buffer, tensorType);
-        expectAddressesIsNonEmpty(field, addresses);
-        return new TensorRemoveUpdate(tensorType, addresses);
+
+        // TODO: for mixed case extract a new tensor type based only on mapped dimensions
+
+        Tensor tensor = readRemoveUpdateTensor(buffer, tensorType);
+        expectAddressesAreNonEmpty(field, tensor);
+        return new TensorRemoveUpdate(new TensorFieldValue(tensor));
     }
 
     private static void expectTensorTypeIsSparse(Field field) {
@@ -41,14 +44,17 @@ public class TensorRemoveUpdateReader {
         }
     }
 
-    private static void expectAddressesIsNonEmpty(Field field, Set<TensorAddress> addresses) {
-        if (addresses.isEmpty()) {
+    private static void expectAddressesAreNonEmpty(Field field, Tensor tensor) {
+        if (tensor.isEmpty()) {
             throw new IllegalArgumentException("Remove update for field '" + field.getName() + "' does not contain tensor addresses");
         }
     }
 
-    private static Set<TensorAddress> readTensorAddresses(TokenBuffer buffer, TensorType type) {
-        Set<TensorAddress> addresses = new HashSet<>();
+    /**
+     * Reads all addresses in buffer and returns a tensor where addresses have cell value 1.0
+     */
+    private static Tensor readRemoveUpdateTensor(TokenBuffer buffer, TensorType type) {
+        Tensor.Builder builder = Tensor.Builder.of(type);
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
@@ -56,13 +62,13 @@ public class TensorRemoveUpdateReader {
                 expectArrayStart(buffer.currentToken());
                 int nesting = buffer.nesting();
                 for (buffer.next(); buffer.nesting() >= nesting; buffer.next()) {
-                    addresses.add(readTensorAddress(buffer, type));
+                    builder.cell(readTensorAddress(buffer, type), 1.0);
                 }
                 expectCompositeEnd(buffer.currentToken());
             }
         }
         expectObjectEnd(buffer.currentToken());
-        return addresses;
+        return builder.build();
     }
 
     private static TensorAddress readTensorAddress(TokenBuffer buffer, TensorType type) {
