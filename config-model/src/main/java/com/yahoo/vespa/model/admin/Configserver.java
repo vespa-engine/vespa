@@ -51,6 +51,14 @@ public class Configserver extends AbstractService {
      */
     public int getPortCount() { return 2; }
 
+    @Override
+    public String[] getPortSuffixes() {
+        String[] suffixes = new String[2];
+        suffixes[0] = "rpc";
+        suffixes[1] = "http";
+        return suffixes;
+    }
+
     /**
      * The configserver is not started by the config system!
      */

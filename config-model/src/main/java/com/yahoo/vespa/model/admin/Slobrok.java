@@ -56,6 +56,14 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
         return 2;
     }
 
+    @Override
+    public String[] getPortSuffixes() {
+        String[] suffixes = new String[2];
+        suffixes[0] = "rpc";
+        suffixes[1] = "http";
+        return suffixes;
+    }
+
     /**
      * @return The port on which this slobrok should respond, as a String.
      */

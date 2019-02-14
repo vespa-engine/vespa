@@ -37,7 +37,7 @@ public class HostResourceTest {
     public void next_available_baseport_is_BASE_PORT_plus_one_when_one_port_has_been_reserved() {
         MockRoot root = new MockRoot();
         HostResource host = mockHostResource(root);
-        host.reservePort(new TestService(1), HostResource.BASE_PORT);
+        host.reservePort(new TestService(1), HostResource.BASE_PORT, "foo");
         assertThat(host.nextAvailableBaseport(1), is(HostResource.BASE_PORT + 1));
     }
 
@@ -47,12 +47,12 @@ public class HostResourceTest {
         HostResource host = mockHostResource(root);
 
         for (int p = HostResource.BASE_PORT; p < HostResource.BASE_PORT + HostResource.MAX_PORTS; p += 2) {
-            host.reservePort(new TestService(1), p);
+            host.reservePort(new TestService(1), p, "foo");
         }
         assertThat(host.nextAvailableBaseport(2), is(0));
 
         try {
-            host.reservePort(new TestService(2), HostResource.BASE_PORT);
+            host.reservePort(new TestService(2), HostResource.BASE_PORT, "bar");
         } catch (RuntimeException e) {
             assertThat(e.getMessage(), containsString("Too many ports are reserved"));
         }
@@ -181,5 +181,14 @@ public class HostResourceTest {
 
         @Override
         public int getPortCount() { return portCount; }
+
+        @Override
+        public String[] getPortSuffixes() {
+            String[] suffixes = new String[portCount];
+            for (int i = 0; i < portCount; i++) {
+                suffixes[i] = "generic." + i;
+            }
+            return suffixes;
+        }
     }
 }

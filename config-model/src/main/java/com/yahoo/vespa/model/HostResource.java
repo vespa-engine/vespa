@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NetworkPorts;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -36,9 +37,22 @@ public class HostResource implements Comparable<HostResource> {
     /** Map from "sentinel name" to service */
     private final Map<String, Service> services = new LinkedHashMap<>();
 
-    private final Map<Integer, Service> portDB = new LinkedHashMap<>();
+    private final Map<Integer, NetworkPortRequestor> portDB = new LinkedHashMap<>();
 
     private int allocatedPorts = 0;
+
+    static class PortReservation {
+        int gotPort;
+        NetworkPortRequestor service;
+        String suffix;
+        PortReservation(int port, NetworkPortRequestor svc, String suf) {
+            this.gotPort = port;
+            this.service = svc;
+            this.suffix = suf;
+        }
+    }
+
+    private List<PortReservation> portReservations = new ArrayList<>();
 
     private Set<ClusterMembership> clusterMemberships = new LinkedHashSet<>();
 
@@ -48,17 +62,22 @@ public class HostResource implements Comparable<HostResource> {
     /** The current Vespa version running on this node, or empty if not known */
     private final Optional<Version> version;
 
+    private final NetworkPorts networkPortsList;
+
+    public NetworkPorts getNetworkPorts() { return networkPortsList; }
+
     /**
      * Create a new {@link HostResource} bound to a specific {@link com.yahoo.vespa.model.Host}.
      *
      * @param host {@link com.yahoo.vespa.model.Host} object to bind to.
      */
     public HostResource(Host host) {
-        this(host, Optional.empty());
+        this(host, new NetworkPorts(), Optional.empty());
     }
 
-    public HostResource(Host host, Optional<Version> version) {
+    public HostResource(Host host, NetworkPorts networkPortsList, Optional<Version> version) {
         this.host = host;
+        this.networkPortsList = networkPortsList;
         this.version = version;
     }
 
@@ -108,22 +127,22 @@ public class HostResource implements Comparable<HostResource> {
         return ports;
     }
 
-    private List<Integer> allocatePorts(DeployLogger deployLogger, AbstractService service, int wantedPort) {
+    private List<Integer> allocatePorts(DeployLogger deployLogger, NetworkPortRequestor service, int wantedPort) {
         List<Integer> ports = new ArrayList<>();
         if (service.getPortCount() < 1)
             return ports;
 
         int serviceBasePort = BASE_PORT + allocatedPorts;
         if (wantedPort > 0) {
-            if (service.getPortCount() < 1) {
-                throw new RuntimeException(service + " wants baseport " + wantedPort +
-                                           ", but it has not reserved any ports, so it cannot name a desired baseport.");
-            }
             if (service.requiresWantedPort() || canUseWantedPort(deployLogger, service, wantedPort, serviceBasePort))
                 serviceBasePort = wantedPort;
         }
+        String[] suffixes = service.getPortSuffixes();
+        if (suffixes.length != service.getPortCount()) {
+            throw new IllegalArgumentException("service "+service+" had "+suffixes.length+" port suffixes, but port count "+service.getPortCount()+", mismatch");
+        }
 
-        reservePort(service, serviceBasePort);
+        reservePort(service, serviceBasePort, suffixes[0]);
         ports.add(serviceBasePort);
 
         int remainingPortsStart =  service.requiresConsecutivePorts() ?
@@ -131,17 +150,29 @@ public class HostResource implements Comparable<HostResource> {
                 BASE_PORT + allocatedPorts;
         for (int i = 0; i < service.getPortCount() - 1; i++) {
             int port = remainingPortsStart + i;
-            reservePort(service, port);
+            reservePort(service, port, suffixes[i+1]);
             ports.add(port);
+        }
+        if (suffixes.length != service.getPortCount()) {
+            throw new IllegalArgumentException("service "+service+" had "+suffixes.length+" port suffixes, but port count "+service.getPortCount()+", mismatch");
         }
         return ports;
     }
 
-    private boolean canUseWantedPort(DeployLogger deployLogger, AbstractService service, int wantedPort, int serviceBasePort) {
+    public void flushPortReservations() {
+        for (PortReservation pr : portReservations) {
+            String servType = pr.service.getServiceType();
+            String configId = pr.service.getConfigId();
+            System.out.println("reserved="+pr.gotPort+" [type="+servType+", cfgid="+configId+", suffix="+pr.suffix+"]");
+            networkPortsList.override(new NetworkPorts.Allocation(pr.gotPort, servType, configId, pr.suffix));
+        }
+    }
+
+    private boolean canUseWantedPort(DeployLogger deployLogger, NetworkPortRequestor service, int wantedPort, int serviceBasePort) {
         for (int i = 0; i < service.getPortCount(); i++) {
             int port = wantedPort + i;
             if (portDB.containsKey(port)) {
-                AbstractService s = (AbstractService)portDB.get(port);
+                NetworkPortRequestor s = portDB.get(port);
                 deployLogger.log(Level.WARNING, service.getServiceName() +" cannot reserve port " + port + " on " +
                         this + ": Already reserved for " + s.getServiceName() +
                         ". Using default port range from " + serviceBasePort);
@@ -159,7 +190,7 @@ public class HostResource implements Comparable<HostResource> {
      * @param service the service that wishes to reserve the port.
      * @param port the port to be reserved.
      */
-    void reservePort(AbstractService service, int port) {
+    void reservePort(NetworkPortRequestor service, int port, String suffix) {
         if (portDB.containsKey(port)) {
             portAlreadyReserved(service, port);
         } else {
@@ -170,6 +201,7 @@ public class HostResource implements Comparable<HostResource> {
                 }
             }
             portDB.put(port, service);
+            portReservations.add(new PortReservation(port, service, suffix));
         }
     }
 
@@ -178,8 +210,8 @@ public class HostResource implements Comparable<HostResource> {
                 port < BASE_PORT + MAX_PORTS;
     }
 
-    private void portAlreadyReserved(AbstractService service, int port) {
-        AbstractService otherService = (AbstractService)portDB.get(port);
+    private void portAlreadyReserved(NetworkPortRequestor service, int port) {
+        NetworkPortRequestor otherService = portDB.get(port);
         int nextAvailablePort = nextAvailableBaseport(service.getPortCount());
         if (nextAvailablePort == 0) {
             noMoreAvailablePorts();

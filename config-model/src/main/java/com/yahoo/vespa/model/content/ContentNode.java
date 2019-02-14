@@ -57,6 +57,14 @@ public abstract class ContentNode extends AbstractService
     @Override
     public int getPortCount() { return 3; }
 
+    @Override
+    public String[] getPortSuffixes() {
+        String[] suffixes = new String[3];
+        suffixes[0] = "messaging";
+        suffixes[1] = "rpc";
+        suffixes[2] = "http";
+        return suffixes;
+    }
 
     @Override
     public void getConfig(StorCommunicationmanagerConfig.Builder builder) {

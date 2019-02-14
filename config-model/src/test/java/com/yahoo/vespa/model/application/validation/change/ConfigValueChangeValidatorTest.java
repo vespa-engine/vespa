@@ -246,6 +246,9 @@ public class ConfigValueChangeValidatorTest {
         public int getPortCount() {
             return 0;
         }
+
+        @Override
+        public String[] getPortSuffixes() { return null; }
     }
 
     private static class SimpleConfigProducer extends AbstractConfigProducer<AbstractConfigProducer<?>>

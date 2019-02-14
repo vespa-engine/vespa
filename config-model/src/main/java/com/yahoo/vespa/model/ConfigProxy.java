@@ -47,6 +47,13 @@ public class ConfigProxy extends AbstractService {
      */
     public int getPortCount() { return 1; }
 
+    @Override
+    public String[] getPortSuffixes() {
+        String[] suffixes = new String[1];
+        suffixes[0] = "rpc";
+        return suffixes;
+    }
+
     /**
      * The config proxy is not started by the config system!
      */

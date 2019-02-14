@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.ProvisionLogger;
 
 import java.net.UnknownHostException;
@@ -126,7 +127,9 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     private HostResource addNewHost(HostSpec hostSpec) {
         Host host = Host.createHost(this, hostSpec.hostname());
-        HostResource hostResource = new HostResource(host, hostSpec.version());
+        HostResource hostResource = new HostResource(host,
+                                                     provisioner.getNetworkPorts(hostSpec),
+                                                     hostSpec.version());
         hostResource.setFlavor(hostSpec.flavor());
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);
         hostname2host.put(host.getHostname(), hostResource);
@@ -139,6 +142,17 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         return hostname2host.values().stream()
                 .filter(host -> !host.getHost().runsConfigServer())
                 .collect(Collectors.toList());
+    }
+
+    public void dumpPortAllocations() {
+        for (HostResource hr : getHosts()) {
+            System.out.println("port allocations for: "+hr.getHostname());
+            hr.flushPortReservations();
+            NetworkPorts networkPortsList = hr.getNetworkPorts();
+            for (NetworkPorts.Allocation allocation: networkPortsList.allocations()) {
+                System.out.println("port="+allocation.port+" [type="+allocation.serviceType+", cfgId="+allocation.configId+", suffix="+allocation.portSuffix+"]");
+            }
+        }
     }
 
     public Map<HostResource, ClusterMembership> allocateHosts(ClusterSpec cluster, Capacity capacity, int groups, DeployLogger logger) {

@@ -70,4 +70,14 @@ public class Logserver extends AbstractService {
         return 4;
     }
 
+    @Override
+    public String[] getPortSuffixes() {
+        String[] suffixes = new String[4];
+        suffixes[0] = "unused";
+        suffixes[1] = "logtp";
+        suffixes[2] = "last.errors";
+        suffixes[3] = "replicator";
+        return suffixes;
+    }
+
 }

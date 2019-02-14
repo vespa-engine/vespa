@@ -91,6 +91,7 @@ public class VespaModelTestCase {
     // Verify that common config from plugins is delivered from the root node for any configId, using the Builder based API
     @Test
     public void testCommonConfig() throws Exception {
+try{
         VespaModel model = getVespaModel(TESTDIR + "app_nohosts/");
         LogdConfig.Builder b = new LogdConfig.Builder();
         b = (LogdConfig.Builder) model.getConfig(b, "");
@@ -114,6 +115,11 @@ public class VespaModelTestCase {
         assertEquals(ApplicationId.defaultId().tenant().value(), applicationIdConfig.tenant());
         assertEquals(ApplicationId.defaultId().application().value(), applicationIdConfig.application());
         assertEquals(ApplicationId.defaultId().instance().value(), applicationIdConfig.instance());
+} catch (Exception e) {
+e.printStackTrace();
+System.err.println("got: "+e);
+throw e;
+}
     }
 
     @Test

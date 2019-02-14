@@ -75,5 +75,8 @@ public class StartupCommandChangeValidatorTest {
         public int getPortCount() {
             return 0;
         }
+
+        @Override
+        public String[] getPortSuffixes() { return null; }
     }
 }
