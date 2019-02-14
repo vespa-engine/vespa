@@ -155,11 +155,11 @@ public class ResenderTestCase {
         assertNull(((Receptor)dstSession.getMessageHandler()).getMessage(0));
 
         String trace = reply.getTrace().toString();
-        assertTrue(trace.contains("retry 1 in 0.01"));
+        assertTrue(trace.contains("retry 1 in 0.0"));
         assertTrue(trace.contains("retry 2 in 0.02"));
-        assertTrue(trace.contains("retry 3 in 0.03"));
-        assertTrue(trace.contains("retry 4 in 0.04"));
-        assertTrue(trace.contains("retry 5 in 0.05"));
+        assertTrue(trace.contains("retry 3 in 0.04"));
+        assertTrue(trace.contains("retry 4 in 0.08"));
+        assertTrue(trace.contains("retry 5 in 0.16"));
     }
 
     @Test

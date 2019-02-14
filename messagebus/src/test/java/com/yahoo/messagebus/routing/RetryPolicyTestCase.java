@@ -12,26 +12,27 @@ import static org.junit.Assert.assertTrue;
  * @author Simon Thoresen Hult
  */
 public class RetryPolicyTestCase {
+    private static final double SMALL = 0.00000000000000000001;
 
     @Test
     public void testSimpleRetryPolicy() {
         RetryTransientErrorsPolicy policy = new RetryTransientErrorsPolicy();
-        for (int i = 0; i < 5; ++i) {
-            double delay = i / 3.0;
-            policy.setBaseDelay(delay);
-            for (int j = 0; j < 5; ++j) {
-                assertEquals((int)(j * delay), (int)policy.getRetryDelay(j));
-            }
-            for (int j = ErrorCode.NONE; j < ErrorCode.ERROR_LIMIT; ++j) {
-                policy.setEnabled(true);
-                if (j < ErrorCode.FATAL_ERROR) {
-                    assertTrue(policy.canRetry(j));
-                } else {
-                    assertFalse(policy.canRetry(j));
-                }
-                policy.setEnabled(false);
+        assertEquals(0.0, policy.getRetryDelay(0), SMALL);
+        assertEquals(0.0, policy.getRetryDelay(1), SMALL);
+        for (int i = 2; i < 15; i++) {
+            assertEquals(0.001*(1 << (i-1)), policy.getRetryDelay(i), SMALL);
+        }
+        assertEquals(10.0, policy.getRetryDelay(15), SMALL);
+        assertEquals(10.0, policy.getRetryDelay(20), SMALL);
+        for (int j = ErrorCode.NONE; j < ErrorCode.ERROR_LIMIT; ++j) {
+            policy.setEnabled(true);
+            if (j < ErrorCode.FATAL_ERROR) {
+                assertTrue(policy.canRetry(j));
+            } else {
                 assertFalse(policy.canRetry(j));
             }
+            policy.setEnabled(false);
+            assertFalse(policy.canRetry(j));
         }
     }
 
