@@ -146,12 +146,14 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     public void dumpPortAllocations() {
         for (HostResource hr : getHosts()) {
-            System.out.println("port allocations for: "+hr.getHostname());
             hr.flushPortReservations();
+/*
+            System.out.println("port allocations for: "+hr.getHostname());
             NetworkPorts networkPortsList = hr.getNetworkPorts();
             for (NetworkPorts.Allocation allocation: networkPortsList.allocations()) {
                 System.out.println("port="+allocation.port+" [type="+allocation.serviceType+", cfgId="+allocation.configId+", suffix="+allocation.portSuffix+"]");
             }
+*/
         }
     }
 

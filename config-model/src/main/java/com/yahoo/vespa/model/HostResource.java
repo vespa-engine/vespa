@@ -163,7 +163,6 @@ public class HostResource implements Comparable<HostResource> {
         for (PortReservation pr : portReservations) {
             String servType = pr.service.getServiceType();
             String configId = pr.service.getConfigId();
-            System.out.println("reserved="+pr.gotPort+" [type="+servType+", cfgid="+configId+", suffix="+pr.suffix+"]");
             networkPortsList.override(new NetworkPorts.Allocation(pr.gotPort, servType, configId, pr.suffix));
         }
     }
