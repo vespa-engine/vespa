@@ -30,19 +30,7 @@ public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBu
 
     @Override
     protected Container doBuild(DeployState deployState, AbstractConfigProducer parent, Element nodeElem) {
-        return new Container(parent, id, readServerPortOverrides(nodeElem), index, deployState.isHosted());
+        return new Container(parent, id, index, deployState.isHosted());
     }
 
-    private List<Container.PortOverride> readServerPortOverrides(Element spec) {
-        List<Container.PortOverride> portOverrides = new ArrayList<>();
-
-        for (Element serverPort: XML.getChildren(spec, "server-port")) {
-            ComponentSpecification serverId = XmlHelper.getIdRef(serverPort);
-            int port = Integer.parseInt(serverPort.getAttribute("port"));
-
-            portOverrides.add(new Container.PortOverride(serverId, port));
-        }
-
-        return portOverrides;
-    }
 }

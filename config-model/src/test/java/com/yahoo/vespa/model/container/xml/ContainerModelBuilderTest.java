@@ -516,21 +516,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  </http>",
                 "  <nodes cpu-socket-affinity='true'>",
                 "    <node hostalias='node1' />",
-                "    <node hostalias='node2'> <server-port id='main' port='5080'/> </node>",
-                "    <node hostalias='node3'> <server-port id='main' port='6080'/> </node>",
-                "    <node hostalias='node4'> <server-port id='main' port='7080'/> </node>",
                 "  </nodes>" +
                 "</jdisc>");
         createModel(root, clusterElem);
         assertTrue(getContainerCluster("default").getContainers().get(0).getAffinity().isPresent());
-        assertTrue(getContainerCluster("default").getContainers().get(1).getAffinity().isPresent());
-        assertTrue(getContainerCluster("default").getContainers().get(2).getAffinity().isPresent());
-        assertTrue(getContainerCluster("default").getContainers().get(3).getAffinity().isPresent());
-
         assertThat(getContainerCluster("default").getContainers().get(0).getAffinity().get().cpuSocket(), is(0));
-        assertThat(getContainerCluster("default").getContainers().get(1).getAffinity().get().cpuSocket(), is(1));
-        assertThat(getContainerCluster("default").getContainers().get(2).getAffinity().get().cpuSocket(), is(2));
-        assertThat(getContainerCluster("default").getContainers().get(3).getAffinity().get().cpuSocket(), is(3));
     }
 
     @Test

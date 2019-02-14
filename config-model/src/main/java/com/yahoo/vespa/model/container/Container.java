@@ -70,27 +70,18 @@ public class Container extends AbstractService implements
 
     private final JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
 
-    private final List<PortOverride> portOverrides;
-
     private final int numHttpServerPorts;
     private static final int numRpcServerPorts = 2;
     private static final String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
 
     public Container(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa) {
-        this(parent, name, Collections.emptyList(), index, isHostedVespa);
+        this(parent, name, false, index, isHostedVespa);
     }
     public Container(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa) {
-        this(parent, name, retired, Collections.emptyList(), index, isHostedVespa);
-    }
-    public Container(AbstractConfigProducer parent, String name, List<PortOverride> portOverrides, int index, boolean isHostedVespa) {
-        this(parent, name, false, portOverrides, index, isHostedVespa);
-    }
-    public Container(AbstractConfigProducer parent, String name, boolean retired, List<PortOverride> portOverrides, int index, boolean isHostedVespa) {
         super(parent, name);
         this.name = name;
         this.parent = parent;
         this.isHostedVespa = isHostedVespa;
-        this.portOverrides = Collections.unmodifiableList(new ArrayList<>(portOverrides));
         this.retired = retired;
         this.index = index;
 
@@ -183,18 +174,12 @@ public class Container extends AbstractService implements
     private void reserveHttpPortsPrepended() {
         if (getHttp().getHttpServer() != null) {
             for (ConnectorFactory connectorFactory : getHttp().getHttpServer().getConnectorFactories()) {
-                reservePortPrepended(getPort(connectorFactory, portOverrides));
+                reservePortPrepended(getPort(connectorFactory));
             }
         }
     }
 
-    private int getPort(ConnectorFactory connectorFactory, List<PortOverride> portOverrides) {
-        ComponentId id = ComponentId.fromString(connectorFactory.getName());
-        for (PortOverride override : portOverrides) {
-            if (override.serverId.matches(id)) {
-                return override.port;
-            }
-        }
+    private int getPort(ConnectorFactory connectorFactory) {
         return connectorFactory.getListenPort();
     }
 
@@ -394,16 +379,6 @@ public class Container extends AbstractService implements
 
     private boolean rpcServerEnabled() {
         return containerCluster().isPresent() && containerCluster().get().rpcServerEnabled();
-    }
-
-    public static final class PortOverride {
-        public final ComponentSpecification serverId;
-        public final int port;
-
-        public PortOverride(ComponentSpecification serverId, int port) {
-            this.serverId = serverId;
-            this.port = port;
-        }
     }
 
     private Optional<ContainerCluster> containerCluster() {
