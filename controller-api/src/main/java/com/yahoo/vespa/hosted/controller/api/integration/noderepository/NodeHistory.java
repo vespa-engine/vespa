@@ -32,6 +32,6 @@ public class NodeHistory {
         return event;
     }
 
-    public enum Agent { system, application, operator, NodeRetirer }
+    public enum Agent { system, application, operator, NodeRetirer, NodeFailer }
 
 }
