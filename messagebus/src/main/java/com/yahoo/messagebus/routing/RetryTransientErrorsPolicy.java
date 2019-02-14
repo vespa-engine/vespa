@@ -49,9 +49,9 @@ public class RetryTransientErrorsPolicy implements RetryPolicy {
     public double getRetryDelay(int retry) {
         long retryMultiplier = 0l;
         if (retry > 1) {
-            retryMultiplier = Math.min(10000, 1L << (retry-1));
+            retryMultiplier = 1L << Math.min(20, retry-1);
         }
 
-        return Math.min(10.0, retryMultiplier*baseDelayUS.get()/US);
+        return Math.min(10.0, (retryMultiplier*baseDelayUS.get())/US);
     }
 }
