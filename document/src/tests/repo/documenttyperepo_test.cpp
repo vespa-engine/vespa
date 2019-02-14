@@ -7,7 +7,9 @@
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/objects/identifiable.h>
@@ -530,6 +532,15 @@ TEST("Reference fields are resolved to correct reference type") {
     EXPECT_EQUAL(*ref1_type, type->getFieldsType().getField("ref3").getDataType());
 }
 
+namespace {
+
+const TensorDataType &
+asTensorDataType(const DataType &dataType) {
+    return dynamic_cast<const TensorDataType &>(dataType);
+}
+
+}
+
 TEST("Tensor fields have tensor types") {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, type_name, 
@@ -543,10 +554,12 @@ TEST("Tensor fields have tensor types") {
     ASSERT_TRUE(docType != nullptr);
     auto &tensorField1 = docType->getField("tensor1");
     auto &tensorField2 = docType->getField("tensor2");
-    EXPECT_EQUAL("TensorDataType(tensor(x[3]))", tensorField1.getDataType().toString());
-    EXPECT_EQUAL("TensorDataType(tensor(y{}))", tensorField2.getDataType().toString());
+    EXPECT_EQUAL("tensor(x[3])", asTensorDataType(tensorField1.getDataType()).getTensorType().to_spec());
+    EXPECT_EQUAL("tensor(y{})", asTensorDataType(tensorField2.getDataType()).getTensorType().to_spec());
     auto &tensorField3 = docType->getField("tensor3");
     EXPECT_TRUE(&tensorField1.getDataType() == &tensorField3.getDataType());
+    auto tensorFieldValue1 = tensorField1.getDataType().createFieldValue();
+    EXPECT_TRUE(&tensorField1.getDataType() == tensorFieldValue1->getDataType());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

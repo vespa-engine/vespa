@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/testdocrepo.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/floatfieldvalue.h>
@@ -28,6 +29,7 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_updater_test");
@@ -389,6 +391,15 @@ makeTensorAttribute(const vespalib::string &name, const vespalib::string &tensor
     return result;
 }
 
+vespalib::hash_map<vespalib::string, std::unique_ptr<const TensorDataType>> tensorTypes;
+
+const TensorDataType &
+getTensorDataType(const vespalib::string &spec)
+{
+    auto insres = tensorTypes.insert(std::make_pair(spec, TensorDataType::fromSpec(spec)));
+    return *insres.first->second;
+}
+
 std::unique_ptr<Tensor>
 makeTensor(const TensorSpec &spec)
 {
@@ -399,8 +410,9 @@ makeTensor(const TensorSpec &spec)
 std::unique_ptr<TensorFieldValue>
 makeTensorFieldValue(const TensorSpec &spec)
 {
-    auto result = std::make_unique<TensorFieldValue>();
-    result->assignDeserialized(makeTensor(spec));
+    auto tensor = makeTensor(spec);
+    auto result = std::make_unique<TensorFieldValue>(getTensorDataType(tensor->type().to_spec()));
+    result->assignDeserialized(std::move(tensor));
     return result;
 }
 

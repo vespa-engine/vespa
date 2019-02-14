@@ -23,13 +23,13 @@ TensorDataType emptyTensorDataType;
 }
 
 TensorFieldValue::TensorFieldValue()
-    : TensorFieldValue(&emptyTensorDataType)
+    : TensorFieldValue(emptyTensorDataType)
 {
 }
 
-TensorFieldValue::TensorFieldValue(const TensorDataType *dataType)
+TensorFieldValue::TensorFieldValue(const TensorDataType &dataType)
     : FieldValue(),
-      _dataType(dataType),
+      _dataType(&dataType),
       _tensor(),
       _altered(true)
 {
