@@ -5263,17 +5263,17 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.tensor.TensorType, java.util.Set)",
+      "public void <init>(com.yahoo.document.datatypes.TensorFieldValue)",
       "protected void checkCompatibility(com.yahoo.document.DataType)",
       "public void serialize(com.yahoo.document.serialization.DocumentUpdateWriter, com.yahoo.document.DataType)",
       "public com.yahoo.document.datatypes.FieldValue applyTo(com.yahoo.document.datatypes.FieldValue)",
-      "public com.yahoo.document.datatypes.FieldValue getValue()",
-      "public com.yahoo.tensor.TensorType getTensorType()",
-      "public java.util.Set getAddresses()",
-      "public void setValue(com.yahoo.document.datatypes.FieldValue)",
+      "public com.yahoo.document.datatypes.TensorFieldValue getValue()",
+      "public void setValue(com.yahoo.document.datatypes.TensorFieldValue)",
+      "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()",
-      "public java.lang.String toStringWithType()"
+      "public bridge synthetic void setValue(com.yahoo.document.datatypes.FieldValue)",
+      "public bridge synthetic com.yahoo.document.datatypes.FieldValue getValue()"
     ],
     "fields": []
   },
