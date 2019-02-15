@@ -1,4 +1,0 @@
-tests/docsumformat
-tests/docsummary
-tests/docsummary/slime_summary
-tests/extractkeywords

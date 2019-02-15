@@ -1,5 +1,0 @@
-tests/charbuffer
-tests/docsum
-tests/document
-tests/searcher
-tests/textutil

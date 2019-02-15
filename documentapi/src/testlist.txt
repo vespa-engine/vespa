@@ -1,8 +1,0 @@
-tests/messagebus
-tests/messages
-tests/policies
-tests/policyfactory
-tests/priority
-tests/routablefactory
-tests/loadtypes
-tests/replymerger

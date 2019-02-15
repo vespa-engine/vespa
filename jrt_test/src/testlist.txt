@@ -1,8 +1,0 @@
-tests/connect-close
-tests/echo
-tests/garbage
-tests/hello-world
-tests/mandatory-methods
-tests/mockup-invoke
-tests/rpc-error
-tests/slobrok-api
