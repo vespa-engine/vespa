@@ -394,8 +394,7 @@ public class DockerImpl implements Docker {
         JerseyDockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory()
                 .withMaxPerRouteConnections(config.maxPerRouteConnections())
                 .withMaxTotalConnections(config.maxTotalConnections())
-                .withConnectTimeout(config.connectTimeoutMillis())
-                .withReadTimeout(config.readTimeoutMillis());
+                .withConnectTimeout(config.connectTimeoutMillis());
 
         DockerClientConfig dockerClientConfig = new DefaultDockerClientConfig.Builder()
                 .withDockerHost(config.uri())
