@@ -7,6 +7,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager;
+import com.yahoo.security.tls.policy.AuthorizedPeers;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -20,6 +21,7 @@ import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -110,7 +112,7 @@ public class ReloadingTlsContext implements TlsContext {
                 .withTrustManagerFactory(
                         ignoredTruststore -> options.getAuthorizedPeers()
                                 .map(authorizedPeers -> (X509ExtendedTrustManager) new PeerAuthorizerTrustManager(authorizedPeers, mode, mutableTrustManager))
-                                .orElse(mutableTrustManager))
+                                .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(Set.of()), AuthorizationMode.DISABLE, mutableTrustManager)))
                 .build();
         return new DefaultTlsContext(sslContext, options.getAcceptedCiphers());
     }

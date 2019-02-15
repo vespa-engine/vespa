@@ -2,7 +2,7 @@
 package com.yahoo.security.tls;
 
 import com.yahoo.security.SslContextBuilder;
-import com.yahoo.security.tls.authz.PeerAuthorizerTrustManagersFactory;
+import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 
 import javax.net.ssl.SSLContext;
@@ -12,6 +12,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -133,7 +134,9 @@ public class DefaultTlsContext implements TlsContext {
             builder.withTrustStore(caCertificates);
         }
         if (authorizedPeers != null) {
-            builder.withTrustManagerFactory(new PeerAuthorizerTrustManagersFactory(authorizedPeers, mode));
+            builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(authorizedPeers, mode, truststore));
+        } else {
+            builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(new AuthorizedPeers(Set.of()), AuthorizationMode.DISABLE, truststore));
         }
         return builder.build();
     }
