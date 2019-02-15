@@ -635,7 +635,6 @@ Test::testTrace(TestData &data, const std::vector<string> &expected)
     if (!EXPECT_TRUE(reply.get() != NULL)) {
         return false;
     }
-    printf("%s", reply->getTrace().toString().c_str());
     if (!EXPECT_TRUE(!reply->hasErrors())) {
         return false;
     }
@@ -747,7 +746,6 @@ Test::testNoRoutingTable(TestData &data)
     Result res = data._srcSession->send(createMessage("msg"), "foo");
     EXPECT_TRUE(!res.isAccepted());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, res.getError().getCode());
-    printf("%s\n", res.getError().getMessage().c_str());
     Message::UP msg = res.getMessage();
     EXPECT_TRUE(msg.get() != NULL);
 }
@@ -760,7 +758,6 @@ Test::testUnknownRoute(TestData &data)
     Result res = data._srcSession->send(createMessage("msg"), "baz");
     EXPECT_TRUE(!res.isAccepted());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, res.getError().getCode());
-    printf("%s\n", res.getError().getMessage().c_str());
     Message::UP msg = res.getMessage();
     EXPECT_TRUE(msg.get() != NULL);
 }
@@ -771,7 +768,6 @@ Test::testNoRoute(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route()).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
 }
@@ -787,7 +783,6 @@ Test::testRecognizeHopName(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -803,7 +798,6 @@ Test::testRecognizeRouteDirective(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -818,7 +812,6 @@ Test::testRecognizeRouteName(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -831,7 +824,6 @@ Test::testHopResolutionOverflow(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("foo")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
 }
@@ -844,7 +836,6 @@ Test::testRouteResolutionOverflow(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), "foo").isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
 }
@@ -863,7 +854,6 @@ Test::testInsertRoute(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -875,7 +865,6 @@ Test::testErrorDirective(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), route).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
     EXPECT_EQUAL("err", reply->getError(0).getMessage());
@@ -907,7 +896,6 @@ Test::testSelectNone(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::NO_SERVICES_FOR_ROUTE, reply->getError(0).getCode());
 }
@@ -925,7 +913,6 @@ Test::testSelectOne(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -951,7 +938,6 @@ Test::testResend1(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("[APP_TRANSIENT_ERROR @ localhost]: err1")
@@ -987,7 +973,6 @@ Test::testResend2(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Source session accepted a 3 byte message. 1 message(s) now pending.")
@@ -1002,7 +987,7 @@ Test::testResend2(TestData &data)
                          .add("Reply (type 0) received at client.")
                          .add("Routing policy 'Custom' merging replies.")
                          .add("Merged { 'dst/session' }.")
-                         .add("Message scheduled for retry 1 in 0.00 seconds.")
+                         .add("Message scheduled for retry 1 in 0.000 seconds.")
                          .add("Resender resending message.")
                          .add("Running routing policy 'Custom'.")
                          .add("Selecting { 'dst/session' }.")
@@ -1015,7 +1000,7 @@ Test::testResend2(TestData &data)
                          .add("Reply (type 0) received at client.")
                          .add("Routing policy 'Custom' merging replies.")
                          .add("Merged { 'dst/session' }.")
-                         .add("Message scheduled for retry 2 in 0.00 seconds.")
+                         .add("Message scheduled for retry 2 in 0.000 seconds.")
                          .add("Resender resending message.")
                          .add("Running routing policy 'Custom'.")
                          .add("Selecting { 'dst/session' }.")
@@ -1044,7 +1029,6 @@ Test::testNoResend(TestData &data)
     data._dstSession->reply(std::move(reply));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::APP_TRANSIENT_ERROR, reply->getError(0).getCode());
 }
@@ -1069,7 +1053,6 @@ Test::testSelectOnResend(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Selecting { 'dst/session' }.")
@@ -1102,7 +1085,6 @@ Test::testNoSelectOnResend(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Selecting { 'dst/session' }.")
@@ -1129,7 +1111,6 @@ Test::testCanConsumeError(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
     EXPECT_TRUE(testTrace(StringList()
@@ -1175,7 +1156,6 @@ Test::testNestedPolicies(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
 }
@@ -1197,7 +1177,6 @@ Test::testRemoveReply(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("[NO_ADDRESS_FOR_SERVICE @ localhost]")
@@ -1222,7 +1201,6 @@ Test::testSetReply(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
     EXPECT_EQUAL("foo", reply->getError(0).getMessage());
@@ -1253,7 +1231,6 @@ Test::testResendSetAndReuseReply(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -1277,7 +1254,6 @@ Test::testResendSetAndRemoveReply(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
     EXPECT_EQUAL("foo", reply->getError(0).getMessage());
@@ -1302,7 +1278,6 @@ Test::testHopIgnoresReply(TestData &data)
     data._dstSession->reply(std::move(reply));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Not waiting for a reply from 'dst/session'."),
@@ -1323,7 +1298,6 @@ Test::testHopBlueprintIgnoresReply(TestData &data)
     data._dstSession->reply(std::move(reply));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Not waiting for a reply from 'dst/session'."),
@@ -1341,7 +1315,6 @@ Test::testAcceptEmptyRoute(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
 }
 
 void
@@ -1361,7 +1334,6 @@ Test::testAbortOnlyActiveNodes(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:[SetReply:foo],?bar,dst/session]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(2u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
     EXPECT_EQUAL((uint32_t)ErrorCode::SEND_ABORTED, reply->getError(1).getCode());
@@ -1373,7 +1345,6 @@ Test::testUnknownPolicy(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Unknown]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::UNKNOWN_POLICY, reply->getError(0).getCode());
 }
@@ -1392,7 +1363,6 @@ Test::testSelectException(TestData &data)
                 .isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::POLICY_ERROR,
                  reply->getError(0).getCode());
@@ -1417,7 +1387,6 @@ Test::testMergeException(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::POLICY_ERROR,
                  reply->getError(0).getCode());
@@ -1568,7 +1537,6 @@ Test::testTimeout(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/unknown")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply.get() != NULL);
-    printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(2u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
     EXPECT_EQUAL((uint32_t)ErrorCode::TIMEOUT, reply->getError(1).getCode());

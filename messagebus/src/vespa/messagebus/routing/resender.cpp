@@ -85,7 +85,7 @@ Resender::scheduleRetry(RoutingNode &node)
     node.prepareForRetry(); // consumes the reply
     node.getTrace().trace(
         TraceLevel::COMPONENT,
-        vespalib::make_string("Message scheduled for retry %u in %.2f seconds.", retry, delay));
+        vespalib::make_string("Message scheduled for retry %u in %.3f seconds.", retry, delay));
     msg.setRetry(retry);
     _queue.push(Entry((uint64_t)(_time.MilliSecsToNow() + delay * 1000), &node));
     return true;

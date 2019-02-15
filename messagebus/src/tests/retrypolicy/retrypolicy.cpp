@@ -12,14 +12,17 @@ int
 Test::Main()
 {
     TEST_INIT("retrypolicy_test");
-
+    constexpr double DELAY(0.001);
     RetryTransientErrorsPolicy policy;
+    policy.setBaseDelay(DELAY);
+    EXPECT_EQUAL(0.0, policy.getRetryDelay(0));
+    EXPECT_EQUAL(0.0, policy.getRetryDelay(1));
+    for (uint32_t j = 2; j < 15; ++j) {
+        EXPECT_EQUAL(DELAY*(1 << (j-1)), policy.getRetryDelay(j));
+    }
+    EXPECT_EQUAL(10.0, policy.getRetryDelay(15));
+    EXPECT_EQUAL(10.0, policy.getRetryDelay(20));
     for (uint32_t i = 0; i < 5; ++i) {
-        double delay = i / 3.0;
-        policy.setBaseDelay(delay);
-        for (uint32_t j = 0; j < 5; ++j) {
-            EXPECT_EQUAL((int)(j * delay), (int)policy.getRetryDelay(j));
-        }
         for (uint32_t j = ErrorCode::NONE; j < ErrorCode::ERROR_LIMIT; ++j) {
             policy.setEnabled(true);
             if (j < ErrorCode::FATAL_ERROR) {

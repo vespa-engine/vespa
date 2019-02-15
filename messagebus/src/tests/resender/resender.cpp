@@ -268,12 +268,11 @@ Test::testRetryDelay(TestData &data)
     EXPECT_TRUE(msg.get() == NULL);
 
     string trace = reply->getTrace().toString();
-    printf("%s", trace.c_str());
-    EXPECT_TRUE(trace.find("retry 1 in 0.01") != string::npos);
-    EXPECT_TRUE(trace.find("retry 2 in 0.02") != string::npos);
-    EXPECT_TRUE(trace.find("retry 3 in 0.03") != string::npos);
-    EXPECT_TRUE(trace.find("retry 4 in 0.04") != string::npos);
-    EXPECT_TRUE(trace.find("retry 5 in 0.05") != string::npos);
+    EXPECT_TRUE(trace.find("retry 1 in 0.000") != string::npos);
+    EXPECT_TRUE(trace.find("retry 2 in 0.020") != string::npos);
+    EXPECT_TRUE(trace.find("retry 3 in 0.040") != string::npos);
+    EXPECT_TRUE(trace.find("retry 4 in 0.080") != string::npos);
+    EXPECT_TRUE(trace.find("retry 5 in 0.160") != string::npos);
 }
 
 void
@@ -298,11 +297,10 @@ Test::testRequestRetryDelay(TestData &data)
     EXPECT_TRUE(msg.get() == NULL);
 
     string trace = reply->getTrace().toString();
-    printf("%s", trace.c_str());
-    EXPECT_TRUE(trace.find("retry 1 in 0") != string::npos);
-    EXPECT_TRUE(trace.find("retry 2 in 0.02") != string::npos);
-    EXPECT_TRUE(trace.find("retry 3 in 0.04") != string::npos);
-    EXPECT_TRUE(trace.find("retry 4 in 0.06") != string::npos);
-    EXPECT_TRUE(trace.find("retry 5 in 0.08") != string::npos);
+    EXPECT_TRUE(trace.find("retry 1 in 0.000") != string::npos);
+    EXPECT_TRUE(trace.find("retry 2 in 0.020") != string::npos);
+    EXPECT_TRUE(trace.find("retry 3 in 0.040") != string::npos);
+    EXPECT_TRUE(trace.find("retry 4 in 0.060") != string::npos);
+    EXPECT_TRUE(trace.find("retry 5 in 0.080") != string::npos);
 }
 

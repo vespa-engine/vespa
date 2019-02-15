@@ -7,7 +7,7 @@ namespace mbus {
 
 RetryTransientErrorsPolicy::RetryTransientErrorsPolicy() :
     _enabled(true),
-    _baseDelay(1.0)
+    _baseDelay(0.001)
 {}
 
 RetryTransientErrorsPolicy &
@@ -29,7 +29,11 @@ RetryTransientErrorsPolicy::canRetry(uint32_t errorCode) const {
 
 double
 RetryTransientErrorsPolicy::getRetryDelay(uint32_t retry) const {
-    return _baseDelay.load(std::memory_order_relaxed) * retry;
+    uint64_t retryMultiplier = 0l;
+    if (retry > 1) {
+        retryMultiplier = 1L << std::min(20u, retry-1);
+    }
+    return std::min(10.0, _baseDelay.load(std::memory_order_relaxed) * retryMultiplier);
 }
 
 }
