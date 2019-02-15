@@ -159,7 +159,7 @@ public class NodeRetirerTest {
 
         // Now 2 of those finish retiring and go to parked
         nodesToRetire.stream().limit(2).forEach(node ->
-                tester.nodeRepository.park(node.hostname(), Agent.system, "Parked for unit testing"));
+                tester.nodeRepository.park(node.hostname(), false, Agent.system, "Parked for unit testing"));
         long actualOneRetired = retirer.getNumberNodesAllowToRetireForCluster(tester.nodeRepository.getNodes(app), 2);
         assertEquals(1, actualOneRetired);
     }
