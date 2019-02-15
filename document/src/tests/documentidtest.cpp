@@ -1,38 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/fastos/file.h>
+#include <gtest/gtest.h>
 
 namespace document {
-
-struct DocumentIdTest : public CppUnit::TestFixture {
-    void generateJavaComplianceFile();
-    void testOutput();
-    void testEqualityOperator();
-    void testCopying();
-    void testParseId();
-    void checkNtnuGlobalId();
-    void testDocGlobalId();
-    void freestandingLocationFromGroupNameFuncMatchesIdLocation();
-
-    CPPUNIT_TEST_SUITE(DocumentIdTest);
-    CPPUNIT_TEST(testEqualityOperator);
-    CPPUNIT_TEST(testOutput);
-    CPPUNIT_TEST(testCopying);
-    CPPUNIT_TEST(generateJavaComplianceFile);
-    CPPUNIT_TEST(testParseId);
-    CPPUNIT_TEST(checkNtnuGlobalId);
-    CPPUNIT_TEST(testDocGlobalId);
-    CPPUNIT_TEST(freestandingLocationFromGroupNameFuncMatchesIdLocation);
-    CPPUNIT_TEST_SUITE_END();
-
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(DocumentIdTest);
 
 namespace {
     void writeGlobalIdBucketId(std::ostream& out, const std::string& id) {
@@ -43,7 +18,7 @@ namespace {
     }
 }
 
-void DocumentIdTest::generateJavaComplianceFile()
+TEST(DocumentIdTest, generateJavaComplianceFile)
 {
     {  // Generate file with globalids and bucket ID of various document ids,
        // which java will use to ensure equal implementations.
@@ -72,28 +47,28 @@ void DocumentIdTest::generateJavaComplianceFile()
         writeGlobalIdBucketId(ost, "id:np:type:g=agroup:another");
         writeGlobalIdBucketId(ost, "id:ns:type:g=another:specific");
         FastOS_File file;
-        CPPUNIT_ASSERT(file.OpenWriteOnlyTruncate(TEST_PATH("cpp-globalidbucketids.txt").c_str()));
+        ASSERT_TRUE(file.OpenWriteOnlyTruncate(TEST_PATH("cpp-globalidbucketids.txt").c_str()));
         std::string content(ost.str());
-        CPPUNIT_ASSERT(file.CheckedWrite(content.c_str(), content.size()));
-        CPPUNIT_ASSERT(file.Close());
+        ASSERT_TRUE(file.CheckedWrite(content.c_str(), content.size()));
+        ASSERT_TRUE(file.Close());
     }
 }
 
 
-void DocumentIdTest::testOutput()
+TEST(DocumentIdTest, testOutput)
 {
     DocumentId id(DocIdString("crawler", "http://www.yahoo.com"));
 
     std::ostringstream ost;
     ost << id;
     std::string expected("doc:crawler:http://www.yahoo.com");
-    CPPUNIT_ASSERT_EQUAL(expected, ost.str());
+    EXPECT_EQ(expected, ost.str());
 
-    CPPUNIT_ASSERT_EQUAL(vespalib::string(expected), id.toString());
+    EXPECT_EQ(vespalib::string(expected), id.toString());
 
     expected = "DocumentId(id = doc:crawler:http://www.yahoo.com, "
                           "gid(0x928baffb39cf32004542fb60))";
-    CPPUNIT_ASSERT_EQUAL(expected, static_cast<Printable&>(id).toString(true));
+    EXPECT_EQ(expected, static_cast<Printable&>(id).toString(true));
 }
 
 namespace {
@@ -106,7 +81,7 @@ namespace {
     }
 }
 
-void DocumentIdTest::testEqualityOperator()
+TEST(DocumentIdTest, testEqualityOperator)
 {
     std::string uri(DocIdString("crawler", "http://www.yahoo.com").toString());
 
@@ -114,11 +89,11 @@ void DocumentIdTest::testEqualityOperator()
     DocumentId id2(uri);
     DocumentId id3("doc:crawler:http://www.yahoo.no/");
 
-    CPPUNIT_ASSERT_EQUAL(id1, id2);
-    CPPUNIT_ASSERT_MESSAGE(getNotEqualMessage(id1, id3), !(id1 == id3));
+    EXPECT_EQ(id1, id2);
+    EXPECT_NE(id1, id3);
 }
 
-void DocumentIdTest::testCopying()
+TEST(DocumentIdTest, testCopying)
 {
     std::string uri(DocIdString("crawler", "http://www.yahoo.com/").toString());
 
@@ -127,26 +102,17 @@ void DocumentIdTest::testCopying()
     DocumentId id3("doc:ns:foo");
     id3 = id2;
 
-    CPPUNIT_ASSERT_EQUAL(id1, id2);
-    CPPUNIT_ASSERT_EQUAL(id1, id3);
+    EXPECT_EQ(id1, id2);
+    EXPECT_EQ(id1, id3);
 }
 
-void
-DocumentIdTest::testParseId()
-{
-    // Moved to base/documentid_test.cpp
-}
-
-void
-DocumentIdTest::checkNtnuGlobalId()
+TEST(DocumentIdTest, checkNtnuGlobalId)
 {
     DocumentId id("doc:crawler:http://www.ntnu.no/");
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("gid(0xb8863740be14221c0ac77896)"),
-                         id.getGlobalId().toString());
+    EXPECT_EQ(vespalib::string("gid(0xb8863740be14221c0ac77896)"), id.getGlobalId().toString());
 }
 
-void
-DocumentIdTest::testDocGlobalId()
+TEST(DocumentIdTest, testDocGlobalId)
 {
         // Test that location of doc scheme documents are set correctly, such
         // that the location is the first bytes of the original GID.
@@ -157,16 +123,15 @@ DocumentIdTest::testDocGlobalId()
     fastc_md5sum(reinterpret_cast<const unsigned char*>(id.c_str()),
                  id.size(), key);
 
-    CPPUNIT_ASSERT_EQUAL(GlobalId(key), did.getGlobalId());
+    EXPECT_EQ(GlobalId(key), did.getGlobalId());
 }
 
-void
-DocumentIdTest::freestandingLocationFromGroupNameFuncMatchesIdLocation()
+TEST(DocumentIdTest, freestandingLocationFromGroupNameFuncMatchesIdLocation)
 {
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             DocumentId("id::foo:g=zoid:bar").getScheme().getLocation(),
             GroupDocIdString::locationFromGroupName("zoid"));
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             DocumentId("id::bar:g=doink:baz").getScheme().getLocation(),
             GroupDocIdString::locationFromGroupName("doink"));
 }
