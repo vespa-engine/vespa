@@ -11,8 +11,14 @@ simply organized in a flat structure of about 150 modules.
 
 This document aims to provide a map from the
 [functional elements](https://docs.vespa.ai/documentation/overview.html)
-of Vespa to the most implrtant modules in the flat module structure in the
+of Vespa to the most important modules in the flat module structure in the
 [code base on GitHub]()[https://github.com/vespa-engine/vespa).
+
+It covers the modules you are most likely to encounter as a developer. 
+The rest are either small and needed for technical reasons or doing one thing 
+which should be self-explanatory, or implementing the cloud service run by the 
+Vespa team which we don't expect anybody else to run and therefor be interested 
+in changing.
 
 
 ## The stateless container
@@ -75,8 +81,21 @@ This is written in C++.
 The third major subsystem in Vespa is responsible for managing configuration, clusters, application deployment and similar.
 It is implemented in Java.
 
+- [configserver](https://github.com/vespa-engine/vespa/tree/master/configserver) - the server to which applications are deployed, and nodes send requests for the configuration derived from these deployments.
+- [config-model](https://github.com/vespa-engine/vespa/tree/master/config-model) - a model of the running system specified by a deployed application, which returns config instances on request given a config type name and config id (associated with a role).
+- [config](https://github.com/vespa-engine/vespa/tree/master/config) - client-side library on both Java and C++ for subscribing to configs (by type name and id) and reading config payloads.
+- [configgen](https://github.com/vespa-engine/vespa/tree/master/configgen) - generation of config classes in C++ and Java for reading (and building) a config given its type.
+- [config-proxy](https://github.com/vespa-engine/vespa/tree/master/config-proxy) - client node-side proxy between config subscriptions (issued by config) and the config server.
+- [configdefinitions](https://github.com/vespa-engine/vespa/tree/master/configdefinitions) - config type definitions which are referenced by multiple modules.
 
+## General utility libraries
 
+Libraries used throughput the code.
+
+- [vespalib](https://github.com/vespa-engine/vespa/tree/master/vespalib) - general utility library for C++
+- [staging_vespalib](https://github.com/vespa-engine/vespa/tree/master/staging_vespalib) - general (less stable) utility library for C++
+- [vespajlib](https://github.com/vespa-engine/vespa/tree/master/vespajlib) - general utility library for Java. Includes the Java implementation of the tensor library.
+- [yolean](https://github.com/vespa-engine/vespa/tree/master/yolean) - another (more stable) general Java utility library 
 
 
 
