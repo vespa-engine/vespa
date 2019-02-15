@@ -355,6 +355,25 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
+    public void test_tensor_remove_update() {
+        roundtripSerializeJsonAndMatch(inputJson(
+                "{",
+                "  'update': 'DOCUMENT_ID',",
+                "  'fields': {",
+                "    'sparse_tensor': {",
+                "      'remove': {",
+                "        'addresses': [",
+                "          {'x':'0','y':'0'},",
+                "          {'x':'1','y':'2'}",
+                "        ]",
+                "      }",
+                "    }",
+                "  }",
+                "}"
+        ));
+    }
+
+    @Test
     public void reference_field_id_can_be_update_assigned_non_empty_id() {
         roundtripSerializeJsonAndMatch(inputJson(
                 "{",

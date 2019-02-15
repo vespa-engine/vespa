@@ -20,7 +20,7 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStar
  */
 public class TensorRemoveUpdateReader {
 
-    private static final String TENSOR_ADDRESSES = "addresses";
+    public static final String TENSOR_ADDRESSES = "addresses";
 
     static TensorRemoveUpdate createTensorRemoveUpdate(TokenBuffer buffer, Field field) {
         expectObjectStart(buffer.currentToken());

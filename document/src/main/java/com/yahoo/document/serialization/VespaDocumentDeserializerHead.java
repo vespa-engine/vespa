@@ -4,12 +4,13 @@ package com.yahoo.document.serialization;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.TensorDataType;
-import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
+import com.yahoo.document.update.TensorRemoveUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.tensor.TensorType;
 
 /**
  * Class used for de-serializing documents on the current head document format.
@@ -48,5 +49,20 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
         TensorFieldValue tensor = new TensorFieldValue(tensorDataType.getTensorType());
         tensor.deserialize(this);
         return new TensorAddUpdate(tensor);
+    }
+
+    @Override
+    protected ValueUpdate readTensorRemoveUpdate(DataType type) {
+        if (!(type instanceof TensorDataType)) {
+            throw new DeserializationException("Expected tensor data type, got " + type);
+        }
+        TensorDataType tensorDataType = (TensorDataType)type;
+        TensorType tensorType = tensorDataType.getTensorType();
+
+        // TODO: for mixed case extract a new tensor type based only on mapped dimensions
+
+        TensorFieldValue tensor = new TensorFieldValue(tensorType);
+        tensor.deserialize(this);
+        return new TensorRemoveUpdate(tensor);
     }
 }

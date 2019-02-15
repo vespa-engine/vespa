@@ -26,6 +26,7 @@ import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.json.readers.TensorReader;
+import com.yahoo.document.json.readers.TensorRemoveUpdateReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
@@ -87,7 +88,6 @@ public class JsonSerializationHelper {
         for (String dimension : dimensions) {
             generator.writeString(dimension);
         }
-
         generator.writeEndArray();
     }
 
@@ -99,7 +99,19 @@ public class JsonSerializationHelper {
             generator.writeNumberField(TensorReader.TENSOR_VALUE, cell.getValue());
             generator.writeEndObject();
         }
+        generator.writeEndArray();
+    }
 
+    static void serializeTensorAddresses(JsonGenerator generator, Tensor tensor) throws IOException {
+        TensorType tensorType = tensor.type();
+        generator.writeArrayFieldStart(TensorRemoveUpdateReader.TENSOR_ADDRESSES);
+        for (Map.Entry<TensorAddress, Double> cell : tensor.cells().entrySet()) {
+            generator.writeStartObject();
+            for (int i = 0; i < tensorType.dimensions().size(); i++) {
+                generator.writeStringField(tensorType.dimensions().get(i).name(), cell.getKey().label(i));
+            }
+            generator.writeEndObject();
+        }
         generator.writeEndArray();
     }
 
@@ -107,7 +119,6 @@ public class JsonSerializationHelper {
         generator.writeObjectFieldStart(TensorReader.TENSOR_ADDRESS);
         for (int i = 0; i < type.dimensions().size(); i++)
             generator.writeStringField(type.dimensions().get(i).name(), address.label(i));
-
         generator.writeEndObject();
     }
 
