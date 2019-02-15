@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <cstdint>
 #include <memory>
-#include <stdint.h>
 
 namespace mbus {
 
@@ -15,16 +15,12 @@ namespace mbus {
  */
 class IRetryPolicy {
 public:
-    /**
-     * Convenience typedefs.
-     */
-    typedef std::unique_ptr<IRetryPolicy> UP;
-    typedef std::shared_ptr<IRetryPolicy> SP;
 
+    using SP = std::shared_ptr<IRetryPolicy>;
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~IRetryPolicy() { /* empty */ }
+    virtual ~IRetryPolicy() = default;
 
     /**
      * Returns whether or not a {@link com.yahoo.messagebus.Reply} containing an {@link

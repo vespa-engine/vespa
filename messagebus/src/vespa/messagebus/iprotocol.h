@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/messagebus/routing/iroutingpolicy.h>
-#include <vespa/vespalib/component/version.h>
 #include "blobref.h"
 #include "routable.h"
+#include <vespa/messagebus/routing/iroutingpolicy.h>
+#include <vespa/vespalib/component/version.h>
 
 namespace mbus {
 

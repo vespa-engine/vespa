@@ -2,6 +2,7 @@
 #pragma once
 
 #include "iretrypolicy.h"
+#include <atomic>
 
 namespace mbus {
 
@@ -11,16 +12,12 @@ namespace mbus {
  */
 class RetryTransientErrorsPolicy : public IRetryPolicy {
 private:
-    volatile bool   _enabled;
-    volatile double _baseDelay;
+    std::atomic<bool>   _enabled;
+    std::atomic<double> _baseDelay;
 
 public:
-    /**
-     * Convenience typedefs.
-     */
-    typedef std::unique_ptr<RetryTransientErrorsPolicy> UP;
-    typedef std::shared_ptr<RetryTransientErrorsPolicy> SP;
 
+    using SP = std::shared_ptr<RetryTransientErrorsPolicy>;
     /**
      * Constructs a new instance of this policy. By default retries are enabled with a 1.0 second base delay.
      */
