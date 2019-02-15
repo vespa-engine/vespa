@@ -17,6 +17,7 @@
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/tensor_add_update.h>
 #include <vespa/document/update/tensor_modify_update.h>
+#include <vespa/document/update/tensor_remove_update.h>
 #include <vespa/document/update/valueupdate.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
@@ -63,6 +64,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   void tensor_modify_update_can_be_applied();
   void tensor_assign_update_can_be_roundtrip_serialized();
   void tensor_add_update_can_be_roundtrip_serialized();
+  void tensor_remove_update_can_be_roundtrip_serialized();
   void tensor_modify_update_can_be_roundtrip_serialized();
   void testThatDocumentUpdateFlagsIsWorking();
   void testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50();
@@ -96,6 +98,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(tensor_modify_update_can_be_applied);
   CPPUNIT_TEST(tensor_assign_update_can_be_roundtrip_serialized);
   CPPUNIT_TEST(tensor_add_update_can_be_roundtrip_serialized);
+  CPPUNIT_TEST(tensor_remove_update_can_be_roundtrip_serialized);
   CPPUNIT_TEST(tensor_modify_update_can_be_roundtrip_serialized);
   CPPUNIT_TEST(testThatDocumentUpdateFlagsIsWorking);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50);
@@ -1059,6 +1062,13 @@ DocumentUpdateTest::tensor_add_update_can_be_roundtrip_serialized()
 {
     TensorUpdateFixture f;
     f.assertRoundtripSerialize(TensorAddUpdate(f.makeBaselineTensor()));
+}
+
+void
+DocumentUpdateTest::tensor_remove_update_can_be_roundtrip_serialized()
+{
+    TensorUpdateFixture f;
+    f.assertRoundtripSerialize(TensorRemoveUpdate(f.makeBaselineTensor()));
 }
 
 void

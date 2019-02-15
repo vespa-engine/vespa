@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "vespadocumentserializer.h"
 #include "annotationserializer.h"
 #include "slime_output_to_vector.h"
 #include "util.h"
+#include "vespadocumentserializer.h"
+#include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/boolfieldvalue.h>
@@ -16,20 +18,18 @@
 #include <vespa/document/fieldvalue/mapfieldvalue.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/fieldvalue/rawfieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/fieldvalue/shortfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/document/fieldvalue/referencefieldvalue.h>
-#include <vespa/document/datatype/weightedsetdatatype.h>
-#include <vespa/document/update/updates.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/update/fieldpathupdates.h>
+#include <vespa/document/update/updates.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/data/databuffer.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/util/compressor.h>
 
 using std::make_pair;
@@ -590,6 +590,19 @@ VespaDocumentSerializer::write(const TensorAddUpdate &value)
 
 void
 VespaDocumentSerializer::visit(const TensorAddUpdate &value)
+{
+    write(value);
+}
+
+void
+VespaDocumentSerializer::write(const TensorRemoveUpdate &value)
+{
+    _stream << TensorRemoveUpdate::classId;
+    write(value.getTensor());
+}
+
+void
+VespaDocumentSerializer::visit(const TensorRemoveUpdate &value)
 {
     write(value);
 }

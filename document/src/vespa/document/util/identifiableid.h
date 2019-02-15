@@ -70,6 +70,7 @@
 
 #define CID_TensorModifyUpdate     DOCUMENT_CID(100)
 #define CID_TensorAddUpdate        DOCUMENT_CID(101)
+#define CID_TensorRemoveUpdate     DOCUMENT_CID(102)
 
 #define CID_document_DocumentUpdate    DOCUMENT_CID(999)
 
