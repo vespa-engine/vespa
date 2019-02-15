@@ -895,7 +895,7 @@ makeTensorFieldValue(const TensorSpec &spec, const TensorDataType &dataType)
 {
     auto tensor = makeTensor(spec);
     auto result = std::make_unique<TensorFieldValue>(dataType);
-    result->assignDeserialized(std::move(tensor));
+    *result = std::move(tensor);
     return result;
 }
 
