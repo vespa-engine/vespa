@@ -1,14 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/datatype/tensor_data_type.h>
-
+#include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/clearvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/documentupdateflags.h>
 #include <vespa/document/update/fieldupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
@@ -16,26 +18,21 @@
 #include <vespa/document/update/tensor_add_update.h>
 #include <vespa/document/update/tensor_modify_update.h>
 #include <vespa/document/update/valueupdate.h>
-#include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/util/bytebuffer.h>
-
-#include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/types.h>
-#include <vespa/eval/tensor/default_tensor.h>
-#include <vespa/eval/tensor/tensor_factory.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/exception.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 
 using namespace document::config_builder;
+using vespalib::eval::TensorSpec;
+using vespalib::tensor::DefaultTensorEngine;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorCells;
-using vespalib::tensor::TensorDimensions;
 using vespalib::nbostream;
 
 namespace document {
@@ -157,55 +154,66 @@ void testValueUpdate(const UpdateType& update, const DataType &type) {
     }
 }
 
-Tensor::UP
-createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
-    vespalib::tensor::DefaultTensor::builder builder;
-    return vespalib::tensor::TensorFactory::create(cells, dimensions, builder);
+const std::string tensorType2DMapped = "tensor(x{},y{})";
+TensorDataType tensorDataType2DMapped(vespalib::eval::ValueType::from_spec(tensorType2DMapped));
+
+std::unique_ptr<Tensor>
+makeTensor(const TensorSpec &spec)
+{
+    auto result = DefaultTensorEngine::ref().from_spec(spec);
+    return std::unique_ptr<Tensor>(dynamic_cast<Tensor*>(result.release()));
 }
 
-TensorDataType tensorDataType2DMapped(vespalib::eval::ValueType::from_spec("tensor(x{},y{})"));
+std::unique_ptr<TensorFieldValue>
+makeTensorFieldValue(const TensorSpec &spec)
+{
+    auto tensor = makeTensor(spec);
+    auto result = std::make_unique<TensorFieldValue>(tensorDataType2DMapped);
+    result->assignDeserialized(std::move(tensor));
+    return result;
+}
 
 FieldValue::UP createTensorFieldValue() {
-    auto fv(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
-    *fv = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} }, {"x", "y"});
-    return std::move(fv);
+    return makeTensorFieldValue(TensorSpec(tensorType2DMapped)
+                                        .add({{"x", "8"}, {"y", "9"}}, 11));
 }
 
 std::unique_ptr<Tensor> createTensorWith2Cells() {
-    return createTensor({    {{{"x", "8"}, {"y", "9"}}, 11},
-                             {{{"x", "9"}, {"y", "9"}}, 11} }, {"x", "y"});
+    return makeTensor(TensorSpec(tensorType2DMapped)
+                              .add({{"x", "8"}, {"y", "9"}}, 11)
+                              .add({{"x", "9"}, {"y", "9"}}, 11));
 }
 
 std::unique_ptr<Tensor> createExpectedUpdatedTensorWith2Cells() {
-    return createTensor({    {{{"x", "8"}, {"y", "9"}}, 2},
-                             {{{"x", "9"}, {"y", "9"}}, 11} }, {"x", "y"});
+    return makeTensor(TensorSpec(tensorType2DMapped)
+                              .add({{"x", "8"}, {"y", "9"}}, 2)
+                              .add({{"x", "9"}, {"y", "9"}}, 11));
 }
 
 std::unique_ptr<Tensor> createExpectedAddUpdatedTensorWith3Cells() {
-    return createTensor({    {{{"x", "8"}, {"y", "8"}}, 2},
-                             {{{"x", "8"}, {"y", "9"}}, 2},
-                             {{{"x", "9"}, {"y", "9"}}, 11} }, {"x", "y"});
+    return makeTensor(TensorSpec(tensorType2DMapped)
+                              .add({{"x", "8"}, {"y", "8"}}, 2)
+                              .add({{"x", "8"}, {"y", "9"}}, 2)
+                              .add({{"x", "9"}, {"y", "9"}}, 11));
 }
 
 FieldValue::UP createTensorFieldValueWith2Cells() {
-    auto fv(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
-    *fv = createTensorWith2Cells();
-    return std::move(fv);
+    auto result = std::make_unique<TensorFieldValue>(tensorDataType2DMapped);
+    result->assignDeserialized(createTensorWith2Cells());
+    return result;
 }
 
 std::unique_ptr<TensorAddUpdate> createTensorAddUpdate() {
-    auto tensorFieldValue(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
-    *tensorFieldValue = createTensor({    {{{"x", "8"}, {"y", "8"}}, 2},
-                                          {{{"x", "8"}, {"y", "9"}}, 2} }, {"x", "y"});
-    auto update = std::make_unique<TensorAddUpdate>(std::move(tensorFieldValue));
-    return update;
+    auto tensorFieldValue = makeTensorFieldValue(TensorSpec(tensorType2DMapped)
+                                                         .add({{"x", "8"}, {"y", "8"}}, 2)
+                                                         .add({{"x", "8"}, {"y", "9"}}, 2));
+    return std::make_unique<TensorAddUpdate>(std::move(tensorFieldValue));
 }
 
 std::unique_ptr<TensorModifyUpdate> createTensorModifyUpdate() {
-    auto tensorFieldValue(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
-    *tensorFieldValue = createTensor({ {{{"x", "8"}, {"y", "9"}}, 2} }, {"x", "y"});
-    auto update = std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::REPLACE, std::move(tensorFieldValue));
-    return update;
+    auto tensorFieldValue = makeTensorFieldValue(TensorSpec(tensorType2DMapped)
+                                                         .add({{"x", "8"}, {"y", "9"}}, 2));
+    return std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::REPLACE, std::move(tensorFieldValue));
 }
 
 const Tensor &asTensor(const FieldValue &fieldValue) {
