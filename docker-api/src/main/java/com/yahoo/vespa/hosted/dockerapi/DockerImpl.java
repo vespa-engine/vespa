@@ -59,8 +59,8 @@ public class DockerImpl implements Docker {
     private final CounterWrapper numberOfDockerDaemonFails;
 
     @Inject
-    public DockerImpl(DockerConfig config, MetricReceiverWrapper metricReceiverWrapper) {
-        this(createDockerClient(config), metricReceiverWrapper);
+    public DockerImpl(MetricReceiverWrapper metricReceiverWrapper) {
+        this(createDockerClient(), metricReceiverWrapper);
     }
 
     DockerImpl(DockerClient dockerClient, MetricReceiverWrapper metricReceiver) {
@@ -390,7 +390,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private static DockerClient createDockerClient(DockerConfig config) {
+    private static DockerClient createDockerClient() {
         JerseyDockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory()
                 .withMaxPerRouteConnections(10)
                 .withMaxTotalConnections(100)
