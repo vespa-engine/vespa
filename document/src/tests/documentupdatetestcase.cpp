@@ -1,14 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/datatype/tensor_data_type.h>
-
+#include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/clearvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/documentupdateflags.h>
 #include <vespa/document/update/fieldupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
@@ -16,26 +18,21 @@
 #include <vespa/document/update/tensor_add_update.h>
 #include <vespa/document/update/tensor_modify_update.h>
 #include <vespa/document/update/valueupdate.h>
-#include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/util/bytebuffer.h>
-
-#include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/types.h>
-#include <vespa/eval/tensor/default_tensor.h>
-#include <vespa/eval/tensor/tensor_factory.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/exception.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 
 using namespace document::config_builder;
+using vespalib::eval::TensorSpec;
+using vespalib::tensor::DefaultTensorEngine;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorCells;
-using vespalib::tensor::TensorDimensions;
 using vespalib::nbostream;
 
 namespace document {
@@ -60,10 +57,13 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   void testUpdateArrayWrongSubtype();
   void testUpdateWeightedSetWrongSubtype();
   void testMapValueUpdate();
-  void testTensorAssignUpdate();
-  void testTensorClearUpdate();
-  void testTensorAddUpdate();
-  void testTensorModifyUpdate();
+  void tensor_assign_update_can_be_applied();
+  void tensor_clear_update_can_be_applied();
+  void tensor_add_update_can_be_applied();
+  void tensor_modify_update_can_be_applied();
+  void tensor_assign_update_can_be_roundtrip_serialized();
+  void tensor_add_update_can_be_roundtrip_serialized();
+  void tensor_modify_update_can_be_roundtrip_serialized();
   void testThatDocumentUpdateFlagsIsWorking();
   void testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50();
   void testThatCreateIfNonExistentFlagIsSerializedAndDeserialized();
@@ -90,10 +90,13 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testUpdateArrayWrongSubtype);
   CPPUNIT_TEST(testUpdateWeightedSetWrongSubtype);
   CPPUNIT_TEST(testMapValueUpdate);
-  CPPUNIT_TEST(testTensorAssignUpdate);
-  CPPUNIT_TEST(testTensorClearUpdate);
-  CPPUNIT_TEST(testTensorAddUpdate);
-  CPPUNIT_TEST(testTensorModifyUpdate);
+  CPPUNIT_TEST(tensor_assign_update_can_be_applied);
+  CPPUNIT_TEST(tensor_clear_update_can_be_applied);
+  CPPUNIT_TEST(tensor_add_update_can_be_applied);
+  CPPUNIT_TEST(tensor_modify_update_can_be_applied);
+  CPPUNIT_TEST(tensor_assign_update_can_be_roundtrip_serialized);
+  CPPUNIT_TEST(tensor_add_update_can_be_roundtrip_serialized);
+  CPPUNIT_TEST(tensor_modify_update_can_be_roundtrip_serialized);
   CPPUNIT_TEST(testThatDocumentUpdateFlagsIsWorking);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerializedAndDeserialized);
@@ -145,7 +148,7 @@ nbostream serialize(const FieldUpdate & update)
 }
 
 template<typename UpdateType>
-void testValueUpdate(const UpdateType& update, const DataType &type) {
+void testRoundtripSerialize(const UpdateType& update, const DataType &type) {
     try{
         DocumentTypeRepo repo;
         nbostream stream = serialize(update);
@@ -157,65 +160,7 @@ void testValueUpdate(const UpdateType& update, const DataType &type) {
     }
 }
 
-Tensor::UP
-createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
-    vespalib::tensor::DefaultTensor::builder builder;
-    return vespalib::tensor::TensorFactory::create(cells, dimensions, builder);
 }
-
-TensorDataType tensorDataType2DMapped(vespalib::eval::ValueType::from_spec("tensor(x{},y{})"));
-
-FieldValue::UP createTensorFieldValue() {
-    auto fv(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
-    *fv = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} }, {"x", "y"});
-    return std::move(fv);
-}
-
-std::unique_ptr<Tensor> createTensorWith2Cells() {
-    return createTensor({    {{{"x", "8"}, {"y", "9"}}, 11},
-                             {{{"x", "9"}, {"y", "9"}}, 11} }, {"x", "y"});
-}
-
-std::unique_ptr<Tensor> createExpectedUpdatedTensorWith2Cells() {
-    return createTensor({    {{{"x", "8"}, {"y", "9"}}, 2},
-                             {{{"x", "9"}, {"y", "9"}}, 11} }, {"x", "y"});
-}
-
-std::unique_ptr<Tensor> createExpectedAddUpdatedTensorWith3Cells() {
-    return createTensor({    {{{"x", "8"}, {"y", "8"}}, 2},
-                             {{{"x", "8"}, {"y", "9"}}, 2},
-                             {{{"x", "9"}, {"y", "9"}}, 11} }, {"x", "y"});
-}
-
-FieldValue::UP createTensorFieldValueWith2Cells() {
-    auto fv(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
-    *fv = createTensorWith2Cells();
-    return std::move(fv);
-}
-
-std::unique_ptr<TensorAddUpdate> createTensorAddUpdate() {
-    auto tensorFieldValue(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
-    *tensorFieldValue = createTensor({    {{{"x", "8"}, {"y", "8"}}, 2},
-                                          {{{"x", "8"}, {"y", "9"}}, 2} }, {"x", "y"});
-    auto update = std::make_unique<TensorAddUpdate>(std::move(tensorFieldValue));
-    return update;
-}
-
-std::unique_ptr<TensorModifyUpdate> createTensorModifyUpdate() {
-    auto tensorFieldValue(std::make_unique<TensorFieldValue>(tensorDataType2DMapped));
-    *tensorFieldValue = createTensor({ {{{"x", "8"}, {"y", "9"}}, 2} }, {"x", "y"});
-    auto update = std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::REPLACE, std::move(tensorFieldValue));
-    return update;
-}
-
-const Tensor &asTensor(const FieldValue &fieldValue) {
-    auto &tensorFieldValue = dynamic_cast<const TensorFieldValue &>(fieldValue);
-    auto &tensor = tensorFieldValue.getAsTensorPtr();
-    CPPUNIT_ASSERT(tensor);
-    return *tensor;
-}
-
-}  // namespace
 
 void
 DocumentUpdateTest::testSimpleUsage() {
@@ -228,11 +173,11 @@ DocumentUpdateTest::testSimpleUsage() {
     const DataType *arrayType = repo.getDataType(*docType, "Array<Int>");
 
         // Test that primitive value updates can be serialized
-    testValueUpdate(ClearValueUpdate(), *DataType::INT);
-    testValueUpdate(AssignValueUpdate(IntFieldValue(1)), *DataType::INT);
-    testValueUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Div, 4.3), *DataType::FLOAT);
-    testValueUpdate(AddValueUpdate(IntFieldValue(1), 4), *arrayType);
-    testValueUpdate(RemoveValueUpdate(IntFieldValue(1)), *arrayType);
+    testRoundtripSerialize(ClearValueUpdate(), *DataType::INT);
+    testRoundtripSerialize(AssignValueUpdate(IntFieldValue(1)), *DataType::INT);
+    testRoundtripSerialize(ArithmeticValueUpdate(ArithmeticValueUpdate::Div, 4.3), *DataType::FLOAT);
+    testRoundtripSerialize(AddValueUpdate(IntFieldValue(1), 4), *arrayType);
+    testRoundtripSerialize(RemoveValueUpdate(IntFieldValue(1)), *arrayType);
 
     FieldUpdate fieldUpdate(docType->getField("intf"));
     fieldUpdate.addUpdate(AssignValueUpdate(IntFieldValue(1)));
@@ -938,94 +883,193 @@ DocumentUpdateTest::testMapValueUpdate()
     CPPUNIT_ASSERT(fv4->find(StringFieldValue("apple")) == fv4->end());
 }
 
+std::unique_ptr<Tensor>
+makeTensor(const TensorSpec &spec)
+{
+    auto result = DefaultTensorEngine::ref().from_spec(spec);
+    return std::unique_ptr<Tensor>(dynamic_cast<Tensor*>(result.release()));
+}
+
+std::unique_ptr<TensorFieldValue>
+makeTensorFieldValue(const TensorSpec &spec, const TensorDataType &dataType)
+{
+    auto tensor = makeTensor(spec);
+    auto result = std::make_unique<TensorFieldValue>(dataType);
+    *result = std::move(tensor);
+    return result;
+}
+
+const Tensor &asTensor(const FieldValue &fieldValue) {
+    auto &tensorFieldValue = dynamic_cast<const TensorFieldValue &>(fieldValue);
+    auto &tensor = tensorFieldValue.getAsTensorPtr();
+    CPPUNIT_ASSERT(tensor);
+    return *tensor;
+}
+
+struct TensorUpdateFixture {
+    TestDocMan docMan;
+    Document::UP emptyDoc;
+    Document updatedDoc;
+    vespalib::string fieldName;
+    vespalib::string tensorType;
+    TensorDataType tensorDataType;
+
+    TensorUpdateFixture(const vespalib::string &fieldName_ = "tensor",
+                        const vespalib::string &tensorType_ = "tensor(x{},y{})")
+        : docMan(),
+          emptyDoc(docMan.createDocument()),
+          updatedDoc(*emptyDoc),
+          fieldName(fieldName_),
+          tensorType(tensorType_),
+          tensorDataType(vespalib::eval::ValueType::from_spec(tensorType))
+    {
+        CPPUNIT_ASSERT(!emptyDoc->getValue(fieldName));
+    }
+    ~TensorUpdateFixture() {}
+
+    TensorSpec spec() {
+        return TensorSpec(tensorType);
+    }
+
+    FieldValue::UP getTensor() {
+        return updatedDoc.getValue(fieldName);
+    }
+
+    void setTensor(const TensorFieldValue &tensorValue) {
+        updatedDoc.setValue(updatedDoc.getField(fieldName), tensorValue);
+        assertDocumentUpdated();
+    }
+
+    void setTensor(const TensorSpec &spec) {
+        setTensor(*makeTensor(spec));
+    }
+
+    std::unique_ptr<TensorFieldValue> makeTensor(const TensorSpec &spec) {
+        return makeTensorFieldValue(spec, tensorDataType);
+    }
+
+    std::unique_ptr<TensorFieldValue> makeBaselineTensor() {
+        return makeTensor(spec().add({{"x", "a"}, {"y", "a"}}, 2)
+                                  .add({{"x", "a"}, {"y", "b"}}, 3));
+    }
+
+    void applyUpdate(const ValueUpdate &update) {
+        DocumentUpdate docUpdate(docMan.getTypeRepo(), *emptyDoc->getDataType(), emptyDoc->getId());
+        docUpdate.addUpdate(FieldUpdate(docUpdate.getType().getField(fieldName)).addUpdate(update));
+        docUpdate.applyTo(updatedDoc);
+    }
+
+    void assertDocumentUpdated() {
+        CPPUNIT_ASSERT(*emptyDoc != updatedDoc);
+    }
+
+    void assertDocumentNotUpdated() {
+        CPPUNIT_ASSERT(*emptyDoc == updatedDoc);
+    }
+
+    void assertTensor(const TensorFieldValue &expTensorValue) {
+        auto actTensorValue = getTensor();
+        CPPUNIT_ASSERT(actTensorValue);
+        CPPUNIT_ASSERT(*actTensorValue == expTensorValue);
+        auto &actTensor = asTensor(*actTensorValue);
+        auto &expTensor = asTensor(expTensorValue);
+        CPPUNIT_ASSERT(actTensor == expTensor);
+    }
+
+    void assertTensor(const TensorSpec &expSpec) {
+        auto expTensor = makeTensor(expSpec);
+        assertTensor(*expTensor);
+    }
+
+    void assertApplyUpdate(const TensorSpec& initialTensor,
+                           const ValueUpdate& update,
+                           const TensorSpec& expTensor) {
+        setTensor(initialTensor);
+        applyUpdate(update);
+        assertDocumentUpdated();
+        assertTensor(expTensor);
+    }
+
+    template <typename ValueUpdateType>
+    void assertRoundtripSerialize(const ValueUpdateType &valueUpdate) {
+        testRoundtripSerialize(valueUpdate, tensorDataType);
+    }
+
+};
 
 void
-DocumentUpdateTest::testTensorAssignUpdate()
+DocumentUpdateTest::tensor_assign_update_can_be_applied()
 {
-    TestDocMan docMan;
-    Document::UP doc(docMan.createDocument());
-    CPPUNIT_ASSERT(!doc->getValue("tensor"));
-    Document updated(*doc);
-    FieldValue::UP new_value(createTensorFieldValue());
-    testValueUpdate(AssignValueUpdate(*new_value), tensorDataType2DMapped);
-    DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(AssignValueUpdate(*new_value)));
-    upd.applyTo(updated);
-    FieldValue::UP fval(updated.getValue("tensor"));
-    CPPUNIT_ASSERT(fval);
-    CPPUNIT_ASSERT(*fval == *new_value);
-    CPPUNIT_ASSERT(*doc != updated);
+    TensorUpdateFixture f;
+    auto newTensor = f.makeBaselineTensor();
+    f.applyUpdate(AssignValueUpdate(*newTensor));
+    f.assertDocumentUpdated();
+    f.assertTensor(*newTensor);
 }
 
 void
-DocumentUpdateTest::testTensorClearUpdate()
+DocumentUpdateTest::tensor_clear_update_can_be_applied()
 {
-    TestDocMan docMan;
-    Document::UP doc(docMan.createDocument());
-    Document updated(*doc);
-    updated.setValue(updated.getField("tensor"), *createTensorFieldValue());
-    CPPUNIT_ASSERT(*doc != updated);
-    DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(ClearValueUpdate()));
-    upd.applyTo(updated);
-    CPPUNIT_ASSERT(!updated.getValue("tensor"));
-    CPPUNIT_ASSERT(*doc == updated);
+    TensorUpdateFixture f;
+    f.setTensor(*f.makeBaselineTensor());
+    f.applyUpdate(ClearValueUpdate());
+    f.assertDocumentNotUpdated();
+    CPPUNIT_ASSERT(!f.getTensor());
 }
 
 void
-DocumentUpdateTest::testTensorAddUpdate()
+DocumentUpdateTest::tensor_add_update_can_be_applied()
 {
-    TestDocMan docMan;
-    Document::UP doc(docMan.createDocument());
-    Document updated(*doc);
-    auto oldTensor = createTensorFieldValueWith2Cells();
-    updated.setValue(updated.getField("tensor"), *oldTensor);
-    CPPUNIT_ASSERT(*doc != updated);
-    testValueUpdate(*createTensorAddUpdate(), tensorDataType2DMapped);
-    std::string expTensorAddUpdateString("TensorAddUpdate("
-                                         "{TensorFieldValue: "
-                                         "{\"dimensions\":[\"x\",\"y\"],"
-                                         "\"cells\":["
-                                         "{\"address\":{\"x\":\"8\",\"y\":\"9\"},\"value\":2},"
-                                         "{\"address\":{\"x\":\"8\",\"y\":\"8\"},\"value\":2}"
-                                         "]}})");
-    CPPUNIT_ASSERT_EQUAL(expTensorAddUpdateString, createTensorAddUpdate()->toString());
-    DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(*createTensorAddUpdate()));
-    upd.applyTo(updated);
-    FieldValue::UP fval(updated.getValue("tensor"));
-    CPPUNIT_ASSERT(fval);
-    auto &tensor = asTensor(*fval);
-    auto expectedUpdatedTensor = createExpectedAddUpdatedTensorWith3Cells();
-    CPPUNIT_ASSERT(tensor.equals(*expectedUpdatedTensor));
+    TensorUpdateFixture f;
+    f.assertApplyUpdate(f.spec().add({{"x", "a"}, {"y", "a"}}, 2)
+                                .add({{"x", "a"}, {"y", "b"}}, 3),
+
+                        TensorAddUpdate(f.makeTensor(f.spec().add({{"x", "a"}, {"y", "b"}}, 5)
+                                                             .add({{"x", "a"}, {"y", "c"}}, 7))),
+
+                        f.spec().add({{"x", "a"}, {"y", "a"}}, 2)
+                                .add({{"x", "a"}, {"y", "b"}}, 5)
+                                .add({{"x", "a"}, {"y", "c"}}, 7));
 }
 
 void
-DocumentUpdateTest::testTensorModifyUpdate()
+DocumentUpdateTest::tensor_modify_update_can_be_applied()
 {
-    TestDocMan docMan;
-    Document::UP doc(docMan.createDocument());
-    Document updated(*doc);
-    auto oldTensor = createTensorFieldValueWith2Cells();
-    updated.setValue(updated.getField("tensor"), *oldTensor);
-    CPPUNIT_ASSERT(*doc != updated);
-    testValueUpdate(*createTensorModifyUpdate(), tensorDataType2DMapped);
-    std::string expTensorModifyUpdateString("TensorModifyUpdate(replace,"
-                                            "{TensorFieldValue: "
-                                            "{\"dimensions\":[\"x\",\"y\"],"
-                                            "\"cells\":["
-                                            "{\"address\":{\"x\":\"8\",\"y\":\"9\"},\"value\":2}"
-                                            "]}})");
-    CPPUNIT_ASSERT_EQUAL(expTensorModifyUpdateString, createTensorModifyUpdate()->toString());
-    DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(*createTensorModifyUpdate()));
-    upd.applyTo(updated);
-    FieldValue::UP fval(updated.getValue("tensor"));
-    CPPUNIT_ASSERT(fval);
-    auto &tensor = asTensor(*fval);
-    auto expectedUpdatedTensor = createExpectedUpdatedTensorWith2Cells();
-    CPPUNIT_ASSERT(tensor.equals(*expectedUpdatedTensor));
+    TensorUpdateFixture f;
+    f.assertApplyUpdate(f.spec().add({{"x", "a"}, {"y", "a"}}, 2)
+                                .add({{"x", "a"}, {"y", "b"}}, 3),
+
+                        TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
+                                           f.makeTensor(f.spec().add({{"x", "a"}, {"y", "b"}}, 5)
+                                                                .add({{"x", "a"}, {"y", "c"}}, 7))),
+
+                        f.spec().add({{"x", "a"}, {"y", "a"}}, 2)
+                                .add({{"x", "a"}, {"y", "b"}}, 5));
 }
+
+void
+DocumentUpdateTest::tensor_assign_update_can_be_roundtrip_serialized()
+{
+    TensorUpdateFixture f;
+    f.assertRoundtripSerialize(AssignValueUpdate(*f.makeBaselineTensor()));
+}
+
+void
+DocumentUpdateTest::tensor_add_update_can_be_roundtrip_serialized()
+{
+    TensorUpdateFixture f;
+    f.assertRoundtripSerialize(TensorAddUpdate(f.makeBaselineTensor()));
+}
+
+void
+DocumentUpdateTest::tensor_modify_update_can_be_roundtrip_serialized()
+{
+    TensorUpdateFixture f;
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, f.makeBaselineTensor()));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MUL, f.makeBaselineTensor()));
+}
+
 
 void
 assertDocumentUpdateFlag(bool createIfNonExistent, int value)
