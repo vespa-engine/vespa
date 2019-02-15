@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostLivenessTracker;
@@ -28,7 +26,6 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -134,28 +131,6 @@ public class NodeFailer extends Maintainer {
             failActive(node, reason);
         }
 
-        // Retire active hosts and their children.
-        activeNodes.stream()
-                .filter(node -> failAllowedFor(node.type()))
-                .filter(node -> !nodesWithFailureReason.contains(node))
-                // Defer to parent host (it should also be active)
-                .filter(node -> node.parentHostname().isEmpty())
-                // This will sort those with wantToRetire first
-                .sorted(Comparator.comparing(node -> node.status().wantToRetire(), Comparator.reverseOrder()))
-                .filter(node -> {
-                    if (node.status().wantToRetire()) return true;
-                    if (node.allocation().map(a -> a.membership().retired()).orElse(false)) return true;
-                    List<String> reasons = reasonsToRetireActiveParentHost(node);
-                    if (reasons.size() > 0) {
-                        retireRecursively(node, reasons, activeNodes);
-                        return true;
-                    }
-                    return false;
-                })
-                //  Only allow 1 active host to be wantToRetire at a time for rate limiting.
-                .limit(1)
-                .count();
-
         metric.set(throttlingActiveMetric, Math.min( 1, throttledNodeFailures), null);
         metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
     }
@@ -235,8 +210,20 @@ public class NodeFailer extends Maintainer {
         for (Node node : activeNodes) {
             if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
                 nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
-            } else if (node.status().hardwareFailureDescription().isPresent() && nodeSuspended(node)) {
-                nodesByFailureReason.put(node, "Node has hardware failure: " + node.status().hardwareFailureDescription().get());
+            } else if (nodeSuspended(node)) {
+                if (node.status().hardwareFailureDescription().isPresent()) {
+                    nodesByFailureReason.put(node, "Node has hardware failure: " + node.status().hardwareFailureDescription().get());
+                } else {
+                    Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
+                    List<String> failureReports = reasonsToRetireActiveParentHost(hostNode);
+                    if (failureReports.size() > 0) {
+                        if (hostNode.equals(node)) {
+                            nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
+                        } else {
+                            nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
+                        }
+                    }
+                }
             }
         }
         return nodesByFailureReason;
@@ -259,43 +246,6 @@ public class NodeFailer extends Maintainer {
     static Optional<String> baseReportToString(Node node, String reportId) {
         return node.reports().getReport(reportId).map(report ->
                 reportId + " reported " + report.getCreatedTime() + ": " + report.getDescription());
-    }
-
-    /**
-     * There are reasons why this node should be parked, and we'd like to do it through retiring,
-     * including any child nodes.
-     */
-    private void retireRecursively(Node node, List<String> reasons, List<Node> activeNodes) {
-        if (activeNodes != null) {
-            List<Node> childNodesToRetire = activeNodes.stream()
-                    .filter(n -> n.parentHostname().equals(Optional.of(node.hostname())))
-                    .collect(Collectors.toList());
-            for (Node childNode : childNodesToRetire) {
-                retireRecursively(childNode, reasons, null);
-            }
-        }
-
-        if (node.status().wantToRetire()) return;
-        retireActive(node.hostname(), node.allocation().get().owner(), reasons);
-    }
-
-    private void retireActive(String hostname, ApplicationId owner, List<String> reasons) {
-        // Getting the application lock can take a very long time for the largest applications.
-        // Don't bother waiting for too long since retries is automatic with maintainers.
-        Duration lockWait = Duration.ofSeconds(10);
-        try (Mutex lock = nodeRepository().lock(owner, lockWait)) {
-            // Recheck all conditions in case anything has changed
-            Optional<Node> node = nodeRepository().getNode(hostname);
-            if (node.isEmpty()) return;
-            if (node.get().state() != Node.State.active) return;
-            if (!node.get().allocation().orElseThrow().owner().equals(owner)) return;
-            if (node.get().status().wantToRetire()) return;
-
-            log.info("Setting wantToRetire on " + node.get() + " due to these reports: " + reasons);
-            nodeRepository().write(node.get().withWantToRetire(true, Agent.NodeFailer, clock.instant()));
-        } catch (ApplicationLockException e) {
-            log.warning("Failed to get lock on " + owner + " within " + lockWait + " to set wantToRetire, will retry later");
-        }
     }
 
     /** Returns whether node has any kind of hardware issue */
