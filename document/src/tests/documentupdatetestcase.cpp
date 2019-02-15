@@ -57,10 +57,13 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   void testUpdateArrayWrongSubtype();
   void testUpdateWeightedSetWrongSubtype();
   void testMapValueUpdate();
-  void testTensorAssignUpdate();
-  void testTensorClearUpdate();
-  void testTensorAddUpdate();
-  void testTensorModifyUpdate();
+  void tensor_assign_update_can_be_applied();
+  void tensor_clear_update_can_be_applied();
+  void tensor_add_update_can_be_applied();
+  void tensor_modify_update_can_be_applied();
+  void tensor_assign_update_can_be_roundtrip_serialized();
+  void tensor_add_update_can_be_roundtrip_serialized();
+  void tensor_modify_update_can_be_roundtrip_serialized();
   void testThatDocumentUpdateFlagsIsWorking();
   void testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50();
   void testThatCreateIfNonExistentFlagIsSerializedAndDeserialized();
@@ -87,10 +90,13 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testUpdateArrayWrongSubtype);
   CPPUNIT_TEST(testUpdateWeightedSetWrongSubtype);
   CPPUNIT_TEST(testMapValueUpdate);
-  CPPUNIT_TEST(testTensorAssignUpdate);
-  CPPUNIT_TEST(testTensorClearUpdate);
-  CPPUNIT_TEST(testTensorAddUpdate);
-  CPPUNIT_TEST(testTensorModifyUpdate);
+  CPPUNIT_TEST(tensor_assign_update_can_be_applied);
+  CPPUNIT_TEST(tensor_clear_update_can_be_applied);
+  CPPUNIT_TEST(tensor_add_update_can_be_applied);
+  CPPUNIT_TEST(tensor_modify_update_can_be_applied);
+  CPPUNIT_TEST(tensor_assign_update_can_be_roundtrip_serialized);
+  CPPUNIT_TEST(tensor_add_update_can_be_roundtrip_serialized);
+  CPPUNIT_TEST(tensor_modify_update_can_be_roundtrip_serialized);
   CPPUNIT_TEST(testThatDocumentUpdateFlagsIsWorking);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerializedAndDeserialized);
@@ -1001,19 +1007,17 @@ struct TensorUpdateFixture {
 };
 
 void
-DocumentUpdateTest::testTensorAssignUpdate()
+DocumentUpdateTest::tensor_assign_update_can_be_applied()
 {
     TensorUpdateFixture f;
     auto newTensor = createTensorFieldValue();
-    testRoundtripSerialize(AssignValueUpdate(*newTensor), tensorDataType2DMapped);
-
     f.applyUpdate(AssignValueUpdate(*newTensor));
     f.assertDocumentUpdated();
     f.assertTensor(*newTensor);
 }
 
 void
-DocumentUpdateTest::testTensorClearUpdate()
+DocumentUpdateTest::tensor_clear_update_can_be_applied()
 {
     TensorUpdateFixture f;
     f.setTensor(*createTensorFieldValue());
@@ -1023,43 +1027,43 @@ DocumentUpdateTest::testTensorClearUpdate()
 }
 
 void
-DocumentUpdateTest::testTensorAddUpdate()
+DocumentUpdateTest::tensor_add_update_can_be_applied()
 {
     TensorUpdateFixture f;
     f.setTensor(*createTensorFieldValueWith2Cells());
-    testRoundtripSerialize(*createTensorAddUpdate(), tensorDataType2DMapped);
-    std::string expTensorAddUpdateString("TensorAddUpdate("
-                                         "{TensorFieldValue: "
-                                         "{\"dimensions\":[\"x\",\"y\"],"
-                                         "\"cells\":["
-                                         "{\"address\":{\"x\":\"8\",\"y\":\"9\"},\"value\":2},"
-                                         "{\"address\":{\"x\":\"8\",\"y\":\"8\"},\"value\":2}"
-                                         "]}})");
-    CPPUNIT_ASSERT_EQUAL(expTensorAddUpdateString, createTensorAddUpdate()->toString());
-
     f.applyUpdate(*createTensorAddUpdate());
     f.assertDocumentUpdated();
     f.assertTensor(*createExpectedAddUpdatedTensorWith3Cells());
 }
 
 void
-DocumentUpdateTest::testTensorModifyUpdate()
+DocumentUpdateTest::tensor_modify_update_can_be_applied()
 {
     TensorUpdateFixture f;
     f.setTensor(*createTensorFieldValueWith2Cells());
-    testRoundtripSerialize(*createTensorModifyUpdate(), tensorDataType2DMapped);
-    std::string expTensorModifyUpdateString("TensorModifyUpdate(replace,"
-                                            "{TensorFieldValue: "
-                                            "{\"dimensions\":[\"x\",\"y\"],"
-                                            "\"cells\":["
-                                            "{\"address\":{\"x\":\"8\",\"y\":\"9\"},\"value\":2}"
-                                            "]}})");
-    CPPUNIT_ASSERT_EQUAL(expTensorModifyUpdateString, createTensorModifyUpdate()->toString());
-
     f.applyUpdate(*createTensorModifyUpdate());
     f.assertDocumentUpdated();
     f.assertTensor(*createExpectedUpdatedTensorWith2Cells());
 }
+
+void
+DocumentUpdateTest::tensor_assign_update_can_be_roundtrip_serialized()
+{
+    testRoundtripSerialize(AssignValueUpdate(*createTensorFieldValue()), tensorDataType2DMapped);
+}
+
+void
+DocumentUpdateTest::tensor_add_update_can_be_roundtrip_serialized()
+{
+    testRoundtripSerialize(*createTensorAddUpdate(), tensorDataType2DMapped);
+}
+
+void
+DocumentUpdateTest::tensor_modify_update_can_be_roundtrip_serialized()
+{
+    testRoundtripSerialize(*createTensorModifyUpdate(), tensorDataType2DMapped);
+}
+
 
 void
 assertDocumentUpdateFlag(bool createIfNonExistent, int value)
