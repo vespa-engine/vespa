@@ -46,7 +46,7 @@ public:
 
 TEST_APPHOOK(Test);
 
-TestData::~TestData() {}
+TestData::~TestData() = default;
 TestData::TestData() :
     _slobrok(),
     _retryPolicy(std::make_shared<RetryTransientErrorsPolicy>()),

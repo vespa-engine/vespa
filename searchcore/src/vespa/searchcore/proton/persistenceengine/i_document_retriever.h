@@ -8,7 +8,6 @@
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/docstore/idocumentstore.h>
 #include <vespa/searchcore/proton/common/cachedselect.h>
-#include <vespa/searchlib/query/base.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 
 namespace document { class Document; }
