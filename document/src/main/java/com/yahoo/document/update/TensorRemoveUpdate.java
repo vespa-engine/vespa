@@ -16,7 +16,7 @@ import java.util.Objects;
 /**
  *  An update used to remove cells from a sparse tensor (has only mapped dimensions).
  *
- *  The cells to remove are contained in a set of addresses.
+ *  The cells to remove are contained in a sparse tensor where cell values are set to 1.0
  */
 public class TensorRemoveUpdate extends ValueUpdate<TensorFieldValue> {
 
