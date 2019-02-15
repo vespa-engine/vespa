@@ -427,4 +427,5 @@ TEST_F("require that parameters can be echoed as return values", Fixture()) {
 TEST_MAIN() {
     crypto = my_crypto_engine();
     TEST_RUN_ALL();
+    crypto.reset();
 }

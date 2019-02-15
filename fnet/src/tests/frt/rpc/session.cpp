@@ -130,4 +130,5 @@ TEST("session") {
 TEST_MAIN() {
     crypto = my_crypto_engine();
     TEST_RUN_ALL();
+    crypto.reset();
 }
