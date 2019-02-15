@@ -107,8 +107,8 @@ public class FailedExpirer extends Maintainer {
                                       .collect(Collectors.toList());
 
                 if (unparkedChildren.isEmpty()) {
-                    nodeRepository.park(candidate.hostname(), Agent.system,
-                                        "Parked by FailedExpirer due to hardware issue");
+                    nodeRepository.park(candidate.hostname(), false, Agent.system,
+                            "Parked by FailedExpirer due to hardware issue");
                 } else {
                     log.info(String.format("Expired failed node %s with hardware issue was not parked because of " +
                                            "unparked children: %s", candidate.hostname(),

@@ -87,7 +87,7 @@ public class NodeRetirer extends Maintainer {
 
                             retirementPolicy.shouldRetire(nodeToRetire).ifPresent(reason -> {
                                 nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToDeprovision(true)));
-                                nodeRepository().park(nodeToRetire.hostname(), Agent.NodeRetirer, reason);
+                                nodeRepository().park(nodeToRetire.hostname(), false, Agent.NodeRetirer, reason);
                                 iter.remove();
                             });
                         }

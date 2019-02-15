@@ -250,6 +250,13 @@ public final class Node {
         return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
+    /** Returns a new Node without an allocation. */
+    public Node withoutAllocation() {
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state,
+                Optional.empty(), history, type, reports, modelName);
+    }
+
+
     /** Returns a copy of this node with the IP addresses set to the given value. */
     public Node withIpAddresses(Set<String> ipAddresses) {
         return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state,

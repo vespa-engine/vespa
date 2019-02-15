@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
@@ -163,9 +164,9 @@ public class NodeRetirerTester {
     }
 
     void assertParkedCountsByApplication(long... nums) {
-        Map<ApplicationId, Long> expected = expectedCountsByApplication(nums);
-        Map<ApplicationId, Long> actual = nodeRepository.getNodes(Node.State.parked).stream()
-                .collect(Collectors.groupingBy(node -> node.allocation().get().owner(), Collectors.counting()));
+        // Nodes loose allocation when parked, so just do a sum.
+        long expected = LongStream.of(nums).filter(value -> value > 0L).sum();
+        long actual = (long) nodeRepository.getNodes(Node.State.parked).size();
         assertEquals(expected, actual);
     }
 

@@ -33,7 +33,7 @@ public class NodeRepositoryTest {
 
         assertEquals(3, tester.nodeRepository().getNodes().size());
         
-        tester.nodeRepository().park("host2", Agent.system, "Parking to unit test");
+        tester.nodeRepository().park("host2", true, Agent.system, "Parking to unit test");
         tester.nodeRepository().removeRecursively("host2");
 
         assertEquals(2, tester.nodeRepository().getNodes().size());
