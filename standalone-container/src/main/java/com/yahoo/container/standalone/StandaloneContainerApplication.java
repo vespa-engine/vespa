@@ -81,6 +81,7 @@ public class StandaloneContainerApplication implements Application {
     private final Application configuredApplication;
     private final Container container;
 
+    @SuppressWarnings("WeakerAccess")
     @Inject
     public StandaloneContainerApplication(Injector injector) {
         this.injector = injector;
@@ -245,7 +246,8 @@ public class StandaloneContainerApplication implements Application {
                 deployState.getVespaVersion(), deployState.getProperties().applicationId());
 
         Element spec = containerRootElement(applicationPackage);
-        ContainerModel containerModel = newContainerModelBuilder(networkingOption).build(deployState, root, configModelRepo, vespaRoot, spec);
+        ContainerModel containerModel = newContainerModelBuilder(networkingOption)
+                .build(deployState, root, configModelRepo, vespaRoot, spec);
         containerModel.getCluster().prepare(deployState);
         initializeContainerModel(containerModel, configModelRepo);
         Container container = first(containerModel.getCluster().getContainers());
@@ -274,19 +276,13 @@ public class StandaloneContainerApplication implements Application {
         return new Zone(system, environment, region);
     }
 
-    private static DeployState createDeployState(ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger logger) {
+    private static DeployState createDeployState(ApplicationPackage applicationPackage, FileRegistry fileRegistry,
+                                                 DeployLogger logger) {
         DeployState.Builder builder = new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .fileRegistry(fileRegistry)
                 .deployLogger(logger)
                 .configDefinitionRepo(configDefinitionRepo);
-
-        /* Temporarily disable until we know how status.html is updated for config servers/controllers
-        if (isConfigServer())
-            builder.properties(new DeployProperties.Builder()
-                                       .hostedVespa(new CloudConfigInstallVariables().hostedVespa().orElse(Boolean.FALSE))
-                                       .build());
-        */
 
         return builder.build();
     }
