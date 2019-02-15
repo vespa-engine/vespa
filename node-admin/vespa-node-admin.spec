@@ -18,7 +18,6 @@ URL:            http://vespa.ai
 Requires: bash
 Requires: vespa-base = %{version}
 Requires: vespa-standalone-container = %{version}
-Requires: vespa-node-maintainer = %{version}
 Requires: vespa-log-utils = %{version}
 
 Conflicts: vespa
