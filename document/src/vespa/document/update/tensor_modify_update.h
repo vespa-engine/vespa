@@ -18,9 +18,9 @@ class TensorModifyUpdate : public ValueUpdate {
 public:
     /** Declare all types of tensor modify updates. */
     enum class Operation { // Operation to be applied to matching tensor cells
-        REPLACE = 0,
-        ADD     = 1,
-        MUL     = 2,
+        REPLACE  = 0,
+        ADD      = 1,
+        MULTIPLY = 2,
         MAX_NUM_OPERATIONS = 3
     };
 private:

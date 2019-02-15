@@ -17,6 +17,7 @@
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/tensor_add_update.h>
 #include <vespa/document/update/tensor_modify_update.h>
+#include <vespa/document/update/tensor_remove_update.h>
 #include <vespa/document/update/valueupdate.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
@@ -63,6 +64,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   void tensor_modify_update_can_be_applied();
   void tensor_assign_update_can_be_roundtrip_serialized();
   void tensor_add_update_can_be_roundtrip_serialized();
+  void tensor_remove_update_can_be_roundtrip_serialized();
   void tensor_modify_update_can_be_roundtrip_serialized();
   void testThatDocumentUpdateFlagsIsWorking();
   void testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50();
@@ -96,6 +98,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(tensor_modify_update_can_be_applied);
   CPPUNIT_TEST(tensor_assign_update_can_be_roundtrip_serialized);
   CPPUNIT_TEST(tensor_add_update_can_be_roundtrip_serialized);
+  CPPUNIT_TEST(tensor_remove_update_can_be_roundtrip_serialized);
   CPPUNIT_TEST(tensor_modify_update_can_be_roundtrip_serialized);
   CPPUNIT_TEST(testThatDocumentUpdateFlagsIsWorking);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50);
@@ -911,17 +914,21 @@ struct TensorUpdateFixture {
     Document::UP emptyDoc;
     Document updatedDoc;
     vespalib::string fieldName;
+    const TensorDataType &tensorDataType;
     vespalib::string tensorType;
-    TensorDataType tensorDataType;
 
-    TensorUpdateFixture(const vespalib::string &fieldName_ = "tensor",
-                        const vespalib::string &tensorType_ = "tensor(x{},y{})")
+    const TensorDataType &extractTensorDataType() {
+        const auto &dataType = emptyDoc->getField(fieldName).getDataType();
+        return dynamic_cast<const TensorDataType &>(dataType);
+    }
+
+    TensorUpdateFixture(const vespalib::string &fieldName_ = "sparse_tensor")
         : docMan(),
           emptyDoc(docMan.createDocument()),
           updatedDoc(*emptyDoc),
           fieldName(fieldName_),
-          tensorType(tensorType_),
-          tensorDataType(vespalib::eval::ValueType::from_spec(tensorType))
+          tensorDataType(extractTensorDataType()),
+          tensorType(tensorDataType.getTensorType().to_spec())
     {
         CPPUNIT_ASSERT(!emptyDoc->getValue(fieldName));
     }
@@ -949,8 +956,8 @@ struct TensorUpdateFixture {
     }
 
     std::unique_ptr<TensorFieldValue> makeBaselineTensor() {
-        return makeTensor(spec().add({{"x", "a"}, {"y", "a"}}, 2)
-                                  .add({{"x", "a"}, {"y", "b"}}, 3));
+        return makeTensor(spec().add({{"x", "a"}}, 2)
+                                  .add({{"x", "b"}}, 3));
     }
 
     void applyUpdate(const ValueUpdate &update) {
@@ -1021,30 +1028,42 @@ void
 DocumentUpdateTest::tensor_add_update_can_be_applied()
 {
     TensorUpdateFixture f;
-    f.assertApplyUpdate(f.spec().add({{"x", "a"}, {"y", "a"}}, 2)
-                                .add({{"x", "a"}, {"y", "b"}}, 3),
+    f.assertApplyUpdate(f.spec().add({{"x", "a"}}, 2)
+                                .add({{"x", "b"}}, 3),
 
-                        TensorAddUpdate(f.makeTensor(f.spec().add({{"x", "a"}, {"y", "b"}}, 5)
-                                                             .add({{"x", "a"}, {"y", "c"}}, 7))),
+                        TensorAddUpdate(f.makeTensor(f.spec().add({{"x", "b"}}, 5)
+                                                             .add({{"x", "c"}}, 7))),
 
-                        f.spec().add({{"x", "a"}, {"y", "a"}}, 2)
-                                .add({{"x", "a"}, {"y", "b"}}, 5)
-                                .add({{"x", "a"}, {"y", "c"}}, 7));
+                        f.spec().add({{"x", "a"}}, 2)
+                                .add({{"x", "b"}}, 5)
+                                .add({{"x", "c"}}, 7));
 }
 
 void
 DocumentUpdateTest::tensor_modify_update_can_be_applied()
 {
     TensorUpdateFixture f;
-    f.assertApplyUpdate(f.spec().add({{"x", "a"}, {"y", "a"}}, 2)
-                                .add({{"x", "a"}, {"y", "b"}}, 3),
+    auto baseLine = f.spec().add({{"x", "a"}}, 2)
+                            .add({{"x", "b"}}, 3);
 
+    f.assertApplyUpdate(baseLine,
                         TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
-                                           f.makeTensor(f.spec().add({{"x", "a"}, {"y", "b"}}, 5)
-                                                                .add({{"x", "a"}, {"y", "c"}}, 7))),
+                                           f.makeTensor(f.spec().add({{"x", "b"}}, 5)
+                                                                .add({{"x", "c"}}, 7))),
+                        f.spec().add({{"x", "a"}}, 2)
+                                .add({{"x", "b"}}, 5));
 
-                        f.spec().add({{"x", "a"}, {"y", "a"}}, 2)
-                                .add({{"x", "a"}, {"y", "b"}}, 5));
+    f.assertApplyUpdate(baseLine,
+                        TensorModifyUpdate(TensorModifyUpdate::Operation::ADD,
+                                           f.makeTensor(f.spec().add({{"x", "b"}}, 5))),
+                        f.spec().add({{"x", "a"}}, 2)
+                                .add({{"x", "b"}}, 8));
+
+    f.assertApplyUpdate(baseLine,
+                        TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY,
+                                           f.makeTensor(f.spec().add({{"x", "b"}}, 5))),
+                        f.spec().add({{"x", "a"}}, 2)
+                                .add({{"x", "b"}}, 15));
 }
 
 void
@@ -1062,12 +1081,19 @@ DocumentUpdateTest::tensor_add_update_can_be_roundtrip_serialized()
 }
 
 void
+DocumentUpdateTest::tensor_remove_update_can_be_roundtrip_serialized()
+{
+    TensorUpdateFixture f;
+    f.assertRoundtripSerialize(TensorRemoveUpdate(f.makeBaselineTensor()));
+}
+
+void
 DocumentUpdateTest::tensor_modify_update_can_be_roundtrip_serialized()
 {
     TensorUpdateFixture f;
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, f.makeBaselineTensor()));
-    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MUL, f.makeBaselineTensor()));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor()));
 }
 
 

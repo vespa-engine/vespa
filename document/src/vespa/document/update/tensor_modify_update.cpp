@@ -44,7 +44,7 @@ getJoinFunction(TensorModifyUpdate::Operation operation)
         return replace;
     case Operation::ADD:
         return vespalib::eval::operation::Add::f;
-    case Operation::MUL:
+    case Operation::MULTIPLY:
         return vespalib::eval::operation::Mul::f;
     default:
         throw IllegalArgumentException("Bad operation", VESPA_STRLOC);
@@ -61,7 +61,7 @@ getJoinFunctionName(TensorModifyUpdate::Operation operation)
         return "replace";
     case Operation::ADD:
         return "add";
-    case Operation::MUL:
+    case Operation::MULTIPLY:
         return "multiply";
     default:
         throw IllegalArgumentException("Bad operation", VESPA_STRLOC);

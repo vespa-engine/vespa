@@ -76,6 +76,7 @@ private:
     void write(const RemoveFieldPathUpdate &value);
     void write(const TensorModifyUpdate &value);
     void write(const TensorAddUpdate &value);
+    void write(const TensorRemoveUpdate &value);
 
     void visit(const DocumentUpdate &value)        override { writeHEAD(value); }
     void visit(const FieldUpdate &value)           override { write(value); }
@@ -90,6 +91,7 @@ private:
     void visit(const RemoveFieldPathUpdate &value) override { write(value); }
     void visit(const TensorModifyUpdate &value) override;
     void visit(const TensorAddUpdate &value) override;
+    void visit(const TensorRemoveUpdate &value) override;
 
     void visit(const AnnotationReferenceFieldValue &value) override { write(value); }
     void visit(const ArrayFieldValue &value)               override { write(value); }
