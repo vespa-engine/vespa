@@ -1,9 +1,0 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-namespace=vespa.hosted.dockerapi
-
-uri string default = "unix:///var/run/docker.sock"
-
-maxPerRouteConnections int default = 10
-maxTotalConnections int default = 100
-connectTimeoutMillis int default = 100000 # 100 sec
-readTimeoutMillis int default = 1800000 # 30 min
