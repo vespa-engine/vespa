@@ -1,13 +1,36 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
-import com.yahoo.document.*;
-import com.yahoo.document.datatypes.*;
-import com.yahoo.document.update.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.Field;
+import com.yahoo.document.FieldPath;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.StructuredFieldValue;
+import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.update.AddValueUpdate;
+import com.yahoo.document.update.ArithmeticValueUpdate;
+import com.yahoo.document.update.AssignValueUpdate;
+import com.yahoo.document.update.ClearValueUpdate;
+import com.yahoo.document.update.FieldUpdate;
+import com.yahoo.document.update.MapValueUpdate;
+import com.yahoo.document.update.RemoveValueUpdate;
+import com.yahoo.document.update.TensorAddUpdate;
+import com.yahoo.document.update.TensorModifyUpdate;
+import com.yahoo.document.update.TensorRemoveUpdate;
+import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.FieldValueAdapter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Simon Thoresen Hult
@@ -140,6 +163,8 @@ public class FieldUpdateAdapter implements UpdateAdapter {
             } else if (upd instanceof TensorModifyUpdate) {
                 lst.add(upd);
             } else if (upd instanceof TensorAddUpdate) {
+                lst.add(upd);
+            } else if (upd instanceof TensorRemoveUpdate) {
                 lst.add(upd);
             } else {
                 throw new UnsupportedOperationException(
