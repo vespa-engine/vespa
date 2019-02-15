@@ -29,7 +29,7 @@ TensorFieldValue::TensorFieldValue()
 
 TensorFieldValue::TensorFieldValue(const TensorDataType &dataType)
     : FieldValue(),
-      _dataType(&dataType),
+      _dataType(dataType),
       _tensor(),
       _altered(true)
 {
@@ -66,7 +66,6 @@ TensorFieldValue &
 TensorFieldValue::operator=(const TensorFieldValue &rhs)
 {
     if (this != &rhs) {
-        _dataType = rhs._dataType;
         if (rhs._tensor) {
             _tensor = rhs._tensor->clone();
         } else {
@@ -105,7 +104,7 @@ TensorFieldValue::accept(ConstFieldValueVisitor &visitor) const
 const DataType *
 TensorFieldValue::getDataType() const
 {
-    return _dataType;
+    return &_dataType;
 }
 
 
