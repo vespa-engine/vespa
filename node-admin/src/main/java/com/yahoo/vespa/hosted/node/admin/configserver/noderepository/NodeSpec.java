@@ -41,7 +41,7 @@ public class NodeSpec {
     private final Optional<Instant> wantedFirmwareCheck;
     private final Optional<Instant> currentFirmwareCheck;
 
-    private final Optional<String> modelId;
+    private final Optional<String> modelName;
 
     private final Optional<Boolean> allowedToBeDown;
     private final Optional<Boolean> wantToDeprovision;
@@ -84,7 +84,7 @@ public class NodeSpec {
             long currentRebootGeneration,
             Optional<Instant> wantedFirmwareCheck,
             Optional<Instant> currentFirmwareCheck,
-            Optional<String> modelId,
+            Optional<String> modelName,
             double minCpuCores,
             double minMainMemoryAvailableGb,
             double minDiskAvailableGb,
@@ -102,7 +102,7 @@ public class NodeSpec {
         this.nodeType = Objects.requireNonNull(nodeType);
         this.flavor = Objects.requireNonNull(flavor);
         this.canonicalFlavor = canonicalFlavor;
-        this.modelId = modelId;
+        this.modelName = modelName;
         this.wantedVespaVersion = Objects.requireNonNull(wantedVespaVersion);
         this.vespaVersion = Objects.requireNonNull(vespaVersion);
         this.wantedOsVersion = Objects.requireNonNull(wantedOsVersion);
@@ -197,8 +197,8 @@ public class NodeSpec {
         return currentFirmwareCheck;
     }
 
-    public Optional<String> getModelId() {
-        return modelId;
+    public Optional<String> getModelName() {
+        return modelName;
     }
 
     public Optional<Boolean> getAllowedToBeDown() {
@@ -519,7 +519,7 @@ public class NodeSpec {
         private long currentRebootGeneration;
         private Optional<Instant> wantedFirmwareCheck = Optional.empty();
         private Optional<Instant> currentFirmwareCheck = Optional.empty();
-        private Optional<String> modelId = Optional.empty();
+        private Optional<String> modelName = Optional.empty();
         private double minCpuCores;
         private double minMainMemoryAvailableGb;
         private double minDiskAvailableGb;
@@ -869,7 +869,7 @@ public class NodeSpec {
                     owner, membership,
                     wantedRestartGeneration, currentRestartGeneration,
                     wantedRebootGeneration, currentRebootGeneration,
-                    wantedFirmwareCheck, currentFirmwareCheck, modelId,
+                    wantedFirmwareCheck, currentFirmwareCheck, modelName,
                     minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb,
                     fastDisk, bandwidth, ipAddresses, hardwareDivergence, hardwareFailureDescription,
                     reports, parentHostname);
