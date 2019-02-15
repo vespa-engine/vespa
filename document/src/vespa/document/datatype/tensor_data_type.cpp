@@ -22,6 +22,8 @@ TensorDataType::TensorDataType(ValueType tensorType)
 {
 }
 
+TensorDataType::~TensorDataType() = default;
+
 FieldValue::UP
 TensorDataType::createFieldValue() const
 {

@@ -14,7 +14,8 @@ class TensorDataType : public PrimitiveDataType {
 public:
     TensorDataType();
     TensorDataType(vespalib::eval::ValueType tensorType);
-    
+    ~TensorDataType();
+
     std::unique_ptr<FieldValue> createFieldValue() const override;
     TensorDataType* clone() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
