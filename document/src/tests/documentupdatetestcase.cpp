@@ -1060,7 +1060,7 @@ DocumentUpdateTest::tensor_modify_update_can_be_applied()
                                 .add({{"x", "b"}}, 8));
 
     f.assertApplyUpdate(baseLine,
-                        TensorModifyUpdate(TensorModifyUpdate::Operation::MUL,
+                        TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY,
                                            f.makeTensor(f.spec().add({{"x", "b"}}, 5))),
                         f.spec().add({{"x", "a"}}, 2)
                                 .add({{"x", "b"}}, 15));
@@ -1093,7 +1093,7 @@ DocumentUpdateTest::tensor_modify_update_can_be_roundtrip_serialized()
     TensorUpdateFixture f;
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, f.makeBaselineTensor()));
-    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MUL, f.makeBaselineTensor()));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor()));
 }
 
 
