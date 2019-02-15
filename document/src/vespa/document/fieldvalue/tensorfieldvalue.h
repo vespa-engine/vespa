@@ -15,7 +15,7 @@ class TensorDataType;
  */
 class TensorFieldValue : public FieldValue {
 private:
-    const TensorDataType *_dataType;
+    const TensorDataType &_dataType;
     std::unique_ptr<vespalib::tensor::Tensor> _tensor;
     bool _altered;
 public:

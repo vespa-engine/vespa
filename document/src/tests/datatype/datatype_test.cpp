@@ -4,7 +4,9 @@
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/structdatatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -59,6 +61,47 @@ TEST("require that StructDataType can redeclare identical fields.") {
                      "Field id in use by field Field(field1");
     s.addInheritedField(field2);
     EXPECT_FALSE(s.hasField(field2.getName()));
+}
+
+class TensorDataTypeFixture {
+    std::unique_ptr<const TensorDataType> _tensorDataType;
+public:
+    using ValueType = vespalib::eval::ValueType;
+    TensorDataTypeFixture()
+        : _tensorDataType()
+    {
+    }
+
+    ~TensorDataTypeFixture();
+
+    void setup(const vespalib::string &spec)
+    {
+        _tensorDataType = TensorDataType::fromSpec(spec);
+    }
+
+    bool isAssignableType(const vespalib::string &spec) const
+    {
+        auto assignType = ValueType::from_spec(spec);
+        return _tensorDataType->isAssignableType(assignType);
+    }
+};
+
+TensorDataTypeFixture::~TensorDataTypeFixture() = default;
+
+TEST_F("require that TensorDataType can check for assignable tensor type", TensorDataTypeFixture)
+{
+    f.setup("tensor(x[2])");
+    EXPECT_TRUE(f.isAssignableType("tensor(x[2])"));
+    EXPECT_FALSE(f.isAssignableType("tensor(x[3])"));
+    EXPECT_FALSE(f.isAssignableType("tensor(y[2])"));
+    EXPECT_FALSE(f.isAssignableType("tensor(x[])"));
+    EXPECT_FALSE(f.isAssignableType("tensor(x{})"));
+    f.setup("tensor(x[])");
+    EXPECT_TRUE(f.isAssignableType("tensor(x[2])"));
+    EXPECT_TRUE(f.isAssignableType("tensor(x[3])"));
+    EXPECT_FALSE(f.isAssignableType("tensor(y[2])"));
+    EXPECT_FALSE(f.isAssignableType("tensor(x[])"));
+    EXPECT_FALSE(f.isAssignableType("tensor(x{})"));
 }
 
 }  // namespace
