@@ -36,7 +36,7 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the node running on this physical host */
     Node generateNode() {
-        return Node.createDockerNode(Set.of(), Set.of(), nodeHostname, hostHostname, nodeFlavor, NodeType.tenant);
+        return Node.createDockerNode(Set.of(), Set.of(), nodeHostname, Optional.of(hostHostname), nodeFlavor, NodeType.tenant);
     }
 
     @Override

@@ -173,7 +173,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addDocumentApi(spec, cluster);  // NOTE: Must be done after addSearch
 
         addDefaultHandlers(cluster);
-        addStatusHandlers(cluster, context);
+        addStatusHandlers(cluster, context.getDeployState().isHosted());
 
         addHttp(deployState, spec, cluster);
 
@@ -258,8 +258,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addDefaultHandlersExceptStatus(cluster);
     }
 
-    private void addStatusHandlers(ContainerCluster cluster, ConfigModelContext configModelContext) {
-        if (configModelContext.getDeployState().isHosted()) {
+    protected void addStatusHandlers(ContainerCluster cluster, boolean isHostedVespa) {
+        if (isHostedVespa) {
             String name = "status.html";
             Optional<String> statusFile = Optional.ofNullable(System.getenv(HOSTED_VESPA_STATUS_FILE_INSTALL_SETTING));
             cluster.addComponent(
