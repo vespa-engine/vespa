@@ -52,7 +52,7 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
                      .addField("content", DataType::T_STRING)
                      .addField("rawarray", Array(DataType::T_RAW))
                      .addField("structarray", structarray_id)
-                     .addTensorField("tensor", "tensor(x{},y{})"));
+                     .addTensorField("sparse_tensor", "tensor(x{})"));
     builder.document(type2_id, "testdoctype2",
                      Struct("testdoctype2.header")
                      .addField("onlyinchild", DataType::T_INT),
