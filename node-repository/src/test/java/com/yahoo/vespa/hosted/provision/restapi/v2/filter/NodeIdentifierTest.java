@@ -32,6 +32,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Optional;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
@@ -232,7 +233,7 @@ public class NodeIdentifierTest {
                         singleton("1.2.3.4"),
                         emptySet(),
                         HOSTNAME,
-                        "parenthost",
+                        Optional.of("parenthost"),
                         new Flavor(createFlavourConfig().flavor(0)),
                         NodeType.tenant)
                 .with(

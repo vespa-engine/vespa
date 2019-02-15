@@ -126,11 +126,11 @@ public class MetricsReporterTest {
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
-        Node container1 = Node.createDockerNode(Collections.singleton("::2"), Collections.emptySet(), "container1", "dockerHost", nodeFlavors.getFlavorOrThrow("docker"), NodeType.tenant);
+        Node container1 = Node.createDockerNode(Collections.singleton("::2"), Collections.emptySet(), "container1", Optional.of("dockerHost"), nodeFlavors.getFlavorOrThrow("docker"), NodeType.tenant);
         container1 = container1.with(allocation(Optional.of("app1")).get());
         nodeRepository.addDockerNodes(Collections.singletonList(container1), nodeRepository.lockAllocation());
 
-        Node container2 = Node.createDockerNode(Collections.singleton("::3"), Collections.emptySet(), "container2", "dockerHost", nodeFlavors.getFlavorOrThrow("docker2"), NodeType.tenant);
+        Node container2 = Node.createDockerNode(Collections.singleton("::3"), Collections.emptySet(), "container2", Optional.of("dockerHost"), nodeFlavors.getFlavorOrThrow("docker2"), NodeType.tenant);
         container2 = container2.with(allocation(Optional.of("app2")).get());
         nodeRepository.addDockerNodes(Collections.singletonList(container2), nodeRepository.lockAllocation());
 
