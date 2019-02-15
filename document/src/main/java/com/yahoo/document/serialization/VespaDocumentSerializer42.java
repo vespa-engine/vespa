@@ -47,6 +47,7 @@ import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.RemoveValueUpdate;
 import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
+import com.yahoo.document.update.TensorRemoveUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
@@ -648,12 +649,17 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
 
     @Override
     public void write(TensorModifyUpdate update) {
-        throw new IllegalArgumentException("Write of TensorModifyUpdate not implemeneted for Vespa 4.2");
+        throw new IllegalArgumentException("Write of TensorModifyUpdate not implemented for Vespa 4.2");
     }
 
     @Override
     public void write(TensorAddUpdate update) {
-        throw new IllegalArgumentException("Write of TensorAddUpdate not implemeneted for Vespa 4.2");
+        throw new IllegalArgumentException("Write of TensorAddUpdate not implemented for Vespa 4.2");
+    }
+
+    @Override
+    public void write(TensorRemoveUpdate update) {
+        throw new IllegalArgumentException("Write of TensorRemoveUpdate not implemented for Vespa 4.2");
     }
 
     /**

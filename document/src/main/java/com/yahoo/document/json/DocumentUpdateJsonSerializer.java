@@ -42,6 +42,7 @@ import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.RemoveValueUpdate;
 import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
+import com.yahoo.document.update.TensorRemoveUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.objects.FieldBase;
 import com.yahoo.vespa.objects.Serializer;
@@ -51,7 +52,6 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -281,6 +281,17 @@ public class DocumentUpdateJsonSerializer
                 generator.writeObjectFieldStart("add");
                 if (update.getValue().getTensor().isPresent()) {
                     serializeTensorCells(generator, update.getValue().getTensor().get());
+                }
+                generator.writeEndObject();
+            });
+        }
+
+        @Override
+        public void write(TensorRemoveUpdate update) {
+            wrapIOException(() -> {
+                generator.writeObjectFieldStart("remove");
+                if (update.getValue().getTensor().isPresent()) {
+                    serializeTensorAddresses(generator, update.getValue().getTensor().get());
                 }
                 generator.writeEndObject();
             });

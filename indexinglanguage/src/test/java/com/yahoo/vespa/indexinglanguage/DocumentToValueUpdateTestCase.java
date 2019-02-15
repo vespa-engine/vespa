@@ -399,4 +399,12 @@ public class DocumentToValueUpdateTestCase {
         f.assertTensorUpdatePassesThrough(addUpdate, doc);
     }
 
+    @Test
+    public void tensor_remove_update_passes_through_unmodified() {
+        TensorFixture f = new TensorFixture();
+        TensorRemoveUpdate removeUpdate = new TensorRemoveUpdate(new TensorFieldValue(Tensor.from("tensor(x{})", "{{x:a}:1}")));
+        Document doc = f.assertTensorUpdateNotApplied(removeUpdate);
+        f.assertTensorUpdatePassesThrough(removeUpdate, doc);
+    }
+
 }

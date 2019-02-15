@@ -50,6 +50,7 @@ import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.RemoveValueUpdate;
 import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
+import com.yahoo.document.update.TensorRemoveUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
@@ -63,7 +64,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import static com.yahoo.text.Utf8.calculateBytePositions;
 
@@ -686,13 +686,19 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
     @Override
     public void write(TensorModifyUpdate update) {
-        throw new IllegalArgumentException("Write of TensorModifyUpdate not implemeneted for Vespa 6");
+        throw new IllegalArgumentException("Write of TensorModifyUpdate not implemented for Vespa 6");
     }
 
     @Override
     public void write(TensorAddUpdate update) {
-        throw new IllegalArgumentException("Write of TensorAddUpdate not implemeneted for Vespa 6");
+        throw new IllegalArgumentException("Write of TensorAddUpdate not implemented for Vespa 6");
     }
+
+    @Override
+    public void write(TensorRemoveUpdate update) {
+        throw new IllegalArgumentException("Write of TensorRemoveUpdate not implemented for Vespa 6");
+    }
+
 
     /**
      * Returns the serialized size of the given {@link Document}. Please note that this method performs actual

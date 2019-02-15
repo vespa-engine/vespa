@@ -12,6 +12,7 @@ import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.RemoveValueUpdate;
 import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
+import com.yahoo.document.update.TensorRemoveUpdate;
 
 /**
  * Interface for writing document updates in custom serializers.
@@ -30,4 +31,5 @@ public interface DocumentUpdateWriter {
     public void write(ClearValueUpdate clearValueUpdate, DataType superType);
     public void write(TensorModifyUpdate update);
     public void write(TensorAddUpdate update);
+    public void write(TensorRemoveUpdate update);
 }

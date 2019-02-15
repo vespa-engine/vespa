@@ -3,6 +3,7 @@ package com.yahoo.document.serialization;
 
 import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
+import com.yahoo.document.update.TensorRemoveUpdate;
 import com.yahoo.io.GrowableByteBuffer;
 
 /**
@@ -26,5 +27,11 @@ public class VespaDocumentSerializerHead extends VespaDocumentSerializer6 {
     public void write(TensorAddUpdate update) {
         update.getValue().serialize(this);
     }
+
+    @Override
+    public void write(TensorRemoveUpdate update) {
+        update.getValue().serialize(this);
+    }
+
 
 }

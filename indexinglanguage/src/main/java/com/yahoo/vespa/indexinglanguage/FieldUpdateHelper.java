@@ -1,9 +1,28 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
-import com.yahoo.document.*;
-import com.yahoo.document.datatypes.*;
-import com.yahoo.document.update.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
+import com.yahoo.document.StructuredDataType;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
+import com.yahoo.document.datatypes.StructuredFieldValue;
+import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.update.AddValueUpdate;
+import com.yahoo.document.update.ArithmeticValueUpdate;
+import com.yahoo.document.update.AssignValueUpdate;
+import com.yahoo.document.update.ClearValueUpdate;
+import com.yahoo.document.update.MapValueUpdate;
+import com.yahoo.document.update.RemoveValueUpdate;
+import com.yahoo.document.update.TensorAddUpdate;
+import com.yahoo.document.update.TensorModifyUpdate;
+import com.yahoo.document.update.TensorRemoveUpdate;
+import com.yahoo.document.update.ValueUpdate;
 
 /**
  * @author Simon Thoresen Hult
@@ -93,6 +112,8 @@ public abstract class FieldUpdateHelper {
         } else if (upd instanceof TensorModifyUpdate) {
             return val;
         } else if (upd instanceof TensorAddUpdate) {
+            return val;
+        } else if (upd instanceof TensorRemoveUpdate) {
             return val;
         }
         throw new UnsupportedOperationException("Value update type " + upd.getClass().getName() + " not supported.");
