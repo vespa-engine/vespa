@@ -24,12 +24,12 @@ RetryTransientErrorsPolicy::setBaseDelay(double baseDelay) {
 
 bool
 RetryTransientErrorsPolicy::canRetry(uint32_t errorCode) const {
-    return _enabled && errorCode < ErrorCode::FATAL_ERROR;
+    return _enabled.load(std::memory_order_relaxed) && errorCode < ErrorCode::FATAL_ERROR;
 }
 
 double
 RetryTransientErrorsPolicy::getRetryDelay(uint32_t retry) const {
-    return _baseDelay * retry;
+    return _baseDelay.load(std::memory_order_relaxed) * retry;
 }
 
 }
