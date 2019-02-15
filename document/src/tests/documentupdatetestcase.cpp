@@ -142,7 +142,7 @@ nbostream serialize(const FieldUpdate & update)
 }
 
 template<typename UpdateType>
-void testValueUpdate(const UpdateType& update, const DataType &type) {
+void testRoundtripSerialize(const UpdateType& update, const DataType &type) {
     try{
         DocumentTypeRepo repo;
         nbostream stream = serialize(update);
@@ -236,11 +236,11 @@ DocumentUpdateTest::testSimpleUsage() {
     const DataType *arrayType = repo.getDataType(*docType, "Array<Int>");
 
         // Test that primitive value updates can be serialized
-    testValueUpdate(ClearValueUpdate(), *DataType::INT);
-    testValueUpdate(AssignValueUpdate(IntFieldValue(1)), *DataType::INT);
-    testValueUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Div, 4.3), *DataType::FLOAT);
-    testValueUpdate(AddValueUpdate(IntFieldValue(1), 4), *arrayType);
-    testValueUpdate(RemoveValueUpdate(IntFieldValue(1)), *arrayType);
+    testRoundtripSerialize(ClearValueUpdate(), *DataType::INT);
+    testRoundtripSerialize(AssignValueUpdate(IntFieldValue(1)), *DataType::INT);
+    testRoundtripSerialize(ArithmeticValueUpdate(ArithmeticValueUpdate::Div, 4.3), *DataType::FLOAT);
+    testRoundtripSerialize(AddValueUpdate(IntFieldValue(1), 4), *arrayType);
+    testRoundtripSerialize(RemoveValueUpdate(IntFieldValue(1)), *arrayType);
 
     FieldUpdate fieldUpdate(docType->getField("intf"));
     fieldUpdate.addUpdate(AssignValueUpdate(IntFieldValue(1)));
@@ -946,50 +946,88 @@ DocumentUpdateTest::testMapValueUpdate()
     CPPUNIT_ASSERT(fv4->find(StringFieldValue("apple")) == fv4->end());
 }
 
+struct TensorUpdateFixture {
+    TestDocMan docMan;
+    Document::UP emptyDoc;
+    Document updatedDoc;
+    vespalib::string fieldName;
+
+    TensorUpdateFixture(const vespalib::string &fieldName_ = "tensor")
+        : docMan(),
+          emptyDoc(docMan.createDocument()),
+          updatedDoc(*emptyDoc),
+          fieldName(fieldName_)
+    {
+        CPPUNIT_ASSERT(!emptyDoc->getValue(fieldName));
+    }
+    ~TensorUpdateFixture() {}
+
+    void applyUpdate(const ValueUpdate &update) {
+        DocumentUpdate docUpdate(docMan.getTypeRepo(), *emptyDoc->getDataType(), emptyDoc->getId());
+        docUpdate.addUpdate(FieldUpdate(docUpdate.getType().getField(fieldName)).addUpdate(update));
+        docUpdate.applyTo(updatedDoc);
+    }
+
+    FieldValue::UP getTensor() {
+        return updatedDoc.getValue(fieldName);
+    }
+
+    void setTensor(const FieldValue &tensor) {
+        updatedDoc.setValue(updatedDoc.getField(fieldName), tensor);
+        assertDocumentUpdated();
+    }
+
+    void assertDocumentUpdated() {
+        CPPUNIT_ASSERT(*emptyDoc != updatedDoc);
+    }
+
+    void assertDocumentNotUpdated() {
+        CPPUNIT_ASSERT(*emptyDoc == updatedDoc);
+    }
+
+    void assertTensor(const FieldValue &expTensorValue) {
+        auto actTensorValue = getTensor();
+        CPPUNIT_ASSERT(actTensorValue);
+        CPPUNIT_ASSERT(*actTensorValue == expTensorValue);
+    }
+
+    void assertTensor(const Tensor &expTensor) {
+        auto actTensorValue = getTensor();
+        CPPUNIT_ASSERT(actTensorValue);
+        auto &actTensor = asTensor(*actTensorValue);
+        CPPUNIT_ASSERT(actTensor.equals(expTensor));
+    }
+
+};
 
 void
 DocumentUpdateTest::testTensorAssignUpdate()
 {
-    TestDocMan docMan;
-    Document::UP doc(docMan.createDocument());
-    CPPUNIT_ASSERT(!doc->getValue("tensor"));
-    Document updated(*doc);
-    FieldValue::UP new_value(createTensorFieldValue());
-    testValueUpdate(AssignValueUpdate(*new_value), tensorDataType2DMapped);
-    DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(AssignValueUpdate(*new_value)));
-    upd.applyTo(updated);
-    FieldValue::UP fval(updated.getValue("tensor"));
-    CPPUNIT_ASSERT(fval);
-    CPPUNIT_ASSERT(*fval == *new_value);
-    CPPUNIT_ASSERT(*doc != updated);
+    TensorUpdateFixture f;
+    auto newTensor = createTensorFieldValue();
+    testRoundtripSerialize(AssignValueUpdate(*newTensor), tensorDataType2DMapped);
+
+    f.applyUpdate(AssignValueUpdate(*newTensor));
+    f.assertDocumentUpdated();
+    f.assertTensor(*newTensor);
 }
 
 void
 DocumentUpdateTest::testTensorClearUpdate()
 {
-    TestDocMan docMan;
-    Document::UP doc(docMan.createDocument());
-    Document updated(*doc);
-    updated.setValue(updated.getField("tensor"), *createTensorFieldValue());
-    CPPUNIT_ASSERT(*doc != updated);
-    DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(ClearValueUpdate()));
-    upd.applyTo(updated);
-    CPPUNIT_ASSERT(!updated.getValue("tensor"));
-    CPPUNIT_ASSERT(*doc == updated);
+    TensorUpdateFixture f;
+    f.setTensor(*createTensorFieldValue());
+    f.applyUpdate(ClearValueUpdate());
+    f.assertDocumentNotUpdated();
+    CPPUNIT_ASSERT(!f.getTensor());
 }
 
 void
 DocumentUpdateTest::testTensorAddUpdate()
 {
-    TestDocMan docMan;
-    Document::UP doc(docMan.createDocument());
-    Document updated(*doc);
-    auto oldTensor = createTensorFieldValueWith2Cells();
-    updated.setValue(updated.getField("tensor"), *oldTensor);
-    CPPUNIT_ASSERT(*doc != updated);
-    testValueUpdate(*createTensorAddUpdate(), tensorDataType2DMapped);
+    TensorUpdateFixture f;
+    f.setTensor(*createTensorFieldValueWith2Cells());
+    testRoundtripSerialize(*createTensorAddUpdate(), tensorDataType2DMapped);
     std::string expTensorAddUpdateString("TensorAddUpdate("
                                          "{TensorFieldValue: "
                                          "{\"dimensions\":[\"x\",\"y\"],"
@@ -998,26 +1036,18 @@ DocumentUpdateTest::testTensorAddUpdate()
                                          "{\"address\":{\"x\":\"8\",\"y\":\"8\"},\"value\":2}"
                                          "]}})");
     CPPUNIT_ASSERT_EQUAL(expTensorAddUpdateString, createTensorAddUpdate()->toString());
-    DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(*createTensorAddUpdate()));
-    upd.applyTo(updated);
-    FieldValue::UP fval(updated.getValue("tensor"));
-    CPPUNIT_ASSERT(fval);
-    auto &tensor = asTensor(*fval);
-    auto expectedUpdatedTensor = createExpectedAddUpdatedTensorWith3Cells();
-    CPPUNIT_ASSERT(tensor.equals(*expectedUpdatedTensor));
+
+    f.applyUpdate(*createTensorAddUpdate());
+    f.assertDocumentUpdated();
+    f.assertTensor(*createExpectedAddUpdatedTensorWith3Cells());
 }
 
 void
 DocumentUpdateTest::testTensorModifyUpdate()
 {
-    TestDocMan docMan;
-    Document::UP doc(docMan.createDocument());
-    Document updated(*doc);
-    auto oldTensor = createTensorFieldValueWith2Cells();
-    updated.setValue(updated.getField("tensor"), *oldTensor);
-    CPPUNIT_ASSERT(*doc != updated);
-    testValueUpdate(*createTensorModifyUpdate(), tensorDataType2DMapped);
+    TensorUpdateFixture f;
+    f.setTensor(*createTensorFieldValueWith2Cells());
+    testRoundtripSerialize(*createTensorModifyUpdate(), tensorDataType2DMapped);
     std::string expTensorModifyUpdateString("TensorModifyUpdate(replace,"
                                             "{TensorFieldValue: "
                                             "{\"dimensions\":[\"x\",\"y\"],"
@@ -1025,14 +1055,10 @@ DocumentUpdateTest::testTensorModifyUpdate()
                                             "{\"address\":{\"x\":\"8\",\"y\":\"9\"},\"value\":2}"
                                             "]}})");
     CPPUNIT_ASSERT_EQUAL(expTensorModifyUpdateString, createTensorModifyUpdate()->toString());
-    DocumentUpdate upd(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).addUpdate(*createTensorModifyUpdate()));
-    upd.applyTo(updated);
-    FieldValue::UP fval(updated.getValue("tensor"));
-    CPPUNIT_ASSERT(fval);
-    auto &tensor = asTensor(*fval);
-    auto expectedUpdatedTensor = createExpectedUpdatedTensorWith2Cells();
-    CPPUNIT_ASSERT(tensor.equals(*expectedUpdatedTensor));
+
+    f.applyUpdate(*createTensorModifyUpdate());
+    f.assertDocumentUpdated();
+    f.assertTensor(*createExpectedUpdatedTensorWith2Cells());
 }
 
 void
