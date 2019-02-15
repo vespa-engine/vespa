@@ -49,4 +49,26 @@ TensorDataType::fromSpec(const vespalib::string &spec)
     return std::make_unique<const TensorDataType>(ValueType::from_spec(spec));
 }
 
+bool
+TensorDataType::isAssignableType(const vespalib::eval::ValueType &rhs) const
+{
+    const auto &dimensions = _tensorType.dimensions();
+    const auto &rhsDimensions = rhs.dimensions();
+    if (!rhs.is_tensor() || dimensions.size() != rhsDimensions.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < dimensions.size(); ++i) {
+        const auto &dim = dimensions[i];
+        const auto &rhsDim = rhsDimensions[i];
+        if ((dim.name != rhsDim.name) ||
+            (dim.is_indexed() != rhsDim.is_indexed()) ||
+            (rhsDim.is_indexed() && !rhsDim.is_bound()) || 
+            (dim.is_bound() && (dim.size != rhsDim.size))) {
+            return false;
+        }
+    }
+    return true;
+    
+}
+
 } // document

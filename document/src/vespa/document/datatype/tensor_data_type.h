@@ -24,6 +24,7 @@ public:
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorDataType);
 
     const vespalib::eval::ValueType &getTensorType() const { return _tensorType; }
+    bool isAssignableType(const vespalib::eval::ValueType &tensorType) const;
 };
 
 }
