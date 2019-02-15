@@ -452,7 +452,7 @@ public class NodeRepository extends AbstractComponent {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node fail(String hostname, Agent agent, String reason) {
-        return move(hostname, Node.State.failed, agent, Optional.of(reason), true);
+        return move(hostname, true, Node.State.failed, agent, Optional.of(reason));
     }
 
     /**
@@ -471,7 +471,7 @@ public class NodeRepository extends AbstractComponent {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node park(String hostname, boolean keepAllocation, Agent agent, String reason) {
-        return move(hostname, Node.State.parked, agent, Optional.of(reason), keepAllocation);
+        return move(hostname, keepAllocation, Node.State.parked, agent, Optional.of(reason));
     }
 
     /**
@@ -490,7 +490,7 @@ public class NodeRepository extends AbstractComponent {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node reactivate(String hostname, Agent agent, String reason) {
-        return move(hostname, Node.State.active, agent, Optional.of(reason), true);
+        return move(hostname, true, Node.State.active, agent, Optional.of(reason));
     }
 
     private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
@@ -498,11 +498,11 @@ public class NodeRepository extends AbstractComponent {
                                          .map(child -> move(child, toState, agent, reason))
                                          .collect(Collectors.toList());
 
-        moved.add(move(hostname, toState, agent, reason, true));
+        moved.add(move(hostname, true, toState, agent, reason));
         return moved;
     }
 
-    private Node move(String hostname, Node.State toState, Agent agent, Optional<String> reason, boolean keepAllocation) {
+    private Node move(String hostname, boolean keepAllocation, Node.State toState, Agent agent, Optional<String> reason) {
         Node node = getNode(hostname).orElseThrow(() ->
                 new NoSuchNodeException("Could not move " + hostname + " to " + toState + ": Node not found"));
 
