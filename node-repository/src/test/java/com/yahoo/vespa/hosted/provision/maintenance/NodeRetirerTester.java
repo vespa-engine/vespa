@@ -164,7 +164,7 @@ public class NodeRetirerTester {
     }
 
     void assertParkedCountsByApplication(long... nums) {
-        // Nodes loose allocation when parked, so just do a sum.
+        // Nodes lose allocation when parked, so just do a sum.
         long expected = LongStream.of(nums).filter(value -> value > 0L).sum();
         long actual = (long) nodeRepository.getNodes(Node.State.parked).size();
         assertEquals(expected, actual);
