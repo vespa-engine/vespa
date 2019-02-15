@@ -5256,6 +5256,27 @@
       "protected com.yahoo.document.datatypes.TensorFieldValue tensor"
     ]
   },
+  "com.yahoo.document.update.TensorRemoveUpdate": {
+    "superClass": "com.yahoo.document.update.ValueUpdate",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.document.datatypes.TensorFieldValue)",
+      "protected void checkCompatibility(com.yahoo.document.DataType)",
+      "public void serialize(com.yahoo.document.serialization.DocumentUpdateWriter, com.yahoo.document.DataType)",
+      "public com.yahoo.document.datatypes.FieldValue applyTo(com.yahoo.document.datatypes.FieldValue)",
+      "public com.yahoo.document.datatypes.TensorFieldValue getValue()",
+      "public void setValue(com.yahoo.document.datatypes.TensorFieldValue)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "public bridge synthetic void setValue(com.yahoo.document.datatypes.FieldValue)",
+      "public bridge synthetic com.yahoo.document.datatypes.FieldValue getValue()"
+    ],
+    "fields": []
+  },
   "com.yahoo.document.update.ValueUpdate$ValueUpdateClassID": {
     "superClass": "java.lang.Enum",
     "interfaces": [],
@@ -5278,6 +5299,7 @@
       "public static final enum com.yahoo.document.update.ValueUpdate$ValueUpdateClassID REMOVE",
       "public static final enum com.yahoo.document.update.ValueUpdate$ValueUpdateClassID TENSORMODIFY",
       "public static final enum com.yahoo.document.update.ValueUpdate$ValueUpdateClassID TENSORADD",
+      "public static final enum com.yahoo.document.update.ValueUpdate$ValueUpdateClassID TENSORREMOVE",
       "public final int id",
       "public final java.lang.String name"
     ]

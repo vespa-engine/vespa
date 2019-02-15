@@ -34,6 +34,7 @@ import static com.yahoo.document.json.readers.TensorAddUpdateReader.createTensor
 import static com.yahoo.document.json.readers.TensorAddUpdateReader.isTensorField;
 import static com.yahoo.document.json.readers.TensorModifyUpdateReader.UPDATE_MODIFY;
 import static com.yahoo.document.json.readers.TensorModifyUpdateReader.createModifyUpdate;
+import static com.yahoo.document.json.readers.TensorRemoveUpdateReader.createTensorRemoveUpdate;
 
 /**
  * @author freva
@@ -118,7 +119,11 @@ public class VespaJsonDocumentReader {
         while (localNesting <= buffer.nesting()) {
             switch (buffer.currentName()) {
                 case UPDATE_REMOVE:
-                    createRemoves(buffer, field, fieldUpdate);
+                    if (isTensorField(field)) {
+                        fieldUpdate.addValueUpdate(createTensorRemoveUpdate(buffer, field));
+                    } else {
+                        createRemoves(buffer, field, fieldUpdate);
+                    }
                     break;
                 case UPDATE_ADD:
                     if (isTensorField(field)) {

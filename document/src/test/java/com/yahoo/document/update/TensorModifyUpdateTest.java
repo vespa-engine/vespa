@@ -59,19 +59,10 @@ public class TensorModifyUpdateTest {
     }
 
     private void assertApplyTo(String spec, Operation op, String init, String update, String expected) {
-        DocumentTypeManager types = new DocumentTypeManager();
-        DocumentType x = new DocumentType("x");
-        x.addField(new Field("f", new TensorDataType(TensorType.fromSpec(spec))));
-        types.registerDocumentType(x);
-
-        Document document = new Document(types.getDocumentType("x"), new DocumentId("doc:test:x"));
-        document.setFieldValue("f", new TensorFieldValue(Tensor.from(spec, init)));
-
-        FieldUpdate.create(document.getField("f"))
-            .addValueUpdate(new TensorModifyUpdate(op, new TensorFieldValue(Tensor.from("tensor(x{},y{})", update))))
-            .applyTo(document);
-        Tensor result = ((TensorFieldValue) document.getFieldValue("f")).getTensor().get();
-        assertEquals(Tensor.from(spec, expected), result);
+        TensorFieldValue initialFieldValue = new TensorFieldValue(Tensor.from(spec, init));
+        TensorModifyUpdate modifyUpdate = new TensorModifyUpdate(op, new TensorFieldValue(Tensor.from("tensor(x{},y{})", update)));
+        TensorFieldValue updatedFieldValue = (TensorFieldValue) modifyUpdate.applyTo(initialFieldValue);
+        assertEquals(Tensor.from(spec, expected), updatedFieldValue.getTensor().get());
     }
 
 }
