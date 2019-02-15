@@ -1043,15 +1043,27 @@ void
 DocumentUpdateTest::tensor_modify_update_can_be_applied()
 {
     TensorUpdateFixture f;
-    f.assertApplyUpdate(f.spec().add({{"x", "a"}}, 2)
-                                .add({{"x", "b"}}, 3),
+    auto baseLine = f.spec().add({{"x", "a"}}, 2)
+                            .add({{"x", "b"}}, 3);
 
+    f.assertApplyUpdate(baseLine,
                         TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
                                            f.makeTensor(f.spec().add({{"x", "b"}}, 5)
                                                                 .add({{"x", "c"}}, 7))),
-
                         f.spec().add({{"x", "a"}}, 2)
                                 .add({{"x", "b"}}, 5));
+
+    f.assertApplyUpdate(baseLine,
+                        TensorModifyUpdate(TensorModifyUpdate::Operation::ADD,
+                                           f.makeTensor(f.spec().add({{"x", "b"}}, 5))),
+                        f.spec().add({{"x", "a"}}, 2)
+                                .add({{"x", "b"}}, 8));
+
+    f.assertApplyUpdate(baseLine,
+                        TensorModifyUpdate(TensorModifyUpdate::Operation::MUL,
+                                           f.makeTensor(f.spec().add({{"x", "b"}}, 5))),
+                        f.spec().add({{"x", "a"}}, 2)
+                                .add({{"x", "b"}}, 15));
 }
 
 void
