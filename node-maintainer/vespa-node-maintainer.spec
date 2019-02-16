@@ -16,7 +16,6 @@ License:        Commercial
 URL:            http://vespa.ai
 
 Requires: bash
-Requires: vespa-base = %{version}
 
 Conflicts: vespa
 
