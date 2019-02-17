@@ -59,12 +59,6 @@ public final class Node {
                 Optional.empty(), History.empty(), type, new Reports(), Optional.empty());
     }
 
-    /** Do not use. Construct nodes by calling {@link NodeRepository#createNode} */
-    private Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
-                 Flavor flavor, Status status, State state, Allocation allocation, History history, NodeType type) {
-        this(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type, new Reports(), Optional.empty());
-    }
-
     /** Creates a node. See also the {@code create} helper methods. */
     public Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type,
@@ -247,7 +241,8 @@ public final class Node {
      * Do not use this to allocate a node.
      */
     public Node with(Allocation allocation) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state,
+                Optional.of(allocation), history, type, reports, modelName);
     }
 
     /** Returns a new Node without an allocation. */
