@@ -117,8 +117,8 @@ However, maps cannot be indexed as text-search disk indexes.
 
 ## Global writes
 
-**Effort:** Large<br/>
-**Difficulty:** Master<br/>
+**Effort:** High<br/>
+**Difficulty:** High<br/>
 **Skills:** C++, Java, distributed systems, performance, multithreading, network, distributed consistency
 
 Vespa instances distribute data automatically within clusters, but these clusters are meant to consist of co-located 
@@ -141,8 +141,8 @@ supported is part of the design and analysis needed).
 
 ## Global dynamic tensors
 
-**Effort:** High
-**Difficulty:** Master<br/>
+**Effort:** High<br/>
+**Difficulty:** High<br/>
 **Skills:** Java, C++, distributed systems, performance, networking, distributed consistency
 
 Tensors in ranking models may either be passed with the query, be part of the document or be configured as part of the 
