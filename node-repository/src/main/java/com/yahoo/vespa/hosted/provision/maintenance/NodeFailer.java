@@ -215,12 +215,14 @@ public class NodeFailer extends Maintainer {
                     nodesByFailureReason.put(node, "Node has hardware failure: " + node.status().hardwareFailureDescription().get());
                 } else {
                     Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
-                    List<String> failureReports = reasonsToRetireActiveParentHost(hostNode);
-                    if (failureReports.size() > 0) {
-                        if (hostNode.equals(node)) {
-                            nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
-                        } else {
-                            nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
+                    if (hostNode.type() == NodeType.host) {
+                        List<String> failureReports = reasonsToRetireActiveParentHost(hostNode);
+                        if (failureReports.size() > 0) {
+                            if (hostNode.equals(node)) {
+                                nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
+                            } else {
+                                nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
+                            }
                         }
                     }
                 }
