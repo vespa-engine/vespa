@@ -80,7 +80,7 @@ void reconfigureApplication() {
  *     It is fairly tricky to get this right during integration testing, since dependencies might be part of the build
  *     tree instead of being installed on the host. To facilitate this, JDisc will prefix any non-schemed location (e.g.
  *     "my_dependency.jar") with the system property "jdisc.bundle.path". This property defaults to the current
- *     directory when running inside an IDE, but is set to "$VESPA_HOME/lib/jars/" by the jdisc_start script.
+ *     directory when running inside an IDE, but is set to "$VESPA_HOME/lib/jars/" by the jdisc startup scripts.
  *
  *     One may also reference system properties in a bundle location using the syntax "${propertyName}". If the property
  *     is not found, it defaults to an empty string.
@@ -116,16 +116,6 @@ void reconfigureApplication() {
 $ install myapp_jar
 $ set jdisc.application="myapp.jar"
 $ restart jdisc
-</pre>
- *
- * For testing and development, the jDISC binary also supports command line parameters to start and stop a local
- * application.
- *
-<pre>
-$ install jdisc-dev
-$ emacs src/main/java/edu/disc/MyApplication.java
-$ mvn install
-$ sudo jdisc_start target/myapp.jar
 </pre>
  *
  * <p>It is the responsibility of the Application itself to create, configure
