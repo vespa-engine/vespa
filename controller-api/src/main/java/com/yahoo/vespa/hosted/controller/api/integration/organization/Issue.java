@@ -71,6 +71,10 @@ public class Issue {
         return new Issue(summary, description, labels, assignee, type, queue, Optional.empty());
     }
 
+    public Issue withoutComponent() {
+        return new Issue(summary, description, labels, assignee, type, queue, Optional.empty());
+    }
+
     public String summary() {
         return summary;
     }
