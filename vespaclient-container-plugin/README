@@ -1,1 +1,1 @@
-Code for handling various client calls such as feeding, visiting, and old search API on gateway server.
+Implementation of the document/V1 rest API and the internal API used by the Java HTTP client.
