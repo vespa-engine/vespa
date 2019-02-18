@@ -118,6 +118,69 @@ public class NodeFailerTest {
     }
 
     @Test
+    public void hw_fail_only_if_whole_host_is_suspended() {
+        NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(6);
+        String hostWithFailureReports = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2);
+        assertEquals(Node.State.active, tester.nodeRepository.getNode(hostWithFailureReports).get().state());
+
+        // The host has 2 nodes in active and 1 ready
+        Map<Node.State, List<String>> hostnamesByState = tester.nodeRepository.list().childrenOf(hostWithFailureReports).asList().stream()
+                .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
+        assertEquals(2, hostnamesByState.get(Node.State.active).size());
+        String activeChild1 = hostnamesByState.get(Node.State.active).get(0);
+        String activeChild2 = hostnamesByState.get(Node.State.active).get(1);
+        assertEquals(1, hostnamesByState.get(Node.State.ready).size());
+        String readyChild = hostnamesByState.get(Node.State.ready).get(0);
+
+        // Set failure report to the parent and all its children.
+        Report badTotalMemorySizeReport = Report.basicReport("badTotalMemorySize", Instant.now(), "too low");
+        tester.nodeRepository.getNodes().stream()
+                .filter(node -> node.hostname().equals(hostWithFailureReports))
+                .forEach(node -> {
+                    Node updatedNode = node.with(node.reports().withReport(badTotalMemorySizeReport));
+                    tester.nodeRepository.write(updatedNode);
+                });
+
+        // The ready node will be failed, but neither the host nor the 2 active nodes since they have not been suspended
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+        assertEquals(Node.State.failed, tester.nodeRepository.getNode(readyChild).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.getNode(hostWithFailureReports).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.getNode(activeChild1).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.getNode(activeChild2).get().state());
+
+        // Suspending the host will not fail any more since none of the children are suspened
+        tester.suspend(hostWithFailureReports);
+        tester.clock.advance(Duration.ofHours(25));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+        assertEquals(Node.State.failed, tester.nodeRepository.getNode(readyChild).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.getNode(hostWithFailureReports).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.getNode(activeChild1).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.getNode(activeChild2).get().state());
+
+        // Suspending one child node will fail that out.
+        tester.suspend(activeChild1);
+        tester.clock.advance(Duration.ofHours(25));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+        assertEquals(Node.State.failed, tester.nodeRepository.getNode(readyChild).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.getNode(hostWithFailureReports).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.getNode(activeChild1).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.getNode(activeChild2).get().state());
+
+        // Suspending the second child node will fail that out and the host.
+        tester.suspend(activeChild2);
+        tester.clock.advance(Duration.ofHours(25));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+        assertEquals(Node.State.failed, tester.nodeRepository.getNode(readyChild).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.getNode(hostWithFailureReports).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.getNode(activeChild1).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.getNode(activeChild2).get().state());
+    }
+
+    @Test
     public void nodes_for_suspended_applications_are_not_failed() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
         tester.suspend(NodeFailTester.app1);
