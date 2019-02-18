@@ -12,6 +12,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -208,8 +209,13 @@ class NodesResponse extends HttpResponse {
             Cursor object = array.addObject();
             object.setString("event", event.type().name());
             object.setLong("at", event.at().toEpochMilli());
-            object.setString("agent", event.agent().name());
+            object.setString("agent", normalizedAgentNameUntilV6IsGone(event.agent().name()));
         }
+    }
+
+    /** maven-vespa-plugin @ v6 needs to deserialize nodes w/history. */
+    private String normalizedAgentNameUntilV6IsGone(String name) {
+        return name.equals(Agent.NodeFailer.name()) ? Agent.system.name() : name;
     }
 
     private void ipAddressesToSlime(Set<String> ipAddresses, Cursor array) {
