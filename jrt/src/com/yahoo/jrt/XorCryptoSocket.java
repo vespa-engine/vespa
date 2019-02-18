@@ -7,7 +7,6 @@ import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.Random;
 
 /**
  * A very simple CryptoSocket that performs connection handshaking and
@@ -81,6 +80,7 @@ public class XorCryptoSocket implements CryptoSocket {
         }
         return HandshakeResult.DONE;
     }
+    @Override public void doHandshakeWork() {}
     @Override public int getMinimumReadBufferSize() { return 1; }
     @Override public int read(ByteBuffer dst) throws IOException {
         if (input.bytes() == 0) {

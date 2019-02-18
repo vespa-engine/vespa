@@ -25,7 +25,7 @@ public interface CryptoSocket {
      **/
     public SocketChannel channel();
 
-    public enum HandshakeResult { DONE, NEED_READ, NEED_WRITE }
+    public enum HandshakeResult { DONE, NEED_READ, NEED_WRITE, NEED_WORK }
 
     /**
      * Try to progress the initial connection handshake. Handshaking
@@ -35,9 +35,17 @@ public interface CryptoSocket {
      * the status is either DONE or an IOException is thrown. When
      * NEED_READ or NEED_WRITE is returned, the handshake function
      * will be called again when the appropriate io event has
-     * triggered.
+     * triggered. When NEED_WORK is returned, the {@link #doHandshakeWork()}
+     * will be called (possibly in another thread) before this function is called again.
      **/
     public HandshakeResult handshake() throws IOException;
+
+
+    /**
+     * Called when {@link #handshake()} returns {@link HandshakeResult#NEED_WORK} to perform compute-heavy tasks.
+     * This method may be called from another thread to avoid blocking the transport thread.
+     */
+    public void doHandshakeWork();
 
     /**
      * This function should be called after handshaking has completed

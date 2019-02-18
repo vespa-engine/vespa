@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import com.yahoo.jrt.CryptoSocket.HandshakeResult;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -215,7 +217,11 @@ class Connection extends Target {
     }
 
     private void handshake() throws IOException {
-        switch (socket.handshake()) {
+        HandshakeResult result;
+        while ((result = socket.handshake()) == HandshakeResult.NEED_WORK) {
+            socket.doHandshakeWork();
+        }
+        switch (result) {
         case DONE:
             if (socket.getMinimumReadBufferSize() > readSize) {
                 readSize = socket.getMinimumReadBufferSize();
