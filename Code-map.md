@@ -55,7 +55,7 @@ Search container, layered on jDisc container:
 
 Document operation modules:
 
-- [document](https://github.com/vespa-engine/vespa/tree/master/document) - the document model - documents, fields and document types, and operations on documents.
+- [document](https://github.com/vespa-engine/vespa/tree/master/document) - the document model - documents, fields and document types, and operations on documents. Implemented in both Java and C++.
 - [messagebus](https://github.com/vespa-engine/vespa/tree/master/messagebus) - generic async, multi-hop message passing implemented in both Java and C++.
 - [jdisc_messagebus_service](https://github.com/vespa-engine/vespa/tree/master/jdisc_messagebus_service) - MessageBus connector for jDisc.
 - [documentapi](https://github.com/vespa-engine/vespa/tree/master/documentapi) - API for issuing document operations to Vespa over messagebus.
@@ -67,13 +67,13 @@ Document operation modules:
 
 ## Content nodes
 
-Content nodes store all data in Vespa, maintains reverse indexes and performs the distributed parts of query execution - matching, ranking and grouping/aggregation.
+Content nodes store all data in Vespa, maintains reverse and forward indexes, and performs the distributed parts of query execution - matching, ranking and grouping/aggregation.
 This is written in C++.
 
 - [searchcore](https://github.com/vespa-engine/vespa/tree/master/searchcore) - core functionality for maintaining indexes, matching, data storage, grouping, as well as the content node server itself (called proton).
-- [searchlib](https://github.com/vespa-engine/vespa/tree/master/searchlib) - libraries invoked by searchcore: Ranking (feature execution framework (fef), rank feature implementations, ranking expressions), index and btree implementations etc. This also contains the Java libraries for ranking.
+- [searchlib](https://github.com/vespa-engine/vespa/tree/master/searchlib) - libraries invoked by searchcore: Ranking (feature execution framework (fef), rank feature implementations, ranking expressions), index and btree implementations, attributes (forward indexes) etc. In addition, this contains the Java libraries for ranking.
 - [storage](https://github.com/vespa-engine/vespa/tree/master/storage/src/vespa/storage) - system for elastic and auto-recovering data storage over clusters of nodes.
-- [eval](https://github.com/vespa-engine/vespa/tree/master/eval) - library for efficient evaluation of ranking expressions.
+- [eval](https://github.com/vespa-engine/vespa/tree/master/eval) - library for efficient evaluation of ranking expressions. Tensor API and implementation.
 - [storageapi](https://github.com/vespa-engine/vespa/tree/master/storageapi/src/vespa/storageapi) - message bus messages and implementation for the document API.
 - [clustercontroller-core](https://github.com/vespa-engine/vespa/tree/master/clustercontroller-core) - cluster controller for storage, implemented in Java. This provides singular node-level decision making for storage, based on ZooKeeper.
 
