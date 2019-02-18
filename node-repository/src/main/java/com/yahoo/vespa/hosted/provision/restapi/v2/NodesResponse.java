@@ -209,13 +209,13 @@ class NodesResponse extends HttpResponse {
             Cursor object = array.addObject();
             object.setString("event", event.type().name());
             object.setLong("at", event.at().toEpochMilli());
-            object.setString("agent", normalizedAgentNameUntilV6IsGone(event.agent().name()));
+            object.setString("agent", normalizedAgentUntilV6IsGone(event.agent()).name());
         }
     }
 
     /** maven-vespa-plugin @ v6 needs to deserialize nodes w/history. */
-    private String normalizedAgentNameUntilV6IsGone(String name) {
-        return name.equals(Agent.NodeFailer.name()) ? Agent.system.name() : name;
+    private Agent normalizedAgentUntilV6IsGone(Agent agent) {
+        return agent == Agent.NodeFailer ? Agent.system : agent;
     }
 
     private void ipAddressesToSlime(Set<String> ipAddresses, Cursor array) {
