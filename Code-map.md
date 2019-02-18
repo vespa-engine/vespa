@@ -17,7 +17,7 @@ of Vespa to the most important modules in the flat module structure in the
 It covers the modules you are most likely to encounter as a developer. 
 The rest are either small and needed for technical reasons or doing one thing 
 which should be self-explanatory, or implementing the cloud service run by the 
-Vespa team which we don't expect anybody else to run and therefor be interested 
+Vespa team which we don't expect anybody else to run and therefore be interested 
 in changing.
 
 
@@ -55,7 +55,7 @@ Document operation modules:
 
 - [document](https://github.com/vespa-engine/vespa/tree/master/document) - The document model - documents, fields and document types, and operations on documents.
 - [messagebus](https://github.com/vespa-engine/vespa/tree/master/messagebus) - Generic async, multi-hop message passing implemented in both Java and C++.
-- [jdics_messagebus_service](https://github.com/vespa-engine/vespa/tree/master/jdisc_messagebus_service) - MessageBus connector for jDisc.
+- [jdisc_messagebus_service](https://github.com/vespa-engine/vespa/tree/master/jdisc_messagebus_service) - MessageBus connector for jDisc.
 - [documentapi](https://github.com/vespa-engine/vespa/tree/master/documentapi) - API for issuing document operations to Vespa over messagebus.
 - [docproc](https://github.com/vespa-engine/vespa/tree/master/docproc) - Chainable document (operation) processors: Document operations issued over messagebus to Vespa will usually be routed through a container running a document processor chain.
 - [indexinglanguage](https://github.com/vespa-engine/vespa/tree/master/indexinglanguage) - Implementation of the "indexing" language which is used to express the statements prefixed by "indexing:" in the search definition. 
@@ -68,7 +68,7 @@ Document operation modules:
 Content nodes store all data in Vespa, maintains reverse indexes and performs the distributed parts of query execution - matching, ranking and grouping/aggregation.
 This is written in C++.
 
-- [searchcore](https://github.com/vespa-engine/vespa/tree/master/searchcore) - core functionality for maintaining indexes, matching, data storage, grouping, as well as the content node server itselv (called proton).
+- [searchcore](https://github.com/vespa-engine/vespa/tree/master/searchcore) - core functionality for maintaining indexes, matching, data storage, grouping, as well as the content node server itself (called proton).
 - [searchlib](https://github.com/vespa-engine/vespa/tree/master/searchlib) - libraries invoked by searchcore: Ranking (feature execution framework (fef), rank feature implementations, ranking expressions), index and btree implementations etc. This also contains the Java libraries for ranking.
 - [storage](https://github.com/vespa-engine/vespa/tree/master/storage/src/vespa/storage) - system for elastic and auto-recovering data storage over clusters of nodes.
 - [eval](https://github.com/vespa-engine/vespa/tree/master/eval) - library for efficient evaluation of ranking expressions.
