@@ -137,7 +137,7 @@ public class ReloadingTlsContext implements TlsContext {
             try {
                 reloadCryptoMaterial(TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile), trustManager, keyManager);
             } catch (Throwable t) {
-                log.log(Level.SEVERE, String.format("Failed reload crypto material (path='%s'): %s", tlsOptionsConfigFile, t.getMessage()), t);
+                log.log(Level.SEVERE, String.format("Failed to reload crypto material (path='%s'): %s", tlsOptionsConfigFile, t.getMessage()), t);
             }
         }
     }

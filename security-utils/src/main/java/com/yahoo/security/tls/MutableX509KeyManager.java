@@ -13,7 +13,7 @@ import java.util.WeakHashMap;
 /**
  * A {@link X509ExtendedKeyManager} which can be updated with new certificate chain and private key while in use.
  *
- * The implementations assumes that aliases are retrieve from the same thread as the certificate chain and private key.
+ * The implementations assumes that aliases are retrieved from the same thread as the certificate chain and private key.
  * This is case for OpenJDK 11.
  *
  * @author bjorncs
