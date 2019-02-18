@@ -61,6 +61,7 @@ If you want to contribute to the documentation, see
 
 You do not need to build Vespa to use it, but if you want to contribute you need to be able to build the code.
 This section explains how to build and test Vespa. To understand where to make changes, see [Code-map.md](Code-map.md).
+Some suggested improvements with pointers to code are in [TODO.md](TODO.md).
 
 ### Set up the build environment
 
