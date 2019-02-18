@@ -6,7 +6,8 @@ independently of other work and are not yet under development.
 
 ## Global writes
 
-**Effort:** Large
+**Effort:** Large<br/>
+**Difficulty:** Master<br/>
 **Skills:** C++, Java, distributed systems, performance, multithreading, network, distributed consistency
 
 Vespa instances distribute data automatically within clusters, but these clusters are meant to consist of co-located 
@@ -26,7 +27,8 @@ supported is part of the design and analysis needed).
 
 ## Indexed search in maps
 
-**Effort:** Medium
+**Effort:** Medium<br/>
+**Difficulty:** Medium<br/>
 **Skills:** C++, Java, multithreading, performance, indexing, data structures
 
 Vespa supports maps and and making them searchable in memory by declaring as an attribute. 
@@ -34,7 +36,8 @@ However, maps cannot be indexed as text-search disk indexes.
 
 ## Change search protocol from fnet to RPC
 
-**Effort:** Small
+**Effort:** Small<br/>
+**Difficulty:** Low<br/>
 **Skills:** Java, C++, networking
 
 Currently, search requests happens over a very old custom protocol called "fnet". While this is efficient, it is hard to extend. 
@@ -44,7 +47,8 @@ The largest part of this work is to encode the Query object as a Slime structure
 
 ## Support query profiles for document processors
 
-**Effort:** Small
+**Effort:** Small<br/>
+**Difficulty:** Low<br/>
 **Skills:** Java
 
 Query profiles make it simple to support multiple buckets, behavior profiles for different use cases etc by providing 
@@ -54,7 +58,8 @@ processor profiles by reusing the query profile support also for document proces
 
 ## Background reindexing
 
-**Effort:** Medium
+**Effort:** Medium<br/>
+**Difficulty:** Low<br/>
 **Skills:** Java
 
 Some times there is a need to reindex existing data to refresh the set of tokens produced from the raw text: Some search 
@@ -68,6 +73,7 @@ indexing container cluster and triggering a visiting job using this route.
 ## Global dynamic tensors
 
 **Effort:** High
+**Difficulty:** Master<br/>
 **Skills:** Java, C++, distributed systems, performance, networking, distributed consistency
 
 Tensors in ranking models may either be passed with the query, be part of the document or be configured as part of the 
@@ -83,7 +89,8 @@ model updates.
 
 ## Java implementation of the content layer for testing
 
-**Effort:** Medium
+**Effort:** Medium<br/>
+**Difficulty:** Low<br/>
 **Skills:** Java
 
 There is currently support for creating Application instances programmatically in Java to unit test application package
@@ -95,7 +102,8 @@ libraries (see the searchlib module).
 
 ## Update where
 
-**Effort:** Medium
+**Effort:** Medium<br/>
+**Difficulty:** Medium<br/>
 **Skills:** Java, C++, distributed systems
 
 Support "update where" operations which changes/removes all documents matching some document selection expression. This 
@@ -103,7 +111,8 @@ entails adding a new document API operation and probably supporting continuation
 
 ## Query tracing including content nodes
 
-**Effort:** Low
+**Effort:** Low<br/>
+**Difficulty:** Low<br/>
 **Skills:** Java, C++, multithreading
 
 Currently, trace information can be requested for a given query by adding travelevel=N to the query. This is useful for 
