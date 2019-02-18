@@ -94,7 +94,7 @@ public class TlsCryptoSocket implements CryptoSocket {
                     channelRead();
                     break;
                 case NEED_WORK:
-                    if (authorizationResult != null) {
+                    if (authorizationResult == null) {
                         PeerAuthorizerTrustManager.getAuthorizationResult(sslEngine) // only available during handshake
                                 .ifPresent(result ->  {
                                     if (!result.succeeded()) {
