@@ -121,7 +121,7 @@ TEST_F(BucketMoverTest, testMaxPending)
 
     std::vector<api::StorageMessage::SP> msgs = after->getCommandsOnce();
     // 5 is the max pending default config.
-    EXPECT_EQ(5, (int)msgs.size());
+    ASSERT_EQ(5, (int)msgs.size());
 
     after->sendUp(std::shared_ptr<api::StorageMessage>(
                           ((api::StorageCommand*)msgs[3].get())->
@@ -130,7 +130,7 @@ TEST_F(BucketMoverTest, testMaxPending)
     _bucketMover->tick();
 
     std::vector<api::StorageMessage::SP> msgs2 = after->getCommandsOnce();
-    EXPECT_EQ(1, (int)msgs2.size());
+    ASSERT_EQ(1, (int)msgs2.size());
 }
 
 TEST_F(BucketMoverTest, testErrorHandling)
@@ -147,7 +147,7 @@ TEST_F(BucketMoverTest, testErrorHandling)
 
     std::vector<api::StorageMessage::SP> msgs = after->getCommandsOnce();
     // 5 is the max pending default config.
-    EXPECT_EQ(5, (int)msgs.size());
+    ASSERT_EQ(5, (int)msgs.size());
 
     BucketDiskMoveCommand& cmd = static_cast<BucketDiskMoveCommand&>(*msgs[0]);
     uint32_t targetDisk = cmd.getDstDisk();
@@ -165,7 +165,7 @@ TEST_F(BucketMoverTest, testErrorHandling)
     _bucketMover->tick();
 
     std::vector<api::StorageMessage::SP> msgs2 = after->getCommandsOnce();
-    EXPECT_EQ(5, (int)msgs2.size());
+    ASSERT_EQ(5, (int)msgs2.size());
 
     for (uint32_t i = 0; i < msgs2.size(); ++i) {
         BucketDiskMoveCommand& bdm = static_cast<BucketDiskMoveCommand&>(*msgs2[i]);
