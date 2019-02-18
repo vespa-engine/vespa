@@ -37,13 +37,13 @@ The stateless container is implemented in Java.
 
 jDisc core modules:
 
-- [jdisc_core](https://github.com/vespa-engine/vespa/tree/master/jdisc_core) - The core jDisc functionality
+- [jdisc_core](https://github.com/vespa-engine/vespa/tree/master/jdisc_core) - the core jDisc functionality
 - [jdisc_http_service](https://github.com/vespa-engine/vespa/tree/master/jdisc_http_service) - HTTP connector for jDisc, implemented using Jetty.
 
 jDisc container modules, layered on jDisc core:
 
-- [container-disc](https://github.com/vespa-engine/vespa/tree/master/container-disc) - Integration between the jDisc container and jDisc core layers.
-- [container-core](https://github.com/vespa-engine/vespa/tree/master/container-core) - Core jDisc container functionality: Metrics, OSGi integration for component bundles, etc.
+- [container-disc](https://github.com/vespa-engine/vespa/tree/master/container-disc) - integration between the jDisc container and jDisc core layers.
+- [container-core](https://github.com/vespa-engine/vespa/tree/master/container-core) - core jDisc container functionality: Metrics, OSGi integration for component bundles, etc.
 - [component](https://github.com/vespa-engine/vespa/tree/master/component) - the component model. Components (in Java) will implement or subclass a type for this module.
 - [chain](https://github.com/vespa-engine/vespa/tree/master/chain) - generic support for chaining components in a Chain of Responsibility structure, which is a pattern used repeatedly in higher level modules.
 - [container-di](https://github.com/vespa-engine/vespa/tree/master/container-di) - component dependency injection framework for the container, compatible with Guice annotations but an separate implementation which handles injection of config and injection of component collections.
@@ -55,14 +55,14 @@ Search container, layered on jDisc container:
 
 Document operation modules:
 
-- [document](https://github.com/vespa-engine/vespa/tree/master/document) - The document model - documents, fields and document types, and operations on documents.
-- [messagebus](https://github.com/vespa-engine/vespa/tree/master/messagebus) - Generic async, multi-hop message passing implemented in both Java and C++.
+- [document](https://github.com/vespa-engine/vespa/tree/master/document) - the document model - documents, fields and document types, and operations on documents.
+- [messagebus](https://github.com/vespa-engine/vespa/tree/master/messagebus) - generic async, multi-hop message passing implemented in both Java and C++.
 - [jdisc_messagebus_service](https://github.com/vespa-engine/vespa/tree/master/jdisc_messagebus_service) - MessageBus connector for jDisc.
 - [documentapi](https://github.com/vespa-engine/vespa/tree/master/documentapi) - API for issuing document operations to Vespa over messagebus.
-- [docproc](https://github.com/vespa-engine/vespa/tree/master/docproc) - Chainable document (operation) processors: Document operations issued over messagebus to Vespa will usually be routed through a container running a document processor chain.
-- [indexinglanguage](https://github.com/vespa-engine/vespa/tree/master/indexinglanguage) - Implementation of the "indexing" language which is used to express the statements prefixed by "indexing:" in the search definition. 
-- [docprocs](https://github.com/vespa-engine/vespa/tree/master/docprocs) - Document processor components bundled with Vespa. Notably the Indexingprocessor - a document processor invoking the indexing language statements configured for the document type in question on document operations.
-- [vespaclient-container-plugin](https://github.com/vespa-engine/vespa/tree/master/vespaclient-container-plugin) - Implements the document/v1 API and internal API used by the Java HTTP client on top of the jDisc container, forwarding to the Document API.
+- [docproc](https://github.com/vespa-engine/vespa/tree/master/docproc) - chainable document (operation) processors: Document operations issued over messagebus to Vespa will usually be routed through a container running a document processor chain.
+- [indexinglanguage](https://github.com/vespa-engine/vespa/tree/master/indexinglanguage) - implementation of the "indexing" language which is used to express the statements prefixed by "indexing:" in the search definition. 
+- [docprocs](https://github.com/vespa-engine/vespa/tree/master/docprocs) - document processor components bundled with Vespa. Notably the Indexingprocessor - a document processor invoking the indexing language statements configured for the document type in question on document operations.
+- [vespaclient-container-plugin](https://github.com/vespa-engine/vespa/tree/master/vespaclient-container-plugin) - implements the document/v1 API and internal API used by the Java HTTP client on top of the jDisc container, forwarding to the Document API.
 - [vespa-http-client](https://github.com/vespa-engine/vespa/tree/master/vespa-http-client) - client for fast writing to the internal API implemented by vespaclient-container-plugin.
 
 ## Content nodes
