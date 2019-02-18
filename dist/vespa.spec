@@ -34,7 +34,7 @@ BuildRequires: Judy-devel
 BuildRequires: cmake3
 BuildRequires: llvm5.0-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
-BuildRequires: vespa-gtest >= 1.8.0-1
+BuildRequires: vespa-gtest >= 1.8.1-1
 %endif
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
@@ -42,7 +42,7 @@ BuildRequires: maven
 %if 0%{?fc27}
 BuildRequires: llvm-devel >= 5.0.2
 BuildRequires: boost-devel >= 1.64
-BuildRequires: vespa-gtest >= 1.8.0-2
+BuildRequires: vespa-gtest >= 1.8.1-1
 %endif
 %if 0%{?fc28}
 BuildRequires: llvm-devel >= 6.0.1
@@ -110,14 +110,14 @@ Requires: net-tools
 %if 0%{?centos}
 Requires: llvm5.0
 %define _vespa_llvm_version 5.0
-%define _extra_link_directory /usr/lib64/llvm5.0/lib;/opt/vespa-gtest/lib;/opt/vespa-cppunit/lib
+%define _extra_link_directory /usr/lib64/llvm5.0/lib;/opt/vespa-gtest/lib64;/opt/vespa-cppunit/lib
 %define _extra_include_directory /usr/include/llvm5.0;/opt/vespa-boost/include;/opt/vespa-gtest/include;/opt/vespa-cppunit/include
 %endif
 %if 0%{?fedora}
 %if 0%{?fc27}
 Requires: llvm-libs >= 5.0.2
 %define _vespa_llvm_version 5.0
-%define _vespa_gtest_link_directory /opt/vespa-gtest/lib
+%define _vespa_gtest_link_directory /opt/vespa-gtest/lib64
 %define _vespa_gtest_include_directory /opt/vespa-gtest/include
 %endif
 %if 0%{?fc28}
