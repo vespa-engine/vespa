@@ -1,24 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storage/bucketmover/htmltable.h>
-#include <tests/common/testhelper.h>
+#include <gtest/gtest.h>
 
 namespace storage {
 
-struct HtmlTableTest : public CppUnit::TestFixture {
-
-    void testPercentageColumn();
-    void testByteSizeColumn();
-
-    CPPUNIT_TEST_SUITE(HtmlTableTest);
-    CPPUNIT_TEST(testPercentageColumn);
-    CPPUNIT_TEST(testByteSizeColumn);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(HtmlTableTest);
-
-void HtmlTableTest::testPercentageColumn()
+TEST(HtmlTableTest, testPercentageColumn)
 {
         // With total hardcoded to 100
     {
@@ -43,7 +30,7 @@ void HtmlTableTest::testPercentageColumn()
 "<tr><td>1</td><td bgcolor=\"#ffffa0\" align=\"right\">80.00 %</td></tr>\n"
 "<tr><td>2</td><td bgcolor=\"#ffa0a0\" align=\"right\">100.00 %</td></tr>\n"
 "</table>\n");
-        CPPUNIT_ASSERT_EQUAL(expected, ost.str());
+        EXPECT_EQ(expected, ost.str());
     }
         // With automatically gathered total
     {
@@ -65,11 +52,11 @@ void HtmlTableTest::testPercentageColumn()
                 "<tr><td>1</td><td align=\"right\">38.10 %</td></tr>\n"
                 "<tr><td>2</td><td align=\"right\">47.62 %</td></tr>\n"
                 "</table>\n");
-        CPPUNIT_ASSERT_EQUAL(expected, ost.str());
+        EXPECT_EQ(expected, ost.str());
     }
 }
 
-void HtmlTableTest::testByteSizeColumn()
+TEST(HtmlTableTest, testByteSizeColumn)
 {
     {
         HtmlTable table("disk");
@@ -91,7 +78,7 @@ void HtmlTableTest::testByteSizeColumn()
                 "<tr><td>1</td><td align=\"right\">118 MB</td></tr>\n"
                 "<tr><td>2</td><td align=\"right\">5 MB</td></tr>\n"
                 "</table>\n");
-        CPPUNIT_ASSERT_EQUAL(expected, ost.str());
+        EXPECT_EQ(expected, ost.str());
     }
 
 }

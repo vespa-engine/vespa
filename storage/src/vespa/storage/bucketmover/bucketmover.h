@@ -69,6 +69,8 @@ public:
         // Useful for unit testing
     vespa::config::content::core::StorBucketmoverConfig& getConfig() { return *_config; }
     RunStatistics& getLastRunStats() { return *_history.begin(); }
+    bool tick();
+    void finishCurrentRun();
 
 private:
     friend struct BucketMoverTest;
@@ -76,8 +78,6 @@ private:
     void startNewRun();
     void queueNewMoves();
     void sendNewMoves();
-    void finishCurrentRun();
-    bool tick();
 
     void configure(std::unique_ptr<vespa::config::content::core::StorBucketmoverConfig>) override;
     void run(framework::ThreadHandle&) override;
