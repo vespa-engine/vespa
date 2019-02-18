@@ -1,28 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/vdslib/bucketdistribution.h>
+#include <gtest/gtest.h>
 
 using namespace vdslib;
 
-class BucketDistributionTest : public CppUnit::TestFixture {
-public:
-    void testDistribution();
-    void testNumBucketBits();
+void
+assertDistribution(uint32_t numColumns, uint32_t numBucketBits, const uint32_t expected[])
+{
+    BucketDistribution bd(numColumns, numBucketBits);
+    EXPECT_EQ(numColumns, bd.getNumColumns());
+    EXPECT_EQ((uint32_t)(1 << numBucketBits), bd.getNumBuckets());
+    for (uint32_t i = 0; i < bd.getNumBuckets(); ++i) {
+        EXPECT_EQ(expected[i], bd.getColumn(document::BucketId(16, i)));
+    }
+}
 
-public:
-    CPPUNIT_TEST_SUITE(BucketDistributionTest);
-    CPPUNIT_TEST(testDistribution);
-    CPPUNIT_TEST(testNumBucketBits);
-    CPPUNIT_TEST_SUITE_END();
-
-private:
-    void assertDistribution(uint32_t numColumns, uint32_t numBucketBits, const uint32_t expected[]);
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(BucketDistributionTest);
-
-void BucketDistributionTest::testDistribution()
+TEST(BucketDistributionTest, testDistribution)
 {
     const uint32_t expected4[] = {
         10, 11, 9, 6, 4, 8, 14, 1, 13, 2, 12, 3, 5, 7, 15, 0 };
@@ -75,36 +69,24 @@ void BucketDistributionTest::testDistribution()
     assertDistribution(16, 9, expected9);
 }
 
-void
-BucketDistributionTest::assertDistribution(uint32_t numColumns, uint32_t numBucketBits, const uint32_t expected[])
-{
-    BucketDistribution bd(numColumns, numBucketBits);
-    CPPUNIT_ASSERT_EQUAL(numColumns, bd.getNumColumns());
-    CPPUNIT_ASSERT_EQUAL((uint32_t)(1 << numBucketBits), bd.getNumBuckets());
-    for (uint32_t i = 0; i < bd.getNumBuckets(); ++i) {
-        CPPUNIT_ASSERT_EQUAL(expected[i],
-                             bd.getColumn(document::BucketId(16, i)));
-    }
-}
-
-void BucketDistributionTest::testNumBucketBits()
+TEST(BucketDistributionTest, testNumBucketBits)
 {
     BucketDistribution bd(1, 4);
     for (uint32_t i = 0; i <= 0xf; ++i) {
-        CPPUNIT_ASSERT_EQUAL(0u, bd.getColumn(document::BucketId(32, (rand() << 4) & i)));
+        EXPECT_EQ(0u, bd.getColumn(document::BucketId(32, (rand() << 4) & i)));
     }
 
     bd.reset();
     bd.setNumColumns(1);
     bd.setNumBucketBits(8);
     for (uint32_t i = 0; i <= 0xff; ++i) {
-        CPPUNIT_ASSERT_EQUAL(0u, bd.getColumn(document::BucketId(32, (rand() << 8) & i)));
+        EXPECT_EQ(0u, bd.getColumn(document::BucketId(32, (rand() << 8) & i)));
     }
 
     bd.reset();
     bd.setNumColumns(1);
     bd.setNumBucketBits(16);
     for (uint32_t i = 0; i <= 0xffff; ++i) {
-        CPPUNIT_ASSERT_EQUAL(0u, bd.getColumn(document::BucketId(32, (rand() << 16) & i)));
+        EXPECT_EQ(0u, bd.getColumn(document::BucketId(32, (rand() << 16) & i)));
     }
 }

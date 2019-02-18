@@ -6,52 +6,38 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <tests/common/dummystoragelink.h>
-#include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/config/common/exceptions.h>
+#include <gtest/gtest.h>
 
 bool debug = false;
 
 using document::test::makeBucketSpace;
 using document::test::makeDocumentBucket;
 
-namespace storage {
-namespace bucketmover {
+namespace storage::bucketmover {
 
-struct BucketMoverTest : public CppUnit::TestFixture {
+struct BucketMoverTest : public ::testing::Test {
 public:
-    void setUp() override;
-    void tearDown() override;
-
-    void testNormalUsage();
-    void testMaxPending();
-    void testErrorHandling();
-
-    CPPUNIT_TEST_SUITE(BucketMoverTest);
-    CPPUNIT_TEST(testNormalUsage);
-    CPPUNIT_TEST(testMaxPending);
-    CPPUNIT_TEST(testErrorHandling);
-    CPPUNIT_TEST_SUITE_END();
+    void SetUp() override;
+    void TearDown() override;
 
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<ServiceLayerComponent> _component;
     std::unique_ptr<BucketMover> _bucketMover;
     DummyStorageLink* after;
 
-private:
     void addBucket(const document::BucketId& id, uint16_t idealDiff);
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(BucketMoverTest);
-
 void
-BucketMoverTest::tearDown()
+BucketMoverTest::TearDown()
 {
     _node.reset(0);
 }
 
 void
-BucketMoverTest::setUp()
+BucketMoverTest::SetUp()
 {
     try {
         _node.reset(new TestServiceLayerApp(DiskCount(4)));
@@ -83,8 +69,7 @@ BucketMoverTest::addBucket(const document::BucketId& id,
     entry.write();
 }
 
-void
-BucketMoverTest::testNormalUsage()
+TEST_F(BucketMoverTest, testNormalUsage)
 {
     for (uint32_t i = 1; i < 4; ++i) {
         addBucket(document::BucketId(16, i), 1);
@@ -97,15 +82,15 @@ BucketMoverTest::testNormalUsage()
     _bucketMover->tick();
 
     std::vector<api::StorageMessage::SP> msgs = after->getCommandsOnce();
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             std::string("BucketDiskMoveCommand("
                         "BucketId(0x4000000000000002), source 3, target 2)"),
             msgs[0]->toString());
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             std::string("BucketDiskMoveCommand("
                         "BucketId(0x4000000000000001), source 2, target 1)"),
             msgs[1]->toString());
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             std::string("BucketDiskMoveCommand("
                         "BucketId(0x4000000000000003), source 1, target 0)"),
             msgs[2]->toString());
@@ -117,13 +102,12 @@ BucketMoverTest::testNormalUsage()
     }
 
     _bucketMover->tick();
-    CPPUNIT_ASSERT_EQUAL(0, (int)after->getNumCommands());
+    EXPECT_EQ(0, (int)after->getNumCommands());
 
     _bucketMover->finishCurrentRun();
 }
 
-void
-BucketMoverTest::testMaxPending()
+TEST_F(BucketMoverTest, testMaxPending)
 {
     for (uint32_t i = 1; i < 100; ++i) {
         addBucket(document::BucketId(16, i), 1);
@@ -137,7 +121,7 @@ BucketMoverTest::testMaxPending()
 
     std::vector<api::StorageMessage::SP> msgs = after->getCommandsOnce();
     // 5 is the max pending default config.
-    CPPUNIT_ASSERT_EQUAL(5, (int)msgs.size());
+    ASSERT_EQ(5, (int)msgs.size());
 
     after->sendUp(std::shared_ptr<api::StorageMessage>(
                           ((api::StorageCommand*)msgs[3].get())->
@@ -146,11 +130,10 @@ BucketMoverTest::testMaxPending()
     _bucketMover->tick();
 
     std::vector<api::StorageMessage::SP> msgs2 = after->getCommandsOnce();
-    CPPUNIT_ASSERT_EQUAL(1, (int)msgs2.size());
+    ASSERT_EQ(1, (int)msgs2.size());
 }
 
-void
-BucketMoverTest::testErrorHandling()
+TEST_F(BucketMoverTest, testErrorHandling)
 {
     for (uint32_t i = 1; i < 100; ++i) {
         addBucket(document::BucketId(16, i), 1);
@@ -164,7 +147,7 @@ BucketMoverTest::testErrorHandling()
 
     std::vector<api::StorageMessage::SP> msgs = after->getCommandsOnce();
     // 5 is the max pending default config.
-    CPPUNIT_ASSERT_EQUAL(5, (int)msgs.size());
+    ASSERT_EQ(5, (int)msgs.size());
 
     BucketDiskMoveCommand& cmd = static_cast<BucketDiskMoveCommand&>(*msgs[0]);
     uint32_t targetDisk = cmd.getDstDisk();
@@ -182,13 +165,12 @@ BucketMoverTest::testErrorHandling()
     _bucketMover->tick();
 
     std::vector<api::StorageMessage::SP> msgs2 = after->getCommandsOnce();
-    CPPUNIT_ASSERT_EQUAL(5, (int)msgs2.size());
+    ASSERT_EQ(5, (int)msgs2.size());
 
     for (uint32_t i = 0; i < msgs2.size(); ++i) {
         BucketDiskMoveCommand& bdm = static_cast<BucketDiskMoveCommand&>(*msgs2[i]);
-        CPPUNIT_ASSERT(bdm.getDstDisk() != targetDisk);
+        EXPECT_NE(bdm.getDstDisk(), targetDisk);
     }
 }
 
-} // bucketmover
-} // storage
+}

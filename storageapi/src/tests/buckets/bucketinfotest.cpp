@@ -1,41 +1,28 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
+#include <gtest/gtest.h>
 
-namespace storage {
-namespace api {
-
-struct BucketInfo_Test : public CppUnit::TestFixture {
-
-    void testSimple();
-
-    CPPUNIT_TEST_SUITE(BucketInfo_Test);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(BucketInfo_Test);
+namespace storage::api {
 
 /** Tests simple operations */
-void BucketInfo_Test::testSimple()
+TEST(BucketInfoTest, testSimple)
 {
     BucketInfo info;
 
-    CPPUNIT_ASSERT_EQUAL(false, info.valid());
-    CPPUNIT_ASSERT_EQUAL(0u, info.getChecksum());
-    CPPUNIT_ASSERT_EQUAL(0u, info.getDocumentCount());
-    CPPUNIT_ASSERT_EQUAL(1u, info.getTotalDocumentSize());
+    EXPECT_FALSE(info.valid());
+    EXPECT_EQ(0u, info.getChecksum());
+    EXPECT_EQ(0u, info.getDocumentCount());
+    EXPECT_EQ(1u, info.getTotalDocumentSize());
 
     info.setChecksum(0xa000bbbb);
     info.setDocumentCount(15);
     info.setTotalDocumentSize(64000);
 
-    CPPUNIT_ASSERT_EQUAL(true, info.valid());
-    CPPUNIT_ASSERT_EQUAL(0xa000bbbb, info.getChecksum());
-    CPPUNIT_ASSERT_EQUAL(15u, info.getDocumentCount());
-    CPPUNIT_ASSERT_EQUAL(64000u, info.getTotalDocumentSize());
+    EXPECT_TRUE(info.valid());
+    EXPECT_EQ(0xa000bbbb, info.getChecksum());
+    EXPECT_EQ(15u, info.getDocumentCount());
+    EXPECT_EQ(64000u, info.getTotalDocumentSize());
 };
 
-} // api
-} // storage
+}

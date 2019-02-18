@@ -6,4 +6,5 @@ vespa_add_library(storage_testbucketmover TEST
     DEPENDS
     storage
     storage_testcommon
+    gtest
 )

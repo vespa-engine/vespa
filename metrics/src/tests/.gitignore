@@ -4,4 +4,5 @@
 Makefile
 testrunner
 /test.vlog
+metrics_gtest_runner_app
 metrics_testrunner_app
