@@ -6,4 +6,5 @@ Makefile
 docstorage
 test.vlog
 testrunner
+storageapi_gtest_runner_app
 storageapi_testrunner_app
