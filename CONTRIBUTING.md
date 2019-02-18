@@ -39,8 +39,8 @@ If you have questions, want to share your experience or help others, please join
 ### Getting started
 See [README](README.md) for how to build and test Vespa. 
 
-Vespa is large and getting an overview of the code can be a challenge.
-It may help to read the READMEs of each module.
+For an overview of the modules, see [Code-map.md](Code-map.md).
+More details are in the READMEs of each module.
 
 ## License and copyright
 If you add new files you are welcome to use your own copyright.
