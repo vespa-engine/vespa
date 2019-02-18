@@ -231,6 +231,7 @@ public class NodeFailer extends Maintainer {
 
     private static List<String> reasonsToRetireActiveParentHost(Node hostNode) {
         return Stream.of(
+                "badMicrocode",
                 "badTotalMemorySize",
                 "badTotalDiskSize",
                 "badDiskType",
