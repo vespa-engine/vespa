@@ -3,12 +3,14 @@ package com.yahoo.security.tls.authz;
 
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.AuthorizationMode;
-import com.yahoo.security.tls.TrustManagerUtils;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedTrustManager;
 import java.net.Socket;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -37,8 +39,22 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
         this.defaultTrustManager = defaultTrustManager;
     }
 
-    public PeerAuthorizerTrustManager(AuthorizedPeers authorizedPeers, AuthorizationMode mode, KeyStore truststore) {
-        this(authorizedPeers, mode, TrustManagerUtils.createDefaultX509TrustManager(truststore));
+    public static TrustManager[] wrapTrustManagersFromKeystore(AuthorizedPeers authorizedPeers, AuthorizationMode mode, KeyStore keystore) throws GeneralSecurityException {
+        TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        factory.init(keystore);
+        return wrapTrustManagers(authorizedPeers, mode, factory.getTrustManagers());
+    }
+
+    public static TrustManager[] wrapTrustManagers(AuthorizedPeers authorizedPeers, AuthorizationMode mode, TrustManager[] managers) {
+        TrustManager[] wrappedManagers = new TrustManager[managers.length];
+        for (int i = 0; i < managers.length; i++) {
+            if (managers[i] instanceof X509ExtendedTrustManager) {
+                wrappedManagers[i] = new PeerAuthorizerTrustManager(authorizedPeers, mode, (X509ExtendedTrustManager) managers[i]);
+            } else {
+                wrappedManagers[i] = managers[i];
+            }
+        }
+        return wrappedManagers;
     }
 
     @Override

@@ -1,14 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
-import com.yahoo.security.tls.KeyManagerUtils;
-import com.yahoo.security.tls.TrustManagerUtils;
-
 import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedKeyManager;
-import javax.net.ssl.X509ExtendedTrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -22,17 +19,14 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 
 /**
- * A builder for {@link SSLContext}.
- *
  * @author bjorncs
  */
 public class SslContextBuilder {
 
-    private KeyStoreSupplier trustStoreSupplier = () -> null;
-    private KeyStoreSupplier keyStoreSupplier = () -> null;
+    private KeyStoreSupplier trustStoreSupplier;
+    private KeyStoreSupplier keyStoreSupplier;
     private char[] keyStorePassword;
-    private TrustManagerFactory trustManagerFactory = TrustManagerUtils::createDefaultX509TrustManager;
-    private KeyManagerFactory keyManagerFactory = KeyManagerUtils::createDefaultX509KeyManager;
+    private TrustManagersFactory trustManagersFactory = SslContextBuilder::createDefaultTrustManagers;
 
     public SslContextBuilder() {}
 
@@ -100,21 +94,18 @@ public class SslContextBuilder {
         return this;
     }
 
-    public SslContextBuilder withTrustManagerFactory(TrustManagerFactory trustManagersFactory) {
-        this.trustManagerFactory = trustManagersFactory;
-        return this;
-    }
-
-    public SslContextBuilder withKeyManagerFactory(KeyManagerFactory keyManagerFactory) {
-        this.keyManagerFactory = keyManagerFactory;
+    public SslContextBuilder withTrustManagerFactory(TrustManagersFactory trustManagersFactory) {
+        this.trustManagersFactory = trustManagersFactory;
         return this;
     }
 
     public SSLContext build() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-            TrustManager[] trustManagers = new TrustManager[] { trustManagerFactory.createTrustManager(trustStoreSupplier.get()) };
-            KeyManager[] keyManagers = new KeyManager[] { keyManagerFactory.createKeyManager(keyStoreSupplier.get(), keyStorePassword) };
+            TrustManager[] trustManagers =
+                    trustStoreSupplier != null ? createTrustManagers(trustManagersFactory, trustStoreSupplier) : null;
+            KeyManager[] keyManagers =
+                    keyStoreSupplier != null ? createKeyManagers(keyStoreSupplier, keyStorePassword) : null;
             sslContext.init(keyManagers, trustManagers, null);
             return sslContext;
         } catch (GeneralSecurityException e) {
@@ -122,6 +113,27 @@ public class SslContextBuilder {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static TrustManager[] createTrustManagers(TrustManagersFactory trustManagersFactory, KeyStoreSupplier trustStoreSupplier)
+            throws GeneralSecurityException, IOException {
+        KeyStore truststore = trustStoreSupplier.get();
+        return trustManagersFactory.createTrustManagers(truststore);
+    }
+
+    private static TrustManager[] createDefaultTrustManagers(KeyStore truststore) throws GeneralSecurityException {
+        TrustManagerFactory trustManagerFactory =
+                TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        trustManagerFactory.init(truststore);
+        return trustManagerFactory.getTrustManagers();
+    }
+
+    private static KeyManager[] createKeyManagers(KeyStoreSupplier keyStoreSupplier, char[] password)
+            throws GeneralSecurityException, IOException {
+        KeyManagerFactory keyManagerFactory =
+                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        keyManagerFactory.init(keyStoreSupplier.get(), password);
+        return keyManagerFactory.getKeyManagers();
     }
 
     private static KeyStore createTrustStore(List<X509Certificate> caCertificates) {
@@ -137,19 +149,11 @@ public class SslContextBuilder {
     }
 
     /**
-     * A factory interface for creating {@link X509ExtendedTrustManager}.
+     * A factory interface that is similar to {@link TrustManagerFactory}, but is an interface instead of a class.
      */
     @FunctionalInterface
-    public interface TrustManagerFactory {
-        X509ExtendedTrustManager createTrustManager(KeyStore truststore) throws GeneralSecurityException;
-    }
-
-    /**
-     * A factory interface for creating {@link X509ExtendedKeyManager}.
-     */
-    @FunctionalInterface
-    public interface KeyManagerFactory {
-        X509ExtendedKeyManager createKeyManager(KeyStore truststore, char[] password) throws GeneralSecurityException;
+    public interface TrustManagersFactory {
+        TrustManager[] createTrustManagers(KeyStore truststore) throws GeneralSecurityException;
     }
 
 }
