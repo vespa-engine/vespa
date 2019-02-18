@@ -14,6 +14,8 @@ This document aims to provide a map from the
 of Vespa to the most important modules in the flat module structure in the
 [code base on GitHub](https://github.com/vespa-engine/vespa).
 
+![Code map](Code-map.png)
+
 It covers the modules you are most likely to encounter as a developer. 
 The rest are either small and needed for technical reasons or doing one thing 
 which should be self-explanatory, or implementing the cloud service run by the 
