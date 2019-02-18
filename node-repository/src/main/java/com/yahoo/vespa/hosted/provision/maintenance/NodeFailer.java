@@ -210,7 +210,7 @@ public class NodeFailer extends Maintainer {
         for (Node node : activeNodes) {
             if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
                 nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
-            } else if (nodeSuspended(node)) {
+            } else if (hostSuspended(node, activeNodes)) {
                 if (node.status().hardwareFailureDescription().isPresent()) {
                     nodesByFailureReason.put(node, "Node has hardware failure: " + node.status().hardwareFailureDescription().get());
                 } else {
@@ -294,6 +294,16 @@ public class NodeFailer extends Maintainer {
             // Treat it as not suspended
             return false;
         }
+    }
+
+    /** Is the node and all active children suspended? */
+    private boolean hostSuspended(Node node, List<Node> activeNodes) {
+        if (!nodeSuspended(node)) return false;
+        if (node.parentHostname().isPresent()) return true; // optimization
+        return activeNodes.stream()
+                .filter(childNode -> childNode.parentHostname().isPresent() &&
+                        childNode.parentHostname().get().equals(node.hostname()))
+                .allMatch(this::nodeSuspended);
     }
 
     /**
