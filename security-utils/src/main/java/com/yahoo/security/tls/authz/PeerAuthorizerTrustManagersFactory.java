@@ -5,12 +5,14 @@ import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.tls.AuthorizationMode;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 
+import javax.net.ssl.TrustManager;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 
 /**
  * @author bjorncs
  */
-public class PeerAuthorizerTrustManagersFactory implements SslContextBuilder.TrustManagerFactory {
+public class PeerAuthorizerTrustManagersFactory implements SslContextBuilder.TrustManagersFactory {
     private final AuthorizedPeers authorizedPeers;
     private AuthorizationMode mode;
 
@@ -20,7 +22,7 @@ public class PeerAuthorizerTrustManagersFactory implements SslContextBuilder.Tru
     }
 
     @Override
-    public PeerAuthorizerTrustManager createTrustManager(KeyStore truststore) {
-        return new PeerAuthorizerTrustManager(authorizedPeers, mode, truststore);
+    public TrustManager[] createTrustManagers(KeyStore truststore) throws GeneralSecurityException {
+        return PeerAuthorizerTrustManager.wrapTrustManagersFromKeystore(authorizedPeers, mode, truststore);
     }
 }
