@@ -56,7 +56,6 @@ public class NodeSpec {
     private final double bandwidth;
     private final Set<String> ipAddresses;
 
-    private final Optional<String> hardwareDivergence;
     private final Optional<String> hardwareFailureDescription;
     private final NodeReports reports;
 
@@ -91,7 +90,6 @@ public class NodeSpec {
             boolean fastDisk,
             double bandwidth,
             Set<String> ipAddresses,
-            Optional<String> hardwareDivergence,
             Optional<String> hardwareFailureDescription,
             NodeReports reports,
             Optional<String> parentHostname) {
@@ -123,7 +121,6 @@ public class NodeSpec {
         this.fastDisk = fastDisk;
         this.bandwidth = bandwidth;
         this.ipAddresses = Objects.requireNonNull(ipAddresses);
-        this.hardwareDivergence = Objects.requireNonNull(hardwareDivergence);
         this.hardwareFailureDescription = Objects.requireNonNull(hardwareFailureDescription);
         this.reports = Objects.requireNonNull(reports);
         this.parentHostname = Objects.requireNonNull(parentHostname);
@@ -241,10 +238,6 @@ public class NodeSpec {
         return ipAddresses;
     }
 
-    public Optional<String> getHardwareDivergence() {
-        return hardwareDivergence;
-    }
-
     public Optional<String> getHardwareFailureDescription() {
         return hardwareFailureDescription;
     }
@@ -289,7 +282,6 @@ public class NodeSpec {
                 Objects.equals(fastDisk, that.fastDisk) &&
                 Objects.equals(bandwidth, that.bandwidth) &&
                 Objects.equals(ipAddresses, that.ipAddresses) &&
-                Objects.equals(hardwareDivergence, that.hardwareDivergence) &&
                 Objects.equals(hardwareFailureDescription, that.hardwareFailureDescription) &&
                 Objects.equals(reports, that.reports) &&
                 Objects.equals(parentHostname, that.parentHostname);
@@ -325,7 +317,6 @@ public class NodeSpec {
                 fastDisk,
                 bandwidth,
                 ipAddresses,
-                hardwareDivergence,
                 hardwareFailureDescription,
                 reports,
                 parentHostname);
@@ -361,7 +352,6 @@ public class NodeSpec {
                 + " fastDisk=" + fastDisk
                 + " bandwidth=" + bandwidth
                 + " ipAddresses=" + ipAddresses
-                + " hardwareDivergence=" + hardwareDivergence
                 + " hardwareFailureDescription=" + hardwareFailureDescription
                 + " reports=" + reports
                 + " parentHostname=" + parentHostname
@@ -563,7 +553,6 @@ public class NodeSpec {
             node.currentRestartGeneration.ifPresent(this::currentRestartGeneration);
             node.wantedFirmwareCheck.ifPresent(this::wantedFirmwareCheck);
             node.currentFirmwareCheck.ifPresent(this::currentFirmwareCheck);
-            node.hardwareDivergence.ifPresent(this::hardwareDivergence);
             node.hardwareFailureDescription.ifPresent(this::hardwareFailureDescription);
             node.parentHostname.ifPresent(this::parentHostname);
         }
@@ -846,10 +835,6 @@ public class NodeSpec {
             return ipAddresses;
         }
 
-        public Optional<String> getHardwareDivergence() {
-            return hardwareDivergence;
-        }
-
         public Optional<String> getHardwareFailureDescription() {
             return hardwareFailureDescription;
         }
@@ -871,7 +856,7 @@ public class NodeSpec {
                     wantedRebootGeneration, currentRebootGeneration,
                     wantedFirmwareCheck, currentFirmwareCheck, modelName,
                     minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb,
-                    fastDisk, bandwidth, ipAddresses, hardwareDivergence, hardwareFailureDescription,
+                    fastDisk, bandwidth, ipAddresses, hardwareFailureDescription,
                     reports, parentHostname);
         }
 

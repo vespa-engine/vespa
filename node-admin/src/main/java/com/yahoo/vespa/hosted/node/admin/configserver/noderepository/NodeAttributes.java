@@ -70,11 +70,6 @@ public class NodeAttributes {
         return this;
     }
 
-    public NodeAttributes withHardwareDivergence(String hardwareDivergence) {
-        this.hardwareDivergence = Optional.of(hardwareDivergence);
-        return this;
-    }
-
     public NodeAttributes withHardwareFailureDescription(String hardwareFailureDescription) {
         this.hardwareFailureDescription = Optional.of(hardwareFailureDescription);
         return this;

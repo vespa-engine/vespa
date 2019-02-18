@@ -66,8 +66,6 @@ public class NodeRepositoryNode {
     public Boolean hardwareFailure;
     @JsonProperty("hardwareFailureDescription")
     public String hardwareFailureDescription;
-    @JsonProperty("hardwareDivergence")
-    public String hardwareDivergence;
     @JsonProperty("environment")
     public String environment;
     @JsonProperty("type")
@@ -122,7 +120,6 @@ public class NodeRepositoryNode {
                 ", bandwidth=" + bandwidth +
                 ", hardwareFailure=" + hardwareFailure +
                 ", hardwareFailureDescription='" + hardwareFailureDescription + '\'' +
-                ", hardwareDivergence='" + hardwareDivergence + '\'' +
                 ", environment='" + environment + '\'' +
                 ", type='" + type + '\'' +
                 ", wantedDockerImage='" + wantedDockerImage + '\'' +
