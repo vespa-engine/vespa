@@ -122,6 +122,7 @@ public class MaybeTlsCryptoSocket implements CryptoSocket {
 
     @Override public SocketChannel channel() { return socket.channel(); }
     @Override public HandshakeResult handshake() throws IOException { return socket.handshake(); }
+    @Override public void doHandshakeWork() { socket.doHandshakeWork(); }
     @Override public int getMinimumReadBufferSize() { return socket.getMinimumReadBufferSize(); }
     @Override public int read(ByteBuffer dst) throws IOException { return socket.read(dst); }
     @Override public int drain(ByteBuffer dst) throws IOException { return socket.drain(dst); }

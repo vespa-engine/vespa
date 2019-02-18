@@ -24,6 +24,7 @@ public class NullCryptoSocket implements CryptoSocket {
         }
         return HandshakeResult.DONE;
     }
+    @Override public void doHandshakeWork() {}
     @Override public int getMinimumReadBufferSize() { return 1; }
     @Override public int read(ByteBuffer dst) throws IOException { return channel.read(dst); }
     @Override public int drain(ByteBuffer dst) throws IOException { return 0; }

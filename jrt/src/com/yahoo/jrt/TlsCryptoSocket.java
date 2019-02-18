@@ -29,7 +29,7 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     private static final Logger log = Logger.getLogger(TlsCryptoSocket.class.getName());
 
-    private enum HandshakeState { NOT_STARTED, NEED_READ, NEED_WRITE, COMPLETED }
+    private enum HandshakeState { NOT_STARTED, NEED_READ, NEED_WRITE, NEED_WORK, COMPLETED }
 
     private final TransportMetrics metrics = TransportMetrics.getInstance();
     private final SocketChannel channel;
@@ -72,6 +72,14 @@ public class TlsCryptoSocket implements CryptoSocket {
         return toHandshakeResult(newHandshakeState);
     }
 
+    @Override
+    public void doHandshakeWork() {
+        Runnable task;
+        while ((task = sslEngine.getDelegatedTask()) != null) {
+            task.run();
+        }
+    }
+
     private HandshakeState processHandshakeState(HandshakeState state) throws IOException {
         try {
             switch (state) {
@@ -84,6 +92,17 @@ public class TlsCryptoSocket implements CryptoSocket {
                     break;
                 case NEED_READ:
                     channelRead();
+                    break;
+                case NEED_WORK:
+                    if (authorizationResult == null) {
+                        PeerAuthorizerTrustManager.getAuthorizationResult(sslEngine) // only available during handshake
+                                .ifPresent(result ->  {
+                                    if (!result.succeeded()) {
+                                        metrics.incrementPeerAuthorizationFailures();
+                                    }
+                                    authorizationResult = result;
+                                });
+                    }
                     break;
                 case COMPLETED:
                     return HandshakeState.COMPLETED;
@@ -108,17 +127,7 @@ public class TlsCryptoSocket implements CryptoSocket {
                         }
                         return HandshakeState.COMPLETED;
                     case NEED_TASK:
-                        sslEngine.getDelegatedTask().run();
-                        if (authorizationResult != null) {
-                            PeerAuthorizerTrustManager.getAuthorizationResult(sslEngine) // only available during handshake
-                                    .ifPresent(result ->  {
-                                        if (!result.succeeded()) {
-                                            metrics.incrementPeerAuthorizationFailures();
-                                        }
-                                        authorizationResult = result;
-                                    });
-                        }
-                        break;
+                        return HandshakeState.NEED_WORK;
                     case NEED_UNWRAP:
                         if (wrapBuffer.bytes() > 0) return HandshakeState.NEED_WRITE;
                         if (!handshakeUnwrap()) return HandshakeState.NEED_READ;
@@ -145,6 +154,8 @@ public class TlsCryptoSocket implements CryptoSocket {
                 return HandshakeResult.NEED_READ;
             case NEED_WRITE:
                 return HandshakeResult.NEED_WRITE;
+            case NEED_WORK:
+                return HandshakeResult.NEED_WORK;
             case COMPLETED:
                 return HandshakeResult.DONE;
             default:
