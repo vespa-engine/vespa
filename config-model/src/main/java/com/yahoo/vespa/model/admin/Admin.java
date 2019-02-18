@@ -48,7 +48,10 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     private final List<Slobrok> slobroks = new ArrayList<>();
     private Configserver defaultConfigserver;
+
+    /** The log server, or null if none */
     private Logserver logserver;
+
     private LogForwarder.Config logForwarderConfig = null;
 
     private ApplicationType applicationType = ApplicationType.DEFAULT;
@@ -115,6 +118,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     public void setLogserver(Logserver logserver) { this.logserver = logserver; }
 
+    /** Returns the log server for this, or null if none */
     public Logserver getLogserver() { return logserver; }
 
     public void addConfigservers(List<Configserver> configservers) {
@@ -147,12 +151,17 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     }
 
     public void getConfig(LogdConfig.Builder builder) {
-        builder.
-            logserver(new LogdConfig.Logserver.Builder().
-                    use(logServerContainerCluster.isPresent() || !isHostedVespa).
-                    host(logserver.getHostName()).
-                    port(logserver.getRelativePort(1)));
-    }
+        if (logserver == null) {
+            builder.logserver(new LogdConfig.Logserver.Builder().use(false));
+        }
+        else {
+            builder.
+                logserver(new LogdConfig.Logserver.Builder().
+                        use(logServerContainerCluster.isPresent() || !isHostedVespa).
+                        host(logserver.getHostName()).
+                        port(logserver.getRelativePort(1)));
+        }
+     }
 
     public void getConfig(SlobroksConfig.Builder builder) {
         for (Slobrok slob : slobroks) {
