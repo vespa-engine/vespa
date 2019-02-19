@@ -40,9 +40,4 @@ public class ProvisionerAdapter implements HostProvisioner {
         return provisioner.prepare(applicationId, cluster, capacity, groups, logger);
     }
 
-    @Override
-    public NetworkPorts getNetworkPorts(HostSpec host) {
-        return provisioner.getNetworkPorts(host);
-    }
-
 }

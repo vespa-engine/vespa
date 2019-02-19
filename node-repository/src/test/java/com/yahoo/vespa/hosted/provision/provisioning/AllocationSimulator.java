@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -84,7 +83,7 @@ public class AllocationSimulator {
         return new Node("fake", Collections.singleton("127.0.0.1"),
                 parent.isPresent() ? Collections.emptySet() : getAdditionalIP(), hostname, parent, flavor, Status.initial(),
                 parent.isPresent() ? Node.State.ready : Node.State.active, allocation(tenant), History.empty(),
-                parent.isPresent() ? NodeType.tenant : NodeType.host, new Reports(), Optional.empty(), NetworkPorts.empty());
+                parent.isPresent() ? NodeType.tenant : NodeType.host, new Reports(), Optional.empty());
     }
 
     private Set<String> getAdditionalIP() {

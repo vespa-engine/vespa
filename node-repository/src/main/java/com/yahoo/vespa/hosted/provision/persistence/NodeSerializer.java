@@ -11,6 +11,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.NetworkPorts;
+import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -88,10 +89,6 @@ public class NodeSerializer {
 
     // Network port fields
     private static final String networkPortsKey = "networkPorts";
-    private static final String portNumberKey = "port";
-    private static final String serviceTypeKey = "type";
-    private static final String configIdKey = "cfg";
-    private static final String portSuffixKey = "suf";
 
     // ---------------- Serialization ----------------------------------------------------
 
@@ -133,17 +130,6 @@ public class NodeSerializer {
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
         node.reports().toSlime(object, reportsKey);
         node.modelId().ifPresent(modelId -> object.setString(modelIdKey, modelId));
-        node.networkPorts().ifPresent(ports -> toSlime(ports, object.setArray(networkPortsKey)));
-    }
-
-    private void toSlime(NetworkPorts networkPorts, Cursor array) {
-        for (NetworkPorts.Allocation allocation : networkPorts.allocations()) {
-            Cursor object = array.addObject();
-            object.setLong(portNumberKey, allocation.port);
-            object.setString(serviceTypeKey, allocation.serviceType);
-            object.setString(configIdKey, allocation.configId);
-            object.setString(portSuffixKey, allocation.portSuffix);
-        }
     }
 
     private void toSlime(Allocation allocation, Cursor object) {
@@ -155,6 +141,7 @@ public class NodeSerializer {
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
         object.setBool(removableKey, allocation.isRemovable());
         object.setString(wantedVespaVersionKey, allocation.membership().cluster().vespaVersion().toString());
+        allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(networkPortsKey)));
     }
 
     private void toSlime(History history, Cursor array) {
@@ -192,8 +179,7 @@ public class NodeSerializer {
                         historyFromSlime(object.field(historyKey)),
                         nodeTypeFromString(object.field(nodeTypeKey).asString()),
                         Reports.fromSlime(object.field(reportsKey)),
-                        modelIdFromSlime(object),
-                        networkPortsFromSlime(object.field(networkPortsKey)));
+                        modelIdFromSlime(object));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -217,20 +203,8 @@ public class NodeSerializer {
         return Optional.of(new Allocation(applicationIdFromSlime(object),
                                           clusterMembershipFromSlime(object),
                                           generationFromSlime(object, restartGenerationKey, currentRestartGenerationKey),
-                                          object.field(removableKey).asBool()));
-    }
-
-    private Optional<NetworkPorts> networkPortsFromSlime(Inspector array) {
-        if ( ! array.valid()) return Optional.empty();
-        NetworkPorts allocator = new NetworkPorts();
-        array.traverse((ArrayTraverser) (int i, Inspector item) -> {
-            allocator.override(new NetworkPorts.Allocation((int)item.field(portNumberKey).asLong(),
-                                                        item.field(serviceTypeKey).asString(),
-                                                        item.field(configIdKey).asString(),
-                                                        item.field(portSuffixKey).asString()));
-            }
-        );
-        return Optional.of(allocator);
+                                          object.field(removableKey).asBool(),
+                                          NetworkPortsSerializer.fromSlime(object.field(networkPortsKey))));
     }
 
     private ApplicationId applicationIdFromSlime(Inspector object) {

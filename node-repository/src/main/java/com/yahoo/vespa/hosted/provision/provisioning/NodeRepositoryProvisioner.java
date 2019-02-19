@@ -111,13 +111,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     }
 
     @Override
-    public NetworkPorts getNetworkPorts(HostSpec host) {
-         Optional<Node> node = nodeRepository.getNode(host.hostname());
-         Optional<NetworkPorts> ports = node.map(n -> n.getNetworkPorts());
-         return ports.orElse(new NetworkPorts());
-    }
-
-    @Override
     public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
         validate(hosts);
         activator.activate(application, hosts, transaction);

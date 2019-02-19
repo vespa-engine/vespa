@@ -128,10 +128,10 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     private HostResource addNewHost(HostSpec hostSpec) {
         Host host = Host.createHost(this, hostSpec.hostname());
         HostResource hostResource = new HostResource(host,
-                                                     provisioner.getNetworkPorts(hostSpec),
                                                      hostSpec.version());
         hostResource.setFlavor(hostSpec.flavor());
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);
+        hostSpec.networkPorts().ifPresent(hostResource::addNetworkPorts);
         hostname2host.put(host.getHostname(), hostResource);
         log.log(DEBUG, () -> "Added new host resource for " + host.getHostname() + " with flavor " + hostResource.getFlavor());
         return hostResource;
@@ -193,7 +193,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     Set<HostSpec> getHostSpecs() {
         return getHosts().stream()
                 .map(host -> new HostSpec(host.getHostname(), Collections.emptyList(),
-                                          host.getFlavor(), host.primaryClusterMembership(), host.version()))
+                                          host.getFlavor(), host.primaryClusterMembership(), host.version(), host.networkPorts()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 

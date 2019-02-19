@@ -62,9 +62,11 @@ public class HostResource implements Comparable<HostResource> {
     /** The current Vespa version running on this node, or empty if not known */
     private final Optional<Version> version;
 
-    private final NetworkPorts networkPortsList;
+    private Optional<NetworkPorts> networkPortsList = Optional.empty();
 
-    public NetworkPorts getNetworkPorts() { return networkPortsList; }
+    public Optional<NetworkPorts> networkPorts() { return networkPortsList; }
+
+    public void addNetworkPorts(NetworkPorts ports) { this.networkPortsList = Optional.of(ports); }
 
     /**
      * Create a new {@link HostResource} bound to a specific {@link com.yahoo.vespa.model.Host}.
@@ -72,12 +74,11 @@ public class HostResource implements Comparable<HostResource> {
      * @param host {@link com.yahoo.vespa.model.Host} object to bind to.
      */
     public HostResource(Host host) {
-        this(host, new NetworkPorts(), Optional.empty());
+        this(host, Optional.empty());
     }
 
-    public HostResource(Host host, NetworkPorts networkPortsList, Optional<Version> version) {
+    public HostResource(Host host, Optional<Version> version) {
         this.host = host;
-        this.networkPortsList = networkPortsList;
         this.version = version;
     }
 
@@ -160,11 +161,13 @@ public class HostResource implements Comparable<HostResource> {
     }
 
     public void flushPortReservations() {
+        List<NetworkPorts.Allocation> list = new ArrayList<>();
         for (PortReservation pr : portReservations) {
             String servType = pr.service.getServiceType();
             String configId = pr.service.getConfigId();
-            networkPortsList.override(new NetworkPorts.Allocation(pr.gotPort, servType, configId, pr.suffix));
+            list.add(new NetworkPorts.Allocation(pr.gotPort, servType, configId, pr.suffix));
         }
+        this.networkPortsList = Optional.of(new NetworkPorts(list));
     }
 
     private boolean canUseWantedPort(DeployLogger deployLogger, NetworkPortRequestor service, int wantedPort, int serviceBasePort) {
