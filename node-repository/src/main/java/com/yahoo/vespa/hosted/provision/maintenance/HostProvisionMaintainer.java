@@ -7,8 +7,9 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.List;
@@ -43,6 +44,8 @@ public class HostProvisionMaintainer extends Maintainer {
                 try {
                     List<Node> updatedNodes = hostProvisioner.provision(host, children);
                     nodeRepository().write(updatedNodes);
+                } catch (IllegalArgumentException | IllegalStateException e) {
+                    log.log(Level.INFO, "Failed to provision " + host.hostname() + ": " + Exceptions.toMessageString(e));
                 } catch (FatalProvisioningException e) {
                     log.log(Level.SEVERE, "Failed to provision " + host.hostname() + ", failing out the host recursively", e);
                     // Fail out as operator to force a quick redeployment
