@@ -28,17 +28,15 @@ public class RoutingPolicy {
 
     private final ApplicationId owner;
     private final ZoneId zone;
-    private final String recordId;
     private final HostName alias;
     private final HostName canonicalName;
     private final Optional<String> dnsZone;
     private final Set<RotationName> rotations;
 
-    public RoutingPolicy(ApplicationId owner, ZoneId zone, String recordId, HostName alias, HostName canonicalName,
+    public RoutingPolicy(ApplicationId owner, ZoneId zone, HostName alias, HostName canonicalName,
                          Optional<String> dnsZone, Set<RotationName> rotations) {
         this.owner = Objects.requireNonNull(owner, "owner must be non-null");
         this.zone = Objects.requireNonNull(zone, "zone must be non-null");
-        this.recordId = Objects.requireNonNull(recordId, "recordId must be non-null");
         this.alias = Objects.requireNonNull(alias, "alias must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
@@ -53,12 +51,6 @@ public class RoutingPolicy {
     /** The zone this applies to */
     public ZoneId zone() {
         return zone;
-    }
-
-    /** The ID of the DNS record identifying this */
-    // TODO: Remove this field as it's no longer needed
-    public String recordId() {
-        return recordId;
     }
 
     /** This alias (lhs of a CNAME or ALIAS record) */
@@ -85,24 +77,23 @@ public class RoutingPolicy {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RoutingPolicy that = (RoutingPolicy) o;
-        return owner.equals(that.owner) &&
-               zone.equals(that.zone) &&
-               recordId.equals(that.recordId) &&
-               alias.equals(that.alias) &&
-               canonicalName.equals(that.canonicalName) &&
-               dnsZone.equals(that.dnsZone) &&
-               rotations.equals(that.rotations);
+        RoutingPolicy policy = (RoutingPolicy) o;
+        return owner.equals(policy.owner) &&
+               zone.equals(policy.zone) &&
+               alias.equals(policy.alias) &&
+               canonicalName.equals(policy.canonicalName) &&
+               dnsZone.equals(policy.dnsZone) &&
+               rotations.equals(policy.rotations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, zone, recordId, alias, canonicalName, dnsZone, rotations);
+        return Objects.hash(owner, zone, alias, canonicalName, dnsZone, rotations);
     }
 
     @Override
     public String toString() {
-        return String.format("%s: %s -> %s [rotations: %s%s], owned by %s, in %s", recordId, alias, canonicalName, rotations,
+        return String.format("%s -> %s [rotations: %s%s], owned by %s, in %s", alias, canonicalName, rotations,
                              dnsZone.map(z -> ", DNS zone: " + z).orElse(""), owner.toShortString(),
                              zone.value());
     }

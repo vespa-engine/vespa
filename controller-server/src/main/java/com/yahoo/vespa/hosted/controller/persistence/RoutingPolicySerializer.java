@@ -42,7 +42,6 @@ public class RoutingPolicySerializer {
         Cursor policyArray = root.setArray(routingPoliciesField);
         routingPolicies.forEach(policy -> {
             Cursor policyObject = policyArray.addObject();
-            policyObject.setString(recordIdField, policy.recordId());
             policyObject.setString(aliasField, policy.alias().value());
             policyObject.setString(zoneField, policy.zone().value());
             policyObject.setString(canonicalNameField, policy.canonicalName().value());
@@ -72,7 +71,6 @@ public class RoutingPolicySerializer {
             policies.add(new RoutingPolicy(owner,
                                            // TODO: Remove fallback after 7.13 has been released
                                            optionalField(inspect.field(zoneField), ZoneId::from).orElse(ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName())),
-                                           recordId.asString(),
                                            HostName.from(inspect.field(aliasField).asString()),
                                            HostName.from(inspect.field(canonicalNameField).asString()),
                                            optionalField(inspect.field(dnsZoneField), Function.identity()),

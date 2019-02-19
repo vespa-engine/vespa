@@ -147,8 +147,8 @@ public class RoutingPolicyMaintainer extends Maintainer {
         } else {
             nameService.createCname(name, data);
         }
-        return new RoutingPolicy(application, zone, "fake-id" + alias, alias, loadBalancer.hostname(),
-                                 loadBalancer.dnsZone(), loadBalancer.rotations());
+        return new RoutingPolicy(application, zone, alias, loadBalancer.hostname(), loadBalancer.dnsZone(),
+                                 loadBalancer.rotations());
     }
 
     /** Remove all DNS records that point to non-existing load balancers */
