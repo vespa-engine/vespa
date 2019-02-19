@@ -4,8 +4,10 @@ package com.yahoo.vespa.hosted.controller.api.integration.noderepository;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -86,6 +88,8 @@ public class NodeRepositoryNode {
     private NodeHistory[] history;
     @JsonProperty("allowedToBeDown")
     private Boolean allowedToBeDown;
+    @JsonProperty("reports")
+    private Map<String, JsonNode> reports;
     @JsonProperty("modelName")
     private String modelName;
 
@@ -379,6 +383,14 @@ public class NodeRepositoryNode {
         this.wantedOsVersion = wantedOsVersion;
     }
 
+    public Map<String, JsonNode> getReports() {
+        return reports;
+    }
+
+    public void setReports(Map<String, JsonNode> reports) {
+        this.reports = reports;
+    }
+
     public String getModelName() {
         return modelName;
     }
@@ -427,6 +439,7 @@ public class NodeRepositoryNode {
                ", description='" + description + '\'' +
                ", history=" + Arrays.toString(history) +
                ", allowedToBeDown=" + allowedToBeDown +
+                ", reports=" + reports +
                ", modelName=" + modelName +
                '}';
     }
