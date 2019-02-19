@@ -414,6 +414,24 @@ public:
 
 
     /**
+     * Signal the completion of an asyncronous handshake operation for
+     * the given io component. Note that the actual work is performed
+     * by the transport thread. This method simply posts an event on
+     * the transport thread event queue. NOTE: in order to post async
+     * events regarding I/O components, an extra reference to the
+     * component needs to be allocated. The needRef flag indicates
+     * wether the caller already has done this.
+     *
+     * @param comp the component to signal about operation completion
+     * @param needRef should be set to false if the caller of this
+     *        method already has obtained an extra reference to the
+     *        component. If this flag is true, this method will call the
+     *        AddRef method on the component.
+     **/
+    void handshake_act(FNET_IOComponent *comp, bool needRef = true);
+
+
+    /**
      * Close an I/O component and remove it from the working set of this
      * transport object. Note that the actual work is performed by the
      * transport thread. This method simply posts an event on the

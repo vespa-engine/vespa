@@ -61,6 +61,7 @@ public:
         }
         return HandshakeResult::DONE;
     }
+    void do_handshake_work() override {}
     size_t min_read_buffer_size() const override { return 1; }
     ssize_t read(char *buf, size_t len) override {
         int drain_result = drain(buf, len);

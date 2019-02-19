@@ -144,6 +144,7 @@ FNET_TransportThread::DiscardEvent(FNET_ControlPacket *cpacket,
     case FNET_ControlPacket::FNET_CMD_IOC_DISABLE_READ:
     case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_WRITE:
     case FNET_ControlPacket::FNET_CMD_IOC_DISABLE_WRITE:
+    case FNET_ControlPacket::FNET_CMD_IOC_HANDSHAKE_ACT:
     case FNET_ControlPacket::FNET_CMD_IOC_CLOSE:
         context._value.IOC->SubRef();
         break;
@@ -344,6 +345,15 @@ FNET_TransportThread::DisableWrite(FNET_IOComponent *comp, bool needRef)
               FNET_Context(comp));
 }
 
+void
+FNET_TransportThread::handshake_act(FNET_IOComponent *comp, bool needRef)
+{
+    if (needRef) {
+        comp->AddRef();
+    }
+    PostEvent(&FNET_ControlPacket::IOCHandshakeACT,
+              FNET_Context(comp));
+}
 
 void
 FNET_TransportThread::Close(FNET_IOComponent *comp, bool needRef)
@@ -480,6 +490,13 @@ FNET_TransportThread::handle_wakeup()
         case FNET_ControlPacket::FNET_CMD_IOC_DISABLE_WRITE:
             context._value.IOC->EnableWriteEvent(false);
             context._value.IOC->SubRef();
+            break;
+        case FNET_ControlPacket::FNET_CMD_IOC_HANDSHAKE_ACT:
+            if (context._value.IOC->handle_handshake_act()) {
+                context._value.IOC->SubRef();
+            } else {
+                handle_close_cmd(context._value.IOC);
+            }
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_CLOSE:
             handle_close_cmd(context._value.IOC);

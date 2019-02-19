@@ -25,6 +25,7 @@ public:
     MaybeTlsCryptoSocket(SocketHandle socket, std::shared_ptr<AbstractTlsCryptoEngine> tls_engine);
     int get_fd() const override { return _socket->get_fd(); }
     HandshakeResult handshake() override { return _socket->handshake(); }
+    void do_handshake_work() override { _socket->do_handshake_work(); }
     size_t min_read_buffer_size() const override { return _socket->min_read_buffer_size(); }
     ssize_t read(char *buf, size_t len) override { return _socket->read(buf, len); }
     ssize_t drain(char *buf, size_t len) override { return _socket->drain(buf, len); }

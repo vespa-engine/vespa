@@ -197,6 +197,18 @@ public:
     virtual bool handle_add_event();
 
     /**
+     * This function is called by the transport thread to handle the
+     * completion of an asynchronous invocation of
+     * 'do_handshake_work'. This functionality is used by TLS
+     * connections in order to move expensive cpu work out of the
+     * transport thread. If this function returns false, the component
+     * is broken and should be closed immediately.
+     *
+     * @return false if broken, true otherwise.
+     **/
+    virtual bool handle_handshake_act();
+
+    /**
      * This method is called by the SubRef methods just before the
      * object is deleted. It may be used to perform cleanup tasks that
      * must be done before the destructor is invoked.

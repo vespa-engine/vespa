@@ -44,6 +44,7 @@ public:
     NullCryptoSocket(SocketHandle socket) : _socket(std::move(socket)) {}
     int get_fd() const override { return _socket.get(); }
     HandshakeResult handshake() override { return HandshakeResult::DONE; }
+    void do_handshake_work() override {}
     size_t min_read_buffer_size() const override { return 1; }
     ssize_t read(char *buf, size_t len) override { return _socket.read(buf, len); }
     ssize_t drain(char *, size_t) override { return 0; }
@@ -118,6 +119,7 @@ public:
         }
         return HandshakeResult::DONE;
     }
+    void do_handshake_work() override {}
     size_t min_read_buffer_size() const override { return 1; }
     ssize_t read(char *buf, size_t len) override {
         if (_input.obtain().size == 0) {

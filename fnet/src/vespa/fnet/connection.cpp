@@ -51,6 +51,26 @@ SyncPacket::Free()
         _cond.notify_one();
     }
 }
+
+
+struct DoHandshakeWork : vespalib::Executor::Task {
+    FNET_Connection *conn;
+    vespalib::CryptoSocket *socket;
+    DoHandshakeWork(FNET_Connection *conn_in, vespalib::CryptoSocket *socket_in)
+        : conn(conn_in), socket(socket_in)
+    {
+        conn->AddRef();
+    }
+    void run() override {
+        socket->do_handshake_work();
+        conn->Owner()->handshake_act(conn, false);
+        conn = nullptr; // ref given away above
+    }
+    ~DoHandshakeWork() {
+        assert(conn == nullptr);
+    }
+};
+
 }
 
 
@@ -216,6 +236,9 @@ bool
 FNET_Connection::handshake()
 {
     bool broken = false;
+    if (_flags._handshake_work_pending) {
+        return !broken;
+    }
     switch (_socket->handshake()) {
     case vespalib::CryptoSocket::HandshakeResult::FAIL:
         LOG(debug, "Connection(%s): handshake failed with peer %s", GetSpec(), GetPeerSpec().c_str());
@@ -247,6 +270,12 @@ FNET_Connection::handshake()
         EnableReadEvent(false);
         EnableWriteEvent(true);
         break;
+    case vespalib::CryptoSocket::HandshakeResult::NEED_WORK:
+        EnableReadEvent(false);
+        EnableWriteEvent(false);
+        assert(!_flags._handshake_work_pending);
+        _flags._handshake_work_pending = true;
+        Owner()->owner().post_or_perform(std::make_unique<DoHandshakeWork>(this, _socket.get()));
     }
     return !broken;
 }
@@ -552,6 +581,13 @@ FNET_Connection::handle_add_event()
     return (_socket && (_socket->get_fd() >= 0));
 }
 
+bool
+FNET_Connection::handle_handshake_act()
+{
+    assert(_flags._handshake_work_pending);
+    _flags._handshake_work_pending = false;
+    return ((_state == FNET_CONNECTING) && handshake());
+}
 
 void
 FNET_Connection::SetCleanupHandler(FNET_IConnectionCleanupHandler *handler)
@@ -695,7 +731,9 @@ FNET_Connection::Close()
     detach_selector();
     SetState(FNET_CLOSED);
     _ioc_socket_fd = -1;
-    _socket.reset();
+    if (!_flags._handshake_work_pending) {
+        _socket.reset();
+    }
 }
 
 

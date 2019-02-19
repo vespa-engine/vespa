@@ -89,13 +89,13 @@ void perform_test(size_t thread_id, Client &client, Result &result) {
         req = client.orb.AllocRPCRequest(req);
         req->SetMethodName("inc");
         req->GetParams()->AddInt64(seq);
-        target->InvokeSync(req, 60.0);
+        target->InvokeSync(req, 300.0);
         ASSERT_TRUE(req->CheckReturnTypes("l"));
         uint64_t ret = req->GetReturn()->GetValue(0)._intval64;
         EXPECT_EQUAL(ret, seq + 1);
         seq = ret;
     };
-    size_t loop_cnt = 128;
+    size_t loop_cnt = 8;
     BenchmarkTimer::benchmark(invoke, invoke, 0.5);
     BenchmarkTimer timer(1.5);
     while (timer.has_budget()) {

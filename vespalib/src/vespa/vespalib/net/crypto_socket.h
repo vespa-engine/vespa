@@ -26,7 +26,7 @@ struct CryptoSocket {
      **/
     virtual int get_fd() const = 0;
 
-    enum class HandshakeResult { FAIL, DONE, NEED_READ, NEED_WRITE };
+    enum class HandshakeResult { FAIL, DONE, NEED_READ, NEED_WRITE, NEED_WORK };
 
     /**
      * Try to progress the initial connection handshake. Handshaking
@@ -35,9 +35,19 @@ struct CryptoSocket {
      * permitted. This function will be called multiple times until
      * the status is either DONE or FAIL. When NEED_READ or NEED_WRITE
      * is returned, the handshake function will be called again when
-     * the appropriate io event has triggered.
+     * the appropriate io event has triggered. When NEED_WORK is
+     * returned, the 'do_handshake_work' function will be called
+     * exactly once before this function is called again.
      **/
     virtual HandshakeResult handshake() = 0;
+
+    /**
+     * This function is called to perform possibly expensive work
+     * needed by the 'handshake' function. The work is done by a
+     * separate function to enable performing it outside the critical
+     * path (transport thread).
+     **/
+    virtual void do_handshake_work() = 0;
 
     /**
      * This function should be called after handshaking has completed
