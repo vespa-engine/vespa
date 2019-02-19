@@ -462,11 +462,13 @@
       "public void <init>(java.lang.String, java.util.List, com.yahoo.config.provision.ClusterMembership)",
       "public void <init>(java.lang.String, java.util.List, java.util.Optional, java.util.Optional)",
       "public void <init>(java.lang.String, java.util.List, java.util.Optional, java.util.Optional, java.util.Optional)",
+      "public void <init>(java.lang.String, java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public java.lang.String hostname()",
       "public java.util.List aliases()",
       "public java.util.Optional flavor()",
       "public java.util.Optional version()",
       "public java.util.Optional membership()",
+      "public java.util.Optional networkPorts()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -522,13 +524,21 @@
       "public"
     ],
     "methods": [
-      "public static java.util.Optional empty()",
-      "public java.util.Map byPortMap()",
-      "public java.util.Map byKeyMap()",
-      "public java.util.Collection allocations()",
+      "public void <init>(java.util.Collection)",
+      "public java.util.Collection allocations()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.NetworkPortsSerializer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
       "public void <init>()",
-      "public void add(com.yahoo.config.provision.NetworkPorts$Allocation)",
-      "public void override(com.yahoo.config.provision.NetworkPorts$Allocation)"
+      "public static void toSlime(com.yahoo.config.provision.NetworkPorts, com.yahoo.slime.Cursor)",
+      "public static java.util.Optional fromSlime(com.yahoo.slime.Inspector)"
     ],
     "fields": []
   },
@@ -617,7 +627,6 @@
     ],
     "methods": [
       "public abstract java.util.List prepare(com.yahoo.config.provision.ApplicationId, com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, int, com.yahoo.config.provision.ProvisionLogger)",
-      "public com.yahoo.config.provision.NetworkPorts getNetworkPorts(com.yahoo.config.provision.HostSpec)",
       "public abstract void activate(com.yahoo.transaction.NestedTransaction, com.yahoo.config.provision.ApplicationId, java.util.Collection)",
       "public abstract void remove(com.yahoo.transaction.NestedTransaction, com.yahoo.config.provision.ApplicationId)",
       "public abstract void restart(com.yahoo.config.provision.ApplicationId, com.yahoo.config.provision.HostFilter)"

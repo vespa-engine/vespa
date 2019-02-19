@@ -26,13 +26,6 @@ public interface Provisioner {
     List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger);
 
     /**
-     * fetch or create a port allocator for the given host
-     * @param host the host spec
-     * @return the port allocator
-     **/
-    default NetworkPorts getNetworkPorts(HostSpec host) { return new NetworkPorts(); }
-
-    /**
      * Activates the allocation of nodes to this application captured in the hosts argument.
      *
      * @param transaction Transaction with operations to commit together with any operations done within the provisioner.
