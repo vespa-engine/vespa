@@ -1,2 +1,0 @@
-Test that logd will drop data in favor of rotation if log server is
-too slow.

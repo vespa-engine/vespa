@@ -1,2 +1,0 @@
-Test the SlaveProc class, a wrapper for FastOS_Process that simplifies
-writing to stdin and reading from stdout of sub-processes.

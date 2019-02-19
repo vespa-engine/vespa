@@ -1,4 +1,0 @@
-See what happens when feeding an RPC server garbage input. This
-particular test is based on Java interpreting the packet size as
-negative and therefore can determine that this is garbage from the
-packet header alone.

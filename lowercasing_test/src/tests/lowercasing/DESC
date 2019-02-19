@@ -1,7 +1,0 @@
-Check lowercasing is the same in Java and C++.
-
-Currently based on data from
-http://www.unicode.org/Public/4.0-Update/UnicodeData-4.0.0.txt
-
-The reason for using an older standard is the Character class in Java 6 uses the
-same data.
