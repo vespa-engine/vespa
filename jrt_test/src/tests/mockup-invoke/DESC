@@ -1,2 +1,0 @@
-Test that the mockup invoke implementation in Java is able to invoke
-methods in a C++ based RPC server.

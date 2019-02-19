@@ -1,2 +1,0 @@
-Test that service patterns with '*' performs load balancing between
-the services the pattern resolves to.

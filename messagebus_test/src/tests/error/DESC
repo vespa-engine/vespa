@@ -1,2 +1,0 @@
-Check that java and cpp messagebus components are able to pass errors
-to each other and preserve meaning.

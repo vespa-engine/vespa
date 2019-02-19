@@ -1,4 +1,0 @@
-This is a simple test that gives a rough idea of the inherent overhead
-in messagebus. It sends simple messages back and forth with the
-simplest routing setup possible. This test also tests that messagebus
-works across Java and C++.
