@@ -28,6 +28,4 @@ public interface HostProvisioner {
      * @return the specification of the allocated hosts
      */
     List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger);
-
-    default NetworkPorts getNetworkPorts(HostSpec host) { return new NetworkPorts(); }
 }
