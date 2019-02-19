@@ -15,14 +15,17 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 import com.yahoo.statistics.Counter;
 import com.yahoo.statistics.Value;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.logging.Level;
 
 import static com.yahoo.container.protect.Error.*;
@@ -79,6 +82,7 @@ public class StatisticsSearcher extends Searcher {
     private Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
     private Map<String, Metric.Context> statePageOnlyContexts = new CopyOnWriteHashMap<>();
     private Map<String, Map<DegradedReason, Metric.Context>> degradedReasonContexts = new CopyOnWriteHashMap<>();
+    private Map<String, Map<String, Metric.Context>> relevanceContexts = new CopyOnWriteHashMap<>();
     private java.util.Timer scheduler = new java.util.Timer(true);
 
     private class PeakQpsReporter extends java.util.TimerTask {
@@ -184,6 +188,19 @@ public class StatisticsSearcher extends Searcher {
         return DegradedReason.non_ideal_state;
     }
 
+    private Metric.Context createRelevanceMetricContext(String chainName, String rankProfile) {
+        Map<String, String> dimensions = new HashMap<>();
+        dimensions.put("chain", chainName);
+        dimensions.put("rankprofile", rankProfile);
+        return metric.createContext(dimensions);
+    }
+
+    private Metric.Context getRelevanceMetricContext(String chainName, String rankProfile) {
+        return relevanceContexts
+                .computeIfAbsent(chainName, k -> new HashMap<>())
+                .computeIfAbsent(rankProfile, k -> createRelevanceMetricContext(chainName, rankProfile));
+    }
+
     /**
      * Generate statistics for the query passing through this Searcher
      * 1) Add 1 to total query count
@@ -242,11 +259,11 @@ public class StatisticsSearcher extends Searcher {
             metric.add(EMPTY_RESULTS_METRIC, 1, metricContext);
         }
 
-        // Update running averages
-        //setAverages();
+        addRelevanceMetrics(query, execution, result);
 
         return result;
     }
+
 
     private void logQuery(com.yahoo.search.Query query) {
         // Don't parse the query if it's not necessary for the logging Query.toString triggers parsing
@@ -340,6 +357,56 @@ public class StatisticsSearcher extends Searcher {
         // Would be nice to have chain as a dimension as
         // we can separate errors from different chains
         return context;
+    }
+
+    /**
+     * Effectively flattens the hits, and measures relevance @1, @5 and @10
+     */
+    private void addRelevanceMetrics(Query query, Execution execution, Result result) {
+        final int heapCapacity = 10;
+        PriorityQueue<Double> heap = new PriorityQueue<>(heapCapacity);
+        for (Iterator<Hit> it = result.hits().unorderedDeepIterator(); it.hasNext(); ) {
+            Hit hit = it.next();
+            if (hit instanceof ErrorHit || hit.getRelevance() == null) {
+                continue;
+            }
+            double score = hit.getRelevance().getScore();
+            if (Double.isNaN(score)) {
+                continue;
+            }
+            if (heap.size() < heapCapacity) {
+                heap.add(score);
+            } else if (score > heap.peek()) {
+                heap.remove();
+                heap.add(score);
+            }
+        }
+        if (heap.isEmpty()) {
+            return;
+        }
+
+        String chain = execution.chain().getId().stringValue();
+        String rankProfile = query.getRanking().getProfile();
+        Metric.Context metricContext = getRelevanceMetricContext(chain, rankProfile);
+
+        while (heap.size() > 10) {
+            heap.remove();
+        }
+        if (heap.size() == 10) {
+            metric.set("relevance_at_10", heap.poll(), metricContext);
+        }
+        while (heap.size() > 5) {
+            heap.remove();
+        }
+        if (heap.size() == 5) {
+            metric.set("relevance_at_5", heap.poll(), metricContext);
+        }
+        while (heap.size() > 1) {
+            heap.remove();
+        }
+        if (heap.size() == 1) {
+            metric.set("relevance_at_1", heap.poll(), metricContext);
+        }
     }
 
 }
