@@ -452,7 +452,7 @@
         <guava.version>20.0</guava.version>
         <guice.version>3.0</guice.version>
         <jaxb.version>2.3.0</jaxb.version>
-        <jetty.version>9.4.15.v20190215</jetty.version>
+        <jetty.version>9.4.14.v20181114</jetty.version>
         <slf4j.version>1.7.5</slf4j.version>
 
         <!-- These must be kept in sync with version used by current jersey2.version. -->
