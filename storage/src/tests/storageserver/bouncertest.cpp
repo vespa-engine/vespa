@@ -19,7 +19,7 @@ using document::test::makeDocumentBucket;
 namespace storage {
 
 struct BouncerTest : public CppUnit::TestFixture {
-    std::unique_ptr<TestServiceLayerApp> _node;
+    std::unique_ptr<TestStorageApp> _node;
     std::unique_ptr<DummyStorageLink> _upper;
     Bouncer* _manager;
     DummyStorageLink* _lower;
@@ -28,6 +28,8 @@ struct BouncerTest : public CppUnit::TestFixture {
 
     void setUp() override;
     void tearDown() override;
+
+    void setUpAsNode(const lib::NodeType& type);
 
     void testFutureTimestamp();
     void testAllowNotifyBucketChangeEvenWhenDistributorDown();
@@ -40,6 +42,7 @@ struct BouncerTest : public CppUnit::TestFixture {
     void internalOperationsAreNotRejected();
     void outOfBoundsConfigValuesThrowException();
     void abort_request_when_derived_bucket_space_node_state_is_marked_down();
+    void client_operations_are_allowed_through_on_cluster_state_down_distributor();
 
     CPPUNIT_TEST_SUITE(BouncerTest);
     CPPUNIT_TEST(testFutureTimestamp);
@@ -53,6 +56,7 @@ struct BouncerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(internalOperationsAreNotRejected);
     CPPUNIT_TEST(outOfBoundsConfigValuesThrowException);
     CPPUNIT_TEST(abort_request_when_derived_bucket_space_node_state_is_marked_down);
+    CPPUNIT_TEST(client_operations_are_allowed_through_on_cluster_state_down_distributor);
     CPPUNIT_TEST_SUITE_END();
 
     using Priority = api::StorageMessage::Priority;
@@ -81,39 +85,42 @@ CPPUNIT_TEST_SUITE_REGISTRATION(BouncerTest);
 BouncerTest::BouncerTest()
     : _node(),
       _upper(),
-      _manager(0),
-      _lower(0)
+      _manager(nullptr),
+      _lower(nullptr)
 {
 }
 
-void
-BouncerTest::setUp() {
-    try{
-        vdstestlib::DirConfig config(getStandardConfig(true));
-        _node.reset(new TestServiceLayerApp(
-                DiskCount(1), NodeIndex(2), config.getConfigId()));
-        _upper.reset(new DummyStorageLink());
-        _manager = new Bouncer(_node->getComponentRegister(),
-                               config.getConfigId());
-        _lower = new DummyStorageLink();
-        _upper->push_back(std::unique_ptr<StorageLink>(_manager));
-        _upper->push_back(std::unique_ptr<StorageLink>(_lower));
-        _upper->open();
-    } catch (std::exception& e) {
-        std::cerr << "Failed to static initialize objects: " << e.what()
-                  << "\n";
+void BouncerTest::setUpAsNode(const lib::NodeType& type) {
+    vdstestlib::DirConfig config(getStandardConfig(type == lib::NodeType::STORAGE));
+    if (type == lib::NodeType::STORAGE) {
+        _node.reset(new TestServiceLayerApp(DiskCount(1), NodeIndex(2), config.getConfigId()));
+    } else {
+        _node.reset(new TestDistributorApp(NodeIndex(2), config.getConfigId()));
     }
+    _upper.reset(new DummyStorageLink());
+    _manager = new Bouncer(_node->getComponentRegister(), config.getConfigId());
+    _lower = new DummyStorageLink();
+    _upper->push_back(std::unique_ptr<StorageLink>(_manager));
+    _upper->push_back(std::unique_ptr<StorageLink>(_lower));
+    _upper->open();
     _node->getClock().setAbsoluteTimeInSeconds(10);
 }
 
 void
+BouncerTest::setUp() {
+    setUpAsNode(lib::NodeType::STORAGE);
+}
+
+void
 BouncerTest::tearDown() {
-    _manager = 0;
-    _lower = 0;
-    _upper->close();
-    _upper->flush();
-    _upper.reset(0);
-    _node.reset(0);
+    _manager = nullptr;
+    _lower = nullptr;
+    if (_upper) {
+        _upper->close();
+        _upper->flush();
+        _upper.reset();
+    }
+    _node.reset();
 }
 
 std::shared_ptr<api::StorageCommand>
@@ -334,13 +341,31 @@ makeClusterStateBundle(const vespalib::string &baselineState, const std::map<doc
 void
 BouncerTest::abort_request_when_derived_bucket_space_node_state_is_marked_down()
 {
+    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _manager->metrics().unavailable_node_aborts.getValue());
+
     auto state = makeClusterStateBundle("distributor:3 storage:3", {{ document::FixedBucketSpaces::default_space(), "distributor:3 storage:3 .2.s:d" }});
     _node->getNodeStateUpdater().setClusterStateBundle(state);
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space()));
     assertMessageBouncedWithAbort();
+    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _manager->metrics().unavailable_node_aborts.getValue());
+
     _upper->reset();
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::global_space()));
     assertMessageNotBounced();
+    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _manager->metrics().unavailable_node_aborts.getValue());
+}
+
+void BouncerTest::client_operations_are_allowed_through_on_cluster_state_down_distributor() {
+    tearDown();
+    setUpAsNode(lib::NodeType::DISTRIBUTOR);
+
+    // Distributor states never vary across bucket spaces, so not necessary to test with
+    // anything except baseline state here.
+    auto state = makeClusterStateBundle("distributor:3 .2.s:d storage:3", {});
+    _node->getNodeStateUpdater().setClusterStateBundle(state);
+    _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space()));
+    assertMessageNotBounced();
+    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _manager->metrics().unavailable_node_aborts.getValue());
 }
 
 } // storage

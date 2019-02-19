@@ -118,6 +118,7 @@ Bouncer::abortCommandForUnavailableNode(api::StorageMessage& msg,
         << " when node is in state " << state.toString(true);
     append_node_identity(ost);
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, ost.str()));
+    _metrics->unavailable_node_aborts.inc();
     sendUp(reply);
 }
 
@@ -156,6 +157,10 @@ bool
 Bouncer::clusterIsUp() const
 {
     return (*_clusterState == lib::State::UP);
+}
+
+bool Bouncer::isDistributor() const {
+    return (_component.getNodeType() == lib::NodeType::DISTRIBUTOR);
 }
 
 uint64_t
@@ -243,12 +248,11 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     int feedPriorityLowerBound;
     {
         vespalib::LockGuard lock(_lock);
-        state = &getDerivedNodeState(msg->getBucket().getBucketSpace()).getState();
-        maxClockSkewInSeconds = _config->maxClockSkewSeconds;
+        state                    = &getDerivedNodeState(msg->getBucket().getBucketSpace()).getState();
+        maxClockSkewInSeconds    = _config->maxClockSkewSeconds;
         abortLoadWhenClusterDown = _config->stopExternalLoadWhenClusterDown;
-        isInAvailableState = state->oneOf(
-                _config->stopAllLoadWhenNodestateNotIn.c_str());
-        feedPriorityLowerBound = _config->feedRejectionPriorityThreshold;
+        isInAvailableState       = state->oneOf(_config->stopAllLoadWhenNodestateNotIn.c_str());
+        feedPriorityLowerBound   = _config->feedRejectionPriorityThreshold;
     }
     // Special case for messages storage nodes are expected to get during
     // initializing. Request bucket info will be queued so storage can
@@ -258,13 +262,14 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     {
         return false;
     }
-    if (!isInAvailableState) {
+    const bool externalLoad = isExternalLoad(type);
+    if (!isInAvailableState && !(isDistributor() && externalLoad)) {
         abortCommandForUnavailableNode(*msg, *state);
         return true;
     }
 
     // Allow all internal load to go through at this point
-    if (!isExternalLoad(type)) {
+    if (!externalLoad) {
         return false;
     }
     if (priorityRejectionIsEnabled(feedPriorityLowerBound)

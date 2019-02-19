@@ -248,8 +248,7 @@ TestDistributorApp::configure(vespalib::stringref id)
 
 TestDistributorApp::TestDistributorApp(vespalib::stringref configId)
     : TestStorageApp(
-            StorageComponentRegisterImpl::UP(
-                new DistributorComponentRegisterImpl),
+            std::make_unique<DistributorComponentRegisterImpl>(),
             lib::NodeType::DISTRIBUTOR, getIndexFromConfig(configId), configId),
       _compReg(dynamic_cast<DistributorComponentRegisterImpl&>(
                     TestStorageApp::getComponentRegister())),
@@ -263,7 +262,7 @@ TestDistributorApp::TestDistributorApp(vespalib::stringref configId)
 TestDistributorApp::TestDistributorApp(NodeIndex index,
                                        vespalib::stringref configId)
     : TestStorageApp(
-            StorageComponentRegisterImpl::UP(new StorageComponentRegisterImpl),
+            std::make_unique<DistributorComponentRegisterImpl>(),
             lib::NodeType::DISTRIBUTOR, index, configId),
       _compReg(dynamic_cast<DistributorComponentRegisterImpl&>(
                     TestStorageApp::getComponentRegister())),

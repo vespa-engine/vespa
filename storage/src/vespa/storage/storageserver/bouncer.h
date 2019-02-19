@@ -70,6 +70,8 @@ private:
 
     bool clusterIsUp() const;
 
+    bool isDistributor() const;
+
     bool isExternalLoad(const api::MessageType&) const noexcept;
 
     bool isExternalWriteOperation(const api::MessageType&) const noexcept;

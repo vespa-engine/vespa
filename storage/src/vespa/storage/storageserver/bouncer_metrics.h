@@ -8,6 +8,7 @@ namespace storage {
 
 struct BouncerMetrics : metrics::MetricSet {
     metrics::LongCountMetric clock_skew_aborts;
+    metrics::LongCountMetric unavailable_node_aborts;
 
     BouncerMetrics();
     ~BouncerMetrics() override;
