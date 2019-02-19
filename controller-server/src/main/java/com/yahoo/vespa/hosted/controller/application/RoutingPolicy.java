@@ -56,6 +56,7 @@ public class RoutingPolicy {
     }
 
     /** The ID of the DNS record identifying this */
+    // TODO: Remove this field as it's no longer needed
     public String recordId() {
         return recordId;
     }

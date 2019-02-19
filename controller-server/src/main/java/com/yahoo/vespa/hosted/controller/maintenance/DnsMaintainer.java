@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Performs DNS maintenance tasks such as removing DNS aliases for unassigned rotations.
@@ -53,14 +54,12 @@ public class DnsMaintainer extends Maintainer {
     /** Remove DNS alias for unassigned rotation */
     private void removeDnsAlias(Rotation rotation) {
         // When looking up CNAME by data, the data must be a FQDN
-        nameService.findRecords(Record.Type.CNAME, RecordData.fqdn(rotation.name())).stream()
-                   .filter(DnsMaintainer::canUpdate)
-                   .forEach(record -> {
-                       log.info(String.format("Removing DNS record %s (%s) because it points to the unassigned " +
-                                              "rotation %s (%s)", record.id().asString(),
-                                              record.name().asString(), rotation.id().asString(), rotation.name()));
-                       nameService.removeRecord(record.id());
-                   });
+        List<Record> records = nameService.findRecords(Record.Type.CNAME, RecordData.fqdn(rotation.name())).stream()
+                                          .filter(DnsMaintainer::canUpdate)
+                                          .collect(Collectors.toList());
+        log.info(String.format("Removing DNS records %s because they point to the unassigned " +
+                               "rotation %s (%s)", records, rotation.id().asString(), rotation.name()));
+        nameService.removeRecords(records);
     }
 
     /**

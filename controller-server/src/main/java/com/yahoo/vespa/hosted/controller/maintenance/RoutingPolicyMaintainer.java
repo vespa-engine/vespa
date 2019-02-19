@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.GlobalDnsName;
@@ -141,16 +140,14 @@ public class RoutingPolicyMaintainer extends Maintainer {
             throw new IllegalStateException("Found more than 1 CNAME record for " + name.asString() + ": " + existingRecords);
         }
         Optional<Record> record = existingRecords.stream().findFirst();
-        RecordId id;
         if (record.isPresent()) {
-            id = record.get().id();
             if (!record.get().data().equals(data)) {
-                nameService.updateRecord(id, data);
+                nameService.updateRecord(record.get(), data);
             }
         } else {
-            id = nameService.createCname(name, data);
+            nameService.createCname(name, data);
         }
-        return new RoutingPolicy(application, zone, id.asString(), alias, loadBalancer.hostname(),
+        return new RoutingPolicy(application, zone, "fake-id" + alias, alias, loadBalancer.hostname(),
                                  loadBalancer.dnsZone(), loadBalancer.rotations());
     }
 
@@ -167,9 +164,10 @@ public class RoutingPolicyMaintainer extends Maintainer {
             removalCandidates.removeIf(policy -> activeLoadBalancers.contains(policy.canonicalName()));
             for (RoutingPolicy policy : removalCandidates) {
                 try {
-                    nameService.removeRecord(new RecordId(policy.recordId()));
+                    List<Record> records = nameService.findRecords(Record.Type.CNAME, RecordName.from(policy.alias().value()));
+                    nameService.removeRecords(records);
                 } catch (Exception e) {
-                    log.log(LogLevel.WARNING, "Failed to remove CNAME record with ID '" + policy.recordId() +
+                    log.log(LogLevel.WARNING, "Failed to remove record '" + policy.alias() +
                                               "'. Retrying in " + maintenanceInterval());
                 }
             }
@@ -186,7 +184,7 @@ public class RoutingPolicyMaintainer extends Maintainer {
                 GlobalDnsName dnsName = dnsName(id);
                 try {
                     List<Record> records = nameService.findRecords(Record.Type.ALIAS, RecordName.from(dnsName.oathDnsName()));
-                    records.stream().map(Record::id).forEach(nameService::removeRecord);
+                    nameService.removeRecords(records);
                 } catch (Exception e) {
                     log.log(LogLevel.WARNING, "Failed to remove all ALIAS records with name '" + dnsName.oathDnsName() +
                                               "'. Retrying in " + maintenanceInterval());

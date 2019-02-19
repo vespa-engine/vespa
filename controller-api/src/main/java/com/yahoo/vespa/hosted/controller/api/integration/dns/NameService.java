@@ -14,24 +14,31 @@ public interface NameService {
     /**
      * Create a new CNAME record
      *
-     * @param alias The alias to create
-     * @param canonicalName The canonical name which the alias should point to. This must be a FQDN.
+     * @param name          The alias to create (lhs of the record)
+     * @param canonicalName The canonical name which the alias should point to (rhs of the record). This must be a FQDN.
+     * @return The created record
      */
-    RecordId createCname(RecordName alias, RecordData canonicalName);
+    Record createCname(RecordName name, RecordData canonicalName);
 
-    /** Create a non-standard ALIAS record pointing to given targets. Implementations of this are expected to be idempotent */
-    RecordId createAlias(RecordName name, Set<AliasTarget> targets);
+    /**
+     * Create a non-standard ALIAS record pointing to given targets. Implementations of this can be expected to be
+     * idempotent
+     *
+     * @param targets Targets that should be resolved by this alias. pointing to given targets.
+     * @return The created records. One for each target.
+     */
+    List<Record> createAlias(RecordName name, Set<AliasTarget> targets);
 
-    /** Find records matching type and name */
+    /** Find all records matching given type and name */
     List<Record> findRecords(Record.Type type, RecordName name);
 
-    /** Find records matching type and data */
+    /** Find all records matching given type and data */
     List<Record> findRecords(Record.Type type, RecordData data);
 
     /** Update existing record */
-    void updateRecord(RecordId id, RecordData newData);
+    void updateRecord(Record record, RecordData newData);
 
-    /** Remove record by ID */
-    void removeRecord(RecordId id);
+    /** Remove given record(s) */
+    void removeRecords(List<Record> record);
 
 }

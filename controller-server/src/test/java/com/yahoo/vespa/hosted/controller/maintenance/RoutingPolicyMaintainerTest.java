@@ -21,7 +21,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -194,8 +193,7 @@ public class RoutingPolicyMaintainerTest {
     }
 
     private Set<String> recordNames() {
-        return tester.controllerTester().nameService().records().values().stream()
-                     .flatMap(Collection::stream)
+        return tester.controllerTester().nameService().records().stream()
                      .map(Record::name)
                      .map(RecordName::asString)
                      .collect(Collectors.toSet());

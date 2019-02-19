@@ -10,7 +10,7 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class RecordData {
+public class RecordData implements Comparable<RecordData> {
 
     private final String data;
 
@@ -40,7 +40,7 @@ public class RecordData {
         return data;
     }
 
-    /** Create a new record containing the given data */
+    /** Create data containing the given data */
     public static RecordData from(String data) {
         return new RecordData(data);
     }
@@ -48,6 +48,11 @@ public class RecordData {
     /** Create a new record and append a trailing dot to given data, if missing */
     public static RecordData fqdn(String data) {
         return from(data.endsWith(".") ? data : data + ".");
+    }
+
+    @Override
+    public int compareTo(RecordData that) {
+        return this.data.compareTo(that.data);
     }
 
 }
