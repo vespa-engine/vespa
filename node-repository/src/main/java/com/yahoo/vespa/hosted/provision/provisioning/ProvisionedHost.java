@@ -30,13 +30,33 @@ public class ProvisionedHost {
     }
 
     /** Generate {@link Node} instance representing the provisioned physical host */
-    Node generateHost() {
+    public Node generateHost() {
         return Node.create(id, Set.of(), Set.of(), hostHostname, Optional.empty(), hostFlavor, NodeType.host);
     }
 
     /** Generate {@link Node} instance representing the node running on this physical host */
-    Node generateNode() {
+    public Node generateNode() {
         return Node.createDockerNode(Set.of(), Set.of(), nodeHostname, Optional.of(hostHostname), nodeFlavor, NodeType.tenant);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getHostHostname() {
+        return hostHostname;
+    }
+
+    public Flavor getHostFlavor() {
+        return hostFlavor;
+    }
+
+    public String getNodeHostname() {
+        return nodeHostname;
+    }
+
+    public Flavor getNodeFlavor() {
+        return nodeFlavor;
     }
 
     @Override
