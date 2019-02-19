@@ -37,8 +37,8 @@ qrs.env string default="" restart
 ## Set ulimit -v in start script? this is mainly a safeguard against JNI stuff leaking memory.
 ulimitv string default="" restart
 
-## Extra class path entries, forwarded to jdisc_start. Overrides the corresponding env setting.
+## Extra class path entries, forwarded to vespa-start-container_daemon. Overrides the corresponding env setting.
 jdisc.classpath_extra string default="" restart
 
-## Extra export packages entries, forwarded to jdisc_start. Overrides the corresponding env setting.
+## Extra export packages entries, forwarded to vespa-start-container_daemon. Overrides the corresponding env setting.
 jdisc.export_packages string default="" restart
