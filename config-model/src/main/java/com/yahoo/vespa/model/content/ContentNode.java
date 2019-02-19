@@ -59,11 +59,7 @@ public abstract class ContentNode extends AbstractService
 
     @Override
     public String[] getPortSuffixes() {
-        String[] suffixes = new String[3];
-        suffixes[0] = "messaging";
-        suffixes[1] = "rpc";
-        suffixes[2] = "http";
-        return suffixes;
+        return new String[] { "messaging", "rpc", "http" };
     }
 
     @Override

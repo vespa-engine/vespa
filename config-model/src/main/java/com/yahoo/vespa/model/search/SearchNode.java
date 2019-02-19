@@ -162,15 +162,8 @@ public class SearchNode extends AbstractService implements
 
     @Override
     public String[] getPortSuffixes() {
-        String[] suffixes = new String[5];
-        suffixes[0] = "rpc";
-        suffixes[1] = "fs4";
-        suffixes[2] = "future/4";
-        suffixes[3] = "unused/3";
-        suffixes[4] = "health";
-        return suffixes;
+        return new String[] { "rpc", "fs4", "future/4", "unused/3", "health" };
     }
-
 
     /**
      * Returns the RPC port used by this searchnode.

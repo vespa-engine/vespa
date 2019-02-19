@@ -34,9 +34,7 @@ public class Logd
 
     @Override
     public String[] getPortSuffixes() {
-        String[] suffixes = new String[1];
-        suffixes[0] = "http";
-        return suffixes;
+        return new String[]{"http"};
     }
 
     /** Returns the desired base port for this service.  */

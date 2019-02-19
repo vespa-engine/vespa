@@ -72,12 +72,7 @@ public class Logserver extends AbstractService {
 
     @Override
     public String[] getPortSuffixes() {
-        String[] suffixes = new String[4];
-        suffixes[0] = "unused";
-        suffixes[1] = "logtp";
-        suffixes[2] = "last.errors";
-        suffixes[3] = "replicator";
-        return suffixes;
+        return new String[]{ "unused", "logtp", "last.errors", "replicator" };
     }
 
 }

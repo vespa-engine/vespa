@@ -40,9 +40,7 @@ public class TransactionLogServer extends AbstractService  {
 
     @Override
     public String[] getPortSuffixes() {
-        String[] suffixes = new String[1];
-        suffixes[0] = "tls";
-        return suffixes;
+        return new String[]{"tls"};
     }
 
     /**

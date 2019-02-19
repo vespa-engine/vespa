@@ -40,13 +40,7 @@ public class SimpleService extends AbstractService implements com.yahoo.test.Sta
 
     @Override
     public String[] getPortSuffixes() {
-        String[] suffixes = new String[5];
-        suffixes[0] = "a";
-        suffixes[1] = "b";
-        suffixes[2] = "c";
-        suffixes[3] = "d";
-        suffixes[4] = "e";
-        return suffixes;
+        return new String[]{ "a", "b", "c", "d", "e" };
     }
 
     // Make sure this service is listed in the sentinel config

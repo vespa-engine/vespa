@@ -49,9 +49,7 @@ public class ConfigProxy extends AbstractService {
 
     @Override
     public String[] getPortSuffixes() {
-        String[] suffixes = new String[1];
-        suffixes[0] = "rpc";
-        return suffixes;
+        return new String[]{"rpc"};
     }
 
     /**

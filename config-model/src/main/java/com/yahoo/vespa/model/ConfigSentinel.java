@@ -49,10 +49,7 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
 
     @Override
     public String[] getPortSuffixes() {
-        String[] suffixes = new String[2];
-        suffixes[0] = "rpc";
-        suffixes[1] = "http";
-        return suffixes;
+        return new String[]{ "rpc", "http" };
     }
 
     @Override

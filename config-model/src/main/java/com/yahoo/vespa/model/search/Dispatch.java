@@ -237,11 +237,7 @@ public class Dispatch extends AbstractService implements SearchInterface,
 
     @Override
     public String[] getPortSuffixes() {
-        String[] suffixes = new String[3];
-        suffixes[0] = "rpc";
-        suffixes[1] = "fs4";
-        suffixes[2] = "health";
-        return suffixes;
+        return new String[]{ "rpc", "fs4", "health" };
     }
 
 }
