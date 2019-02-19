@@ -2,6 +2,9 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
@@ -32,8 +35,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 public class HostDeprovisionMaintainerTest {
     private final HostProvisionerTester tester = new HostProvisionerTester();
     private final HostProvisioner hostProvisioner = mock(HostProvisioner.class);
+    private final FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true);
     private final HostDeprovisionMaintainer maintainer = new HostDeprovisionMaintainer(
-            tester.nodeRepository(), Duration.ofDays(1), tester.jobControl(), hostProvisioner);
+            tester.nodeRepository(), Duration.ofDays(1), tester.jobControl(), hostProvisioner, flagSource);
 
     @Test
     public void removes_nodes_if_successful() {

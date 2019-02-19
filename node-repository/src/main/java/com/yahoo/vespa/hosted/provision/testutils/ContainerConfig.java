@@ -26,6 +26,7 @@ public class ContainerConfig {
                "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance'/>\n" +
+               "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
                "  <component id='com.yahoo.config.provision.Zone'/>\n" +
                "  <handler id='com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler'>\n" +
                "    <binding>http://*/nodes/v2/*</binding>\n" +

@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetireIPv4OnlyNodes;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
@@ -64,16 +65,17 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig,
                                      DuperModelInfraApi duperModelInfraApi,
-                                     ProvisionServiceProvider provisionServiceProvider) {
+                                     ProvisionServiceProvider provisionServiceProvider,
+                                     FlagSource flagSource) {
         this(nodeRepository, deployer, provisioner, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
-                orchestrator, metric, configserverConfig, duperModelInfraApi, provisionServiceProvider);
+                orchestrator, metric, configserverConfig, duperModelInfraApi, provisionServiceProvider, flagSource);
     }
 
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Provisioner provisioner,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig, DuperModelInfraApi duperModelInfraApi,
-                                     ProvisionServiceProvider provisionServiceProvider) {
+                                     ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
         DefaultTimes defaults = new DefaultTimes(zone);
         jobControl = new JobControl(nodeRepository.database());
         infrastructureVersions = new InfrastructureVersions(nodeRepository.database());
@@ -93,9 +95,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService().map(lbService ->
                 new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expiry").orElse(defaults.loadBalancerExpiry), jobControl, lbService));
         hostProvisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
-                new HostProvisionMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.hostProvisionerInterval), jobControl, hostProvisioner));
+                new HostProvisionMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.hostProvisionerInterval), jobControl, hostProvisioner, flagSource));
         hostDeprovisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
-                new HostDeprovisionMaintainer(nodeRepository, durationFromEnv("host_deprovisioner_interval").orElse(defaults.hostDeprovisionerInterval), jobControl, hostProvisioner));
+                new HostDeprovisionMaintainer(nodeRepository, durationFromEnv("host_deprovisioner_interval").orElse(defaults.hostDeprovisionerInterval), jobControl, hostProvisioner, flagSource));
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintain();
