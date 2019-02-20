@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -153,17 +154,18 @@ class NodesResponse extends HttpResponse {
         object.setBool("fastDisk", node.flavor().hasFastDisk());
         object.setDouble("bandwidth", node.flavor().getBandwidth());
         object.setString("environment", node.flavor().getType().name());
-        if (node.allocation().isPresent()) {
-            toSlime(node.allocation().get().owner(), object.setObject("owner"));
-            toSlime(node.allocation().get().membership(), object.setObject("membership"));
-            object.setLong("restartGeneration", node.allocation().get().restartGeneration().wanted());
-            object.setLong("currentRestartGeneration", node.allocation().get().restartGeneration().current());
-            object.setString("wantedDockerImage", nodeRepository.dockerImage().withTag(node.allocation().get().membership().cluster().vespaVersion()).asString());
-            object.setString("wantedVespaVersion", node.allocation().get().membership().cluster().vespaVersion().toFullString());
+        node.allocation().ifPresent(allocation -> {
+            toSlime(allocation.owner(), object.setObject("owner"));
+            toSlime(allocation.membership(), object.setObject("membership"));
+            object.setLong("restartGeneration", allocation.restartGeneration().wanted());
+            object.setLong("currentRestartGeneration", allocation.restartGeneration().current());
+            object.setString("wantedDockerImage", nodeRepository.dockerImage().withTag(allocation.membership().cluster().vespaVersion()).asString());
+            object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
+            allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
             orchestrator.apply(new HostName(node.hostname()))
                         .map(status -> status == HostStatus.ALLOWED_TO_BE_DOWN)
                         .ifPresent(allowedToBeDown -> object.setBool("allowedToBeDown", allowedToBeDown));
-        }
+        });
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());
         node.status().osVersion().ifPresent(version -> object.setString("currentOsVersion", version.toFullString()));
