@@ -236,9 +236,11 @@ public class JobController {
                            .map(Deployment::applicationVersion)
                            .distinct()
                            .forEach(appVersion -> {
-                               byte[] content = controller.applications().artifacts().getApplicationPackage(application.get().id(), appVersion.id());
-                               controller.applications().applicationStore().put(application.get().id(), appVersion, content);
+                               byte[] content = controller.applications().artifacts().getApplicationPackage(id, appVersion.id());
+                               controller.applications().applicationStore().put(id, appVersion, content);
                            });
+                // Make sure any ongoing upgrade is cancelled, since future jobs will require the tester artifact.
+                application = application.withChange(application.get().change().withoutPlatform().withoutApplication());
             }
 
             long run = nextBuild(id);
