@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.DoubleBinaryOperator;
 import java.util.stream.Collectors;
 
 /**
@@ -70,13 +71,17 @@ public class MixedTensor implements Tensor {
         return cells.iterator();
     }
 
+    private Iterable<Cell> cellIterable() {
+        return this::cellIterator;
+    }
+
     /**
      * Returns an iterator over the values of this tensor.
      * The iteration order is the same as for cellIterator.
      */
     @Override
     public Iterator<Double> valueIterator() {
-        return new Iterator<Double>() {
+        return new Iterator<>() {
             Iterator<Cell> cellIterator = cellIterator();
             @Override
             public boolean hasNext() {
@@ -105,6 +110,20 @@ public class MixedTensor implements Tensor {
                     this.type.toString() + "', requested type: '" + type.toString() + "'");
         }
         return new MixedTensor(other, cells, index);
+    }
+
+    @Override
+    public Tensor merge(DoubleBinaryOperator op, Map<TensorAddress, Double> addCells) {
+        Tensor.Builder builder = Tensor.Builder.of(type());
+        for (Cell cell  : cellIterable()) {
+            TensorAddress address = cell.getKey();
+            double value = cell.getValue();
+            builder.cell(address, addCells.containsKey(address) ? op.applyAsDouble(value, addCells.get(address)) : value);
+        }
+        for (Map.Entry<TensorAddress, Double> addCell : addCells.entrySet()) {
+            builder.cell(addCell.getKey(), addCell.getValue());
+        }
+        return builder.build();
     }
 
     @Override

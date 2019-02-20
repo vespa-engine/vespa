@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.DoubleBinaryOperator;
 
 /**
  * An indexed (dense) tensor backed by a double array.
@@ -187,6 +188,11 @@ public class IndexedTensor implements Tensor {
             builder.put(indexes.toAddress(), values[(int)i]);
         }
         return builder.build();
+    }
+
+    @Override
+    public Tensor merge(DoubleBinaryOperator op, Map<TensorAddress, Double> cells) {
+        throw new IllegalArgumentException("Merge is not supported for indexed tensors");
     }
 
     @Override

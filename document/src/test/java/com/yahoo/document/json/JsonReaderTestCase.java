@@ -56,6 +56,7 @@ import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -1449,11 +1450,29 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void tensor_add_update_on_non_sparse_tensor_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("An add update can only be applied to sparse tensors. Field 'mixed_tensor' has unsupported tensor type 'tensor(x{},y[3])'");
+    public void tensor_add_update_on_mixed_tensor() {
+        assertTensorAddUpdate("{{x:a,y:0}:2.0, {x:a,y:1}:3.0}", "mixed_tensor",
+                inputJson("{",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 },",
+                        "    { 'address': { 'x': 'a', 'y': '1' }, 'value': 3.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_add_update_with_out_of_bound_dense_cells_throws() {
+        exception.expect(IndexOutOfBoundsException.class);
+        exception.expectMessage("Dimension 'y' has label '3' but type is tensor(x{},y[3])");
         createTensorAddUpdate(inputJson("{",
-                "  'cells': [] }"), "mixed_tensor");
+                "  'cells': [",
+                "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}"), "mixed_tensor");
+    }
+
+    @Test
+    public void tensor_add_update_on_dense_tensor_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("An add update can only be applied to tensors with at least one sparse dimension. Field 'dense_tensor' has unsupported tensor type 'tensor(x[2],y[3])'");
+        createTensorAddUpdate(inputJson("{",
+                "  'cells': [] }"), "dense_tensor");
     }
 
     @Test
@@ -1481,12 +1500,22 @@ public class JsonReaderTestCase {
                         "    { 'x': 'c', 'y': 'd' } ]}"));
     }
 
+    @Ignore
     @Test
-    public void tensor_remove_update_on_non_sparse_tensor_throws() {
+    public void tensor_remove_update_on_mixed_tensor() {
+        assertTensorRemoveUpdate("{{x:1}:1.0,{x:2}:1.0}", "mixed_tensor",
+                inputJson("{",
+                        "  'addresses': [",
+                        "    { 'x': '1' },",
+                        "    { 'x': '2' } ]}"));
+    }
+
+    @Test
+    public void tensor_remove_update_on_dense_tensor_throws() {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("A remove update can only be applied to sparse tensors. Field 'mixed_tensor' has unsupported tensor type 'tensor(x{},y[3])'");
+        exception.expectMessage("A remove update can only be applied to sparse tensors. Field 'dense_tensor' has unsupported tensor type 'tensor(x[2],y[3])'");
         createTensorRemoveUpdate(inputJson("{",
-                "  'addresses': [] }"), "mixed_tensor");
+                "  'addresses': [] }"), "dense_tensor");
     }
 
     @Test

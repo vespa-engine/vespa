@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.DoubleBinaryOperator;
 
 /**
  * A sparse implementation of a tensor backed by a Map of cells to values.
@@ -48,6 +49,25 @@ public class MappedTensor implements Tensor {
                     this.type.toString() + "', requested type: '" + type.toString() + "'");
         }
         return new MappedTensor(other, cells);
+    }
+
+    @Override
+    public Tensor merge(DoubleBinaryOperator op, Map<TensorAddress, Double> addCells) {
+
+        // currently, underlying implementation disallows multiple entries with the same key
+
+        Tensor.Builder builder = Tensor.Builder.of(type());
+        for (Map.Entry<TensorAddress, Double> cell  : cells.entrySet()) {
+            TensorAddress address = cell.getKey();
+            double value = cell.getValue();
+            builder.cell(address, addCells.containsKey(address) ? op.applyAsDouble(value, addCells.get(address)) : value);
+        }
+        for (Map.Entry<TensorAddress, Double> addCell : addCells.entrySet()) {
+            if ( ! cells.containsKey(addCell.getKey())) {
+                builder.cell(addCell.getKey(), addCell.getValue());
+            }
+        }
+        return builder.build();
     }
 
     @Override

@@ -129,25 +129,26 @@ public class TensorModifyUpdateReader {
 
         validateBounds(tensor, originalType);
 
-        TensorFieldValue result = new TensorFieldValue(convertedType);
-        result.assign(tensor);
-        return result;
+        return new TensorFieldValue(tensor);
     }
 
-    /** Only validate if original type is indexed bound */
-    private static void validateBounds(Tensor convertedTensor, TensorType originalType) {
-        if ( ! originalType.dimensions().stream().allMatch(d -> d instanceof TensorType.IndexedBoundDimension)) {
+    /** Only validate if original type has indexed bound dimensions */
+    static void validateBounds(Tensor convertedTensor, TensorType originalType) {
+        if (originalType.dimensions().stream().noneMatch(d -> d instanceof TensorType.IndexedBoundDimension)) {
             return;
         }
         for (Iterator<Tensor.Cell> iter = convertedTensor.cellIterator(); iter.hasNext(); ) {
             Tensor.Cell cell = iter.next();
             TensorAddress address = cell.getKey();
             for (int i = 0; i < address.size(); ++i) {
-                long label = address.numericLabel(i);
-                long bound = originalType.dimensions().get(i).size().get();  // size is non-optional for indexed bound
-                if (label >= bound) {
-                    throw new IndexOutOfBoundsException("Dimension '" + originalType.dimensions().get(i).name() +
-                            "' has label '" + label + "' but type is " + originalType.toString());
+                TensorType.Dimension dim = originalType.dimensions().get(i);
+                if (dim instanceof TensorType.IndexedBoundDimension) {
+                    long label = address.numericLabel(i);
+                    long bound = dim.size().get();  // size is non-optional for indexed bound
+                    if (label >= bound) {
+                        throw new IndexOutOfBoundsException("Dimension '" + originalType.dimensions().get(i).name() +
+                                "' has label '" + label + "' but type is " + originalType.toString());
+                    }
                 }
             }
         }

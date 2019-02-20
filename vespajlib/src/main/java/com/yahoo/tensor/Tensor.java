@@ -113,6 +113,20 @@ public interface Tensor {
         return builder.build();
     }
 
+    /**
+     * Returns a new tensor where existing cells in this tensor have been
+     * modified according to the given operation and cells in the given map.
+     * In contrast to {@link #modify}, previously non-existing cells are added
+     * to this tensor. Only valid for sparse or mixed tensors.
+     *
+     * @param op how to update overlapping cells
+     * @param cells cells to merge with this tensor
+     * @return a new tensor where this tensor is merged with the other
+     */
+    Tensor merge(DoubleBinaryOperator op, Map<TensorAddress, Double> cells);
+
+//    Tensor remove(Tensor other);
+
     // ----------------- Primitive tensor functions
 
     default Tensor map(DoubleUnaryOperator mapper) {

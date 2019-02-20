@@ -6,10 +6,15 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.TensorAddUpdate;
+import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
+import java.util.Iterator;
+
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
+import static com.yahoo.document.json.readers.TensorModifyUpdateReader.validateBounds;
 import static com.yahoo.document.json.readers.TensorReader.fillTensor;
 
 /**
@@ -23,22 +28,27 @@ public class TensorAddUpdateReader {
 
     public static TensorAddUpdate createTensorAddUpdate(TokenBuffer buffer, Field field) {
         expectObjectStart(buffer.currentToken());
-        expectTensorTypeIsSparse(field);
+        expectTensorTypeHasSparseDimensions(field);
 
+        // Convert update type to sparse
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
-        TensorType tensorType = tensorDataType.getTensorType();
-        TensorFieldValue tensorFieldValue = new TensorFieldValue(tensorType);
+        TensorType originalType = tensorDataType.getTensorType();
+        TensorType convertedType = TensorModifyUpdate.convertToCompatibleType(originalType);
+
+        TensorFieldValue tensorFieldValue = new TensorFieldValue(convertedType);
         fillTensor(buffer, tensorFieldValue);
         expectTensorIsNonEmpty(field, tensorFieldValue.getTensor().get());
+        validateBounds(tensorFieldValue.getTensor().get(), originalType);
+
         return new TensorAddUpdate(tensorFieldValue);
     }
 
-    private static void expectTensorTypeIsSparse(Field field) {
+    private static void expectTensorTypeHasSparseDimensions(Field field) {
         TensorType tensorType = ((TensorDataType)field.getDataType()).getTensorType();
-        if (tensorType.dimensions().stream()
-                .anyMatch(dim -> dim.isIndexed())) {
-            throw new IllegalArgumentException("An add update can only be applied to sparse tensors. "
-                    + "Field '" + field.getName() + "' has unsupported tensor type '" + tensorType + "'");
+        if (tensorType.dimensions().stream().allMatch(TensorType.Dimension::isIndexed)) {
+            throw new IllegalArgumentException("An add update can only be applied to tensors " +
+                    "with at least one sparse dimension. Field '" + field.getName() +
+                    "' has unsupported tensor type '" + tensorType + "'");
         }
     }
 
@@ -47,6 +57,5 @@ public class TensorAddUpdateReader {
             throw new IllegalArgumentException("Add update for field '" + field.getName() + "' does not contain tensor cells");
         }
     }
-
 
 }
