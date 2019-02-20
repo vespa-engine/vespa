@@ -7,9 +7,7 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 
-import java.util.Map;
 import java.util.Objects;
 
 /**

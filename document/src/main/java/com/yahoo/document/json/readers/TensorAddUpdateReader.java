@@ -8,10 +8,7 @@ import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-
-import java.util.Iterator;
 
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
 import static com.yahoo.document.json.readers.TensorModifyUpdateReader.validateBounds;
