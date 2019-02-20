@@ -46,10 +46,12 @@ public class ServiceModelCache implements Supplier<ServiceModel> {
                 updatePossiblyInProgress = true;
             }
 
-            takeSnapshot();
-
-            synchronized (updateMonitor) {
-                updatePossiblyInProgress = false;
+            try {
+                takeSnapshot();
+            } finally {
+                synchronized (updateMonitor) {
+                    updatePossiblyInProgress = false;
+                }
             }
         }
 
