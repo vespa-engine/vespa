@@ -32,7 +32,6 @@ public class TensorModifyUpdateReader {
 
         expectFieldIsOfTypeTensor(field);
         expectTensorTypeHasNoneIndexedUnboundDimensions(field);
-        expectTensorTypeIsNotMixed(field);
         expectObjectStart(buffer.currentToken());
 
         ModifyUpdateResult result = createModifyUpdateResult(buffer, field);
@@ -55,16 +54,6 @@ public class TensorModifyUpdateReader {
                 .anyMatch(dim -> dim.type().equals(TensorType.Dimension.Type.indexedUnbound))) {
             throw new IllegalArgumentException("A modify update cannot be applied to tensor types with indexed unbound dimensions. "
                     + "Field '" + field.getName() + "' has unsupported tensor type '" + tensorType + "'");
-        }
-    }
-
-    private static void expectTensorTypeIsNotMixed(Field field) {
-        TensorType tensorType = ((TensorDataType)field.getDataType()).getTensorType();
-        long numMappedDimensions = tensorType.dimensions().stream().filter(dim -> dim.type().equals(TensorType.Dimension.Type.mapped)).count();
-        long numIndexedDimensions = tensorType.dimensions().stream().filter(dim -> dim.isIndexed()).count();
-        if (numMappedDimensions > 0 && numIndexedDimensions > 0) {
-            throw new IllegalArgumentException("A modify update cannot be applied to tensor types with mixed dimensions. "
-                    + "Field '" + field.getName() + "' has mixed tensor type '" + tensorType + "'");
         }
     }
 

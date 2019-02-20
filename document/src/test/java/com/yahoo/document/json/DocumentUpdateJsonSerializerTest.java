@@ -338,6 +338,26 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
+    public void test_tensor_modify_update_on_mixed_tensor() {
+        roundtripSerializeJsonAndMatch(inputJson(
+                "{",
+                "  'update': 'DOCUMENT_ID',",
+                "  'fields': {",
+                "    'mixed_tensor': {",
+                "      'modify': {",
+                "        'operation': 'multiply',",
+                "        'cells': [",
+                "          { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 },",
+                "          { 'address': { 'x': 'c', 'y': '1' }, 'value': 3.0 }",
+                "        ]",
+                "      }",
+                "    }",
+                "  }",
+                "}"
+        ));
+    }
+
+    @Test
     public void test_tensor_add_update() {
         roundtripSerializeJsonAndMatch(inputJson(
                 "{",

@@ -36,7 +36,10 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
             throw new DeserializationException("Expected tensor data type, got " + type);
         }
         TensorDataType tensorDataType = (TensorDataType)type;
-        TensorFieldValue tensor = new TensorFieldValue(TensorModifyUpdate.convertToCompatibleType(tensorDataType.getTensorType()));
+        TensorType tensorType = tensorDataType.getTensorType();
+        TensorType convertedType = TensorModifyUpdate.convertToCompatibleType(tensorType);
+
+        TensorFieldValue tensor = new TensorFieldValue(convertedType);
         tensor.deserialize(this);
         return new TensorModifyUpdate(operation, tensor);
     }

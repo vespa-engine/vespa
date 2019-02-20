@@ -1387,12 +1387,30 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void tensor_modify_update_on_mixed_tensor_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("A modify update cannot be applied to tensor types with mixed dimensions. Field 'mixed_tensor' has mixed tensor type 'tensor(x{},y[3])'");
-        createTensorModifyUpdate(inputJson("{",
-                "  'operation': 'replace',",
-                "  'cells': [] }"), "mixed_tensor");
+    public void tensor_modify_update_with_replace_operation_mixed() {
+        assertTensorModifyUpdate("{{x:a,y:0}:2.0}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
+                inputJson("{",
+                        "  'operation': 'replace',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_modify_update_with_add_operation_mixed() {
+        assertTensorModifyUpdate("{{x:a,y:0}:2.0}", TensorModifyUpdate.Operation.ADD, "mixed_tensor",
+                inputJson("{",
+                        "  'operation': 'add',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_modify_update_with_multiply_operation_mixed() {
+        assertTensorModifyUpdate("{{x:a,y:0}:2.0}", TensorModifyUpdate.Operation.MULTIPLY, "mixed_tensor",
+                inputJson("{",
+                        "  'operation': 'multiply',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 } ]}"));
     }
 
     @Test
@@ -1404,6 +1422,17 @@ public class JsonReaderTestCase {
                 "  'cells': [",
                 "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}"), "dense_tensor");
     }
+
+    @Test
+    public void tensor_modify_update_with_out_of_bound_cells_throws_mixed() {
+        exception.expect(IndexOutOfBoundsException.class);
+        exception.expectMessage("Dimension 'y' has label '3' but type is tensor(x{},y[3])");
+        createTensorModifyUpdate(inputJson("{",
+                "  'operation': 'replace',",
+                "  'cells': [",
+                "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}"), "mixed_tensor");
+    }
+
 
     @Test
     public void tensor_modify_update_with_unknown_operation_throws() {
