@@ -124,6 +124,7 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
                         .orElseGet(() -> updateKeystore(configserverIdentity, generateKeystorePassword(), keyProvider, ztsClient, zoneConfig));
         factory.setKeyStore(keyStore);
         factory.setKeyStorePassword("");
+        factory.setEndpointIdentificationAlgorithm(null); // disable https hostname verification of clients (must be disabled when using Athenz x509 certificates)
         return factory;
     }
 
