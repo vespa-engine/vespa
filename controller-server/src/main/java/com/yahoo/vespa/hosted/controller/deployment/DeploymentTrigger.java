@@ -34,6 +34,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -218,7 +219,7 @@ public class DeploymentTrigger {
                                           controller.systemVersion());
         String reason = "Job triggered manually by " + user;
         return (jobType.isProduction() && ! isTested(application, versions)
-                ? testJobs(application, versions, reason, clock.instant()).stream()
+                ? testJobs(application, versions, reason, clock.instant(), __ -> true).stream()
                 : Stream.of(deploymentJob(application, versions, application.change(), jobType, reason, clock.instant())))
                 .peek(this::trigger)
                 .map(Job::jobType).collect(toList());
@@ -540,11 +541,18 @@ public class DeploymentTrigger {
      * Returns the list of test jobs that should run now, and that need to succeed on the given versions for it to be considered tested.
      */
     private List<Job> testJobs(Application application, Versions versions, String reason, Instant availableSince) {
+        return testJobs(application, versions, reason, availableSince, jobType -> canTrigger(jobType, versions, application));
+    }
+
+    /**
+     * Returns the list of test jobs that need to succeed on the given versions for it to be considered tested, filtered by the given condition.
+     */
+    private List<Job> testJobs(Application application, Versions versions, String reason, Instant availableSince, Predicate<JobType> condition) {
         List<Job> jobs = new ArrayList<>();
         for (JobType jobType : steps(application.deploymentSpec()).testJobs()) {
             Optional<JobRun> completion = successOn(application, jobType, versions)
                     .filter(run -> versions.sourcesMatchIfPresent(run) || jobType == systemTest);
-            if ( ! completion.isPresent() && canTrigger(jobType, versions, application))
+            if ( ! completion.isPresent() && condition.test(jobType))
                 jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
         }
         return jobs;
