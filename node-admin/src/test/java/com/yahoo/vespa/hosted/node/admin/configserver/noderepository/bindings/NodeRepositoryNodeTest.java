@@ -53,7 +53,7 @@ public class NodeRepositoryNodeTest {
         node.reports.put("ridTwo", reportJson);
 
         // Add ridTwo report to attributes
-        BaseReport reportTwo = new BaseReport(3L, "desc");
+        BaseReport reportTwo = new BaseReport(3L, "desc", null);
         attributes.withReport("ridTwo", reportTwo.toJsonNode());
 
         // Verify node serializes to expected, as well as attributes patched on node.
