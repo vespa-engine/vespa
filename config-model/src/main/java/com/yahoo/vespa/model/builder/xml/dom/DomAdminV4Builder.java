@@ -93,7 +93,6 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     }
 
     private NodesSpecification createNodesSpecificationForLogserver() {
-        // TODO: Enable for main system as well
         DeployState deployState = context.getDeployState();
         if (deployState.getProperties().useDedicatedNodeForLogserver() &&
                 context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT &&
@@ -124,6 +123,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         logServerCluster.addContainer(container);
         admin.addAndInitializeService(deployState.getDeployLogger(), hostResource, container);
         admin.setLogserverContainerCluster(logServerCluster);
+        context.getConfigModelRepoAdder().add(logserverClusterModel);
     }
 
     private void addLogHandler(ContainerCluster cluster) {
