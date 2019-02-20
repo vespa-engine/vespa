@@ -2,11 +2,8 @@
 
 package com.yahoo.config.provision;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Models an immutable list of network port allocations
@@ -47,11 +44,10 @@ public class NetworkPorts {
     private final List<Allocation> allocations;
 
     public NetworkPorts(Collection<Allocation> allocations) {
-        this.allocations = new ArrayList<>(allocations.size());
-        this.allocations.addAll(allocations);
+        this.allocations = List.copyOf(allocations);
     }
 
     public Collection<Allocation> allocations() {
-        return Collections.unmodifiableList(this.allocations);
+        return this.allocations;
     }
 }
