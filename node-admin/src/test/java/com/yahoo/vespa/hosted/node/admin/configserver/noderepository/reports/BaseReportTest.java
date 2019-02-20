@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports;
 import com.yahoo.test.json.JsonTestHelper;
 import org.junit.Test;
 
-import static com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport.Type.UNSPECIFIED;
 import static com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport.Type.SOFT_FAIL;
+import static com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport.Type.UNSPECIFIED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -67,12 +67,9 @@ public class BaseReportTest {
     }
 
     @Test
-    public void settingInformationalIgnoresType() {
-        BaseReport report = BaseReport.fromJson(JSON_2);
-        assertEquals(BaseReport.Type.SOFT_FAIL, report.getTypeOrNull());
-        report.setType(UNSPECIFIED);
-        JsonTestHelper.assertJsonEquals(JSON_1, report.toJson());
-        report.setType(null);
-        JsonTestHelper.assertJsonEquals(JSON_1, report.toJson());
+    public void testUnspecifiedType() {
+        BaseReport report = new BaseReport(1L, "desc", null);
+        assertEquals(null, report.getTypeOrNull());
+        assertEquals(UNSPECIFIED, report.getType());
     }
 }

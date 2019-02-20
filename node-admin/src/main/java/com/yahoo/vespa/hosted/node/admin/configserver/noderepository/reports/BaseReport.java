@@ -29,10 +29,9 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  *     {@code !super.updates(current)}.</li>
  * </ol>
  *
- * <p>NOT immutable to allow e.g. type to be overridden before serialization.</p>
- *
  * @author hakonhall
  */
+// @Immutable
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BaseReport {
@@ -47,8 +46,7 @@ public class BaseReport {
 
     private final OptionalLong createdMillis;
     private final Optional<String> description;
-
-    private Type type;
+    private final Type type;
 
     public enum Type {
         /** The default type if none given, or not recognized. */
@@ -90,10 +88,6 @@ public class BaseReport {
 
     public Type getType() {
         return type;
-    }
-
-    public void setType(Type typeOrNull) {
-        this.type = typeOrNull;
     }
 
     /**
