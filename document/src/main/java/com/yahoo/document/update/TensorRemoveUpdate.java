@@ -51,17 +51,10 @@ public class TensorRemoveUpdate extends ValueUpdate<TensorFieldValue> {
             return oldValue;
         }
 
-        Tensor oldTensor = ((TensorFieldValue) oldValue).getTensor().get();
-        Map<TensorAddress, Double> cellsToRemove = tensor.getTensor().get().cells();
-        Tensor.Builder builder = Tensor.Builder.of(oldTensor.type());
-        for (Iterator<Tensor.Cell> i = oldTensor.cellIterator(); i.hasNext(); ) {
-            Tensor.Cell cell = i.next();
-            TensorAddress address = cell.getKey();
-            if ( ! cellsToRemove.containsKey(address)) {
-                builder.cell(address, cell.getValue());
-            }
-        }
-        return new TensorFieldValue(builder.build());
+        Tensor old = ((TensorFieldValue) oldValue).getTensor().get();
+        Tensor update = tensor.getTensor().get();
+        Tensor result = old.remove(update.cells().keySet());
+        return new TensorFieldValue(result);
     }
 
     @Override

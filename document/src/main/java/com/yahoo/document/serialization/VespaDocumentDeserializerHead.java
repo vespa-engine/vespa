@@ -5,6 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.document.json.readers.TensorRemoveUpdateReader;
 import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.TensorRemoveUpdate;
@@ -46,7 +47,10 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
             throw new DeserializationException("Expected tensor data type, got " + type);
         }
         TensorDataType tensorDataType = (TensorDataType)type;
-        TensorFieldValue tensor = new TensorFieldValue(tensorDataType.getTensorType());
+        TensorType tensorType = tensorDataType.getTensorType();
+        TensorType convertedType = TensorModifyUpdate.convertToCompatibleType(tensorType);
+
+        TensorFieldValue tensor = new TensorFieldValue(convertedType);
         tensor.deserialize(this);
         return new TensorAddUpdate(tensor);
     }
@@ -58,10 +62,9 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
         }
         TensorDataType tensorDataType = (TensorDataType)type;
         TensorType tensorType = tensorDataType.getTensorType();
+        TensorType convertedType = TensorRemoveUpdateReader.extractSparseDimensions(tensorType);
 
-        // TODO: for mixed case extract a new tensor type based only on mapped dimensions
-
-        TensorFieldValue tensor = new TensorFieldValue(tensorType);
+        TensorFieldValue tensor = new TensorFieldValue(convertedType);
         tensor.deserialize(this);
         return new TensorRemoveUpdate(tensor);
     }

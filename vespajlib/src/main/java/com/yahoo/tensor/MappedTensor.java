@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 
 /**
@@ -65,6 +66,19 @@ public class MappedTensor implements Tensor {
         for (Map.Entry<TensorAddress, Double> addCell : addCells.entrySet()) {
             if ( ! cells.containsKey(addCell.getKey())) {
                 builder.cell(addCell.getKey(), addCell.getValue());
+            }
+        }
+        return builder.build();
+    }
+
+    @Override
+    public Tensor remove(Set<TensorAddress> addresses) {
+        Tensor.Builder builder = Tensor.Builder.of(type());
+        for (Iterator<Tensor.Cell> i = cellIterator(); i.hasNext(); ) {
+            Tensor.Cell cell = i.next();
+            TensorAddress address = cell.getKey();
+            if ( ! addresses.contains(address)) {
+                builder.cell(address, cell.getValue());
             }
         }
         return builder.build();

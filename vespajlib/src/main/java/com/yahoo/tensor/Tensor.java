@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
@@ -125,7 +126,15 @@ public interface Tensor {
      */
     Tensor merge(DoubleBinaryOperator op, Map<TensorAddress, Double> cells);
 
-//    Tensor remove(Tensor other);
+    /**
+     * Returns a new tensor where existing cells in this tensor have been
+     * removed according to the given set of addresses. Only valid for sparse
+     * or mixed tensors.
+     *
+     * @param addresses list of addresses to remove
+     * @return a new tensor where cells have been removed
+     */
+    Tensor remove(Set<TensorAddress> addresses);
 
     // ----------------- Primitive tensor functions
 

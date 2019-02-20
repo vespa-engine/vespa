@@ -1489,6 +1489,7 @@ public class JsonReaderTestCase {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Add update for field 'sparse_tensor' does not contain tensor cells");
         createTensorAddUpdate(inputJson("{}"), "sparse_tensor");
+        createTensorAddUpdate(inputJson("{}"), "mixed_tensor");
     }
 
     @Test
@@ -1500,7 +1501,6 @@ public class JsonReaderTestCase {
                         "    { 'x': 'c', 'y': 'd' } ]}"));
     }
 
-    @Ignore
     @Test
     public void tensor_remove_update_on_mixed_tensor() {
         assertTensorRemoveUpdate("{{x:1}:1.0,{x:2}:1.0}", "mixed_tensor",
@@ -1511,9 +1511,19 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_remove_update_on_mixed_tensor_with_dense_addresses_throws() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Indexed dimension address 'y' should not be specified in remove update");
+        createTensorRemoveUpdate(inputJson("{",
+                        "  'addresses': [",
+                        "    { 'x': '1', 'y': '0' },",
+                        "    { 'x': '2', 'y': '0' } ]}"), "mixed_tensor");
+    }
+
+    @Test
     public void tensor_remove_update_on_dense_tensor_throws() {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("A remove update can only be applied to sparse tensors. Field 'dense_tensor' has unsupported tensor type 'tensor(x[2],y[3])'");
+        exception.expectMessage("A remove update can only be applied to tensors with at least one sparse dimension. Field 'dense_tensor' has unsupported tensor type 'tensor(x[2],y[3])'");
         createTensorRemoveUpdate(inputJson("{",
                 "  'addresses': [] }"), "dense_tensor");
     }
@@ -1532,6 +1542,7 @@ public class JsonReaderTestCase {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Remove update for field 'sparse_tensor' does not contain tensor addresses");
         createTensorRemoveUpdate(inputJson("{'addresses': [] }"), "sparse_tensor");
+        createTensorRemoveUpdate(inputJson("{'addresses': [] }"), "mixed_tensor");
     }
 
     @Test

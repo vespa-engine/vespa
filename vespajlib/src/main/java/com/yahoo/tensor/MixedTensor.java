@@ -6,9 +6,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 import java.util.stream.Collectors;
 
@@ -122,6 +124,22 @@ public class MixedTensor implements Tensor {
         }
         for (Map.Entry<TensorAddress, Double> addCell : addCells.entrySet()) {
             builder.cell(addCell.getKey(), addCell.getValue());
+        }
+        return builder.build();
+    }
+
+    @Override
+    public Tensor remove(Set<TensorAddress> addresses) {
+        Tensor.Builder builder = Tensor.Builder.of(type());
+        for (Map.Entry<TensorAddress, Long> entry : index.sparseMap.entrySet()) {
+            TensorAddress sparsePartialAddress = entry.getKey();
+            if ( ! addresses.contains(sparsePartialAddress)) {
+                long offset = entry.getValue();
+                for (int i = 0; i < index.denseSubspaceSize; ++i) {
+                    Cell cell = cells.get((int)offset + i);
+                    builder.cell(cell.getKey(), cell.getValue());
+                }
+            }
         }
         return builder.build();
     }

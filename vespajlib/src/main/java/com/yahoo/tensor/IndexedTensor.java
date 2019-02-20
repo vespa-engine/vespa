@@ -196,6 +196,11 @@ public class IndexedTensor implements Tensor {
     }
 
     @Override
+    public Tensor remove(Set<TensorAddress> addresses) {
+        throw new IllegalArgumentException("Remove is not supported for indexed tensors");
+    }
+
+    @Override
     public int hashCode() { return Arrays.hashCode(values); }
 
     @Override
