@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.config.model.application.provider.*;
@@ -136,7 +137,15 @@ public class LocalSessionTest {
 
     @Test
     public void require_that_provision_info_can_be_read() throws Exception {
-        AllocatedHosts input = AllocatedHosts.withHosts(Collections.singleton(new HostSpec("myhost", Collections.<String>emptyList())));
+        List<NetworkPorts.Allocation> list = new ArrayList<>();
+        list.add(new NetworkPorts.Allocation(8080, "container", "default/0", "http"));
+        list.add(new NetworkPorts.Allocation(19101, "searchnode", "other/1", "rpc"));
+        NetworkPorts ports = new NetworkPorts(list);
+
+        AllocatedHosts input = AllocatedHosts.withHosts(Collections.singleton(
+                new HostSpec("myhost", Collections.<String>emptyList(),
+                             Optional.empty(), Optional.empty(), Optional.empty(),
+                             Optional.of(ports))));
 
         LocalSession session = createSession(TenantName.defaultName(), 3, new SessionTest.MockSessionPreparer(), Optional.of(input));
         ApplicationId origId = new ApplicationId.Builder()
@@ -147,6 +156,9 @@ public class LocalSessionTest {
         assertNotNull(info);
         assertThat(info.getHosts().size(), is(1));
         assertTrue(info.getHosts().contains(new HostSpec("myhost", Collections.emptyList())));
+        Optional<NetworkPorts> portsCopy = info.getHosts().iterator().next().networkPorts();
+        assertTrue(portsCopy.isPresent());
+        assertThat(portsCopy.get().allocations(), is(list));
     }
 
     @Test
