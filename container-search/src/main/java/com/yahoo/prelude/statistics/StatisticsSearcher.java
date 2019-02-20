@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.logging.Level;
 
 import static com.yahoo.container.protect.Error.*;
@@ -195,10 +196,12 @@ public class StatisticsSearcher extends Searcher {
         return metric.createContext(dimensions);
     }
 
-    private Metric.Context getRelevanceMetricContext(String chainName, String rankProfile) {
+    private Metric.Context getRelevanceMetricContext(Execution execution, Query query) {
+        String chain = execution.chain().getId().stringValue();
+        String rankProfile = query.getRanking().getProfile();
         return relevanceContexts
-                .computeIfAbsent(chainName, k -> new HashMap<>())
-                .computeIfAbsent(rankProfile, k -> createRelevanceMetricContext(chainName, rankProfile));
+                .computeIfAbsent(chain, k -> new HashMap<>())
+                .computeIfAbsent(rankProfile, k -> createRelevanceMetricContext(chain, rankProfile));
     }
 
     /**
@@ -360,7 +363,7 @@ public class StatisticsSearcher extends Searcher {
     }
 
     /**
-     * Effectively flattens the hits, and measures relevance @1, @5 and @10
+     * Effectively flattens the hits, and measures relevance @ 1, 5, and 10
      */
     private void addRelevanceMetrics(Query query, Execution execution, Result result) {
         final int heapCapacity = 10;
@@ -385,9 +388,7 @@ public class StatisticsSearcher extends Searcher {
             return;
         }
 
-        String chain = execution.chain().getId().stringValue();
-        String rankProfile = query.getRanking().getProfile();
-        Metric.Context metricContext = getRelevanceMetricContext(chain, rankProfile);
+        Metric.Context metricContext = getRelevanceMetricContext(execution, query);
 
         while (heap.size() > 10) {
             heap.remove();
