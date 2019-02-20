@@ -5,6 +5,7 @@
 vespa_add_executable(document_gtest_runner_app TEST
     SOURCES
     documentidtest.cpp
+    documentupdatetestcase.cpp
     gtest_runner.cpp
     DEPENDS
     document
@@ -15,7 +16,7 @@ vespa_add_executable(document_gtest_runner_app TEST
 
 vespa_add_test(
     NAME document_gtest_runner_app
-    COMMAND $<TARGET_FILE:document_gtest_runner_app>
+    COMMAND document_gtest_runner_app
     DEPENDS document_gtest_runner_app
 )
 
@@ -35,7 +36,6 @@ vespa_add_executable(document_testrunner_app TEST
     structfieldvaluetest.cpp
     documenttestcase.cpp
     testdocmantest.cpp
-    documentupdatetestcase.cpp
     fieldpathupdatetestcase.cpp
     documentselectparsertest.cpp
     bucketselectortest.cpp
