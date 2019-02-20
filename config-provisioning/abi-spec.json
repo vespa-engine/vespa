@@ -695,6 +695,7 @@
       "public void <init>(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public void <init>(com.yahoo.config.provision.SystemName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public void <init>(com.yahoo.config.provision.CloudName, com.yahoo.config.provision.SystemName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
+      "public void <init>(com.yahoo.config.provision.CloudName, com.yahoo.config.provision.SystemName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName, com.yahoo.config.provision.NodeFlavors)",
       "public com.yahoo.config.provision.CloudName cloud()",
       "public com.yahoo.config.provision.SystemName system()",
       "public com.yahoo.config.provision.Environment environment()",

@@ -41,12 +41,21 @@ public class Zone {
 
     /** Create from system, environment and region. Use for testing. */
     public Zone(SystemName systemName, Environment environment, RegionName region) {
-        this(CloudName.defaultName(), systemName, environment, region, new FlavorDefaults("default"), null);
+        this(CloudName.defaultName(), systemName, environment, region);
     }
 
     /** Create from cloud, system, environment and region. Use for testing. */
     public Zone(CloudName cloudName, SystemName systemName, Environment environment, RegionName region) {
-        this(cloudName, systemName, environment, region, new FlavorDefaults("default"), null);
+        this(cloudName, systemName, environment, region, null);
+    }
+
+    /** Create from cloud, system, environment, region and node flavors. Use for testing. */
+    public Zone(CloudName cloudName,
+                SystemName systemName,
+                Environment environment,
+                RegionName region,
+                NodeFlavors nodeFlavors) {
+        this(cloudName, systemName, environment, region, new FlavorDefaults("default"), nodeFlavors);
     }
 
     private Zone(CloudName cloudName,
