@@ -22,12 +22,11 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/exception.h>
 
 #include <fcntl.h>
+#include <gtest/gtest.h>
 #include <unistd.h>
 
 using namespace document::config_builder;
@@ -37,80 +36,6 @@ using vespalib::tensor::Tensor;
 using vespalib::nbostream;
 
 namespace document {
-
-struct DocumentUpdateTest : public CppUnit::TestFixture {
-
-  void testSimpleUsage();
-  void testUpdateApplySingleValue();
-  void testClearField();
-  void testUpdateArray();
-  void testUpdateWeightedSet();
-  void testIncrementNonExistingAutoCreateWSetField();
-  void testIncrementExistingWSetField();
-  void testIncrementWithZeroResultWeightIsRemoved();
-  void testReadSerializedFile();
-  void testGenerateSerializedFile();
-  void testSetBadFieldTypes();
-  void testUpdateApplyNoParams();
-  void testUpdateApplyNoArrayValues();
-  void testUpdateArrayEmptyParamValue();
-  void testUpdateWeightedSetEmptyParamValue();
-  void testUpdateArrayWrongSubtype();
-  void testUpdateWeightedSetWrongSubtype();
-  void testMapValueUpdate();
-  void tensor_assign_update_can_be_applied();
-  void tensor_clear_update_can_be_applied();
-  void tensor_add_update_can_be_applied();
-  void tensor_modify_update_can_be_applied();
-  void tensor_assign_update_can_be_roundtrip_serialized();
-  void tensor_add_update_can_be_roundtrip_serialized();
-  void tensor_remove_update_can_be_roundtrip_serialized();
-  void tensor_modify_update_can_be_roundtrip_serialized();
-  void testThatDocumentUpdateFlagsIsWorking();
-  void testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50();
-  void testThatCreateIfNonExistentFlagIsSerializedAndDeserialized();
-  void array_element_update_can_be_roundtrip_serialized();
-  void array_element_update_applies_to_specified_element();
-  void array_element_update_for_invalid_index_is_ignored();
-
-  CPPUNIT_TEST_SUITE(DocumentUpdateTest);
-  CPPUNIT_TEST(testSimpleUsage);
-  CPPUNIT_TEST(testUpdateApplySingleValue);
-  CPPUNIT_TEST(testClearField);
-  CPPUNIT_TEST(testUpdateArray);
-  CPPUNIT_TEST(testUpdateWeightedSet);
-  CPPUNIT_TEST(testIncrementNonExistingAutoCreateWSetField);
-  CPPUNIT_TEST(testIncrementExistingWSetField);
-  CPPUNIT_TEST(testIncrementWithZeroResultWeightIsRemoved);
-  CPPUNIT_TEST(testReadSerializedFile);
-  CPPUNIT_TEST(testGenerateSerializedFile);
-  CPPUNIT_TEST(testSetBadFieldTypes);
-  CPPUNIT_TEST(testUpdateApplyNoParams);
-  CPPUNIT_TEST(testUpdateApplyNoArrayValues);
-  CPPUNIT_TEST(testUpdateArrayEmptyParamValue);
-  CPPUNIT_TEST(testUpdateWeightedSetEmptyParamValue);
-  CPPUNIT_TEST(testUpdateArrayWrongSubtype);
-  CPPUNIT_TEST(testUpdateWeightedSetWrongSubtype);
-  CPPUNIT_TEST(testMapValueUpdate);
-  CPPUNIT_TEST(tensor_assign_update_can_be_applied);
-  CPPUNIT_TEST(tensor_clear_update_can_be_applied);
-  CPPUNIT_TEST(tensor_add_update_can_be_applied);
-  CPPUNIT_TEST(tensor_modify_update_can_be_applied);
-  CPPUNIT_TEST(tensor_assign_update_can_be_roundtrip_serialized);
-  CPPUNIT_TEST(tensor_add_update_can_be_roundtrip_serialized);
-  CPPUNIT_TEST(tensor_remove_update_can_be_roundtrip_serialized);
-  CPPUNIT_TEST(tensor_modify_update_can_be_roundtrip_serialized);
-  CPPUNIT_TEST(testThatDocumentUpdateFlagsIsWorking);
-  CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50);
-  CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerializedAndDeserialized);
-  CPPUNIT_TEST(array_element_update_can_be_roundtrip_serialized);
-  CPPUNIT_TEST(array_element_update_applies_to_specified_element);
-  CPPUNIT_TEST(array_element_update_for_invalid_index_is_ignored);
-  CPPUNIT_TEST_SUITE_END();
-
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(DocumentUpdateTest);
 
 namespace {
 
@@ -156,7 +81,7 @@ void testRoundtripSerialize(const UpdateType& update, const DataType &type) {
         DocumentTypeRepo repo;
         nbostream stream = serialize(update);
         std::unique_ptr<UpdateType> copy(dynamic_cast<UpdateType*>(ValueUpdate::createInstance(repo, type, stream).release()));
-        CPPUNIT_ASSERT_EQUAL(update, *copy);
+        EXPECT_EQ(update, *copy);
     } catch (std::exception& e) {
             std::cerr << "Failed while processing update " << update << "\n";
     throw;
@@ -165,8 +90,8 @@ void testRoundtripSerialize(const UpdateType& update, const DataType &type) {
 
 }
 
-void
-DocumentUpdateTest::testSimpleUsage() {
+TEST(DocumentUpdateTest, testSimpleUsage)
+{
     DocumenttypesConfigBuilderHelper builder;
     builder.document(42, "test",
                      Struct("test.header").addField("bytef", DataType::T_BYTE).addField("intf", DataType::T_INT),
@@ -186,7 +111,7 @@ DocumentUpdateTest::testSimpleUsage() {
     fieldUpdate.addUpdate(AssignValueUpdate(IntFieldValue(1)));
     nbostream stream = serialize(fieldUpdate);
     FieldUpdate fieldUpdateCopy(repo, *docType, stream);
-    CPPUNIT_ASSERT_EQUAL(fieldUpdate, fieldUpdateCopy);
+    EXPECT_EQ(fieldUpdate, fieldUpdateCopy);
 
         // Test that a document update can be serialized
     DocumentUpdate docUpdate(repo, *docType, DocumentId("doc::testdoc"));
@@ -210,44 +135,44 @@ DocumentUpdateTest::testSimpleUsage() {
         DocumentUpdate upd(repo, *docType, DocumentId("doc::testdoc"));
         upd.addUpdate(FieldUpdate(docType->getField("intf")).addUpdate(ClearValueUpdate()));
         upd.applyTo(updated);
-        CPPUNIT_ASSERT(doc != updated);
-        CPPUNIT_ASSERT(! updated.getValue("intf"));
+        EXPECT_NE(doc, updated);
+        EXPECT_FALSE(updated.getValue("intf"));
     }
     {
         Document updated(doc);
         DocumentUpdate upd(repo, *docType, DocumentId("doc::testdoc"));
         upd.addUpdate(FieldUpdate(docType->getField("intf")).addUpdate(AssignValueUpdate(IntFieldValue(15))));
         upd.applyTo(updated);
-        CPPUNIT_ASSERT(doc != updated);
-        CPPUNIT_ASSERT_EQUAL(15, updated.getValue("intf")->getAsInt());
+        EXPECT_NE(doc, updated);
+        EXPECT_EQ(15, updated.getValue("intf")->getAsInt());
     }
     {
         Document updated(doc);
         DocumentUpdate upd(repo, *docType, DocumentId("doc::testdoc"));
         upd.addUpdate(FieldUpdate(docType->getField("intf")).addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 15)));
         upd.applyTo(updated);
-        CPPUNIT_ASSERT(doc != updated);
-        CPPUNIT_ASSERT_EQUAL(20, updated.getValue("intf")->getAsInt());
+        EXPECT_NE(doc, updated);
+        EXPECT_EQ(20, updated.getValue("intf")->getAsInt());
     }
     {
         Document updated(doc);
         DocumentUpdate upd(repo, *docType, DocumentId("doc::testdoc"));
         upd.addUpdate(FieldUpdate(docType->getField("intarr")).addUpdate(AddValueUpdate(IntFieldValue(4))));
         upd.applyTo(updated);
-        CPPUNIT_ASSERT(doc != updated);
+        EXPECT_NE(doc, updated);
         std::unique_ptr<ArrayFieldValue> val(dynamic_cast<ArrayFieldValue*>(updated.getValue("intarr").release()));
-        CPPUNIT_ASSERT_EQUAL(size_t(3), val->size());
-        CPPUNIT_ASSERT_EQUAL(4, (*val)[2].getAsInt());
+        ASSERT_EQ(size_t(3), val->size());
+        EXPECT_EQ(4, (*val)[2].getAsInt());
     }
     {
         Document updated(doc);
         DocumentUpdate upd(repo, *docType, DocumentId("doc::testdoc"));
         upd.addUpdate(FieldUpdate(docType->getField("intarr")).addUpdate(RemoveValueUpdate(IntFieldValue(3))));
         upd.applyTo(updated);
-        CPPUNIT_ASSERT(doc != updated);
+        EXPECT_NE(doc, updated);
         std::unique_ptr<ArrayFieldValue> val(dynamic_cast<ArrayFieldValue*>(updated.getValue("intarr").release()));
-        CPPUNIT_ASSERT_EQUAL(size_t(1), val->size());
-        CPPUNIT_ASSERT_EQUAL(7, (*val)[0].getAsInt());
+        ASSERT_EQ(size_t(1), val->size());
+        EXPECT_EQ(7, (*val)[0].getAsInt());
     }
     {
         Document updated(doc);
@@ -255,50 +180,47 @@ DocumentUpdateTest::testSimpleUsage() {
         upd.addUpdate(FieldUpdate(docType->getField("bytef"))
                               .addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 15)));
         upd.applyTo(updated);
-        CPPUNIT_ASSERT(doc != updated);
-        CPPUNIT_ASSERT_EQUAL(15, (int) updated.getValue("bytef")->getAsByte());
+        EXPECT_NE(doc, updated);
+        EXPECT_EQ(15, (int) updated.getValue("bytef")->getAsByte());
     }
 }
 
-void
-DocumentUpdateTest::testClearField()
+TEST(DocumentUpdateTest, testClearField)
 {
     // Create a document.
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     doc->setValue(doc->getField("headerval"), IntFieldValue(4));
-    CPPUNIT_ASSERT_EQUAL(4, doc->getValue("headerval")->getAsInt());
+    EXPECT_EQ(4, doc->getValue("headerval")->getAsInt());
 
     // Apply an update.
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
         .addUpdate(FieldUpdate(doc->getField("headerval")).addUpdate(AssignValueUpdate()))
         .applyTo(*doc);
-    CPPUNIT_ASSERT(!doc->getValue("headerval"));
+    EXPECT_FALSE(doc->getValue("headerval"));
 }
 
-void
-DocumentUpdateTest::testUpdateApplySingleValue()
+TEST(DocumentUpdateTest, testUpdateApplySingleValue)
 {
     // Create a document.
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     doc->setValue(doc->getField("headerval"), IntFieldValue(4));
-    CPPUNIT_ASSERT_EQUAL(4, doc->getValue("headerval")->getAsInt());
+    EXPECT_EQ(4, doc->getValue("headerval")->getAsInt());
 
     // Apply an update.
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
         .addUpdate(FieldUpdate(doc->getField("headerval")).addUpdate(AssignValueUpdate(IntFieldValue(9))))
         .applyTo(*doc);
-    CPPUNIT_ASSERT_EQUAL(9, doc->getValue("headerval")->getAsInt());
+    EXPECT_EQ(9, doc->getValue("headerval")->getAsInt());
 }
 
-void
-DocumentUpdateTest::testUpdateArray()
+TEST(DocumentUpdateTest, testUpdateArray)
 {
     // Create a document.
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*)NULL, doc->getValue(doc->getField("tags")).get());
+    EXPECT_EQ((document::FieldValue*)NULL, doc->getValue(doc->getField("tags")).get());
 
     // Assign array field.
     ArrayFieldValue myarray(doc->getType().getField("tags").getDataType());
@@ -309,9 +231,9 @@ DocumentUpdateTest::testUpdateArray()
         .addUpdate(FieldUpdate(doc->getField("tags")).addUpdate(AssignValueUpdate(myarray)))
         .applyTo(*doc);
     auto fval1(doc->getAs<ArrayFieldValue>(doc->getField("tags")));
-    CPPUNIT_ASSERT_EQUAL((size_t) 2, fval1->size());
-    CPPUNIT_ASSERT_EQUAL(std::string("foo"), std::string((*fval1)[0].getAsString()));
-    CPPUNIT_ASSERT_EQUAL(std::string("bar"), std::string((*fval1)[1].getAsString()));
+    ASSERT_EQ((size_t) 2, fval1->size());
+    EXPECT_EQ(std::string("foo"), std::string((*fval1)[0].getAsString()));
+    EXPECT_EQ(std::string("bar"), std::string((*fval1)[1].getAsString()));
 
     // Append array field
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
@@ -321,24 +243,19 @@ DocumentUpdateTest::testUpdateArray()
         .applyTo(*doc);
     std::unique_ptr<ArrayFieldValue>
         fval2(doc->getAs<ArrayFieldValue>(doc->getField("tags")));
-    CPPUNIT_ASSERT_EQUAL((size_t) 4, fval2->size());
-    CPPUNIT_ASSERT_EQUAL(std::string("foo"), std::string((*fval2)[0].getAsString()));
-    CPPUNIT_ASSERT_EQUAL(std::string("bar"), std::string((*fval2)[1].getAsString()));
-    CPPUNIT_ASSERT_EQUAL(std::string("another"), std::string((*fval2)[2].getAsString()));
-    CPPUNIT_ASSERT_EQUAL(std::string("tag"), std::string((*fval2)[3].getAsString()));
+    ASSERT_EQ((size_t) 4, fval2->size());
+    EXPECT_EQ(std::string("foo"), std::string((*fval2)[0].getAsString()));
+    EXPECT_EQ(std::string("bar"), std::string((*fval2)[1].getAsString()));
+    EXPECT_EQ(std::string("another"), std::string((*fval2)[2].getAsString()));
+    EXPECT_EQ(std::string("tag"), std::string((*fval2)[3].getAsString()));
 
     // Append single value.
-    try {
+    ASSERT_THROW(
         DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
             .addUpdate(FieldUpdate(doc->getField("tags"))
                        .addUpdate(AssignValueUpdate(StringFieldValue("THROW MEH!"))))
-            .applyTo(*doc);
-        CPPUNIT_FAIL("Expected exception when assinging a string value to an "
-                     "array field.");
-        }
-    catch (std::exception& e) {
-        ; // fprintf(stderr, "Got exception => OK: %s\n", e.what());
-    }
+            .applyTo(*doc),
+        std::exception) << "Expected exception when assigning a string value to an array field.";
 
     // Remove array field.
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
@@ -347,35 +264,29 @@ DocumentUpdateTest::testUpdateArray()
                    .addUpdate(RemoveValueUpdate(StringFieldValue("tag"))))
         .applyTo(*doc);
     auto fval3(doc->getAs<ArrayFieldValue>(doc->getField("tags")));
-    CPPUNIT_ASSERT_EQUAL((size_t) 2, fval3->size());
-    CPPUNIT_ASSERT_EQUAL(std::string("bar"), std::string((*fval3)[0].getAsString()));
-    CPPUNIT_ASSERT_EQUAL(std::string("another"), std::string((*fval3)[1].getAsString()));
+    ASSERT_EQ((size_t) 2, fval3->size());
+    EXPECT_EQ(std::string("bar"), std::string((*fval3)[0].getAsString()));
+    EXPECT_EQ(std::string("another"), std::string((*fval3)[1].getAsString()));
 
     // Remove array from array.
     ArrayFieldValue myarray2(doc->getType().getField("tags").getDataType());
     myarray2.add(StringFieldValue("foo"));
     myarray2.add(StringFieldValue("bar"));
-    try {
+    ASSERT_THROW(
         DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
             .addUpdate(FieldUpdate(doc->getField("tags"))
                        .addUpdate(RemoveValueUpdate(myarray2)))
-            .applyTo(*doc);
-        CPPUNIT_FAIL("Expected exception when removing an array from a "
-                     "string array.");
-    }
-    catch (std::exception& e) {
-        ; // fprintf(stderr, "Got exception => OK: %s\n", e.what());
-    }
+            .applyTo(*doc),
+        std::exception) << "Expected exception when removing an array from a string array.";
 }
 
-void
-DocumentUpdateTest::testUpdateWeightedSet()
+TEST(DocumentUpdateTest, testUpdateWeightedSet)
 {
     // Create a test document
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field& field(doc->getType().getField("stringweightedset"));
-    CPPUNIT_ASSERT_EQUAL((FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ((FieldValue*) 0, doc->getValue(field).get());
 	
     // Assign weightedset field
     WeightedSetFieldValue wset(field.getDataType());
@@ -385,13 +296,13 @@ DocumentUpdateTest::testUpdateWeightedSet()
         .addUpdate(FieldUpdate(field).addUpdate(AssignValueUpdate(wset)))
         .applyTo(*doc);
     auto fval1(doc->getAs<WeightedSetFieldValue>(field));
-    CPPUNIT_ASSERT_EQUAL((size_t) 2, fval1->size());
-    CPPUNIT_ASSERT(fval1->contains(StringFieldValue("foo")));
-    CPPUNIT_ASSERT(fval1->find(StringFieldValue("foo")) != fval1->end());
-    CPPUNIT_ASSERT_EQUAL(3, fval1->get(StringFieldValue("foo"), 0));
-    CPPUNIT_ASSERT(fval1->contains(StringFieldValue("bar")));
-    CPPUNIT_ASSERT(fval1->find(StringFieldValue("bar")) != fval1->end());
-    CPPUNIT_ASSERT_EQUAL(14, fval1->get(StringFieldValue("bar"), 0));
+    ASSERT_EQ((size_t) 2, fval1->size());
+    EXPECT_TRUE(fval1->contains(StringFieldValue("foo")));
+    EXPECT_NE(fval1->find(StringFieldValue("foo")), fval1->end());
+    EXPECT_EQ(3, fval1->get(StringFieldValue("foo"), 0));
+    EXPECT_TRUE(fval1->contains(StringFieldValue("bar")));
+    EXPECT_NE(fval1->find(StringFieldValue("bar")), fval1->end());
+    EXPECT_EQ(14, fval1->get(StringFieldValue("bar"), 0));
 
     // Do a second assign
     WeightedSetFieldValue wset2(field.getDataType());
@@ -402,13 +313,13 @@ DocumentUpdateTest::testUpdateWeightedSet()
                    .addUpdate(AssignValueUpdate(wset2)))
         .applyTo(*doc);
     auto fval2(doc->getAs<WeightedSetFieldValue>(field));
-    CPPUNIT_ASSERT_EQUAL((size_t) 2, fval2->size());
-    CPPUNIT_ASSERT(fval2->contains(StringFieldValue("foo")));
-    CPPUNIT_ASSERT(fval2->find(StringFieldValue("foo")) != fval1->end());
-    CPPUNIT_ASSERT_EQUAL(16, fval2->get(StringFieldValue("foo"), 0));
-    CPPUNIT_ASSERT(fval2->contains(StringFieldValue("bar")));
-    CPPUNIT_ASSERT(fval2->find(StringFieldValue("bar")) != fval1->end());
-    CPPUNIT_ASSERT_EQUAL(24, fval2->get(StringFieldValue("bar"), 0));
+    ASSERT_EQ((size_t) 2, fval2->size());
+    EXPECT_TRUE(fval2->contains(StringFieldValue("foo")));
+    EXPECT_NE(fval2->find(StringFieldValue("foo")), fval1->end());
+    EXPECT_EQ(16, fval2->get(StringFieldValue("foo"), 0));
+    EXPECT_TRUE(fval2->contains(StringFieldValue("bar")));
+    EXPECT_NE(fval2->find(StringFieldValue("bar")), fval1->end());
+    EXPECT_EQ(24, fval2->get(StringFieldValue("bar"), 0));
 
     // Append weighted field
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
@@ -418,13 +329,13 @@ DocumentUpdateTest::testUpdateWeightedSet()
         .applyTo(*doc);
     std::unique_ptr<WeightedSetFieldValue>
         fval3(doc->getAs<WeightedSetFieldValue>(field));
-    CPPUNIT_ASSERT_EQUAL((size_t) 3, fval3->size());
-    CPPUNIT_ASSERT(fval3->contains(StringFieldValue("foo")));
-    CPPUNIT_ASSERT_EQUAL(3, fval3->get(StringFieldValue("foo"), 0));
-    CPPUNIT_ASSERT(fval3->contains(StringFieldValue("bar")));
-    CPPUNIT_ASSERT_EQUAL(24, fval3->get(StringFieldValue("bar"), 0));
-    CPPUNIT_ASSERT(fval3->contains(StringFieldValue("too")));
-    CPPUNIT_ASSERT_EQUAL(14, fval3->get(StringFieldValue("too"), 0));
+    ASSERT_EQ((size_t) 3, fval3->size());
+    EXPECT_TRUE(fval3->contains(StringFieldValue("foo")));
+    EXPECT_EQ(3, fval3->get(StringFieldValue("foo"), 0));
+    EXPECT_TRUE(fval3->contains(StringFieldValue("bar")));
+    EXPECT_EQ(24, fval3->get(StringFieldValue("bar"), 0));
+    EXPECT_TRUE(fval3->contains(StringFieldValue("too")));
+    EXPECT_EQ(14, fval3->get(StringFieldValue("too"), 0));
 
     // Remove weighted field
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
@@ -433,11 +344,11 @@ DocumentUpdateTest::testUpdateWeightedSet()
                    .addUpdate(RemoveValueUpdate(StringFieldValue("too"))))
         .applyTo(*doc);
     auto fval4(doc->getAs<WeightedSetFieldValue>(field));
-    CPPUNIT_ASSERT_EQUAL((size_t) 1, fval4->size());
-    CPPUNIT_ASSERT(!fval4->contains(StringFieldValue("foo")));
-    CPPUNIT_ASSERT(fval4->contains(StringFieldValue("bar")));
-    CPPUNIT_ASSERT_EQUAL(24, fval4->get(StringFieldValue("bar"), 0));
-    CPPUNIT_ASSERT(!fval4->contains(StringFieldValue("too")));
+    ASSERT_EQ((size_t) 1, fval4->size());
+    EXPECT_FALSE(fval4->contains(StringFieldValue("foo")));
+    EXPECT_TRUE(fval4->contains(StringFieldValue("bar")));
+    EXPECT_EQ(24, fval4->get(StringFieldValue("bar"), 0));
+    EXPECT_FALSE(fval4->contains(StringFieldValue("too")));
 }
 
 namespace {
@@ -482,8 +393,7 @@ WeightedSetAutoCreateFixture::WeightedSetAutoCreateFixture()
 }
 } // anon ns
 
-void
-DocumentUpdateTest::testIncrementNonExistingAutoCreateWSetField()
+TEST(DocumentUpdateTest, testIncrementNonExistingAutoCreateWSetField)
 {
     WeightedSetAutoCreateFixture fixture;
 
@@ -491,13 +401,12 @@ DocumentUpdateTest::testIncrementNonExistingAutoCreateWSetField()
 
     std::unique_ptr<WeightedSetFieldValue> ws(
             fixture.doc.getAs<WeightedSetFieldValue>(fixture.field));
-    CPPUNIT_ASSERT_EQUAL(size_t(1), ws->size());
-    CPPUNIT_ASSERT(ws->contains(StringFieldValue("foo")));
-    CPPUNIT_ASSERT_EQUAL(1, ws->get(StringFieldValue("foo"), 0));
+    ASSERT_EQ(size_t(1), ws->size());
+    EXPECT_TRUE(ws->contains(StringFieldValue("foo")));
+    EXPECT_EQ(1, ws->get(StringFieldValue("foo"), 0));
 }
 
-void
-DocumentUpdateTest::testIncrementExistingWSetField()
+TEST(DocumentUpdateTest, testIncrementExistingWSetField)
 {
     WeightedSetAutoCreateFixture fixture;
     {
@@ -508,13 +417,12 @@ DocumentUpdateTest::testIncrementExistingWSetField()
     fixture.applyUpdateToDocument();
 
     auto ws(fixture.doc.getAs<WeightedSetFieldValue>(fixture.field));
-    CPPUNIT_ASSERT_EQUAL(size_t(2), ws->size());
-    CPPUNIT_ASSERT(ws->contains(StringFieldValue("foo")));
-    CPPUNIT_ASSERT_EQUAL(1, ws->get(StringFieldValue("foo"), 0));
+    ASSERT_EQ(size_t(2), ws->size());
+    EXPECT_TRUE(ws->contains(StringFieldValue("foo")));
+    EXPECT_EQ(1, ws->get(StringFieldValue("foo"), 0));
 }
 
-void
-DocumentUpdateTest::testIncrementWithZeroResultWeightIsRemoved()
+TEST(DocumentUpdateTest, testIncrementWithZeroResultWeightIsRemoved)
 {
     WeightedSetAutoCreateFixture fixture;
     fixture.update.addUpdate(FieldUpdate(fixture.field)
@@ -524,18 +432,18 @@ DocumentUpdateTest::testIncrementWithZeroResultWeightIsRemoved()
     fixture.applyUpdateToDocument();
 
     auto ws(fixture.doc.getAs<WeightedSetFieldValue>(fixture.field));
-    CPPUNIT_ASSERT_EQUAL(size_t(1), ws->size());
-    CPPUNIT_ASSERT(ws->contains(StringFieldValue("foo")));
-    CPPUNIT_ASSERT(!ws->contains(StringFieldValue("baz")));
+    ASSERT_EQ(size_t(1), ws->size());
+    EXPECT_TRUE(ws->contains(StringFieldValue("foo")));
+    EXPECT_FALSE(ws->contains(StringFieldValue("baz")));
 }
 
-void DocumentUpdateTest::testReadSerializedFile()
+TEST(DocumentUpdateTest, testReadSerializedFile)
 {
     // Reads a file serialized from java
-    const std::string file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");
+    const std::string file_name = "data/crossplatform-java-cpp-doctypes.cfg";
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
-    int fd = open(TEST_PATH("data/serializeupdatejava.dat").c_str(), O_RDONLY);
+    int fd = open("data/serializeupdatejava.dat" , O_RDONLY);
 
     int len = lseek(fd,0,SEEK_END);
     ByteBuffer buf(len);
@@ -550,61 +458,61 @@ void DocumentUpdateTest::testReadSerializedFile()
     DocumentUpdate& upd(*updp);
 
     const DocumentType *type = repo.getDocumentType("serializetest");
-    CPPUNIT_ASSERT_EQUAL(DocumentId(DocIdString("update", "test")), upd.getId());
-    CPPUNIT_ASSERT_EQUAL(*type, upd.getType());
+    EXPECT_EQ(DocumentId(DocIdString("update", "test")), upd.getId());
+    EXPECT_EQ(*type, upd.getType());
 
     // Verify assign value update.
     FieldUpdate serField = upd.getUpdates()[1];
-    CPPUNIT_ASSERT_EQUAL(serField.getField().getId(), type->getField("intfield").getId());
+    EXPECT_EQ(serField.getField().getId(), type->getField("intfield").getId());
 
     const ValueUpdate* serValue = &serField[0];
-    CPPUNIT_ASSERT_EQUAL(serValue->getType(), ValueUpdate::Assign);
+    EXPECT_EQ(serValue->getType(), ValueUpdate::Assign);
 
     const AssignValueUpdate* assign(static_cast<const AssignValueUpdate*>(serValue));
-    CPPUNIT_ASSERT_EQUAL(IntFieldValue(4), static_cast<const IntFieldValue&>(assign->getValue()));
+    EXPECT_EQ(IntFieldValue(4), static_cast<const IntFieldValue&>(assign->getValue()));
 
     // Verify clear field update.
     serField = upd.getUpdates()[2];
-    CPPUNIT_ASSERT_EQUAL(serField.getField().getId(), type->getField("floatfield").getId());
+    EXPECT_EQ(serField.getField().getId(), type->getField("floatfield").getId());
 
     serValue = &serField[0];
-    CPPUNIT_ASSERT_EQUAL(serValue->getType(), ValueUpdate::Clear);
-    CPPUNIT_ASSERT(serValue->inherits(ClearValueUpdate::classId));
+    EXPECT_EQ(serValue->getType(), ValueUpdate::Clear);
+    EXPECT_TRUE(serValue->inherits(ClearValueUpdate::classId));
 
     // Verify add value update.
     serField = upd.getUpdates()[0];
-    CPPUNIT_ASSERT_EQUAL(serField.getField().getId(), type->getField("arrayoffloatfield").getId());
+    EXPECT_EQ(serField.getField().getId(), type->getField("arrayoffloatfield").getId());
 
     serValue = &serField[0];
-    CPPUNIT_ASSERT_EQUAL(serValue->getType(), ValueUpdate::Add);
+    EXPECT_EQ(serValue->getType(), ValueUpdate::Add);
 
     const AddValueUpdate* add = static_cast<const AddValueUpdate*>(serValue);
     const FieldValue* value = &add->getValue();
-    CPPUNIT_ASSERT(value->inherits(FloatFieldValue::classId));
-    CPPUNIT_ASSERT_EQUAL(value->getAsFloat(), 5.00f);
+    EXPECT_TRUE(value->inherits(FloatFieldValue::classId));
+    EXPECT_FLOAT_EQ(value->getAsFloat(), 5.00f);
 
     serValue = &serField[1];
-    CPPUNIT_ASSERT_EQUAL(serValue->getType(), ValueUpdate::Add);
+    EXPECT_EQ(serValue->getType(), ValueUpdate::Add);
 
     add = static_cast<const AddValueUpdate*>(serValue);
     value = &add->getValue();
-    CPPUNIT_ASSERT(value->inherits(FloatFieldValue::classId));
-    CPPUNIT_ASSERT_EQUAL(value->getAsFloat(), 4.23f);
+    EXPECT_TRUE(value->inherits(FloatFieldValue::classId));
+    EXPECT_FLOAT_EQ(value->getAsFloat(), 4.23f);
 
     serValue = &serField[2];
-    CPPUNIT_ASSERT_EQUAL(serValue->getType(), ValueUpdate::Add);
+    EXPECT_EQ(serValue->getType(), ValueUpdate::Add);
 
     add = static_cast<const AddValueUpdate*>(serValue);
     value = &add->getValue();
-    CPPUNIT_ASSERT(value->inherits(FloatFieldValue::classId));
-    CPPUNIT_ASSERT_EQUAL(value->getAsFloat(), -1.00f);
+    EXPECT_TRUE(value->inherits(FloatFieldValue::classId));
+    EXPECT_FLOAT_EQ(value->getAsFloat(), -1.00f);
 
 }
 
-void DocumentUpdateTest::testGenerateSerializedFile()
+TEST(DocumentUpdateTest, testGenerateSerializedFile)
 {
     // Tests nothing, only generates a file for java test
-    const std::string file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");
+    const std::string file_name = "data/crossplatform-java-cpp-doctypes.cfg";
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
     const DocumentType *type(repo.getDocumentType("serializetest"));
@@ -626,7 +534,7 @@ void DocumentUpdateTest::testGenerateSerializedFile()
                         ArithmeticValueUpdate(ArithmeticValueUpdate::Mul, 2))));
     ByteBuffer::UP buf(serialize42(upd));
 
-    int fd = open(TEST_PATH("data/serializeupdatecpp.dat").c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644);
+    int fd = open("data/serializeupdatecpp.dat", O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
 	    throw vespalib::Exception("read failed");
     }
@@ -634,59 +542,48 @@ void DocumentUpdateTest::testGenerateSerializedFile()
 }
 
 
-void DocumentUpdateTest::testSetBadFieldTypes()
+TEST(DocumentUpdateTest, testSetBadFieldTypes)
 {
     // Create a test document
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*)NULL, doc->getValue(doc->getField("headerval")).get());
+    EXPECT_EQ((document::FieldValue*)NULL, doc->getValue(doc->getField("headerval")).get());
 
     // Assign a float value to an int field.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    try {
+    ASSERT_THROW(
         update.addUpdate(FieldUpdate(doc->getField("headerval"))
-                 .addUpdate(AssignValueUpdate(FloatFieldValue(4.00f))));
-        CPPUNIT_FAIL("Expected exception when adding a float to an int field.");
-    } catch (std::exception& e) {
-        ; // fprintf(stderr, "Got exception => OK: %s\n", e.what());
-    }
+                 .addUpdate(AssignValueUpdate(FloatFieldValue(4.00f)))),
+        std::exception) << "Expected exception when adding a float to an int field.";
 
     update.applyTo(*doc);
 
     // Verify that the field is NOT set in the document.
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*)NULL,
+    EXPECT_EQ((document::FieldValue*)NULL,
 			 doc->getValue(doc->getField("headerval")).get());
 }
 
-void
-DocumentUpdateTest::testUpdateApplyNoParams()
+TEST(DocumentUpdateTest, testUpdateApplyNoParams)
 {
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*)NULL, doc->getValue(doc->getField("tags")).get());
+    EXPECT_EQ((document::FieldValue*)NULL, doc->getValue(doc->getField("tags")).get());
 
-    // Assign array field with no parameters - illegal.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    try {
-        update.addUpdate(FieldUpdate(doc->getField("tags")).addUpdate(AssignValueUpdate()));
-        CPPUNIT_FAIL("Expected exception when assign a NULL value.");
-    } catch (std::exception& e) {
-        ; // fprintf(stderr, "Got exception => OK: %s\n", e.what());
-    }
+    update.addUpdate(FieldUpdate(doc->getField("tags")).addUpdate(AssignValueUpdate()));
 
     update.applyTo(*doc);
 
     // Verify that the field was cleared in the document.
-    CPPUNIT_ASSERT(!doc->hasValue(doc->getField("tags")));
+    EXPECT_FALSE(doc->hasValue(doc->getField("tags")));
 }
 
-void
-DocumentUpdateTest::testUpdateApplyNoArrayValues()
+TEST(DocumentUpdateTest, testUpdateApplyNoArrayValues)
 {
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("tags"));
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ((document::FieldValue*) 0, doc->getValue(field).get());
 
     // Assign array field with no array values = empty array
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -697,18 +594,17 @@ DocumentUpdateTest::testUpdateApplyNoArrayValues()
 
     // Verify that the field was set in the document
     std::unique_ptr<ArrayFieldValue> fval(doc->getAs<ArrayFieldValue>(field));
-    CPPUNIT_ASSERT(fval.get());
-    CPPUNIT_ASSERT_EQUAL((size_t) 0, fval->size());
+    EXPECT_TRUE(fval.get());
+    EXPECT_EQ((size_t) 0, fval->size());
 }
 
-void
-DocumentUpdateTest::testUpdateArrayEmptyParamValue()
+TEST(DocumentUpdateTest, testUpdateArrayEmptyParamValue)
 {
     // Create a test document.
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("tags"));
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ((document::FieldValue*) 0, doc->getValue(field).get());
 
     // Assign array field with no array values = empty array.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -717,8 +613,8 @@ DocumentUpdateTest::testUpdateArrayEmptyParamValue()
 
     // Verify that the field was set in the document.
     std::unique_ptr<ArrayFieldValue> fval1(doc->getAs<ArrayFieldValue>(field));
-    CPPUNIT_ASSERT(fval1.get());
-    CPPUNIT_ASSERT_EQUAL((size_t) 0, fval1->size());
+    EXPECT_TRUE(fval1.get());
+    EXPECT_EQ((size_t) 0, fval1->size());
 
     // Remove array field.
     DocumentUpdate update2(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -727,17 +623,16 @@ DocumentUpdateTest::testUpdateArrayEmptyParamValue()
 
     // Verify that the field was cleared in the document.
     std::unique_ptr<ArrayFieldValue> fval2(doc->getAs<ArrayFieldValue>(field));
-    CPPUNIT_ASSERT(!fval2);
+    EXPECT_FALSE(fval2);
 }
 
-void
-DocumentUpdateTest::testUpdateWeightedSetEmptyParamValue()
+TEST(DocumentUpdateTest, testUpdateWeightedSetEmptyParamValue)
 {
     // Create a test document
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("stringweightedset"));
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ((document::FieldValue*) 0, doc->getValue(field).get());
 
     // Assign weighted set with no items = empty set.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -746,8 +641,8 @@ DocumentUpdateTest::testUpdateWeightedSetEmptyParamValue()
 
     // Verify that the field was set in the document.
     auto fval1(doc->getAs<WeightedSetFieldValue>(field));
-    CPPUNIT_ASSERT(fval1.get());
-    CPPUNIT_ASSERT_EQUAL((size_t) 0, fval1->size());
+    EXPECT_TRUE(fval1.get());
+    EXPECT_EQ((size_t) 0, fval1->size());
 
     // Remove weighted set field.
     DocumentUpdate update2(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -756,67 +651,58 @@ DocumentUpdateTest::testUpdateWeightedSetEmptyParamValue()
 
     // Verify that the field was cleared in the document.
     auto fval2(doc->getAs<WeightedSetFieldValue>(field));
-    CPPUNIT_ASSERT(!fval2);
+    EXPECT_FALSE(fval2);
 }
 
-void
-DocumentUpdateTest::testUpdateArrayWrongSubtype()
+TEST(DocumentUpdateTest, testUpdateArrayWrongSubtype)
 {
     // Create a test document
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("tags"));
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ((document::FieldValue*) 0, doc->getValue(field).get());
 
     // Assign int values to string array.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    try {
+    ASSERT_THROW(
         update.addUpdate(FieldUpdate(field)
                  .addUpdate(AddValueUpdate(IntFieldValue(123)))
-                 .addUpdate(AddValueUpdate(IntFieldValue(456))));
-        CPPUNIT_FAIL("Expected exception when adding wrong type.");
-    } catch (std::exception& e) {
-        ; // fprintf(stderr, "Got exception => OK: %s\n", e.what());
-    }
+                 .addUpdate(AddValueUpdate(IntFieldValue(456)))),
+        std::exception) << "Expected exception when adding wrong type.";
 
     // Apply update
     update.applyTo(*doc);
 
     // Verify that the field was NOT set in the document
     FieldValue::UP fval(doc->getValue(field));
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0, fval.get());
+    EXPECT_EQ((document::FieldValue*) 0, fval.get());
 }
 
-void
-DocumentUpdateTest::testUpdateWeightedSetWrongSubtype()
+TEST(DocumentUpdateTest, testUpdateWeightedSetWrongSubtype)
 {
     // Create a test document
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("stringweightedset"));
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ((document::FieldValue*) 0, doc->getValue(field).get());
 
     // Assign int values to string array.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    try {
+    ASSERT_THROW(
         update.addUpdate(FieldUpdate(field)
                  .addUpdate(AddValueUpdate(IntFieldValue(123)).setWeight(1000))
-                 .addUpdate(AddValueUpdate(IntFieldValue(456)).setWeight(2000)));
-        CPPUNIT_FAIL("Expected exception when adding wrong type.");
-    } catch (std::exception& e) {
-        ; // fprintf(stderr, "Got exception => OK: %s\n", e.what());
-    }
+                 .addUpdate(AddValueUpdate(IntFieldValue(456)).setWeight(2000))),
+        std::exception) << "Expected exception when adding wrong type.";
 
     // Apply update
     update.applyTo(*doc);
 
     // Verify that the field was NOT set in the document
     FieldValue::UP fval(doc->getValue(field));
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0, fval.get());
+    EXPECT_EQ((document::FieldValue*) 0, fval.get());
 }
 
-void
-DocumentUpdateTest::testMapValueUpdate()
+TEST(DocumentUpdateTest, testMapValueUpdate)
 {
     // Create a test document
     TestDocMan docMan;
@@ -835,7 +721,7 @@ DocumentUpdateTest::testMapValueUpdate()
         .applyTo(*doc);
     std::unique_ptr<WeightedSetFieldValue> fv1 =
         doc->getAs<WeightedSetFieldValue>(field1);
-    CPPUNIT_ASSERT(fv1->size() == 0);
+    EXPECT_EQ(0, fv1->size());
 
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
         .addUpdate(FieldUpdate(field2)
@@ -843,9 +729,9 @@ DocumentUpdateTest::testMapValueUpdate()
                                              ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 1.0))))
         .applyTo(*doc);
     auto fv2 = doc->getAs<WeightedSetFieldValue>(field2);
-    CPPUNIT_ASSERT(fv2->size() == 1);
+    EXPECT_EQ(1, fv2->size());
 
-    CPPUNIT_ASSERT(fv1->find(StringFieldValue("apple")) == fv1->end());
+    EXPECT_EQ(fv1->find(StringFieldValue("apple")), fv1->end());
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
         .addUpdate(FieldUpdate(field1).addUpdate(ClearValueUpdate()))
         .applyTo(*doc);
@@ -855,16 +741,16 @@ DocumentUpdateTest::testMapValueUpdate()
         .applyTo(*doc);
 
     auto fval3(doc->getAs<WeightedSetFieldValue>(field1));
-    CPPUNIT_ASSERT(fval3->find(StringFieldValue("apple")) != fval3->end());
-    CPPUNIT_ASSERT_EQUAL(1, fval3->get(StringFieldValue("apple")));
+    EXPECT_NE(fval3->find(StringFieldValue("apple")), fval3->end());
+    EXPECT_EQ(1, fval3->get(StringFieldValue("apple")));
 
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
         .addUpdate(FieldUpdate(field2).addUpdate(AddValueUpdate(StringFieldValue("apple")).setWeight(1)))
         .applyTo(*doc);
 
     auto fval3b(doc->getAs<WeightedSetFieldValue>(field2));
-    CPPUNIT_ASSERT(fval3b->find(StringFieldValue("apple")) != fval3b->end());
-    CPPUNIT_ASSERT_EQUAL(1, fval3b->get(StringFieldValue("apple")));
+    EXPECT_NE(fval3b->find(StringFieldValue("apple")), fval3b->end());
+    EXPECT_EQ(1, fval3b->get(StringFieldValue("apple")));
 
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
         .addUpdate(FieldUpdate(field1)
@@ -873,8 +759,8 @@ DocumentUpdateTest::testMapValueUpdate()
         .applyTo(*doc);
 
     auto fv3 = doc->getAs<WeightedSetFieldValue>(field1);
-    CPPUNIT_ASSERT(fv3->find(StringFieldValue("apple")) != fv3->end());
-    CPPUNIT_ASSERT_EQUAL(0, fv3->get(StringFieldValue("apple")));
+    EXPECT_NE(fv3->find(StringFieldValue("apple")), fv3->end());
+    EXPECT_EQ(0, fv3->get(StringFieldValue("apple")));
 
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
         .addUpdate(FieldUpdate(field2)
@@ -883,7 +769,7 @@ DocumentUpdateTest::testMapValueUpdate()
         .applyTo(*doc);
 
     auto fv4 = doc->getAs<WeightedSetFieldValue>(field2);
-    CPPUNIT_ASSERT(fv4->find(StringFieldValue("apple")) == fv4->end());
+    EXPECT_EQ(fv4->find(StringFieldValue("apple")), fv4->end());
 }
 
 std::unique_ptr<Tensor>
@@ -905,7 +791,7 @@ makeTensorFieldValue(const TensorSpec &spec, const TensorDataType &dataType)
 const Tensor &asTensor(const FieldValue &fieldValue) {
     auto &tensorFieldValue = dynamic_cast<const TensorFieldValue &>(fieldValue);
     auto &tensor = tensorFieldValue.getAsTensorPtr();
-    CPPUNIT_ASSERT(tensor);
+    assert(tensor);
     return *tensor;
 }
 
@@ -930,7 +816,7 @@ struct TensorUpdateFixture {
           tensorDataType(extractTensorDataType()),
           tensorType(tensorDataType.getTensorType().to_spec())
     {
-        CPPUNIT_ASSERT(!emptyDoc->getValue(fieldName));
+        EXPECT_FALSE(emptyDoc->getValue(fieldName));
     }
     ~TensorUpdateFixture() {}
 
@@ -967,20 +853,20 @@ struct TensorUpdateFixture {
     }
 
     void assertDocumentUpdated() {
-        CPPUNIT_ASSERT(*emptyDoc != updatedDoc);
+        EXPECT_NE(*emptyDoc, updatedDoc);
     }
 
     void assertDocumentNotUpdated() {
-        CPPUNIT_ASSERT(*emptyDoc == updatedDoc);
+        EXPECT_EQ(*emptyDoc, updatedDoc);
     }
 
     void assertTensor(const TensorFieldValue &expTensorValue) {
         auto actTensorValue = getTensor();
-        CPPUNIT_ASSERT(actTensorValue);
-        CPPUNIT_ASSERT(*actTensorValue == expTensorValue);
+        ASSERT_TRUE(actTensorValue);
+        EXPECT_EQ(*actTensorValue, expTensorValue);
         auto &actTensor = asTensor(*actTensorValue);
         auto &expTensor = asTensor(expTensorValue);
-        CPPUNIT_ASSERT(actTensor == expTensor);
+        EXPECT_EQ(actTensor, expTensor);
     }
 
     void assertTensor(const TensorSpec &expSpec) {
@@ -1004,8 +890,7 @@ struct TensorUpdateFixture {
 
 };
 
-void
-DocumentUpdateTest::tensor_assign_update_can_be_applied()
+TEST(DocumentUpdateTest, tensor_assign_update_can_be_applied)
 {
     TensorUpdateFixture f;
     auto newTensor = f.makeBaselineTensor();
@@ -1014,18 +899,16 @@ DocumentUpdateTest::tensor_assign_update_can_be_applied()
     f.assertTensor(*newTensor);
 }
 
-void
-DocumentUpdateTest::tensor_clear_update_can_be_applied()
+TEST(DocumentUpdateTest, tensor_clear_update_can_be_applied)
 {
     TensorUpdateFixture f;
     f.setTensor(*f.makeBaselineTensor());
     f.applyUpdate(ClearValueUpdate());
     f.assertDocumentNotUpdated();
-    CPPUNIT_ASSERT(!f.getTensor());
+    EXPECT_FALSE(f.getTensor());
 }
 
-void
-DocumentUpdateTest::tensor_add_update_can_be_applied()
+TEST(DocumentUpdateTest, tensor_add_update_can_be_applied)
 {
     TensorUpdateFixture f;
     f.assertApplyUpdate(f.spec().add({{"x", "a"}}, 2)
@@ -1039,8 +922,7 @@ DocumentUpdateTest::tensor_add_update_can_be_applied()
                                 .add({{"x", "c"}}, 7));
 }
 
-void
-DocumentUpdateTest::tensor_modify_update_can_be_applied()
+TEST(DocumentUpdateTest, tensor_modify_update_can_be_applied)
 {
     TensorUpdateFixture f;
     auto baseLine = f.spec().add({{"x", "a"}}, 2)
@@ -1066,29 +948,25 @@ DocumentUpdateTest::tensor_modify_update_can_be_applied()
                                 .add({{"x", "b"}}, 15));
 }
 
-void
-DocumentUpdateTest::tensor_assign_update_can_be_roundtrip_serialized()
+TEST(DocumentUpdateTest, tensor_assign_update_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f;
     f.assertRoundtripSerialize(AssignValueUpdate(*f.makeBaselineTensor()));
 }
 
-void
-DocumentUpdateTest::tensor_add_update_can_be_roundtrip_serialized()
+TEST(DocumentUpdateTest, tensor_add_update_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f;
     f.assertRoundtripSerialize(TensorAddUpdate(f.makeBaselineTensor()));
 }
 
-void
-DocumentUpdateTest::tensor_remove_update_can_be_roundtrip_serialized()
+TEST(DocumentUpdateTest, tensor_remove_update_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f;
     f.assertRoundtripSerialize(TensorRemoveUpdate(f.makeBaselineTensor()));
 }
 
-void
-DocumentUpdateTest::tensor_modify_update_can_be_roundtrip_serialized()
+TEST(DocumentUpdateTest, tensor_modify_update_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f;
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
@@ -1102,18 +980,17 @@ assertDocumentUpdateFlag(bool createIfNonExistent, int value)
 {
     DocumentUpdateFlags f1;
     f1.setCreateIfNonExistent(createIfNonExistent);
-    CPPUNIT_ASSERT_EQUAL(createIfNonExistent, f1.getCreateIfNonExistent());
+    EXPECT_EQ(createIfNonExistent, f1.getCreateIfNonExistent());
     int combined = f1.injectInto(value);
     std::cout << "createIfNonExistent=" << createIfNonExistent << ", value=" << value << ", combined=" << combined << std::endl;
 
     DocumentUpdateFlags f2 = DocumentUpdateFlags::extractFlags(combined);
     int extractedValue = DocumentUpdateFlags::extractValue(combined);
-    CPPUNIT_ASSERT_EQUAL(createIfNonExistent, f2.getCreateIfNonExistent());
-    CPPUNIT_ASSERT_EQUAL(value, extractedValue);
+    EXPECT_EQ(createIfNonExistent, f2.getCreateIfNonExistent());
+    EXPECT_EQ(value, extractedValue);
 }
 
-void
-DocumentUpdateTest::testThatDocumentUpdateFlagsIsWorking()
+TEST(DocumentUpdateTest, testThatDocumentUpdateFlagsIsWorking)
 {
     { // create-if-non-existent = true
         assertDocumentUpdateFlag(true, 0);
@@ -1153,8 +1030,7 @@ CreateIfNonExistentFixture::CreateIfNonExistentFixture()
     update->setCreateIfNonExistent(true);
 }
 
-void
-DocumentUpdateTest::testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50()
+TEST(DocumentUpdateTest, testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50)
 {
     CreateIfNonExistentFixture f;
 
@@ -1162,12 +1038,11 @@ DocumentUpdateTest::testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized
     buf->flip();
 
     DocumentUpdate::UP deserialized = DocumentUpdate::createHEAD(f.docMan.getTypeRepo(), *buf);
-    CPPUNIT_ASSERT_EQUAL(*f.update, *deserialized);
-    CPPUNIT_ASSERT(deserialized->getCreateIfNonExistent());
+    EXPECT_EQ(*f.update, *deserialized);
+    EXPECT_TRUE(deserialized->getCreateIfNonExistent());
 }
 
-void
-DocumentUpdateTest::testThatCreateIfNonExistentFlagIsSerializedAndDeserialized()
+TEST(DocumentUpdateTest, testThatCreateIfNonExistentFlagIsSerializedAndDeserialized)
 {
     CreateIfNonExistentFixture f;
 
@@ -1176,8 +1051,8 @@ DocumentUpdateTest::testThatCreateIfNonExistentFlagIsSerializedAndDeserialized()
 
     nbostream is(buf->getBufferAtPos(), buf->getRemaining());
     auto deserialized = DocumentUpdate::create42(f.docMan.getTypeRepo(), is);
-    CPPUNIT_ASSERT_EQUAL(*f.update, *deserialized);
-    CPPUNIT_ASSERT(deserialized->getCreateIfNonExistent());
+    EXPECT_EQ(*f.update, *deserialized);
+    EXPECT_TRUE(deserialized->getCreateIfNonExistent());
 }
 
 struct ArrayUpdateFixture {
@@ -1202,17 +1077,19 @@ ArrayUpdateFixture::ArrayUpdateFixture()
 }
 ArrayUpdateFixture::~ArrayUpdateFixture() = default;
 
-void DocumentUpdateTest::array_element_update_can_be_roundtrip_serialized() {
+TEST(DocumentUpdateTest, array_element_update_can_be_roundtrip_serialized)
+{
     ArrayUpdateFixture f;
 
     auto buffer = serializeHEAD(*f.update);
     buffer->flip();
 
     auto deserialized = DocumentUpdate::createHEAD(f.doc_man.getTypeRepo(), *buffer);
-    CPPUNIT_ASSERT_EQUAL(*f.update, *deserialized);
+    EXPECT_EQ(*f.update, *deserialized);
 }
 
-void DocumentUpdateTest::array_element_update_applies_to_specified_element() {
+TEST(DocumentUpdateTest, array_element_update_applies_to_specified_element)
+{
     ArrayUpdateFixture f;
 
     ArrayFieldValue array_value(f.array_field.getDataType());
@@ -1224,13 +1101,14 @@ void DocumentUpdateTest::array_element_update_applies_to_specified_element() {
     f.update->applyTo(*f.doc);
 
     auto result_array = f.doc->getAs<ArrayFieldValue>(f.array_field);
-    CPPUNIT_ASSERT_EQUAL(size_t(3), result_array->size());
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("foo"), (*result_array)[0].getAsString());
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("bar"), (*result_array)[1].getAsString());
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("blarg"), (*result_array)[2].getAsString());
+    ASSERT_EQ(size_t(3), result_array->size());
+    EXPECT_EQ(vespalib::string("foo"), (*result_array)[0].getAsString());
+    EXPECT_EQ(vespalib::string("bar"), (*result_array)[1].getAsString());
+    EXPECT_EQ(vespalib::string("blarg"), (*result_array)[2].getAsString());
 }
 
-void DocumentUpdateTest::array_element_update_for_invalid_index_is_ignored() {
+TEST(DocumentUpdateTest, array_element_update_for_invalid_index_is_ignored)
+{
     ArrayUpdateFixture f;
 
     ArrayFieldValue array_value(f.array_field.getDataType());
@@ -1240,7 +1118,7 @@ void DocumentUpdateTest::array_element_update_for_invalid_index_is_ignored() {
     f.update->applyTo(*f.doc); // MapValueUpdate for index 1, which does not exist
 
     auto result_array = f.doc->getAs<ArrayFieldValue>(f.array_field);
-    CPPUNIT_ASSERT_EQUAL(array_value, *result_array);
+    EXPECT_EQ(array_value, *result_array);
 }
 
 }  // namespace document
