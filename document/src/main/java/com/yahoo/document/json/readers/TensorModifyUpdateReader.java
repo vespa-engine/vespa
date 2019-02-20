@@ -110,7 +110,7 @@ public class TensorModifyUpdateReader {
     private static TensorFieldValue createTensor(TokenBuffer buffer, Field field) {
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
         TensorType originalType = tensorDataType.getTensorType();
-        TensorType convertedType = TensorModifyUpdate.convertToCompatibleType(originalType);
+        TensorType convertedType = TensorModifyUpdate.convertDimensionsToMapped(originalType);
 
         Tensor.Builder tensorBuilder = Tensor.Builder.of(convertedType);
         readTensorCells(buffer, tensorBuilder);

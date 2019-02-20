@@ -27,10 +27,10 @@ public class TensorAddUpdateReader {
         expectObjectStart(buffer.currentToken());
         expectTensorTypeHasSparseDimensions(field);
 
-        // Convert update type to sparse
+        // Convert update type to only have mapped dimensions - to avoid spanning out dense subspace
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
         TensorType originalType = tensorDataType.getTensorType();
-        TensorType convertedType = TensorModifyUpdate.convertToCompatibleType(originalType);
+        TensorType convertedType = TensorModifyUpdate.convertDimensionsToMapped(originalType);
 
         TensorFieldValue tensorFieldValue = new TensorFieldValue(convertedType);
         fillTensor(buffer, tensorFieldValue);

@@ -26,7 +26,7 @@ public class TensorModifyUpdateTest {
     }
 
     private static void assertConvertToCompatible(String expectedType, String inputType) {
-        assertEquals(expectedType, TensorModifyUpdate.convertToCompatibleType(TensorType.fromSpec(inputType)).toString());
+        assertEquals(expectedType, TensorModifyUpdate.convertDimensionsToMapped(TensorType.fromSpec(inputType)).toString());
     }
 
     @Test

@@ -432,7 +432,6 @@ public class DocumentUpdateJsonSerializerTest {
         ));
     }
 
-
     @Test
     public void reference_field_id_can_be_update_assigned_non_empty_id() {
         roundtripSerializeJsonAndMatch(inputJson(
