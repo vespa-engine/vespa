@@ -466,7 +466,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     EXPECT_EQ(serField.getField().getId(), type->getField("intfield").getId());
 
     const ValueUpdate* serValue = &serField[0];
-    EXPECT_EQ(serValue->getType(), ValueUpdate::Assign);
+    ASSERT_EQ(serValue->getType(), ValueUpdate::Assign);
 
     const AssignValueUpdate* assign(static_cast<const AssignValueUpdate*>(serValue));
     EXPECT_EQ(IntFieldValue(4), static_cast<const IntFieldValue&>(assign->getValue()));
@@ -484,7 +484,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     EXPECT_EQ(serField.getField().getId(), type->getField("arrayoffloatfield").getId());
 
     serValue = &serField[0];
-    EXPECT_EQ(serValue->getType(), ValueUpdate::Add);
+    ASSERT_EQ(serValue->getType(), ValueUpdate::Add);
 
     const AddValueUpdate* add = static_cast<const AddValueUpdate*>(serValue);
     const FieldValue* value = &add->getValue();
@@ -492,7 +492,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     EXPECT_FLOAT_EQ(value->getAsFloat(), 5.00f);
 
     serValue = &serField[1];
-    EXPECT_EQ(serValue->getType(), ValueUpdate::Add);
+    ASSERT_EQ(serValue->getType(), ValueUpdate::Add);
 
     add = static_cast<const AddValueUpdate*>(serValue);
     value = &add->getValue();
@@ -500,7 +500,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     EXPECT_FLOAT_EQ(value->getAsFloat(), 4.23f);
 
     serValue = &serField[2];
-    EXPECT_EQ(serValue->getType(), ValueUpdate::Add);
+    ASSERT_EQ(serValue->getType(), ValueUpdate::Add);
 
     add = static_cast<const AddValueUpdate*>(serValue);
     value = &add->getValue();
@@ -594,7 +594,7 @@ TEST(DocumentUpdateTest, testUpdateApplyNoArrayValues)
 
     // Verify that the field was set in the document
     std::unique_ptr<ArrayFieldValue> fval(doc->getAs<ArrayFieldValue>(field));
-    EXPECT_TRUE(fval.get());
+    ASSERT_TRUE(fval.get());
     EXPECT_EQ((size_t) 0, fval->size());
 }
 
@@ -613,7 +613,7 @@ TEST(DocumentUpdateTest, testUpdateArrayEmptyParamValue)
 
     // Verify that the field was set in the document.
     std::unique_ptr<ArrayFieldValue> fval1(doc->getAs<ArrayFieldValue>(field));
-    EXPECT_TRUE(fval1.get());
+    ASSERT_TRUE(fval1.get());
     EXPECT_EQ((size_t) 0, fval1->size());
 
     // Remove array field.
@@ -641,7 +641,7 @@ TEST(DocumentUpdateTest, testUpdateWeightedSetEmptyParamValue)
 
     // Verify that the field was set in the document.
     auto fval1(doc->getAs<WeightedSetFieldValue>(field));
-    EXPECT_TRUE(fval1.get());
+    ASSERT_TRUE(fval1.get());
     EXPECT_EQ((size_t) 0, fval1->size());
 
     // Remove weighted set field.
