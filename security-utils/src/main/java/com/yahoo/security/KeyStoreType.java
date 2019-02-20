@@ -16,7 +16,7 @@ public enum KeyStoreType {
     },
     PKCS12 {
         KeyStore createKeystore() throws KeyStoreException {
-            return KeyStore.getInstance("PKCS12", BouncyCastleProviderHolder.getInstance());
+            return KeyStore.getInstance("PKCS12");
         }
     };
     abstract KeyStore createKeystore() throws GeneralSecurityException;
