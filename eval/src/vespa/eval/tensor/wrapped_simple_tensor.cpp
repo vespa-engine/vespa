@@ -89,4 +89,10 @@ WrappedSimpleTensor::add(const Tensor &) const
     LOG_ABORT("should not be reached");
 }
 
+std::unique_ptr<Tensor>
+WrappedSimpleTensor::remove(const CellValues &) const
+{
+    LOG_ABORT("should not be reached");
+}
+
 } // namespace vespalib::tensor

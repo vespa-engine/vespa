@@ -7,6 +7,7 @@
 #include "sparse_tensor_match.h"
 #include "sparse_tensor_modify.h"
 #include "sparse_tensor_reduce.hpp"
+#include "sparse_tensor_remove.h"
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/tensor/cell_values.h>
 #include <vespa/eval/tensor/tensor_address_builder.h>
@@ -213,6 +214,17 @@ SparseTensor::add(const Tensor &arg) const
     SparseTensorAdd adder(_type, std::move(cells), std::move(stash));
     rhs->accept(adder);
     return adder.build();
+}
+
+std::unique_ptr<Tensor>
+SparseTensor::remove(const CellValues &cellAddresses) const
+{
+    Cells cells;
+    Stash stash;
+    copyCells(cells, _cells, stash);
+    SparseTensorRemove remover(_type, std::move(cells), std::move(stash));
+    cellAddresses.accept(remover);
+    return remover.build();
 }
 
 }
