@@ -299,4 +299,10 @@ DenseTensorView::add(const Tensor &) const
     LOG_ABORT("should not be reached");
 }
 
+std::unique_ptr<Tensor>
+DenseTensorView::remove(const CellValues &) const
+{
+    LOG_ABORT("should not be reached");
+}
+
 }

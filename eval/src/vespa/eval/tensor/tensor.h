@@ -49,6 +49,12 @@ public:
      */
     virtual std::unique_ptr<Tensor> add(const Tensor &arg) const = 0;
 
+    /**
+     * Creates a new tensor by removing the cells matching the given cell addresses.
+     * The value associated with the address is ignored.
+     */
+    virtual std::unique_ptr<Tensor> remove(const CellValues &cellAddresses) const = 0;
+
     virtual bool equals(const Tensor &arg) const = 0; // want to remove, but needed by document
     virtual Tensor::UP clone() const = 0; // want to remove, but needed by document
     virtual eval::TensorSpec toSpec() const = 0;
