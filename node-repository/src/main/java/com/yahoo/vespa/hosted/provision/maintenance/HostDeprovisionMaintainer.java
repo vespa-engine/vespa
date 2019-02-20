@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -24,15 +27,19 @@ public class HostDeprovisionMaintainer extends Maintainer {
     private static final Logger log = Logger.getLogger(HostDeprovisionMaintainer.class.getName());
 
     private final HostProvisioner hostProvisioner;
+    private final BooleanFlag dynamicProvisioningEnabled;
 
-    public HostDeprovisionMaintainer(
-            NodeRepository nodeRepository, Duration interval, JobControl jobControl, HostProvisioner hostProvisioner) {
+    public HostDeprovisionMaintainer(NodeRepository nodeRepository, Duration interval, JobControl jobControl,
+                                     HostProvisioner hostProvisioner, FlagSource flagSource) {
         super(nodeRepository, interval, jobControl);
         this.hostProvisioner = hostProvisioner;
+        this.dynamicProvisioningEnabled = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
     }
 
     @Override
     protected void maintain() {
+        if (! dynamicProvisioningEnabled.value()) return;
+
         try (Mutex lock = nodeRepository().lockAllocation()) {
             NodeList nodes = nodeRepository().list();
 

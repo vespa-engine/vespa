@@ -10,6 +10,9 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -18,9 +21,9 @@ import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
-import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
@@ -52,8 +55,9 @@ public class HostProvisionMaintainerTest {
 
     private final HostProvisionerTester tester = new HostProvisionerTester();
     private final HostProvisioner hostProvisioner = mock(HostProvisioner.class);
+    private final FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true);
     private final HostProvisionMaintainer maintainer = new HostProvisionMaintainer(
-            tester.nodeRepository(), Duration.ofDays(1), tester.jobControl(), hostProvisioner);
+            tester.nodeRepository(), Duration.ofDays(1), tester.jobControl(), hostProvisioner, flagSource);
 
     @Test
     public void delegates_to_host_provisioner_and_writes_back_result() {
