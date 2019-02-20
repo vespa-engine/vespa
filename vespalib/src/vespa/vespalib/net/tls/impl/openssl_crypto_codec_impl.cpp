@@ -97,6 +97,14 @@ HandshakeResult handshake_completed() noexcept {
     return {0, 0, HandshakeResult::State::Done};
 }
 
+HandshakeResult handshake_needs_work() noexcept {
+    return {0, 0, HandshakeResult::State::NeedsWork};
+}
+
+HandshakeResult handshake_needs_peer_data() noexcept {
+    return {0, 0, HandshakeResult::State::NeedsMorePeerData};
+}
+
 HandshakeResult handshake_failed() noexcept {
     return {0, 0, HandshakeResult::State::Failed};
 }
@@ -161,7 +169,9 @@ void log_ssl_error(const char* source, int ssl_error) {
 OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx, Mode mode)
     : _ctx(std::move(ctx)),
       _ssl(::SSL_new(_ctx->native_context())),
-      _mode(mode)
+      _mode(mode),
+      _deferred_handshake_params(),
+      _deferred_handshake_result()
 {
     if (!_ssl) {
         throw CryptoException("Failed to create new SSL from SSL_CTX");
@@ -208,27 +218,62 @@ OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContext
 
 OpenSslCryptoCodecImpl::~OpenSslCryptoCodecImpl() = default;
 
-// TODO remove spammy logging once code is stable
-
 HandshakeResult OpenSslCryptoCodecImpl::handshake(const char* from_peer, size_t from_peer_buf_size,
-                                                  char* to_peer, size_t to_peer_buf_size) noexcept {
+                                                  char* to_peer, size_t to_peer_buf_size) noexcept
+{
     LOG_ASSERT(verify_buf(from_peer, from_peer_buf_size) && verify_buf(to_peer, to_peer_buf_size));
+    LOG_ASSERT(!_deferred_handshake_params.has_value()); // do_handshake_work() not called as expected
 
+    if (_deferred_handshake_result.has_value()) {
+        const auto result = *_deferred_handshake_result;
+        _deferred_handshake_result = std::optional<HandshakeResult>();
+        return result;
+    }
     if (SSL_is_init_finished(_ssl.get())) {
         return handshake_completed();
     }
-    ConstBufferViewGuard const_view_guard(*_input_bio, from_peer, from_peer_buf_size);
-    MutableBufferViewGuard mut_view_guard(*_output_bio, to_peer, to_peer_buf_size);
+    // We make the assumption that TLS handshake processing is primarily reactive,
+    // i.e. a handshake frame is received from the peer and this either produces
+    // output to send back and/or marks the handshake as complete or failed.
+    // One exception to this rule is if if we're a client. In this case we have to
+    // do work the first time we're called in order to prepare a ClientHello message.
+    // At that point there will be nothing on the wire to react to.
+    //
+    // Note that we will return a "needs work" false positive in the case of a short read,
+    // as whether or not a complete TLS frame has been received is entirely opaque to us.
+    // The end result will still be correct, as the do_handshake_work() call will signal
+    // "needs read" as expected, but we get extra thread round-trips and added latency.
+    // It is expected that this is not a common case.
+    const bool first_client_send = ((_mode == Mode::Client) && SSL_in_before(_ssl.get()));
+    const bool needs_work = ((from_peer_buf_size > 0) || first_client_send);
+    if (needs_work) {
+        _deferred_handshake_params = DeferredHandshakeParams(from_peer, from_peer_buf_size, to_peer, to_peer_buf_size);
+        return handshake_needs_work();
+    }
+    return handshake_needs_peer_data();
+}
+
+void OpenSslCryptoCodecImpl::do_handshake_work() noexcept {
+    LOG_ASSERT(_deferred_handshake_params.has_value());  // handshake() not called as expected
+    LOG_ASSERT(!_deferred_handshake_result.has_value()); // do_handshake_work() called multiple times without handshake()
+    const auto params = *_deferred_handshake_params;
+    _deferred_handshake_params = std::optional<DeferredHandshakeParams>();
+
+    ConstBufferViewGuard const_view_guard(*_input_bio, params.from_peer, params.from_peer_buf_size);
+    MutableBufferViewGuard mut_view_guard(*_output_bio, params.to_peer, params.to_peer_buf_size);
 
     const auto consume_res = do_handshake_and_consume_peer_input_bytes();
-    LOG_ASSERT(consume_res.bytes_produced == 0);
+    LOG_ASSERT(consume_res.bytes_produced == 0); // Measured via BIO_pending below, not from result.
     if (consume_res.failed()) {
-        return consume_res;
+        _deferred_handshake_result = consume_res;
+        return;
     }
     // SSL_do_handshake() might have produced more data to send. Note: handshake may
     // be complete at this point.
-    int produced = BIO_pending(_output_bio);
-    return handshaked_bytes(consume_res.bytes_consumed, static_cast<size_t>(produced), consume_res.state);
+    const int produced = BIO_pending(_output_bio);
+    _deferred_handshake_result = handshaked_bytes(consume_res.bytes_consumed,
+                                                  static_cast<size_t>(produced),
+                                                  consume_res.state);
 }
 
 HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_bytes() noexcept {

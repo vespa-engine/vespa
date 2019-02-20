@@ -5,6 +5,7 @@
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/crypto_codec.h>
 #include <memory>
+#include <optional>
 
 namespace vespalib::net::tls { struct TlsContext; }
 
@@ -16,10 +17,31 @@ class OpenSslTlsContextImpl;
  * Frame-level OpenSSL-backed TLSv1.2/TLSv1.3 (depending on OpenSSL version)
  * crypto codec implementation.
  *
- * NOT thread safe per instance, but independent instances may be
- * used by different threads safely.
+ * NOT generally thread safe per instance, but independent instances may be
+ * used by different threads safely. One exception is that handshake() and
+ * do_handshake_work() may be called from different threads, as long as it
+ * happens with appropriate data visibility synchronization and not concurrently.
  */
 class OpenSslCryptoCodecImpl : public CryptoCodec {
+
+    struct DeferredHandshakeParams {
+        const char* from_peer          = nullptr;
+        size_t      from_peer_buf_size = 0;
+        char*       to_peer            = nullptr;
+        size_t      to_peer_buf_size   = 0;
+
+        DeferredHandshakeParams(const char* from_peer_, size_t from_peer_buf_size_,
+                                char* to_peer_, size_t to_peer_buf_size_) noexcept
+            : from_peer(from_peer_),
+              from_peer_buf_size(from_peer_buf_size_),
+              to_peer(to_peer_),
+              to_peer_buf_size(to_peer_buf_size_)
+        {}
+
+        DeferredHandshakeParams(const DeferredHandshakeParams&) noexcept = default;
+        DeferredHandshakeParams& operator=(const DeferredHandshakeParams&) noexcept = default;
+    };
+
     // The context maintains shared verification callback state, so it must be
     // kept alive explictly for at least as long as any codecs.
     std::shared_ptr<OpenSslTlsContextImpl> _ctx;
@@ -27,6 +49,8 @@ class OpenSslCryptoCodecImpl : public CryptoCodec {
     ::BIO* _input_bio;  // Owned by _ssl
     ::BIO* _output_bio; // Owned by _ssl
     Mode _mode;
+    std::optional<DeferredHandshakeParams> _deferred_handshake_params;
+    std::optional<HandshakeResult> _deferred_handshake_result;
 public:
     OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx, Mode mode);
     ~OpenSslCryptoCodecImpl() override;
@@ -39,7 +63,7 @@ public:
      *    typically this expansion is only 16 octets). TLS 1.3 reduces
      *    the allowance for expansion to 256 octets."
      *
-     * We're on TLSv1.2, so make room for the worst case.
+     * We may be on TLSv1.2, so make room for the worst case.
      */
     static constexpr size_t MaximumTlsFrameSize = 16384 + 2048;
     static constexpr size_t MaximumFramePlaintextSize = 16384;
@@ -53,6 +77,8 @@ public:
 
     HandshakeResult handshake(const char* from_peer, size_t from_peer_buf_size,
                               char* to_peer, size_t to_peer_buf_size) noexcept override;
+
+    void do_handshake_work() noexcept override;
 
     EncodeResult encode(const char* plaintext, size_t plaintext_size,
                         char* ciphertext, size_t ciphertext_size) noexcept override;

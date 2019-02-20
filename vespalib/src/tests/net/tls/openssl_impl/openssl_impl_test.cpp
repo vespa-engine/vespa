@@ -34,6 +34,7 @@ const char* hs_state_to_str(HandshakeResult::State state) noexcept {
     case HandshakeResult::State::Failed: return "Broken";
     case HandshakeResult::State::Done:   return "Done";
     case HandshakeResult::State::NeedsMorePeerData: return "NeedsMorePeerData";
+    case HandshakeResult::State::NeedsWork: return "NeedsWork";
     }
     abort();
 }
@@ -183,14 +184,24 @@ struct Fixture {
         return hs_result;
     }
 
+    void do_handshake_work(CryptoCodec& codec) {
+        codec.do_handshake_work();
+    }
+
     bool handshake() {
         HandshakeResult cli_res;
         HandshakeResult serv_res;
         while (!(cli_res.done() && serv_res.done())) {
-            cli_res  = do_handshake(*client, server_to_client, client_to_server);
-            serv_res = do_handshake(*server, client_to_server, server_to_client);
-            print_handshake_result("client", cli_res);
-            print_handshake_result("server", serv_res);
+            while ((cli_res  = do_handshake(*client, server_to_client, client_to_server)).needs_work()) {
+                fprintf(stderr, "doing client handshake work\n");
+                do_handshake_work(*client);
+            }
+            print_handshake_result("client handshake()", cli_res);
+            while ((serv_res = do_handshake(*server, client_to_server, server_to_client)).needs_work()) {
+                fprintf(stderr, "doing server handshake work\n");
+                do_handshake_work(*server);
+            }
+            print_handshake_result("server handshake()", serv_res);
 
             if (cli_res.failed() || serv_res.failed()) {
                 return false;
@@ -205,6 +216,21 @@ Fixture::~Fixture() = default;
 TEST_F("client and server can complete handshake", Fixture) {
     fprintf(stderr, "Compiled with %s\n", OPENSSL_VERSION_TEXT);
     EXPECT_TRUE(f.handshake());
+}
+
+TEST_F("client handshake() initially returns NeedsWork without producing anything", Fixture) {
+    auto res = f.do_handshake(*f.client, f.server_to_client, f.client_to_server);
+    EXPECT_TRUE(res.needs_work());
+    EXPECT_EQUAL(0u, res.bytes_consumed);
+    EXPECT_EQUAL(0u, res.bytes_produced);
+}
+
+TEST_F("server handshake() returns NeedsPeerData with empty input", Fixture) {
+    auto res = f.do_handshake(*f.server, f.client_to_server, f.server_to_client);
+    EXPECT_EQUAL(static_cast<int>(HandshakeResult::State::NeedsMorePeerData),
+                 static_cast<int>(res.state));
+    EXPECT_EQUAL(0u, res.bytes_consumed);
+    EXPECT_EQUAL(0u, res.bytes_produced);
 }
 
 TEST_F("clients and servers can send single data frame after handshake (not full duplex)", Fixture) {

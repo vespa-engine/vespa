@@ -13,12 +13,14 @@ struct HandshakeResult {
     enum class State {
         Failed,
         Done,
-        NeedsMorePeerData
+        NeedsMorePeerData,
+        NeedsWork
     };
     State state = State::Failed;
 
     bool failed() const noexcept { return (state == State::Failed); }
     bool done() const noexcept { return (state == State::Done); }
+    bool needs_work() const noexcept { return (state == State::NeedsWork); }
 };
 
 struct EncodeResult {
@@ -76,12 +78,54 @@ public:
     virtual size_t min_decode_buffer_size() const noexcept = 0;
 
     /*
+     * Initiates or progresses a handshake towards a peer. Guaranteed to be lightweight
+     * in the sense that it will not perform any CPU-heavy operations by itself. When
+     * handshaking requires more heavy lifting (such as cryptographic operations), handshake()
+     * will return a result with needs_work() == true. When this is the case, the caller
+     * must call do_handshake_work() before retrying handshake() again. At that point,
+     * handshake() will return the result of the CPU-heavy work (which MAY itself be
+     * needs_work() again).
+     *
+     * Basic call flow:
+     *
+     *     handshake() --> needs_work() ----.
+     *        ^                             |
+     *        |                             |
+     *        `---- do_handshake_work() <---'  (possibly in different thread)
+     *
      * Precondition:  to_peer_buf_size >= min_encode_buffer_size()
-     * Postcondition: if result.done(), the handshake process has completed
+     *
+     *                The handshake() <-> do_handshake_work() flow invariant must hold.
+     *
+     * Postcondition: If result.done(), the handshake process has completed
      *                and data may be passed through encode()/decode().
+     *
+     *                If result.needs_work(), do_handshake_work() MUST be called prior
+     *                to calling handshake() again. The next time handshake() is called,
+     *                it will return the result of the work performed as part of
+     *                do_handshake_work(). The from/to buffers MUST remain valid and
+     *                stable until do_handshake_work() is called.
+     *
+     *                If result.needs_work() it is guaranteed that zero bytes have been
+     *                consumed from the from_peer buffer or produced to the to_peer buffer.
      */
     virtual HandshakeResult handshake(const char* from_peer, size_t from_peer_buf_size,
                                       char* to_peer, size_t to_peer_buf_size) noexcept = 0;
+
+    /*
+     * Perform any CPU-heavy handshake operations that have been initiated by handshake().
+     *
+     * MAY be called from a different thread than handshake() as long as caller guarantees
+     * external synchronization between the threads. MUST NOT be called concurrently with
+     * handshake() on the same instance.
+     *
+     * Precondition:  handshake() has been called immediately prior on this instance with
+     *                a result of needs_work()
+     *                do_handshake_work() has NOT been called immediately prior on this instance.
+     * Postcondition: The next call to handshake() on this instance will return the result
+     *                of the handshake work performed.
+     */
+    virtual void do_handshake_work() noexcept = 0;
 
     /*
      * Encodes a single ciphertext frame into `ciphertext`. If plaintext_size
