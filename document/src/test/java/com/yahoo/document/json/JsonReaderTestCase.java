@@ -1479,7 +1479,7 @@ public class JsonReaderTestCase {
 
     @Test
     public void tensor_add_update_on_mixed_tensor() {
-        assertTensorAddUpdate("{{x:a,y:0}:2.0, {x:a,y:1}:3.0}", "mixed_tensor",
+        assertTensorAddUpdate("{{x:a,y:0}:2.0, {x:a,y:1}:3.0, {x:a,y:2}:0.0}", "mixed_tensor",
                 inputJson("{",
                         "  'cells': [",
                         "    { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 },",
@@ -1487,9 +1487,9 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void tensor_add_update_with_out_of_bound_dense_cells_throws() {
+    public void tensor_add_update_on_mixed_with_out_of_bound_dense_cells_throws() {
         exception.expect(IndexOutOfBoundsException.class);
-        exception.expectMessage("Dimension 'y' has label '3' but type is tensor(x{},y[3])");
+        exception.expectMessage("Index 3 out of bounds for length 3");
         createTensorAddUpdate(inputJson("{",
                 "  'cells': [",
                 "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}"), "mixed_tensor");

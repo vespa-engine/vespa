@@ -6,12 +6,10 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.TensorAddUpdate;
-import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
-import static com.yahoo.document.json.readers.TensorModifyUpdateReader.validateBounds;
 import static com.yahoo.document.json.readers.TensorReader.fillTensor;
 
 /**
@@ -27,15 +25,12 @@ public class TensorAddUpdateReader {
         expectObjectStart(buffer.currentToken());
         expectTensorTypeHasSparseDimensions(field);
 
-        // Convert update type to only have mapped dimensions - to avoid spanning out dense subspace
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
-        TensorType originalType = tensorDataType.getTensorType();
-        TensorType convertedType = TensorModifyUpdate.convertDimensionsToMapped(originalType);
+        TensorType tensorType = tensorDataType.getTensorType();
 
-        TensorFieldValue tensorFieldValue = new TensorFieldValue(convertedType);
+        TensorFieldValue tensorFieldValue = new TensorFieldValue(tensorType);
         fillTensor(buffer, tensorFieldValue);
         expectTensorIsNonEmpty(field, tensorFieldValue.getTensor().get());
-        validateBounds(tensorFieldValue.getTensor().get(), originalType);
 
         return new TensorAddUpdate(tensorFieldValue);
     }
