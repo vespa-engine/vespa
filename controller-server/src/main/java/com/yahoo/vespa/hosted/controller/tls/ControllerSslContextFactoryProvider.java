@@ -63,6 +63,7 @@ public class ControllerSslContextFactoryProvider extends AbstractComponent imple
         factory.setTrustStore(truststore);
         factory.setKeyStore(keystore);
         factory.setKeyStorePassword("");
+        factory.setEndpointIdentificationAlgorithm(null); // disable https hostname verification of clients (must be disabled when using Athenz x509 certificates)
         return factory;
     }
 
