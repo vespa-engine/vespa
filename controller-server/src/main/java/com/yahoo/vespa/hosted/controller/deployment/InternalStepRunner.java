@@ -453,31 +453,32 @@ public class InternalStepRunner implements StepRunner {
     private void sendNotification(Run run, DualLogger logger) {
         Application application = controller.applications().require(run.id().application());
         Notifications notifications = application.deploymentSpec().notifications();
-        if (notifications != Notifications.none()) {
-            boolean newCommit = application.change().application()
-                                           .map(run.versions().targetApplication()::equals)
-                                           .orElse(false);
-            When when = newCommit ? failingCommit : failing;
+        boolean newCommit = application.change().application()
+                                       .map(run.versions().targetApplication()::equals)
+                                       .orElse(false);
+        When when = newCommit ? failingCommit : failing;
 
-            List<String> recipients = new ArrayList<>(notifications.emailAddressesFor(when));
-            if (notifications.emailRolesFor(when).contains(author))
-                run.versions().targetApplication().authorEmail().ifPresent(recipients::add);
+        List<String> recipients = new ArrayList<>(notifications.emailAddressesFor(when));
+        if (notifications.emailRolesFor(when).contains(author))
+            run.versions().targetApplication().authorEmail().ifPresent(recipients::add);
 
-            try {
-                if (run.status() == outOfCapacity && run.id().type().isProduction())
-                    controller.mailer().send(mails.outOfCapacity(run.id(), recipients));
-                if (run.status() == deploymentFailed)
-                    controller.mailer().send(mails.deploymentFailure(run.id(), recipients));
-                if (run.status() == installationFailed)
-                    controller.mailer().send(mails.installationFailure(run.id(), recipients));
-                if (run.status() == testFailure)
-                    controller.mailer().send(mails.testFailure(run.id(), recipients));
-                if (run.status() == error)
-                    controller.mailer().send(mails.systemError(run.id(), recipients));
-            }
-            catch (RuntimeException e) {
-                logger.log(INFO, "Exception trying to send mail for " + run.id(), e);
-            }
+        if (recipients.isEmpty())
+            return;
+
+        try {
+            if (run.status() == outOfCapacity && run.id().type().isProduction())
+                controller.mailer().send(mails.outOfCapacity(run.id(), recipients));
+            if (run.status() == deploymentFailed)
+                controller.mailer().send(mails.deploymentFailure(run.id(), recipients));
+            if (run.status() == installationFailed)
+                controller.mailer().send(mails.installationFailure(run.id(), recipients));
+            if (run.status() == testFailure)
+                controller.mailer().send(mails.testFailure(run.id(), recipients));
+            if (run.status() == error)
+                controller.mailer().send(mails.systemError(run.id(), recipients));
+        }
+        catch (RuntimeException e) {
+            logger.log(INFO, "Exception trying to send mail for " + run.id(), e);
         }
     }
 

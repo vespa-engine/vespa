@@ -73,10 +73,14 @@ public class InternalStepRunnerTest {
         tester.setEndpoints(appId, JobType.productionUsWest1.zone(tester.tester().controller().system()));
         tester.setEndpoints(appId, JobType.productionUsEast3.zone(tester.tester().controller().system()));
 
+        // Let application have an ongoing upgrade when it switches (but kill the jobs, as the tester assumes they aren't running).
+        tester.tester().upgradeSystem(new Version("7.1"));
+        tester.tester().buildService().clear();
+
         tester.deployNewSubmission();
         tester.deployNewSubmission();
 
-        tester.deployNewPlatform(new Version("7.1"));
+        tester.deployNewPlatform(new Version("7.2"));
 
         tester.jobs().unregister(appId);
         try {
