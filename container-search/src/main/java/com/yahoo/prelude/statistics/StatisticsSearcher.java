@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.logging.Level;
 
 import static com.yahoo.container.protect.Error.*;
