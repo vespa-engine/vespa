@@ -9,6 +9,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-attributes.h>
+#include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 
 #include <vespa/log/log.h>
@@ -18,6 +19,8 @@ using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
 using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::IndexschemaConfigBuilder;
+using vespa::config::search::SummaryConfig;
+using vespa::config::search::SummaryConfigBuilder;
 using vespa::config::search::SummarymapConfig;
 using vespa::config::search::SummarymapConfigBuilder;
 using search::attribute::Config;
@@ -125,6 +128,24 @@ SummarymapConfig::Override make_attribute_combiner_override(const vespalib::stri
     return override;
 }
 
+SummaryConfig::Classes::Fields make_summary_field(const vespalib::string name, const vespalib::string &type)
+{
+    SummaryConfig::Classes::Fields field;
+    field.name = name;
+    field.type = type;
+    return field;
+}
+
+SummaryConfig sCfg(std::vector<SummaryConfig::Classes::Fields> fields)
+{
+    SummaryConfigBuilder result;
+    result.classes.resize(1);
+    result.classes.back().id = 0;
+    result.classes.back().name = "default";
+    result.classes.back().fields = std::move(fields);
+    return result;
+}
+
 SummarymapConfig smCfg(std::vector<SummarymapConfig::Override> overrides)
 {
     SummarymapConfigBuilder result;
@@ -175,10 +196,10 @@ public:
         _oldIndexSchema.indexfield.emplace_back(field);
     }
     void setup(const AttributesConfig &oldAttributesConfig, const SummarymapConfig &oldSummarymapConfig,
-               const AttributesConfig &newAttributesConfig, const SummarymapConfig &newSummarymapConfig) {
+               const AttributesConfig &newAttributesConfig, const SummaryConfig &newSummaryConfig, const SummarymapConfig &newSummarymapConfig) {
         IndexschemaInspector indexschemaInspector(_oldIndexSchema);
         _delayer.setup(oldAttributesConfig, oldSummarymapConfig,
-                       newAttributesConfig, newSummarymapConfig,
+                       newAttributesConfig, newSummaryConfig, newSummarymapConfig,
                        indexschemaInspector, _inspector);
     }
     void assertAttributeConfig(const std::vector<AttributesConfig::Attribute> &exp)
@@ -195,14 +216,14 @@ public:
 
 TEST_F("require that empty config is OK", Fixture)
 {
-    f.setup(attrCfg({}), smCfg({}), attrCfg({}), smCfg({}));
+    f.setup(attrCfg({}), smCfg({}), attrCfg({}), sCfg({}), smCfg({}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({}));
 }
 
 TEST_F("require that simple attribute config is OK", Fixture)
 {
-    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}));
+    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({make_int32_sv_cfg()}), sCfg({make_summary_field("a", "integer")}), smCfg({make_attribute_override("a")}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }
@@ -210,7 +231,7 @@ TEST_F("require that simple attribute config is OK", Fixture)
 TEST_F("require that adding attribute aspect is delayed if field type is unchanged", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}));
+    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), sCfg({make_summary_field("a", "integer")}), smCfg({make_attribute_override("a")}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({}));
 }
@@ -218,14 +239,14 @@ TEST_F("require that adding attribute aspect is delayed if field type is unchang
 TEST_F("require that adding attribute aspect is delayed if field type is unchanged, geopos override", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), smCfg({make_geopos_override("a")}));
+    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), sCfg({make_summary_field("a", "integer")}), smCfg({make_geopos_override("a")}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({make_geopos_override("a")}));
 }
 
 TEST_F("require that adding attribute is not delayed if field type changed", Fixture)
 {
-    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}));
+    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), sCfg({make_summary_field("a", "integer")}), smCfg({make_attribute_override("a")}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }
@@ -233,22 +254,30 @@ TEST_F("require that adding attribute is not delayed if field type changed", Fix
 TEST_F("require that removing attribute aspect is delayed if field type is unchanged", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({}), smCfg({}));
+    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({}), sCfg({make_summary_field("a", "integer")}), smCfg({}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
+}
+
+TEST_F("require that summary map override is removed when summary aspect is removed, even if removing attribute aspect is delayed", Fixture)
+{
+    f.addFields({"a"});
+    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({}), sCfg({}), smCfg({}));
+    TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
+    TEST_DO(f.assertSummarymapConfig({}));
 }
 
 TEST_F("require that removing attribute aspect is delayed if field type is unchanged, gepos override", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_geopos_override("a")}), attrCfg({}), smCfg({}));
+    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_geopos_override("a")}), attrCfg({}), sCfg({}), smCfg({}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({}));
 }
 
 TEST_F("require that removing attribute aspect is not delayed if field type changed", Fixture)
 {
-    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({}), smCfg({}));
+    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({}), sCfg({make_summary_field("a", "integer")}), smCfg({}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({}));
 }
@@ -257,7 +286,7 @@ TEST_F("require that removing attribute aspect is not delayed if also indexed", 
 {
     f.addFields({"a"});
     f.addOldIndexField("a");
-    f.setup(attrCfg({make_string_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({}), smCfg({}));
+    f.setup(attrCfg({make_string_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({}), sCfg({make_summary_field("a", "string")}), smCfg({}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({}));
 }
@@ -265,7 +294,7 @@ TEST_F("require that removing attribute aspect is not delayed if also indexed", 
 TEST_F("require that removing attribute aspect is not delayed for tensor", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({make_tensor_cfg("tensor(x[10])")}), smCfg({make_attribute_override("a")}), attrCfg({}), smCfg({}));
+    f.setup(attrCfg({make_tensor_cfg("tensor(x[10])")}), smCfg({make_attribute_override("a")}), attrCfg({}), sCfg({make_summary_field("a", "tensor")}), smCfg({}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({}));
 }
@@ -273,7 +302,7 @@ TEST_F("require that removing attribute aspect is not delayed for tensor", Fixtu
 TEST_F("require that removing attribute aspect is not delayed for predicate", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({make_predicate_cfg(4)}), smCfg({}), attrCfg({}), smCfg({}));
+    f.setup(attrCfg({make_predicate_cfg(4)}), smCfg({}), attrCfg({}), sCfg({make_summary_field("a", "string")}), smCfg({}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({}));
 }
@@ -281,7 +310,7 @@ TEST_F("require that removing attribute aspect is not delayed for predicate", Fi
 TEST_F("require that removing attribute aspect is not delayed for reference", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({make_reference_cfg()}), smCfg({}), attrCfg({}), smCfg({}));
+    f.setup(attrCfg({make_reference_cfg()}), smCfg({}), attrCfg({}), sCfg({make_summary_field("a", "longstring")}), smCfg({}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({}));
 }
@@ -289,7 +318,7 @@ TEST_F("require that removing attribute aspect is not delayed for reference", Fi
 TEST_F("require that fast access flag change is delayed, false->true edge", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({make_fa(make_int32_sv_cfg())}), smCfg({make_attribute_override("a")}));
+    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({make_fa(make_int32_sv_cfg())}), sCfg({make_summary_field("a", "integer")}), smCfg({make_attribute_override("a")}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }
@@ -297,7 +326,7 @@ TEST_F("require that fast access flag change is delayed, false->true edge", Fixt
 TEST_F("require that fast access flag change is delayed, true->false edge", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({make_fa(make_int32_sv_cfg())}), smCfg({make_attribute_override("a")}), attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}));
+    f.setup(attrCfg({make_fa(make_int32_sv_cfg())}), smCfg({make_attribute_override("a")}), attrCfg({make_int32_sv_cfg()}), sCfg({make_summary_field("a", "integer")}), smCfg({make_attribute_override("a")}));
     TEST_DO(f.assertAttributeConfig({make_fa(make_int32_sv_cfg())}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }
@@ -305,7 +334,7 @@ TEST_F("require that fast access flag change is delayed, true->false edge", Fixt
 TEST_F("require that fast access flag change is delayed, false->true edge, tensor attr", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({make_tensor_cfg("tensor(x[10])")}), smCfg({make_attribute_override("a")}), attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}), smCfg({make_attribute_override("a")}));
+    f.setup(attrCfg({make_tensor_cfg("tensor(x[10])")}), smCfg({make_attribute_override("a")}), attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}), sCfg({make_summary_field("a", "tensor")}), smCfg({make_attribute_override("a")}));
     TEST_DO(f.assertAttributeConfig({make_tensor_cfg("tensor(x[10])")}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }
@@ -313,7 +342,7 @@ TEST_F("require that fast access flag change is delayed, false->true edge, tenso
 TEST_F("require that fast access flag change is not delayed, true->false edge, tensor attr", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}), smCfg({make_attribute_override("a")}), attrCfg({make_tensor_cfg("tensor(x[10])")}), smCfg({make_attribute_override("a")}));
+    f.setup(attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}), smCfg({make_attribute_override("a")}), attrCfg({make_tensor_cfg("tensor(x[10])")}), sCfg({make_summary_field("a", "tensor")}), smCfg({make_attribute_override("a")}));
     TEST_DO(f.assertAttributeConfig({make_tensor_cfg("tensor(x[10])")}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }
@@ -322,14 +351,14 @@ TEST_F("require that fast access flag change is not delayed, true->false edge, s
 {
     f.addFields({"a"});
     f.addOldIndexField("a");
-    f.setup(attrCfg({make_fa(make_string_sv_cfg())}), smCfg({make_attribute_override("a")}), attrCfg({make_string_sv_cfg()}), smCfg({make_attribute_override("a")}));
+    f.setup(attrCfg({make_fa(make_string_sv_cfg())}), smCfg({make_attribute_override("a")}), attrCfg({make_string_sv_cfg()}), sCfg({make_summary_field("a", "tensor")}), smCfg({make_attribute_override("a")}));
     TEST_DO(f.assertAttributeConfig({make_string_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }
 
 TEST_F("require that adding attribute aspect to struct field is not delayed if field type is changed", Fixture)
 {
-    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg("array.a")}), smCfg({make_attribute_combiner_override("array")}));
+    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg("array.a")}), sCfg({make_summary_field("array", "jsonstring")}), smCfg({make_attribute_combiner_override("array")}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg("array.a")}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_combiner_override("array")}));
 }
@@ -337,7 +366,7 @@ TEST_F("require that adding attribute aspect to struct field is not delayed if f
 TEST_F("require that adding attribute aspect to struct field is delayed if field type is unchanged", Fixture)
 {
     f.addFields({"array.a"});
-    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg("array.a")}), smCfg({make_attribute_combiner_override("array")}));
+    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg("array.a")}), sCfg({make_summary_field("array", "jsonstring")}), smCfg({make_attribute_combiner_override("array")}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({}));
 }
@@ -345,7 +374,7 @@ TEST_F("require that adding attribute aspect to struct field is delayed if field
 TEST_F("require that removing attribute aspect from struct field is not delayed", Fixture)
 {
     f.addFields({"array.a"});
-    f.setup(attrCfg({make_int32_sv_cfg("array.a")}), smCfg({make_attribute_combiner_override("array")}), attrCfg({}), smCfg({}));
+    f.setup(attrCfg({make_int32_sv_cfg("array.a")}), smCfg({make_attribute_combiner_override("array")}), attrCfg({}), sCfg({make_summary_field("array", "jsonstring")}), smCfg({}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({}));
 }

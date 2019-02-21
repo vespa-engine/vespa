@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/common/config_hash.hpp>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/config-attributes.h>
+#include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 
 using search::attribute::ConfigConverter;
@@ -14,6 +15,7 @@ using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
 using vespa::config::search::SummarymapConfig;
 using vespa::config::search::SummarymapConfigBuilder;
+using vespa::config::search::SummaryConfig;
 using search::attribute::BasicType;
 
 namespace proton {
@@ -40,6 +42,30 @@ bool willTriggerReprocessOnAttributeAspectRemoval(const search::attribute::Confi
     return fastPartialUpdateAttribute(cfg) && !indexschemaInspector.isStringIndex(name) && !isStructFieldAttribute(name);
 }
 
+class KnownSummaryFields
+{
+    vespalib::hash_set<vespalib::string> _fields;
+
+public:
+    KnownSummaryFields(const SummaryConfig &summaryConfig);
+    ~KnownSummaryFields();
+
+    bool known(const vespalib::string &fieldName) const {
+        return _fields.find(fieldName) != _fields.end();
+    }
+};
+
+KnownSummaryFields::KnownSummaryFields(const SummaryConfig &summaryConfig)
+    : _fields()
+{
+    for (const auto &summaryClass : summaryConfig.classes) {
+        for (const auto &summaryField : summaryClass.fields) {
+            _fields.insert(summaryField.name);
+        }
+    }
+}
+
+KnownSummaryFields::~KnownSummaryFields() = default;
 
 }
 
@@ -135,12 +161,14 @@ void
 handleOldAttributes(const AttributesConfig &oldAttributesConfig,
                     const AttributesConfig &newAttributesConfig,
                     const SummarymapConfig &oldSummarymapConfig,
+                    const SummaryConfig &newSummaryConfig,
                     const IIndexschemaInspector &oldIndexschemaInspector,
                     const IDocumentTypeInspector &inspector,
                     AttributesConfigBuilder &attributesConfig,
                     SummarymapConfigBuilder &summarymapConfig)
 {
     vespalib::hash_set<vespalib::string> delayed;
+    KnownSummaryFields knownSummaryFields(newSummaryConfig);
     AttributesConfigHash newAttrs(newAttributesConfig.attribute);
     for (const auto &oldAttr : oldAttributesConfig.attribute) {
         search::attribute::Config oldCfg = ConfigConverter::convert(oldAttr);
@@ -159,7 +187,7 @@ handleOldAttributes(const AttributesConfig &oldAttributesConfig,
     for (const auto &override : oldSummarymapConfig.override) {
         if (override.command == "attribute") {
             auto itr = delayed.find(override.field);
-            if (itr != delayed.end()) {
+            if (itr != delayed.end() && knownSummaryFields.known(override.field)) {
                 summarymapConfig.override.emplace_back(override);
             }
         }
@@ -172,16 +200,18 @@ void
 AttributeAspectDelayer::setup(const AttributesConfig &oldAttributesConfig,
                              const SummarymapConfig &oldSummarymapConfig,
                              const AttributesConfig &newAttributesConfig,
+                             const SummaryConfig &newSummaryConfig,
                              const SummarymapConfig &newSummarymapConfig,
                              const IIndexschemaInspector &oldIndexschemaInspector,
                              const IDocumentTypeInspector &inspector)
 {
+    (void) newSummaryConfig;
     handleNewAttributes(oldAttributesConfig, newAttributesConfig,
                         newSummarymapConfig,
                         oldIndexschemaInspector, inspector,
                         *_attributesConfig, *_summarymapConfig);
     handleOldAttributes(oldAttributesConfig, newAttributesConfig,
-                        oldSummarymapConfig,
+                        oldSummarymapConfig, newSummaryConfig,
                         oldIndexschemaInspector, inspector,
                         *_attributesConfig, *_summarymapConfig);
 }
