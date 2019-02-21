@@ -14,7 +14,6 @@ vespa_define_module(
     vdslib
 
     LIBS
-    src/vespa/binref
     src/vespa/documentapi
     src/vespa/documentapi/loadtypes
     src/vespa/documentapi/messagebus
