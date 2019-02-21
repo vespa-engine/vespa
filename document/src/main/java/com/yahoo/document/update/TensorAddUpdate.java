@@ -12,8 +12,6 @@ import java.util.Objects;
 
 /**
  *  An update used to add cells to a sparse or mixed tensor (has at least one mapped dimension).
- *
- *  The cells to add are contained in a sparse tensor.
  */
 public class TensorAddUpdate extends ValueUpdate<TensorFieldValue> {
 
@@ -50,7 +48,7 @@ public class TensorAddUpdate extends ValueUpdate<TensorFieldValue> {
 
         Tensor old = ((TensorFieldValue) oldValue).getTensor().get();
         Tensor update = tensor.getTensor().get();
-        Tensor result = old.merge((left, right) -> right, update.cells());
+        Tensor result = old.merge((left, right) -> right, update.cells());  // note this might be slow for large mixed tensor updates
         return new TensorFieldValue(result);
     }
 

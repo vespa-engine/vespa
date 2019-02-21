@@ -41,19 +41,7 @@ public class TensorModifyUpdateTest {
     public void apply_modify_update_operations() {
         assertApplyTo("tensor(x{},y{})", Operation.REPLACE,
                 "{{x:0,y:0}:1, {x:0,y:1}:2}", "{{x:0,y:1}:0}", "{{x:0,y:0}:1,{x:0,y:1}:0}");
-        assertApplyTo("tensor(x{},y{})", Operation.ADD,
-                "{{x:0,y:0}:1, {x:0,y:1}:2}", "{{x:0,y:1}:3}", "{{x:0,y:0}:1,{x:0,y:1}:5}");
-        assertApplyTo("tensor(x{},y{})", Operation.MULTIPLY,
-                "{{x:0,y:0}:3, {x:0,y:1}:2}", "{{x:0,y:1}:3}", "{{x:0,y:0}:3,{x:0,y:1}:6}");
-        assertApplyTo("tensor(x[1],y[2])", Operation.REPLACE,
-                "{{x:0,y:0}:1, {x:0,y:1}:2}", "{{x:0,y:1}:0}", "{{x:0,y:0}:1,{x:0,y:1}:0}");
         assertApplyTo("tensor(x[1],y[2])", Operation.ADD,
-                "{{x:0,y:0}:1, {x:0,y:1}:2}", "{{x:0,y:1}:3}", "{{x:0,y:0}:1,{x:0,y:1}:5}");
-        assertApplyTo("tensor(x[1],y[2])", Operation.MULTIPLY,
-                "{{x:0,y:0}:3, {x:0,y:1}:2}", "{{x:0,y:1}:3}", "{{x:0,y:0}:3,{x:0,y:1}:6}");
-        assertApplyTo("tensor(x{},y[2])", Operation.REPLACE,
-                "{{x:0,y:0}:1, {x:0,y:1}:2}", "{{x:0,y:1}:0}", "{{x:0,y:0}:1,{x:0,y:1}:0}");
-        assertApplyTo("tensor(x{},y[2])", Operation.ADD,
                 "{{x:0,y:0}:1, {x:0,y:1}:2}", "{{x:0,y:1}:3}", "{{x:0,y:0}:1,{x:0,y:1}:5}");
         assertApplyTo("tensor(x{},y[2])", Operation.MULTIPLY,
                 "{{x:0,y:0}:3, {x:0,y:1}:2}", "{{x:0,y:1}:3}", "{{x:0,y:0}:3,{x:0,y:1}:6}");

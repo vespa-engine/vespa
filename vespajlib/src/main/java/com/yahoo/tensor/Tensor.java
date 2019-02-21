@@ -129,7 +129,8 @@ public interface Tensor {
     /**
      * Returns a new tensor where existing cells in this tensor have been
      * removed according to the given set of addresses. Only valid for sparse
-     * or mixed tensors.
+     * or mixed tensors. For mixed tensors, addresses are assumed to only
+     * contain the sparse dimensions, as the entire dense subspace is removed.
      *
      * @param addresses list of addresses to remove
      * @return a new tensor where cells have been removed

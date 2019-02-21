@@ -7,6 +7,7 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 
 import java.util.Objects;
 
@@ -22,6 +23,18 @@ public class TensorRemoveUpdate extends ValueUpdate<TensorFieldValue> {
     public TensorRemoveUpdate(TensorFieldValue value) {
         super(ValueUpdateClassID.TENSORREMOVE);
         this.tensor = value;
+        verifyCompatibleType();
+    }
+
+    private void verifyCompatibleType() {
+        if ( ! tensor.getTensor().isPresent()) {
+            throw new IllegalArgumentException("Tensor must be present in remove update");
+        }
+        TensorType tensorType = tensor.getTensor().get().type();
+        TensorType expectedType = extractSparseDimensions(tensor.getDataType().getTensorType());
+        if ( ! tensorType.equals(expectedType)) {
+            throw new IllegalArgumentException("Unexpected type '" + tensorType + "' in remove update. Expected is '" + expectedType + "'");
+        }
     }
 
     @Override
@@ -82,5 +95,12 @@ public class TensorRemoveUpdate extends ValueUpdate<TensorFieldValue> {
     public String toString() {
         return super.toString() + " " + tensor;
     }
+
+    public static TensorType extractSparseDimensions(TensorType type) {
+        TensorType.Builder builder = new TensorType.Builder();
+        type.dimensions().stream().filter(dim -> ! dim.isIndexed()).forEach(dim -> builder.mapped(dim.name()));
+        return builder.build();
+    }
+
 
 }

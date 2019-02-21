@@ -63,7 +63,7 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
         }
         TensorDataType tensorDataType = (TensorDataType)type;
         TensorType tensorType = tensorDataType.getTensorType();
-        TensorType convertedType = TensorRemoveUpdateReader.extractSparseDimensions(tensorType);
+        TensorType convertedType = TensorRemoveUpdate.extractSparseDimensions(tensorType);
 
         TensorFieldValue tensor = new TensorFieldValue(convertedType);
         tensor.deserialize(this);

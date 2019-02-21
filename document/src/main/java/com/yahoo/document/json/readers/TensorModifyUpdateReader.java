@@ -29,7 +29,6 @@ public class TensorModifyUpdateReader {
     private static final String MODIFY_MULTIPLY = "multiply";
 
     public static TensorModifyUpdate createModifyUpdate(TokenBuffer buffer, Field field) {
-
         expectFieldIsOfTypeTensor(field);
         expectTensorTypeHasNoneIndexedUnboundDimensions(field);
         expectObjectStart(buffer.currentToken());

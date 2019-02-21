@@ -130,9 +130,11 @@ public class MixedTensor implements Tensor {
     @Override
     public Tensor remove(Set<TensorAddress> addresses) {
         Tensor.Builder builder = Tensor.Builder.of(type());
+
+        // iterate through all sparse addresses referencing a dense subspace
         for (Map.Entry<TensorAddress, Long> entry : index.sparseMap.entrySet()) {
             TensorAddress sparsePartialAddress = entry.getKey();
-            if ( ! addresses.contains(sparsePartialAddress)) {
+            if ( ! addresses.contains(sparsePartialAddress)) {  // assumption: addresses only contain the sparse part
                 long offset = entry.getValue();
                 for (int i = 0; i < index.denseSubspaceSize; ++i) {
                     Cell cell = cells.get((int)offset + i);

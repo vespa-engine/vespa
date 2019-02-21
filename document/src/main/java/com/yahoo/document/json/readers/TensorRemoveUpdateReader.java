@@ -28,9 +28,9 @@ public class TensorRemoveUpdateReader {
 
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
         TensorType originalType = tensorDataType.getTensorType();
-        TensorType convertedType = extractSparseDimensions(originalType);
-
+        TensorType convertedType = TensorRemoveUpdate.extractSparseDimensions(originalType);
         Tensor tensor = readRemoveUpdateTensor(buffer, convertedType, originalType);
+
         expectAddressesAreNonEmpty(field, tensor);
         return new TensorRemoveUpdate(new TensorFieldValue(tensor));
     }
@@ -87,9 +87,4 @@ public class TensorRemoveUpdateReader {
         return builder.build();
     }
 
-    public static TensorType extractSparseDimensions(TensorType type) {
-        TensorType.Builder builder = new TensorType.Builder();
-        type.dimensions().stream().filter(dim -> ! dim.isIndexed()).forEach(dim -> builder.mapped(dim.name()));
-        return builder.build();
-    }
 }

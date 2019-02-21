@@ -27,11 +27,10 @@ public class TensorAddUpdateReader {
 
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
         TensorType tensorType = tensorDataType.getTensorType();
-
         TensorFieldValue tensorFieldValue = new TensorFieldValue(tensorType);
         fillTensor(buffer, tensorFieldValue);
-        expectTensorIsNonEmpty(field, tensorFieldValue.getTensor().get());
 
+        expectTensorIsNonEmpty(field, tensorFieldValue.getTensor().get());
         return new TensorAddUpdate(tensorFieldValue);
     }
 
