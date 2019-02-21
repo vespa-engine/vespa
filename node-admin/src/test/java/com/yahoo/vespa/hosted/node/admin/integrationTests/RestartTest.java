@@ -6,7 +6,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import org.junit.Test;
 
 import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.NODE_PROGRAM;
@@ -28,7 +28,7 @@ public class RestartTest {
 
             tester.addChildNodeRepositoryNode(new NodeSpec.Builder()
                     .hostname(hostname)
-                    .state(Node.State.active)
+                    .state(NodeState.active)
                     .wantedDockerImage(dockerImage)
                     .nodeType(NodeType.tenant)
                     .flavor("docker")

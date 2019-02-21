@@ -8,7 +8,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -107,7 +106,7 @@ public class RealNodeRepositoryTest {
         final NodeSpec node = containersToRun.get(0);
         assertThat(node.getHostname(), is("host4.yahoo.com"));
         assertThat(node.getWantedDockerImage().get(), is(new DockerImage("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
-        assertThat(node.getState(), is(Node.State.active));
+        assertThat(node.getState(), is(NodeState.active));
         assertThat(node.getWantedRestartGeneration().get(), is(0L));
         assertThat(node.getCurrentRestartGeneration().get(), is(0L));
         assertThat(node.getMinCpuCores(), is(0.2));
@@ -152,18 +151,18 @@ public class RealNodeRepositoryTest {
 
     @Test
     public void testMarkAsReady() {
-        nodeRepositoryApi.setNodeState("host5.yahoo.com", Node.State.dirty);
-        nodeRepositoryApi.setNodeState("host5.yahoo.com", Node.State.ready);
+        nodeRepositoryApi.setNodeState("host5.yahoo.com", NodeState.dirty);
+        nodeRepositoryApi.setNodeState("host5.yahoo.com", NodeState.ready);
 
         try {
-            nodeRepositoryApi.setNodeState("host4.yahoo.com", Node.State.ready);
+            nodeRepositoryApi.setNodeState("host4.yahoo.com", NodeState.ready);
             fail("Should not be allowed to be marked ready as it is not registered as provisioned, dirty, failed or parked");
         } catch (RuntimeException ignored) {
             // expected
         }
 
         try {
-            nodeRepositoryApi.setNodeState("host101.yahoo.com", Node.State.ready);
+            nodeRepositoryApi.setNodeState("host101.yahoo.com", NodeState.ready);
             fail("Expected failure because host101 does not exist");
         } catch (RuntimeException ignored) {
             // expected

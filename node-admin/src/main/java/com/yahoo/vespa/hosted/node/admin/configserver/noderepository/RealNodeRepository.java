@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.Ge
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeMessageResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.hosted.provision.Node;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -133,7 +132,7 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public void setNodeState(String hostName, Node.State nodeState) {
+    public void setNodeState(String hostName, NodeState nodeState) {
         String state = nodeState.name();
         NodeMessageResponse response = configServerApi.put(
                 "/nodes/v2/state/" + state + "/" + hostName,
@@ -162,8 +161,8 @@ public class RealNodeRepository implements NodeRepository {
         NodeType nodeType = NodeType.valueOf(node.type);
 
         Objects.requireNonNull(node.state, "Unknown node state");
-        Node.State nodeState = Node.State.valueOf(node.state);
-        if (nodeState == Node.State.active) {
+        NodeState nodeState = NodeState.valueOf(node.state);
+        if (nodeState == NodeState.active) {
             Objects.requireNonNull(node.wantedVespaVersion, "Unknown vespa version for active node");
             Objects.requireNonNull(node.wantedDockerImage, "Unknown docker image for active node");
             Objects.requireNonNull(node.restartGeneration, "Unknown restartGeneration for active node");

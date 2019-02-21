@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.provision.Node;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -17,7 +16,7 @@ import java.util.Set;
  */
 public class NodeSpec {
     private final String hostname;
-    private final Node.State state;
+    private final NodeState state;
     private final NodeType nodeType;
     private final String flavor;
     private final String canonicalFlavor;
@@ -64,7 +63,7 @@ public class NodeSpec {
             String hostname,
             Optional<DockerImage> wantedDockerImage,
             Optional<DockerImage> currentDockerImage,
-            Node.State state,
+            NodeState state,
             NodeType nodeType,
             String flavor,
             String canonicalFlavor,
@@ -129,7 +128,7 @@ public class NodeSpec {
         return hostname;
     }
 
-    public Node.State getState() {
+    public NodeState getState() {
         return state;
     }
 
@@ -361,7 +360,7 @@ public class NodeSpec {
         private String hostname;
         private Optional<DockerImage> wantedDockerImage = Optional.empty();
         private Optional<DockerImage> currentDockerImage = Optional.empty();
-        private Node.State state;
+        private NodeState state;
         private NodeType nodeType;
         private String flavor;
         private String canonicalFlavor;
@@ -442,7 +441,7 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder state(Node.State state) {
+        public Builder state(NodeState state) {
             this.state = state;
             return this;
         }
@@ -617,7 +616,7 @@ public class NodeSpec {
             return currentDockerImage;
         }
 
-        public Node.State getState() {
+        public NodeState getState() {
             return state;
         }
 

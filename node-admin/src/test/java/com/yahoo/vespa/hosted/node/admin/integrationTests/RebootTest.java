@@ -3,11 +3,10 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -51,7 +50,7 @@ public class RebootTest {
         return new NodeSpec.Builder()
                 .hostname(hostname)
                 .wantedDockerImage(dockerImage)
-                .state(Node.State.active)
+                .state(NodeState.active)
                 .nodeType(NodeType.tenant)
                 .flavor("docker")
                 .vespaVersion("6.50.0")
