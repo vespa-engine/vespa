@@ -12,7 +12,7 @@ public class ContainerConfig {
     public static String servicesXmlV2(int port) {
         return "<jdisc version='1.0'>\n" +
                "  <config name=\"container.handler.threadpool\">\n" +
-               "    <maxthreads>10</maxthreads>\n" +
+               "    <maxthreads>20</maxthreads>\n" +
                "  </config>  \n" +
                "  <component id='com.yahoo.test.ManualClock'/>\n" +
                "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
