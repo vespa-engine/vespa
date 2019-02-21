@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -31,7 +30,6 @@ import java.util.stream.Stream;
  */
 public class RealNodeRepository implements NodeRepository {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(RealNodeRepository.class);
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final ConfigServerApi configServerApi;
 
@@ -136,18 +134,6 @@ public class RealNodeRepository implements NodeRepository {
         String state = nodeState.name();
         NodeMessageResponse response = configServerApi.put(
                 "/nodes/v2/state/" + state + "/" + hostName,
-                Optional.empty(), /* body */
-                NodeMessageResponse.class);
-        NODE_ADMIN_LOGGER.info(response.message);
-
-        if (Strings.isNullOrEmpty(response.errorCode)) return;
-        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
-    }
-
-    @Override
-    public void scheduleReboot(String hostName) {
-        NodeMessageResponse response = configServerApi.post(
-                "/nodes/v2/command/reboot?hostname=" + hostName,
                 Optional.empty(), /* body */
                 NodeMessageResponse.class);
         NODE_ADMIN_LOGGER.info(response.message);

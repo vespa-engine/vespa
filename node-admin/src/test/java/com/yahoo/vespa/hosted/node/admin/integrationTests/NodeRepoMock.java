@@ -67,11 +67,6 @@ public class NodeRepoMock implements NodeRepository {
         }
     }
 
-    @Override
-    public void scheduleReboot(String hostname) {
-
-    }
-
     void updateNodeRepositoryNode(NodeSpec nodeSpec) {
         synchronized (monitor) {
             nodeRepositoryNodesByHostname.put(nodeSpec.getHostname(), nodeSpec);

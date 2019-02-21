@@ -190,12 +190,4 @@ public class RealNodeRepositoryTest {
 
         assertTrue(nodeRepositoryApi.getOptionalNode("host123-1.domain.tld").isPresent());
     }
-
-    @Test
-    public void testRebootScheduling() {
-        NodeSpec nodeSpec = nodeRepositoryApi.getNode("host5.yahoo.com");
-        nodeRepositoryApi.scheduleReboot(nodeSpec.getHostname());
-        NodeSpec newNodeSpec = nodeRepositoryApi.getNode(nodeSpec.getHostname());
-        assertEquals(nodeSpec.getWantedRebootGeneration() + 1, newNodeSpec.getWantedRebootGeneration());
-    }
 }
