@@ -922,6 +922,17 @@ TEST(DocumentUpdateTest, tensor_add_update_can_be_applied)
                                 .add({{"x", "c"}}, 7));
 }
 
+TEST(DocumentUpdateTest, tensor_remove_update_can_be_applied)
+{
+    TensorUpdateFixture f;
+    f.assertApplyUpdate(f.spec().add({{"x", "a"}}, 2)
+                                .add({{"x", "b"}}, 3),
+
+                        TensorRemoveUpdate(f.makeTensor(f.spec().add({{"x", "b"}}, 1))),
+
+                        f.spec().add({{"x", "a"}}, 2));
+}
+
 TEST(DocumentUpdateTest, tensor_modify_update_can_be_applied)
 {
     TensorUpdateFixture f;
