@@ -55,7 +55,8 @@ public:
         Map        = IDENTIFIABLE_CLASSID(MapValueUpdate),
         Remove     = IDENTIFIABLE_CLASSID(RemoveValueUpdate),
         TensorModifyUpdate = IDENTIFIABLE_CLASSID(TensorModifyUpdate),
-        TensorAddUpdate = IDENTIFIABLE_CLASSID(TensorAddUpdate)
+        TensorAddUpdate = IDENTIFIABLE_CLASSID(TensorAddUpdate),
+        TensorRemoveUpdate = IDENTIFIABLE_CLASSID(TensorRemoveUpdate)
     };
 
     ValueUpdate()

@@ -16,6 +16,7 @@
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/tensor_add_update.h>
 #include <vespa/document/update/tensor_modify_update.h>
+#include <vespa/document/update/tensor_remove_update.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/changevector.hpp>
@@ -238,6 +239,8 @@ AttributeUpdater::handleUpdate(TensorAttribute &vec, uint32_t lid, const ValueUp
         applyTensorUpdate(vec, lid, static_cast<const TensorModifyUpdate &>(upd));
     } else if (op == ValueUpdate::TensorAddUpdate) {
         applyTensorUpdate(vec, lid, static_cast<const TensorAddUpdate &>(upd));
+    } else if (op == ValueUpdate::TensorRemoveUpdate) {
+        applyTensorUpdate(vec, lid, static_cast<const TensorRemoveUpdate &>(upd));
     } else if (op == ValueUpdate::Clear) {
         vec.clearDoc(lid);
     } else {

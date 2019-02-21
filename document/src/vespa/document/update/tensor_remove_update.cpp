@@ -6,6 +6,8 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
+#include <vespa/eval/tensor/cell_values.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/xmlstream.h>
@@ -77,17 +79,35 @@ TensorRemoveUpdate::checkCompatibility(const Field &field) const
 std::unique_ptr<Tensor>
 TensorRemoveUpdate::applyTo(const Tensor &tensor) const
 {
-    // TODO: implement
-    (void) tensor;
+    auto &addressTensor = _tensor->getAsTensorPtr();
+    if (addressTensor) {
+        if (const auto *sparseTensor = dynamic_cast<const vespalib::tensor::SparseTensor *>(addressTensor.get())) {
+            vespalib::tensor::CellValues cellAddresses(*sparseTensor);
+            return tensor.remove(cellAddresses);
+        } else {
+            throw IllegalArgumentException(make_string("Expected address tensor to be sparse, but has type '%s'",
+                                                       addressTensor->type().to_spec().c_str()));
+        }
+    }
     return std::unique_ptr<Tensor>();
 }
 
 bool
 TensorRemoveUpdate::applyTo(FieldValue &value) const
 {
-    // TODO: implement
-    (void) value;
-    return false;
+    if (value.inherits(TensorFieldValue::classId)) {
+        TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
+        auto &oldTensor = tensorFieldValue.getAsTensorPtr();
+        auto newTensor = applyTo(*oldTensor);
+        if (newTensor) {
+            tensorFieldValue = std::move(newTensor);
+        }
+    } else {
+        std::string err = make_string("Unable to perform a tensor remove update on a '%s' field value.",
+                                      value.getClass().name());
+        throw IllegalStateException(err, VESPA_STRLOC);
+    }
+    return true;
 }
 
 void

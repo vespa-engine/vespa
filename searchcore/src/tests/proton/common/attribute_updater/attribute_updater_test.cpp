@@ -20,6 +20,7 @@
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/tensor_add_update.h>
 #include <vespa/document/update/tensor_modify_update.h>
+#include <vespa/document/update/tensor_remove_update.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
@@ -28,8 +29,8 @@
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/generic_tensor_attribute.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_updater_test");
@@ -76,7 +77,8 @@ makeDocumentTypeRepo()
                              .addField("wsfloat", Wset(DataType::T_FLOAT))
                              .addField("wsstring", Wset(DataType::T_STRING))
                              .addField("ref", 333)
-                             .addField("dense_tensor", DataType::T_TENSOR),
+                             .addField("dense_tensor", DataType::T_TENSOR)
+                             .addField("sparse_tensor", DataType::T_TENSOR),
                      Struct("testdoc.body"))
                      .referenceType(333, 222);
     return std::make_unique<DocumentTypeRepo>(builder.config());
@@ -416,35 +418,54 @@ makeTensorFieldValue(const TensorSpec &spec)
     return result;
 }
 
-void
-setTensor(TensorAttribute &attribute, uint32_t lid, const TensorSpec &spec)
-{
-    auto tensor = makeTensor(spec);
-    attribute.setTensor(lid, *tensor);
-    attribute.commit();
-}
+template <typename TensorAttributeType>
+struct TensorFixture : public Fixture {
+    vespalib::string type;
+    std::unique_ptr<TensorAttributeType> attribute;
 
-TEST_F("require that tensor modify update is applied", Fixture)
-{
-    vespalib::string type = "tensor(x[2])";
-    auto attribute = makeTensorAttribute<DenseTensorAttribute>("dense_tensor", type);
-    setTensor(*attribute, 1, TensorSpec(type).add({{"x", 0}}, 3).add({{"x", 1}}, 5));
+    TensorFixture(const vespalib::string &type_, const vespalib::string &name)
+        : type(type_),
+          attribute(makeTensorAttribute<TensorAttributeType>(name, type))
+    {
+    }
 
-    f.applyValueUpdate(*attribute, 1,
+    void setTensor(const TensorSpec &spec) {
+        auto tensor = makeTensor(spec);
+        attribute->setTensor(1, *tensor);
+        attribute->commit();
+    }
+
+    void assertTensor(const TensorSpec &expSpec) {
+        EXPECT_EQUAL(expSpec, attribute->getTensor(1)->toSpec());
+    }
+};
+
+TEST_F("require that tensor modify update is applied",
+        TensorFixture<DenseTensorAttribute>("tensor(x[2])", "dense_tensor"))
+{
+    f.setTensor(TensorSpec(f.type).add({{"x", 0}}, 3).add({{"x", 1}}, 5));
+    f.applyValueUpdate(*f.attribute, 1,
                        TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
                                           makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", 0}}, 7))));
-    EXPECT_EQUAL(TensorSpec(type).add({{"x", 0}}, 7).add({{"x", 1}}, 5), attribute->getTensor(1)->toSpec());
+    f.assertTensor(TensorSpec(f.type).add({{"x", 0}}, 7).add({{"x", 1}}, 5));
 }
 
-TEST_F("require that tensor add update is applied", Fixture)
+TEST_F("require that tensor add update is applied",
+        TensorFixture<GenericTensorAttribute>("tensor(x{})", "sparse_tensor"))
 {
-    vespalib::string type = "tensor(x{})";
-    auto attribute = makeTensorAttribute<GenericTensorAttribute>("dense_tensor", type);
-    setTensor(*attribute, 1, TensorSpec(type).add({{"x", "a"}}, 2));
+    f.setTensor(TensorSpec(f.type).add({{"x", "a"}}, 2));
+    f.applyValueUpdate(*f.attribute, 1,
+                       TensorAddUpdate(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "a"}}, 3))));
+    f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 3));
+}
 
-    f.applyValueUpdate(*attribute, 1,
-                       TensorAddUpdate(makeTensorFieldValue(TensorSpec(type).add({{"x", "a"}}, 3))));
-    EXPECT_EQUAL(TensorSpec(type).add({{"x", "a"}}, 3), attribute->getTensor(1)->toSpec());
+TEST_F("require that tensor remove update is applied",
+        TensorFixture<GenericTensorAttribute>("tensor(x{})", "sparse_tensor"))
+{
+    f.setTensor(TensorSpec(f.type).add({{"x", "a"}}, 2).add({{"x", "b"}}, 3));
+    f.applyValueUpdate(*f.attribute, 1,
+                       TensorRemoveUpdate(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "b"}}, 1))));
+    f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 2));
 }
 
 }
