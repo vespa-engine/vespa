@@ -33,12 +33,6 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>defaults</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-dev</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
