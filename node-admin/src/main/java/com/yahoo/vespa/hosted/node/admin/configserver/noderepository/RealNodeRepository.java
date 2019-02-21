@@ -172,14 +172,14 @@ public class RealNodeRepository implements NodeRepository {
 
         String hostName = Objects.requireNonNull(node.hostname, "hostname is null");
 
-        NodeSpec.Owner owner = null;
+        NodeOwner owner = null;
         if (node.owner != null) {
-            owner = new NodeSpec.Owner(node.owner.tenant, node.owner.application, node.owner.instance);
+            owner = new NodeOwner(node.owner.tenant, node.owner.application, node.owner.instance);
         }
 
-        NodeSpec.Membership membership = null;
+        NodeMembership membership = null;
         if (node.membership != null) {
-            membership = new NodeSpec.Membership(node.membership.clusterType, node.membership.clusterId,
+            membership = new NodeMembership(node.membership.clusterType, node.membership.clusterId,
                     node.membership.group, node.membership.index, node.membership.retired);
         }
 

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -45,8 +44,8 @@ public class NodeSpec {
 
     private final Optional<Boolean> allowedToBeDown;
     private final Optional<Boolean> wantToDeprovision;
-    private final Optional<Owner> owner;
-    private final Optional<Membership> membership;
+    private final Optional<NodeOwner> owner;
+    private final Optional<NodeMembership> membership;
 
     private final double minCpuCores;
     private final double minMainMemoryAvailableGb;
@@ -75,8 +74,8 @@ public class NodeSpec {
             Optional<String> currentOsVersion,
             Optional<Boolean> allowedToBeDown,
             Optional<Boolean> wantToDeprovision,
-            Optional<Owner> owner,
-            Optional<Membership> membership,
+            Optional<NodeOwner> owner,
+            Optional<NodeMembership> membership,
             Optional<Long> wantedRestartGeneration,
             Optional<Long> currentRestartGeneration,
             long wantedRebootGeneration,
@@ -206,11 +205,11 @@ public class NodeSpec {
         return wantToDeprovision;
     }
 
-    public Optional<Owner> getOwner() {
+    public Optional<NodeOwner> getOwner() {
         return owner;
     }
 
-    public Optional<Membership> getMembership() {
+    public Optional<NodeMembership> getMembership() {
         return membership;
     }
 
@@ -358,135 +357,6 @@ public class NodeSpec {
                 + " }";
     }
 
-    public static class Owner {
-        private final String tenant;
-        private final String application;
-        private final String instance;
-
-        public Owner(String tenant, String application, String instance) {
-            this.tenant = tenant;
-            this.application = application;
-            this.instance = instance;
-        }
-
-        public String getTenant() {
-            return tenant;
-        }
-
-        public String getApplication() {
-            return application;
-        }
-
-        public String getInstance() {
-            return instance;
-        }
-
-        public ApplicationId asApplicationId() {
-            return ApplicationId.from(tenant, application, instance);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Owner owner = (Owner) o;
-
-            if (!tenant.equals(owner.tenant)) return false;
-            if (!application.equals(owner.application)) return false;
-            return instance.equals(owner.instance);
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = tenant.hashCode();
-            result = 31 * result + application.hashCode();
-            result = 31 * result + instance.hashCode();
-            return result;
-        }
-
-        public String toString() {
-            return "Owner {" +
-                    " tenant = " + tenant +
-                    " application = " + application +
-                    " instance = " + instance +
-                    " }";
-        }
-    }
-
-    public static class Membership {
-        private final String clusterType;
-        private final String clusterId;
-        private final String group;
-        private final int index;
-        private final boolean retired;
-
-        public Membership(String clusterType, String clusterId, String group, int index, boolean retired) {
-            this.clusterType = clusterType;
-            this.clusterId = clusterId;
-            this.group = group;
-            this.index = index;
-            this.retired = retired;
-        }
-
-        public String getClusterType() {
-            return clusterType;
-        }
-
-        public String getClusterId() {
-            return clusterId;
-        }
-
-        public String getGroup() {
-            return group;
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
-        public boolean isRetired() {
-            return retired;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Membership that = (Membership) o;
-
-            if (index != that.index) return false;
-            if (retired != that.retired) return false;
-            if (!clusterType.equals(that.clusterType)) return false;
-            if (!clusterId.equals(that.clusterId)) return false;
-            return group.equals(that.group);
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = clusterType.hashCode();
-            result = 31 * result + clusterId.hashCode();
-            result = 31 * result + group.hashCode();
-            result = 31 * result + index;
-            result = 31 * result + (retired ? 1 : 0);
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return "Membership {" +
-                    " clusterType = " + clusterType +
-                    " clusterId = " + clusterId +
-                    " group = " + group +
-                    " index = " + index +
-                    " retired = " + retired +
-                    " }";
-        }
-    }
-
     public static class Builder {
         private String hostname;
         private Optional<DockerImage> wantedDockerImage = Optional.empty();
@@ -501,8 +371,8 @@ public class NodeSpec {
         private Optional<String> currentOsVersion = Optional.empty();
         private Optional<Boolean> allowedToBeDown = Optional.empty();
         private Optional<Boolean> wantToDeprovision = Optional.empty();
-        private Optional<Owner> owner = Optional.empty();
-        private Optional<Membership> membership = Optional.empty();
+        private Optional<NodeOwner> owner = Optional.empty();
+        private Optional<NodeMembership> membership = Optional.empty();
         private Optional<Long> wantedRestartGeneration = Optional.empty();
         private Optional<Long> currentRestartGeneration = Optional.empty();
         private long wantedRebootGeneration;
@@ -622,12 +492,12 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder owner(Owner owner) {
+        public Builder owner(NodeOwner owner) {
             this.owner = Optional.of(owner);
             return this;
         }
 
-        public Builder membership(Membership membership) {
+        public Builder membership(NodeMembership membership) {
             this.membership = Optional.of(membership);
             return this;
         }
@@ -787,11 +657,11 @@ public class NodeSpec {
             return wantToDeprovision;
         }
 
-        public Optional<Owner> getOwner() {
+        public Optional<NodeOwner> getOwner() {
             return owner;
         }
 
-        public Optional<Membership> getMembership() {
+        public Optional<NodeMembership> getMembership() {
             return membership;
         }
 

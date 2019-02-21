@@ -10,17 +10,19 @@ import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
-import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -651,8 +653,8 @@ public class NodeAgentImplTest {
         ContainerStats stats1 = new ContainerStats(networks, precpu_stats, memory_stats, blkio_stats);
         ContainerStats stats2 = new ContainerStats(networks, cpu_stats, memory_stats, blkio_stats);
 
-        NodeSpec.Owner owner = new NodeSpec.Owner("tester", "testapp", "testinstance");
-        NodeSpec.Membership membership = new NodeSpec.Membership("clustType", "clustId", "grp", 3, false);
+        NodeOwner owner = new NodeOwner("tester", "testapp", "testinstance");
+        NodeMembership membership = new NodeMembership("clustType", "clustId", "grp", 3, false);
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)

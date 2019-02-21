@@ -11,21 +11,22 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
@@ -379,7 +380,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private ContainerResources getContainerResources(NodeSpec node) {
         double cpuCap = node.getOwner()
-                .map(NodeSpec.Owner::asApplicationId)
+                .map(NodeOwner::asApplicationId)
                 .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
                 .orElse(containerCpuCap)
                 .value() * node.getMinCpuCores();

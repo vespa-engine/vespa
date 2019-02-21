@@ -7,6 +7,8 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.node.admin.component.ZoneId;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -157,8 +159,8 @@ public class StorageMaintainerTest {
                     .nodeType(nodeType)
                     .state(Node.State.active)
                     .parentHostname("host123.test.domain.tld")
-                    .owner(new NodeSpec.Owner("tenant", "application", "instance"))
-                    .membership(new NodeSpec.Membership("clusterType", "clusterId", null, 0, false))
+                    .owner(new NodeOwner("tenant", "application", "instance"))
+                    .membership(new NodeMembership("clusterType", "clusterId", null, 0, false))
                     .vespaVersion("6.305.12")
                     .flavor("d-2-8-50")
                     .canonicalFlavor("d-2-8-50")
