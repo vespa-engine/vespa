@@ -182,7 +182,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         DefaultTimes(Zone zone) {
             failGrace = Duration.ofMinutes(60);
             periodicRedeployInterval = Duration.ofMinutes(30);
-            redeployMaintainerInterval = Duration.ofMinutes(1);
+            redeployMaintainerInterval = zone.environment().isTest() ? Duration.ofDays(Long.MAX_VALUE) : Duration.ofMinutes(1);
             operatorChangeRedeployInterval = Duration.ofMinutes(1);
             failedExpirerInterval = Duration.ofMinutes(10);
             provisionedExpiry = Duration.ofHours(4);
