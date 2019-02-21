@@ -482,8 +482,8 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      *  Must be done this way since the system test framework
      *  currently uses the first port as container http port.
      */
-    public void reservePortPrepended(int port) {
-        hostResource.reservePort(this, port);
+    public void reservePortPrepended(int port, String suffix) {
+        hostResource.reservePort(this, port, suffix);
         ports.add(0, port);
     }
 

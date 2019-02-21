@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
@@ -29,8 +30,11 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -370,6 +374,31 @@ public class SerializationTest {
         node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
         assertEquals("some model", node.modelName().get());
     }
+
+    @Test
+    public void testNodeWithNetworkPorts() {
+        Node node = createNode();
+        List<NetworkPorts.Allocation> list = new ArrayList<>();
+        list.add(new NetworkPorts.Allocation(8080, "container", "default/0", "http"));
+        list.add(new NetworkPorts.Allocation(19101, "searchnode", "other/1", "rpc"));
+        NetworkPorts ports = new NetworkPorts(list);
+        node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
+                ApplicationName.from("myApplication"),
+                InstanceName.from("myInstance")),
+                ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
+                clock.instant());
+        assertTrue(node.allocation().isPresent());
+        node = node.with(node.allocation().get().withNetworkPorts(ports));
+        assertTrue(node.allocation().isPresent());
+        assertTrue(node.allocation().get().networkPorts().isPresent());
+        Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
+        assertTrue(copy.allocation().isPresent());
+        assertTrue(copy.allocation().get().networkPorts().isPresent());
+        NetworkPorts portsCopy = node.allocation().get().networkPorts().get();
+        Collection<NetworkPorts.Allocation> listCopy = portsCopy.allocations();
+        assertEquals(list, listCopy);
+    }
+
 
     private byte[] createNodeJson(String hostname, String... ipAddress) {
         String ipAddressJsonPart = "";

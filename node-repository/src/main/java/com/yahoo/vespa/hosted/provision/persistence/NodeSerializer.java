@@ -10,6 +10,8 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.NetworkPorts;
+import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -85,6 +87,9 @@ public class NodeSerializer {
     private static final String atKey = "at";
     private static final String agentKey = "agent"; // retired events only
 
+    // Network port fields
+    private static final String networkPortsKey = "networkPorts";
+
     // ---------------- Serialization ----------------------------------------------------
 
     public NodeSerializer(NodeFlavors flavors) {
@@ -136,6 +141,7 @@ public class NodeSerializer {
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
         object.setBool(removableKey, allocation.isRemovable());
         object.setString(wantedVespaVersionKey, allocation.membership().cluster().vespaVersion().toString());
+        allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(networkPortsKey)));
     }
 
     private void toSlime(History history, Cursor array) {
@@ -197,7 +203,8 @@ public class NodeSerializer {
         return Optional.of(new Allocation(applicationIdFromSlime(object),
                                           clusterMembershipFromSlime(object),
                                           generationFromSlime(object, restartGenerationKey, currentRestartGenerationKey),
-                                          object.field(removableKey).asBool()));
+                                          object.field(removableKey).asBool(),
+                                          NetworkPortsSerializer.fromSlime(object.field(networkPortsKey))));
     }
 
     private ApplicationId applicationIdFromSlime(Inspector object) {

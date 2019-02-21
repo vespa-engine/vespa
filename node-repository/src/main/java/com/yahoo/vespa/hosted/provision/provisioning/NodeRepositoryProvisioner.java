@@ -22,11 +22,13 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.flag.FlagId;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -141,10 +143,16 @@ public class NodeRepositoryProvisioner implements Provisioner {
         List<HostSpec> hosts = new ArrayList<>(nodes.size());
         for (Node node : nodes) {
             log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
+            Allocation nodeAllocation = node.allocation().orElseThrow(IllegalStateException::new);
             hosts.add(new HostSpec(node.hostname(),
-                                   node.allocation().orElseThrow(IllegalStateException::new).membership(),
-                                   node.flavor(),
-                                   node.status().vespaVersion()));
+                                   Collections.emptyList(),
+                                   Optional.of(node.flavor()),
+                                   Optional.of(nodeAllocation.membership()),
+                                   node.status().vespaVersion(),
+                                   nodeAllocation.networkPorts()));
+            if (nodeAllocation.networkPorts().isPresent()) {
+                log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " has port allocations");
+            }
         }
         return hosts;
     }

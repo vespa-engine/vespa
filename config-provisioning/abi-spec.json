@@ -462,11 +462,13 @@
       "public void <init>(java.lang.String, java.util.List, com.yahoo.config.provision.ClusterMembership)",
       "public void <init>(java.lang.String, java.util.List, java.util.Optional, java.util.Optional)",
       "public void <init>(java.lang.String, java.util.List, java.util.Optional, java.util.Optional, java.util.Optional)",
+      "public void <init>(java.lang.String, java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public java.lang.String hostname()",
       "public java.util.List aliases()",
       "public java.util.Optional flavor()",
       "public java.util.Optional version()",
       "public java.util.Optional membership()",
+      "public java.util.Optional networkPorts()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -494,6 +496,50 @@
       "public java.lang.String value()",
       "public int compareTo(com.yahoo.config.provision.InstanceName)",
       "public bridge synthetic int compareTo(java.lang.Object)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.NetworkPorts$Allocation": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(int, java.lang.String, java.lang.String, java.lang.String)",
+      "public java.lang.String key()",
+      "public java.lang.String toString()"
+    ],
+    "fields": [
+      "public final int port",
+      "public final java.lang.String serviceType",
+      "public final java.lang.String configId",
+      "public final java.lang.String portSuffix"
+    ]
+  },
+  "com.yahoo.config.provision.NetworkPorts": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.util.Collection)",
+      "public java.util.Collection allocations()",
+      "public int size()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.NetworkPortsSerializer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static void toSlime(com.yahoo.config.provision.NetworkPorts, com.yahoo.slime.Cursor)",
+      "public static java.util.Optional fromSlime(com.yahoo.slime.Inspector)"
     ],
     "fields": []
   },

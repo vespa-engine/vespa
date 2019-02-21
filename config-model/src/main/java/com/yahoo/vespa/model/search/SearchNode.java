@@ -160,6 +160,11 @@ public class SearchNode extends AbstractService implements
         return 5;
     }
 
+    @Override
+    public String[] getPortSuffixes() {
+        return new String[] { "rpc", "fs4", "future/4", "unused/3", "health" };
+    }
+
     /**
      * Returns the RPC port used by this searchnode.
      *

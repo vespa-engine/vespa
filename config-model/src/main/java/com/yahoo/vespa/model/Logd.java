@@ -32,6 +32,11 @@ public class Logd
      */
     public int getPortCount() { return 1; }
 
+    @Override
+    public String[] getPortSuffixes() {
+        return new String[]{"http"};
+    }
+
     /** Returns the desired base port for this service.  */
     public int getWantedPort() { return 19089; }
 

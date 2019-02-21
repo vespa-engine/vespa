@@ -38,6 +38,11 @@ public class TransactionLogServer extends AbstractService  {
         return 1;
     }
 
+    @Override
+    public String[] getPortSuffixes() {
+        return new String[]{"tls"};
+    }
+
     /**
      * Returns the port used by the TLS.
      *

@@ -129,6 +129,8 @@ public class ModelAmendingTestCase {
             return 0;
         }
 
+        @Override
+        public String[] getPortSuffixes() { return null; }
     }
 
     public static class AdminModelAmender extends ConfigModel {

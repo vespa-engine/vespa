@@ -9,6 +9,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,7 +74,7 @@ class Activator {
             activeToRemove = activeToRemove.stream().map(Node::unretire).collect(Collectors.toList()); // only active nodes can be retired
             nodeRepository.deactivate(activeToRemove, transaction);
             nodeRepository.activate(updateFrom(hosts, continuedActive), transaction); // update active with any changes
-            nodeRepository.activate(reservedToActivate, transaction);
+            nodeRepository.activate(updatePortsFrom(hosts, reservedToActivate), transaction);
         }
     }
 
@@ -133,9 +134,30 @@ class Activator {
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
             node = hostSpec.membership().get().retired() ? node.retire(nodeRepository.clock().instant()) : node.unretire();
-            node = node.with(node.allocation().get().with(hostSpec.membership().get()));
+            Allocation allocation = node.allocation().get().with(hostSpec.membership().get());
+            if (hostSpec.networkPorts().isPresent()) {
+                allocation = allocation.withNetworkPorts(hostSpec.networkPorts().get());
+            }
+            node = node.with(allocation);
             if (hostSpec.flavor().isPresent()) // Docker nodes may change flavor
                 node = node.with(hostSpec.flavor().get());
+            updated.add(node);
+        }
+        return updated;
+    }
+
+    /**
+     * Returns the input nodes with any port allocations from the hosts
+     */
+    private List<Node> updatePortsFrom(Collection<HostSpec> hosts, List<Node> nodes) {
+        List<Node> updated = new ArrayList<>();
+        for (Node node : nodes) {
+            HostSpec hostSpec = getHost(node.hostname(), hosts);
+            Allocation allocation = node.allocation().get();
+            if (hostSpec.networkPorts().isPresent()) {
+                allocation = allocation.withNetworkPorts(hostSpec.networkPorts().get());
+                node = node.with(allocation);
+            }
             updated.add(node);
         }
         return updated;

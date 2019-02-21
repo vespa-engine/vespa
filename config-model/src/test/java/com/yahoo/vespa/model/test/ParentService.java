@@ -58,4 +58,7 @@ public class ParentService extends AbstractService implements com.yahoo.test.Sta
     }
     
     public int getPortCount() { return 0; }
+
+    @Override
+    public String[] getPortSuffixes() { return null; }
 }

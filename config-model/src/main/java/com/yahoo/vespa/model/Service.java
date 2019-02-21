@@ -11,7 +11,7 @@ import java.util.Optional;
  *
  * @author gjoranv
  */
-public interface Service extends ConfigProducer {
+public interface Service extends ConfigProducer, NetworkPortRequestor {
 
     /**
      * Services that should be started by config-sentinel must return
@@ -42,39 +42,6 @@ public interface Service extends ConfigProducer {
      * config-sentinel.
      */
     boolean getAutorestartFlag();
-
-    /**
-     * Returns the type of service. E.g. the class-name without the
-     * package prefix.
-     */
-    String getServiceType();
-
-   /**
-     * Returns the name that identifies this service for the config-sentinel.
-     */
-    String getServiceName();
-
-    /**
-     * Returns the desired base port for this service, or '0' if this
-     * service should use the default port allocation mechanism.
-     *
-     * @return The desired base port for this service.
-     */
-    int getWantedPort();
-
-    /**
-     * Returns true if the desired base port (returned by
-     * getWantedPort()) for this service is the only allowed base
-     * port.
-     *
-     * @return true if this Service requires the wanted base port.
-     */
-    boolean requiresWantedPort();
-
-    /**
-     * Returns the number of ports needed by this service.
-     */
-    int getPortCount();
 
     /**
      * Returns a PortsMeta object, giving access to more information

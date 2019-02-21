@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.NetworkPorts;
 
 import java.util.*;
 

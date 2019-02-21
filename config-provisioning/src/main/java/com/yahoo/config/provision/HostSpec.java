@@ -29,6 +29,8 @@ public class HostSpec implements Comparable<HostSpec> {
 
     private final Optional<com.yahoo.component.Version> version;
 
+    private final Optional<NetworkPorts> networkPorts;
+
     public HostSpec(String hostname, Optional<ClusterMembership> membership) {
         this(hostname, new ArrayList<>(), Optional.empty(), membership);
     }
@@ -40,6 +42,7 @@ public class HostSpec implements Comparable<HostSpec> {
     public HostSpec(String hostname, List<String> aliases) {
         this(hostname, aliases, Optional.empty(), Optional.empty());
     }
+
     public HostSpec(String hostname, List<String> aliases, Flavor flavor) {
         this(hostname, aliases, Optional.of(flavor), Optional.empty());
     }
@@ -54,13 +57,21 @@ public class HostSpec implements Comparable<HostSpec> {
 
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
                     Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version) {
+        this(hostname, aliases, flavor, membership, version, Optional.empty());
+    }
+
+    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
+                    Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version,
+                    Optional<NetworkPorts> networkPorts) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
         Objects.requireNonNull(version, "Version cannot be null but can be empty");
+        Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");
         this.hostname = hostname;
         this.aliases = ImmutableList.copyOf(aliases);
         this.flavor = flavor;
         this.membership = membership;
         this.version = version;
+        this.networkPorts = networkPorts;
     }
 
     /** Returns the name identifying this host */
@@ -76,6 +87,9 @@ public class HostSpec implements Comparable<HostSpec> {
 
     /** Returns the membership of this host, or an empty value if not present */
     public Optional<ClusterMembership> membership() { return membership; }
+
+    /** Returns the network port allocations on this host, or empty if not present */
+    public Optional<NetworkPorts> networkPorts() { return networkPorts; }
 
     @Override
     public String toString() {
