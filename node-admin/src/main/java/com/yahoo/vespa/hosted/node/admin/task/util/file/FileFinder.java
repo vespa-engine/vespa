@@ -115,7 +115,7 @@ public class FileFinder {
         try {
             // Only need to traverse as deep as we want to match, unless we want to match everything in directories
             // already matched
-            Files.walkFileTree(basePath, Collections.emptySet(), maxDepth, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(basePath, Collections.emptySet(), maxDepth, new SimpleFileVisitor<>() {
                 private final Stack<FileAttributes> matchingDirectoryStack = new Stack<>();
                 private int currentLevel = -1;
 

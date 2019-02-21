@@ -22,8 +22,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class NodeRepositoryNodeTest {
     private static final ObjectMapper mapper = new ObjectMapper();
-    private NodeRepositoryNode node = new NodeRepositoryNode();
-    private NodeAttributes attributes = new NodeAttributes();
+    private final NodeRepositoryNode node = new NodeRepositoryNode();
+    private final NodeAttributes attributes = new NodeAttributes();
 
 
     /**
