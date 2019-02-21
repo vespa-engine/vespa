@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storage/storageutil/distributorstatecache.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
@@ -577,7 +578,21 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
                   << " differs from this state.";
         } else if (!their_hash.empty() && their_hash != our_hash) {
             // Empty hash indicates request from 4.2 protocol or earlier
-            error << "Distribution config has changed since request.";
+            // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
+            bool matches_legacy_hash = false;
+            if (bucketSpace == document::FixedBucketSpaces::global_space()) {
+                const auto default_distr =_component.getBucketSpaceRepo()
+                        .get(document::FixedBucketSpaces::default_space()).getDistribution();
+                // Convert in legacy distribution mode, which will accept old 'hash' structure.
+                const auto legacy_global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(
+                        *default_distr, true/*use legacy mode*/);
+                const auto legacy_hash = legacy_global_distr->getNodeGraph().getDistributionConfigHash();
+                LOG(debug, "Falling back to comparing against legacy distribution hash: %s", legacy_hash.c_str());
+                matches_legacy_hash = (their_hash == legacy_hash);
+            }
+            if (!matches_legacy_hash) {
+                error << "Distribution config has changed since request.";
+            }
         }
         if (error.str().empty()) {
             std::pair<std::set<uint16_t>::iterator, bool> result(
