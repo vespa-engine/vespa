@@ -525,7 +525,8 @@
     ],
     "methods": [
       "public void <init>(java.util.Collection)",
-      "public java.util.Collection allocations()"
+      "public java.util.Collection allocations()",
+      "public int size()"
     ],
     "fields": []
   },

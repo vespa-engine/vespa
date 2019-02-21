@@ -50,4 +50,6 @@ public class NetworkPorts {
     public Collection<Allocation> allocations() {
         return this.allocations;
     }
+
+    public int size() { return allocations.size(); }
 }
