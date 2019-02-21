@@ -708,6 +708,11 @@
                 <artifactId>assertj-core</artifactId>
                 <version>3.11.1</version>
             </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-core</artifactId>
+                <version>${aws.sdk.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -717,6 +722,7 @@
         <apache.httpclient.version>4.4.1</apache.httpclient.version>
         <apache.httpcore.version>4.4.1</apache.httpcore.version>
         <asm.version>7.0</asm.version>
+        <aws.sdk.version>1.11.357</aws.sdk.version>
         <jna.version>4.5.2</jna.version>
         <tensorflow.version>1.12.0</tensorflow.version>
         <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
