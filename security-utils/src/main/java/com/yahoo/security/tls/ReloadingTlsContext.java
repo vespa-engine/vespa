@@ -18,9 +18,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -79,12 +77,9 @@ public class ReloadingTlsContext implements TlsContext {
 
     private static KeyStore loadTruststore(Path caCertificateFile) {
         try {
-            List<X509Certificate> caCertificates = X509CertificateUtils.certificateListFromPem(Files.readString(caCertificateFile));
-            KeyStoreBuilder trustStoreBuilder = KeyStoreBuilder.withType(KeyStoreType.PKCS12);
-            for (int i = 0; i < caCertificates.size(); i++) {
-                trustStoreBuilder.withCertificateEntry("cert-" + i, caCertificates.get(i));
-            }
-            return trustStoreBuilder.build();
+            return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
+                    .withCertificateEntries("cert", X509CertificateUtils.certificateListFromPem(Files.readString(caCertificateFile)))
+                    .build();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

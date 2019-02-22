@@ -125,11 +125,9 @@ public class SslContextBuilder {
     }
 
     private static KeyStore createTrustStore(List<X509Certificate> caCertificates) {
-        KeyStoreBuilder trustStoreBuilder = KeyStoreBuilder.withType(KeyStoreType.JKS);
-        for (int i = 0; i < caCertificates.size(); i++) {
-            trustStoreBuilder.withCertificateEntry("cert-" + i, caCertificates.get(i));
-        }
-        return trustStoreBuilder.build();
+        return KeyStoreBuilder.withType(KeyStoreType.JKS)
+                .withCertificateEntries("cert", caCertificates)
+                .build();
     }
 
     private interface KeyStoreSupplier {
