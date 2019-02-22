@@ -15,8 +15,7 @@ import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Objects;
-import java.util.logging.Logger;
+import java.util.Optional;
 
 /**
  * Implementation of AWSCredentialsProvider using com.yahoo.vespa.athenz.client.zts.ZtsClient
@@ -24,8 +23,6 @@ import java.util.logging.Logger;
  * @author mortent
  */
 public class AwsCredentialsProvider implements AWSCredentialsProvider {
-
-    private static final Logger logger = Logger.getLogger(AwsCredentialsProvider.class.getName());
 
     private final static Duration MIN_EXPIRY = Duration.ofMinutes(5);
     private final AthenzDomain athenzDomain;
@@ -72,8 +69,8 @@ public class AwsCredentialsProvider implements AWSCredentialsProvider {
     /*
      * Checks credential expiration, returns true if it will expipre in the next MIN_EXPIRY minutes
      */
-    private static boolean shouldRefresh(AwsTemporaryCredentials credentials) {
-        Instant expiration = credentials.expiration();
-        return Objects.isNull(expiration) || expiration.minus(MIN_EXPIRY).isAfter(Instant.now());
+    static boolean shouldRefresh(AwsTemporaryCredentials credentials) {
+        Instant expiration = Optional.ofNullable(credentials).map(AwsTemporaryCredentials::expiration).orElse(Instant.EPOCH);
+        return Duration.between(Instant.now(), expiration).toMinutes() < MIN_EXPIRY.toMinutes();
     }
 }
