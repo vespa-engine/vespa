@@ -43,6 +43,11 @@ public class TransportSecurityUtils {
                 .map(TransportSecurityOptions::fromJsonFile);
     }
 
+    public static Optional<TlsContext> createTlsContext() {
+        return getConfigFile()
+                .map(configFile -> new ReloadingTlsContext(configFile, getInsecureAuthorizationMode()));
+    }
+
     private static Optional<String> getEnvironmentVariable(String environmentVariable) {
         return Optional.ofNullable(System.getenv(environmentVariable))
                 .filter(var -> !var.isEmpty());
