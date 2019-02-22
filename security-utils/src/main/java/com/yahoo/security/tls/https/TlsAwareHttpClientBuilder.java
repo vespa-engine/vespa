@@ -23,10 +23,6 @@ public class TlsAwareHttpClientBuilder implements HttpClient.Builder {
     private final HttpClient.Builder wrappedBuilder;
     private final String userAgent;
 
-    public TlsAwareHttpClientBuilder(TlsContext tlsContext) {
-        this(tlsContext, "vespa-tls-aware-client");
-    }
-
     public TlsAwareHttpClientBuilder(TlsContext tlsContext, String userAgent) {
         this.wrappedBuilder = HttpClient.newBuilder()
                 .sslContext(tlsContext.context())
