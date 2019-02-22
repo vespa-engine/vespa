@@ -151,11 +151,105 @@ public class TensorTestCase {
                 Tensor.from("tensor(x[1],y[2])", "{{x:0,y:0}:1, {x:0,y:1}:2}"),
                 Tensor.from("tensor(x[1],y[3])", "{}"),
                 Tensor.from("tensor(x[1],y[2])", "{{x:0,y:0}:0,{x:0,y:1}:0}"));
+        assertTensorModify((left, right) -> left * right,
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:1, {x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:1}:3}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:1,{x:0,y:1}:6}"));
+    }
+
+    @Test
+    public void testTensorMerge() {
+        assertTensorMerge(
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1,{x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:2}:3}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1,{x:0,y:1}:2,{x:0,y:2}:3}"));
+        assertTensorMerge(
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1,{x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:1}:3}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1,{x:0,y:1}:3}"));
+        assertTensorMerge(
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1,{x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:1}:3,{x:0,y:2}:4}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1,{x:0,y:1}:3,{x:0,y:2}:4}"));
+        assertTensorMerge(
+                Tensor.from("tensor(x{},y{})", "{}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:5}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:5}"));
+        assertTensorMerge(
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1,{x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y{})", "{}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1,{x:0,y:1}:2}"));
+        assertTensorMerge(
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:1,{x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:2}:3}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:0,{x:0,y:1}:0,{x:0,y:2}:3}"));  // notice difference with sparse case - y is dense dimension here with default value 0.0
+        assertTensorMerge(
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:1,{x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:1}:3}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:0,{x:0,y:1}:3,{x:0,y:2}:0}"));
+        assertTensorMerge(
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:1,{x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:1}:3,{x:0,y:2}:4}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:0,{x:0,y:1}:3,{x:0,y:2}:4}"));
+        assertTensorMerge(
+                Tensor.from("tensor(x{},y[3])", "{}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:5}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:5}"));
+        assertTensorMerge(
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:1,{x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y[3])", "{}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:1,{x:0,y:1}:2}"));
+    }
+
+    @Test
+    public void testTensorRemove() {
+        assertTensorRemove(
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:2,{x:0,y:1}:3}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:1}:1}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:2}"));
+        assertTensorRemove(
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1,{x:0,y:1}:2}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1,{x:0,y:1}:1}"),
+                Tensor.from("tensor(x{},y{})", "{}"));
+        assertTensorRemove(
+                Tensor.from("tensor(x{},y{})", "{}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:1}"),
+                Tensor.from("tensor(x{},y{})", "{}"));
+        assertTensorRemove(
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:2,{x:0,y:1}:3}"),
+                Tensor.from("tensor(x{},y{})", "{}"),
+                Tensor.from("tensor(x{},y{})", "{{x:0,y:0}:2,{x:0,y:1}:3}"));
+        assertTensorRemove(
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:2, {x:0,y:1}:3}"),
+                Tensor.from("tensor(x{})", "{{x:0}:1}"),  // notice update is without dense dimension
+                Tensor.from("tensor(x{},y[3])", "{}"));
+        assertTensorRemove(
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:1,{x:1,y:0}:2}"),
+                Tensor.from("tensor(x{})", "{{x:0}:1}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:1,y:0}:2,{x:1,y:1}:0,{x:1,y:2}:0}"));
+        assertTensorRemove(
+                Tensor.from("tensor(x{},y[3])", "{}"),
+                Tensor.from("tensor(x{})", "{{x:0}:1}"),
+                Tensor.from("tensor(x{},y[3])", "{}"));
+        assertTensorRemove(
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:2,{x:0,y:1}:3}"),
+                Tensor.from("tensor(x{})", "{}"),
+                Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:2,{x:0,y:1}:3}"));
     }
 
     private void assertTensorModify(DoubleBinaryOperator op, Tensor init, Tensor update, Tensor expected) {
         assertEquals(expected, init.modify(op, update.cells()));
     }
+
+    private void assertTensorMerge(Tensor init, Tensor update, Tensor expected) {
+        DoubleBinaryOperator op = (left, right) -> right;
+        assertEquals(expected, init.merge(op, update.cells()));
+    }
+
+    private void assertTensorRemove(Tensor init, Tensor update, Tensor expected) {
+        assertEquals(expected, init.remove(update.cells().keySet()));
+    }
+
 
     private double dotProduct(Tensor tensor, List<Tensor> tensors) {
         double sum = 0;

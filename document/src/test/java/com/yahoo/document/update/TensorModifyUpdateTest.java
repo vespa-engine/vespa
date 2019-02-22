@@ -1,12 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.update;
 
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentId;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.Field;
-import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.update.TensorModifyUpdate.Operation;
 import com.yahoo.tensor.Tensor;
@@ -28,10 +22,11 @@ public class TensorModifyUpdateTest {
         assertConvertToCompatible("tensor(x{})", "tensor(x[10])");
         assertConvertToCompatible("tensor(x{})", "tensor(x{})");
         assertConvertToCompatible("tensor(x{},y{},z{})", "tensor(x[],y[10],z{})");
+        assertConvertToCompatible("tensor(x{},y{})", "tensor(x{},y[3])");
     }
 
     private static void assertConvertToCompatible(String expectedType, String inputType) {
-        assertEquals(expectedType, TensorModifyUpdate.convertToCompatibleType(TensorType.fromSpec(inputType)).toString());
+        assertEquals(expectedType, TensorModifyUpdate.convertDimensionsToMapped(TensorType.fromSpec(inputType)).toString());
     }
 
     @Test
@@ -46,15 +41,9 @@ public class TensorModifyUpdateTest {
     public void apply_modify_update_operations() {
         assertApplyTo("tensor(x{},y{})", Operation.REPLACE,
                 "{{x:0,y:0}:1, {x:0,y:1}:2}", "{{x:0,y:1}:0}", "{{x:0,y:0}:1,{x:0,y:1}:0}");
-        assertApplyTo("tensor(x{},y{})", Operation.ADD,
-                "{{x:0,y:0}:1, {x:0,y:1}:2}", "{{x:0,y:1}:3}", "{{x:0,y:0}:1,{x:0,y:1}:5}");
-        assertApplyTo("tensor(x{},y{})", Operation.MULTIPLY,
-                "{{x:0,y:0}:3, {x:0,y:1}:2}", "{{x:0,y:1}:3}", "{{x:0,y:0}:3,{x:0,y:1}:6}");
-        assertApplyTo("tensor(x[1],y[2])", Operation.REPLACE,
-                "{{x:0,y:0}:1, {x:0,y:1}:2}", "{{x:0,y:1}:0}", "{{x:0,y:0}:1,{x:0,y:1}:0}");
         assertApplyTo("tensor(x[1],y[2])", Operation.ADD,
                 "{{x:0,y:0}:1, {x:0,y:1}:2}", "{{x:0,y:1}:3}", "{{x:0,y:0}:1,{x:0,y:1}:5}");
-        assertApplyTo("tensor(x[1],y[2])", Operation.MULTIPLY,
+        assertApplyTo("tensor(x{},y[2])", Operation.MULTIPLY,
                 "{{x:0,y:0}:3, {x:0,y:1}:2}", "{{x:0,y:1}:3}", "{{x:0,y:0}:3,{x:0,y:1}:6}");
     }
 

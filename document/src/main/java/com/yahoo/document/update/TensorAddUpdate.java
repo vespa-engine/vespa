@@ -7,15 +7,11 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 
-import java.util.Map;
 import java.util.Objects;
 
 /**
- *  An update used to add cells to a sparse tensor (has only mapped dimensions).
- *
- *  The cells to add are contained in a sparse tensor as well.
+ *  An update used to add cells to a sparse or mixed tensor (has at least one mapped dimension).
  */
 public class TensorAddUpdate extends ValueUpdate<TensorFieldValue> {
 
@@ -50,22 +46,10 @@ public class TensorAddUpdate extends ValueUpdate<TensorFieldValue> {
             return oldValue;
         }
 
-        Tensor oldTensor = ((TensorFieldValue) oldValue).getTensor().get();
-        Map<TensorAddress, Double> oldCells = oldTensor.cells();
-        Map<TensorAddress, Double> addCells = tensor.getTensor().get().cells();
-
-        // currently, underlying implementation disallows multiple entries with the same key
-
-        Tensor.Builder builder = Tensor.Builder.of(oldTensor.type());
-        for (Map.Entry<TensorAddress, Double> oldCell : oldCells.entrySet()) {
-            builder.cell(oldCell.getKey(), addCells.getOrDefault(oldCell.getKey(), oldCell.getValue()));
-        }
-        for (Map.Entry<TensorAddress, Double> addCell : addCells.entrySet()) {
-            if ( ! oldCells.containsKey(addCell.getKey())) {
-                builder.cell(addCell.getKey(), addCell.getValue());
-            }
-        }
-        return new TensorFieldValue(builder.build());
+        Tensor old = ((TensorFieldValue) oldValue).getTensor().get();
+        Tensor update = tensor.getTensor().get();
+        Tensor result = old.merge((left, right) -> right, update.cells());  // note this might be slow for large mixed tensor updates
+        return new TensorFieldValue(result);
     }
 
     @Override

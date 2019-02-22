@@ -23,22 +23,23 @@ public class TensorAddUpdateReader {
 
     public static TensorAddUpdate createTensorAddUpdate(TokenBuffer buffer, Field field) {
         expectObjectStart(buffer.currentToken());
-        expectTensorTypeIsSparse(field);
+        expectTensorTypeHasSparseDimensions(field);
 
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
         TensorType tensorType = tensorDataType.getTensorType();
         TensorFieldValue tensorFieldValue = new TensorFieldValue(tensorType);
         fillTensor(buffer, tensorFieldValue);
+
         expectTensorIsNonEmpty(field, tensorFieldValue.getTensor().get());
         return new TensorAddUpdate(tensorFieldValue);
     }
 
-    private static void expectTensorTypeIsSparse(Field field) {
+    private static void expectTensorTypeHasSparseDimensions(Field field) {
         TensorType tensorType = ((TensorDataType)field.getDataType()).getTensorType();
-        if (tensorType.dimensions().stream()
-                .anyMatch(dim -> dim.isIndexed())) {
-            throw new IllegalArgumentException("An add update can only be applied to sparse tensors. "
-                    + "Field '" + field.getName() + "' has unsupported tensor type '" + tensorType + "'");
+        if (tensorType.dimensions().stream().allMatch(TensorType.Dimension::isIndexed)) {
+            throw new IllegalArgumentException("An add update can only be applied to tensors " +
+                    "with at least one sparse dimension. Field '" + field.getName() +
+                    "' has unsupported tensor type '" + tensorType + "'");
         }
     }
 
@@ -47,6 +48,5 @@ public class TensorAddUpdateReader {
             throw new IllegalArgumentException("Add update for field '" + field.getName() + "' does not contain tensor cells");
         }
     }
-
 
 }

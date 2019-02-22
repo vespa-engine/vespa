@@ -24,23 +24,23 @@ public class TensorRemoveUpdateReader {
 
     static TensorRemoveUpdate createTensorRemoveUpdate(TokenBuffer buffer, Field field) {
         expectObjectStart(buffer.currentToken());
-        expectTensorTypeIsSparse(field);
+        expectTensorTypeHasSparseDimensions(field);
 
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
-        TensorType tensorType = tensorDataType.getTensorType();
+        TensorType originalType = tensorDataType.getTensorType();
+        TensorType convertedType = TensorRemoveUpdate.extractSparseDimensions(originalType);
+        Tensor tensor = readRemoveUpdateTensor(buffer, convertedType, originalType);
 
-        // TODO: for mixed case extract a new tensor type based only on mapped dimensions
-
-        Tensor tensor = readRemoveUpdateTensor(buffer, tensorType);
         expectAddressesAreNonEmpty(field, tensor);
         return new TensorRemoveUpdate(new TensorFieldValue(tensor));
     }
 
-    private static void expectTensorTypeIsSparse(Field field) {
+    private static void expectTensorTypeHasSparseDimensions(Field field) {
         TensorType tensorType = ((TensorDataType)field.getDataType()).getTensorType();
-        if (tensorType.dimensions().stream().anyMatch(TensorType.Dimension::isIndexed)) {
-            throw new IllegalArgumentException("A remove update can only be applied to sparse tensors. "
-                    + "Field '" + field.getName() + "' has unsupported tensor type '" + tensorType + "'");
+        if (tensorType.dimensions().stream().allMatch(TensorType.Dimension::isIndexed)) {
+            throw new IllegalArgumentException("A remove update can only be applied to tensors " +
+                    "with at least one sparse dimension. Field '" + field.getName() +
+                    "' has unsupported tensor type '" + tensorType + "'");
         }
     }
 
@@ -53,7 +53,7 @@ public class TensorRemoveUpdateReader {
     /**
      * Reads all addresses in buffer and returns a tensor where addresses have cell value 1.0
      */
-    private static Tensor readRemoveUpdateTensor(TokenBuffer buffer, TensorType type) {
+    private static Tensor readRemoveUpdateTensor(TokenBuffer buffer, TensorType type, TensorType originalType) {
         Tensor.Builder builder = Tensor.Builder.of(type);
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
@@ -62,7 +62,7 @@ public class TensorRemoveUpdateReader {
                 expectArrayStart(buffer.currentToken());
                 int nesting = buffer.nesting();
                 for (buffer.next(); buffer.nesting() >= nesting; buffer.next()) {
-                    builder.cell(readTensorAddress(buffer, type), 1.0);
+                    builder.cell(readTensorAddress(buffer, type, originalType), 1.0);
                 }
                 expectCompositeEnd(buffer.currentToken());
             }
@@ -71,12 +71,15 @@ public class TensorRemoveUpdateReader {
         return builder.build();
     }
 
-    private static TensorAddress readTensorAddress(TokenBuffer buffer, TensorType type) {
+    private static TensorAddress readTensorAddress(TokenBuffer buffer, TensorType type, TensorType originalType) {
         TensorAddress.Builder builder = new TensorAddress.Builder(type);
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             String dimension = buffer.currentName();
+            if ( ! type.dimension(dimension).isPresent() && originalType.dimension(dimension).isPresent()) {
+                throw new IllegalArgumentException("Indexed dimension address '" + dimension + "' should not be specified in remove update");
+            }
             String label = buffer.currentText();
             builder.add(dimension, label);
         }

@@ -29,10 +29,8 @@ public class TensorModifyUpdateReader {
     private static final String MODIFY_MULTIPLY = "multiply";
 
     public static TensorModifyUpdate createModifyUpdate(TokenBuffer buffer, Field field) {
-
         expectFieldIsOfTypeTensor(field);
         expectTensorTypeHasNoneIndexedUnboundDimensions(field);
-        expectTensorTypeIsNotMixed(field);
         expectObjectStart(buffer.currentToken());
 
         ModifyUpdateResult result = createModifyUpdateResult(buffer, field);
@@ -55,16 +53,6 @@ public class TensorModifyUpdateReader {
                 .anyMatch(dim -> dim.type().equals(TensorType.Dimension.Type.indexedUnbound))) {
             throw new IllegalArgumentException("A modify update cannot be applied to tensor types with indexed unbound dimensions. "
                     + "Field '" + field.getName() + "' has unsupported tensor type '" + tensorType + "'");
-        }
-    }
-
-    private static void expectTensorTypeIsNotMixed(Field field) {
-        TensorType tensorType = ((TensorDataType)field.getDataType()).getTensorType();
-        long numMappedDimensions = tensorType.dimensions().stream().filter(dim -> dim.type().equals(TensorType.Dimension.Type.mapped)).count();
-        long numIndexedDimensions = tensorType.dimensions().stream().filter(dim -> dim.isIndexed()).count();
-        if (numMappedDimensions > 0 && numIndexedDimensions > 0) {
-            throw new IllegalArgumentException("A modify update cannot be applied to tensor types with mixed dimensions. "
-                    + "Field '" + field.getName() + "' has mixed tensor type '" + tensorType + "'");
         }
     }
 
@@ -121,7 +109,7 @@ public class TensorModifyUpdateReader {
     private static TensorFieldValue createTensor(TokenBuffer buffer, Field field) {
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
         TensorType originalType = tensorDataType.getTensorType();
-        TensorType convertedType = TensorModifyUpdate.convertToCompatibleType(originalType);
+        TensorType convertedType = TensorModifyUpdate.convertDimensionsToMapped(originalType);
 
         Tensor.Builder tensorBuilder = Tensor.Builder.of(convertedType);
         readTensorCells(buffer, tensorBuilder);
@@ -129,25 +117,26 @@ public class TensorModifyUpdateReader {
 
         validateBounds(tensor, originalType);
 
-        TensorFieldValue result = new TensorFieldValue(convertedType);
-        result.assign(tensor);
-        return result;
+        return new TensorFieldValue(tensor);
     }
 
-    /** Only validate if original type is indexed bound */
-    private static void validateBounds(Tensor convertedTensor, TensorType originalType) {
-        if ( ! originalType.dimensions().stream().allMatch(d -> d instanceof TensorType.IndexedBoundDimension)) {
+    /** Only validate if original type has indexed bound dimensions */
+    static void validateBounds(Tensor convertedTensor, TensorType originalType) {
+        if (originalType.dimensions().stream().noneMatch(d -> d instanceof TensorType.IndexedBoundDimension)) {
             return;
         }
         for (Iterator<Tensor.Cell> iter = convertedTensor.cellIterator(); iter.hasNext(); ) {
             Tensor.Cell cell = iter.next();
             TensorAddress address = cell.getKey();
             for (int i = 0; i < address.size(); ++i) {
-                long label = address.numericLabel(i);
-                long bound = originalType.dimensions().get(i).size().get();  // size is non-optional for indexed bound
-                if (label >= bound) {
-                    throw new IndexOutOfBoundsException("Dimension '" + originalType.dimensions().get(i).name() +
-                            "' has label '" + label + "' but type is " + originalType.toString());
+                TensorType.Dimension dim = originalType.dimensions().get(i);
+                if (dim instanceof TensorType.IndexedBoundDimension) {
+                    long label = address.numericLabel(i);
+                    long bound = dim.size().get();  // size is non-optional for indexed bound
+                    if (label >= bound) {
+                        throw new IndexOutOfBoundsException("Dimension '" + originalType.dimensions().get(i).name() +
+                                "' has label '" + label + "' but type is " + originalType.toString());
+                    }
                 }
             }
         }

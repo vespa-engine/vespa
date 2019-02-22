@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
@@ -112,6 +113,29 @@ public interface Tensor {
         }
         return builder.build();
     }
+
+    /**
+     * Returns a new tensor where existing cells in this tensor have been
+     * modified according to the given operation and cells in the given map.
+     * In contrast to {@link #modify}, previously non-existing cells are added
+     * to this tensor. Only valid for sparse or mixed tensors.
+     *
+     * @param op how to update overlapping cells
+     * @param cells cells to merge with this tensor
+     * @return a new tensor where this tensor is merged with the other
+     */
+    Tensor merge(DoubleBinaryOperator op, Map<TensorAddress, Double> cells);
+
+    /**
+     * Returns a new tensor where existing cells in this tensor have been
+     * removed according to the given set of addresses. Only valid for sparse
+     * or mixed tensors. For mixed tensors, addresses are assumed to only
+     * contain the sparse dimensions, as the entire dense subspace is removed.
+     *
+     * @param addresses list of addresses to remove
+     * @return a new tensor where cells have been removed
+     */
+    Tensor remove(Set<TensorAddress> addresses);
 
     // ----------------- Primitive tensor functions
 

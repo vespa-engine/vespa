@@ -40,6 +40,7 @@ public class DocumentUpdateJsonSerializerTest {
 
     final static TensorType sparseTensorType = new TensorType.Builder().mapped("x").mapped("y").build();
     final static TensorType denseTensorType = new TensorType.Builder().indexed("x", 2).indexed("y", 3).build();
+    final static TensorType mixedTensorType = new TensorType.Builder().mapped("x").indexed("y", 3).build();
     final static DocumentTypeManager types = new DocumentTypeManager();
     final static JsonFactory parserFactory = new JsonFactory();
     final static DocumentType docType = new DocumentType("doctype");
@@ -60,6 +61,7 @@ public class DocumentUpdateJsonSerializerTest {
         docType.addField(new Field("byte_field", DataType.BYTE));
         docType.addField(new Field("sparse_tensor", new TensorDataType(sparseTensorType)));
         docType.addField(new Field("dense_tensor", new TensorDataType(denseTensorType)));
+        docType.addField(new Field("mixed_tensor", new TensorDataType(mixedTensorType)));
         docType.addField(new Field("reference_field", new ReferenceDataType(refTargetDocType, 777)));
         docType.addField(new Field("predicate_field", DataType.PREDICATE));
         docType.addField(new Field("raw_field", DataType.RAW));
@@ -336,6 +338,26 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
+    public void test_tensor_modify_update_on_mixed_tensor() {
+        roundtripSerializeJsonAndMatch(inputJson(
+                "{",
+                "  'update': 'DOCUMENT_ID',",
+                "  'fields': {",
+                "    'mixed_tensor': {",
+                "      'modify': {",
+                "        'operation': 'multiply',",
+                "        'cells': [",
+                "          { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 },",
+                "          { 'address': { 'x': 'c', 'y': '1' }, 'value': 3.0 }",
+                "        ]",
+                "      }",
+                "    }",
+                "  }",
+                "}"
+        ));
+    }
+
+    @Test
     public void test_tensor_add_update() {
         roundtripSerializeJsonAndMatch(inputJson(
                 "{",
@@ -355,6 +377,29 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
+    public void test_tensor_add_update_mixed() {
+        roundtripSerializeJsonAndMatch(inputJson(
+                "{",
+                "  'update': 'DOCUMENT_ID',",
+                "  'fields': {",
+                "    'mixed_tensor': {",
+                "      'add': {",
+                "        'cells': [",
+                "          { 'address': { 'x': '1', 'y': '0' }, 'value': 2.0 },",
+                "          { 'address': { 'x': '1', 'y': '1' }, 'value': 0.0 },",
+                "          { 'address': { 'x': '1', 'y': '2' }, 'value': 0.0 },",
+                "          { 'address': { 'x': '0', 'y': '0' }, 'value': 0.0 },",
+                "          { 'address': { 'x': '0', 'y': '1' }, 'value': 0.0 },",
+                "          { 'address': { 'x': '0', 'y': '2' }, 'value': 3.0 }",
+                "        ]",
+                "      }",
+                "    }",
+                "  }",
+                "}"
+        ));
+    }
+
+    @Test
     public void test_tensor_remove_update() {
         roundtripSerializeJsonAndMatch(inputJson(
                 "{",
@@ -365,6 +410,24 @@ public class DocumentUpdateJsonSerializerTest {
                 "        'addresses': [",
                 "          {'x':'0','y':'0'},",
                 "          {'x':'1','y':'2'}",
+                "        ]",
+                "      }",
+                "    }",
+                "  }",
+                "}"
+        ));
+    }
+
+    @Test
+    public void test_tensor_remove_update_mixed() {
+        roundtripSerializeJsonAndMatch(inputJson(
+                "{",
+                "  'update': 'DOCUMENT_ID',",
+                "  'fields': {",
+                "    'mixed_tensor': {",
+                "      'remove': {",
+                "        'addresses': [",
+                "          {'x':'0' }",
                 "        ]",
                 "      }",
                 "    }",

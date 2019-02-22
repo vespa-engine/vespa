@@ -12,9 +12,6 @@ public class TensorRemoveUpdateTest {
     @Test
     public void apply_remove_update_operations() {
         assertApplyTo("{{x:0,y:0}:2, {x:0,y:1}:3}", "{{x:0,y:1}:1}", "{{x:0,y:0}:2}");
-        assertApplyTo("{{x:0,y:0}:1, {x:0,y:1}:2}", "{{x:0,y:0}:1,{x:0,y:1}:1}", "{}");
-        assertApplyTo("{}", "{{x:0,y:0}:1}", "{}");
-        assertApplyTo("{{x:0,y:0}:2, {x:0,y:1}:3}", "{}", "{{x:0,y:0}:2, {x:0,y:1}:3}");
     }
 
     private void assertApplyTo(String init, String update, String expected) {
