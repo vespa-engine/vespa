@@ -100,7 +100,7 @@ public class QueryPacket extends Packet {
         byte[] stripped    = new byte[encodedBody.length - (ignoreableSize + getSessionKeySkipLength()) + utf8Summary.length + 1];
 
         System.arraycopy(encodedBody, 0, stripped, 0, ignoreableOffset);
-        stripped[1] = (byte)(stripped[1] & 0x7f);  // Ignor sessionKey feature flag
+        stripped[1] = (byte)(stripped[1] & 0x7f);  // Ignore sessionKey feature flag
         System.arraycopy(utf8Summary, 0, stripped, ignoreableOffset, utf8Summary.length);
         stripped[ignoreableOffset + utf8Summary.length] = 0;
 

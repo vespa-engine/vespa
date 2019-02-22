@@ -13,6 +13,7 @@ import java.util.Optional;
  * @author hakonhall
  */
 class StateV1HealthUpdater implements HealthUpdater {
+
     private final String endpoint;
     private final StateV1HealthClient healthClient;
 
@@ -56,4 +57,5 @@ class StateV1HealthUpdater implements HealthUpdater {
     public void close() {
         healthClient.close();
     }
+
 }

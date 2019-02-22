@@ -22,6 +22,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * @author hakonhall
  */
 public class StateV1HealthClient implements AutoCloseable {
+
     private static final long MAX_CONTENT_LENGTH = 1L << 20; // 1 MB
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Logger logger = Logger.getLogger(StateV1HealthClient.class.getName());
@@ -71,4 +72,5 @@ public class StateV1HealthClient implements AutoCloseable {
             logger.log(LogLevel.WARNING, "Failed to close CloseableHttpClient", e);
         }
     }
+
 }
