@@ -58,6 +58,10 @@ public:
         _importedFields = importedFields_in;
         return *this;
     }
+    DocumentDBConfigBuilder &summary(const DocumentDBConfig::SummaryConfigSP &summary_in) {
+        _summary = summary_in;
+        return *this;
+    }
     DocumentDBConfigBuilder &summarymap(const DocumentDBConfig::SummarymapConfigSP &summarymap_in) {
         _summarymap = summarymap_in;
         return *this;

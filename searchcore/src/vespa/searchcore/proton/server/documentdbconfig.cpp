@@ -265,7 +265,7 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
     DocumentTypeInspector inspector(*oldCfg.getDocumentType(), *n.getDocumentType());
     IndexschemaInspector oldIndexschemaInspector(oldCfg.getIndexschemaConfig());
     attributeAspectDelayer.setup(oldCfg.getAttributesConfig(), oldCfg.getSummarymapConfig(),
-                                 n.getAttributesConfig(), n.getSummarymapConfig(),
+                                 n.getAttributesConfig(), n.getSummaryConfig(), n.getSummarymapConfig(),
                                  oldIndexschemaInspector, inspector);
     bool delayedAttributeAspects = (n.getAttributesConfig() != *attributeAspectDelayer.getAttributesConfig()) ||
                                    (n.getSummarymapConfig() != *attributeAspectDelayer.getSummarymapConfig());

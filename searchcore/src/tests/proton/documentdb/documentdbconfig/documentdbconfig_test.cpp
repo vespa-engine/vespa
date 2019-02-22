@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/server/documentdbconfig.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -86,6 +87,19 @@ public:
         _builder.attributes(make_shared<AttributesConfig>(builder));
         return *this;
     }
+    MyConfigBuilder &addSummary(bool hasField) {
+        SummaryConfigBuilder builder;
+        builder.classes.resize(1);
+        builder.classes.back().id = 0;
+        builder.classes.back().name = "default";
+        if (hasField) {
+            builder.classes.back().fields.resize(1);
+            builder.classes.back().fields.back().name = "my_attribute";
+            builder.classes.back().fields.back().type = "integer";
+        }
+        _builder.summary(make_shared<SummaryConfig>(builder));
+        return *this;
+    }
     MyConfigBuilder &addSummarymap() {
         SummarymapConfigBuilder builder;
         builder.override.resize(1);
@@ -114,11 +128,12 @@ struct Fixture {
           replayCfg(),
           nullCfg()
     {
-        basicCfg = MyConfigBuilder(4, schema, repo).addAttribute().build();
+        basicCfg = MyConfigBuilder(4, schema, repo).addAttribute().addSummary(true).build();
         fullCfg = MyConfigBuilder(4, schema, repo).addAttribute().
                                                    addRankProfile().
                                                    addRankingConstant().
                                                    addImportedField().
+                                                   addSummary(true).
                                                    addSummarymap().
                                                    build();
         replayCfg = DocumentDBConfig::makeReplayConfig(fullCfg);
@@ -152,11 +167,13 @@ struct DelayAttributeAspectFixture {
                                                    addRankProfile().
                                                    addRankingConstant().
                                                    addImportedField().
+                                                   addSummary(true).
                                                    addSummarymap().
                                                    build();
         noAttrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(hasDocField)).addRankProfile().
                          addRankingConstant().
                          addImportedField().
+                         addSummary(hasDocField).
                          build();
     }
 

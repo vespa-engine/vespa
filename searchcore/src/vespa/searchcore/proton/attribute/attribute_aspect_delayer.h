@@ -9,6 +9,7 @@ namespace vespa { namespace config { namespace search { namespace internal {
 class InternalAttributesType;
 class InternalIndexschemaType;
 class InternalSummarymapType;
+class InternalSummaryType;
 } } } }
 
 namespace proton {
@@ -28,6 +29,7 @@ class AttributeAspectDelayer
     using IndexschemaConfig = const vespa::config::search::internal::InternalIndexschemaType;
     using SummarymapConfigBuilder = vespa::config::search::internal::InternalSummarymapType;
     using SummarymapConfig = const vespa::config::search::internal::InternalSummarymapType;
+    using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
 
     std::shared_ptr<AttributesConfigBuilder> _attributesConfig;
     std::shared_ptr<SummarymapConfigBuilder> _summarymapConfig;
@@ -43,6 +45,7 @@ public:
     void setup(const AttributesConfig &oldAttributesConfig,
                const SummarymapConfig &oldSummarymapConfig,
                const AttributesConfig &newAttributesConfig,
+               const SummaryConfig &newSummaryConfig,
                const SummarymapConfig &newSummarymapConfig,
                const IIndexschemaInspector &oldIndexschemaInspector,
                const IDocumentTypeInspector &inspector);
