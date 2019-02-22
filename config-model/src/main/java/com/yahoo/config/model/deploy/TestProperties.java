@@ -73,7 +73,7 @@ public class TestProperties implements ModelContext.Properties {
         return this;
     }
 
-    public TestProperties setConfigServerSpecs(List<Configserver.Spec> configServerSpecs) {
+    public TestProperties setConfigServerSpecs(List<Spec> configServerSpecs) {
         this.configServerSpecs = ImmutableList.copyOf(configServerSpecs);
         return this;
     }
@@ -82,4 +82,55 @@ public class TestProperties implements ModelContext.Properties {
         this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
         return this;
     }
+
+    public static class Spec implements ConfigServerSpec {
+
+        private final String hostName;
+        private final int configServerPort;
+        private final int httpPort;
+        private final int zooKeeperPort;
+
+        public String getHostName() {
+            return hostName;
+        }
+
+        public int getConfigServerPort() {
+            return configServerPort;
+        }
+
+        public int getHttpPort() {
+            return httpPort;
+        }
+
+        public int getZooKeeperPort() {
+            return zooKeeperPort;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof ConfigServerSpec) {
+                ConfigServerSpec other = (ConfigServerSpec)o;
+
+                return hostName.equals(other.getHostName()) &&
+                        configServerPort == other.getConfigServerPort() &&
+                        httpPort == other.getHttpPort() &&
+                        zooKeeperPort == other.getZooKeeperPort();
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return hostName.hashCode();
+        }
+
+        public Spec(String hostName, int configServerPort, int httpPort, int zooKeeperPort) {
+            this.hostName = hostName;
+            this.configServerPort = configServerPort;
+            this.httpPort = httpPort;
+            this.zooKeeperPort = zooKeeperPort;
+        }
+    }
+
 }

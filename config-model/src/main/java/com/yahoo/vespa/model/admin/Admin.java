@@ -103,14 +103,6 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         return configservers;
     }
 
-    public List<ConfigServerSpec> getConfigServerSpecs() {
-        List<ConfigServerSpec> serverSpecs = new ArrayList<>();
-        for (Configserver server : getConfigservers()) {
-            serverSpecs.add(server.getConfigServerSpec());
-        }
-        return serverSpecs;
-    }
-
     public void removeSlobroks() { slobroks.clear(); }
 
     /** Returns an immutable list of the slobroks in this */

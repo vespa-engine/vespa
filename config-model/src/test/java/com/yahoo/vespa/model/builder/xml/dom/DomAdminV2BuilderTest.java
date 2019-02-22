@@ -6,6 +6,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.admin.*;
@@ -115,9 +116,9 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     @Test
     public void multitenant() {
         List<ConfigServerSpec> configServerSpecs = Arrays.asList(
-                new Configserver.Spec("test1", 19070, 19071, 2181),
-                new Configserver.Spec("test2", 19070, 19071, 2181),
-                new Configserver.Spec("test3", 19070, 19071, 2181));
+                new TestProperties.Spec("test1", 19070, 19071, 2181),
+                new TestProperties.Spec("test2", 19070, 19071, 2181),
+                new TestProperties.Spec("test3", 19070, 19071, 2181));
         Admin admin = buildAdmin(servicesMultitenantAdminOnly(), true, configServerSpecs);
         assertThat(admin.getConfigservers().size(), is(3));
         assertThat(admin.getSlobroks().size(), is(1));

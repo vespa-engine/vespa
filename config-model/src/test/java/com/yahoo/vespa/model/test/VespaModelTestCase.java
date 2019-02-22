@@ -280,7 +280,7 @@ public class VespaModelTestCase {
                 .applicationPackage(applicationPackage)
                 .modelHostProvisioner(new InMemoryProvisioner(true, "host1.yahoo.com"))
                 .properties(new TestProperties()
-                        .setConfigServerSpecs(Arrays.asList(new Configserver.Spec("cfghost", 1234, 1235, 1236)))
+                        .setConfigServerSpecs(Arrays.asList(new TestProperties.Spec("cfghost", 1234, 1235, 1236)))
                         .setMultitenant(true))
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);

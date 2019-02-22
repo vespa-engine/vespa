@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
-import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 
@@ -74,64 +73,10 @@ public class Configserver extends AbstractService {
         return getRelativePort(1);
     }
 
-    ConfigServerSpec getConfigServerSpec() {
-        return new Spec(getHostName(), getConfigServerRpcPort(), getConfigServerHttpPort(), ZooKeepersConfigProvider.zkPort);
-    }
-
     @Override
     public int getHealthPort()  {
         return getRelativePort(1);
     }
 
-    // TODO: Remove this implementation when we are on Hosted Vespa.
-    public static class Spec implements ConfigServerSpec {
-
-        private final String hostName;
-        private final int configServerPort;
-        private final int httpPort;
-        private final int zooKeeperPort;
-
-        public String getHostName() {
-            return hostName;
-        }
-
-        public int getConfigServerPort() {
-            return configServerPort;
-        }
-
-        public int getHttpPort() {
-            return httpPort;
-        }
-
-        public int getZooKeeperPort() {
-            return zooKeeperPort;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o instanceof ConfigServerSpec) {
-                ConfigServerSpec other = (ConfigServerSpec)o;
-
-                return hostName.equals(other.getHostName()) &&
-                        configServerPort == other.getConfigServerPort() &&
-                        httpPort == other.getHttpPort() &&
-                        zooKeeperPort == other.getZooKeeperPort();
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return hostName.hashCode();
-        }
-
-        public Spec(String hostName, int configServerPort, int httpPort, int zooKeeperPort) {
-            this.hostName = hostName;
-            this.configServerPort = configServerPort;
-            this.httpPort = httpPort;
-            this.zooKeeperPort = zooKeeperPort;
-        }
-    }
 
 }
