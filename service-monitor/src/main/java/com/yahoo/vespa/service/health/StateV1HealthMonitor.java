@@ -13,6 +13,7 @@ import java.time.Duration;
  * @author hakon
  */
 class StateV1HealthMonitor implements HealthMonitor {
+
     private final StateV1HealthUpdater updater;
     private final Cancellable periodicExecution;
 
@@ -30,4 +31,5 @@ class StateV1HealthMonitor implements HealthMonitor {
     public void close() {
         periodicExecution.cancel();
     }
+
 }
