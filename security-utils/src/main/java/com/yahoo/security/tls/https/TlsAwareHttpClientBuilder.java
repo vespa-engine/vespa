@@ -23,10 +23,14 @@ public class TlsAwareHttpClientBuilder implements HttpClient.Builder {
     private final HttpClient.Builder wrappedBuilder;
     private final String userAgent;
 
+    public TlsAwareHttpClientBuilder(String userAgent) {
+        this(null, userAgent);
+    }
+
     public TlsAwareHttpClientBuilder(TlsContext tlsContext, String userAgent) {
-        this.wrappedBuilder = HttpClient.newBuilder()
-                .sslContext(tlsContext.context())
-                .sslParameters(tlsContext.parameters());
+        this.wrappedBuilder = tlsContext != null ?
+                HttpClient.newBuilder().sslContext(tlsContext.context()).sslParameters(tlsContext.parameters()) :
+                HttpClient.newBuilder();
         this.userAgent = userAgent;
     }
 
