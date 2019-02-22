@@ -7,6 +7,7 @@
 #include "distributor_bucket_space.h"
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/xmlstream.hpp>
 #include <climits>
@@ -185,7 +186,30 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
 {
     const auto &distributorBucketSpace(_bucketSpaceRepo.get(bucketSpaceAndNode.bucketSpace));
     const auto &distribution(distributorBucketSpace.getDistribution());
-    vespalib::string distributionHash(distribution.getNodeGraph().getDistributionConfigHash());
+    vespalib::string distributionHash;
+    // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
+    bool sendLegacyHash = false;
+    if (bucketSpaceAndNode.bucketSpace == document::FixedBucketSpaces::global_space()) {
+        auto transitionIter = _pendingTransitions.find(bucketSpaceAndNode.bucketSpace);
+        assert(transitionIter != _pendingTransitions.end());
+        // First request cannot have been rejected yet and will thus be sent with non-legacy hash.
+        // Subsequent requests will be sent 50-50. This is because a request may be rejected due to
+        // other reasons than just the hash mismatching, so if we don't cycle back to the non-legacy
+        // hash we risk never converging.
+        sendLegacyHash = ((transitionIter->second->rejectedRequests(bucketSpaceAndNode.node) % 2) == 1);
+    }
+    if (!sendLegacyHash) {
+        distributionHash = distribution.getNodeGraph().getDistributionConfigHash();
+    } else {
+        const auto& defaultSpace = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space());
+        // Generate legacy distribution hash explicitly.
+        auto legacyGlobalDistr = GlobalBucketSpaceDistributionConverter::convert_to_global(
+                defaultSpace.getDistribution(), true/*use legacy mode*/);
+        distributionHash = legacyGlobalDistr->getNodeGraph().getDistributionConfigHash();
+        LOG(debug, "Falling back to sending legacy hash to node %u: %s",
+            bucketSpaceAndNode.node, distributionHash.c_str());
+    }
+
     LOG(debug,
         "Requesting bucket info for bucket space %" PRIu64 " node %d with cluster state '%s' "
         "and distribution hash '%s'",
@@ -238,6 +262,11 @@ PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::Request
         resendTime += framework::MilliSecTime(100);
         _delayedRequests.emplace_back(resendTime, bucketSpaceAndNode);
         _sentMessages.erase(iter);
+        if (result.getResult() == api::ReturnCode::REJECTED) {
+            auto transitionIter = _pendingTransitions.find(bucketSpaceAndNode.bucketSpace);
+            assert(transitionIter != _pendingTransitions.end());
+            transitionIter->second->incrementRequestRejections(bucketSpaceAndNode.node);
+        }
         return true;
     }
 

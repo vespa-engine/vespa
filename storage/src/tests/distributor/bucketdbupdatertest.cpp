@@ -111,6 +111,7 @@ class BucketDBUpdaterTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(identity_update_of_diverging_untrusted_replicas_does_not_mark_any_as_trusted);
     CPPUNIT_TEST(adding_diverging_replica_to_existing_trusted_does_not_remove_trusted);
     CPPUNIT_TEST(batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted);
+    CPPUNIT_TEST(global_distribution_hash_falls_back_to_legacy_format_upon_request_rejection);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -175,6 +176,7 @@ protected:
     void identity_update_of_diverging_untrusted_replicas_does_not_mark_any_as_trusted();
     void adding_diverging_replica_to_existing_trusted_does_not_remove_trusted();
     void batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted();
+    void global_distribution_hash_falls_back_to_legacy_format_upon_request_rejection();
 
     auto &defaultDistributorBucketSpace() { return getBucketSpaceRepo().get(makeBucketSpace()); }
 
@@ -505,7 +507,7 @@ public:
                 std::make_shared<lib::Distribution>(distConfig));
     }
 
-    std::string getDistConfig6Nodes3Groups() const {
+    std::string getDistConfig6Nodes2Groups() const {
         return ("redundancy 2\n"
                 "group[3]\n"
                 "group[0].name \"invalid\"\n"
@@ -692,7 +694,7 @@ BucketDBUpdaterTest::testDistributorChange()
 void
 BucketDBUpdaterTest::testDistributorChangeWithGrouping()
 {
-    std::string distConfig(getDistConfig6Nodes3Groups());
+    std::string distConfig(getDistConfig6Nodes2Groups());
     setDistribution(distConfig);
     int numBuckets = 100;
 
@@ -2073,7 +2075,7 @@ BucketDBUpdaterTest::testClusterStateAlwaysSendsFullFetchWhenDistributionChangeP
         setAndEnableClusterState(stateBefore, expectedMsgs, dummyBucketsToReturn);
     }
     _sender.clear();
-    std::string distConfig(getDistConfig6Nodes3Groups());
+    std::string distConfig(getDistConfig6Nodes2Groups());
     setDistribution(distConfig);
     sortSentMessagesByIndex(_sender);
     CPPUNIT_ASSERT_EQUAL(messageCount(6), _sender.commands.size());
@@ -2547,6 +2549,54 @@ void BucketDBUpdaterTest::batch_update_from_distributor_change_does_not_mark_div
                     "0:5/1/2/3|1:5/7/8/9",
                     lib::ClusterState("distributor:1 storage:3"),
                     "0:5/1/2/3|1:5/7/8/9", true));
+}
+
+// TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
+void BucketDBUpdaterTest::global_distribution_hash_falls_back_to_legacy_format_upon_request_rejection() {
+    std::string distConfig(getDistConfig6Nodes2Groups());
+    setDistribution(distConfig);
+
+    const vespalib::string current_hash = "(0d*|*(0;0;1;2)(1;3;4;5))";
+    const vespalib::string legacy_hash = "(0d3|3|*(0;0;1;2)(1;3;4;5))";
+
+    setSystemState(lib::ClusterState("distributor:6 storage:6"));
+    CPPUNIT_ASSERT_EQUAL(messageCount(6), _sender.commands.size());
+
+    api::RequestBucketInfoCommand* global_req = nullptr;
+    for (auto& cmd : _sender.commands) {
+        auto& req_cmd = dynamic_cast<api::RequestBucketInfoCommand&>(*cmd);
+        if (req_cmd.getBucketSpace() == document::FixedBucketSpaces::global_space()) {
+            global_req = &req_cmd;
+            break;
+        }
+    }
+    CPPUNIT_ASSERT(global_req != nullptr);
+    CPPUNIT_ASSERT_EQUAL(current_hash, global_req->getDistributionHash());
+
+    auto reply = std::make_shared<api::RequestBucketInfoReply>(*global_req);
+    reply->setResult(api::ReturnCode::REJECTED);
+    getBucketDBUpdater().onRequestBucketInfoReply(reply);
+
+    getClock().addSecondsToTime(10);
+    getBucketDBUpdater().resendDelayedMessages();
+
+    // Should now be a resent request with legacy distribution hash
+    CPPUNIT_ASSERT_EQUAL(messageCount(6) + 1, _sender.commands.size());
+    auto& legacy_req = dynamic_cast<api::RequestBucketInfoCommand&>(*_sender.commands.back());
+    CPPUNIT_ASSERT_EQUAL(legacy_hash, legacy_req.getDistributionHash());
+
+    // Now if we reject it _again_ we should cycle back to the current hash
+    // in case it wasn't a hash-based rejection after all. And the circle of life continues.
+    reply = std::make_shared<api::RequestBucketInfoReply>(legacy_req);
+    reply->setResult(api::ReturnCode::REJECTED);
+    getBucketDBUpdater().onRequestBucketInfoReply(reply);
+
+    getClock().addSecondsToTime(10);
+    getBucketDBUpdater().resendDelayedMessages();
+
+    CPPUNIT_ASSERT_EQUAL(messageCount(6) + 2, _sender.commands.size());
+    auto& new_current_req = dynamic_cast<api::RequestBucketInfoCommand&>(*_sender.commands.back());
+    CPPUNIT_ASSERT_EQUAL(current_hash, new_current_req.getDistributionHash());
 }
 
 }

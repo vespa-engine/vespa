@@ -59,6 +59,21 @@ vespalib::string sub_groups_to_partition_spec(const Group& parent) {
     return spec.str();
 }
 
+// Allow generating legacy (broken) partition specs that may be used transiently
+// during rolling upgrades from a pre-fix version to a post-fix version.
+// TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
+vespalib::string sub_groups_to_legacy_partition_spec(const Group& parent) {
+    vespalib::asciistream partitions;
+    // In case of a flat cluster config, this ends up with a partition spec of '*',
+    // which is fine. It basically means "put all replicas in this group", which
+    // happens to be exactly what we want.
+    for (auto& child : parent.sub_groups) {
+        partitions << child.second->nested_leaf_count << '|';
+    }
+    partitions << '*';
+    return partitions.str();
+}
+
 bool is_leaf_group(const DistributionConfigBuilder::Group& g) noexcept {
     return !g.nodes.empty();
 }
@@ -87,19 +102,31 @@ void insert_new_group_into_tree(
 
 void build_transformed_root_group(DistributionConfigBuilder& builder,
                                   const DistributionConfigBuilder::Group& config_source_root,
-                                  const Group& parsed_root) {
+                                  const Group& parsed_root,
+                                  bool legacy_mode) {
     DistributionConfigBuilder::Group new_root(config_source_root);
-    new_root.partitions = sub_groups_to_partition_spec(parsed_root);
+    if (!legacy_mode) {
+        new_root.partitions = sub_groups_to_partition_spec(parsed_root);
+    } else {
+        // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
+        new_root.partitions = sub_groups_to_legacy_partition_spec(parsed_root);
+    }
     builder.group.emplace_back(std::move(new_root));
 }
 
 void build_transformed_non_root_group(DistributionConfigBuilder& builder,
                                       const DistributionConfigBuilder::Group& config_source_group,
-                                      const Group& parsed_root) {
+                                      const Group& parsed_root,
+                                      bool legacy_mode) {
     DistributionConfigBuilder::Group new_group(config_source_group);
     if (!is_leaf_group(config_source_group)) { // Partition specs only apply to inner nodes
         const auto& g = find_non_root_group_by_index(config_source_group.index, parsed_root);
-        new_group.partitions = sub_groups_to_partition_spec(g);
+        if (!legacy_mode) {
+            new_group.partitions = sub_groups_to_partition_spec(g);
+        } else {
+            // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
+            new_group.partitions = sub_groups_to_legacy_partition_spec(g);
+        }
     }
     builder.group.emplace_back(std::move(new_group));
 }
@@ -135,16 +162,16 @@ std::unique_ptr<Group> create_group_tree_from_config(const DistributionConfig& s
  * transitively, its parents again etc) have already been processed. This directly
  * implies that the root group is always the first group present in the config.
  */
-void build_global_groups(DistributionConfigBuilder& builder, const DistributionConfig& source) {
+void build_global_groups(DistributionConfigBuilder& builder, const DistributionConfig& source, bool legacy_mode) {
     assert(!source.group.empty()); // TODO gracefully handle empty config?
     auto root = create_group_tree_from_config(source);
 
     auto g_iter = source.group.begin();
     const auto g_end = source.group.end();
-    build_transformed_root_group(builder, *g_iter, *root);
+    build_transformed_root_group(builder, *g_iter, *root, legacy_mode);
     ++g_iter;
     for (; g_iter != g_end; ++g_iter) {
-        build_transformed_non_root_group(builder, *g_iter, *root);
+        build_transformed_non_root_group(builder, *g_iter, *root, legacy_mode);
     }
 
     builder.redundancy = root->nested_leaf_count;
@@ -154,17 +181,17 @@ void build_global_groups(DistributionConfigBuilder& builder, const DistributionC
 } // anon ns
 
 std::shared_ptr<DistributionConfig>
-GlobalBucketSpaceDistributionConverter::convert_to_global(const DistributionConfig& source) {
+GlobalBucketSpaceDistributionConverter::convert_to_global(const DistributionConfig& source, bool legacy_mode) {
     DistributionConfigBuilder builder;
     set_distribution_invariant_config_fields(builder, source);
-    build_global_groups(builder, source);
+    build_global_groups(builder, source, legacy_mode);
     return std::make_shared<DistributionConfig>(builder);
 }
 
 std::shared_ptr<lib::Distribution>
-GlobalBucketSpaceDistributionConverter::convert_to_global(const lib::Distribution& distr) {
+GlobalBucketSpaceDistributionConverter::convert_to_global(const lib::Distribution& distr, bool legacy_mode) {
     const auto src_config = distr.serialize();
-    auto global_config = convert_to_global(*string_to_config(src_config));
+    auto global_config = convert_to_global(*string_to_config(src_config), legacy_mode);
     return std::make_shared<lib::Distribution>(*global_config);
 }
 

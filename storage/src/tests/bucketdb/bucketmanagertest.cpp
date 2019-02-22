@@ -8,6 +8,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
+#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
@@ -84,6 +85,7 @@ public:
     CPPUNIT_TEST(testConflictSetOnlyClearedAfterAllBucketRequestsDone);
     CPPUNIT_TEST(testRejectRequestWithMismatchingDistributionHash);
     CPPUNIT_TEST(testDbNotIteratedWhenAllRequestsRejected);
+    CPPUNIT_TEST(fall_back_to_legacy_global_distribution_hash_on_mismatch);
 
     // FIXME(vekterli): test is not deterministic and enjoys failing
     // sporadically when running under Valgrind. See bug 5932891.
@@ -154,6 +156,7 @@ public:
     void testConflictSetOnlyClearedAfterAllBucketRequestsDone();
     void testRejectRequestWithMismatchingDistributionHash();
     void testDbNotIteratedWhenAllRequestsRejected();
+    void fall_back_to_legacy_global_distribution_hash_on_mismatch();
 
 public:
     static constexpr uint32_t DIR_SPREAD = 3;
@@ -785,6 +788,10 @@ public:
         return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, _state, hash);
     }
 
+    auto createFullFetchCommandWithHash(document::BucketSpace space, vespalib::stringref hash) const {
+        return std::make_shared<api::RequestBucketInfoCommand>(space, 0, _state, hash);
+    }
+
     auto acquireBucketLockAndSendInfoRequest(const document::BucketId& bucket) {
         auto guard = acquireBucketLock(bucket);
         // Send down processing command which will block.
@@ -848,6 +855,45 @@ public:
 
     void clearReceivedReplies() {
         _self._top->getRepliesOnce();
+    }
+
+    // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
+    std::unique_ptr<lib::Distribution> default_grouped_distribution() {
+        return std::make_unique<lib::Distribution>(
+                GlobalBucketSpaceDistributionConverter::string_to_config(vespalib::string(
+R"(redundancy 2
+group[3]
+group[0].name "invalid"
+group[0].index "invalid"
+group[0].partitions 1|*
+group[0].nodes[0]
+group[1].name rack0
+group[1].index 0
+group[1].nodes[3]
+group[1].nodes[0].index 0
+group[1].nodes[1].index 1
+group[1].nodes[2].index 2
+group[2].name rack1
+group[2].index 1
+group[2].nodes[3]
+group[2].nodes[0].index 3
+group[2].nodes[1].index 4
+group[2].nodes[2].index 5
+)")));
+    }
+
+    std::shared_ptr<lib::Distribution> derived_global_grouped_distribution(bool use_legacy) {
+        auto default_distr = default_grouped_distribution();
+        return  GlobalBucketSpaceDistributionConverter::convert_to_global(*default_distr, use_legacy);
+    }
+
+    void set_grouped_distribution_configs() {
+        auto default_distr = default_grouped_distribution();
+        _self._node->getComponentRegister().getBucketSpaceRepo()
+                .get(document::FixedBucketSpaces::default_space()).setDistribution(std::move(default_distr));
+        auto global_distr = derived_global_grouped_distribution(false);
+        _self._node->getComponentRegister().getBucketSpaceRepo()
+                .get(document::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
     }
 
 private:
@@ -1356,6 +1402,21 @@ BucketManagerTest::testDbNotIteratedWhenAllRequestsRejected()
     auto infoCmd = fixture.createFullFetchCommandWithHash("(0;0;1;2)");
     _top->sendDown(infoCmd);
     auto replies = fixture.awaitAndGetReplies(1);
+}
+
+// TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
+void BucketManagerTest::fall_back_to_legacy_global_distribution_hash_on_mismatch() {
+    ConcurrentOperationFixture f(*this);
+
+    f.set_grouped_distribution_configs();
+
+    auto legacy_hash = f.derived_global_grouped_distribution(true)->getNodeGraph().getDistributionConfigHash();
+
+    auto infoCmd = f.createFullFetchCommandWithHash(document::FixedBucketSpaces::global_space(), legacy_hash);
+    _top->sendDown(infoCmd);
+    auto replies = f.awaitAndGetReplies(1);
+    auto& reply = dynamic_cast<api::RequestBucketInfoReply&>(*replies[0]);
+    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::OK, reply.getResult().getResult()); // _not_ REJECTED
 }
 
 } // storage

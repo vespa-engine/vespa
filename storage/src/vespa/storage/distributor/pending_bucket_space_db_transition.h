@@ -4,6 +4,7 @@
 #include "pending_bucket_space_db_transition_entry.h"
 #include "outdated_nodes.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
+#include <unordered_map>
 
 namespace storage::api { class RequestBucketInfoReply; }
 namespace storage::lib { class ClusterState; class State; }
@@ -48,6 +49,7 @@ private:
     DistributorBucketSpace                   &_distributorBucketSpace;
     uint16_t                                  _distributorIndex;
     bool                                      _bucketOwnershipTransfer;
+    std::unordered_map<uint16_t, size_t>      _rejectedRequests;
 
     // BucketDataBase::MutableEntryProcessor API
     bool process(BucketDatabase::Entry& e) override;
@@ -111,6 +113,14 @@ public:
     // Methods used by unit tests.
     const EntryList& results() const { return _entries; }
     void addNodeInfo(const document::BucketId& id, const BucketCopy& copy);
+
+    void incrementRequestRejections(uint16_t node) {
+        _rejectedRequests[node]++;
+    }
+    size_t rejectedRequests(uint16_t node) const {
+        auto iter = _rejectedRequests.find(node);
+        return ((iter != _rejectedRequests.end()) ? iter->second : 0);
+    }
 };
 
 }

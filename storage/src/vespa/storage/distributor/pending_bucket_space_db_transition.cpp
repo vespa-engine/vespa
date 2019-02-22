@@ -35,7 +35,8 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClus
       _pendingClusterState(pendingClusterState),
       _distributorBucketSpace(distributorBucketSpace),
       _distributorIndex(_clusterInfo->getDistributorIndex()),
-      _bucketOwnershipTransfer(distributionChanged)
+      _bucketOwnershipTransfer(distributionChanged),
+      _rejectedRequests()
 {
     if (distributorChanged()) {
         _bucketOwnershipTransfer = true;
