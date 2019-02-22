@@ -26,9 +26,6 @@ public class ClustersStatus extends AbstractComponent {
     /** Are there any (in-service influencing) clusters in this container? */
     private boolean containerHasClusters;
 
-    /** If we have no clusters, what should we answer? */
-    private boolean receiveTrafficByDefault;
-
     private final Object mutex = new Object();
 
     /** The status of clusters, when known. Note that clusters may exist for which there is no knowledge yet. */
@@ -42,10 +39,9 @@ public class ClustersStatus extends AbstractComponent {
         }
     }
 
+    /** @deprecated this is ignored */
+    @Deprecated // TODO: remove on Vespa 8
     public void setReceiveTrafficByDefault(boolean receiveTrafficByDefault) {
-        synchronized (mutex) {
-            this.receiveTrafficByDefault = receiveTrafficByDefault;
-        }
     }
 
     void setUp(String clusterIdentifier) {
@@ -80,7 +76,7 @@ public class ClustersStatus extends AbstractComponent {
                 return clusterStatus.values().stream().anyMatch(status -> status==true);
             }
             else {
-                return receiveTrafficByDefault;
+                return true;
             }
         }
     }

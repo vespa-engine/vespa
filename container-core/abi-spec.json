@@ -241,6 +241,7 @@
       "public void <init>()",
       "public void <init>(com.yahoo.container.QrSearchersConfig)",
       "public void <init>(com.yahoo.container.handler.ClustersStatus)",
+      "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.handler.ClustersStatus)",
       "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.core.VipStatusConfig, com.yahoo.container.handler.ClustersStatus)",
       "public void setInRotation(java.lang.Boolean)",
       "public void addToRotation(java.lang.String)",

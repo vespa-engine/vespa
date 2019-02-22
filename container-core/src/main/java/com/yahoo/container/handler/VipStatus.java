@@ -24,7 +24,7 @@ public class VipStatus {
     }
 
     public VipStatus(QrSearchersConfig dispatchers) {
-        this(dispatchers, new VipStatusConfig(new VipStatusConfig.Builder()), new ClustersStatus());
+        this(dispatchers, new ClustersStatus());
     }
 
     public VipStatus(ClustersStatus clustersStatus) {
@@ -32,10 +32,15 @@ public class VipStatus {
     }
 
     @Inject
-    public VipStatus(QrSearchersConfig dispatchers, VipStatusConfig vipStatusConfig, ClustersStatus clustersStatus) {
+    public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus) {
         this.clustersStatus = clustersStatus;
-        clustersStatus.setReceiveTrafficByDefault(vipStatusConfig.initiallyInRotation());
         clustersStatus.setContainerHasClusters(! dispatchers.searchcluster().isEmpty());
+    }
+
+    /** @deprecated don't pass VipStatusConfig */
+    @Deprecated // TODO: Remove on Vespa 8
+    public VipStatus(QrSearchersConfig dispatchers, VipStatusConfig vipStatusConfig, ClustersStatus clustersStatus) {
+        this(dispatchers, clustersStatus);
     }
 
     /**

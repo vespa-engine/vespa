@@ -8,5 +8,5 @@ accessdisk bool default=false
 ## If the path is relative vespa home is prepended
 statusfile string default="share/qrsdocs/status.html"
 
-## The default rotation state when there are no configured clusters to decide rotation state
+## Not used TODO: Remove on Vespa 8
 initiallyInRotation bool default=true

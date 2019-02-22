@@ -72,7 +72,7 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         // Take a host away so that there are too few for the application, to verify we can still bootstrap
         provisioner.allocations().values().iterator().next().remove(0);
-        VipStatus vipStatus = createVipStatus(VIP_STATUS_PROGRAMMATICALLY);
+        VipStatus vipStatus = createVipStatus();
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
                                                                     versionState, createStateMonitor(),
                                                                     vipStatus, INITIALIZE_ONLY, VIP_STATUS_PROGRAMMATICALLY);
@@ -102,7 +102,7 @@ public class ConfigServerBootstrapTest {
         assertTrue(versionState.isUpgraded());
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        VipStatus vipStatus = createVipStatus(VIP_STATUS_FILE);
+        VipStatus vipStatus = createVipStatus();
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
                                                                     versionState, createStateMonitor(),
                                                                     vipStatus, INITIALIZE_ONLY, VIP_STATUS_FILE);
@@ -132,7 +132,7 @@ public class ConfigServerBootstrapTest {
                                            .resolve("sessions/2/services.xml"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        VipStatus vipStatus = createVipStatus(VIP_STATUS_PROGRAMMATICALLY);
+        VipStatus vipStatus = createVipStatus();
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
                                                                     createStateMonitor(),
                                                                     vipStatus, INITIALIZE_ONLY, VIP_STATUS_PROGRAMMATICALLY);
@@ -174,7 +174,7 @@ public class ConfigServerBootstrapTest {
         curator.set(Path.fromString("/config/v2/tenants/" + applicationId.tenant().value() + "/sessions/2/version"), Utf8.toBytes("1.2.2"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        VipStatus vipStatus = createVipStatus(VIP_STATUS_PROGRAMMATICALLY);
+        VipStatus vipStatus = createVipStatus();
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
                                                                     createStateMonitor(), vipStatus,
                                                                     BOOTSTRAP_IN_SEPARATE_THREAD, VIP_STATUS_PROGRAMMATICALLY);
@@ -229,13 +229,8 @@ public class ConfigServerBootstrapTest {
         return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.of(com.yahoo.component.Version.fromString(version)));
     }
 
-    private VipStatus createVipStatus(ConfigServerBootstrap.VipStatusMode vipStatusMode) throws IOException {
+    private VipStatus createVipStatus() {
         return new VipStatus(new QrSearchersConfig.Builder().build(),
-                             new VipStatusConfig.Builder()
-                                     .initiallyInRotation(vipStatusMode == VIP_STATUS_FILE)
-                                     .statusfile(temporaryFolder.newFile().getAbsolutePath())
-                                     .accessdisk(vipStatusMode == VIP_STATUS_FILE)
-                                     .build(),
                              new ClustersStatus());
     }
 
