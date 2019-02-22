@@ -205,7 +205,6 @@ AttributeAspectDelayer::setup(const AttributesConfig &oldAttributesConfig,
                              const IIndexschemaInspector &oldIndexschemaInspector,
                              const IDocumentTypeInspector &inspector)
 {
-    (void) newSummaryConfig;
     handleNewAttributes(oldAttributesConfig, newAttributesConfig,
                         newSummarymapConfig,
                         oldIndexschemaInspector, inspector,
