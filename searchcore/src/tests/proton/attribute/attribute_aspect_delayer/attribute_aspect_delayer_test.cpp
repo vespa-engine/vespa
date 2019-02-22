@@ -128,7 +128,7 @@ SummarymapConfig::Override make_attribute_combiner_override(const vespalib::stri
     return override;
 }
 
-SummaryConfig::Classes::Fields make_summary_field(const vespalib::string name, const vespalib::string &type)
+SummaryConfig::Classes::Fields make_summary_field(const vespalib::string &name, const vespalib::string &type)
 {
     SummaryConfig::Classes::Fields field;
     field.name = name;
