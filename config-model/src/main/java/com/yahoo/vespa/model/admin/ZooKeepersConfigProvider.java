@@ -28,9 +28,7 @@ public class ZooKeepersConfigProvider implements ZookeepersConfig.Producer {
     public List<String> getZooKeepers() {
         List<String> servers = new ArrayList<>();
         for (Configserver server : configServers) {
-            ConfigServerSpec serverSpec = server.getConfigServerSpec();
-            servers.add(serverSpec.getHostName() + ":" + serverSpec.getZooKeeperPort());
-
+            servers.add(server.getHostName() + ":" + zkPort);
         }
         return servers;
     }
