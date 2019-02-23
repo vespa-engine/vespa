@@ -272,7 +272,7 @@ public class Container extends AbstractService implements
      * @return the actual search port
      * TODO: Remove. Use {@link #getPortsMeta()} and check tags in conjunction with {@link #getRelativePort(int)}.
      */
-    public int getSearchPort(){
+    public int getSearchPort() {
         if (getHttp() != null)
             throw new AssertionError("getSearchPort must not be used when http section is present.");
 
