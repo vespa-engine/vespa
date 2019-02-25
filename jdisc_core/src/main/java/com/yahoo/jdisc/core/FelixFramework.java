@@ -11,7 +11,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkEvent;
-import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.wiring.FrameworkWiring;
 
 import java.io.File;
@@ -99,6 +98,16 @@ public class FelixFramework implements OsgiFramework {
             }
             bundle.start();
         }
+        log.info(startedBundlesMessage(bundles));
+    }
+
+    private String startedBundlesMessage(List<Bundle> bundles) {
+        StringBuilder sb = new StringBuilder("Started bundles: {" );
+        for (Bundle b : bundles)
+            sb.append("[" + b.getBundleId() + "]" + b.getSymbolicName() + ":" + b.getVersion() + ", ");
+        sb.setLength(sb.length() - 2);
+        sb.append("}");
+        return sb.toString();
     }
 
     @Override
