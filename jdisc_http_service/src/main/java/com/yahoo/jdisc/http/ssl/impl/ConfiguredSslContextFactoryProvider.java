@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.ssl.impl;
 
 import com.yahoo.jdisc.http.ConnectorConfig;
@@ -11,6 +11,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyStore;
@@ -85,7 +86,7 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
 
     private static String readToString(String filename) {
         try {
-            return new String(Files.readAllBytes(Paths.get(filename)));
+            return Files.readString(Paths.get(filename), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
