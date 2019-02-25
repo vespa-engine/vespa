@@ -43,10 +43,15 @@ public class UrlDownloader {
         int timeRemaining = 5000;
         try {
             while (timeRemaining > 0) {
-                target = supervisor.connectSync(spec);
-                if (target.isValid()) {
+                target = supervisor.connect(spec);
+                // ping to check if connection is working
+                Request request = new Request("frt.rpc.ping");
+                target.invokeSync(request, 5.0);
+                if (! request.isError()) {
                     log.log(LogLevel.DEBUG, "Successfully connected to '" + spec + "', this = " + System.identityHashCode(this));
                     return;
+                } else {
+                    target.close();
                 }
                 Thread.sleep(500);
                 timeRemaining -= 500;
