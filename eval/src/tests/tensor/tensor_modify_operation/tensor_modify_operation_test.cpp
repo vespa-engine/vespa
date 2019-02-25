@@ -61,6 +61,23 @@ TEST(TensorModifyTest, dense_tensors_can_be_modified)
                         .add({{"x",9},{"y",9}}, 11));
 }
 
+TEST(TensorModifyTest, mixed_tensors_can_be_modified)
+{
+    checkUpdate(TensorSpec("tensor(x{},y[2])")
+                        .add({{"x","a"},{"y",0}}, 2)
+                        .add({{"x","a"},{"y",1}}, 3)
+                        .add({{"x","b"},{"y",0}}, 4)
+                        .add({{"x","b"},{"y",1}}, 5),
+                TensorSpec("tensor(x{},y{})")
+                        .add({{"x","a"},{"y","0"}}, 6)
+                        .add({{"x","b"},{"y","1"}}, 7),
+                TensorSpec("tensor(x{},y[2])")
+                        .add({{"x","a"},{"y",0}}, 6)
+                        .add({{"x","a"},{"y",1}}, 3)
+                        .add({{"x","b"},{"y",0}}, 4)
+                        .add({{"x","b"},{"y",1}}, 7));
+}
+
 TEST(TensorModifyTest, sparse_tensors_ignore_updates_to_missing_cells)
 {
     checkUpdate(TensorSpec("tensor(x{},y{})")
@@ -85,6 +102,19 @@ TEST(TensorModifyTest, dense_tensors_ignore_updates_to_out_of_range_cells)
                 TensorSpec("tensor(x[10],y[10])")
                         .add({{"x",8},{"y",9}}, 2)
                         .add({{"x",9},{"y",9}}, 11));
+}
+
+TEST(TensorModifyTest, mixed_tensors_ignore_updates_to_missing_or_out_of_range_cells)
+{
+    checkUpdate(TensorSpec("tensor(x{},y[2])")
+                        .add({{"x","a"},{"y",0}}, 2)
+                        .add({{"x","a"},{"y",1}}, 3),
+                TensorSpec("tensor(x{},y{})")
+                        .add({{"x","a"},{"y","2"}}, 4)
+                        .add({{"x","c"},{"y","0"}}, 5),
+                TensorSpec("tensor(x{},y[2])")
+                        .add({{"x","a"},{"y",0}}, 2)
+                        .add({{"x","a"},{"y",1}}, 3));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS

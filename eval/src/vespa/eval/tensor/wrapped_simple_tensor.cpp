@@ -81,10 +81,42 @@ WrappedSimpleTensor::reduce(join_fun_t, const std::vector<vespalib::string> &) c
     LOG_ABORT("should not be reached");
 }
 
-std::unique_ptr<Tensor>
-WrappedSimpleTensor::modify(join_fun_t, const CellValues &) const
+namespace {
+
+TensorSpec::Address
+convertToOnlyMappedDimensions(const TensorSpec::Address &address)
 {
-    LOG_ABORT("should not be reached");
+    TensorSpec::Address result;
+    for (const auto &elem : address) {
+        if (elem.second.is_indexed()) {
+            result.emplace(std::make_pair(elem.first,
+                    TensorSpec::Label(vespalib::make_string("%zu", elem.second.index))));
+        } else {
+            result.emplace(elem);
+        }
+    }
+    return result;
+}
+
+}
+
+std::unique_ptr<Tensor>
+WrappedSimpleTensor::modify(join_fun_t op, const CellValues &cellValues) const
+{
+    TensorSpec oldTensor = toSpec();
+    TensorSpec toModify = cellValues.toSpec();
+    TensorSpec result(type().to_spec());
+
+    for (const auto &cell : oldTensor.cells()) {
+        TensorSpec::Address mappedAddress = convertToOnlyMappedDimensions(cell.first);
+        auto itr = toModify.cells().find(mappedAddress);
+        if (itr != toModify.cells().end()) {
+            result.add(cell.first, op(cell.second, itr->second));
+        } else {
+            result.add(cell.first, cell.second);
+        }
+    }
+    return std::make_unique<WrappedSimpleTensor>(SimpleTensor::create(result));
 }
 
 std::unique_ptr<Tensor>
