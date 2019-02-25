@@ -27,6 +27,7 @@ public:
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     bool operator==(const DataType& other) const override;
     ArrayDataType* clone() const override { return new ArrayDataType(*this); }
+    ArrayDataType &operator=(const ArrayDataType &rhs) = default;
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
 
     DECLARE_IDENTIFIABLE(ArrayDataType);

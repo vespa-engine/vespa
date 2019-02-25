@@ -30,6 +30,8 @@ public:
         Stats(const Stats &rhs);
         ~Stats() { }
 
+        Stats &operator=(const Stats &rhs) = default;
+
         /**
          * For each node N, look at all the buckets that have or should have a
          * bucket copy on that node.  For each of these buckets, there is a

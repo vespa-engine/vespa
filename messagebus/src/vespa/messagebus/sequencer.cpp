@@ -51,7 +51,7 @@ Sequencer::filter(Message::UP msg)
         }
         _seqMap[seqId] = nullptr; // insert empty queue
     }
-    return std::move(msg);
+    return msg;
 }
 
 void

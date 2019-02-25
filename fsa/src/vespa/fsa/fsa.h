@@ -124,6 +124,8 @@ public:
                                              _symbol(it._symbol), _state(it._state),
                                              _fsa(it._fsa) {}
 
+      iteratorItem &operator=(const iteratorItem &rhs) = default;
+
       /**
        * @brief Destructor.
        */

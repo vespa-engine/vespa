@@ -189,7 +189,7 @@ defaultTransactionLogStats()
     flushengine::TlsStatsMap::Map result;
     result.insert(std::make_pair("handler1", flushengine::TlsStats(1000, 11, 110)));
     result.insert(std::make_pair("handler2", flushengine::TlsStats(2000, 11, 110)));
-    return std::move(result);
+    return result;
 }
 
 struct FlushStrategyFixture

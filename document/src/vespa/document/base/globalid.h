@@ -89,6 +89,8 @@ public:
      */
     explicit GlobalId(const void *gid) { set(gid); }
 
+    GlobalId(const GlobalId &rhs) = default;
+
     /**
      * Implements the assignment operator.
      *

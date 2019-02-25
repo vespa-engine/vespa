@@ -49,7 +49,7 @@ const Value &to_value(std::unique_ptr<SimpleTensor> tensor, Stash &stash) {
 
 Value::UP to_value(std::unique_ptr<SimpleTensor> tensor) {
     if (tensor->type().is_tensor()) {
-        return std::move(tensor);
+        return tensor;
     }
     if (tensor->type().is_double()) {
         return std::make_unique<DoubleValue>(tensor->as_double());

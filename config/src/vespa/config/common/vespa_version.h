@@ -14,6 +14,7 @@ public:
     static VespaVersion fromString(const vespalib::string & versionString);
     static const VespaVersion & getCurrentVersion();
     VespaVersion(const VespaVersion & version);
+    VespaVersion &operator=(const VespaVersion &rhs) = default;
     const vespalib::string & toString() const;
 private:
     VespaVersion(const vespalib::string & versionString);

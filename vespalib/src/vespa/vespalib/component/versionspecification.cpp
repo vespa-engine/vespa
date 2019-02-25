@@ -24,6 +24,8 @@ VersionSpecification::VersionSpecification(const VersionSpecification &) = defau
 
 VersionSpecification::~VersionSpecification() = default;
 
+VersionSpecification &VersionSpecification::operator=(const VersionSpecification &rhs) = default;
+
 void
 VersionSpecification::initialize()
 {

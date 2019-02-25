@@ -567,7 +567,7 @@ RoutableFactories60::PutDocumentReplyFactory::doDecode(document::ByteBuffer &buf
 
     // Doing an explicit move here to force converting result to an rvalue.
     // This is done automatically in GCC >= 5.
-    return std::move(reply);
+    return reply;
 }
 
 bool

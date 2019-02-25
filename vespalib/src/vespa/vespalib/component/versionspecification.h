@@ -70,6 +70,7 @@ public:
     VersionSpecification(const VersionSpecification &);
     ~VersionSpecification();
 
+    VersionSpecification &operator=(const VersionSpecification &rhs);
     /**
      * @brief Creates a version specification from the specified string.
      *

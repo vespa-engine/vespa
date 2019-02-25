@@ -57,6 +57,8 @@ public:
         SetMilliSecs(s * 1000.0);
     }
 
+    FastOS_UNIX_Time(const FastOS_UNIX_Time &rhs) = default;
+
     operator fastos::TimeStamp () {
         return fastos::TimeStamp(_time);
     }
