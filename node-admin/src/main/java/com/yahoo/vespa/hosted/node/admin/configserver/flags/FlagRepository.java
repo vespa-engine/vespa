@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.configserver.flags;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
 
-import java.util.List;
 import java.util.Map;
 
 /**

@@ -5,12 +5,12 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
-import com.yahoo.vespa.hosted.provision.Node;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -125,7 +125,7 @@ public class NodeAdminStateUpdater {
             throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
         }
 
-        boolean hostIsActiveInNR = nodeRepository.getNode(hostHostname).getState() == Node.State.active;
+        boolean hostIsActiveInNR = nodeRepository.getNode(hostHostname).getState() == NodeState.active;
         switch (wantedState) {
             case RESUMED:
                 if (hostIsActiveInNR) orchestrator.resume(hostHostname);
@@ -183,7 +183,7 @@ public class NodeAdminStateUpdater {
     private List<String> getNodesInActiveState() {
         return nodeRepository.getNodes(hostHostname)
                              .stream()
-                             .filter(node -> node.getState() == Node.State.active)
+                             .filter(node -> node.getState() == NodeState.active)
                              .map(NodeSpec::getHostname)
                              .collect(Collectors.toList());
     }

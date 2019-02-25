@@ -6,7 +6,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.AddNode;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,17 +59,12 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public void setNodeState(String hostName, Node.State nodeState) {
+    public void setNodeState(String hostName, NodeState nodeState) {
         synchronized (monitor) {
             updateNodeRepositoryNode(new NodeSpec.Builder(getNode(hostName))
                     .state(nodeState)
                     .build());
         }
-    }
-
-    @Override
-    public void scheduleReboot(String hostname) {
-
     }
 
     void updateNodeRepositoryNode(NodeSpec nodeSpec) {

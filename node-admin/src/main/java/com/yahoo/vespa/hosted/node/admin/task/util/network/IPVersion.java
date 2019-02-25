@@ -18,7 +18,7 @@ public enum IPVersion {
     IPv6(6, "ip6tables", "ip -6", "ipv6-icmp", "/128", "icmp6-port-unreachable", "ip6tables-restore"),
     IPv4(4, "iptables", "ip", "icmp", "/32", "icmp-port-unreachable", "iptables-restore");
 
-    private static Pattern cidrNotationPattern = Pattern.compile("/\\d+$");
+    private static final Pattern cidrNotationPattern = Pattern.compile("/\\d+$");
 
     IPVersion(int version, String iptablesCmd, String ipCmd,
               String icmpProtocol, String singleHostCidr, String icmpPortUnreachable,

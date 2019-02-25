@@ -11,26 +11,27 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
+import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
-import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -269,7 +270,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void restartServices(NodeAgentContext context, Container existingContainer) {
-        if (existingContainer.state.isRunning() && context.node().getState() == Node.State.active) {
+        if (existingContainer.state.isRunning() && context.node().getState() == NodeState.active) {
             context.log(logger, "Restarting services");
             // Since we are restarting the services we need to suspend the node.
             orchestratorSuspendNode(context);
@@ -308,8 +309,8 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private Optional<String> shouldRemoveContainer(NodeSpec node, Container existingContainer) {
-        final Node.State nodeState = node.getState();
-        if (nodeState == Node.State.dirty || nodeState == Node.State.provisioned) {
+        final NodeState nodeState = node.getState();
+        if (nodeState == NodeState.dirty || nodeState == NodeState.provisioned) {
             return Optional.of("Node in state " + nodeState + ", container should no longer be running");
         }
         if (node.getWantedDockerImage().isPresent() && !node.getWantedDockerImage().get().equals(existingContainer.image)) {
@@ -347,7 +348,7 @@ public class NodeAgentImpl implements NodeAgent {
                 orchestratorSuspendNode(context);
 
                 try {
-                    if (context.node().getState() != Node.State.dirty) {
+                    if (context.node().getState() != NodeState.dirty) {
                         suspend();
                     }
                     stopServices();
@@ -379,7 +380,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private ContainerResources getContainerResources(NodeSpec node) {
         double cpuCap = node.getOwner()
-                .map(NodeSpec.Owner::asApplicationId)
+                .map(NodeOwner::asApplicationId)
                 .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
                 .orElse(containerCpuCap)
                 .value() * node.getMinCpuCores();
@@ -496,7 +497,7 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(context);
                 break;
             case provisioned:
-                nodeRepository.setNodeState(context.hostname().value(), Node.State.dirty);
+                nodeRepository.setNodeState(context.hostname().value(), NodeState.dirty);
                 break;
             case dirty:
                 removeContainerIfNeededUpdateContainerState(context, container);
@@ -504,7 +505,7 @@ public class NodeAgentImpl implements NodeAgent {
                 athenzCredentialsMaintainer.ifPresent(maintainer -> maintainer.clearCredentials(context));
                 storageMaintainer.archiveNodeStorage(context);
                 updateNodeRepoWithCurrentAttributes(context);
-                nodeRepository.setNodeState(context.hostname().value(), Node.State.ready);
+                nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
                 break;
             default:
                 throw new RuntimeException("UNKNOWN STATE " + node.getState().name());
@@ -696,7 +697,7 @@ public class NodeAgentImpl implements NodeAgent {
     // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
     // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
     private void orchestratorSuspendNode(NodeAgentContext context) {
-        if (context.node().getState() != Node.State.active) return;
+        if (context.node().getState() != NodeState.active) return;
 
         context.log(logger, "Ask Orchestrator for permission to suspend node");
         orchestrator.suspend(context.hostname().value());

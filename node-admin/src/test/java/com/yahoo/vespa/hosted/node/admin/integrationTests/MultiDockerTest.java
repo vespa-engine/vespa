@@ -6,7 +6,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import org.junit.Test;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -27,7 +27,7 @@ public class MultiDockerTest {
 
             tester.addChildNodeRepositoryNode(
                     new NodeSpec.Builder(nodeSpec2)
-                            .state(Node.State.dirty)
+                            .state(NodeState.dirty)
                             .minCpuCores(1)
                             .minMainMemoryAvailableGb(1)
                             .minDiskAvailableGb(1)
@@ -36,7 +36,7 @@ public class MultiDockerTest {
             tester.inOrder(tester.docker).deleteContainer(eq(new ContainerName("host2")));
             tester.inOrder(tester.storageMaintainer).archiveNodeStorage(
                     argThat(context -> context.containerName().equals(new ContainerName("host2"))));
-            tester.inOrder(tester.nodeRepository).setNodeState(eq(nodeSpec2.getHostname()), eq(Node.State.ready));
+            tester.inOrder(tester.nodeRepository).setNodeState(eq(nodeSpec2.getHostname()), eq(NodeState.ready));
 
             addAndWaitForNode(tester, "host3.test.yahoo.com", new DockerImage("image1"));
         }
@@ -46,7 +46,7 @@ public class MultiDockerTest {
         NodeSpec nodeSpec = new NodeSpec.Builder()
                 .hostname(hostName)
                 .wantedDockerImage(dockerImage)
-                .state(Node.State.active)
+                .state(NodeState.active)
                 .nodeType(NodeType.tenant)
                 .flavor("docker")
                 .wantedRestartGeneration(1L)

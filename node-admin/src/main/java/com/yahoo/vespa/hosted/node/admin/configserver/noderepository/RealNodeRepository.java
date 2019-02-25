@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -13,7 +12,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.Ge
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeMessageResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.hosted.provision.Node;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -32,7 +30,6 @@ import java.util.stream.Stream;
  */
 public class RealNodeRepository implements NodeRepository {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(RealNodeRepository.class);
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final ConfigServerApi configServerApi;
 
@@ -133,22 +130,10 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public void setNodeState(String hostName, Node.State nodeState) {
+    public void setNodeState(String hostName, NodeState nodeState) {
         String state = nodeState.name();
         NodeMessageResponse response = configServerApi.put(
                 "/nodes/v2/state/" + state + "/" + hostName,
-                Optional.empty(), /* body */
-                NodeMessageResponse.class);
-        NODE_ADMIN_LOGGER.info(response.message);
-
-        if (Strings.isNullOrEmpty(response.errorCode)) return;
-        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
-    }
-
-    @Override
-    public void scheduleReboot(String hostName) {
-        NodeMessageResponse response = configServerApi.post(
-                "/nodes/v2/command/reboot?hostname=" + hostName,
                 Optional.empty(), /* body */
                 NodeMessageResponse.class);
         NODE_ADMIN_LOGGER.info(response.message);
@@ -162,8 +147,8 @@ public class RealNodeRepository implements NodeRepository {
         NodeType nodeType = NodeType.valueOf(node.type);
 
         Objects.requireNonNull(node.state, "Unknown node state");
-        Node.State nodeState = Node.State.valueOf(node.state);
-        if (nodeState == Node.State.active) {
+        NodeState nodeState = NodeState.valueOf(node.state);
+        if (nodeState == NodeState.active) {
             Objects.requireNonNull(node.wantedVespaVersion, "Unknown vespa version for active node");
             Objects.requireNonNull(node.wantedDockerImage, "Unknown docker image for active node");
             Objects.requireNonNull(node.restartGeneration, "Unknown restartGeneration for active node");
@@ -172,14 +157,14 @@ public class RealNodeRepository implements NodeRepository {
 
         String hostName = Objects.requireNonNull(node.hostname, "hostname is null");
 
-        NodeSpec.Owner owner = null;
+        NodeOwner owner = null;
         if (node.owner != null) {
-            owner = new NodeSpec.Owner(node.owner.tenant, node.owner.application, node.owner.instance);
+            owner = new NodeOwner(node.owner.tenant, node.owner.application, node.owner.instance);
         }
 
-        NodeSpec.Membership membership = null;
+        NodeMembership membership = null;
         if (node.membership != null) {
-            membership = new NodeSpec.Membership(node.membership.clusterType, node.membership.clusterId,
+            membership = new NodeMembership(node.membership.clusterType, node.membership.clusterId,
                     node.membership.group, node.membership.index, node.membership.retired);
         }
 

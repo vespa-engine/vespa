@@ -2,16 +2,10 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
-import com.yahoo.vespa.hosted.node.admin.task.util.time.TestTimer;
-import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.After;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;

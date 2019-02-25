@@ -7,14 +7,16 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.node.admin.component.ZoneId;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.After;
 import org.junit.Test;
@@ -155,10 +157,10 @@ public class StorageMaintainerTest {
             NodeSpec nodeSpec = new NodeSpec.Builder()
                     .hostname("host123-5.test.domain.tld")
                     .nodeType(nodeType)
-                    .state(Node.State.active)
+                    .state(NodeState.active)
                     .parentHostname("host123.test.domain.tld")
-                    .owner(new NodeSpec.Owner("tenant", "application", "instance"))
-                    .membership(new NodeSpec.Membership("clusterType", "clusterId", null, 0, false))
+                    .owner(new NodeOwner("tenant", "application", "instance"))
+                    .membership(new NodeMembership("clusterType", "clusterId", null, 0, false))
                     .vespaVersion("6.305.12")
                     .flavor("d-2-8-50")
                     .canonicalFlavor("d-2-8-50")

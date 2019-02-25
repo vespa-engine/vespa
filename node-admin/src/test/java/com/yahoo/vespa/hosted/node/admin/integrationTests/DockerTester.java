@@ -10,6 +10,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
@@ -21,7 +22,6 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
@@ -81,7 +81,7 @@ public class DockerTester implements AutoCloseable {
 
         NodeSpec hostSpec = new NodeSpec.Builder()
                 .hostname(HOST_HOSTNAME.value())
-                .state(Node.State.active)
+                .state(NodeState.active)
                 .nodeType(NodeType.host)
                 .flavor("default")
                 .wantedRestartGeneration(1L)

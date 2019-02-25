@@ -9,8 +9,8 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.ZoneId;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
-import com.yahoo.vespa.hosted.provision.Node;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -177,7 +177,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         public Builder(String hostname) {
             this.nodeSpecBuilder
                     .hostname(hostname)
-                    .state(Node.State.active)
+                    .state(NodeState.active)
                     .nodeType(NodeType.tenant)
                     .flavor("d-2-8-50");
         }

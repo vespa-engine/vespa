@@ -30,7 +30,6 @@ public class NodeAttributes {
     private Optional<String> hardwareDivergence = Optional.empty();
     private Optional<String> hardwareFailureDescription = Optional.empty();
     private Optional<Boolean> wantToDeprovision = Optional.empty();
-    private Optional<String> modelName = Optional.empty();
     /** The list of reports to patch. A null value is used to remove the report. */
     private Map<String, JsonNode> reports = new TreeMap<>();
 
@@ -77,11 +76,6 @@ public class NodeAttributes {
 
     public NodeAttributes withWantToDeprovision(boolean wantToDeprovision) {
         this.wantToDeprovision = Optional.of(wantToDeprovision);
-        return this;
-    }
-
-    public NodeAttributes withModelName(String modelName) {
-        this.modelName = Optional.of(modelName);
         return this;
     }
 

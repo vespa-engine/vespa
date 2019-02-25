@@ -4,7 +4,6 @@ import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.nio.file.FileSystem;
 
 import static org.junit.Assert.assertFalse;

@@ -5,11 +5,11 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
-import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -57,7 +57,7 @@ public class NodeAdminStateUpdaterTest {
 
     @Test
     public void state_convergence() {
-        mockNodeRepo(Node.State.active, 4);
+        mockNodeRepo(NodeState.active, 4);
         List<String> activeHostnames = nodeRepository.getNodes(hostHostname.value()).stream()
                 .map(NodeSpec::getHostname)
                 .collect(Collectors.toList());
@@ -115,7 +115,7 @@ public class NodeAdminStateUpdaterTest {
     @Test
     public void half_transition_revert() {
         final String exceptionMsg = "Cannot allow to suspend because some reason";
-        mockNodeRepo(Node.State.active, 3);
+        mockNodeRepo(NodeState.active, 3);
 
         // Initially everything is frozen to force convergence
         when(nodeAdmin.setFrozen(eq(false))).thenReturn(true);
@@ -158,7 +158,7 @@ public class NodeAdminStateUpdaterTest {
     public void do_not_orchestrate_host_when_not_active() {
         when(nodeAdmin.subsystemFreezeDuration()).thenReturn(Duration.ofHours(1));
         when(nodeAdmin.setFrozen(anyBoolean())).thenReturn(true);
-        mockNodeRepo(Node.State.ready, 3);
+        mockNodeRepo(NodeState.ready, 3);
 
         // Resume and suspend only require that node-agents are frozen and permission from
         // orchestrator to resume/suspend host. Therefore, if host is not active, we only need to freeze.
@@ -178,7 +178,7 @@ public class NodeAdminStateUpdaterTest {
 
     @Test
     public void uses_cached_acl() {
-        mockNodeRepo(Node.State.active, 1);
+        mockNodeRepo(NodeState.active, 1);
         mockAcl(Acl.EMPTY, 1);
 
         updater.adjustNodeAgentsToRunFromNodeRepository();
@@ -199,7 +199,7 @@ public class NodeAdminStateUpdaterTest {
     @Test
     public void node_spec_and_acl_aligned() {
         Acl acl = new Acl.Builder().withTrustedPorts(22).build();
-        mockNodeRepo(Node.State.active, 3);
+        mockNodeRepo(NodeState.active, 3);
         mockAcl(acl, 1, 2, 3);
 
         updater.adjustNodeAgentsToRunFromNodeRepository();
@@ -216,11 +216,11 @@ public class NodeAdminStateUpdaterTest {
     @Test
     public void node_spec_and_acl_mismatch_missing_one_acl() {
         Acl acl = new Acl.Builder().withTrustedPorts(22).build();
-        mockNodeRepo(Node.State.active, 3);
+        mockNodeRepo(NodeState.active, 3);
         mockAcl(acl, 1, 2); // Acl for 3 is missing
 
         updater.adjustNodeAgentsToRunFromNodeRepository();
-        mockNodeRepo(Node.State.active, 2); // Next tick, the spec for 3 is no longer returned
+        mockNodeRepo(NodeState.active, 2); // Next tick, the spec for 3 is no longer returned
         updater.adjustNodeAgentsToRunFromNodeRepository();
         updater.adjustNodeAgentsToRunFromNodeRepository();
 
@@ -234,7 +234,7 @@ public class NodeAdminStateUpdaterTest {
     @Test
     public void node_spec_and_acl_mismatch_additional_acl() {
         Acl acl = new Acl.Builder().withTrustedPorts(22).build();
-        mockNodeRepo(Node.State.active, 2);
+        mockNodeRepo(NodeState.active, 2);
         mockAcl(acl, 1, 2, 3); // Acl for 3 is extra
 
         updater.adjustNodeAgentsToRunFromNodeRepository();
@@ -256,11 +256,11 @@ public class NodeAdminStateUpdaterTest {
         }
     }
 
-    private void mockNodeRepo(Node.State hostState, int numberOfNodes) {
+    private void mockNodeRepo(NodeState hostState, int numberOfNodes) {
         List<NodeSpec> containersToRun = IntStream.range(1, numberOfNodes + 1)
                 .mapToObj(i -> new NodeSpec.Builder()
                         .hostname("host" + i + ".yahoo.com")
-                        .state(Node.State.active)
+                        .state(NodeState.active)
                         .nodeType(NodeType.tenant)
                         .flavor("docker")
                         .minCpuCores(1)

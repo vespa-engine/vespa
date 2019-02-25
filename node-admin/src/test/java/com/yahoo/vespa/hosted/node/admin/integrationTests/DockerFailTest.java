@@ -5,7 +5,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import org.junit.Test;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -28,7 +28,7 @@ public class DockerFailTest {
                     .hostname(hostname)
                     .wantedDockerImage(dockerImage)
                     .currentDockerImage(dockerImage)
-                    .state(Node.State.active)
+                    .state(NodeState.active)
                     .nodeType(NodeType.tenant)
                     .flavor("docker")
                     .wantedRestartGeneration(1L)
