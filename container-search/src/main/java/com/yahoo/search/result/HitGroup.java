@@ -836,16 +836,66 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     /** Returns the set of summaries for which all concrete hits recursively below this is filled. */
     @Override
     public Set<String> getFilled() {
-        Set<String> intersection = null;
+        /*
+         This is an optimisation to avoid creating many temporary hash sets in the happy path.
+         The simple naive implementation is
+         Set<String> filled = null;
         for (Hit hit : hits) {
-            Set<String> filled = hit.getFilled();
-            if (filled == null) continue;
-            if (intersection == null)
-                intersection = new HashSet<>(filled);
+            if (hit.getFilled() == null) continue;
+            if (filled == null)
+                filled = new HashSet<>(hit.getFilled());
             else
-                intersection.retainAll(filled);
+                filled.retainAll(hit.getFilled());
+        }
+        return filled;
+         */
+        Iterator<Hit> iterator = hits.iterator();
+        Set<String> firstSummaryNames = getSummaryNamesNextFilledHit(iterator);
+        if (firstSummaryNames == null || firstSummaryNames.isEmpty())
+            return firstSummaryNames;
+
+        Set<String> intersection = firstSummaryNames;
+        while (iterator.hasNext()) {
+            Set<String> summaryNames = getSummaryNamesNextFilledHit(iterator);
+            if (summaryNames == null) continue;
+
+            if (intersection.size() == 1)
+                return getFilledSingle(intersection.iterator().next(), summaryNames, iterator);
+
+            boolean identical = false;
+            if (intersection == firstSummaryNames) {
+                // Here we have detected the first inequality and we must create a modifiable set for later use of retainAll
+                identical = intersection.equals(summaryNames);
+                if (!identical) {
+                    intersection = new HashSet<>(firstSummaryNames);
+                }
+            }
+            if ( ! identical ) {
+                intersection.retainAll(summaryNames);
+            }
         }
         return intersection;
+    }
+
+
+    private Set<String> getSummaryNamesNextFilledHit(Iterator<Hit> hitIterator) {
+        while (hitIterator.hasNext()) {
+            Set<String> filled = hitIterator.next().getFilled();
+            if (filled != null)
+                return filled;
+        }
+        return null;
+    }
+
+    private Set<String> getFilledSingle(String summaryName, Set<String> summaryNames, Iterator<Hit> iterator) {
+        while (true) {
+            if (summaryNames == null) {
+                return Collections.singleton(summaryName);
+            } else if (!summaryNames.contains(summaryName)) {
+                return Collections.emptySet();
+            }
+            summaryNames = getSummaryNamesNextFilledHit(iterator);
+        }
     }
 
     private Iterable<Hit> fillableHits() {
