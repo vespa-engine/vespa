@@ -185,23 +185,7 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
     public HttpResponse handle(HttpRequest request) {
         if (metric != null)
             metric.add(NUM_REQUESTS_METRIC, 1, null);
-        if (vipStatus != null)
-            updateAndLogRotationState();
         return new StatusResponse();
-    }
-
-    private void updateAndLogRotationState() {
-        boolean currentlyInRotation = vipStatus.isInRotation();
-        boolean previousRotationAnswer = previouslyInRotation;
-        previouslyInRotation = currentlyInRotation;
-
-        if (previousRotationAnswer != currentlyInRotation) {
-            if (currentlyInRotation) {
-                log.log(LogLevel.INFO, "Putting container back into rotation by serving status.html again.");
-            } else {
-                log.log(LogLevel.WARNING, "Removing container from rotation by no longer serving status.html.");
-            }
-        }
     }
 
 }

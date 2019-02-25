@@ -7,7 +7,8 @@ import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
 
 /**
- * API for programmatically removing the container from VIP rotation.
+ * A component which keeps track of whether or not this container instance should receive traffic
+ * and respond that it is in good health.
  *
  * This is multithread safe.
  *
