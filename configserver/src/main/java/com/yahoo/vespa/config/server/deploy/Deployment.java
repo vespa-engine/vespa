@@ -56,7 +56,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** Whether this model should be validated (only takes effect if prepared=false) */
     private boolean validate;
 
-    private boolean ignoreLockFailure = false;
     private boolean ignoreSessionStaleFailure = false;
 
     private Deployment(LocalSession session, ApplicationRepository applicationRepository,
@@ -88,11 +87,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                       Duration timeout, Clock clock, boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
                               timeout, clock, true, true, session.getVespaVersion(), isBootstrap);
-    }
-
-    public Deployment setIgnoreLockFailure(boolean ignoreLockFailure) {
-        this.ignoreLockFailure = ignoreLockFailure;
-        return this;
     }
 
     public Deployment setIgnoreSessionStaleFailure(boolean ignoreSessionStaleFailure) {
@@ -171,12 +165,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         return sessionId;
     }
 
-    private Transaction deactivateCurrentActivateNew(LocalSession currentActiveSession, LocalSession session, boolean ignoreStaleSessionFailure) {
-        Transaction transaction = session.createActivateTransaction();
-        if (isValidSession(currentActiveSession)) {
-            checkIfActiveHasChanged(session, currentActiveSession, ignoreStaleSessionFailure);
-            checkIfActiveIsNewerThanSessionToBeActivated(session.getSessionId(), currentActiveSession.getSessionId());
-            transaction.add(currentActiveSession.createDeactivateTransaction().operations());
+    private Transaction deactivateCurrentActivateNew(LocalSession active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
+        Transaction transaction = prepared.createActivateTransaction();
+        if (isValidSession(active)) {
+            checkIfActiveHasChanged(prepared, active, ignoreStaleSessionFailure);
+            checkIfActiveIsNewerThanSessionToBeActivated(prepared.getSessionId(), active.getSessionId());
+            transaction.add(active.createDeactivateTransaction().operations());
         }
         return transaction;
     }

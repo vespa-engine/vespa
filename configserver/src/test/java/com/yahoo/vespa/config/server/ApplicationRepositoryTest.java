@@ -316,7 +316,7 @@ public class ApplicationRepositoryTest {
         ApplicationId applicationId = applicationId();
         long sessionId = applicationRepository.createSession(applicationId, timeoutBudget, appDir.getAppDir());
         return applicationRepository.prepareAndActivate(tenantRepository.getTenant(applicationId.tenant()),
-                                                        sessionId, prepareParams(), false, false, Instant.now());
+                                                        sessionId, prepareParams(), false, Instant.now());
     }
 
     private PrepareResult deployApp(File applicationPackage) {

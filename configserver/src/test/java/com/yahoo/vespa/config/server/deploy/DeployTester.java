@@ -177,7 +177,7 @@ public class DeployTester {
         if (vespaVersion != null)
             paramsBuilder.vespaVersion(vespaVersion);
 
-        return applicationRepository.deploy(new File(applicationPath), paramsBuilder.build(), false, false, now);
+        return applicationRepository.deploy(new File(applicationPath), paramsBuilder.build(), false, now);
     }
 
     public AllocatedHosts getAllocatedHostsOf(ApplicationId applicationId) {
