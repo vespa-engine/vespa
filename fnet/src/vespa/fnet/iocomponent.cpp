@@ -139,6 +139,11 @@ FNET_IOComponent::handle_add_event()
     return true;
 }
 
+bool
+FNET_IOComponent::handle_handshake_act()
+{
+    return true;
+}
 
 void
 FNET_IOComponent::CleanupHook()

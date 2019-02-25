@@ -3,10 +3,13 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/fnet.h>
 #include <vespa/vespalib/net/server_socket.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib;
+
+int short_time = 20; // ms
 
 struct BlockingHostResolver : public AsyncResolver::HostResolver {
     AsyncResolver::SimpleHostResolver resolver;
@@ -33,6 +36,43 @@ AsyncResolver::SP make_resolver(AsyncResolver::HostResolver::SP host_resolver) {
 
 //-----------------------------------------------------------------------------
 
+struct BlockingCryptoSocket : public CryptoSocket {
+    SocketHandle socket;
+    Gate &handshake_work_enter;
+    Gate &handshake_work_exit;
+    Gate &handshake_socket_deleted;
+    BlockingCryptoSocket(SocketHandle s, Gate &hs_work_enter, Gate &hs_work_exit, Gate &hs_socket_deleted)
+        : socket(std::move(s)), handshake_work_enter(hs_work_enter), handshake_work_exit(hs_work_exit),
+          handshake_socket_deleted(hs_socket_deleted) {}
+    ~BlockingCryptoSocket() override {
+        handshake_socket_deleted.countDown();
+    }
+    int get_fd() const override { return socket.get(); }
+    HandshakeResult handshake() override { return HandshakeResult::NEED_WORK; }
+    void do_handshake_work() override {
+        handshake_work_enter.countDown();
+        handshake_work_exit.await();
+    }
+    size_t min_read_buffer_size() const override { return 1; }
+    ssize_t read(char *buf, size_t len) override { return socket.read(buf, len); }
+    ssize_t drain(char *, size_t) override { return 0; }
+    ssize_t write(const char *buf, size_t len) override { return socket.write(buf, len); }
+    ssize_t flush() override { return 0; }
+    ssize_t half_close() override { return socket.half_close(); }
+};
+
+struct BlockingCryptoEngine : public CryptoEngine {
+    Gate handshake_work_enter;
+    Gate handshake_work_exit;
+    Gate handshake_socket_deleted;
+    CryptoSocket::UP create_crypto_socket(SocketHandle socket, bool) override {
+        return std::make_unique<BlockingCryptoSocket>(std::move(socket),
+                handshake_work_enter, handshake_work_exit, handshake_socket_deleted);
+    }
+};
+
+//-----------------------------------------------------------------------------
+
 struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
     FNET_SimplePacketStreamer streamer;
     FastOS_ThreadPool pool;
@@ -46,6 +86,12 @@ struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
     }
     TransportFixture(AsyncResolver::HostResolver::SP host_resolver)
         : streamer(nullptr), pool(128 * 1024), transport(make_resolver(std::move(host_resolver)), 1),
+          conn_lost(), conn_deleted()
+    {
+        transport.Start(&pool);
+    }
+    TransportFixture(CryptoEngine::SP crypto)
+        : streamer(nullptr), pool(128 * 1024), transport(crypto, 1),
           conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
@@ -83,19 +129,19 @@ TEST_MT_FFF("require that normal connect works", 2,
         FNET_Connection *conn = f2.connect(spec);
         TEST_BARRIER();
         conn->Owner()->Close(conn);
-        EXPECT_TRUE(f2.conn_lost.await(60000));
-        EXPECT_TRUE(!f2.conn_deleted.await(20));
+        f2.conn_lost.await();
+        EXPECT_TRUE(!f2.conn_deleted.await(short_time));
         conn->SubRef();
-        EXPECT_TRUE(f2.conn_deleted.await(60000));
+        f2.conn_deleted.await();
     }
 }
 
 TEST_FF("require that bogus connect fail asynchronously", TransportFixture(), TimeBomb(60)) {
     FNET_Connection *conn = f1.connect("invalid");
-    EXPECT_TRUE(f1.conn_lost.await(60000));
-    EXPECT_TRUE(!f1.conn_deleted.await(20));
+    f1.conn_lost.await();
+    EXPECT_TRUE(!f1.conn_deleted.await(short_time));
     conn->SubRef();
-    EXPECT_TRUE(f1.conn_deleted.await(60000));
+    f1.conn_deleted.await();
 }
 
 TEST_MT_FFFF("require that async close can be called before async resolve completes", 2,
@@ -110,12 +156,37 @@ TEST_MT_FFFF("require that async close can be called before async resolve comple
         FNET_Connection *conn = f3.connect(spec);
         f2->wait_for_caller();
         conn->Owner()->Close(conn);
-        EXPECT_TRUE(f3.conn_lost.await(60000));
+        f3.conn_lost.await();
         f2->release_caller();
-        EXPECT_TRUE(!f3.conn_deleted.await(20));
+        EXPECT_TRUE(!f3.conn_deleted.await(short_time));
         conn->SubRef();
-        EXPECT_TRUE(f3.conn_deleted.await(60000));
+        f3.conn_deleted.await();
         f1.shutdown();
+    }
+}
+
+TEST_MT_FFFF("require that async close during async do_handshake_work works", 2,
+             ServerSocket("tcp/0"), std::shared_ptr<BlockingCryptoEngine>(new BlockingCryptoEngine()),
+             TransportFixture(f2), TimeBomb(60))
+{
+    if (thread_id == 0) {
+        SocketHandle socket = f1.accept();
+        EXPECT_TRUE(socket.valid());
+        TEST_BARRIER(); // #1
+    } else {
+        vespalib::string spec = make_string("tcp/localhost:%d", f1.address().port());
+        FNET_Connection *conn = f3.connect(spec);
+        f2->handshake_work_enter.await();
+        conn->Owner()->Close(conn, false);
+        conn = nullptr; // ref given away
+        f3.conn_lost.await();
+        TEST_BARRIER(); // #1
+        // verify that pending work keeps relevant objects alive
+        EXPECT_TRUE(!f3.conn_deleted.await(short_time));
+        EXPECT_TRUE(!f2->handshake_socket_deleted.await(short_time));
+        f2->handshake_work_exit.countDown();
+        f3.conn_deleted.await();
+        f2->handshake_socket_deleted.await();
     }
 }
 

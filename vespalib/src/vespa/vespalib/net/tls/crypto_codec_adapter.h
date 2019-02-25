@@ -37,6 +37,7 @@ public:
     void inject_read_data(const char *buf, size_t len) override;
     int get_fd() const override { return _socket.get(); }
     HandshakeResult handshake() override;
+    void do_handshake_work() override;
     size_t min_read_buffer_size() const override { return _codec->min_decode_buffer_size(); }
     ssize_t read(char *buf, size_t len) override;
     ssize_t drain(char *, size_t) override;

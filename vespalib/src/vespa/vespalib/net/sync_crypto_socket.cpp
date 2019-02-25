@@ -94,16 +94,19 @@ SyncCryptoSocket::create(CryptoEngine &engine, SocketHandle socket, bool is_serv
 {
     auto crypto_socket = engine.create_crypto_socket(std::move(socket), is_server);
     set_blocking(crypto_socket->get_fd());
-    auto hs_res = crypto_socket->handshake();
-    while ((hs_res == CryptoSocket::HandshakeResult::NEED_READ) ||
-           (hs_res == CryptoSocket::HandshakeResult::NEED_WRITE))
-    {
-        hs_res = crypto_socket->handshake();
+    for (;;) {
+        switch (crypto_socket->handshake()) {
+        case CryptoSocket::HandshakeResult::FAIL:
+            return std::unique_ptr<SyncCryptoSocket>(nullptr);
+        case CryptoSocket::HandshakeResult::DONE:
+            return UP(new SyncCryptoSocket(std::move(crypto_socket)));
+        case CryptoSocket::HandshakeResult::NEED_READ:
+        case CryptoSocket::HandshakeResult::NEED_WRITE:
+            break;
+        case CryptoSocket::HandshakeResult::NEED_WORK:
+            crypto_socket->do_handshake_work();
+        }
     }
-    if (hs_res != CryptoSocket::HandshakeResult::DONE) {
-        return std::unique_ptr<SyncCryptoSocket>(nullptr);
-    }
-    return UP(new SyncCryptoSocket(std::move(crypto_socket)));
 }
 
 } // namespace vespalib

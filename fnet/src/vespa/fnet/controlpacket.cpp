@@ -101,6 +101,9 @@ FNET_ControlPacket
 FNET_ControlPacket::IOCDisableWrite(FNET_CMD_IOC_DISABLE_WRITE);
 
 FNET_ControlPacket
+FNET_ControlPacket::IOCHandshakeACT(FNET_CMD_IOC_HANDSHAKE_ACT);
+
+FNET_ControlPacket
 FNET_ControlPacket::IOCClose(FNET_CMD_IOC_CLOSE);
 
 FNET_ControlPacket

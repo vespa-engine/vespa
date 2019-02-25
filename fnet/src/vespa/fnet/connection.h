@@ -71,13 +71,15 @@ private:
             _inCallback(false),
             _callbackWait(false),
             _discarding(false),
-            _framed(false)
+            _framed(false),
+            _handshake_work_pending(false)
         { }
         bool _gotheader;
         bool _inCallback;
         bool _callbackWait;
         bool _discarding;
         bool _framed;
+        bool _handshake_work_pending;
     };
     struct ResolveHandler : public vespalib::AsyncResolver::ResultHandler {
         FNET_Connection *connection;
@@ -355,6 +357,18 @@ public:
      * @return false if connection broken, true otherwise.
      **/
     bool handle_add_event() override;
+
+    /**
+     * This function is called by the transport thread to handle the
+     * completion of an asynchronous invocation of
+     * 'do_handshake_work'. This function will try to progress
+     * connection handshaking further, based on the work performed by
+     * 'do_handshake_work'. If this function returns false, the
+     * component is broken and should be closed immediately.
+     *
+     * @return false if broken, true otherwise.
+     **/
+    bool handle_handshake_act() override;
 
     /**
      * Register a cleanup handler to be invoked when this connection is

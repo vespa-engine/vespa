@@ -72,16 +72,13 @@ CryptoCodecAdapter::handshake()
     for (;;) {
         auto in = _input.obtain();
         auto out = _output.reserve(_codec->min_encode_buffer_size());
-        ::vespalib::net::tls::HandshakeResult hs_res;
-        while ((hs_res = _codec->handshake(in.data, in.size, out.data, out.size)).needs_work()) {
-            _codec->do_handshake_work();
-        }
+        auto hs_res = _codec->handshake(in.data, in.size, out.data, out.size);
         _input.evict(hs_res.bytes_consumed);
         _output.commit(hs_res.bytes_produced);
         switch (hs_res.state) {
         case ::vespalib::net::tls::HandshakeResult::State::Failed: return HandshakeResult::FAIL;
         case ::vespalib::net::tls::HandshakeResult::State::Done: return hs_try_flush();
-        case ::vespalib::net::tls::HandshakeResult::State::NeedsWork: abort(); // Impossible
+        case ::vespalib::net::tls::HandshakeResult::State::NeedsWork: return HandshakeResult::NEED_WORK;
         case ::vespalib::net::tls::HandshakeResult::State::NeedsMorePeerData:
             auto flush_res = hs_try_flush();
             if (flush_res != HandshakeResult::DONE) {
@@ -94,6 +91,12 @@ CryptoCodecAdapter::handshake()
         }
     }
     return HandshakeResult::DONE;
+}
+
+void
+CryptoCodecAdapter::do_handshake_work()
+{
+    _codec->do_handshake_work();
 }
 
 ssize_t

@@ -102,11 +102,14 @@ HttpConnection::set_state(State state, bool read, bool write)
 void
 HttpConnection::do_handshake()
 {
-    switch (_socket->handshake()) {
-    case vespalib::CryptoSocket::HandshakeResult::FAIL:       return set_state(State::NOTIFY,       false, false);
-    case vespalib::CryptoSocket::HandshakeResult::DONE:       return set_state(State::READ_REQUEST,  true, false);
-    case vespalib::CryptoSocket::HandshakeResult::NEED_READ:  return set_state(State::HANDSHAKE,     true, false);
-    case vespalib::CryptoSocket::HandshakeResult::NEED_WRITE: return set_state(State::HANDSHAKE,    false,  true);
+    for (;;) {
+        switch (_socket->handshake()) {
+        case vespalib::CryptoSocket::HandshakeResult::FAIL:       return set_state(State::NOTIFY,       false, false);
+        case vespalib::CryptoSocket::HandshakeResult::DONE:       return set_state(State::READ_REQUEST,  true, false);
+        case vespalib::CryptoSocket::HandshakeResult::NEED_READ:  return set_state(State::HANDSHAKE,     true, false);
+        case vespalib::CryptoSocket::HandshakeResult::NEED_WRITE: return set_state(State::HANDSHAKE,    false,  true);
+        case vespalib::CryptoSocket::HandshakeResult::NEED_WORK:  _socket->do_handshake_work();
+        }
     }
 }
 

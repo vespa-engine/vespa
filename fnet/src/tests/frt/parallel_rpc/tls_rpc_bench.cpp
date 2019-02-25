@@ -59,6 +59,22 @@ struct StartCmp {
     }
 };
 
+vespalib::string get_prefix(const std::vector<TimeTracer::Record> &stats, size_t idx) {
+    vespalib::string prefix;
+    TimeTracer::Record self = stats[idx];
+    while (idx-- > 0) {
+        if (stats[idx].thread_id == self.thread_id) {
+            if (stats[idx].stop > self.start) {
+                prefix.append("...");
+            }
+        }
+    }
+    if (!prefix.empty()) {
+        prefix.append(" ");
+    }
+    return prefix;
+}
+
 void benchmark_rpc(Fixture &fixture, bool reconnect) {
     uint64_t seq = 0;
     FRT_Target *target = fixture.connect();
@@ -95,24 +111,25 @@ void benchmark_rpc(Fixture &fixture, bool reconnect) {
     ASSERT_TRUE(stats.size() > 0);
     std::sort(stats.begin(), stats.end(), StartCmp());
     fprintf(stderr, "===== time line BEGIN =====\n");
-    for (const auto &entry: stats) {
+    for (size_t i = 0; i < stats.size(); ++i) {
+        const auto &entry = stats[i];
         double abs_start = std::chrono::duration<double, std::milli>(entry.start - med_sample.start).count();
         double abs_stop = std::chrono::duration<double, std::milli>(entry.stop - med_sample.start).count();
-        fprintf(stderr, "[%g, %g] [%u:%s] %g ms\n", abs_start, abs_stop, entry.thread_id, entry.tag_name().c_str(), entry.ms_duration());
+        fprintf(stderr, "%s[%g, %g] [%u:%s] %g ms\n", get_prefix(stats, i).c_str(), abs_start, abs_stop,
+                entry.thread_id, entry.tag_name().c_str(), entry.ms_duration());
     }
     fprintf(stderr, "===== time line END =====\n");
-    std::sort(stats.begin(), stats.end(), DurationCmp());
-    ASSERT_TRUE(stats.back().tag_id == req_tag.id());
-    double rest_ms = stats.back().ms_duration();
-    while (!stats.empty() && stats.back().ms_duration() > 1.0) {
-        const auto &entry = stats.back();
+    std::vector<TimeTracer::Record> high_duration;
+    for (const auto &entry: stats) {
+        if (entry.ms_duration() > 1.0) {
+            high_duration.push_back(entry);
+        }
+    }
+    for (const auto &entry: high_duration) {
         if (entry.tag_id != req_tag.id()) {
             fprintf(stderr, "WARNING: high duration: [%u:%s] %g ms\n", entry.thread_id, entry.tag_name().c_str(), entry.ms_duration());
-            rest_ms -= entry.ms_duration();
         }
-        stats.pop_back();
     }
-    fprintf(stderr, "INFO: total non-critical overhead: %g ms\n", rest_ms);
 }
 
 TEST_F("^^^-- rpc with null encryption", Fixture(null_crypto)) {

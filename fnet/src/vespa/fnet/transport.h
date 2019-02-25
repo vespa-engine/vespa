@@ -7,6 +7,7 @@
 #include <vector>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 class FastOS_TimeInterface;
 class FNET_TransportThread;
@@ -30,6 +31,7 @@ private:
 
     vespalib::AsyncResolver::SP _async_resolver;
     vespalib::CryptoEngine::SP _crypto_engine;
+    vespalib::ThreadStackExecutor _work_pool;
     Threads _threads;
 
 public:
@@ -51,6 +53,18 @@ public:
     FNET_Transport()
         : FNET_Transport(vespalib::AsyncResolver::get_shared(), vespalib::CryptoEngine::get_default(), 1) {}
     ~FNET_Transport();
+
+    /**
+     * Try to execute the given task on the internal work pool
+     * executor (post). If the executor has been closed or there is
+     * too much pending work the task is run in the context of the
+     * current thread instead (perform). The idea is to move work away
+     * from the transport threads as long as pending work is not
+     * piling up.
+     *
+     * @param task work to be done
+     **/
+    void post_or_perform(vespalib::Executor::Task::UP task);
 
     /**
      * Resolve a connect spec into a socket address to be used to

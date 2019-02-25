@@ -191,6 +191,8 @@ void verify_handshake(CryptoSocket &socket) {
         case CryptoSocket::HandshakeResult::NEED_WRITE:
             ASSERT_TRUE(selector.wait_writable());
             break;
+        case CryptoSocket::HandshakeResult::NEED_WORK:
+            socket.do_handshake_work();
         }
     }
 }
