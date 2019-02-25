@@ -59,7 +59,7 @@ public class VipStatus {
 
     /** @deprecated don't pass VipStatusConfig */
     @Deprecated // TODO: Remove on Vespa 8
-    public VipStatus(QrSearchersConfig dispatchers, VipStatusConfig vipStatusConfig, ClustersStatus clustersStatus) {
+    public VipStatus(QrSearchersConfig dispatchers, VipStatusConfig ignored, ClustersStatus clustersStatus) {
         this(dispatchers, clustersStatus);
     }
 
