@@ -722,7 +722,7 @@
         <apache.httpclient.version>4.4.1</apache.httpclient.version>
         <apache.httpcore.version>4.4.1</apache.httpcore.version>
         <asm.version>7.0</asm.version>
-        <aws.sdk.version>1.11.357</aws.sdk.version>
+        <aws.sdk.version>1.11.289</aws.sdk.version>
         <jna.version>4.5.2</jna.version>
         <tensorflow.version>1.12.0</tensorflow.version>
         <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
