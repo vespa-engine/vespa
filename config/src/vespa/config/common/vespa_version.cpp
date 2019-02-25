@@ -8,10 +8,9 @@ namespace config {
 const VespaVersion currentVersion(VespaVersion::fromString(vespalib::string(vespalib::VersionTagComponent)));
 
 
-VespaVersion::VespaVersion(const VespaVersion & vespaVersion)
-    : _versionString(vespaVersion._versionString)
-{
-}
+VespaVersion::VespaVersion(const VespaVersion & vespaVersion) = default;
+
+VespaVersion & VespaVersion::operator=(const VespaVersion &rhs) = default;
 
 VespaVersion::VespaVersion(const vespalib::string & versionString)
     : _versionString(versionString)
