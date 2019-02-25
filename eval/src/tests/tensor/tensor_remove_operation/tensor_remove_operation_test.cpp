@@ -5,7 +5,7 @@
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/sparse/sparse_tensor.h>
 #include <vespa/eval/tensor/test/test_utils.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::eval::Value;
 using vespalib::eval::TensorSpec;
@@ -19,10 +19,10 @@ assertRemove(const TensorSpec &source, const TensorSpec &arg, const TensorSpec &
     auto argTensor = makeTensor<SparseTensor>(arg);
     auto resultTensor = sourceTensor->remove(CellValues(*argTensor));
     auto actual = resultTensor->toSpec();
-    EXPECT_EQUAL(actual, expected);
+    EXPECT_EQ(actual, expected);
 }
 
-TEST("require that cells can be removed from a sparse tensor")
+TEST(TensorRemoveTest, cells_can_be_removed_from_a_sparse_tensor)
 {
     assertRemove(TensorSpec("tensor(x{},y{})")
                          .add({{"x","a"},{"y","b"}}, 2)
@@ -34,7 +34,7 @@ TEST("require that cells can be removed from a sparse tensor")
                          .add({{"x","a"},{"y","b"}}, 2));
 }
 
-TEST("require that all cells can be removed from a sparse tensor")
+TEST(TensorRemoveTest, all_cells_can_be_removed_from_a_sparse_tensor)
 {
     assertRemove(TensorSpec("tensor(x{},y{})")
                          .add({{"x","a"},{"y","b"}}, 2),
@@ -43,4 +43,4 @@ TEST("require that all cells can be removed from a sparse tensor")
                  TensorSpec("tensor(x{},y{})"));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS

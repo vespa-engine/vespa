@@ -4,7 +4,7 @@
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/sparse/sparse_tensor.h>
 #include <vespa/eval/tensor/test/test_utils.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::eval::Value;
 using vespalib::eval::TensorSpec;
@@ -18,10 +18,10 @@ assertAdd(const TensorSpec &source, const TensorSpec &arg, const TensorSpec &exp
     auto argTensor = makeTensor<Tensor>(arg);
     auto resultTensor = sourceTensor->add(*argTensor);
     auto actual = resultTensor->toSpec();
-    EXPECT_EQUAL(actual, expected);
+    EXPECT_EQ(actual, expected);
 }
 
-TEST("require that cells can be added to a sparse tensor")
+TEST(TensorAddTest, cells_can_be_added_to_a_sparse_tensor)
 {
     assertAdd(TensorSpec("tensor(x{},y{})")
                       .add({{"x","a"},{"y","b"}}, 2)
@@ -35,4 +35,4 @@ TEST("require that cells can be added to a sparse tensor")
                       .add({{"x","e"},{"y","f"}}, 7));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS
