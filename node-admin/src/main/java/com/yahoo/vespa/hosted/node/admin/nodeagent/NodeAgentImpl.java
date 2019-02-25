@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FetchVector;
@@ -12,7 +11,6 @@ import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
@@ -38,12 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
@@ -83,10 +76,6 @@ public class NodeAgentImpl implements NodeAgent {
     private Optional<Long> currentRestartGeneration = Optional.empty();
 
     private final Thread loopThread;
-    private final ScheduledExecutorService filebeatRestarter =
-            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("filebeatrestarter"));
-    private final Consumer<String> serviceRestarter;
-    private Optional<Future<?>> currentFilebeatRestarter = Optional.empty();
 
 
     /**
@@ -140,20 +129,6 @@ public class NodeAgentImpl implements NodeAgent {
             }
         });
         this.loopThread.setName("tick-" + contextSupplier.currentContext().hostname());
-
-        this.serviceRestarter = service -> {
-            NodeAgentContext context = contextSupplier.currentContext();
-            try {
-                ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
-                        context, "service", service, "restart");
-
-                if (!processResult.isSuccess()) {
-                    context.log(logger, LogLevel.ERROR, "Failed to restart service " + service + ": " + processResult);
-                }
-            } catch (Exception e) {
-                context.log(logger, LogLevel.ERROR, "Failed to restart service " + service, e);
-            }
-        };
     }
 
     @Override
@@ -166,15 +141,13 @@ public class NodeAgentImpl implements NodeAgent {
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
-        filebeatRestarter.shutdown();
         contextSupplier.interrupt();
 
         do {
             try {
                 loopThread.join();
-                filebeatRestarter.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
             } catch (InterruptedException ignored) { }
-        } while (loopThread.isAlive() || !filebeatRestarter.isTerminated());
+        } while (loopThread.isAlive());
 
         contextSupplier.currentContext().log(logger, "Stopped");
     }
@@ -189,12 +162,6 @@ public class NodeAgentImpl implements NodeAgent {
 
     void resumeNodeIfNeeded(NodeAgentContext context) {
         if (!hasResumedNode) {
-            if (!currentFilebeatRestarter.isPresent()) {
-                storageMaintainer.writeMetricsConfig(context);
-                currentFilebeatRestarter = Optional.of(filebeatRestarter.scheduleWithFixedDelay(
-                        () -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS));
-            }
-
             context.log(logger, LogLevel.DEBUG, "Starting optional node program resume command");
             dockerOperations.resumeNode(context);
             hasResumedNode = true;
@@ -356,7 +323,6 @@ public class NodeAgentImpl implements NodeAgent {
                     context.log(logger, LogLevel.WARNING, "Failed stopping services, ignoring", e);
                 }
             }
-            stopFilebeatSchedulerIfNeeded();
             storageMaintainer.handleCoreDumpsForContainer(context, Optional.of(existingContainer));
             dockerOperations.removeContainer(context, existingContainer);
             currentRebootGeneration = context.node().getWantedRebootGeneration();
@@ -532,13 +498,6 @@ public class NodeAgentImpl implements NodeAgent {
                 builder.append(", ");
             }
             builder.append(name).append(" ").append(fieldDescription(oldValue)).append(" -> ").append(fieldDescription(newValue));
-        }
-    }
-
-    private void stopFilebeatSchedulerIfNeeded() {
-        if (currentFilebeatRestarter.isPresent()) {
-            currentFilebeatRestarter.get().cancel(true);
-            currentFilebeatRestarter = Optional.empty();
         }
     }
 
