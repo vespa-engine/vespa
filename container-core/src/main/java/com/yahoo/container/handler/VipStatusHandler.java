@@ -57,7 +57,7 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
         private StatusResponse() {
             super(com.yahoo.jdisc.http.HttpResponse.Status.OK); // status may be overwritten below
             if (vipStatus != null && ! vipStatus.isInRotation()) {
-                searchContainerOutOfService();
+                setOutOfServiceStatus();
             } else if (accessDisk) {
                 preSlurpFile();
             } else {
@@ -140,7 +140,7 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
         /**
          * Behaves like a VIP status response file has been deleted.
          */
-        private void searchContainerOutOfService() {
+        private void setOutOfServiceStatus() {
             contentType = "text/plain";
             data = Utf8.toBytes(NO_SEARCH_BACKENDS);
             setStatus(com.yahoo.jdisc.http.HttpResponse.Status.NOT_FOUND);
@@ -191,8 +191,8 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
     }
 
     private void updateAndLogRotationState() {
-        final boolean currentlyInRotation = vipStatus.isInRotation();
-        final boolean previousRotationAnswer = previouslyInRotation;
+        boolean currentlyInRotation = vipStatus.isInRotation();
+        boolean previousRotationAnswer = previouslyInRotation;
         previouslyInRotation = currentlyInRotation;
 
         if (previousRotationAnswer != currentlyInRotation) {

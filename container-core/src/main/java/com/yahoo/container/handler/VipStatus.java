@@ -8,14 +8,22 @@ import com.yahoo.container.core.VipStatusConfig;
 /**
  * API for programmatically removing the container from VIP rotation.
  *
+ * This is multithread safe.
+ *
  * @author Steinar Knutsen
+ * @author bratseth
  */
 public class VipStatus {
 
     private final ClustersStatus clustersStatus;
 
     /** If this is non-null, its value decides whether this container is in rotation */
-    private Boolean inRotationOverride;
+    private Boolean rotationOverride = null;
+
+    /** The current state of this */
+    private boolean currentlyInRotation;
+
+    private final Object mutex = new Object();
 
     public VipStatus() {
         this(new QrSearchersConfig(new QrSearchersConfig.Builder()),
@@ -35,6 +43,7 @@ public class VipStatus {
     public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus) {
         this.clustersStatus = clustersStatus;
         clustersStatus.setContainerHasClusters(! dispatchers.searchcluster().isEmpty());
+        updateCurrentlyInRotation();
     }
 
     /** @deprecated don't pass VipStatusConfig */
@@ -50,17 +59,22 @@ public class VipStatus {
      *                   false to set it out, and null to make this decision using the usual cluster-dependent logic
      */
     public void setInRotation(Boolean inRotation) {
-        this.inRotationOverride = inRotation;
+        synchronized (mutex) {
+            rotationOverride = inRotation;
+            updateCurrentlyInRotation();
+        }
     }
 
     /** Note that a cluster (which influences up/down state) is up */
     public void addToRotation(String clusterIdentifier) {
         clustersStatus.setUp(clusterIdentifier);
+        updateCurrentlyInRotation();
     }
 
     /** Note that a cluster (which influences up/down state) is down */
     public void removeFromRotation(String clusterIdentifier) {
         clustersStatus.setDown(clusterIdentifier);
+        updateCurrentlyInRotation();
     }
 
     /** @deprecated use addToRotation(String) instead  */
@@ -75,10 +89,18 @@ public class VipStatus {
         removeFromRotation((String) clusterIdentifier);
     }
 
+    private void updateCurrentlyInRotation() {
+        synchronized (mutex) {
+            if (rotationOverride != null)
+                currentlyInRotation = rotationOverride;
+            else
+                currentlyInRotation = clustersStatus.containerShouldReceiveTraffic();
+        }
+    }
+
     /** Returns whether this container should receive traffic at this time */
     public boolean isInRotation() {
-        if (inRotationOverride != null) return inRotationOverride;
-        return clustersStatus.containerShouldReceiveTraffic();
+        return currentlyInRotation;
     }
 
 }

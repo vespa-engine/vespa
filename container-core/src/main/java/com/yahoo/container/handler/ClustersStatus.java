@@ -15,6 +15,8 @@ import java.util.Map;
  * will survive reconfiguration events and inform other components even immediately after a reconfiguration
  * (where the true statue of clusters may not yet be available).
  *
+ * This is multithread safe.
+ *
  * @author bratseth
  */
 public class ClustersStatus extends AbstractComponent {
