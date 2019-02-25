@@ -23,6 +23,10 @@ public:
     void accept(TensorVisitor &visitor) const {
         _tensor.accept(visitor);
     }
+
+    eval::TensorSpec toSpec() const {
+        return _tensor.toSpec();
+    }
 };
 
 }

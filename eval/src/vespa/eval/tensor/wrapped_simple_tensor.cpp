@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "wrapped_simple_tensor.h"
+#include "cell_values.h"
 #include "tensor_address_builder.h"
 #include "tensor_visitor.h"
+#include "wrapped_simple_tensor.h"
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -114,10 +115,37 @@ WrappedSimpleTensor::add(const Tensor &arg) const
     return std::make_unique<WrappedSimpleTensor>(SimpleTensor::create(result));
 }
 
-std::unique_ptr<Tensor>
-WrappedSimpleTensor::remove(const CellValues &) const
+namespace {
+
+TensorSpec::Address
+extractMappedDimensions(const TensorSpec::Address &address)
 {
-    LOG_ABORT("should not be reached");
+    TensorSpec::Address result;
+    for (const auto &elem : address) {
+        if (elem.second.is_mapped()) {
+            result.emplace(elem);
+        }
+    }
+    return result;
 }
 
-} // namespace vespalib::tensor
+}
+
+std::unique_ptr<Tensor>
+WrappedSimpleTensor::remove(const CellValues &cellAddresses) const
+{
+    TensorSpec oldTensor = toSpec();
+    TensorSpec toRemove = cellAddresses.toSpec();
+    TensorSpec result(type().to_spec());
+
+    for (const auto &cell : oldTensor.cells()) {
+        TensorSpec::Address mappedAddress = extractMappedDimensions(cell.first);
+        auto itr = toRemove.cells().find(mappedAddress);
+        if (itr == toRemove.cells().end()) {
+            result.add(cell.first, cell.second);
+        }
+    }
+    return std::make_unique<WrappedSimpleTensor>(SimpleTensor::create(result));
+}
+
+}
