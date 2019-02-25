@@ -12,6 +12,9 @@ LOG_SETUP(".eval.tensor.wrapped_simple_tensor");
 
 namespace vespalib::tensor {
 
+using eval::SimpleTensor;
+using eval::TensorSpec;
+
 bool
 WrappedSimpleTensor::equals(const Tensor &arg) const
 {
@@ -84,9 +87,31 @@ WrappedSimpleTensor::modify(join_fun_t, const CellValues &) const
 }
 
 std::unique_ptr<Tensor>
-WrappedSimpleTensor::add(const Tensor &) const
+WrappedSimpleTensor::add(const Tensor &arg) const
 {
-    LOG_ABORT("should not be reached");
+    const auto *rhs = dynamic_cast<const WrappedSimpleTensor *>(&arg);
+    if (!rhs || type() != rhs->type()) {
+        return Tensor::UP();
+    }
+
+    TensorSpec oldTensor = toSpec();
+    TensorSpec argTensor = rhs->toSpec();
+    TensorSpec result(type().to_spec());
+    for (const auto &cell : oldTensor.cells()) {
+        auto argItr = argTensor.cells().find(cell.first);
+        if (argItr != argTensor.cells().end()) {
+            result.add(argItr->first, argItr->second);
+        } else {
+            result.add(cell.first, cell.second);
+        }
+    }
+    for (const auto &cell : argTensor.cells()) {
+        auto resultItr = result.cells().find(cell.first);
+        if (resultItr == result.cells().end()) {
+            result.add(cell.first, cell.second);
+        }
+    }
+    return std::make_unique<WrappedSimpleTensor>(SimpleTensor::create(result));
 }
 
 std::unique_ptr<Tensor>
