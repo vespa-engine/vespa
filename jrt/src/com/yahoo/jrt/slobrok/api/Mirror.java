@@ -164,6 +164,7 @@ public class Mirror implements IMirror {
             return;
         }
 
+        log.log(Level.FINE, () -> "slobroks: "  + slobroks.toString() + ", currSlobrok: " + currSlobrok + ", target=" + target);
         if (target != null && ! slobroks.contains(currSlobrok)) {
             target.close();
             target = null;
@@ -222,6 +223,7 @@ public class Mirror implements IMirror {
             || (req.returnValues().get(2).count() !=
                 req.returnValues().get(3).count()))
         {
+            log.log(Level.FINE, () -> "Error when handling update from slobrok. Request: " + req);
             target.close();
             target = null;
             updateTask.scheduleNow(); // try next slobrok
