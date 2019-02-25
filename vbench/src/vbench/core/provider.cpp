@@ -10,6 +10,6 @@ struct DummyItem {};
 
 } // namespace vbench::<unnamed>
 
-template class Provider<DummyItem>;
+template struct Provider<DummyItem>;
 
 } // namespace vbench

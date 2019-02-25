@@ -88,7 +88,6 @@ private:
     Alloc _buffer;
 
     uint32_t _position;
-    double   _growFactor;
 };
 
 }

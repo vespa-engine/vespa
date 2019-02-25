@@ -117,7 +117,7 @@ bool isLegalName(const std::string& name) {
 
 void convertToLegalName(std::string& name) {
     if (name.size() == 0) {
-        name == "__no_name__";
+        name = "__no_name__";
     } else {
         if (!legalIdentifierFirstChar[static_cast<uint8_t>(name[0])]) {
             name[0] = '_';
@@ -450,7 +450,6 @@ template XmlAttribute::XmlAttribute(const std::string &, std::string, unsigned i
 template XmlAttribute::XmlAttribute(const std::string &, vespalib::string, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, vespalib::stringref, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, CharP, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, ConstCharP, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, bool, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, int16_t, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, int32_t, unsigned int);

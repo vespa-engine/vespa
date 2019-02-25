@@ -20,8 +20,11 @@ public:
     explicit Handle(size_t id) : _id(id) {}
     size_t id() const { return _id; }
 
-    static constexpr Handle empty_handle = Handle();
+    static const Handle empty_handle;
 };
+
+template <typename T>
+const Handle<T> Handle<T>::empty_handle;
 
 template <typename T>
 bool

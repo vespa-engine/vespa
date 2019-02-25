@@ -13,16 +13,17 @@
 
 namespace vbench {
 
-using Input = vespalib::Input;
-using Memory = vespalib::Memory;
-using Output = vespalib::Output;
-using SimpleBuffer = vespalib::SimpleBuffer;
-using WritableMemory = vespalib::WritableMemory;
-using CryptoEngine = vespalib::CryptoEngine;
-using SyncCryptoSocket = vespalib::SyncCryptoSocket;
 
 class Socket : public Stream
 {
+public:
+    using Input = vespalib::Input;
+    using Memory = vespalib::Memory;
+    using Output = vespalib::Output;
+    using SimpleBuffer = vespalib::SimpleBuffer;
+    using WritableMemory = vespalib::WritableMemory;
+    using CryptoEngine = vespalib::CryptoEngine;
+    using SyncCryptoSocket = vespalib::SyncCryptoSocket;
 private:
     SyncCryptoSocket::UP   _socket;
     SimpleBuffer           _input;
@@ -43,6 +44,8 @@ public:
 };
 
 struct ServerSocket {
+    using CryptoEngine = vespalib::CryptoEngine;
+    using SyncCryptoSocket = vespalib::SyncCryptoSocket;
     vespalib::ServerSocket server_socket;
     ServerSocket() : server_socket(0) {}
     int port() const { return server_socket.address().port(); }

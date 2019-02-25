@@ -128,13 +128,13 @@ private:
     class ThreadState {
     private:
         uint32_t _thread_id;
-        mutable std::atomic_flag _lock;
+        mutable std::atomic_flag _lock = ATOMIC_FLAG_INIT;
         vespalib::Stash _stash;
         const LogEntry * _list;
     public:
         using UP = std::unique_ptr<ThreadState>;
         ThreadState(uint32_t thread_id)
-            : _thread_id(thread_id), _lock{ATOMIC_FLAG_INIT}, _stash(64 * 1024), _list(nullptr) {}
+            : _thread_id(thread_id), _stash(64 * 1024), _list(nullptr) {}
         uint32_t thread_id() const { return _thread_id; }
         const LogEntry *get_log_entries() const {
             Guard guard(_lock);

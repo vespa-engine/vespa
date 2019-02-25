@@ -21,6 +21,7 @@ private:
     double     _lastUsed;
 
 public:
+    using CryptoEngine = vespalib::CryptoEngine;
     typedef std::unique_ptr<HttpConnection> UP;
 
     HttpConnection(CryptoEngine &crypto, const ServerSpec &server);

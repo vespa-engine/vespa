@@ -8,10 +8,10 @@
 
 namespace vbench {
 
-using SimpleBuffer = vespalib::SimpleBuffer;
-
 class SimpleHttpResultHandler : public HttpResultHandler
 {
+public:
+    using SimpleBuffer = vespalib::SimpleBuffer;
 private:
     std::vector<std::pair<string, string> > _headers;
     SimpleBuffer                            _content;

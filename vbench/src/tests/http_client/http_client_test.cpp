@@ -8,6 +8,8 @@ using namespace vbench;
 using InputReader = vespalib::InputReader;
 using OutputWriter = vespalib::OutputWriter;
 
+using vespalib::SimpleBuffer;
+
 auto null_crypto = std::make_shared<vespalib::NullCryptoEngine>();
 
 void checkMemory(const string &expect, const Memory &mem) {

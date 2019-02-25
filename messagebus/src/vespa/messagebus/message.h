@@ -29,8 +29,8 @@ public:
      * Constructs a new instance of this class.
      */
     Message();
-    Message(Message &&) noexcept = default;
-    Message & operator = (Message &&) noexcept = default;
+    Message(Message &&) = default;
+    Message & operator = (Message &&) = default;
 
     /**
      * If a message is deleted with elements on the callstack, this destructor

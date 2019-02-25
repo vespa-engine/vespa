@@ -49,7 +49,8 @@ RequestScheduler::abort()
 void
 RequestScheduler::handle(Request::UP request)
 {
-    _queue.insert(std::move(request), request->scheduledTime());
+    double scheduledTime = request->scheduledTime();
+    _queue.insert(std::move(request), scheduledTime);
 }
 
 void

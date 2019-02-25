@@ -8,7 +8,6 @@
 namespace vbench {
 
 using Input = vespalib::Input;
-using InputReader = vespalib::InputReader;
 
 /**
  * Concrete utility class used to read individual lines of text from
@@ -17,6 +16,8 @@ using InputReader = vespalib::InputReader;
  **/
 class LineReader
 {
+public:
+    using InputReader = vespalib::InputReader;
 private:
     InputReader _input;
 
