@@ -4,6 +4,7 @@ package com.yahoo.container.handler;
 import com.google.inject.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
+import com.yahoo.container.jdisc.state.StateMonitor;
 
 /**
  * API for programmatically removing the container from VIP rotation.
@@ -17,6 +18,8 @@ public class VipStatus {
 
     private final ClustersStatus clustersStatus;
 
+    private final StateMonitor healthState;
+
     /** If this is non-null, its value decides whether this container is in rotation */
     private Boolean rotationOverride = null;
 
@@ -25,23 +28,30 @@ public class VipStatus {
 
     private final Object mutex = new Object();
 
+    /** For testing */
     public VipStatus() {
-        this(new QrSearchersConfig(new QrSearchersConfig.Builder()),
-             new VipStatusConfig(new VipStatusConfig.Builder()),
-             new ClustersStatus());
+        this(new ClustersStatus());
     }
 
+    /** For testing */
     public VipStatus(QrSearchersConfig dispatchers) {
         this(dispatchers, new ClustersStatus());
     }
 
+    /** For testing */
     public VipStatus(ClustersStatus clustersStatus) {
-        this.clustersStatus = clustersStatus;
+        this(new QrSearchersConfig.Builder().build(), clustersStatus);
+    }
+
+    public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus) {
+        this(dispatchers, clustersStatus, new StateMonitor());
     }
 
     @Inject
-    public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus) {
+    public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus, StateMonitor healthState) {
         this.clustersStatus = clustersStatus;
+        this.healthState = healthState;
+        healthState.status(StateMonitor.Status.initializing);
         clustersStatus.setContainerHasClusters(! dispatchers.searchcluster().isEmpty());
         updateCurrentlyInRotation();
     }
@@ -95,6 +105,12 @@ public class VipStatus {
                 currentlyInRotation = rotationOverride;
             else
                 currentlyInRotation = clustersStatus.containerShouldReceiveTraffic();
+
+            // Change to/from 'up' when appropriate but don't change 'initializing' to 'down'
+            if (currentlyInRotation)
+                healthState.status(StateMonitor.Status.up);
+            else if (healthState.status() == StateMonitor.Status.up)
+                healthState.status(StateMonitor.Status.down);
         }
     }
 

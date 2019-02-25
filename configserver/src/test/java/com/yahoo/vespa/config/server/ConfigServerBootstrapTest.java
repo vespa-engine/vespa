@@ -72,9 +72,10 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         // Take a host away so that there are too few for the application, to verify we can still bootstrap
         provisioner.allocations().values().iterator().next().remove(0);
-        VipStatus vipStatus = createVipStatus();
+        StateMonitor stateMonitor = new StateMonitor();
+        VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
-                                                                    versionState, createStateMonitor(),
+                                                                    versionState, stateMonitor,
                                                                     vipStatus, INITIALIZE_ONLY, VIP_STATUS_PROGRAMMATICALLY);
         assertFalse(vipStatus.isInRotation());
         bootstrap.start();
@@ -102,9 +103,10 @@ public class ConfigServerBootstrapTest {
         assertTrue(versionState.isUpgraded());
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        VipStatus vipStatus = createVipStatus();
+        StateMonitor stateMonitor = new StateMonitor();
+        VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
-                                                                    versionState, createStateMonitor(),
+                                                                    versionState, stateMonitor,
                                                                     vipStatus, INITIALIZE_ONLY, VIP_STATUS_FILE);
         assertTrue(vipStatus.isInRotation()); // default is in rotation when using status file
 
@@ -132,16 +134,17 @@ public class ConfigServerBootstrapTest {
                                            .resolve("sessions/2/services.xml"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        VipStatus vipStatus = createVipStatus();
+        StateMonitor stateMonitor = new StateMonitor();
+        VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    createStateMonitor(),
+                                                                    stateMonitor,
                                                                     vipStatus, INITIALIZE_ONLY, VIP_STATUS_PROGRAMMATICALLY);
         assertFalse(vipStatus.isInRotation());
         // Call method directly, to be sure that it is finished redeploying all applications and we can check status
         bootstrap.start();
         // App is invalid, bootstrapping was unsuccessful. Status should be 'initializing',
         // rpc server should not be running and it should be out of rotation
-        assertEquals(StateMonitor.Status.initializing, bootstrap.status());
+        assertEquals(StateMonitor.Status.initializing, stateMonitor.status());
         assertFalse(rpcServer.isRunning());
         assertFalse(vipStatus.isInRotation());
 
@@ -174,9 +177,10 @@ public class ConfigServerBootstrapTest {
         curator.set(Path.fromString("/config/v2/tenants/" + applicationId.tenant().value() + "/sessions/2/version"), Utf8.toBytes("1.2.2"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        VipStatus vipStatus = createVipStatus();
+        StateMonitor stateMonitor = createStateMonitor();
+        VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    createStateMonitor(), vipStatus,
+                                                                    stateMonitor, vipStatus,
                                                                     BOOTSTRAP_IN_SEPARATE_THREAD, VIP_STATUS_PROGRAMMATICALLY);
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
@@ -229,9 +233,10 @@ public class ConfigServerBootstrapTest {
         return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.of(com.yahoo.component.Version.fromString(version)));
     }
 
-    private VipStatus createVipStatus() {
+    private VipStatus createVipStatus(StateMonitor stateMonitor) {
         return new VipStatus(new QrSearchersConfig.Builder().build(),
-                             new ClustersStatus());
+                             new ClustersStatus(),
+                             stateMonitor);
     }
 
     public static class MockRpc extends com.yahoo.vespa.config.server.rpc.MockRpc {

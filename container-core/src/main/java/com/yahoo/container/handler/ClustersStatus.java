@@ -9,7 +9,9 @@ import java.util.Map;
 
 /**
  * A component which tracks the up/down status of any clusters which should influence
- * the up down status of this container itself, as well as the separate fact that such clusters are present.
+ * the up down status of this container itself, as well as the separate fact (from config)
+ * that such clusters are present. This is a separate fact because we might know we have clusters configured
+ * but we don't have positive information that they are up yet, and in this case we should be down.
  *
  * This is a separate component which has <b>no dependencies</b> such that the status tracked in this
  * will survive reconfiguration events and inform other components even immediately after a reconfiguration

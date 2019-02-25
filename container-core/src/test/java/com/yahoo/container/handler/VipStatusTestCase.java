@@ -3,6 +3,7 @@ package com.yahoo.container.handler;
 
 import static org.junit.Assert.*;
 
+import com.yahoo.container.QrSearchersConfig;
 import org.junit.Test;
 
 /**
@@ -14,13 +15,17 @@ public class VipStatusTestCase {
 
     @Test
     public void testVipStatusWorksWithClusters() {
-        ClustersStatus clustersStatus = new ClustersStatus();
-        clustersStatus.setContainerHasClusters(true);
-        VipStatus v = new VipStatus(clustersStatus);
+        var b = new QrSearchersConfig.Builder();
+        var searchClusterB = new QrSearchersConfig.Searchcluster.Builder();
+        searchClusterB.name("cluster1");
+        searchClusterB.name("cluster2");
+        searchClusterB.name("cluster3");
+        b.searchcluster(searchClusterB);
+        VipStatus v = new VipStatus(b.build());
 
-        String cluster1 = new String("a");
-        String cluster2 = new String("b");
-        String cluster3 = new String("c");
+        String cluster1 = "cluster1";
+        String cluster2 = "cluster2";
+        String cluster3 = "cluster3";
 
         // initial state
         assertFalse(v.isInRotation());
