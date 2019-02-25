@@ -74,7 +74,6 @@ public class CuratorDb {
     private static final Path applicationRoot = root.append("applications");
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
-    private static final Path legacyRoutingPoliciesRoot = root.append("loadBalancerAliases");
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
@@ -186,15 +185,7 @@ public class CuratorDb {
     }
 
     public Lock lockRoutingPolicies() {
-        Set<Version> clusterVersions = cluster().stream()
-                                                .map(this::readControllerVersion)
-                                                .collect(Collectors.toSet());
-        // TODO: Remove this once cluster has completely upgraded once
-        Path newPath = lockRoot.append("routingPolicies");
-        if (clusterVersions.size() > 1 && !curator.exists(newPath)) {
-            return lock(lockRoot.append("loadBalancerAliases"), defaultLockTimeout);
-        }
-        return lock(newPath, defaultLockTimeout);
+        return lock(lockRoot.append("routingPolicies"), defaultLockTimeout);
     }
     // -------------- Helpers ------------------------------------------
 
@@ -482,17 +473,10 @@ public class CuratorDb {
     }
 
     public Set<RoutingPolicy> readRoutingPolicies() {
-        List<String> children;
-        if (curator.exists(routingPoliciesRoot)) {
-            children = curator.getChildren(routingPoliciesRoot);
-            curator.delete(legacyRoutingPoliciesRoot);
-        } else {
-            children = curator.getChildren(legacyRoutingPoliciesRoot); // TODO: Remove after 7.9 has been released
-        }
-        return children.stream()
-                       .map(ApplicationId::fromSerializedForm)
-                       .flatMap(application -> readRoutingPolicies(application).stream())
-                       .collect(Collectors.toUnmodifiableSet());
+        return curator.getChildren(routingPoliciesRoot).stream()
+                      .map(ApplicationId::fromSerializedForm)
+                      .flatMap(application -> readRoutingPolicies(application).stream())
+                      .collect(Collectors.toUnmodifiableSet());
     }
 
     public Set<RoutingPolicy> readRoutingPolicies(ApplicationId application) {
