@@ -2,15 +2,11 @@
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -20,67 +16,64 @@ import java.util.stream.Collectors;
  */
 public class MemoryNameService implements NameService {
 
-    private final Map<RecordId, Set<Record>> records = new HashMap<>();
+    private final Set<Record> records = new TreeSet<>();
 
-    public Map<RecordId, Set<Record>> records() {
-        return Collections.unmodifiableMap(records);
+    public Set<Record> records() {
+        return Collections.unmodifiableSet(records);
     }
 
     @Override
-    public RecordId createCname(RecordName name, RecordData canonicalName) {
-        RecordId id = new RecordId(UUID.randomUUID().toString());
-        records.put(id, Set.of(new Record(id, Record.Type.CNAME, name, canonicalName)));
-        return id;
+    public Record createCname(RecordName name, RecordData canonicalName) {
+        Record record = new Record(Record.Type.CNAME, name, canonicalName);
+        records.add(record);
+        return record;
     }
 
     @Override
-    public RecordId createAlias(RecordName name, Set<AliasTarget> targets) {
-        RecordId id = new RecordId(UUID.randomUUID().toString());
-        Set<Record> records = targets.stream()
+    public List<Record> createAlias(RecordName name, Set<AliasTarget> targets) {
+        List<Record> records = targets.stream()
                                      .sorted((a, b) -> Comparator.comparing(AliasTarget::name).compare(a, b))
-                                     .map(target -> new Record(id, Record.Type.ALIAS, name,
+                                     .map(target -> new Record(Record.Type.ALIAS, name,
                                                                RecordData.fqdn(target.name().value())))
-                                     .collect(Collectors.toCollection(LinkedHashSet::new));
+                                     .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
-        findRecords(Record.Type.ALIAS, name).stream().map(Record::id).forEach(this::removeRecord);
-        this.records.put(id, records);
-        return id;
+        removeRecords(findRecords(Record.Type.ALIAS, name));
+        this.records.addAll(records);
+        return records;
     }
 
     @Override
     public List<Record> findRecords(Record.Type type, RecordName name) {
-        return records.values().stream()
-                      .flatMap(Collection::stream)
+        return records.stream()
                       .filter(record -> record.type() == type && record.name().equals(name))
                       .collect(Collectors.toUnmodifiableList());
     }
 
     @Override
     public List<Record> findRecords(Record.Type type, RecordData data) {
-        return records.values().stream()
-                      .flatMap(Collection::stream)
+        return records.stream()
                       .filter(record -> record.type() == type && record.data().equals(data))
                       .collect(Collectors.toUnmodifiableList());
     }
 
     @Override
-    public void updateRecord(RecordId id, RecordData newData) {
-        records.computeIfPresent(id, (k, records) -> {
-            if (records.isEmpty()) {
-                throw new IllegalArgumentException("No record with data '" + newData.asString() + "' exists");
-            }
-            if (records.size() > 1) {
-                throw new IllegalArgumentException("Cannot update multi-value record '" + id.asString() + "' with '" +
-                                                   newData.asString() + "'");
-            }
-            Record existing = records.iterator().next();
-            return Set.of(new Record(id, existing.type(), existing.name(), newData));
-        });
+    public void updateRecord(Record record, RecordData newData) {
+        List<Record> records = findRecords(record.type(), record.name());
+        if (records.isEmpty()) {
+            throw new IllegalArgumentException("No record with data '" + newData.asString() + "' exists");
+        }
+        if (records.size() > 1) {
+            throw new IllegalArgumentException("Cannot update multi-value record '" + record.name().asString() +
+                                               "' with '" + newData.asString() + "'");
+        }
+        Record existing = records.get(0);
+        this.records.remove(existing);
+        this.records.add(new Record(existing.type(), existing.name(), newData));
     }
 
     @Override
-    public void removeRecord(RecordId id) {
-        records.remove(id);
+    public void removeRecords(List<Record> records) {
+        this.records.removeAll(records);
     }
 
 }

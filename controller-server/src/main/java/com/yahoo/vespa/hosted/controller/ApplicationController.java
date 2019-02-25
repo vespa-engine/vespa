@@ -37,7 +37,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
@@ -498,16 +497,15 @@ public class ApplicationController {
             records.forEach(record -> {
                 // Ensure that the existing record points to the correct rotation
                 if ( ! record.data().equals(rotationName)) {
-                    nameService.updateRecord(record.id(), rotationName);
-                    log.info("Updated mapping for record ID " + record.id().asString() + ": '" + dnsName
-                            + "' -> '" + rotation.name() + "'");
+                    nameService.updateRecord(record, rotationName);
+                    log.info("Updated mapping for record '" + record + "': '" + dnsName
+                             + "' -> '" + rotation.name() + "'");
                 }
             });
 
             if (records.isEmpty()) {
-                RecordId id = nameService.createCname(RecordName.from(dnsName), rotationName);
-                log.info("Registered mapping with record ID " + id.asString() + ": '" + dnsName + "' -> '"
-                         + rotation.name() + "'");
+                Record record = nameService.createCname(RecordName.from(dnsName), rotationName);
+                log.info("Registered mapping as record  '" + record + "'");
             }
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to register CNAME", e);
