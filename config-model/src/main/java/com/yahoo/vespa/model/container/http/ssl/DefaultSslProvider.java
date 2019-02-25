@@ -8,56 +8,24 @@ import com.yahoo.jdisc.http.ssl.impl.DefaultSslContextFactoryProvider;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
-import java.util.Optional;
-
 import static com.yahoo.component.ComponentSpecification.fromString;
 
 /**
- * @author mortent
+ * @author bjorncs
  */
 public class DefaultSslProvider extends SimpleComponent implements ConnectorConfig.Producer {
+
     public static final String COMPONENT_ID_PREFIX = "default-ssl-provider@";
     public static final String COMPONENT_CLASS = DefaultSslContextFactoryProvider.class.getName();
     public static final String COMPONENT_BUNDLE = "jdisc_http_service";
 
-    private final String privateKeyPath;
-    private final String certificatePath;
-    private final String caCertificatePath;
-    private final ConnectorConfig.Ssl.ClientAuth.Enum clientAuthentication;
-
-    public DefaultSslProvider(String servername, String privateKeyPath, String certificatePath, String caCertificatePath, String clientAuthentication) {
+    public DefaultSslProvider(String serverName) {
         super(new ComponentModel(
-                new BundleInstantiationSpecification(new ComponentId(COMPONENT_ID_PREFIX+servername),
+                new BundleInstantiationSpecification(new ComponentId(COMPONENT_ID_PREFIX + serverName),
                                                      fromString(COMPONENT_CLASS),
                                                      fromString(COMPONENT_BUNDLE))));
-        this.privateKeyPath = privateKeyPath;
-        this.certificatePath = certificatePath;
-        this.caCertificatePath = caCertificatePath;
-        this.clientAuthentication = mapToConfigEnum(clientAuthentication);
     }
 
     @Override
-    public void getConfig(ConnectorConfig.Builder builder) {
-        builder.ssl.enabled(true);
-        builder.ssl.privateKeyFile(privateKeyPath);
-        builder.ssl.certificateFile(certificatePath);
-        builder.ssl.caCertificateFile(Optional.ofNullable(caCertificatePath).orElse(""));
-        builder.ssl.clientAuth(clientAuthentication);
-    }
-
-    public SimpleComponent getComponent() {
-        return new SimpleComponent(new ComponentModel(getComponentId().stringValue(), COMPONENT_CLASS, COMPONENT_BUNDLE));
-    }
-
-    private static ConnectorConfig.Ssl.ClientAuth.Enum mapToConfigEnum(String clientAuthValue) {
-        if ("disabled".equals(clientAuthValue)) {
-            return ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED;
-        } else if ("want".equals(clientAuthValue)) {
-            return ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH;
-        } else if ("need".equals(clientAuthValue)) {
-            return ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH;
-        } else {
-            return ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED;
-        }
-    }
+    public void getConfig(ConnectorConfig.Builder builder) {}
 }

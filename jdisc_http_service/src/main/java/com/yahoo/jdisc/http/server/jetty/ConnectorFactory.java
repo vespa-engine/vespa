@@ -5,9 +5,12 @@ import com.google.inject.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
+import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.OptionalSslConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -15,6 +18,7 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.nio.channels.ServerSocketChannel;
+import java.util.List;
 
 /**
  * @author Einar M R Rosenvinge
@@ -37,15 +41,8 @@ public class ConnectorFactory {
     }
 
     public ServerConnector createConnector(final Metric metric, final Server server, final ServerSocketChannel ch) {
-        ServerConnector connector;
-        if (connectorConfig.ssl().enabled()) {
-            connector = new JDiscServerConnector(connectorConfig, metric, server, ch,
-                                                 newSslConnectionFactory(),
-                                                 newHttpConnectionFactory());
-        } else {
-            connector = new JDiscServerConnector(connectorConfig, metric, server, ch,
-                                                 newHttpConnectionFactory());
-        }
+        ServerConnector connector = new JDiscServerConnector(
+                connectorConfig, metric, server, ch, createConnectionFactories().toArray(ConnectionFactory[]::new));
         connector.setPort(connectorConfig.listenPort());
         connector.setName(connectorConfig.name());
         connector.setAcceptQueueSize(connectorConfig.acceptQueueSize());
@@ -53,6 +50,26 @@ public class ConnectorFactory {
         connector.setIdleTimeout((long)(connectorConfig.idleTimeout() * 1000.0));
         connector.setStopTimeout((long)(connectorConfig.stopTimeout() * 1000.0));
         return connector;
+    }
+
+    private List<ConnectionFactory> createConnectionFactories() {
+        HttpConnectionFactory httpConnectionFactory = newHttpConnectionFactory();
+        if (connectorConfig.ssl().enabled()) {
+            return List.of(newSslConnectionFactory(), httpConnectionFactory);
+        } else if (TransportSecurityUtils.isTransportSecurityEnabled()) {
+            SslConnectionFactory sslConnectionsFactory = newSslConnectionFactory();
+            switch (TransportSecurityUtils.getInsecureMixedMode()) {
+                case TLS_CLIENT_MIXED_SERVER:
+                case PLAINTEXT_CLIENT_MIXED_SERVER:
+                    return List.of(newOptionalSslConnectionFactory(sslConnectionsFactory), sslConnectionsFactory, httpConnectionFactory);
+                case DISABLED:
+                    return List.of(sslConnectionsFactory, httpConnectionFactory);
+                default:
+                    throw new IllegalStateException();
+            }
+        } else {
+            return List.of(httpConnectionFactory);
+        }
     }
 
     private HttpConnectionFactory newHttpConnectionFactory() {
@@ -64,7 +81,7 @@ public class ConnectorFactory {
         httpConfig.setOutputBufferSize(connectorConfig.outputBufferSize());
         httpConfig.setRequestHeaderSize(connectorConfig.requestHeaderSize());
         httpConfig.setResponseHeaderSize(connectorConfig.responseHeaderSize());
-        if (connectorConfig.ssl().enabled()) {
+        if (connectorConfig.ssl().enabled() || TransportSecurityUtils.isTransportSecurityEnabled()) { // TODO Cleanup once mixed mode is gone
             httpConfig.addCustomizer(new SecureRequestCustomizer());
         }
         return new HttpConnectionFactory(httpConfig);
@@ -73,6 +90,10 @@ public class ConnectorFactory {
     private SslConnectionFactory newSslConnectionFactory() {
         SslContextFactory factory = sslContextFactoryProvider.getInstance(connectorConfig.name(), connectorConfig.listenPort());
         return new SslConnectionFactory(factory, HttpVersion.HTTP_1_1.asString());
+    }
+
+    private OptionalSslConnectionFactory newOptionalSslConnectionFactory(SslConnectionFactory sslConnectionsFactory) {
+        return new OptionalSslConnectionFactory(sslConnectionsFactory, HttpVersion.HTTP_1_1.asString());
     }
 
 }

@@ -7,11 +7,14 @@ import com.yahoo.security.tls.TrustManagerUtils;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509ExtendedTrustManager;
 import java.net.Socket;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -55,24 +58,28 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
+        overrideHostnameVerification(socket);
         defaultTrustManager.checkClientTrusted(chain, authType, socket);
         authorizePeer(chain[0], authType, true, null);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
+        overrideHostnameVerification(socket);
         defaultTrustManager.checkServerTrusted(chain, authType, socket);
         authorizePeer(chain[0], authType, false, null);
     }
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
+        overrideHostnameVerification(sslEngine);
         defaultTrustManager.checkClientTrusted(chain, authType, sslEngine);
         authorizePeer(chain[0], authType, true, sslEngine);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
+        overrideHostnameVerification(sslEngine);
         defaultTrustManager.checkServerTrusted(chain, authType, sslEngine);
         authorizePeer(chain[0], authType, false, sslEngine);
     }
@@ -112,6 +119,33 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     private static String createInfoString(X509Certificate certificate, String authType, boolean isVerifyingClient) {
         return String.format("DN='%s', SANs=%s, authType='%s', isVerifyingClient='%b'",
                              certificate.getSubjectX500Principal(), X509CertificateUtils.getSubjectAlternativeNames(certificate), authType, isVerifyingClient);
+    }
+
+    private static void overrideHostnameVerification(SSLEngine engine) {
+        SSLParameters params = engine.getSSLParameters();
+        if (overrideHostnameVerification(params)) {
+            engine.setSSLParameters(params);
+        }
+    }
+
+    private static void overrideHostnameVerification(Socket socket) {
+        if (socket instanceof SSLSocket) {
+            SSLSocket sslSocket = (SSLSocket) socket;
+            SSLParameters params = sslSocket.getSSLParameters();
+            if (overrideHostnameVerification(params)) {
+                sslSocket.setSSLParameters(params);
+            }
+        }
+    }
+
+    // Disable the default hostname verification that is performed by underlying trust manager when 'HTTPS' is used as endpoint identification algorithm.
+    // Some http clients, notably the new http client in Java 11, does not allow user configuration of the endpoint algorithm or custom HostnameVerifier.
+    private static boolean overrideHostnameVerification(SSLParameters params) {
+        if (Objects.equals("HTTPS", params.getEndpointIdentificationAlgorithm())) {
+            params.setEndpointIdentificationAlgorithm("");
+            return true;
+        }
+        return false;
     }
 
 }

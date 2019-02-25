@@ -1128,19 +1128,5 @@
       "public abstract org.eclipse.jetty.util.ssl.SslContextFactory getInstance(java.lang.String, int)"
     ],
     "fields": []
-  },
-  "com.yahoo.jdisc.http.ssl.ThrowingSslContextFactoryProvider": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.jdisc.http.ssl.SslContextFactoryProvider"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public org.eclipse.jetty.util.ssl.SslContextFactory getInstance(java.lang.String, int)"
-    ],
-    "fields": []
   }
 }

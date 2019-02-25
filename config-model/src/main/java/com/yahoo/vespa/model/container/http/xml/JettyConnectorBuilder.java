@@ -9,8 +9,8 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.ssl.CustomSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.ConfiguredSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
-import com.yahoo.vespa.model.container.http.ssl.DummySslProvider;
 import org.w3c.dom.Element;
 
 import java.util.Optional;
@@ -39,7 +39,7 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
             String certificateFile = XML.getValue(XML.getChild(sslConfigurator, "certificate-file"));
             Optional<String> caCertificateFile = XmlHelper.getOptionalChildValue(sslConfigurator, "ca-certificates-file");
             Optional<String> clientAuthentication = XmlHelper.getOptionalChildValue(sslConfigurator, "client-authentication");
-            return new DefaultSslProvider(
+            return new ConfiguredSslProvider(
                     serverName,
                     privateKeyFile,
                     certificateFile,
@@ -50,7 +50,7 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
             String bundle = sslProviderConfigurator.getAttribute("bundle");
             return new CustomSslProvider(serverName, className, bundle);
         } else {
-            return new DummySslProvider(serverName);
+            return new DefaultSslProvider(serverName);
         }
     }
 }
