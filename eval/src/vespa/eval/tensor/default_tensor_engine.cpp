@@ -91,7 +91,7 @@ Value::UP to_value(std::unique_ptr<Tensor> tensor) {
         return std::make_unique<ErrorValue>();
     }
     if (tensor->type().is_tensor()) {
-        return std::move(tensor);
+        return tensor;
     }
     return std::make_unique<DoubleValue>(tensor->as_double());
 }

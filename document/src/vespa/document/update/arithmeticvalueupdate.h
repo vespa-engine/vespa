@@ -55,6 +55,8 @@ public:
           _operator(update._operator),
           _operand(update._operand) {}
 
+    ArithmeticValueUpdate &operator=(const ArithmeticValueUpdate &rhs) = default;
+
     bool operator==(const ValueUpdate& other) const override;
 
     Operator getOperator() const { return _operator; }

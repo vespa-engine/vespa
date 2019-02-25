@@ -17,6 +17,7 @@ public:
     typedef std::unique_ptr<ClearValueUpdate> UP;
     ClearValueUpdate() : ValueUpdate() {}
     ClearValueUpdate(const ClearValueUpdate& update) : ValueUpdate(update) {}
+    ClearValueUpdate &operator=(const ClearValueUpdate &rhs) = default;
     bool operator==(const ValueUpdate& other) const override;
 
     void checkCompatibility(const Field& field) const override;

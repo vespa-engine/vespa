@@ -25,6 +25,7 @@ struct Int
         ++ctorCnt;
         ++aliveCnt;
     }
+    Int &operator=(const Int &rhs) = default;
     operator int() const { return value; }
     ~Int() {
         ++dtorCnt;

@@ -31,6 +31,8 @@ public:
      **/
     GenCnt(uint32_t val) : _val(val) {}
 
+    GenCnt(const GenCnt &rhs) = default;
+
     /**
      * @brief empty destructor
      **/

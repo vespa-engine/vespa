@@ -25,7 +25,7 @@ static ns_log::Logger logger(__VA_ARGS__)
 static ns_log::Logger *logger=NULL;             \
 static bool logInitialised = false;             \
 static const char *logName = x;                 \
-static const char *rcsId = id
+static const char *indirectRcsId = id
 
 
 #define LOG_RCSID(x)                                            \
@@ -55,7 +55,7 @@ do {                                                          \
     if (!logInitialised) {                                                      \
         logInitialised = true;                                                  \
         logger = static_cast<Logger *>(malloc(sizeof *logger));                 \
-        new (logger) Logger(logName, rcsId);                                    \
+        new (logger) Logger(logName, indirectRcsId);                            \
     }
 #define LOG_INDIRECT(level, ...)                                                \
 do {                                                                            \

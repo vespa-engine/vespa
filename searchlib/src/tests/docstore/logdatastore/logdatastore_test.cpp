@@ -1040,7 +1040,7 @@ TEST("require that findIncompleteCompactedFiles does expected filtering") {
     EXPECT_TRUE(toRemove.find(FileChunk::NameId(201)) != toRemove.end());
     EXPECT_TRUE(toRemove.find(FileChunk::NameId(205)) != toRemove.end());
 
-    EXPECT_EXCEPTION(LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,201,202,204})).empty(),
+    EXPECT_EXCEPTION((void) LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,201,202,204})).empty(),
                      vespalib::IllegalStateException, "3 consecutive files {200, 201, 202}. Impossible");
 
 }
