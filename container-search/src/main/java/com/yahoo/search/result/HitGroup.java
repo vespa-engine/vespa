@@ -836,15 +836,16 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     /** Returns the set of summaries for which all concrete hits recursively below this is filled. */
     @Override
     public Set<String> getFilled() {
-        Set<String> filled = null;
+        Set<String> intersection = null;
         for (Hit hit : hits) {
-            if (hit.getFilled() == null) continue;
-            if (filled == null)
-                filled = new HashSet<>(hit.getFilled());
+            Set<String> filled = hit.getFilled();
+            if (filled == null) continue;
+            if (intersection == null)
+                intersection = new HashSet<>(filled);
             else
-                filled.retainAll(hit.getFilled());
+                intersection.retainAll(filled);
         }
-        return filled;
+        return intersection;
     }
 
     private Iterable<Hit> fillableHits() {
