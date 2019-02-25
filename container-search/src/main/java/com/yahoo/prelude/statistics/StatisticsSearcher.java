@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.logging.Level;
 
 import static com.yahoo.container.protect.Error.*;
@@ -365,8 +366,18 @@ public class StatisticsSearcher extends Searcher {
      * Effectively flattens the hits, and measures relevance @ 1, 5, and 10
      */
     private void addRelevanceMetrics(Query query, Execution execution, Result result) {
-        final int heapCapacity = 10;
-        PriorityQueue<Double> heap = new PriorityQueue<>(heapCapacity);
+        Queue<Double> topScores = findTopRelevanceScores(10, result);
+        if (topScores.isEmpty()) {
+            return;
+        }
+        var metricContext = getRelevanceMetricContext(execution, query);
+        setRelevanceMetric(10, topScores, metricContext);  // min-queue: lowest values are polled first
+        setRelevanceMetric( 5, topScores, metricContext);
+        setRelevanceMetric( 1, topScores, metricContext);
+    }
+
+    private Queue<Double> findTopRelevanceScores(int n, Result result) {
+        PriorityQueue<Double> heap = new PriorityQueue<>(n);
         for (Iterator<Hit> it = result.hits().unorderedDeepIterator(); it.hasNext(); ) {
             Hit hit = it.next();
             if (hit instanceof ErrorHit || hit.getRelevance() == null) {
@@ -376,36 +387,23 @@ public class StatisticsSearcher extends Searcher {
             if (Double.isNaN(score)) {
                 continue;
             }
-            if (heap.size() < heapCapacity) {
+            if (heap.size() < n) {
                 heap.add(score);
             } else if (score > heap.peek()) {
                 heap.remove();
                 heap.add(score);
             }
         }
-        if (heap.isEmpty()) {
-            return;
-        }
+        return heap;
+    }
 
-        Metric.Context metricContext = getRelevanceMetricContext(execution, query);
-
-        while (heap.size() > 10) {
-            heap.remove();
+    private void setRelevanceMetric(int pos, Queue<Double> minQueue, Metric.Context context) {
+        String name = "relevance_at_" + pos;
+        while (minQueue.size() > pos) {
+            minQueue.remove();
         }
-        if (heap.size() == 10) {
-            metric.set("relevance_at_10", heap.poll(), metricContext);
-        }
-        while (heap.size() > 5) {
-            heap.remove();
-        }
-        if (heap.size() == 5) {
-            metric.set("relevance_at_5", heap.poll(), metricContext);
-        }
-        while (heap.size() > 1) {
-            heap.remove();
-        }
-        if (heap.size() == 1) {
-            metric.set("relevance_at_1", heap.poll(), metricContext);
+        if (minQueue.size() == pos) {
+            metric.set(name, minQueue.poll(), context);
         }
     }
 
