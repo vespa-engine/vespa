@@ -9,11 +9,15 @@ import java.util.Map;
 
 /**
  * A component which tracks the up/down status of any clusters which should influence
- * the up down status of this container itself, as well as the separate fact that such clusters are present.
+ * the up down status of this container itself, as well as the separate fact (from config)
+ * that such clusters are present. This is a separate fact because we might know we have clusters configured
+ * but we don't have positive information that they are up yet, and in this case we should be down.
  *
  * This is a separate component which has <b>no dependencies</b> such that the status tracked in this
  * will survive reconfiguration events and inform other components even immediately after a reconfiguration
  * (where the true statue of clusters may not yet be available).
+ *
+ * This is multithread safe.
  *
  * @author bratseth
  */
@@ -25,9 +29,6 @@ public class ClustersStatus extends AbstractComponent {
 
     /** Are there any (in-service influencing) clusters in this container? */
     private boolean containerHasClusters;
-
-    /** If we have no clusters, what should we answer? */
-    private boolean receiveTrafficByDefault;
 
     private final Object mutex = new Object();
 
@@ -42,10 +43,9 @@ public class ClustersStatus extends AbstractComponent {
         }
     }
 
+    /** @deprecated this is ignored */
+    @Deprecated // TODO: remove on Vespa 8
     public void setReceiveTrafficByDefault(boolean receiveTrafficByDefault) {
-        synchronized (mutex) {
-            this.receiveTrafficByDefault = receiveTrafficByDefault;
-        }
     }
 
     void setUp(String clusterIdentifier) {
@@ -80,7 +80,7 @@ public class ClustersStatus extends AbstractComponent {
                 return clusterStatus.values().stream().anyMatch(status -> status==true);
             }
             else {
-                return receiveTrafficByDefault;
+                return true;
             }
         }
     }

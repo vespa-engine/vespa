@@ -2,6 +2,7 @@
 package com.yahoo.prelude.fastsearch.test;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.net.HostName;
@@ -45,11 +46,16 @@ class FastSearcherTester {
     }
 
     public FastSearcherTester(int containerClusterSize, List<Node> searchNodes) {
-        ClustersStatus clustersStatus = new ClustersStatus();
-        clustersStatus.setContainerHasClusters(true);
-        vipStatus = new VipStatus(clustersStatus);
+        String clusterId = "a";
+
+        var b = new QrSearchersConfig.Builder();
+        var searchClusterB = new QrSearchersConfig.Searchcluster.Builder();
+        searchClusterB.name(clusterId);
+        b.searchcluster(searchClusterB);
+        vipStatus = new VipStatus(b.build());
+
         mockFS4ResourcePool = new MockFS4ResourcePool();
-        mockDispatcher = new MockDispatcher("a", searchNodes, mockFS4ResourcePool, containerClusterSize, vipStatus);
+        mockDispatcher = new MockDispatcher(clusterId, searchNodes, mockFS4ResourcePool, containerClusterSize, vipStatus);
         fastSearcher = new FastSearcher(new MockBackend(selfHostname, 0L, true),
                                         mockFS4ResourcePool,
                                         mockDispatcher,

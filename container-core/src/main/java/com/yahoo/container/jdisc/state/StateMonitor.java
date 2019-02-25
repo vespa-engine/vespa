@@ -6,6 +6,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.jdisc.application.MetricConsumer;
+import com.yahoo.jdisc.core.SystemTimer;
 import com.yahoo.log.LogLevel;
 
 import java.util.Map;
@@ -36,6 +37,11 @@ public class StateMonitor extends AbstractComponent {
     private volatile MetricSnapshot snapshot;
     private volatile Status status;
     private final TreeSet<String> valueNames = new TreeSet<>();
+
+    /** For testing */
+    public StateMonitor() {
+        this(new HealthMonitorConfig.Builder().build(), new SystemTimer());
+    }
 
     @Inject
     public StateMonitor(HealthMonitorConfig config, Timer timer) {

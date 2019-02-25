@@ -40,7 +40,7 @@ import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApp
  * applications. If that is done successfully the RPC server will start and the health status code will change from
  * 'initializing' to 'up'. If VIP status mode is VIP_STATUS_PROGRAMMATICALLY the config server
  * will be put into rotation (start serving status.html with 200 OK), if the mode is VIP_STATUS_FILE a VIP status
- * file is created or removed ny some external pgrogram based on the health status code.
+ * file is created or removed ny some external program based on the health status code.
  *
  * @author Ulf Lilleengen
  * @author hmusum
@@ -176,12 +176,10 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     }
 
     private void up() {
-        stateMonitor.status(StateMonitor.Status.up);
         vipStatus.setInRotation(true);
     }
 
     private void down() {
-        stateMonitor.status(StateMonitor.Status.down);
         vipStatus.setInRotation(false);
     }
 
