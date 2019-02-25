@@ -41,6 +41,7 @@ class Connection extends Target {
     private Map<TargetWatcher, TargetWatcher> watchers = new IdentityHashMap<>();
     private int           activeReqs = 0;
     private int           writeWork  = 0;
+    private boolean       pendingHandshakeWork = false;
     private Transport     parent;
     private Supervisor    owner;
     private Spec          spec;
@@ -217,11 +218,10 @@ class Connection extends Target {
     }
 
     private void handshake() throws IOException {
-        HandshakeResult result;
-        while ((result = socket.handshake()) == HandshakeResult.NEED_WORK) {
-            socket.doHandshakeWork();
+        if (pendingHandshakeWork) {
+            return;
         }
-        switch (result) {
+        switch (socket.handshake()) {
         case DONE:
             if (socket.getMinimumReadBufferSize() > readSize) {
                 readSize = socket.getMinimumReadBufferSize();
@@ -239,6 +239,28 @@ class Connection extends Target {
             disableRead();
             enableWrite();
             break;
+        case NEED_WORK:
+            disableRead();
+            disableWrite();
+            pendingHandshakeWork = true;
+            parent.doHandshakeWork(this);
+            break;
+        }
+    }
+
+    public void doHandshakeWork() {
+       socket.doHandshakeWork();
+    }
+
+    public void handleHandshakeWorkDone() throws IOException {
+        if (!pendingHandshakeWork) {
+            throw new IllegalStateException("jrt: got unwanted handshake work done event");
+        }
+        pendingHandshakeWork = false;
+        if (state == CONNECTING) {
+            handshake();
+        } else {
+            throw new IOException("jrt: got handshake work done event in incompatible state: " + state);
         }
     }
 
