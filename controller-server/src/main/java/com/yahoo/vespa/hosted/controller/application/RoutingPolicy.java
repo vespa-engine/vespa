@@ -80,15 +80,12 @@ public class RoutingPolicy {
         RoutingPolicy policy = (RoutingPolicy) o;
         return owner.equals(policy.owner) &&
                zone.equals(policy.zone) &&
-               alias.equals(policy.alias) &&
-               canonicalName.equals(policy.canonicalName) &&
-               dnsZone.equals(policy.dnsZone) &&
-               rotations.equals(policy.rotations);
+               canonicalName.equals(policy.canonicalName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, zone, alias, canonicalName, dnsZone, rotations);
+        return Objects.hash(owner, zone, canonicalName);
     }
 
     @Override

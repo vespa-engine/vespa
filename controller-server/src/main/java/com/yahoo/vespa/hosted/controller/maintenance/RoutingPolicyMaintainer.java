@@ -59,10 +59,10 @@ public class RoutingPolicyMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         Map<DeploymentId, List<LoadBalancer>> loadBalancers = findLoadBalancers();
+        removeObsoleteAliases(loadBalancers);
         registerCnames(loadBalancers);
         removeObsoleteCnames(loadBalancers);
         registerAliases();
-        removeObsoleteAliases(loadBalancers);
     }
 
     /** Find all exclusive load balancers in this system, grouped by deployment */
@@ -118,7 +118,11 @@ public class RoutingPolicyMaintainer extends Maintainer {
                 Set<RoutingPolicy> policies = new LinkedHashSet<>(db.readRoutingPolicies(application));
                 for (LoadBalancer loadBalancer : entry.getValue()) {
                     try {
-                        policies.add(registerCname(application, zone, loadBalancer));
+                        RoutingPolicy policy = registerCname(application, zone, loadBalancer);
+                        if (!policies.add(policy)) {
+                            policies.remove(policy);
+                            policies.add(policy);
+                        }
                     } catch (Exception e) {
                         log.log(LogLevel.WARNING, "Failed to create or update DNS record for load balancer " +
                                                   loadBalancer.hostname() + ". Retrying in " + maintenanceInterval(),
