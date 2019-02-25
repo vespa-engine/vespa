@@ -16,13 +16,13 @@ import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
+import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 import com.yahoo.statistics.Counter;
 import com.yahoo.statistics.Value;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
@@ -61,6 +61,9 @@ public class StatisticsSearcher extends Searcher {
     private static final String DOCS_COVERED_METRIC = "documents_covered";
     private static final String DOCS_TOTAL_METRIC = "documents_total";
     private static final String DEGRADED_METRIC = "degraded_queries";
+    private static final String RELEVANCE_AT_1_METRIC = "relevance_at_1";
+    private static final String RELEVANCE_AT_5_METRIC = "relevance_at_5";
+    private static final String RELEVANCE_AT_10_METRIC = "relevance_at_10";
 
     private final Counter queries; // basic counter
     private final Counter failedQueries; // basic counter
@@ -366,20 +369,20 @@ public class StatisticsSearcher extends Searcher {
      * Effectively flattens the hits, and measures relevance @ 1, 5, and 10
      */
     private void addRelevanceMetrics(Query query, Execution execution, Result result) {
-        Queue<Double> topScores = findTopRelevanceScores(10, result);
+        Queue<Double> topScores = findTopRelevanceScores(10, result.hits());
         if (topScores.isEmpty()) {
             return;
         }
-        var metricContext = getRelevanceMetricContext(execution, query);
-        setRelevanceMetric(10, topScores, metricContext);  // min-queue: lowest values are polled first
-        setRelevanceMetric( 5, topScores, metricContext);
-        setRelevanceMetric( 1, topScores, metricContext);
+        Metric.Context metricContext = getRelevanceMetricContext(execution, query);
+        setRelevanceMetric(10, RELEVANCE_AT_10_METRIC, topScores, metricContext);  // min-queue: lowest values are polled first
+        setRelevanceMetric(5,  RELEVANCE_AT_5_METRIC,  topScores, metricContext);
+        setRelevanceMetric(1,  RELEVANCE_AT_1_METRIC,  topScores, metricContext);
     }
 
-    private Queue<Double> findTopRelevanceScores(int n, Result result) {
+    private static Queue<Double> findTopRelevanceScores(int n, HitGroup hits) {
         PriorityQueue<Double> heap = new PriorityQueue<>(n);
-        for (Iterator<Hit> it = result.hits().unorderedDeepIterator(); it.hasNext(); ) {
-            Hit hit = it.next();
+        for (var iterator = hits.unorderedDeepIterator(); iterator.hasNext(); ) {
+            Hit hit = iterator.next();
             if (hit instanceof ErrorHit || hit.getRelevance() == null) {
                 continue;
             }
@@ -397,8 +400,7 @@ public class StatisticsSearcher extends Searcher {
         return heap;
     }
 
-    private void setRelevanceMetric(int pos, Queue<Double> minQueue, Metric.Context context) {
-        String name = "relevance_at_" + pos;
+    private void setRelevanceMetric(int pos, String name, Queue<Double> minQueue, Metric.Context context) {
         while (minQueue.size() > pos) {
             minQueue.remove();
         }
