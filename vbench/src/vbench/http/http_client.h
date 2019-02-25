@@ -16,6 +16,8 @@ namespace vbench {
  **/
 class HttpClient
 {
+public:
+    using CryptoEngine = vespalib::CryptoEngine;
 private:
     static const size_t WRITE_SIZE = 2000;
 

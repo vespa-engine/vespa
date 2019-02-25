@@ -9,6 +9,7 @@ using vespalib::SlaveProc;
 
 using InputReader = vespalib::InputReader;
 using OutputWriter = vespalib::OutputWriter;
+using vespalib::SimpleBuffer;
 
 auto null_crypto = std::make_shared<vespalib::NullCryptoEngine>();
 

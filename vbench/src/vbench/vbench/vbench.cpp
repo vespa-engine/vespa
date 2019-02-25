@@ -4,6 +4,8 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 
+using vespalib::CryptoEngine;
+
 namespace vbench {
 
 namespace {

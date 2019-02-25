@@ -20,6 +20,7 @@ class HttpConnectionPool
 private:
     typedef vespalib::ArrayQueue<HttpConnection::UP> Queue;
     typedef std::map<ServerSpec, size_t> Map;
+    using CryptoEngine = vespalib::CryptoEngine;
 
     vespalib::Lock     _lock;
     Map                _map;

@@ -48,7 +48,7 @@ Socket::~Socket()
     }
 }
 
-Memory
+Socket::Memory
 Socket::obtain()
 {
     if ((_input.get().size == 0) && !_eof && !_taint) {
@@ -72,7 +72,7 @@ Socket::evict(size_t bytes)
     return *this;
 }
 
-WritableMemory
+Socket::WritableMemory
 Socket::reserve(size_t bytes)
 {
     return _output.reserve(bytes);

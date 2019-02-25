@@ -116,12 +116,13 @@ Identifiable::RuntimeClass::RuntimeClass(RuntimeInfo * info_) :
 {
     if (_rt->_factory) {
         Identifiable::UP tmp(create());
+        Identifiable &tmpref = *tmp;
         assert(id() == tmp->getClass().id());
         //printf("Class %s has typeinfo %s\n", name(), typeid(*tmp).name());
         for (const RuntimeInfo * curr = _rt; curr && curr != curr->_base; curr = curr->_base) {
             //printf("\tinherits %s : typeinfo = %s\n", curr->_name, curr->_typeId().name());
             if ( ! curr->_tryCast(tmp.get()) ) {
-                throw std::runtime_error(make_string("(%s, %s) is not a baseclass of (%s, %s)", curr->_name, curr->_typeId().name(), name(), typeid(*tmp).name()));
+                throw std::runtime_error(make_string("(%s, %s) is not a baseclass of (%s, %s)", curr->_name, curr->_typeId().name(), name(), typeid(tmpref).name()));
             }
         }
     }

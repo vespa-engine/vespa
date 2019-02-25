@@ -11,6 +11,7 @@ auto null_crypto = std::make_shared<vespalib::NullCryptoEngine>();
 auto tls_crypto = std::make_shared<vespalib::TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing());
 
 using OutputWriter = vespalib::OutputWriter;
+using vespalib::CryptoEngine;
 
 const size_t numLines = 100;
 
