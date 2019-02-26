@@ -70,9 +70,8 @@ void
 TensorRemoveUpdate::checkCompatibility(const Field &field) const
 {
     if (field.getDataType().getClass().id() != TensorDataType::classId) {
-        throw IllegalArgumentException(make_string(
-                "Can not perform tensor remove update on non-tensor field '%s'.",
-                field.getName().data()), VESPA_STRLOC);
+        throw IllegalArgumentException(make_string("Cannot perform tensor remove update on non-tensor field '%s'",
+                                                   field.getName().data()), VESPA_STRLOC);
     }
 }
 
@@ -81,13 +80,9 @@ TensorRemoveUpdate::applyTo(const Tensor &tensor) const
 {
     auto &addressTensor = _tensor->getAsTensorPtr();
     if (addressTensor) {
-        if (const auto *sparseTensor = dynamic_cast<const vespalib::tensor::SparseTensor *>(addressTensor.get())) {
-            vespalib::tensor::CellValues cellAddresses(*sparseTensor);
-            return tensor.remove(cellAddresses);
-        } else {
-            throw IllegalArgumentException(make_string("Expected address tensor to be sparse, but has type '%s'",
-                                                       addressTensor->type().to_spec().c_str()));
-        }
+        // Address tensor being sparse was validated during deserialize().
+        vespalib::tensor::CellValues cellAddresses(static_cast<const vespalib::tensor::SparseTensor &>(*addressTensor));
+        return tensor.remove(cellAddresses);
     }
     return std::unique_ptr<Tensor>();
 }
@@ -103,8 +98,8 @@ TensorRemoveUpdate::applyTo(FieldValue &value) const
             tensorFieldValue = std::move(newTensor);
         }
     } else {
-        std::string err = make_string("Unable to perform a tensor remove update on a '%s' field value.",
-                                      value.getClass().name());
+        vespalib::string err = make_string("Unable to perform a tensor remove update on a '%s' field value",
+                                           value.getClass().name());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;
@@ -126,6 +121,20 @@ TensorRemoveUpdate::print(std::ostream &out, bool verbose, const std::string &in
     out << ")";
 }
 
+namespace {
+
+void
+verifyAddressTensorIsSparse(const std::unique_ptr<Tensor> &addressTensor)
+{
+    if (addressTensor && !dynamic_cast<const vespalib::tensor::SparseTensor *>(addressTensor.get())) {
+        vespalib::string err = make_string("Expected address tensor to be sparse, but has type '%s'",
+                                           addressTensor->type().to_spec().c_str());
+        throw IllegalStateException(err, VESPA_STRLOC);
+    }
+}
+
+}
+
 void
 TensorRemoveUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &type, nbostream &stream)
 {
@@ -133,12 +142,13 @@ TensorRemoveUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
     if (tensor->inherits(TensorFieldValue::classId)) {
         _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));
     } else {
-        std::string err = make_string(
-                "Expected tensor field value, got a \"%s\" field value.", tensor->getClass().name());
+        vespalib::string err = make_string("Expected tensor field value, got a '%s' field value",
+                                           tensor->getClass().name());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
     deserializer.read(*_tensor);
+    verifyAddressTensorIsSparse(_tensor->getAsTensorPtr());
 }
 
 TensorRemoveUpdate *

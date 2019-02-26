@@ -8,10 +8,10 @@ namespace document {
 
 class TensorFieldValue;
 
-/*
- *  An update used to add cells to a sparse tensor (has only mapped dimensions).
+/**
+ * An update used to add cells to a sparse or mixed tensor.
  *
- *  The cells to add are contained in a sparse tensor as well.
+ * The cells to add are contained in a tensor of the same type.
  */
 class TensorAddUpdate : public ValueUpdate {
     std::unique_ptr<TensorFieldValue> _tensor;
