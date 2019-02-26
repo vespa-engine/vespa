@@ -1016,6 +1016,24 @@ TEST(DocumentUpdateTest, tensor_modify_update_throws_on_non_tensor_field)
     f.assertThrowOnNonTensorField(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
 }
 
+TEST(DocumentUpdateTest, tensor_remove_update_throws_if_address_tensor_is_not_sparse)
+{
+    TensorUpdateFixture f("dense_tensor");
+    auto addressTensor = f.makeTensor(f.spec().add({{"x", 0}}, 2)); // creates a dense address tensor
+    ASSERT_THROW(
+            f.assertRoundtripSerialize(TensorRemoveUpdate(std::move(addressTensor))),
+            vespalib::IllegalStateException);
+}
+
+TEST(DocumentUpdateTest, tensor_modify_update_throws_if_cells_tensor_is_not_sparse)
+{
+    TensorUpdateFixture f("dense_tensor");
+    auto cellsTensor = f.makeTensor(f.spec().add({{"x", 0}}, 2)); // creates a dense cells tensor
+    ASSERT_THROW(
+            f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, std::move(cellsTensor))),
+            vespalib::IllegalStateException);
+}
+
 
 void
 assertDocumentUpdateFlag(bool createIfNonExistent, int value)
