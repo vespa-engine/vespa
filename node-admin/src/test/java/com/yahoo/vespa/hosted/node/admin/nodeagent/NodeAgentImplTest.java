@@ -346,6 +346,9 @@ public class NodeAgentImplTest {
         verify(dockerOperations, never()).startContainer(eq(context));
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(any(String.class), any(NodeAttributes.class));
+
+        // Verify aclMaintainer is called even if suspension fails
+        verify(aclMaintainer, times(1)).converge(eq(context));
     }
 
     @Test

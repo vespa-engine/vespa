@@ -659,7 +659,20 @@ public class NodeAgentImpl implements NodeAgent {
         if (context.node().getState() != NodeState.active) return;
 
         context.log(logger, "Ask Orchestrator for permission to suspend node");
-        orchestrator.suspend(context.hostname().value());
+        try {
+            orchestrator.suspend(context.hostname().value());
+        } catch (OrchestratorException e) {
+            // Ensure the ACLs are up to date: The reason we're unable to suspend may be because some other
+            // node is unable to resume because the ACL rules of SOME Docker container is wrong...
+            try {
+                aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
+            } catch (RuntimeException suppressed) {
+                logger.log(LogLevel.WARNING, "Suppressing ACL update failure: " + suppressed);
+                e.addSuppressed(suppressed);
+            }
+
+            throw e;
+        }
     }
 
     protected ContainerData createContainerData(NodeAgentContext context) {
