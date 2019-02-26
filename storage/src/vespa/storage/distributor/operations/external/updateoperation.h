@@ -47,20 +47,22 @@ private:
     DistributorComponent& _manager;
     DistributorBucketSpace &_bucketSpace;
     std::pair<document::BucketId, uint16_t> _newestTimestampLocation;
+    api::BucketInfo _infoAtSendTime; // Should be same across all replicas
 
     bool anyStorageNodesAvailable() const;
 
-    class OldTimestamp {
+    class PreviousDocumentVersion {
     public:
-        OldTimestamp(document::BucketId b, uint64_t o, uint16_t node) :
-            bucketId(b), oldTs(o), nodeId(node) {}
+        PreviousDocumentVersion(document::BucketId b, const api::BucketInfo& info, uint64_t o, uint16_t node) :
+            bucketId(b), bucketInfo(info), oldTs(o), nodeId(node) {}
 
         document::BucketId bucketId;
+        api::BucketInfo bucketInfo;
         uint64_t oldTs;
         uint16_t nodeId;
     };
 
-    std::vector<OldTimestamp> _results;
+    std::vector<PreviousDocumentVersion> _results;
     UpdateMetricSet& _metrics;
 };
 
