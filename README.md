@@ -65,7 +65,7 @@ Some suggested improvements with pointers to code are in [TODO.md](TODO.md).
 
 ### Set up the build environment
 
-C++ and Java building is supported on CentOS 7. The Java source can also be built on any platform having Java 8 and Maven installed. 
+C++ and Java building is supported on CentOS 7. The Java source can also be built on any platform having Java 11 and Maven installed. 
 We recommend using the following environment: [Create C++ / Java dev environment on CentOS using VirtualBox and Vagrant](vagrant/README.md).
 You can also setup CentOS 7 natively and install the following build dependencies:
 
