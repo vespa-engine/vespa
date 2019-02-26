@@ -116,7 +116,7 @@ class MemoryFileSystem extends FileSystem {
         /** The content of this node, never null. This buffer is effectively immutable. */
         private byte[] content;
 
-        private Map<String, Node> children = new LinkedHashMap<>();
+        private Map<String, Node> children = Collections.synchronizedMap(new LinkedHashMap<>());
 
         private Node(Node parent, String name) {
             this(parent, name, new byte[0]);
