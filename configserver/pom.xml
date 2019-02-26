@@ -240,6 +240,7 @@
             <arg>-Xlint:deprecation</arg>
             <arg>-Xlint:all</arg>
             <arg>-Xlint:-serial</arg>
+            <arg>-Xlint:-try</arg>
             <arg>-Werror</arg>
           </compilerArgs>
         </configuration>
