@@ -95,7 +95,7 @@ public class RoutingPolicyMaintainer extends Maintainer {
                 Set<AliasTarget> targets = route.getValue()
                                                 .stream()
                                                 .filter(policy -> policy.dnsZone().isPresent())
-                                                .map(policy -> new AliasTarget(policy.alias(),
+                                                .map(policy -> new AliasTarget(policy.canonicalName(),
                                                                                policy.dnsZone().get(),
                                                                                policy.zone()))
                                                 .collect(Collectors.toSet());
