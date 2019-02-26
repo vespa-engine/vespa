@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
+import com.google.common.hash.Hashing;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,7 +42,7 @@ public class ApplicationPackage {
      */
     public ApplicationPackage(byte[] zippedContent) {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
-        this.contentHash = DigestUtils.shaHex(zippedContent);
+        this.contentHash = Hashing.sha1().hashBytes(zippedContent).toString();
         this.deploymentSpec = extractFile("deployment.xml", zippedContent).map(DeploymentSpec::fromXml).orElse(DeploymentSpec.empty);
         this.validationOverrides = extractFile("validation-overrides.xml", zippedContent).map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
         Optional<Inspector> buildMetaObject = extractFileBytes("build-meta.json", zippedContent)
