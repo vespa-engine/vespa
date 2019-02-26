@@ -71,11 +71,9 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
 
     private static KeyStore createTruststore(ConnectorConfig.Ssl sslConfig) {
         List<X509Certificate> caCertificates = X509CertificateUtils.certificateListFromPem(readToString(sslConfig.caCertificateFile()));
-        KeyStoreBuilder truststoreBuilder = KeyStoreBuilder.withType(KeyStoreType.JKS);
-        for (int i = 0; i < caCertificates.size(); i++) {
-            truststoreBuilder.withCertificateEntry("entry-" + i, caCertificates.get(i));
-        }
-        return truststoreBuilder.build();
+        return KeyStoreBuilder.withType(KeyStoreType.JKS)
+                .withCertificateEntries("entry", caCertificates)
+                .build();
     }
 
     private static KeyStore createKeystore(ConnectorConfig.Ssl sslConfig) {

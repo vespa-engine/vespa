@@ -69,6 +69,13 @@ public class KeyStoreBuilder {
         return this;
     }
 
+    public KeyStoreBuilder withCertificateEntries(String aliasPrefix, List<X509Certificate> certificates) {
+        for (int i = 0; i < certificates.size(); i++) {
+            withCertificateEntry(aliasPrefix + "-" + i, certificates.get(i));
+        }
+        return this;
+    }
+
     public KeyStore build() {
         try {
             KeyStore keystore = this.keyStoreType.createKeystore();

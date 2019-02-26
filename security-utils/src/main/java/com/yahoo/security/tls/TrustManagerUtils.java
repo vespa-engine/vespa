@@ -36,12 +36,10 @@ public class TrustManagerUtils {
     }
 
     public static X509ExtendedTrustManager createDefaultX509TrustManager(List<X509Certificate> certificates) {
-        KeyStoreBuilder truststoreBuilder = KeyStoreBuilder.withType(KeyStoreType.PKCS12);
-        for (int i = 0; i < certificates.size(); i++) {
-            truststoreBuilder.withCertificateEntry("cert-" + i, certificates.get(i));
-        }
-        KeyStore truststore = truststoreBuilder.build();
-        return createDefaultX509TrustManager(truststore);
+        return createDefaultX509TrustManager(
+                KeyStoreBuilder.withType(KeyStoreType.PKCS12)
+                        .withCertificateEntries("cert", certificates)
+                        .build());
     }
 
     public static X509ExtendedTrustManager createDefaultX509TrustManager() {
