@@ -70,9 +70,8 @@ void
 TensorRemoveUpdate::checkCompatibility(const Field &field) const
 {
     if (field.getDataType().getClass().id() != TensorDataType::classId) {
-        throw IllegalArgumentException(make_string(
-                "Can not perform tensor remove update on non-tensor field '%s'.",
-                field.getName().data()), VESPA_STRLOC);
+        throw IllegalArgumentException(make_string("Cannot perform tensor remove update on non-tensor field '%s'",
+                                                   field.getName().data()), VESPA_STRLOC);
     }
 }
 
@@ -103,7 +102,7 @@ TensorRemoveUpdate::applyTo(FieldValue &value) const
             tensorFieldValue = std::move(newTensor);
         }
     } else {
-        std::string err = make_string("Unable to perform a tensor remove update on a '%s' field value.",
+        std::string err = make_string("Unable to perform a tensor remove update on a '%s' field value",
                                       value.getClass().name());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
@@ -133,8 +132,8 @@ TensorRemoveUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
     if (tensor->inherits(TensorFieldValue::classId)) {
         _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));
     } else {
-        std::string err = make_string(
-                "Expected tensor field value, got a \"%s\" field value.", tensor->getClass().name());
+        std::string err = make_string("Expected tensor field value, got a '%s' field value",
+                                      tensor->getClass().name());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
