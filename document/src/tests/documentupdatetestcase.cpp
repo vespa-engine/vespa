@@ -32,6 +32,7 @@
 
 using namespace document::config_builder;
 using vespalib::eval::TensorSpec;
+using vespalib::eval::ValueType;
 using vespalib::tensor::DefaultTensorEngine;
 using vespalib::tensor::Tensor;
 using vespalib::nbostream;
@@ -996,6 +997,15 @@ TEST(DocumentUpdateTest, tensor_modify_update_can_be_roundtrip_serialized)
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor()));
+}
+
+TEST(DocumentUpdateTest, tensor_modify_update_on_dense_tensor_can_be_roundtrip_serialized)
+{
+    TensorUpdateFixture f("dense_tensor");
+    vespalib::string sparseType("tensor(x{})");
+    TensorDataType sparseTensorType(ValueType::from_spec(sparseType));
+    auto sparseTensor = makeTensorFieldValue(TensorSpec(sparseType).add({{"x","0"}}, 2), sparseTensorType);
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, std::move(sparseTensor)));
 }
 
 TEST(DocumentUpdateTest, tensor_add_update_throws_on_non_tensor_field)
