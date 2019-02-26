@@ -97,8 +97,7 @@ public class AllocatedHosts {
     }
 
     private static Optional<Flavor> flavorFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
-        return nodeFlavors.map(flavorMapper ->  flavorMapper.getFlavor(object.field(hostSpecFlavor).asString()))
-                .orElse(Optional.empty());
+        return nodeFlavors.flatMap(flavorMapper -> flavorMapper.getFlavor(object.field(hostSpecFlavor).asString()));
     }
 
     private static Optional<String> optionalString(Inspector inspector) {

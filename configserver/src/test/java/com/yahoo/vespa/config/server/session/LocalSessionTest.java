@@ -4,16 +4,18 @@ package com.yahoo.vespa.config.server.session;
 import com.google.common.io.Files;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
-import com.yahoo.config.model.application.provider.*;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -30,10 +32,16 @@ import org.junit.Test;
 
 import java.io.File;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -210,4 +218,5 @@ public class LocalSessionTest {
         return new DeployHandlerLogger(new Slime().get(), verbose,
                                        new ApplicationId.Builder().tenant("testtenant").applicationName("testapp").build());
     }
+
 }

@@ -54,7 +54,6 @@ public class ApplicationApiHandler extends SessionHandler {
         PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
 
         PrepareResult result = applicationRepository.prepareAndActivate(tenant, sessionId, prepareParams,
-                                                                        shouldIgnoreLockFailure(request),
                                                                         shouldIgnoreSessionStaleFailure(request),
                                                                         Instant.now());
         return new SessionPrepareAndActivateResponse(result, tenantName, request, prepareParams.getApplicationId(), zone);
@@ -70,7 +69,6 @@ public class ApplicationApiHandler extends SessionHandler {
         PrepareResult result =
                 applicationRepository.deploy(CompressedApplicationInputStream.createFromCompressedStream(request.getData(), request.getHeader(contentTypeHeader)),
                                              prepareParams,
-                                             shouldIgnoreLockFailure(request),
                                              shouldIgnoreSessionStaleFailure(request),
                                              Instant.now());
         return new SessionPrepareAndActivateResponse(result, tenantName, request, prepareParams.getApplicationId(), zone);

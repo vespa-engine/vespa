@@ -50,7 +50,6 @@ public class SessionActiveHandler extends SessionHandler {
         TimeoutBudget timeoutBudget = getTimeoutBudget(request, DEFAULT_ACTIVATE_TIMEOUT);
         final Long sessionId = getSessionIdV2(request);
         ApplicationId applicationId = applicationRepository.activate(tenant, sessionId, timeoutBudget,
-                                                                     shouldIgnoreLockFailure(request),
                                                                      shouldIgnoreSessionStaleFailure(request));
         ApplicationMetaData metaData = applicationRepository.getMetadataFromSession(tenant, sessionId);
         return new SessionActiveResponse(metaData.getSlime(), request, applicationId, sessionId, zone);

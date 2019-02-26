@@ -16,8 +16,8 @@ import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
-import com.yahoo.vespa.config.server.tenant.ActivateLock;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -56,7 +56,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** Whether this model should be validated (only takes effect if prepared=false) */
     private boolean validate;
 
-    private boolean ignoreLockFailure = false;
     private boolean ignoreSessionStaleFailure = false;
 
     private Deployment(LocalSession session, ApplicationRepository applicationRepository,
@@ -88,11 +87,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                       Duration timeout, Clock clock, boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
                               timeout, clock, true, true, session.getVespaVersion(), isBootstrap);
-    }
-
-    public Deployment setIgnoreLockFailure(boolean ignoreLockFailure) {
-        this.ignoreLockFailure = ignoreLockFailure;
-        return this;
     }
 
     public Deployment setIgnoreSessionStaleFailure(boolean ignoreSessionStaleFailure) {
@@ -128,16 +122,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         long sessionId = session.getSessionId();
         validateSessionStatus(session);
-        ActivateLock activateLock = tenant.getActivateLock();
-        boolean activateLockAcquired = false;
-        try {
-            log.log(LogLevel.DEBUG, "Trying to acquire lock " + activateLock + " for session " + sessionId);
-            activateLockAcquired = activateLock.acquire(timeoutBudget, ignoreLockFailure);
-            if ( ! activateLockAcquired) {
-                throw new ActivationConflictException("Did not get activate lock for session " + sessionId + " within " + timeout);
-            }
-
-            log.log(LogLevel.DEBUG, "Lock acquired " + activateLock + " for session " + sessionId);
+        try (Lock lock = tenant.getSessionLock(timeout)) {
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
 
@@ -150,12 +135,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             throw e;
         } catch (Exception e) {
             throw new InternalServerException("Error activating application", e);
-        } finally {
-            if (activateLockAcquired) {
-                log.log(LogLevel.DEBUG, "Trying to release lock " + activateLock + " for session " + sessionId);
-                activateLock.release();
-                log.log(LogLevel.DEBUG, "Lock released " + activateLock + " for session " + sessionId);
-            }
         }
         log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + 
                                " activated successfully using " +
@@ -186,12 +165,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         return sessionId;
     }
 
-    private Transaction deactivateCurrentActivateNew(LocalSession currentActiveSession, LocalSession session, boolean ignoreStaleSessionFailure) {
-        Transaction transaction = session.createActivateTransaction();
-        if (isValidSession(currentActiveSession)) {
-            checkIfActiveHasChanged(session, currentActiveSession, ignoreStaleSessionFailure);
-            checkIfActiveIsNewerThanSessionToBeActivated(session.getSessionId(), currentActiveSession.getSessionId());
-            transaction.add(currentActiveSession.createDeactivateTransaction().operations());
+    private Transaction deactivateCurrentActivateNew(LocalSession active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
+        Transaction transaction = prepared.createActivateTransaction();
+        if (isValidSession(active)) {
+            checkIfActiveHasChanged(prepared, active, ignoreStaleSessionFailure);
+            checkIfActiveIsNewerThanSessionToBeActivated(prepared.getSessionId(), active.getSessionId());
+            transaction.add(active.createDeactivateTransaction().operations());
         }
         return transaction;
     }

@@ -38,11 +38,6 @@ public class ServiceModelProvider implements Supplier<ServiceModel> {
     @Override
     public ServiceModel get() {
         try (LatencyMeasurement measurement = metrics.startServiceModelSnapshotLatencyMeasurement()) {
-            // Reference 'measurement' in a dummy statement, otherwise the compiler
-            // complains about "auto-closeable resource is never referenced in body of
-            // corresponding try statement". Why hasn't javac fixed this!?
-            dummy(measurement);
-
             // WARNING: The monitor manager may be out-of-sync with duper model (no locking)
             List<ApplicationInfo> applicationInfos = duperModelManager.getApplicationInfos();
 
@@ -50,5 +45,4 @@ public class ServiceModelProvider implements Supplier<ServiceModel> {
         }
     }
 
-    private void dummy(LatencyMeasurement measurement) {}
 }

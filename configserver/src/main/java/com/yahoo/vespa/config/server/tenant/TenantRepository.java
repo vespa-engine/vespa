@@ -174,7 +174,7 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
             try {
                 f.getValue().get();
             } catch (ExecutionException e) {
-                log.log(LogLevel.WARNING, "Failed to create tenant " + tenantName);
+                log.log(LogLevel.WARNING, "Failed to create tenant " + tenantName, e);
                 failed.add(tenantName);
             } catch (InterruptedException e) {
                 log.log(LogLevel.WARNING, "Interrupted while creating tenant '" + tenantName + "'", e);

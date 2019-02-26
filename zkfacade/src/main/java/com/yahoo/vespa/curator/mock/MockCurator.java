@@ -61,7 +61,7 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.curator.framework.state.ConnectionStateListener;
-import org.apache.curator.utils.*;
+import org.apache.curator.utils.EnsurePath;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
@@ -73,12 +73,12 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -113,7 +113,7 @@ public class MockCurator extends Curator {
     private final MemoryFileSystem fileSystem = new MemoryFileSystem();
 
     /** Atomic counters. A more accurate mock would store these as files in the file system */
-    private final Map<String, MockAtomicCounter> atomicCounters = new HashMap<>();
+    private final Map<String, MockAtomicCounter> atomicCounters = new ConcurrentHashMap<>();
 
     /** Listeners to changes to a particular path */
     private final ListenerMap listeners = new ListenerMap();
@@ -361,8 +361,8 @@ public class MockCurator extends Curator {
     /** The regular listener implementation which notifies registered file and directory listeners */
     private class ListenerMap extends Listeners {
 
-        private final Map<Path, PathChildrenCacheListener> directoryListeners = new HashMap<>();
-        private final Map<Path, NodeCacheListener> fileListeners = new HashMap<>();
+        private final Map<Path, PathChildrenCacheListener> directoryListeners = new ConcurrentHashMap<>();
+        private final Map<Path, NodeCacheListener> fileListeners = new ConcurrentHashMap<>();
 
         public void add(Path path, PathChildrenCacheListener listener) {
             directoryListeners.put(path, listener);
@@ -376,8 +376,8 @@ public class MockCurator extends Curator {
         public void notify(Path path, PathChildrenCacheEvent event) {
             try {
                 // Snapshot directoryListeners in case notification leads to new directoryListeners added
-                Set<Map.Entry<Path, PathChildrenCacheListener>> directoryLlistenerSnapshot = new HashSet<>(directoryListeners.entrySet());
-                for (Map.Entry<Path, PathChildrenCacheListener> listener : directoryLlistenerSnapshot) {
+                Set<Map.Entry<Path, PathChildrenCacheListener>> directoryListenerSnapshot = new HashSet<>(directoryListeners.entrySet());
+                for (Map.Entry<Path, PathChildrenCacheListener> listener : directoryListenerSnapshot) {
                     if (path.isChildOf(listener.getKey()))
                         listener.getValue().childEvent(curatorFramework, event);
                 }

@@ -4,7 +4,8 @@ package com.yahoo.vespa.config.server.host;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Component to hold host registries.
@@ -14,7 +15,7 @@ import java.util.HashMap;
 public class HostRegistries {
 
     private final HostRegistry<TenantName> tenantHostRegistry = new HostRegistry<>();
-    private final HashMap<TenantName, HostRegistry<ApplicationId>> applicationHostRegistries = new HashMap<>();
+    private final Map<TenantName, HostRegistry<ApplicationId>> applicationHostRegistries = new ConcurrentHashMap<>();
 
     public HostRegistry<TenantName> getTenantHostRegistry() {
         return tenantHostRegistry;
@@ -29,4 +30,5 @@ public class HostRegistries {
         applicationHostRegistries.put(tenant, applicationIdHostRegistry);
         return applicationIdHostRegistry;
     }
+
 }

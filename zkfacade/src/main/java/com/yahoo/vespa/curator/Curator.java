@@ -163,7 +163,7 @@ public class Curator implements AutoCloseable {
         return new DistributedAtomicLong(curatorFramework, path, new ExponentialBackoffRetry(BASE_SLEEP_TIME, MAX_RETRIES));
     }
 
-    /** For internal use; prefer creating a {@link com.yahoo.vespa.curator.recipes.CuratorLock} */
+    /** For internal use; prefer creating a {@link com.yahoo.vespa.curator.Lock} */
     public InterProcessLock createMutex(String lockPath) {
         return new InterProcessMutex(curatorFramework, lockPath);
     }
