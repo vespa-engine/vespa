@@ -3,11 +3,8 @@ package com.yahoo.jrt.slobrok.api;
 
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class SlobrokList {
-    private static Logger log = Logger.getLogger(SlobrokList.class.getName());
 
     private final Internal internal;
     private String[] slobroks;
@@ -23,7 +20,6 @@ public class SlobrokList {
 
     private void checkUpdate() {
         synchronized (internal) {
-            log.log(Level.FINE, () -> "slobroks: " + slobroks + ", internal slobroks: " + internal.slobroks);
             if (slobroks != internal.slobroks) {
                 slobroks = internal.slobroks;
                 idx = 0;
