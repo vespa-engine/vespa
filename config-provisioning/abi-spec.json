@@ -343,7 +343,48 @@
       "public static final enum com.yahoo.config.provision.Environment perf"
     ]
   },
-  "com.yahoo.config.provision.Flavor$Type": {
+  "com.yahoo.config.provision.Flavor$Bandwidth": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract double mbits()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.Flavor$Cpu": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract double cores()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.Flavor$Disk": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract double sizeInBase10Gb()",
+      "public double sizeInBase2Gb()",
+      "public abstract boolean isFast()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.Flavor$Environment": {
     "superClass": "java.lang.Enum",
     "interfaces": [],
     "attributes": [
@@ -352,46 +393,49 @@
       "enum"
     ],
     "methods": [
-      "public static com.yahoo.config.provision.Flavor$Type[] values()",
-      "public static com.yahoo.config.provision.Flavor$Type valueOf(java.lang.String)"
+      "public static com.yahoo.config.provision.Flavor$Environment[] values()",
+      "public static com.yahoo.config.provision.Flavor$Environment valueOf(java.lang.String)"
     ],
     "fields": [
-      "public static final enum com.yahoo.config.provision.Flavor$Type undefined",
-      "public static final enum com.yahoo.config.provision.Flavor$Type BARE_METAL",
-      "public static final enum com.yahoo.config.provision.Flavor$Type VIRTUAL_MACHINE",
-      "public static final enum com.yahoo.config.provision.Flavor$Type DOCKER_CONTAINER"
+      "public static final enum com.yahoo.config.provision.Flavor$Environment BARE_METAL",
+      "public static final enum com.yahoo.config.provision.Flavor$Environment VIRTUAL_MACHINE",
+      "public static final enum com.yahoo.config.provision.Flavor$Environment DOCKER_CONTAINER"
     ]
+  },
+  "com.yahoo.config.provision.Flavor$Memory": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract double sizeInGb()"
+    ],
+    "fields": []
   },
   "com.yahoo.config.provision.Flavor": {
     "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
-      "public"
+      "public",
+      "interface",
+      "abstract"
     ],
     "methods": [
-      "public void <init>(com.yahoo.config.provisioning.FlavorsConfig$Flavor)",
-      "public java.lang.String name()",
-      "public int cost()",
-      "public boolean isStock()",
-      "public double getMinMainMemoryAvailableGb()",
-      "public double getMinDiskAvailableGb()",
-      "public boolean hasFastDisk()",
-      "public double getBandwidth()",
-      "public double getMinCpuCores()",
-      "public java.lang.String getDescription()",
-      "public boolean isRetired()",
-      "public com.yahoo.config.provision.Flavor$Type getType()",
-      "public boolean isDocker()",
-      "public int getIdealHeadroom()",
+      "public abstract java.lang.String flavorName()",
       "public java.lang.String canonicalName()",
-      "public boolean isCanonical()",
-      "public java.util.List replaces()",
+      "public abstract int cost()",
+      "public abstract boolean isStock()",
+      "public abstract boolean isRetired()",
       "public boolean satisfies(com.yahoo.config.provision.Flavor)",
-      "public void freeze()",
-      "public boolean isLargerThan(com.yahoo.config.provision.Flavor)",
-      "public int hashCode()",
-      "public boolean equals(java.lang.Object)",
-      "public java.lang.String toString()"
+      "public abstract com.yahoo.config.provision.Flavor$Cpu cpu()",
+      "public abstract com.yahoo.config.provision.Flavor$Memory memory()",
+      "public abstract com.yahoo.config.provision.Flavor$Disk disk()",
+      "public abstract com.yahoo.config.provision.Flavor$Bandwidth bandwidth()",
+      "public abstract com.yahoo.config.provision.Flavor$Environment environment()",
+      "public abstract java.util.List replaces()"
     ],
     "fields": []
   },
@@ -547,12 +591,13 @@
     "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
-      "public"
+      "public",
+      "interface",
+      "abstract"
     ],
     "methods": [
-      "public void <init>(com.yahoo.config.provisioning.FlavorsConfig)",
-      "public java.util.List getFlavors()",
-      "public java.util.Optional getFlavor(java.lang.String)",
+      "public abstract java.util.List getFlavors()",
+      "public abstract java.util.Optional getFlavor(java.lang.String)",
       "public com.yahoo.config.provision.Flavor getFlavorOrThrow(java.lang.String)"
     ],
     "fields": []
