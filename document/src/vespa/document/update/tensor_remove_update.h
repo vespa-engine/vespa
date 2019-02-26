@@ -9,9 +9,10 @@ namespace document {
 class TensorFieldValue;
 
 /**
- * An update used to remove cells from a sparse tensor (has only mapped dimensions).
+ * An update used to remove cells from a sparse or mixed tensor.
  *
- * The cells to remove are contained in a sparse tensor as well.
+ * The cells to remove are contained in a sparse tensor (with all mapped dimensions) where cell values are set to 1.0.
+ * When used on a mixed tensor the entire dense sub-space (pointed to by a cell in the sparse tensor) is removed.
  */
 class TensorRemoveUpdate : public ValueUpdate {
 private:
