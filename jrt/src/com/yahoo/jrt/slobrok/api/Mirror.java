@@ -222,6 +222,8 @@ public class Mirror implements IMirror {
             || (req.returnValues().get(2).count() !=
                 req.returnValues().get(3).count()))
         {
+            log.log(Level.INFO, "Error when handling update from slobrok. Error: " + req.errorMessage() +
+                    " (error code " + req.errorCode() + ")" + ", target: " + target);
             target.close();
             target = null;
             updateTask.scheduleNow(); // try next slobrok
