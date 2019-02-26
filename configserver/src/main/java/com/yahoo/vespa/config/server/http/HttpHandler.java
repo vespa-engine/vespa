@@ -45,7 +45,6 @@ public class HttpHandler extends LoggingRequestHandler {
                     return createErrorResponse(request.getMethod());
             }
         } catch (NotFoundException | com.yahoo.vespa.config.server.NotFoundException e) {
-            e.printStackTrace();
             return HttpErrorResponse.notFoundError(getMessage(e, request));
         } catch (ActivationConflictException e) {
             return HttpErrorResponse.conflictWhenActivating(getMessage(e, request));
