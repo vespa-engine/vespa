@@ -42,7 +42,7 @@ public class OrchestratorImpl implements Orchestrator {
         } catch (HttpException e) {
             throw new OrchestratorException("Failed to suspend " + hostName + ": " +
                     e.toString());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException("Got error on suspend", e);
         }
 
