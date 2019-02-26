@@ -24,6 +24,7 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <fcntl.h>
 #include <gtest/gtest.h>
@@ -808,6 +809,10 @@ struct TensorUpdateFixture {
         return dynamic_cast<const TensorDataType &>(dataType);
     }
 
+    const Field &getNonTensorField() {
+        return emptyDoc->getField("title");
+    }
+
     TensorUpdateFixture(const vespalib::string &fieldName_ = "sparse_tensor")
         : docMan(),
           emptyDoc(docMan.createDocument()),
@@ -874,9 +879,9 @@ struct TensorUpdateFixture {
         assertTensor(*expTensor);
     }
 
-    void assertApplyUpdate(const TensorSpec& initialTensor,
-                           const ValueUpdate& update,
-                           const TensorSpec& expTensor) {
+    void assertApplyUpdate(const TensorSpec &initialTensor,
+                           const ValueUpdate &update,
+                           const TensorSpec &expTensor) {
         setTensor(initialTensor);
         applyUpdate(update);
         assertDocumentUpdated();
@@ -886,6 +891,14 @@ struct TensorUpdateFixture {
     template <typename ValueUpdateType>
     void assertRoundtripSerialize(const ValueUpdateType &valueUpdate) {
         testRoundtripSerialize(valueUpdate, tensorDataType);
+    }
+
+    void assertThrowOnNonTensorField(const ValueUpdate &update) {
+        ASSERT_THROW(update.checkCompatibility(getNonTensorField()),
+                     vespalib::IllegalArgumentException);
+        StringFieldValue value("my value");
+        ASSERT_THROW(update.applyTo(value),
+                     vespalib::IllegalStateException);
     }
 
 };
@@ -983,6 +996,24 @@ TEST(DocumentUpdateTest, tensor_modify_update_can_be_roundtrip_serialized)
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor()));
+}
+
+TEST(DocumentUpdateTest, tensor_add_update_throws_on_non_tensor_field)
+{
+    TensorUpdateFixture f;
+    f.assertThrowOnNonTensorField(TensorAddUpdate(f.makeBaselineTensor()));
+}
+
+TEST(DocumentUpdateTest, tensor_remove_update_throws_on_non_tensor_field)
+{
+    TensorUpdateFixture f;
+    f.assertThrowOnNonTensorField(TensorRemoveUpdate(f.makeBaselineTensor()));
+}
+
+TEST(DocumentUpdateTest, tensor_modify_update_throws_on_non_tensor_field)
+{
+    TensorUpdateFixture f;
+    f.assertThrowOnNonTensorField(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
 }
 
 
