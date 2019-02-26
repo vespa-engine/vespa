@@ -5,8 +5,9 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.test.ManualClock;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -54,7 +55,7 @@ public class LocalSessionRepoTest {
         }
         clock = new ManualClock(Instant.ofEpochSecond(1));
         LocalSessionLoader loader = new SessionFactoryImpl(globalComponentRegistry,
-                                                           new MemoryTenantApplications(),
+                                                           TenantApplications.create(new MockCurator(), new MockReloadHandler(), tenantName),
                                                            tenantFileSystemDirs, new HostRegistry<>(),
                                                            tenantName);
         repo = new LocalSessionRepo(tenantFileSystemDirs, loader, clock, 5, globalComponentRegistry.getCurator());

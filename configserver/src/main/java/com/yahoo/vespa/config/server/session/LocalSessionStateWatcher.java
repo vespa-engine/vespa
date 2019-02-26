@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  *
  * @author Harald Musum
  */
-public class LocalSessionStateWatcher implements NodeCacheListener {
+public class LocalSessionStateWatcher {
 
     private static final Logger log = Logger.getLogger(LocalSessionStateWatcher.class.getName());
     // One thread pool for all instances of this class
@@ -33,7 +33,7 @@ public class LocalSessionStateWatcher implements NodeCacheListener {
         this.session = session;
         this.localSessionRepo = localSessionRepo;
         this.fileCache.start();
-        this.fileCache.addListener(this);
+        this.fileCache.addListener(this::nodeChanged);
     }
 
     // Will delete session if it exists in local session repo
@@ -59,7 +59,6 @@ public class LocalSessionStateWatcher implements NodeCacheListener {
         }
     }
 
-    @Override
     public void nodeChanged() {
         executor.execute(() -> {
             try {
