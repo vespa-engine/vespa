@@ -2,9 +2,7 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -27,9 +25,6 @@ import java.util.function.Function;
 public class RoutingPolicySerializer {
 
     private static final String routingPoliciesField = "routingPolicies";
-    private static final String aliasesField = "aliases";
-    private static final String idField = "id";
-    private static final String recordIdField = "recordId";
     private static final String aliasField = "alias";
     private static final String canonicalNameField = "canonicalName";
     private static final String zoneField = "zone";
@@ -58,19 +53,11 @@ public class RoutingPolicySerializer {
         Set<RoutingPolicy> policies = new LinkedHashSet<>();
         Cursor root = slime.get();
         Cursor field = root.field(routingPoliciesField);
-        if (!field.valid()) {
-            field = root.field(aliasesField); // TODO: Remove after 7.9 has been released
-        }
         field.traverse((ArrayTraverser) (i, inspect) -> {
             Set<RotationName> rotations = new LinkedHashSet<>();
             inspect.field(rotationsField).traverse((ArrayTraverser) (j, rotation) -> rotations.add(RotationName.from(rotation.asString())));
-            Inspector recordId = inspect.field(recordIdField);
-            if (!recordId.valid()) {
-                recordId = inspect.field(idField); // TODO: Remove after 7.9 has been released
-            }
             policies.add(new RoutingPolicy(owner,
-                                           // TODO: Remove fallback after 7.13 has been released
-                                           optionalField(inspect.field(zoneField), ZoneId::from).orElse(ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName())),
+                                           ZoneId.from(inspect.field(zoneField).asString()),
                                            HostName.from(inspect.field(aliasField).asString()),
                                            HostName.from(inspect.field(canonicalNameField).asString()),
                                            optionalField(inspect.field(dnsZoneField), Function.identity()),

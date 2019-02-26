@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author mortent
@@ -71,17 +72,18 @@ public class RoutingPolicyMaintainerTest {
                 .region("us-central-1")
                 .region("us-east-3")
                 .build();
+        int numberOfDeployments = 3;
         tester.deployCompletely(app1, updatedApplicationPackage, BuildJob.defaultBuildNumber + 1);
 
         // Cluster in new deployment is added to the rotation
         provisionLoadBalancers(app1, 2, rotations);
         maintainer.maintain();
-        assertEquals(3, records1.get().size());
+        assertEquals(numberOfDeployments, records1.get().size());
         assertEquals("c0--app1--tenant1.prod.us-central-1.vespa.oath.cloud.", records1.get().get(0).data().asString());
         assertEquals("c0--app1--tenant1.prod.us-east-3.vespa.oath.cloud.", records1.get().get(1).data().asString());
         assertEquals("c0--app1--tenant1.prod.us-west-1.vespa.oath.cloud.", records1.get().get(2).data().asString());
 
-        // Another appplication is deployed
+        // Another application is deployed
         Supplier<List<Record>> records2 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r0--app2--tenant1.global.vespa.oath.cloud"));
         tester.deployCompletely(app2, applicationPackage);
         provisionLoadBalancers(app2, 1, Map.of(0, Set.of(RotationName.from("r0"))));
@@ -90,10 +92,14 @@ public class RoutingPolicyMaintainerTest {
         assertEquals("c0--app2--tenant1.prod.us-central-1.vespa.oath.cloud.", records2.get().get(0).data().asString());
         assertEquals("c0--app2--tenant1.prod.us-west-1.vespa.oath.cloud.", records2.get().get(1).data().asString());
 
-        // Rotation for app1 is removed
+        // All rotations for app1 are removed
         provisionLoadBalancers(app1, clustersPerZone, Collections.emptyMap());
         maintainer.maintain();
-        assertEquals(0, records1.get().size());
+        assertEquals(List.of(), records1.get());
+        Set<RoutingPolicy> policies = tester.controller().curator().readRoutingPolicies(app1.id());
+        assertEquals(clustersPerZone * numberOfDeployments, policies.size());
+        assertTrue("Rotation membership is removed from all policies",
+                   policies.stream().allMatch(policy -> policy.rotations().isEmpty()));
         assertEquals("Rotations for " + app2 + " are not removed", 2, records2.get().size());
     }
 
@@ -186,10 +192,6 @@ public class RoutingPolicyMaintainerTest {
 
     private Set<RoutingPolicy> policies(Application application) {
         return tester.controller().curator().readRoutingPolicies(application.id());
-    }
-
-    private List<Record> findAlias(String name) {
-        return tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from(name));
     }
 
     private Set<String> recordNames() {
