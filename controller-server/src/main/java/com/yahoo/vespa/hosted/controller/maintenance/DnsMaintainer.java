@@ -47,16 +47,19 @@ public class DnsMaintainer extends Maintainer {
     protected void maintain() {
         try (RotationLock lock = rotationRepository().lock()) {
             Map<RotationId, Rotation> unassignedRotations = rotationRepository().availableRotations(lock);
-            rotationToCheckOf(unassignedRotations.values()).ifPresent(this::removeDnsAlias);
+            rotationToCheckOf(unassignedRotations.values()).ifPresent(this::removeCname);
         }
     }
 
-    /** Remove DNS alias for unassigned rotation */
-    private void removeDnsAlias(Rotation rotation) {
+    /** Remove CNAME(s) for unassigned rotation */
+    private void removeCname(Rotation rotation) {
         // When looking up CNAME by data, the data must be a FQDN
         List<Record> records = nameService.findRecords(Record.Type.CNAME, RecordData.fqdn(rotation.name())).stream()
                                           .filter(DnsMaintainer::canUpdate)
                                           .collect(Collectors.toList());
+        if (records.isEmpty()) {
+            return;
+        }
         log.info(String.format("Removing DNS records %s because they point to the unassigned " +
                                "rotation %s (%s)", records, rotation.id().asString(), rotation.name()));
         nameService.removeRecords(records);
