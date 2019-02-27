@@ -420,7 +420,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                  request.getUri()).toString());
 
         application.deploymentJobs().statusOf(JobType.component)
-                   .flatMap(status -> status.lastSuccess())
+                   .flatMap(JobStatus::lastSuccess)
                    .map(run -> run.application().source())
                    .ifPresent(source -> sourceRevisionToSlime(source, object.setObject("source")));
 

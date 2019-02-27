@@ -1498,7 +1498,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .setZoneIn(rotationName, vipName);
         ApplicationController applicationController = controllerTester.controller().applications();
         List<Application> applicationList = applicationController.asList();
-        applicationList.stream().forEach(application -> {
+        applicationList.forEach(application -> {
                 applicationController.lockIfPresent(application.id(), locked ->
                         applicationController.store(locked.withRotationStatus(rotationStatus(application))));
         });}

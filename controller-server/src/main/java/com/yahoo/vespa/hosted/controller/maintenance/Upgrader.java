@@ -156,6 +156,6 @@ public class Upgrader extends Maintainer {
 
     /** Remove confidence override for given version */
     public void removeConfidenceOverride(Version version) {
-        controller().removeConfidenceOverride(v -> v.equals(version));
+        controller().removeConfidenceOverride(version::equals);
     }
 }
