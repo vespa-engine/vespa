@@ -558,7 +558,7 @@ public class NodeRepository extends AbstractComponent {
         return removeRecursively(node, false);
     }
 
-    private List<Node> removeRecursively(Node node, boolean force) {
+    public List<Node> removeRecursively(Node node, boolean force) {
         try (Mutex lock = lockAllocation()) {
             List<Node> removed = new ArrayList<>();
 

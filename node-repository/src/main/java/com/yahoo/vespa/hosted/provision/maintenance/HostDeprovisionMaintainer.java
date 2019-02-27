@@ -46,7 +46,7 @@ public class HostDeprovisionMaintainer extends Maintainer {
             for (Node node : candidates(nodes)) {
                 try {
                     hostProvisioner.deprovision(node);
-                    nodeRepository().removeRecursively(node.hostname());
+                    nodeRepository().removeRecursively(node, true);
                 } catch (RuntimeException e) {
                     log.log(Level.WARNING, "Failed to deprovision " + node.hostname() + ", will retry in " + interval(), e);
                 }
