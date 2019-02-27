@@ -4,11 +4,11 @@ package com.yahoo.container.handler;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.time.Duration;
 import java.util.Base64;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.attribute.BasicFileAttributes;
 
 public class LogReader {
 
@@ -17,7 +17,7 @@ public class LogReader {
 
     protected JSONObject readLogs(String logDirectory, long earliestLogThreshold, long latestLogThreshold) throws IOException, JSONException {
         this.earliestLogThreshold = earliestLogThreshold;
-        this.latestLogThreshold = latestLogThreshold;
+        this.latestLogThreshold = latestLogThreshold + Duration.ofMinutes(5).toMillis(); // Add some time to allow retrieving logs currently being modified
         JSONObject json = new JSONObject();
         File root = new File(logDirectory);
         traverse_folder(root, json, "");
@@ -27,7 +27,7 @@ public class LogReader {
     private void traverse_folder(File root, JSONObject json, String filename) throws IOException, JSONException {
         File[] files = root.listFiles();
         for(File child : files) {
-            long logTime = Files.readAttributes(child.toPath(), BasicFileAttributes.class).creationTime().toMillis();
+            long logTime = Files.getLastModifiedTime(child.toPath()).toMillis();
             if(child.isFile() && earliestLogThreshold < logTime && logTime < latestLogThreshold) {
                 json.put(filename + child.getName(), Base64.getEncoder().encodeToString(Files.readAllBytes(child.toPath())));
             }
