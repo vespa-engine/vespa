@@ -139,6 +139,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
 
     private LocalSession create(File applicationFile, ApplicationId applicationId, long currentlyActiveSessionId,
                                 boolean internalRedeploy, TimeoutBudget timeoutBudget) {
+        applicationRepo.createApplication(applicationId);
         long sessionId = sessionCounter.nextSessionId();
         Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
         log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Next session id is " + sessionId + " , sessionIdPath=" + sessionIdPath.getAbsolute());
