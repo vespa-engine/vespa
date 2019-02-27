@@ -46,6 +46,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
+import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
@@ -699,8 +700,14 @@ public class ApplicationController {
                                                              application, zone, platformVersion, applicationVersion, deployment.version(), deployment.applicationVersion()));
     }
 
+    /** Returns the rotation repository, used for managing global rotation assignments */
     public RotationRepository rotationRepository() {
         return rotationRepository;
+    }
+
+    /** Returns all known routing policies for given application */
+    public Set<RoutingPolicy> routingPolicies(ApplicationId application) {
+        return curator.readRoutingPolicies(application);
     }
 
     /** Sort given list of applications by application ID */
