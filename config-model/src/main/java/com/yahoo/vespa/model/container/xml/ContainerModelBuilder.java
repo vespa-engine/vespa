@@ -219,10 +219,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         });
     }
 
+    private boolean zoneHasActiveRotation(Zone zone) {
+        return app.getDeployment()
+                  .map(DeploymentSpec::fromXml)
+                  .map(spec -> zoneHasActiveRotation(zone, spec))
+                  .orElse(true);
+    }
+
     private boolean zoneHasActiveRotation(Zone zone, DeploymentSpec spec) {
         return spec.zones().stream()
-                .anyMatch(declaredZone -> declaredZone.deploysTo(zone.environment(), Optional.of(zone.region())) &&
-                                                     declaredZone.active());
+                   .anyMatch(declaredZone -> declaredZone.deploysTo(zone.environment(), Optional.of(zone.region())) &&
+                                             declaredZone.active());
     }
 
     private void setRotations(Container container, Set<Rotation> rotations, Optional<String> globalServiceId, String containerClusterName) {
@@ -578,7 +585,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<Container> createNodesFromNodeCount(ContainerCluster cluster, Element nodesElement, Element rotationsElement, ConfigModelContext context) {
         NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
-        Set<RotationName> rotations = Rotations.from(rotationsElement);
+        Set<RotationName> rotations = Set.of();
+        if (zoneHasActiveRotation(context.getDeployState().zone())) {
+            rotations = Rotations.from(rotationsElement);
+        }
         Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(),
                                                                                   ClusterSpec.Type.container,
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
