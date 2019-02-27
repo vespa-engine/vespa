@@ -5,7 +5,7 @@
   "deployedInternally": false,
   "deploymentJobs": [],
   "changeBlockers": [],
-  "compileVersion": "7.0.0",
+  "compileVersion": "(ignore)",
   "globalRotations": [
     "https://c0--application1--tenant1.global.vespa.oath.cloud:4443/"
   ],
