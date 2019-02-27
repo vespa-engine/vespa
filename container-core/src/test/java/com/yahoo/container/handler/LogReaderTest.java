@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.time.Instant;
 
 import static org.junit.Assert.*;
 
@@ -22,7 +23,7 @@ public class LogReaderTest {
     public void testThatFilesAreWrittenCorrectlyToOutputStream() throws Exception{
         String logDirectory = "src/test/resources/logfolder/";
         LogReader logReader = new LogReader();
-        JSONObject json = logReader.readLogs(logDirectory, 21, Long.MAX_VALUE);
+        JSONObject json = logReader.readLogs(logDirectory, 21, Instant.now().toEpochMilli());
         String expected = "{\"subfolder-log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl\",\"log1.log\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGU=\"}";
         String actual = json.toString();
         assertEquals(expected, actual);
