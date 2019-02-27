@@ -89,9 +89,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                               timeout, clock, true, true, session.getVespaVersion(), isBootstrap);
     }
 
-    public Deployment setIgnoreSessionStaleFailure(boolean ignoreSessionStaleFailure) {
+    public void setIgnoreSessionStaleFailure(boolean ignoreSessionStaleFailure) {
         this.ignoreSessionStaleFailure = ignoreSessionStaleFailure;
-        return this;
     }
 
     /** Prepares this. This does nothing if this is already prepared */

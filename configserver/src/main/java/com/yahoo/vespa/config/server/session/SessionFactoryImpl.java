@@ -194,4 +194,5 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         }
         return nonExistingActiveSession;
     }
+
 }
