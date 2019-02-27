@@ -52,12 +52,6 @@ public class Transport {
         public void run() { handleEnableWrite(conn); }
     }
 
-    private class HandshakeWorkDoneCmd implements Runnable {
-        private Connection conn;
-        HandshakeWorkDoneCmd(Connection conn) { this.conn = conn; }
-        public void run() { handleHandshakeWorkDone(conn); }
-    }
-
     private class SyncCmd implements Runnable {
         boolean done = false;
         public synchronized void waitDone() {
@@ -79,7 +73,7 @@ public class Transport {
     private Queue             queue;
     private Queue             myQueue;
     private Connector         connector;
-    private Worker            worker;
+    private Closer            closer;
     private Scheduler         scheduler;
     private int               state;
     private Selector          selector;
@@ -88,7 +82,7 @@ public class Transport {
     private void handleAddConnection(Connection conn) {
         if (conn.isClosed()) {
             if (conn.hasSocket()) {
-                worker.closeLater(conn);
+                closer.closeLater(conn);
             }
             return;
         }
@@ -103,7 +97,7 @@ public class Transport {
         }
         conn.fini();
         if (conn.hasSocket()) {
-            worker.closeLater(conn);
+            closer.closeLater(conn);
         }
     }
 
@@ -112,18 +106,6 @@ public class Transport {
             return;
         }
         conn.enableWrite();
-    }
-
-    private void handleHandshakeWorkDone(Connection conn) {
-        if (conn.isClosed()) {
-            return;
-        }
-        try {
-            conn.handleHandshakeWorkDone();
-        } catch (IOException e) {
-            conn.setLostReason(e);
-            handleCloseConnection(conn);
-        }
     }
 
     private boolean postCommand(Runnable cmd) {
@@ -192,7 +174,7 @@ public class Transport {
         queue     = new Queue();
         myQueue   = new Queue();
         connector = new Connector(this);
-        worker    = new Worker(this);
+        closer    = new Closer(this);
         scheduler = new Scheduler(System.currentTimeMillis());
         state     = OPEN;
         try {
@@ -305,20 +287,6 @@ public class Transport {
         }
     }
 
-    void handshakeWorkDone(Connection conn) {
-        postCommand(new HandshakeWorkDoneCmd(conn));
-    }
-
-    /**
-     * Request that {@link Connection#doHandshakeWork()} be called (in any thread)
-     * followed by a call to {@link Connection#handleHandshakeWorkDone()} from the transport thread.
-     *
-     * @param conn the connection needing handshake work
-     */
-    void doHandshakeWork(Connection conn) {
-        worker.doHandshakeWork(conn);
-    }
-
     /**
      * Create a {@link Task} that can be scheduled for execution in
      * the transport thread.
@@ -411,7 +379,7 @@ public class Transport {
             handleCloseConnection(conn);
         }
         try { selector.close(); } catch (Exception e) {}
-        worker.shutdown().join();
+        closer.shutdown().join();
         connector.exit().join();
         try { cryptoEngine.close(); } catch (Exception e) {}
     }
