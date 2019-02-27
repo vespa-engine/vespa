@@ -446,6 +446,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.distributor.updates.sum.latency.average"));
         metrics.add(new Metric("vds.distributor.updates.sum.ok.rate"));
         metrics.add(new Metric("vds.distributor.updates.sum.failures.total.rate"));
+        metrics.add(new Metric("vds.distributor.updates.sum.diverging_timestamp_updates.rate"));
         metrics.add(new Metric("vds.distributor.removelocations.sum.latency.average"));
         metrics.add(new Metric("vds.distributor.removelocations.sum.ok.rate"));
         metrics.add(new Metric("vds.distributor.removelocations.sum.failures.total.rate"));
