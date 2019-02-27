@@ -28,6 +28,8 @@ UpdateOperation::UpdateOperation(DistributorComponent& manager,
       _msg(msg),
       _manager(manager),
       _bucketSpace(bucketSpace),
+      _newestTimestampLocation(),
+      _infoAtSendTime(),
       _metrics(metric)
 {
 }
@@ -81,13 +83,17 @@ UpdateOperation::onStart(DistributorMessageSender& sender)
                                       "No buckets found for given document update"));
         return;
     }
+    // An UpdateOperation should only be started iff all replicas are consistent
+    // with each other, so sampling a single replica should be equal to sampling them all.
+    assert(entries[0].getBucketInfo().getNodeCount() > 0); // Empty buckets are not allowed
+    _infoAtSendTime = entries[0].getBucketInfo().getNodeRef(0).getBucketInfo();
 
     // FIXME(vekterli): this loop will happily update all replicas in the
     // bucket sub-tree, but there is nothing here at all which will fail the
     // update if we cannot satisfy a desired replication level (not even for
     // n-of-m operations).
     for (uint32_t j = 0; j < entries.size(); ++j) {
-        LOG(debug, "Found bucket %s", entries[j].toString().c_str());
+        LOG(spam, "Found bucket %s", entries[j].toString().c_str());
 
         const std::vector<uint16_t>& nodes = entries[j]->getNodes();
 
@@ -122,7 +128,7 @@ UpdateOperation::onReceive(DistributorMessageSender& sender,
 
         if (node != (uint16_t)-1) {
             if (reply.getResult().getResult() == api::ReturnCode::OK) {
-                _results.emplace_back(reply.getBucketId(), reply.getOldTimestamp(), node);
+                _results.emplace_back(reply.getBucketId(), reply.getBucketInfo(), reply.getOldTimestamp(), node);
             }
 
             if (_tracker.getReply().get()) {
@@ -155,6 +161,12 @@ UpdateOperation::onReceive(DistributorMessageSender& sender,
                         replyToSend.setNodeWithNewestTimestamp(_results[goodNode].nodeId);
                         _newestTimestampLocation.first  = _results[goodNode].bucketId;
                         _newestTimestampLocation.second = _results[goodNode].nodeId;
+
+                        LOG(warning, "Bucket info prior to update operation was: %s. After update, "
+                                     "info on node %u is %s, info on node %u is %s",
+                                     _infoAtSendTime.toString().c_str(),
+                                     _results[i].nodeId, _results[i].bucketInfo.toString().c_str(),
+                                     _results[goodNode].nodeId, _results[goodNode].bucketInfo.toString().c_str());
                         break;
                     }
                 }
