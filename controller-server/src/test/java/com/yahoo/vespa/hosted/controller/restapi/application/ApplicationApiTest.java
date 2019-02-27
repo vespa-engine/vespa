@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -44,6 +45,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
@@ -76,6 +78,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
@@ -1285,6 +1288,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
         assertEquals(DeploymentJobs.JobError.outOfCapacity, jobStatus.jobError().get());
     }
 
+    @Test
+    public void applicationWithPerClusterGlobalRotation() {
+        Application app = controllerTester.createApplication();
+        RoutingPolicy policy = new RoutingPolicy(app.id(), ZoneId.from(Environment.prod, RegionName.from("us-west-1")),
+                                                 HostName.from("lb-0"), HostName.from("lb-0-canonical-name"),
+                                                 Optional.of("dns-zone-1"), Set.of(RotationName.from("c0")));
+        tester.controller().curator().writeRoutingPolicies(app.id(), Set.of(policy));
+
+        // GET application
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET)
+                                      .userIdentity(USER_ID),
+                              new File("application-cluster-global-rotation.json"));
+    }
+
     private void notifyCompletion(DeploymentJobs.JobReport report, ContainerControllerTester tester) {
         assertResponse(request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
                                .userIdentity(HOSTED_VESPA_OPERATOR)
@@ -1498,7 +1515,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .setZoneIn(rotationName, vipName);
         ApplicationController applicationController = controllerTester.controller().applications();
         List<Application> applicationList = applicationController.asList();
-        applicationList.stream().forEach(application -> {
+        applicationList.forEach(application -> {
                 applicationController.lockIfPresent(application.id(), locked ->
                         applicationController.store(locked.withRotationStatus(rotationStatus(application))));
         });}
