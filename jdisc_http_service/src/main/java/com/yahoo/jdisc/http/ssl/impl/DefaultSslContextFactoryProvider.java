@@ -30,6 +30,6 @@ public class DefaultSslContextFactoryProvider extends AbstractComponent implemen
 
     @Override
     public void deconstruct() {
-        tlsContext.close();
+        if (tlsContext != null) tlsContext.close();
     }
 }
