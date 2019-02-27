@@ -41,6 +41,7 @@ private:
     // the connection if it's attempted by the peer), but this should signal
     // explicitly to the peer that it's not a supported action.
     void disable_renegotiation();
+    void disable_session_resumption();
     void enforce_peer_certificate_verification();
     void set_ssl_ctx_self_reference();
     void set_accepted_cipher_suites(const std::vector<vespalib::string>& ciphers);

@@ -209,6 +209,7 @@ OpenSslTlsContextImpl::OpenSslTlsContextImpl(
     enable_ephemeral_key_exchange();
     disable_compression();
     disable_renegotiation();
+    disable_session_resumption();
     enforce_peer_certificate_verification();
     set_ssl_ctx_self_reference();
     if (!ts_opts.accepted_ciphers().empty()) {
@@ -319,6 +320,11 @@ void OpenSslTlsContextImpl::disable_renegotiation() {
 #if (OPENSSL_VERSION_NUMBER >= 0x10100080L) // v1.1.0h and beyond
     SSL_CTX_set_options(_ctx.get(), SSL_OP_NO_RENEGOTIATION);
 #endif
+}
+
+void OpenSslTlsContextImpl::disable_session_resumption() {
+    SSL_CTX_set_session_cache_mode(_ctx.get(), SSL_SESS_CACHE_OFF);
+    SSL_CTX_set_options(_ctx.get(), SSL_OP_NO_TICKET);
 }
 
 namespace {
