@@ -188,9 +188,9 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     }
 
     private long getActiveSessionId(ApplicationId applicationId) {
-        List<ApplicationId> applicationIds = applicationRepo.listApplications();
+        List<ApplicationId> applicationIds = applicationRepo.activeApplications();
         if (applicationIds.contains(applicationId)) {
-            return applicationRepo.getSessionIdForApplication(applicationId);
+            return applicationRepo.requireActiveSessionOf(applicationId);
         }
         return nonExistingActiveSession;
     }

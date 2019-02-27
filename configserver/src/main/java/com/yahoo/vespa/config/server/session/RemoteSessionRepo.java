@@ -190,9 +190,9 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     }
 
     private void loadSessionIfActive(RemoteSession session) {
-        for (ApplicationId applicationId : applicationRepo.listApplications()) {
+        for (ApplicationId applicationId : applicationRepo.activeApplications()) {
             try {
-                if (applicationRepo.getSessionIdForApplication(applicationId) == session.getSessionId()) {
+                if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
                     log.log(LogLevel.DEBUG, "Found active application for session " + session.getSessionId() + " , loading it");
                     loadActiveSession(session);
                     break;

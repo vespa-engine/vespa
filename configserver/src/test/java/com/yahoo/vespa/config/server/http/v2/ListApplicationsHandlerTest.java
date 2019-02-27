@@ -51,12 +51,12 @@ public class ListApplicationsHandlerTest {
         final String url = "http://myhost:14000/application/v2/tenant/mytenant/application/";
         assertResponse(url, Response.Status.OK,
                 "[]");
-        applicationRepo.createPutApplicationTransaction(
+        applicationRepo.createPutTransaction(
                 new ApplicationId.Builder().tenant("tenant").applicationName("foo").instanceName("quux").build(),
                 1).commit();
         assertResponse(url, Response.Status.OK,
                 "[\"" + url + "foo/environment/dev/region/us-east/instance/quux\"]");
-        applicationRepo.createPutApplicationTransaction(
+        applicationRepo.createPutTransaction(
                 new ApplicationId.Builder().tenant("tenant").applicationName("bali").instanceName("quux").build(),
                 1).commit();
         assertResponse(url, Response.Status.OK,
@@ -82,10 +82,10 @@ public class ListApplicationsHandlerTest {
 
     @Test
     public void require_that_listing_works_with_multiple_tenants() throws Exception {
-        applicationRepo.createPutApplicationTransaction(new ApplicationId.Builder()
+        applicationRepo.createPutTransaction(new ApplicationId.Builder()
                 .tenant("tenant")
                 .applicationName("foo").instanceName("quux").build(), 1).commit();
-        applicationRepo2.createPutApplicationTransaction(new ApplicationId.Builder()
+        applicationRepo2.createPutTransaction(new ApplicationId.Builder()
                 .tenant("tenant")
                 .applicationName("quux").instanceName("foo").build(), 1).commit();
         String url = "http://myhost:14000/application/v2/tenant/mytenant/application/";
