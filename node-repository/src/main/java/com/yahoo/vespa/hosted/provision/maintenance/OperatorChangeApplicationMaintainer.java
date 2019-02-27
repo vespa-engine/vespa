@@ -3,14 +3,18 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -26,6 +30,8 @@ import java.util.stream.Collectors;
  */
 public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
 
+    private static final ApplicationId ZONE_APPLICATION_ID = ApplicationId.from("hosted-vespa", "routing", "default");
+
     private final Clock clock;
     
     private Instant previousRun;
@@ -38,22 +44,28 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
     }
 
     @Override
-    protected List<Node> nodesNeedingMaintenance() {
+    protected Set<ApplicationId> applicationsNeedingMaintenance() {
         Instant windowEnd = clock.instant();
         Instant windowStart = previousRun;
         previousRun = windowEnd;
         return nodeRepository().getNodes().stream()
-                               .filter(node -> node.allocation().isPresent())
                                .filter(node -> hasManualStateChangeSince(windowStart, node))
-                               .collect(Collectors.toList());
+                               .flatMap(node -> owner(node).stream())
+                               .collect(Collectors.toCollection(LinkedHashSet::new));
     }
-    
+
     private boolean hasManualStateChangeSince(Instant instant, Node node) {
         return node.history().events().stream()
                 .anyMatch(event -> event.agent() == Agent.operator && event.at().isAfter(instant));
     }
 
-    /** 
+    private Optional<ApplicationId> owner(Node node) {
+        if (node.allocation().isPresent()) return node.allocation().map(Allocation::owner);
+
+        return node.type() == NodeType.host ? Optional.of(ZONE_APPLICATION_ID) : Optional.empty();
+    }
+
+    /**
      * Deploy in the maintenance thread to avoid scheduling multiple deployments of the same application if it takes
      * longer to deploy than the (short) maintenance interval of this
      */

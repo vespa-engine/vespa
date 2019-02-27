@@ -75,7 +75,6 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
         return clock.instant().isBefore(start.plus(minTimeBetweenRedeployments));
     }
 
-    @Override
     protected List<Node> nodesNeedingMaintenance() {
         return nodeRepository().getNodes(Node.State.active);
     }
