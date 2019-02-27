@@ -17,12 +17,12 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 
@@ -38,7 +38,7 @@ import org.apache.curator.framework.recipes.cache.*;
  * @author Vegard Havdal
  * @author Ulf Lilleengen
  */
-public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements NodeCacheListener, PathChildrenCacheListener {
+public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
 
     private static final Logger log = Logger.getLogger(RemoteSessionRepo.class.getName());
     // One thread pool for all instances of this class
@@ -77,7 +77,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         this.metrics = metricUpdater;
         initializeSessions();
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, pathChildrenExecutor);
-        this.directoryCache.addListener(this);
+        this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
 
@@ -172,7 +172,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
             RemoteSession session = remoteSessionFactory.createSession(sessionId);
             Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
             Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
-            fileCache.addListener(this);
+            fileCache.addListener(this::nodeChanged);
             loadSessionIfActive(session);
             sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics));
             addSession(session);
@@ -215,8 +215,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         }
     }
 
-    @Override
-    public void nodeChanged() {
+    private void nodeChanged() {
         Multiset<Session.Status> sessionMetrics = HashMultiset.create();
         for (RemoteSession session : listSessions()) {
             sessionMetrics.add(session.getStatus());
@@ -227,8 +226,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         metrics.setDeactivatedSessions(sessionMetrics.count(Session.Status.DEACTIVATE));
     }
 
-    @Override
-    public void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) {
+    private void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) {
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "Got child event: " + event);
         }
@@ -254,4 +252,5 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
             session.confirmUpload();
         }
     }
+
 }
