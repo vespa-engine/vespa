@@ -7,7 +7,6 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.session.Session.Status;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -21,12 +20,12 @@ import java.util.Optional;
  */
 public class MockSessionZKClient extends SessionZooKeeperClient {
 
-    private ApplicationPackage app;
+    private ApplicationPackage app = null;
     private Optional<AllocatedHosts> info = Optional.empty();
-    private Status sessionStatus;
+    private Session.Status sessionStatus;
 
     public MockSessionZKClient(Curator curator, TenantName tenantName, long sessionId) {
-        this(curator, tenantName, sessionId, (ApplicationPackage) null);
+        this(curator, tenantName, sessionId, (ApplicationPackage)null);
     }
 
     public MockSessionZKClient(Curator curator, TenantName tenantName, long sessionId, Optional<AllocatedHosts> allocatedHosts) {
@@ -37,11 +36,11 @@ public class MockSessionZKClient extends SessionZooKeeperClient {
     public MockSessionZKClient(Curator curator, TenantName tenantName, long sessionId, ApplicationPackage application) {
         super(curator, TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
         this.app = application;
-        curator.create(TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
     }
 
     public MockSessionZKClient(ApplicationPackage app) {
-        this(new MockCurator(), TenantName.defaultName(), 123, app);
+        super(new MockCurator(), Path.createRoot());
+        this.app = app;
     }
 
     @Override
@@ -55,4 +54,15 @@ public class MockSessionZKClient extends SessionZooKeeperClient {
         return info.orElseThrow(() -> new IllegalStateException("Could not find allocated hosts"));
     }
 
+    @Override
+    public Transaction createWriteStatusTransaction(Session.Status status) {
+        return new DummyTransaction().add((DummyTransaction.RunnableOperation) () -> {
+            sessionStatus = status;
+        });
+    }
+
+    @Override
+    public Session.Status readStatus() {
+        return sessionStatus;
+    }
 }

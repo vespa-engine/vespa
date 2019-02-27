@@ -7,8 +7,8 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStreamTest;
@@ -18,7 +18,6 @@ import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -71,9 +70,8 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
 
     @Before
     public void setupRepo() {
-        Curator curator = new MockCurator();
-        applicationRepo = TenantApplications.create(curator, new MockReloadHandler(), tenant);
-        localSessionRepo = new LocalSessionRepo(Clock.systemUTC(), curator);
+        applicationRepo = new MemoryTenantApplications();
+        localSessionRepo = new LocalSessionRepo(Clock.systemUTC(), new MockCurator());
         tenantRepository = new TenantRepository(componentRegistry, false);
         sessionFactory = new MockSessionFactory();
         TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenant)

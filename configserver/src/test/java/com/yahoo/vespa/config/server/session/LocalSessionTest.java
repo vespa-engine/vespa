@@ -15,9 +15,8 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
-import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
@@ -201,7 +200,7 @@ public class LocalSessionTest {
                         FilesApplicationPackage.fromFile(testApp),
                         zkc,
                         sessionDir,
-                        TenantApplications.create(curator, new MockReloadHandler(), tenant),
+                        new MemoryTenantApplications(),
                         new HostRegistry<>(),
                         superModelGenerationCounter,
                         flagSource));

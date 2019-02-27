@@ -6,11 +6,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
+import com.yahoo.transaction.Transaction;
 
-import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -24,6 +25,8 @@ import org.junit.Test;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongPredicate;
 
@@ -99,9 +102,8 @@ public class RemoteSessionRepoTest {
     @Test
     public void testBadApplicationRepoOnActivate() {
         long sessionId = 3L;
+        TenantApplications applicationRepo = new FailingTenantApplications();
         TenantName mytenant = TenantName.from("mytenant");
-        TenantApplications applicationRepo = TenantApplications.create(curator, new MockReloadHandler(), mytenant);
-        curator.set(TenantRepository.getApplicationsPath(mytenant).append("mytenant:appX:default"), new byte[0]); // Invalid data
         Tenant tenant = TenantBuilder.create(new TestComponentRegistry.Builder().curator(curator).build(), mytenant)
                 .withApplicationRepo(applicationRepo)
                 .build();
@@ -149,4 +151,36 @@ public class RemoteSessionRepoTest {
         } while (System.currentTimeMillis() < endTime && !ok);
     }
 
+    private class FailingTenantApplications implements TenantApplications {
+
+        @Override
+        public List<ApplicationId> listApplications() {
+            return Collections.singletonList(ApplicationId.defaultId());
+        }
+
+        @Override
+        public Transaction createPutApplicationTransaction(ApplicationId applicationId, long sessionId) {
+            return null;
+        }
+
+        @Override
+        public long getSessionIdForApplication(ApplicationId applicationId) {
+            throw new IllegalArgumentException("Bad id " + applicationId);
+        }
+
+        @Override
+        public Transaction deleteApplication(ApplicationId applicationId) {
+            return null;
+        }
+
+        @Override
+        public void removeUnusedApplications() {
+            // do nothing
+        }
+
+        @Override
+        public void close() {
+
+        }
+    }
 }

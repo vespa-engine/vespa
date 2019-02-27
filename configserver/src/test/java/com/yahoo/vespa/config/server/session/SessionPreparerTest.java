@@ -15,12 +15,11 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudgetTest;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
@@ -217,8 +216,7 @@ public class SessionPreparerTest {
         return new SessionContext(app,
                                   new SessionZooKeeperClient(curator, sessionsPath),
                                   app.getAppDir(),
-                                  TenantApplications.create(curator, new MockReloadHandler(), TenantName.from("tenant")),
-                                  new HostRegistry<>(),
+                                  new MemoryTenantApplications(), new HostRegistry<>(),
                                   new SuperModelGenerationCounter(curator),
                                   flagSource);
     }

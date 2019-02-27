@@ -3,22 +3,19 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.google.common.testing.EqualsTester;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  * @author Ulf Lilleengen
  */
 public class TenantTest {
-
     private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
 
     private Tenant t1;
@@ -38,7 +35,7 @@ public class TenantTest {
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
         TenantName tenantName = TenantName.from(name);
         TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
-                .withApplicationRepo(TenantApplications.create(new MockCurator(), new MockReloadHandler(), tenantName));
+                .withApplicationRepo(new MemoryTenantApplications());
         tenantRepository.addTenant(tenantBuilder);
         return tenantRepository.getTenant(tenantName);
     }
@@ -59,4 +56,11 @@ public class TenantTest {
         assertThat(t1.hashCode(), is(not(t4.hashCode())));
     }
 
+    @Test
+    public void close() {
+        MemoryTenantApplications repo = (MemoryTenantApplications) t1.getApplicationRepo();
+        assertTrue(repo.isOpen());
+        t1.close();
+        assertFalse(repo.isOpen());
+    }
 }

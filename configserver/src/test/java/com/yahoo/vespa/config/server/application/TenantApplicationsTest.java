@@ -13,6 +13,8 @@ import org.apache.curator.framework.CuratorFramework;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.Matchers.is;
@@ -101,6 +103,36 @@ public class TenantApplicationsTest {
     }
 
     @Test
+    public void require_that_repos_behave_similarly() throws Exception {
+        TenantApplications zkRepo = createZKAppRepo();
+        TenantApplications memRepo = new MemoryTenantApplications();
+        for (TenantApplications repo : Arrays.asList(zkRepo, memRepo)) {
+            ApplicationId id1 = createApplicationId("myapp");
+            ApplicationId id2 = createApplicationId("myapp2");
+            repo.createPutApplicationTransaction(id1, 4).commit();
+            repo.createPutApplicationTransaction(id2, 5).commit();
+            List<ApplicationId> lst = repo.listApplications();
+            Collections.sort(lst);
+            assertThat(lst.size(), is(2));
+            assertThat(lst.get(0).application(), is(id1.application()));
+            assertThat(lst.get(1).application(), is(id2.application()));
+            assertThat(repo.getSessionIdForApplication(id1), is(4l));
+            assertThat(repo.getSessionIdForApplication(id2), is(5l));
+            repo.createPutApplicationTransaction(id1, 6).commit();
+            lst = repo.listApplications();
+            Collections.sort(lst);
+            assertThat(lst.size(), is(2));
+            assertThat(lst.get(0).application(), is(id1.application()));
+            assertThat(lst.get(1).application(), is(id2.application()));
+            assertThat(repo.getSessionIdForApplication(id1), is(6l));
+            assertThat(repo.getSessionIdForApplication(id2), is(5l));
+            repo.deleteApplication(id1).commit();
+            assertThat(repo.listApplications().size(), is(1));
+            repo.deleteApplication(id2).commit();
+        }
+    }
+
+    @Test
     public void require_that_reload_handler_is_called_when_apps_are_removed() throws Exception {
         ApplicationId foo = createApplicationId("foo");
         writeApplicationData(foo, 3L);
@@ -122,7 +154,7 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo(MockReloadHandler reloadHandler) {
-        return TenantApplications.create(curator, reloadHandler, tenantName);
+        return ZKTenantApplications.create(curator, reloadHandler, tenantName);
     }
 
     private static ApplicationId createApplicationId(String name) {
