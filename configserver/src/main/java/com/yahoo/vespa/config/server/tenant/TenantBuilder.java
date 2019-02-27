@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.application.ZKTenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.*;
@@ -120,7 +121,7 @@ public class TenantBuilder {
 
     private void createApplicationRepo() {
         if (applicationRepo == null) {
-            applicationRepo = TenantApplications.create(componentRegistry.getCurator(), reloadHandler, tenant);
+            applicationRepo = ZKTenantApplications.create(componentRegistry.getCurator(), reloadHandler, tenant);
         }
     }
 

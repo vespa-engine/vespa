@@ -14,7 +14,9 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.zookeeper.KeeperException;
 
 import java.time.Duration;
@@ -35,7 +37,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -56,7 +57,7 @@ import java.util.stream.Collectors;
  * @author Vegard Havdal
  * @author Ulf Lilleengen
  */
-public class TenantRepository {
+public class TenantRepository implements ConnectionStateListener, PathChildrenCacheListener {
 
     public static final TenantName HOSTED_VESPA_TENANT = TenantName.from("hosted-vespa");
     private static final TenantName DEFAULT_TENANT = TenantName.defaultName();
@@ -103,7 +104,7 @@ public class TenantRepository {
         this.curator = globalComponentRegistry.getCurator();
         metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(globalComponentRegistry.getTenantListener());
-        curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
+        curator.framework().getConnectionStateListenable().addListener(this);
 
         curator.create(tenantsPath);
         createSystemTenants(configserverConfig);
@@ -112,7 +113,7 @@ public class TenantRepository {
         if (useZooKeeperWatchForTenantChanges) {
             this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor));
             this.directoryCache.get().start();
-            this.directoryCache.get().addListener(this::childEvent);
+            this.directoryCache.get().addListener(this);
         } else {
             this.directoryCache = Optional.empty();
         }
@@ -317,7 +318,8 @@ public class TenantRepository {
         return ret.toString();
     }
 
-    private void stateChanged(CuratorFramework framework, ConnectionState connectionState) {
+    @Override
+    public void stateChanged(CuratorFramework framework, ConnectionState connectionState) {
         switch (connectionState) {
             case CONNECTED:
                 metricUpdater.incZKConnected();
@@ -337,7 +339,8 @@ public class TenantRepository {
         }
     }
 
-    private void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) {
+    @Override
+    public void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) {
         switch (event.getType()) {
             case CHILD_ADDED:
             case CHILD_REMOVED:
@@ -348,16 +351,8 @@ public class TenantRepository {
 
     public void close() {
         directoryCache.ifPresent(Curator.DirectoryCache::close);
-        try {
-            pathChildrenExecutor.shutdown();
-            checkForRemovedApplicationsService.shutdown();
-            pathChildrenExecutor.awaitTermination(50, TimeUnit.SECONDS);
-            checkForRemovedApplicationsService.awaitTermination(50, TimeUnit.SECONDS);
-        }
-        catch (InterruptedException e) {
-            log.log(Level.WARNING, "Interrupted while shutting down.", e);
-            Thread.currentThread().interrupt();
-        }
+        pathChildrenExecutor.shutdown();
+        checkForRemovedApplicationsService.shutdown();
     }
 
     public boolean checkThatTenantExists(TenantName tenant) {
