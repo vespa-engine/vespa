@@ -12,15 +12,12 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * @author bratseth
@@ -75,17 +72,8 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     protected Deployer deployer() { return deployer; }
 
-    protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        return nodesNeedingMaintenance().stream()
-                                        .map(node -> node.allocation().get().owner())
-                                        .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    /**
-     * Returns the nodes whose applications should be maintained by this now. 
-     * This should be some subset of the allocated nodes. 
-     */
-    protected abstract List<Node> nodesNeedingMaintenance();
+    /** Returns the applications that should be maintained by this now. */
+    protected abstract Set<ApplicationId> applicationsNeedingMaintenance();
 
     /** Redeploy this application. A lock will be taken for the duration of the deployment activation */
     protected final void deployWithLock(ApplicationId application) {
