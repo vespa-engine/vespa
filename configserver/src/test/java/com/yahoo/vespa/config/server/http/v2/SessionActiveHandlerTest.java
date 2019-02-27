@@ -20,9 +20,9 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -98,22 +98,22 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     @Before
     public void setup() {
         remoteSessionRepo = new RemoteSessionRepo(tenantName);
-        applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
-        localRepo = new LocalSessionRepo(clock, curator);
-        pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
-        hostProvisioner = new MockProvisioner();
         modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
         componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
                 .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(modelFactory)))
                 .build();
+        tenantRepository = new TenantRepository(componentRegistry, false);
+        applicationRepo = TenantApplications.create(curator, new MockReloadHandler(), tenantName);
+        localRepo = new LocalSessionRepo(clock, curator);
+        pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
+        hostProvisioner = new MockProvisioner();
         TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
                 .withSessionFactory(new MockSessionFactory())
                 .withLocalSessionRepo(localRepo)
                 .withRemoteSessionRepo(remoteSessionRepo)
                 .withApplicationRepo(applicationRepo);
-        tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(tenantBuilder);
         handler = createHandler();
     }

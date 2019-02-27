@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  *
  * @author Vegard Havdal
  */
-public class RemoteSessionStateWatcher implements NodeCacheListener {
+public class RemoteSessionStateWatcher {
 
     private static final Logger log = Logger.getLogger(RemoteSessionStateWatcher.class.getName());
     // One thread pool for all instances of this class
@@ -41,7 +41,7 @@ public class RemoteSessionStateWatcher implements NodeCacheListener {
         this.session = session;
         this.metrics = metrics;
         this.fileCache.start();
-        this.fileCache.addListener(this);
+        this.fileCache.addListener(this::nodeChanged);
     }
 
     private void sessionChanged(Session.Status status) {
@@ -72,7 +72,6 @@ public class RemoteSessionStateWatcher implements NodeCacheListener {
         }
     }
 
-    @Override
     public void nodeChanged() {
         executor.execute(() -> {
             try {

@@ -19,11 +19,12 @@ import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.host.HostRegistry;
-import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.MockRefeedAction;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
@@ -86,7 +87,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 .withSessionFactory(new MockSessionFactory())
                 .withLocalSessionRepo(localRepo)
                 .withRemoteSessionRepo(remoteSessionRepo)
-                .withApplicationRepo(new MemoryTenantApplications());
+                .withApplicationRepo(TenantApplications.create(curator, new MockReloadHandler(), tenant));
         tenantRepository.addTenant(tenantBuilder);
     }
 
