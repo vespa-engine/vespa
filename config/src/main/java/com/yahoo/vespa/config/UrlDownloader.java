@@ -32,7 +32,6 @@ public class UrlDownloader {
 
     public UrlDownloader() {
         spec = new Spec(Defaults.getDefaults().vespaHostname(), Defaults.getDefaults().vespaConfigProxyRpcPort());
-        connect();
     }
 
     public void shutdown() {
@@ -70,6 +69,7 @@ public class UrlDownloader {
     }
 
     public File waitFor(UrlReference urlReference, long timeout) {
+        connect();
         long start = System.currentTimeMillis() / 1000;
         long timeLeft = timeout;
         do {
