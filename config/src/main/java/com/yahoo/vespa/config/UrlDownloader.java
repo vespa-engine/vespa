@@ -61,7 +61,7 @@ public class UrlDownloader {
     }
 
     public boolean isValid() {
-        return target.isValid();
+        return target != null && target.isValid();
     }
 
     private boolean temporaryError(Request req) {
@@ -70,7 +70,7 @@ public class UrlDownloader {
 
     public File waitFor(UrlReference urlReference, long timeout) {
         long start = System.currentTimeMillis() / 1000;
-        if (target == null || !target.isValid())
+        if (! isValid())
             connect();
         long timeLeft = timeout;
         do {
