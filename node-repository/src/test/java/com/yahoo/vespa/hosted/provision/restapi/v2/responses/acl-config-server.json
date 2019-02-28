@@ -97,6 +97,30 @@
       "trustedBy": "cfg1.yahoo.com"
     },
     {
+      "hostname": "host13.yahoo.com",
+      "type": "tenant",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1.yahoo.com"
+    },
+    {
+      "hostname": "host13.yahoo.com",
+      "type": "tenant",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1.yahoo.com"
+    },
+    {
+      "hostname": "host14.yahoo.com",
+      "type": "tenant",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1.yahoo.com"
+    },
+    {
+      "hostname": "host14.yahoo.com",
+      "type": "tenant",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1.yahoo.com"
+    },
+    {
       "hostname": "host2.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.0.1",

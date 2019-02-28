@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -93,7 +94,7 @@ public class LoadBalancerProvisioner {
 
     /** Returns a list of active containers for given application, grouped by cluster spec */
     private Map<ClusterSpec, List<Node>> activeContainers(ApplicationId application) {
-        return new NodeList(nodeRepository.getNodes(Node.State.active))
+        return new NodeList(nodeRepository.getNodes(NodeType.tenant, Node.State.active))
                 .owner(application)
                 .filter(node -> node.state().isAllocated())
                 .type(ClusterSpec.Type.container)

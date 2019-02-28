@@ -49,7 +49,7 @@ public class RestApiTest {
 
     @After
     public void stopContainer() {
-        container.close();
+        if (container != null) container.close();
     }
 
     /** This test gives examples of all the requests that can be made to nodes/v2 */
@@ -76,17 +76,17 @@ public class RestApiTest {
                          new byte[0], Request.Method.POST));
         assertRestart(2, new Request("http://localhost:8080/nodes/v2/command/restart?application=tenant2.application2.instance2",
                          new byte[0], Request.Method.POST));
-        assertRestart(9, new Request("http://localhost:8080/nodes/v2/command/restart",
+        assertRestart(11, new Request("http://localhost:8080/nodes/v2/command/restart",
                          new byte[0], Request.Method.POST));
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                "\"restartGeneration\":3");
 
         // POST reboot command
-        assertReboot(10, new Request("http://localhost:8080/nodes/v2/command/reboot?state=failed%20active",
+        assertReboot(12, new Request("http://localhost:8080/nodes/v2/command/reboot?state=failed%20active",
                         new byte[0], Request.Method.POST));
         assertReboot(2, new Request("http://localhost:8080/nodes/v2/command/reboot?application=tenant2.application2.instance2",
                         new byte[0], Request.Method.POST));
-        assertReboot(17, new Request("http://localhost:8080/nodes/v2/command/reboot",
+        assertReboot(19, new Request("http://localhost:8080/nodes/v2/command/reboot",
                         new byte[0], Request.Method.POST));
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                "\"rebootGeneration\":4");
@@ -819,8 +819,8 @@ public class RestApiTest {
     /** Tests the rendering of each node separately to make it easier to find errors */
     @Test
     public void test_single_node_rendering() throws Exception {
-        for (int i = 1; i <= 10; i++) {
-            if (i == 8 || i == 9) continue; // these nodes are added later
+        for (int i = 1; i <= 14; i++) {
+            if (i == 8 || i == 9 || i == 11 || i == 12) continue; // these nodes are added later
             assertFile(new Request("http://localhost:8080/nodes/v2/node/host" + i + ".yahoo.com"), "node" + i + ".json");
         }
     }
@@ -828,7 +828,7 @@ public class RestApiTest {
     @Test
     public void test_load_balancers() throws Exception {
         assertFile(new Request("http://localhost:8080/loadbalancers/v1/"), "load-balancers.json");
-        assertFile(new Request("http://localhost:8080/loadbalancers/v1/?application=zoneapp.zoneapp.zoneapp"), "load-balancers.json");
+        assertFile(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant4.application4.instance4"), "load-balancers.json");
         assertResponse(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant.nonexistent.default"), "{\"loadBalancers\":[]}");
     }
 

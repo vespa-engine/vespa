@@ -21,7 +21,6 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -116,13 +115,11 @@ public class NodeRepositoryProvisioner implements Provisioner {
         validate(hosts);
         activator.activate(application, hosts, transaction);
         transaction.onCommitted(() -> {
-            if (nodeRepository.flags().get(FlagId.exclusiveLoadBalancer).isEnabled(application)) {
-                try {
-                    loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.provision(application));
-                } catch (Exception e) {
-                    log.log(LogLevel.ERROR, "Failed to provision load balancer for application " +
-                                            application.toShortString(), e);
-                }
+            try {
+                loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.provision(application));
+            } catch (Exception e) {
+                log.log(LogLevel.ERROR, "Failed to provision load balancer for application " +
+                                        application.toShortString(), e);
             }
         });
     }
