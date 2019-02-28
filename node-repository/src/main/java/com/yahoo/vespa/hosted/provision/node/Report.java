@@ -7,6 +7,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 
 import java.time.Instant;
+import java.util.Arrays;
 
 /**
  * A {@code Report} contains information about a node, typically found and published by host admin.
@@ -18,10 +19,13 @@ import java.time.Instant;
 public class Report {
     /** The time the report was created, in milliseconds since Epoch. */
     public static final String CREATED_FIELD = "createdMillis";
-    /** The description of the error (implies wanting to fail out node). */
+    /** The type of the report. */
+    public static final String TYPE_FIELD = "type";
+    /** The description of the report. */
     public static final String DESCRIPTION_FIELD = "description";
 
     private final String reportId;
+    private final Type type;
     private final Instant createdTime;
     private final String description;
 
@@ -29,17 +33,46 @@ public class Report {
     // clients of specific reports to query the details.
     private final Inspector reportInspector;
 
-    private Report(String reportId, Instant createdTime, String description, Inspector reportInspector) {
+    public enum Type {
+        /** The default type if none given, or not recognized. */
+        UNSPECIFIED(false),
+        /** The host has a soft failure and should be parked for manual inspection. */
+        SOFT_FAIL(true),
+        /** The host has a hard failure and should be given back to siteops. */
+        HARD_FAIL(true);
+
+        private final boolean badHost;
+
+        /**
+         * @param badHost Whether the host is actively trying to suspend itself and all children in anticipation
+         *                of being failed out (by the {@code NodeFailer}. Will expire from failed to parked.
+         */
+        Type(boolean badHost) {
+            this.badHost = badHost;
+        }
+
+        public boolean hostShouldBeFailed() {
+            return badHost;
+        }
+
+        public boolean shouldExpireToParked() {
+            return badHost;
+        }
+    }
+
+    private Report(String reportId, Type type, Instant createdTime, String description, Inspector reportInspector) {
         this.reportId = reportId;
+        this.type = type;
         this.createdTime = createdTime;
         this.description = description;
         this.reportInspector = reportInspector;
     }
 
     /** The ID of the report. */
-    public String getReportId() {
-        return reportId;
-    }
+    public String getReportId() { return reportId; }
+
+    /** The type of the report. */
+    public Type getType() { return type; }
 
     /** The time the report was created. */
     public Instant getCreatedTime() { return createdTime; }
@@ -51,17 +84,21 @@ public class Report {
     public String getDescription() { return description; }
 
     /** For exploring the JSON (Slime) of the report. */
-    public Inspector getInspector() {
-        return reportInspector;
-    }
+    public Inspector getInspector() { return reportInspector; }
 
     /** Create the simplest possible report. */
-    public static Report basicReport(String reportId, Instant createdTime, String description) {
-        return new Report(reportId, createdTime, description,  new Slime().setObject());
+    public static Report basicReport(String reportId, Type type, Instant createdTime, String description) {
+        return new Report(reportId, type, createdTime, description,  new Slime().setObject());
     }
 
     /** The reportInspector will be used to serialize the full report later, including any createdTime and description. */
     public static Report fromSlime(String reportId, Inspector reportInspector) {
+        String typeString = reportInspector.field(TYPE_FIELD).asString();
+        Type type = Arrays.stream(Type.values())
+                .filter(t -> t.name().equalsIgnoreCase(typeString))
+                .findFirst()
+                .orElse(Type.UNSPECIFIED);
+
         long millisSinceEpoch = reportInspector.field(CREATED_FIELD).asLong();
         if (millisSinceEpoch <= 0) {
             // Including null or not set.
@@ -71,7 +108,7 @@ public class Report {
 
         String description = reportInspector.field(DESCRIPTION_FIELD).asString();
 
-        return new Report(reportId, createdTime, description, reportInspector);
+        return new Report(reportId, type, createdTime, description, reportInspector);
     }
 
     public void toSlime(Cursor reportCursor) {
@@ -80,6 +117,7 @@ public class Report {
         // In Slime, trying to overwrite an already existing field is a no-op.
         // We'll write the required fields now. If they weren't already set by the above copyObject,
         // in particular the created field, the below will be set it to the current timestamp which is what we want.
+        if (type != Type.UNSPECIFIED) reportCursor.setString(TYPE_FIELD, type.name());
         reportCursor.setLong(CREATED_FIELD, createdTime.toEpochMilli());
         if (!description.isEmpty()) reportCursor.setString(DESCRIPTION_FIELD, description);
     }

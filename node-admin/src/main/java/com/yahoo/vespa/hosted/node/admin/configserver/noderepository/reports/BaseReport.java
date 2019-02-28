@@ -51,7 +51,7 @@ public class BaseReport {
     public enum Type {
         /** The default type if none given, or not recognized. */
         UNSPECIFIED,
-        /** The host has a soft failure and should parked for manual inspection. */
+        /** The host has a soft failure and should be parked for manual inspection. */
         SOFT_FAIL,
         /** The host has a hard failure and should be given back to siteops. */
         HARD_FAIL

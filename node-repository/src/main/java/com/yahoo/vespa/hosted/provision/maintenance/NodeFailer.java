@@ -35,7 +35,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
@@ -170,7 +169,7 @@ public class NodeFailer extends Maintainer {
                 nodesByFailureReason.put(node, "Node has hardware divergence");
             } else {
                 Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
-                List<String> failureReports = reasonsToRetireActiveParentHost(hostNode);
+                List<String> failureReports = reasonsToFailParentHost(hostNode);
                 if (failureReports.size() > 0) {
                     if (hostNode.equals(node)) {
                         nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
@@ -216,7 +215,7 @@ public class NodeFailer extends Maintainer {
                 } else {
                     Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
                     if (hostNode.type() == NodeType.host) {
-                        List<String> failureReports = reasonsToRetireActiveParentHost(hostNode);
+                        List<String> failureReports = reasonsToFailParentHost(hostNode);
                         if (failureReports.size() > 0) {
                             if (hostNode.equals(node)) {
                                 nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
@@ -231,24 +230,12 @@ public class NodeFailer extends Maintainer {
         return nodesByFailureReason;
     }
 
-    private static List<String> reasonsToRetireActiveParentHost(Node hostNode) {
-        return Stream.of(
-                "badMicrocode",
-                "badTotalMemorySize",
-                "badTotalDiskSize",
-                "badDiskType",
-                "badInterfaceSpeed",
-                "badCpuCount"
-        )
-                .map(reportId -> baseReportToString(hostNode, reportId))
-                .flatMap(Optional::stream)
+    private static List<String> reasonsToFailParentHost(Node hostNode) {
+        return hostNode.reports().getReports().stream()
+                .filter(report -> report.getType().hostShouldBeFailed())
+                // The generated string is built from the report's ID, created time, and description only.
+                .map(report -> report.getReportId() + " reported " + report.getCreatedTime() + ": " + report.getDescription())
                 .collect(Collectors.toList());
-    }
-
-    /** The generated string is built from the report's ID, created time, and description only. */
-    static Optional<String> baseReportToString(Node node, String reportId) {
-        return node.reports().getReport(reportId).map(report ->
-                reportId + " reported " + report.getCreatedTime() + ": " + report.getDescription());
     }
 
     /** Returns whether node has any kind of hardware issue */
@@ -258,7 +245,7 @@ public class NodeFailer extends Maintainer {
         }
 
         Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository.getNode(parent)).orElse(node);
-        return reasonsToRetireActiveParentHost(hostNode).size() > 0;
+        return reasonsToFailParentHost(hostNode).size() > 0;
     }
 
     private boolean expectConfigRequests(Node node) {

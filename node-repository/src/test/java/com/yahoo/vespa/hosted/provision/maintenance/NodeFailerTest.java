@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.hosted.provision.node.Report.Type.HARD_FAIL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -62,7 +63,7 @@ public class NodeFailerTest {
         String hostWithFailureReports = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2);
 
         // Set failure report to the parent and all its children.
-        Report badTotalMemorySizeReport = Report.basicReport("badTotalMemorySize", Instant.now(), "too low");
+        Report badTotalMemorySizeReport = Report.basicReport("badTotalMemorySize", HARD_FAIL, Instant.now(), "too low");
         tester.nodeRepository.getNodes().stream()
                 .filter(node -> node.hostname().equals(hostWithFailureReports))
                 .forEach(node -> {
@@ -133,7 +134,7 @@ public class NodeFailerTest {
         String readyChild = hostnamesByState.get(Node.State.ready).get(0);
 
         // Set failure report to the parent and all its children.
-        Report badTotalMemorySizeReport = Report.basicReport("badTotalMemorySize", Instant.now(), "too low");
+        Report badTotalMemorySizeReport = Report.basicReport("badTotalMemorySize", HARD_FAIL, Instant.now(), "too low");
         tester.nodeRepository.getNodes().stream()
                 .filter(node -> node.hostname().equals(hostWithFailureReports))
                 .forEach(node -> {
