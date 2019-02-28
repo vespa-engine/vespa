@@ -141,6 +141,7 @@ class GetConfigProcessor implements Runnable {
     }
     @Override
     public void run() {
+        rpcServer.hostLivenessTracker().receivedRequestFrom(request.getClientHostName());
         Pair<GetConfigContext, Long> delayed = getConfig(request);
 
         if (delayed != null) {
