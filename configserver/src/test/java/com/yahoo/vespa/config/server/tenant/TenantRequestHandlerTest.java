@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -92,7 +93,7 @@ public class TenantRequestHandlerTest {
         Metrics sh = Metrics.createTestMetrics();
         List<ReloadListener> listeners = new ArrayList<>();
         listeners.add(listener);
-        server = new TenantRequestHandler(sh, tenant, listeners, new UncompressedConfigResponseFactory(), new HostRegistries());
+        server = new TenantRequestHandler(sh, tenant, listeners, new UncompressedConfigResponseFactory(), new HostRegistries(), curator);
         componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
                 .modelFactoryRegistry(createRegistry())

@@ -16,6 +16,7 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.application.ApplicationMapper;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -29,6 +30,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.curator.Curator;
 
 /**
  * A per tenant request handler, for handling reload (activate application) and getConfig requests for
@@ -44,23 +46,25 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
     private final TenantName tenant;
     private final List<ReloadListener> reloadListeners;
     private final ConfigResponseFactory responseFactory;
-
     private final HostRegistry<ApplicationId> hostRegistry;
     private final ApplicationMapper applicationMapper = new ApplicationMapper();
     private final MetricUpdater tenantMetricUpdater;
     private final Clock clock = Clock.systemUTC();
+    private final TenantApplications applications;
 
     public TenantRequestHandler(Metrics metrics,
                                 TenantName tenant,
                                 List<ReloadListener> reloadListeners,
                                 ConfigResponseFactory responseFactory,
-                                HostRegistries hostRegistries) {
+                                HostRegistries hostRegistries,
+                                Curator curator) { // TODO jvenstad: Merge this class with TenantApplications, and straighten this out.
         this.metrics = metrics;
         this.tenant = tenant;
-        this.reloadListeners = reloadListeners;
+        this.reloadListeners = List.copyOf(reloadListeners);
         this.responseFactory = responseFactory;
-        tenantMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenant));
-        hostRegistry = hostRegistries.createApplicationHostRegistry(tenant);
+        this.tenantMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenant));
+        this.hostRegistry = hostRegistries.createApplicationHostRegistry(tenant);
+        this.applications = TenantApplications.create(curator, this, tenant);
     }
 
     /**
@@ -237,5 +241,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
             reloadListener.verifyHostsAreAvailable(tenant, newHosts);
         }
     }
+
+    TenantApplications applications() { return applications; }
 
 }
