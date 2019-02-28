@@ -152,9 +152,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             log.log(LogLevel.SPAM, getConfigMethodName);
         }
         req.detach();
-        JRTServerConfigRequestV3 request = JRTServerConfigRequestV3.createFromRequest(req);
-        addToRequestQueue(request);
-        hostLivenessTracker.receivedRequestFrom(request.getClientHostName());
+        addToRequestQueue(JRTServerConfigRequestV3.createFromRequest(req));
     }
 
     /**
@@ -560,4 +558,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         req.returnValues().add(new Int32Value(0));
     }
 
+    HostLivenessTracker hostLivenessTracker() {
+        return hostLivenessTracker;
+    }
 }
