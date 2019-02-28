@@ -20,8 +20,6 @@ import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.flag.Flag;
-import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -77,6 +75,7 @@ public class CuratorDatabaseClient {
     public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache) {
         this.nodeSerializer = new NodeSerializer(flavors);
         this.zone = zone;
+        curator.delete(flagsRoot); // TODO: Remove after 7.42 has been released
         this.curatorDatabase = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter").getAbsolute());
@@ -97,7 +96,6 @@ public class CuratorDatabaseClient {
         curatorDatabase.create(dockerImagesPath());
         curatorDatabase.create(firmwareCheckPath());
         curatorDatabase.create(loadBalancersRoot);
-        curatorDatabase.create(flagsRoot);
         provisionIndexCounter.initialize(100);
     }
 
@@ -525,28 +523,6 @@ public class CuratorDatabaseClient {
 
     private Path loadBalancerPath(LoadBalancerId id) {
         return loadBalancersRoot.append(id.serializedForm());
-    }
-
-    public void writeFlag(Flag flag) {
-        Path path = flagPath(flag.id());
-        NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(createOrSet(path, FlagSerializer.toJson(flag)));
-        transaction.commit();
-    }
-
-
-    // Flags
-    public Optional<Flag> readFlag(FlagId id) {
-        return read(flagPath(id), FlagSerializer::fromJson);
-    }
-
-    public Lock lockFlags() {
-        return lock(lockRoot.append("flagsLock"), defaultLockTimeout);
-    }
-
-    private Path flagPath(FlagId id) {
-        return flagsRoot.append(id.serializedValue());
     }
 
     private Transaction.Operation createOrSet(Path path, byte[] data) {

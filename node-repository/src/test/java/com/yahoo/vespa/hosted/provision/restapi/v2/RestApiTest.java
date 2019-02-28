@@ -778,44 +778,6 @@ public class RestApiTest {
                        "{\"message\":\"Cancelled outstanding requests for firmware checks\"}");
     }
 
-    @Test
-    public void test_flags() throws Exception {
-        assertFile(new Request("http://localhost:8080/nodes/v2/flags/"), "flags1.json");
-
-        // Enable flag for application
-        assertResponse(new Request("http://localhost:8080/nodes/v2/flags/exclusive-load-balancer/application/foo:bar:default",
-                                   new byte[0], Request.Method.POST),
-                       "{\"message\":\"Enabled feature exclusiveLoadBalancer for application 'foo:bar:default'\"}");
-
-        // Enable flag for node
-        assertResponse(new Request("http://localhost:8080/nodes/v2/flags/exclusive-load-balancer/node/host1",
-                                   new byte[0], Request.Method.POST),
-                       "{\"message\":\"Enabled feature exclusiveLoadBalancer for node 'host1'\"}");
-
-        assertFile(new Request("http://localhost:8080/nodes/v2/flags/"), "flags2.json");
-
-        // Enable flag for entire repository
-        assertResponse(new Request("http://localhost:8080/nodes/v2/flags/exclusive-load-balancer",
-                                   new byte[0], Request.Method.POST),
-                       "{\"message\":\"Enabled feature exclusiveLoadBalancer\"}");
-
-        // Disable flag for application
-        assertResponse(new Request("http://localhost:8080/nodes/v2/flags/exclusive-load-balancer/application/foo:bar:default",
-                                   new byte[0], Request.Method.DELETE),
-                       "{\"message\":\"Disabled feature exclusiveLoadBalancer for application 'foo:bar:default'\"}");
-
-        // Disable flag for node
-        assertResponse(new Request("http://localhost:8080/nodes/v2/flags/exclusive-load-balancer/node/host1",
-                                   new byte[0], Request.Method.DELETE),
-                       "{\"message\":\"Disabled feature exclusiveLoadBalancer for node 'host1'\"}");
-
-        // Disable flag for entire repository
-        assertResponse(new Request("http://localhost:8080/nodes/v2/flags/exclusive-load-balancer",
-                                   new byte[0], Request.Method.DELETE),
-                       "{\"message\":\"Disabled feature exclusiveLoadBalancer\"}");
-
-    }
-
     /** Tests the rendering of each node separately to make it easier to find errors */
     @Test
     public void test_single_node_rendering() throws Exception {

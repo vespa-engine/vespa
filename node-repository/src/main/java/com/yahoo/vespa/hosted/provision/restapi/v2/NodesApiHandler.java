@@ -2,10 +2,8 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostFilter;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -20,7 +18,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -108,7 +105,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
         if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(maintenance.jobControl());
         if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(maintenance.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.dockerImages());
-        if (path.equals(    "/nodes/v2/flags/")) return new FlagsResponse(nodeRepository.flags().list());
         throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
@@ -169,8 +165,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Added " + addedNodes + " nodes to the provisioned state");
         }
         if (path.matches("/nodes/v2/maintenance/inactive/{job}")) return setJobActive(path.get("job"), false);
-        if (path.matches("/nodes/v2/flags/{flag}")) return setFlag(path.get("flag"), true, "", "");
-        if (path.matches("/nodes/v2/flags/{flag}/{dimension}/{value}")) return setFlag(path.get("flag"), true, path.get("dimension"), path.get("value"));
         if (path.matches("/nodes/v2/upgrade/firmware")) return requestFirmwareCheckResponse();
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
@@ -184,8 +178,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Removed " + removedNodes.stream().map(Node::hostname).collect(Collectors.joining(", ")));
         }
         if (path.matches("/nodes/v2/maintenance/inactive/{job}")) return setJobActive(path.get("job"), true);
-        if (path.matches("/nodes/v2/flags/{flag}")) return setFlag(path.get("flag"), false, "", "");
-        if (path.matches("/nodes/v2/flags/{flag}/{dimension}/{value}")) return setFlag(path.get("flag"), false, path.get("dimension"), path.get("value"));
         if (path.matches("/nodes/v2/upgrade/firmware")) return cancelFirmwareCheckResponse();
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
@@ -281,24 +273,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
             throw new NotFoundException("No job named '" + jobName + "'");
         maintenance.jobControl().setActive(jobName, active);
         return new MessageResponse((active ? "Re-activated" : "Deactivated" ) + " job '" + jobName + "'");
-    }
-
-    private HttpResponse setFlag(String flag, boolean enabled, String dimension, String value) {
-        FlagId flagId = FlagId.fromSerializedForm(flag);
-        switch (dimension) {
-            case "application":
-                nodeRepository.flags().setEnabled(flagId, ApplicationId.fromSerializedForm(value), enabled);
-                break;
-            case "node":
-                nodeRepository.flags().setEnabled(flagId, HostName.from(value), enabled);
-                break;
-            case "":
-                nodeRepository.flags().setEnabled(flagId, enabled);
-                break;
-            default: throw new IllegalArgumentException("Unknown flag dimension '" + dimension + "'");
-        }
-        return new MessageResponse((enabled ? "Enabled" : "Disabled") + " feature " + flagId +
-                                   (!value.isEmpty() ? " for " + dimension + " '" + value + "'" : ""));
     }
 
     private MessageResponse setTargetVersions(HttpRequest request) {
