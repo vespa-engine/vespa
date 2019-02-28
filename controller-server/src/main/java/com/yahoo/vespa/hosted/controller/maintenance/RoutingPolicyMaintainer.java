@@ -136,8 +136,10 @@ public class RoutingPolicyMaintainer extends Maintainer {
 
     /** Register DNS alias for given load balancer */
     private RoutingPolicy registerCname(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer) {
-        HostName alias = HostName.from(RoutingPolicy.createAlias(loadBalancer.cluster(), application, zone));
-        RecordName name = RecordName.from(alias.value());
+        RoutingPolicy routingPolicy = new RoutingPolicy(application, zone, loadBalancer.cluster(),
+                                                        loadBalancer.hostname(), loadBalancer.dnsZone(),
+                                                        loadBalancer.rotations());
+        RecordName name = RecordName.from(routingPolicy.alias().value());
         RecordData data = RecordData.fqdn(loadBalancer.hostname().value());
         List<Record> existingRecords = nameService.findRecords(Record.Type.CNAME, name);
         if (existingRecords.size() > 1) {
@@ -151,8 +153,7 @@ public class RoutingPolicyMaintainer extends Maintainer {
         } else {
             nameService.createCname(name, data);
         }
-        return new RoutingPolicy(application, zone, alias, loadBalancer.hostname(), loadBalancer.dnsZone(),
-                                 loadBalancer.rotations());
+        return routingPolicy;
     }
 
     /** Remove all DNS records that point to non-existing load balancers */

@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
@@ -9,11 +8,11 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -24,8 +23,6 @@ import java.util.stream.Collectors;
  */
 public class RoutingPolicy {
 
-    private static final String ignoredEndpointPart = "default";
-
     private final ApplicationId owner;
     private final ZoneId zone;
     private final HostName alias;
@@ -33,6 +30,7 @@ public class RoutingPolicy {
     private final Optional<String> dnsZone;
     private final Set<RotationName> rotations;
 
+    /** DO NOT USE. Public for serialization purposes */
     public RoutingPolicy(ApplicationId owner, ZoneId zone, HostName alias, HostName canonicalName,
                          Optional<String> dnsZone, Set<RotationName> rotations) {
         this.owner = Objects.requireNonNull(owner, "owner must be non-null");
@@ -41,6 +39,11 @@ public class RoutingPolicy {
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.rotations = ImmutableSortedSet.copyOf(Objects.requireNonNull(rotations, "rotations must be non-null"));
+    }
+
+    public RoutingPolicy(ApplicationId owner, ZoneId zone, ClusterSpec.Id cluster, HostName canonicalName,
+                         Optional<String> dnsZone, Set<RotationName> rotations) {
+        this(owner, zone, HostName.from(aliasOf(cluster, owner, zone)), canonicalName, dnsZone, rotations);
     }
 
     /** The application owning this */
@@ -95,20 +98,21 @@ public class RoutingPolicy {
                              zone.value());
     }
 
-    public static String createAlias(ClusterSpec.Id clusterId, ApplicationId applicationId, ZoneId zoneId) {
-        List<String> parts = Arrays.asList(ignorePartIfDefault(clusterId.value()),
-                                           ignorePartIfDefault(applicationId.instance().value()),
-                                           applicationId.application().value(),
-                                           applicationId.tenant().value() +
-                                           "." + zoneId.value() + "." + "vespa.oath.cloud"
+    /** Returns the alias to use for the given application cluster in zone */
+    private static String aliasOf(ClusterSpec.Id cluster, ApplicationId application, ZoneId zone) {
+        List<String> parts = List.of(ignorePartIfDefault(cluster.value()),
+                                     ignorePartIfDefault(application.instance().value()),
+                                     application.application().value(),
+                                     application.tenant().value() +
+                                     "." + zone.value() + "." + "vespa.oath.cloud"
         );
         return parts.stream()
-                    .filter(s -> !Strings.isNullOrEmpty((s)))
+                    .filter(Predicate.not(String::isBlank))
                     .collect(Collectors.joining("--"));
     }
 
     private static String ignorePartIfDefault(String s) {
-        return ignoredEndpointPart.equalsIgnoreCase(s) ? "" : s;
+        return "default".equalsIgnoreCase(s) ? "" : s;
     }
 
 }
