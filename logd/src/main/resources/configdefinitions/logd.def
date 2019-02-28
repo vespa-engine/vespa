@@ -33,4 +33,4 @@ rotate.age int default=86400
 remove.totalmegabytes int default=1000
 
 ## remove old logfiles older than this (in days)
-remove.age int default=31
+remove.age int default=30

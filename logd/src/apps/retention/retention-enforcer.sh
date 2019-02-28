@@ -7,7 +7,7 @@
 DBGF=logs/vespa/debug.retention-enforcer
 DBDIR=var/db/vespa/logfiledb
 PIDF=$DBDIR/retention-enforcer.pid
-RETAIN_DAYS=31
+RETAIN_DAYS=30
 
 # this depends on components adding their log files
 # to a "database" in DBDIR named "logfiles.TTTTT" where
