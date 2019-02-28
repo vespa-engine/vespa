@@ -164,9 +164,5 @@ public class TenantBuilder {
         }
     }
 
-    public TenantApplications getApplicationRepo() {
-        return applicationRepo;
-    }
-
     public TenantName getTenantName() { return tenant; }
 }

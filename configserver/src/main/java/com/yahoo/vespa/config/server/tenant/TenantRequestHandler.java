@@ -93,6 +93,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
      *
      * @param applicationSet the {@link ApplicationSet} to be reloaded
      */
+    @Override
     public void reloadConfig(ApplicationSet applicationSet) {
         setLiveApp(applicationSet);
         notifyReloadListeners(applicationSet);
@@ -112,7 +113,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
     @Override
     public void removeApplicationsExcept(Set<ApplicationId> applications) {
         for (ApplicationId activeApplication : applicationMapper.listApplicationIds()) {
-            if (! applications.contains(activeApplication)) {
+            if ( ! applications.contains(activeApplication)) {
                 log.log(LogLevel.INFO, "Will remove deleted application " + activeApplication.toShortString());
                 removeApplication(activeApplication);
             }

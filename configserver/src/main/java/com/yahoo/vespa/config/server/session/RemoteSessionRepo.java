@@ -115,19 +115,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         return (created.plus(expiryTime).isBefore(Instant.now()));
     }
 
-    private void loadActiveSession(RemoteSession session) {
-        tryReload(session.ensureApplicationLoaded(), session.logPre());
-    }
-
-    private void tryReload(ApplicationSet applicationSet, String logPre) {
-        try {
-            reloadHandler.reloadConfig(applicationSet);
-            log.log(LogLevel.INFO, logPre + "Application activated successfully: " + applicationSet.getId());
-        } catch (Exception e) {
-            log.log(LogLevel.WARNING, logPre + "Skipping loading of application '" + applicationSet.getId() + "': " + Exceptions.toMessageString(e));
-        }
-    }
-
     private List<Long> getSessionListFromDirectoryCache(List<ChildData> children) {
         return getSessionList(children.stream()
                                       .map(child -> Path.fromString(child.getPath()).getName())
@@ -194,11 +181,12 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
             try {
                 if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
                     log.log(LogLevel.DEBUG, "Found active application for session " + session.getSessionId() + " , loading it");
-                    loadActiveSession(session);
-                    break;
+                    reloadHandler.reloadConfig(session.ensureApplicationLoaded());
+                    log.log(LogLevel.INFO, session.logPre() + "Application activated successfully: " + applicationId);
+                    return;
                 }
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, session.logPre() + " error reading session id for " + applicationId, e);
+                log.log(LogLevel.WARNING, session.logPre() + "Skipping loading of application '" + applicationId + "': " + Exceptions.toMessageString(e));
             }
         }
     }

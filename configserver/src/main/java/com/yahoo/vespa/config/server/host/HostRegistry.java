@@ -36,6 +36,7 @@ public class HostRegistry<T> implements HostValidator<T> {
         addHosts(key, newHosts);
     }
 
+    @Override
     public synchronized void verifyHosts(T key, Collection<String> newHosts) {
         for (String host : newHosts) {
             if (hostAlreadyTaken(host, key)) {
