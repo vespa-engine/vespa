@@ -77,7 +77,11 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         }
     }
 
-    protected final void setParent(AbstractConfigProducer parent) { this.parent = parent; }
+    protected final void setParent(AbstractConfigProducer parent) {
+        this.parent = parent;
+        computeConfigId();
+    }
+
     public final String getSubId() { return subId; }
 
     /**
@@ -363,11 +367,31 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
             configId = parentConfigId + subId;
             addConfigId(configId);
         }
+        computeConfigId();
+        setupChildConfigIds(getConfigIdPrefix());
+    }
 
+    private String getConfigIdPrefix() {
         if (this instanceof AbstractConfigProducerRoot || this instanceof ApplicationConfigProducerRoot) {
-            setupChildConfigIds("");
+            return "";
+        }
+        if (configId == null) return null;
+        return configId + "/";
+    }
+
+    private void computeConfigId() {
+        if (parent == null) return;
+        String parentConfigId = parent.getConfigIdPrefix();
+        if (parentConfigId == null) return;
+        String oldConfigId = configId;
+        if (this instanceof AbstractConfigProducerRoot) {
+            configId = "";
         } else {
-            setupChildConfigIds(configId + '/');
+            configId = parentConfigId + subId;
+        }
+        if (oldConfigId == null) return;
+        if (!configId.equals(oldConfigId)) {
+            throw new IllegalArgumentException("configId cannot change "+oldConfigId+" -> "+configId+" (invalid topology change)");
         }
     }
 
