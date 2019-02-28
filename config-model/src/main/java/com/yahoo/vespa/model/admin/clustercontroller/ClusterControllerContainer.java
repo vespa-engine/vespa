@@ -13,6 +13,7 @@ import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.container.Container;
+import com.yahoo.vespa.model.container.ContainerServiceType;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
@@ -83,8 +84,8 @@ public class ClusterControllerContainer extends Container implements
     }
 
     @Override
-    public String getServiceType() {
-        return "container-clustercontroller";
+    public ContainerServiceType myServiceType() {
+        return ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
     }
 
     private void addHandler(Handler h, String binding) {

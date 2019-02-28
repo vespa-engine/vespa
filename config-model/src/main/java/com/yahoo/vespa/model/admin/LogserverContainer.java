@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.admin;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerServiceType;
 import com.yahoo.vespa.model.container.component.Handler;
 
 /**
@@ -25,8 +26,8 @@ public class LogserverContainer extends Container {
 
     // TODO: Change service type to 'logserver-container'
     @Override
-    public String getServiceType() {
-        return "container";
+    public ContainerServiceType myServiceType() {
+        return ContainerServiceType.CONTAINER;
     }
 
     private void addLogHandler(ContainerCluster cluster) {
