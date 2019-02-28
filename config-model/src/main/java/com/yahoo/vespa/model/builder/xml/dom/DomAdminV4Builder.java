@@ -12,11 +12,11 @@ import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Logserver;
+import com.yahoo.vespa.model.admin.LogserverContainer;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
-import com.yahoo.vespa.model.container.component.Handler;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -81,7 +81,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
 
             Logserver logserver = createLogserver(deployState.getDeployLogger(), admin, hosts);
-            createAdditionalContainerOnLogserverHost(deployState, admin, logserver.getHostResource());
+            createContainerOnLogserverHost(deployState, admin, logserver.getHostResource());
         } else if (containerModels.iterator().hasNext()) {
             List<HostResource> hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.count(), false);
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
@@ -102,34 +102,20 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             return NodesSpecification.nonDedicated(1, context);
     }
 
-    // Creates a container cluster 'logserver-cluster' with 1 container on logserver host
-    // for setting up a handler for getting logs from logserver
-    private void createAdditionalContainerOnLogserverHost(DeployState deployState, Admin admin, HostResource hostResource) {
+    // Creates a container cluster 'logs' with a container on the logserver host
+    // that has a handler for getting logs
+    private void createContainerOnLogserverHost(DeployState deployState, Admin admin, HostResource hostResource) {
         ContainerCluster logServerCluster = new ContainerCluster(admin, "logs", "logs", deployState);
         ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
-
-        // Add base handlers and the log handler
-        logServerCluster.addMetricStateHandler();
-        logServerCluster.addApplicationStatusHandler();
-        logServerCluster.addDefaultRootHandler();
-        logServerCluster.addVipHandler();
-        addLogHandler(logServerCluster);
-
         logserverClusterModel.setCluster(logServerCluster);
 
-        Container container = new Container(logServerCluster, "" + 0, 0, deployState.isHosted());
+        Container container = new LogserverContainer(logServerCluster);
         container.setHostResource(hostResource);
         container.initService(deployState.getDeployLogger());
         logServerCluster.addContainer(container);
         admin.addAndInitializeService(deployState.getDeployLogger(), hostResource, container);
         admin.setLogserverContainerCluster(logServerCluster);
         context.getConfigModelRepoAdder().add(logserverClusterModel);
-    }
-
-    private void addLogHandler(ContainerCluster cluster) {
-        Handler<?> logHandler = Handler.fromClassName("com.yahoo.container.handler.LogHandler");
-        logHandler.addServerBindings("http://*/logs", "https://*/logs");
-        cluster.addComponent(logHandler);
     }
 
     private Collection<HostResource> allocateHosts(HostSystem hostSystem, String clusterId, NodesSpecification nodesSpecification) {
