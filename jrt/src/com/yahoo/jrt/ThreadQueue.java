@@ -21,8 +21,22 @@ class ThreadQueue
      * was closed
      * @param obj the object to enqueue
      **/
-    public synchronized boolean enqueue(Object obj) {
-        if (closed) {
+    public boolean enqueue(Object obj) {
+        return enqueue(obj, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Enqueue an object on this queue. If the queue has been closed or
+     * the queue already contains too many items, the object will not be
+     * queued, and this method will return false.
+     *
+     * @return true if the object was enqueued, false if this queue
+     * was closed or too large
+     * @param obj the object to enqueue
+     * @param limit more elements than this means the queue is too large
+     **/
+    public synchronized boolean enqueue(Object obj, int limit) {
+        if (closed || (queue.size() > limit)) {
             return false;
         }
         queue.enqueue(obj);
