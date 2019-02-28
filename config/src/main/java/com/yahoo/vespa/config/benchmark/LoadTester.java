@@ -234,6 +234,7 @@ public class LoadTester {
                             System.out.println("# Connection lost, reconnecting...");
                             reconnCycle = true;
                         }
+                        target.close();
                         target = connect(spec);
                     } else {
                         System.err.println(request.errorMessage());
@@ -270,7 +271,7 @@ public class LoadTester {
         }
 
         private Target connect(Spec spec) {
-            return supervisor.connectSync(spec);
+            return supervisor.connect(spec);
         }
     }
 }

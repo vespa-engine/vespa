@@ -52,14 +52,18 @@ class FileAcquirerImpl implements FileAcquirer {
         private void connect(Timer timer) throws InterruptedException {
             while (timer.isTimeLeft()) {
                 pause();
-                target = supervisor.connectSync(spec);
-                if (target.isValid()) {
+                target = supervisor.connect(spec);
+                // ping to check if connection is working
+                Request request = new Request("frt.rpc.ping");
+                target.invokeSync(request, 5.0);
+                if (request.isError()) {
+                    logWarning();
+                    target.close();
+                } else {
                     log.log(LogLevel.DEBUG, "Successfully connected to '" + spec + "', this = " + System.identityHashCode(this));
                     pauseTime = 0;
                     logCount = 0;
                     return;
-                } else {
-                    logWarning();
                 }
             }
         }
