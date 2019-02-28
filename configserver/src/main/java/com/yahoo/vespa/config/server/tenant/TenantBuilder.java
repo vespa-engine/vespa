@@ -31,7 +31,7 @@ public class TenantBuilder {
     private SessionFactory sessionFactory;
     private LocalSessionLoader localSessionLoader;
     private TenantApplications applicationRepo;
-    private ReloadHandler reloadHandler;
+    private TenantRequestHandler reloadHandler;
     private RequestHandler requestHandler;
     private RemoteSessionFactory remoteSessionFactory;
     private TenantFileSystemDirs tenantFileSystemDirs;
@@ -120,7 +120,7 @@ public class TenantBuilder {
 
     private void createApplicationRepo() {
         if (applicationRepo == null) {
-            applicationRepo = TenantApplications.create(componentRegistry.getCurator(), reloadHandler, tenant);
+            applicationRepo = reloadHandler.applications();
         }
     }
 
@@ -130,7 +130,8 @@ public class TenantBuilder {
                                                                  tenant,
                                                                  Collections.singletonList(componentRegistry.getReloadListener()),
                                                                  ConfigResponseFactory.create(componentRegistry.getConfigserverConfig()),
-                                                                 componentRegistry.getHostRegistries());
+                                                                 componentRegistry.getHostRegistries(),
+                                                                 componentRegistry.getCurator());
             if (hostValidator == null) {
                 this.hostValidator = impl;
             }
