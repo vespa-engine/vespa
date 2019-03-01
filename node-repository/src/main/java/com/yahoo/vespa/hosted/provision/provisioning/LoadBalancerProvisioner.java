@@ -95,6 +95,7 @@ public class LoadBalancerProvisioner {
     private Map<ClusterSpec, List<Node>> activeContainers(ApplicationId application) {
         return new NodeList(nodeRepository.getNodes(Node.State.active))
                 .owner(application)
+                .filter(node -> node.state().isAllocated())
                 .type(ClusterSpec.Type.container)
                 .asList()
                 .stream()
