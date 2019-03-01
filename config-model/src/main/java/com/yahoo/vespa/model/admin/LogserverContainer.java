@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.admin;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerServiceType;
+import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.vespa.model.container.component.Handler;
 
 /**
