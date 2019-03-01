@@ -11,14 +11,18 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -27,9 +31,9 @@ import java.util.stream.Collectors;
 /**
  * The applications of a tenant, backed by ZooKeeper.
  *
- * Each application is stored under /config/v2/tenants/&lt;tenant&gt;/applications/&lt;applications&gt;,
- * the root contains the currently active session, if any, and sub-paths /preparing contains the session id
- * of whatever session may be activated next, if any, and /lock is used for synchronizing writes to all these paths.
+ * Each application is stored under /config/v2/tenants/&lt;tenant&gt;/applications/&lt;application&gt;,
+ * the root contains the currently active session, if any. Locks for synchronising writes to these paths, and changes
+ * to the config of this application, are found under /config/v2/tenants/&lt;tenant&gt;/locks/&lt;application&gt;.
  *
  * @author Ulf Lilleengen
  * @author jonmv
@@ -40,16 +44,19 @@ public class TenantApplications {
 
     private final Curator curator;
     private final Path applicationsPath;
+    private final Path locksPath;
     // One thread pool for all instances of this class
     private static final ExecutorService pathChildrenExecutor =
             Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(TenantApplications.class.getName()));
     private final Curator.DirectoryCache directoryCache;
     private final ReloadHandler reloadHandler;
+    private final Map<ApplicationId, Lock> locks;
 
-    private TenantApplications(Curator curator, Path applicationsPath, ReloadHandler reloadHandler) {
+    private TenantApplications(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
         this.curator = curator;
-        this.applicationsPath = applicationsPath;
-        curator.create(applicationsPath);
+        this.applicationsPath = TenantRepository.getApplicationsPath(tenant);
+        this.locksPath = TenantRepository.getLocksPath(tenant);
+        this.locks = new ConcurrentHashMap<>(2);
         this.reloadHandler = reloadHandler;
         this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.start();
@@ -57,7 +64,7 @@ public class TenantApplications {
     }
 
     public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
-        return new TenantApplications(curator, TenantRepository.getApplicationsPath(tenant), reloadHandler);
+        return new TenantApplications(curator, reloadHandler, tenant);
     }
 
     /**
@@ -71,6 +78,10 @@ public class TenantApplications {
                       .map(ApplicationId::fromSerializedForm)
                       .filter(id -> activeSessionOf(id).isPresent())
                       .collect(Collectors.toUnmodifiableList());
+    }
+
+    public boolean exists(ApplicationId id) {
+        return curator.exists(applicationPath(id));
     }
 
     /** Returns the id of the currently active session for the given application, if any. Throws on unknown applications. */
@@ -94,7 +105,9 @@ public class TenantApplications {
      * Creates a node for the given application, marking its existence.
      */
     public void createApplication(ApplicationId id) {
-        curator.create(applicationPath(id));
+        try (Lock lock = lock(id)) {
+            curator.create(applicationPath(id));
+        }
     }
 
     /**
@@ -113,7 +126,7 @@ public class TenantApplications {
      * Returns a transaction which deletes this application.
      */
     public CuratorTransaction createDeleteTransaction(ApplicationId applicationId) {
-        return CuratorTransaction.from(CuratorOperations.delete(applicationPath(applicationId).getAbsolute()), curator);
+        return CuratorTransaction.from(CuratorOperations.deleteAll(applicationPath(applicationId).getAbsolute(), curator), curator);
     }
 
     /**
@@ -128,6 +141,14 @@ public class TenantApplications {
      */
     public void close() {
         directoryCache.close();
+    }
+
+    /** Returns the lock for changing the session status of the given application. */
+    public Lock lock(ApplicationId id) {
+        curator.create(lockPath(id));
+        Lock lock = locks.computeIfAbsent(id, __ -> new Lock(lockPath(id).getAbsolute(), curator));
+        lock.acquire(Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
+        return lock;
     }
 
     private void childEvent(CuratorFramework client, PathChildrenCacheEvent event) {
@@ -161,6 +182,10 @@ public class TenantApplications {
 
     private Path applicationPath(ApplicationId id) {
         return applicationsPath.append(id.serializedForm());
+    }
+
+    private Path lockPath(ApplicationId id) {
+        return locksPath.append(id.serializedForm());
     }
 
 }
