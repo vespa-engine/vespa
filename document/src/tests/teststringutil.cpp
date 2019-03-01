@@ -1,63 +1,45 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- *  Test program for StringUtil methods
- *
- *  @version  $Id$
- */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
 #include <vespa/document/util/stringutil.h>
-#include "heapdebugger.h"
-#include "teststringutil.h"
-#include <cppunit/TestFixture.h>
-#include <cppunit/extensions/HelperMacros.h>
-
-CPPUNIT_TEST_SUITE_REGISTRATION( StringUtil_Test );
+#include <gtest/gtest.h>
 
 using namespace document;
 using vespalib::string;
 
-void StringUtil_Test::setUp()
+TEST(StringUtilTest, test_escape)
 {
-    enableHeapUsageMonitor();
+    EXPECT_EQ(string("abz019ABZ"), StringUtil::escape("abz019ABZ"));
+    EXPECT_EQ(string("\\t"), StringUtil::escape("\t"));
+    EXPECT_EQ(string("\\n"), StringUtil::escape("\n"));
+    EXPECT_EQ(string("\\r"), StringUtil::escape("\r"));
+    EXPECT_EQ(string("\\\""), StringUtil::escape("\""));
+    EXPECT_EQ(string("\\f"), StringUtil::escape("\f"));
+    EXPECT_EQ(string("\\\\"), StringUtil::escape("\\"));
+    EXPECT_EQ(string("\\x05"), StringUtil::escape("\x05"));
+    EXPECT_EQ(string("\\tA\\ncombined\\r\\x055test"),
+              StringUtil::escape("\tA\ncombined\r\x05""5test"));
+    EXPECT_EQ(string("A\\x20space\\x20separated\\x20string"),
+              StringUtil::escape("A space separated string", ' '));
 }
 
-void StringUtil_Test::test_escape()
+TEST(StringUtilTest, test_unescape)
 {
-    CPPUNIT_ASSERT_EQUAL(string("abz019ABZ"), StringUtil::escape("abz019ABZ"));
-    CPPUNIT_ASSERT_EQUAL(string("\\t"), StringUtil::escape("\t"));
-    CPPUNIT_ASSERT_EQUAL(string("\\n"), StringUtil::escape("\n"));
-    CPPUNIT_ASSERT_EQUAL(string("\\r"), StringUtil::escape("\r"));
-    CPPUNIT_ASSERT_EQUAL(string("\\\""), StringUtil::escape("\""));
-    CPPUNIT_ASSERT_EQUAL(string("\\f"), StringUtil::escape("\f"));
-    CPPUNIT_ASSERT_EQUAL(string("\\\\"), StringUtil::escape("\\"));
-    CPPUNIT_ASSERT_EQUAL(string("\\x05"), StringUtil::escape("\x05"));
-    CPPUNIT_ASSERT_EQUAL(string("\\tA\\ncombined\\r\\x055test"),
-                         StringUtil::escape("\tA\ncombined\r\x05""5test"));
-    CPPUNIT_ASSERT_EQUAL(string("A\\x20space\\x20separated\\x20string"),
-                         StringUtil::escape("A space separated string", ' '));
+    EXPECT_EQ(string("abz019ABZ"),
+              StringUtil::unescape("abz019ABZ"));
+    EXPECT_EQ(string("\t"), StringUtil::unescape("\\t"));
+    EXPECT_EQ(string("\n"), StringUtil::unescape("\\n"));
+    EXPECT_EQ(string("\r"), StringUtil::unescape("\\r"));
+    EXPECT_EQ(string("\""), StringUtil::unescape("\\\""));
+    EXPECT_EQ(string("\f"), StringUtil::unescape("\\f"));
+    EXPECT_EQ(string("\\"), StringUtil::unescape("\\\\"));
+    EXPECT_EQ(string("\x05"), StringUtil::unescape("\\x05"));
+    EXPECT_EQ(string("\tA\ncombined\r\x05""5test"),
+              StringUtil::unescape("\\tA\\ncombined\\r\\x055test"));
+    EXPECT_EQ(string("A space separated string"),
+              StringUtil::unescape("A\\x20space\\x20separated\\x20string"));
 }
 
-void StringUtil_Test::test_unescape()
-{
-    CPPUNIT_ASSERT_EQUAL(string("abz019ABZ"),
-                         StringUtil::unescape("abz019ABZ"));
-    CPPUNIT_ASSERT_EQUAL(string("\t"), StringUtil::unescape("\\t"));
-    CPPUNIT_ASSERT_EQUAL(string("\n"), StringUtil::unescape("\\n"));
-    CPPUNIT_ASSERT_EQUAL(string("\r"), StringUtil::unescape("\\r"));
-    CPPUNIT_ASSERT_EQUAL(string("\""), StringUtil::unescape("\\\""));
-    CPPUNIT_ASSERT_EQUAL(string("\f"), StringUtil::unescape("\\f"));
-    CPPUNIT_ASSERT_EQUAL(string("\\"), StringUtil::unescape("\\\\"));
-    CPPUNIT_ASSERT_EQUAL(string("\x05"), StringUtil::unescape("\\x05"));
-    CPPUNIT_ASSERT_EQUAL(string("\tA\ncombined\r\x05""5test"),
-                         StringUtil::unescape("\\tA\\ncombined\\r\\x055test"));
-    CPPUNIT_ASSERT_EQUAL(string("A space separated string"),
-                         StringUtil::unescape("A\\x20space\\x20separated\\x20string"));
-}
-
-void StringUtil_Test::test_printAsHex()
+TEST(StringUtilTest, test_printAsHex)
 {
     std::vector<char> asciitable(256);
     for (uint32_t i=0; i<256; ++i) asciitable[i] = i;
@@ -82,7 +64,7 @@ void StringUtil_Test::test_printAsHex()
                          "  208: d0 d1 d2 d3 d4 d5 d6 d7 d8 d9 da db dc dd de df\n"
                          "  224: e0 e1 e2 e3 e4 e5 e6 e7 e8 e9 ea eb ec ed ee ef\n"
                          "  240: f0 f1 f2 f3 f4 f5 f6 f7 f8 f9 fa fb fc fd fe ff");
-    CPPUNIT_ASSERT_EQUAL(expected, ost.str());
+    EXPECT_EQ(expected, ost.str());
 
     ost.str("");
     ost << "\n";
@@ -107,5 +89,5 @@ void StringUtil_Test::test_printAsHex()
                "225: e1 e2 e3 e4 e5 e6 e7 e8 e9 ea eb ec ed ee ef ...............\n"
                "240: f0 f1 f2 f3 f4 f5 f6 f7 f8 f9 fa fb fc fd fe ...............\n"
                "255: ff                                           .";
-    CPPUNIT_ASSERT_EQUAL(expected, ost.str());
+    EXPECT_EQ(expected, ost.str());
 }

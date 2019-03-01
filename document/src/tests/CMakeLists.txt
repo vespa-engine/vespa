@@ -8,6 +8,7 @@ vespa_add_executable(document_gtest_runner_app TEST
     documentidtest.cpp
     documentupdatetestcase.cpp
     gtest_runner.cpp
+    teststringutil.cpp
     DEPENDS
     document
     gtest
@@ -23,7 +24,6 @@ vespa_add_test(
 # Runner for unit tests written in CppUnit (DEPRECATED).
 vespa_add_executable(document_testrunner_app TEST
     SOURCES
-    teststringutil.cpp
     testbytebuffer.cpp
     stringtokenizertest.cpp
     buckettest.cpp
