@@ -183,7 +183,7 @@ public class DeployTester {
     public AllocatedHosts getAllocatedHostsOf(ApplicationId applicationId) {
         Tenant tenant = tenant();
         LocalSession session = tenant.getLocalSessionRepo().getSession(tenant.getApplicationRepo()
-                                                                             .requireActiveSessionOf(applicationId));
+                                                                             .getSessionIdForApplication(applicationId));
         return session.getAllocatedHosts();
     }
 
