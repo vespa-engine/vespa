@@ -51,11 +51,6 @@ public abstract class ApplicationMaintainer extends Maintainer {
         return pendingDeployments.size();
     }
 
-    /** Returns whether given application should be deployed at this moment in time */
-    protected boolean canDeployNow(ApplicationId application) {
-        return true;
-    }
-
     /**
      * Redeploy this application.
      *
@@ -83,7 +78,6 @@ public abstract class ApplicationMaintainer extends Maintainer {
         // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
         try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
             if ( ! isActive(application)) return; // became inactive since deployment was requested
-            if ( ! canDeployNow(application)) return; // redeployment is no longer needed
             Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
             if ( ! deployment.isPresent()) return; // this will be done at another config server
             log.log(LogLevel.DEBUG, this.getClass().getSimpleName() + " deploying " + application);
