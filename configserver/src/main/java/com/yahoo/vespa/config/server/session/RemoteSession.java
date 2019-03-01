@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 public class RemoteSession extends Session {
 
     private static final Logger log = Logger.getLogger(RemoteSession.class.getName());
-    private volatile ApplicationSet applicationSet = null;
+    private ApplicationSet applicationSet = null;
     private final ActivatedModelsBuilder applicationLoader;
     private final Clock clock;
 
@@ -69,7 +69,7 @@ public class RemoteSession extends Session {
                                                                      clock.instant()));
     }
 
-    public ApplicationSet ensureApplicationLoaded() {
+    public synchronized ApplicationSet ensureApplicationLoaded() {
         if (applicationSet == null) {
             applicationSet = loadApplication();
         }
@@ -80,7 +80,7 @@ public class RemoteSession extends Session {
         return zooKeeperClient.readStatus();
     }
 
-    public void deactivate() {
+    public synchronized void deactivate() {
         applicationSet = null;
     }
 
