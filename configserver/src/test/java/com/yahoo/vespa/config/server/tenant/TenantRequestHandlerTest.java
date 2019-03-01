@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -10,10 +9,9 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
-import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -21,24 +19,27 @@ import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.VespaVersion;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
-import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
-import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -47,22 +48,11 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Ulf Lilleengen
@@ -93,7 +83,7 @@ public class TenantRequestHandlerTest {
         Metrics sh = Metrics.createTestMetrics();
         List<ReloadListener> listeners = new ArrayList<>();
         listeners.add(listener);
-        server = new TenantRequestHandler(sh, tenant, listeners, new UncompressedConfigResponseFactory(), new HostRegistries(), curator);
+        server = new TenantRequestHandler(sh, tenant, listeners, new UncompressedConfigResponseFactory(), new HostRegistries());
         componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
                 .modelFactoryRegistry(createRegistry())
@@ -176,8 +166,6 @@ public class TenantRequestHandlerTest {
     public void testReloadConfig() throws IOException {
         ApplicationId applicationId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build();
 
-        server.applications().createApplication(applicationId);
-        server.applications().createPutTransaction(applicationId, 1).commit();
         server.reloadConfig(reloadConfig(1));
         assertThat(listener.reloaded.get(), is(1));
         // Using only payload list for this simple test
@@ -197,7 +185,6 @@ public class TenantRequestHandlerTest {
 
         listener.reloaded.set(0);
         feedApp(app2, 2, defaultApp(), true);
-        server.applications().createPutTransaction(applicationId, 2).commit();
         server.reloadConfig(reloadConfig(2L));
         configResponse = getConfigResponse(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
         assertTrue(configResponse.isInternalRedeploy());
@@ -209,34 +196,19 @@ public class TenantRequestHandlerTest {
 
     @Test
     public void testRemoveApplication() {
-        ApplicationId appId = ApplicationId.from(tenant.value(), "default", "default");
         server.reloadConfig(reloadConfig(1));
-        assertThat(listener.reloaded.get(), is(0));
-
-        server.applications().createApplication(appId);
-        server.applications().createPutTransaction(appId, 1).commit();
-        server.reloadConfig(reloadConfig(1));
-        assertThat(listener.reloaded.get(), is(1));
-
         assertThat(listener.removed.get(), is(0));
-
-        server.removeApplication(appId);
-        assertThat(listener.removed.get(), is(0));
-
-        server.applications().createDeleteTransaction(appId).commit();
-        server.removeApplication(appId);
+        server.removeApplication(new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build());
         assertThat(listener.removed.get(), is(1));
     }
 
     @Test
     public void testResolveForAppId() {
         long id = 1L;
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(id)));
         ApplicationId appId = new ApplicationId.Builder()
                               .tenant(tenant)
                               .applicationName("myapp").instanceName("myinst").build();
-        server.applications().createApplication(appId);
-        server.applications().createPutTransaction(appId, 1).commit();
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(id)));
         zkc.writeApplicationId(appId);
         RemoteSession session = new RemoteSession(appId.tenant(), id, componentRegistry, zkc);
         server.reloadConfig(session.ensureApplicationLoaded());
@@ -274,8 +246,6 @@ public class TenantRequestHandlerTest {
     }
 
     private void feedAndReloadApp(File appDir, long sessionId, ApplicationId appId) throws IOException {
-        server.applications().createApplication(appId);
-        server.applications().createPutTransaction(appId, sessionId).commit();
         feedApp(appDir, sessionId, appId, false);
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         zkc.writeApplicationId(appId);
@@ -311,11 +281,9 @@ public class TenantRequestHandlerTest {
     @Test
     public void testHasApplication() {
         assertdefaultAppNotFound();
-        ApplicationId appId = ApplicationId.from(tenant.value(), "default", "default");
-        server.applications().createApplication(appId);
-        server.applications().createPutTransaction(appId, 1).commit();
         server.reloadConfig(reloadConfig(1));
-        assertTrue(server.hasApplication(appId, Optional.of(vespaVersion)));
+        assertTrue(server.hasApplication(new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build(),
+                                         Optional.of(vespaVersion)));
     }
 
     private void assertdefaultAppNotFound() {
@@ -324,13 +292,10 @@ public class TenantRequestHandlerTest {
 
     @Test
     public void testMultipleApplicationsReload() {
-        ApplicationId appId = ApplicationId.from(tenant.value(), "foo", "default");
         assertdefaultAppNotFound();
-        server.applications().createApplication(appId);
-        server.applications().createPutTransaction(appId, 1).commit();
         server.reloadConfig(reloadConfig(1, "foo"));
         assertdefaultAppNotFound();
-        assertTrue(server.hasApplication(appId,
+        assertTrue(server.hasApplication(new ApplicationId.Builder().tenant(tenant).applicationName("foo").build(),
                                          Optional.of(vespaVersion)));
         assertThat(server.resolveApplicationId("doesnotexist"), is(ApplicationId.defaultId()));
         assertThat(server.resolveApplicationId("mytesthost"), is(new ApplicationId.Builder()
@@ -343,8 +308,6 @@ public class TenantRequestHandlerTest {
         assertdefaultAppNotFound();
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
-        server.applications().createApplication(ApplicationId.defaultId());
-        server.applications().createPutTransaction(ApplicationId.defaultId(), 1).commit();
         server.reloadConfig(ApplicationSet.fromSingle(new Application(model,
                                                                       new ServerCache(),
                                                                       1,

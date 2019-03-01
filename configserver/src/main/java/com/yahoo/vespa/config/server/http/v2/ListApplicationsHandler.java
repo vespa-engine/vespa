@@ -56,7 +56,7 @@ public class ListApplicationsHandler extends HttpHandler {
         Utils.checkThatTenantExists(tenantRepository, tenantName);
         Tenant tenant = tenantRepository.getTenant(tenantName);
         TenantApplications applicationRepo = tenant.getApplicationRepo();
-        return applicationRepo.activeApplications();
+        return applicationRepo.listApplications();
     }
 
     private static String createUrlStringFromId(String urlBase, ApplicationId id, Zone zone) {
