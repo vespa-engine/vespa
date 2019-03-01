@@ -264,7 +264,7 @@ public class ContainerClusterTest {
 
 
     private static void addContainer(DeployLogger deployLogger, ContainerCluster cluster, String name, String hostName) {
-        Container container = new Container(cluster, name, 0, cluster.isHostedVespa());
+        Container container = new ContainerImpl(cluster, name, 0, cluster.isHostedVespa());
         container.setHostResource(new HostResource(new Host(null, hostName)));
         container.initService(deployLogger);
         cluster.addContainer(container);

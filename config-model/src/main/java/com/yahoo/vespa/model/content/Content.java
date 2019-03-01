@@ -22,6 +22,7 @@ import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerImpl;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
@@ -323,8 +324,8 @@ public class Content extends ConfigModel {
                 HostResource host = searchNode.getHostResource();
                 if (!processedHosts.contains(host)) {
                     String containerName = String.valueOf(searchNode.getDistributionKey());
-                    Container docprocService = new Container(indexingCluster, containerName, index,
-                                                             modelContext.getDeployState().isHosted());
+                    Container docprocService = new ContainerImpl(indexingCluster, containerName, index,
+                                                                 modelContext.getDeployState().isHosted());
                     index++;
                     docprocService.setBasePort(host.nextAvailableBaseport(docprocService.getPortCount()));
                     docprocService.setHostResource(host);
