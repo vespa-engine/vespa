@@ -46,6 +46,7 @@ import com.yahoo.vespa.model.builder.xml.dom.chains.search.DomSearchChainsBuilde
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerImpl;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.IdentityProvider;
@@ -434,7 +435,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addStandaloneNode(ContainerCluster cluster) {
-        Container container =  new Container(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa());
+        Container container =  new ContainerImpl(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa());
         cluster.addContainers(Collections.singleton(container));
     }
 
@@ -475,7 +476,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         Element rotationsElement = XML.getChild(containerElement, "rotations");
         if (nodesElement == null) { // default single node on localhost
-            Container node = new Container(cluster, "container.0", 0, cluster.isHostedVespa());
+            Container node = new ContainerImpl(cluster, "container.0", 0, cluster.isHostedVespa());
             HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
             node.setHostResource(host);
             node.initService(context.getDeployLogger());
@@ -674,7 +675,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         List<Container> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
             String id = "container." + entry.getValue().index();
-            Container container = new Container(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa());
+            Container container = new ContainerImpl(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa());
             container.setHostResource(entry.getKey());
             container.initService(deployLogger);
             nodes.add(container);

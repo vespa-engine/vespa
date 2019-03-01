@@ -43,7 +43,7 @@ import static com.yahoo.container.QrConfig.Rpc;
  */
 //qr is restart because it is handled by ConfiguredApplication.start
 @RestartConfigs({QrStartConfig.class, QrConfig.class})
-public class Container extends AbstractService implements
+public abstract class Container extends AbstractService implements
         QrConfig.Producer,
         ComponentsConfig.Producer,
         JdiscBindingsConfig.Producer,
@@ -53,7 +53,7 @@ public class Container extends AbstractService implements
     public static final int BASEPORT = Defaults.getDefaults().vespaWebServicePort();
     public static final String SINGLENODE_CONTAINER_SERVICESPEC = "default_singlenode_container";
 
-    private final AbstractConfigProducer parent;
+    protected final AbstractConfigProducer parent;
     private final String name;
     private final boolean isHostedVespa;
 
@@ -203,16 +203,7 @@ public class Container extends AbstractService implements
     }
 
     /** Subclasses must implement this for a custom service name. */
-    protected ContainerServiceType myServiceType() {
-        if (parent instanceof ContainerCluster) {
-            ContainerCluster cluster = (ContainerCluster)parent;
-            // TODO: The 'qrserver' name is retained for legacy reasons (e.g. system tests and log parsing).
-            if (cluster.getSearch() != null && cluster.getDocproc() == null && cluster.getDocumentApi() == null) {
-                return ContainerServiceType.QRSERVER;
-            }
-        }
-        return ContainerServiceType.CONTAINER;
-    }
+    protected abstract ContainerServiceType myServiceType();
 
     public void setClusterName(String name) {
         this.clusterName = name;
