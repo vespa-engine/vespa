@@ -5,7 +5,7 @@
 /**
  * Macro for creating a main function that runs all gtests.
  */
-#define GTEST_MAIN_RUN_ALL_TESTS            \
+#define GTEST_MAIN_RUN_ALL_TESTS()          \
 int                                         \
 main(int argc, char* argv[])                \
 {                                           \

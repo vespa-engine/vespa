@@ -108,4 +108,4 @@ TEST(TensorModifyTest, mixed_tensors_ignore_updates_to_missing_or_out_of_range_c
                         .add({{"x","a"},{"y",1}}, 3));
 }
 
-GTEST_MAIN_RUN_ALL_TESTS
+GTEST_MAIN_RUN_ALL_TESTS()

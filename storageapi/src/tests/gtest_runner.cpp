@@ -5,4 +5,4 @@
 #include <vespa/log/log.h>
 LOG_SETUP("storageapi_gtest_runner");
 
-GTEST_MAIN_RUN_ALL_TESTS
+GTEST_MAIN_RUN_ALL_TESTS()

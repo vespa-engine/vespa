@@ -74,4 +74,4 @@ TEST(LoadTypeTest, testConfig)
 
 } // documentapi
 
-GTEST_MAIN_RUN_ALL_TESTS
+GTEST_MAIN_RUN_ALL_TESTS()
