@@ -11,8 +11,10 @@ import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 import org.apache.zookeeper.data.Stat;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -28,7 +30,7 @@ public class Tenant implements TenantHandlerProvider {
 
     static final String SESSIONS = "sessions";
     static final String APPLICATIONS = "applications";
-    static final String LOCKS = "locks";
+    static final String SESSION_LOCK_PATH = "activateLock";
 
     private final TenantName name;
     private final RemoteSessionRepo remoteSessionRepo;
@@ -36,6 +38,7 @@ public class Tenant implements TenantHandlerProvider {
     private final SessionFactory sessionFactory;
     private final LocalSessionRepo localSessionRepo;
     private final TenantApplications applicationRepo;
+    private final Lock sessionLock;
     private final RequestHandler requestHandler;
     private final ReloadHandler reloadHandler;
     private final TenantFileSystemDirs tenantFileSystemDirs;
@@ -58,6 +61,7 @@ public class Tenant implements TenantHandlerProvider {
         this.remoteSessionRepo = remoteSessionRepo;
         this.sessionFactory = sessionFactory;
         this.localSessionRepo = localSessionRepo;
+        this.sessionLock = createLock(curator, path);
         this.applicationRepo = applicationRepo;
         this.tenantFileSystemDirs = tenantFileSystemDirs;
         this.curator = curator;
@@ -106,6 +110,14 @@ public class Tenant implements TenantHandlerProvider {
         return localSessionRepo;
     }
 
+    /**
+     * This lock allows activation and deactivation of sessions under this tenant.
+     */
+    public Lock getSessionLock(Duration timeout) {
+        sessionLock.acquire(timeout);
+        return sessionLock;
+    }
+    
     @Override
     public String toString() {
         return getName().value();
@@ -151,6 +163,12 @@ public class Tenant implements TenantHandlerProvider {
         applicationRepo.close();
         localSessionRepo.deleteAllSessions();
         curator.delete(path);
+    }
+
+    private static Lock createLock(Curator curator, Path tenantPath) {
+        Path lockPath = tenantPath.append(SESSION_LOCK_PATH);
+        curator.create(lockPath);
+        return new Lock(lockPath.getAbsolute(), curator);
     }
 
 }

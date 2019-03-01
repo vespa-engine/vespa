@@ -196,14 +196,12 @@ public class LocalSessionTest {
         zkClient.write(Collections.singletonMap(new Version(0, 0, 0), new MockFileRegistry()));
         File sessionDir = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
         sessionDir.createNewFile();
-        TenantApplications applications = TenantApplications.create(curator, new MockReloadHandler(), tenant);
-        applications.createApplication(zkc.readApplicationId());
         return new LocalSession(tenant, sessionId, preparer,
                 new SessionContext(
                         FilesApplicationPackage.fromFile(testApp),
                         zkc,
                         sessionDir,
-                        applications,
+                        TenantApplications.create(curator, new MockReloadHandler(), tenant),
                         new HostRegistry<>(),
                         superModelGenerationCounter,
                         flagSource));

@@ -17,6 +17,8 @@ public interface SessionFactory {
     /**
      * Creates a new deployment session from an application package.
      *
+     *
+     *
      * @param applicationDirectory a File pointing to an application.
      * @param applicationId application id for this new session.
      * @param timeoutBudget Timeout for creating session and waiting for other servers.
@@ -27,10 +29,10 @@ public interface SessionFactory {
     /**
      * Creates a new deployment session from an already existing session.
      *
-     * @param existingSession the session to use as base
+     * @param existingSession The session to use as base
      * @param logger a deploy logger where the deploy log will be written.
-     * @param internalRedeploy whether this session is for a system internal redeploy — not an application package change
-     * @param timeoutBudget timeout for creating session and waiting for other servers.
+     * @param internalRedeploy if this session is for a system internal redeploy not an application package change
+     * @param timeoutBudget Timeout for creating session and waiting for other servers.
      * @return a new session
      */
     LocalSession createSessionFromExisting(LocalSession existingSession, DeployLogger logger,

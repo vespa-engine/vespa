@@ -3,26 +3,23 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.api.Model;
-import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.ModelCreateResult;
-import com.yahoo.config.model.api.ModelFactory;
-import com.yahoo.config.model.api.ValidationParameters;
+import com.yahoo.config.model.api.*;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.component.Version;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
+
 import org.junit.Before;
 import org.junit.Test;
 
