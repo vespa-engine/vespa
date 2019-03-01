@@ -3,11 +3,14 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import org.junit.Test;
 
-import static com.yahoo.vespa.hosted.controller.application.RoutingPolicy.createAlias;
-import static org.junit.Assert.*;
+import java.util.Optional;
+import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author mpolden
@@ -27,7 +30,8 @@ public class RoutingPolicyTest {
     }
 
     private void testAlias(String expected, String clusterName, ApplicationId applicationId, ZoneId zoneId) {
-        assertEquals(expected, createAlias(ClusterSpec.Id.from(clusterName), applicationId, zoneId));
+        assertEquals(expected, new RoutingPolicy(applicationId, zoneId, ClusterSpec.Id.from(clusterName),
+                                                 HostName.from("lb-0"), Optional.empty(), Set.of()).alias().value());
     }
 
 }

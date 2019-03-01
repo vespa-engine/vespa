@@ -1292,7 +1292,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void applicationWithPerClusterGlobalRotation() {
         Application app = controllerTester.createApplication();
         RoutingPolicy policy = new RoutingPolicy(app.id(), ZoneId.from(Environment.prod, RegionName.from("us-west-1")),
-                                                 HostName.from("lb-0"), HostName.from("lb-0-canonical-name"),
+                                                 ClusterSpec.Id.from("default"), HostName.from("lb-0-canonical-name"),
                                                  Optional.of("dns-zone-1"), Set.of(RotationName.from("c0")));
         tester.controller().curator().writeRoutingPolicies(app.id(), Set.of(policy));
 
