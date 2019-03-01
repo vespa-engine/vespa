@@ -38,8 +38,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
         this.start = clock.instant();
     }
 
-    @Override
-    protected boolean canDeployNow(ApplicationId application) {
+    private boolean canDeployNow(ApplicationId application) {
         // Don't deploy if a regular deploy just happened
         return getLastDeployTime(application).isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments));
     }

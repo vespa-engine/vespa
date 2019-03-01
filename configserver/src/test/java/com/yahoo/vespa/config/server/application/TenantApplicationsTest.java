@@ -39,12 +39,12 @@ public class TenantApplicationsTest {
         writeApplicationData(createApplicationId("foo"), 3L);
         writeApplicationData(createApplicationId("bar"), 4L);
         TenantApplications repo = createZKAppRepo();
-        List<ApplicationId> applications = repo.listApplications();
+        List<ApplicationId> applications = repo.activeApplications();
         assertThat(applications.size(), is(2));
-        assertThat(applications.get(0).application().value(), is("foo"));
-        assertThat(applications.get(1).application().value(), is("bar"));
-        assertThat(repo.getSessionIdForApplication(applications.get(0)), is(3L));
-        assertThat(repo.getSessionIdForApplication(applications.get(1)), is(4L));
+        assertThat(applications.get(0).application().value(), is("bar"));
+        assertThat(applications.get(1).application().value(), is("foo"));
+        assertThat(repo.requireActiveSessionOf(applications.get(0)), is(4L));
+        assertThat(repo.requireActiveSessionOf(applications.get(1)), is(3L));
     }
 
     @Test
@@ -52,7 +52,7 @@ public class TenantApplicationsTest {
         writeApplicationData(createApplicationId("foo"), 3L);
         writeApplicationData("invalid", 3L);
         TenantApplications repo = createZKAppRepo();
-        List<ApplicationId> applications = repo.listApplications();
+        List<ApplicationId> applications = repo.activeApplications();
         assertThat(applications.size(), is(1));
         assertThat(applications.get(0).application().value(), is("foo"));
     }
@@ -60,7 +60,7 @@ public class TenantApplicationsTest {
     @Test(expected = IllegalArgumentException.class)
     public void require_that_requesting_session_for_unknown_application_throws_exception() throws Exception {
         TenantApplications repo = createZKAppRepo();
-        repo.getSessionIdForApplication(createApplicationId("nonexistent"));
+        repo.requireActiveSessionOf(createApplicationId("nonexistent"));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -70,18 +70,19 @@ public class TenantApplicationsTest {
         curatorFramework.create().creatingParentsIfNeeded()
                 .forPath(TenantRepository.getApplicationsPath(tenantName).append(baz.serializedForm()).getAbsolute());
         TenantApplications repo = createZKAppRepo();
-        repo.getSessionIdForApplication(baz);
+        repo.requireActiveSessionOf(baz);
     }
 
     @Test
     public void require_that_application_ids_can_be_written() throws Exception {
         TenantApplications repo = createZKAppRepo();
         ApplicationId myapp = createApplicationId("myapp");
-        repo.createPutApplicationTransaction(myapp, 3l).commit();
+        repo.createApplication(myapp);
+        repo.createPutTransaction(myapp, 3l).commit();
         String path = TenantRepository.getApplicationsPath(tenantName).append(myapp.serializedForm()).getAbsolute();
         assertTrue(curatorFramework.checkExists().forPath(path) != null);
         assertThat(Utf8.toString(curatorFramework.getData().forPath(path)), is("3"));
-        repo.createPutApplicationTransaction(myapp, 5l).commit();
+        repo.createPutTransaction(myapp, 5l).commit();
         assertTrue(curatorFramework.checkExists().forPath(path) != null);
         assertThat(Utf8.toString(curatorFramework.getData().forPath(path)), is("5"));
     }
@@ -91,13 +92,15 @@ public class TenantApplicationsTest {
         TenantApplications repo = createZKAppRepo();
         ApplicationId id1 = createApplicationId("myapp");
         ApplicationId id2 = createApplicationId("myapp2");
-        repo.createPutApplicationTransaction(id1, 1).commit();
-        repo.createPutApplicationTransaction(id2, 1).commit();
-        assertThat(repo.listApplications().size(), is(2));
-        repo.deleteApplication(id1).commit();
-        assertThat(repo.listApplications().size(), is(1));
-        repo.deleteApplication(id2).commit();
-        assertThat(repo.listApplications().size(), is(0));
+        repo.createApplication(id1);
+        repo.createApplication(id2);
+        repo.createPutTransaction(id1, 1).commit();
+        repo.createPutTransaction(id2, 1).commit();
+        assertThat(repo.activeApplications().size(), is(2));
+        repo.createDeleteTransaction(id1).commit();
+        assertThat(repo.activeApplications().size(), is(1));
+        repo.createDeleteTransaction(id2).commit();
+        assertThat(repo.activeApplications().size(), is(0));
     }
 
     @Test
@@ -108,7 +111,7 @@ public class TenantApplicationsTest {
         MockReloadHandler reloadHandler = new MockReloadHandler();
         TenantApplications repo = createZKAppRepo(reloadHandler);
         assertNull(reloadHandler.lastRemoved);
-        repo.deleteApplication(foo).commit();
+        repo.createDeleteTransaction(foo).commit();
         long endTime = System.currentTimeMillis() + 60_000;
         while (System.currentTimeMillis() < endTime && reloadHandler.lastRemoved == null) {
             Thread.sleep(100);
@@ -126,11 +129,7 @@ public class TenantApplicationsTest {
     }
 
     private static ApplicationId createApplicationId(String name) {
-        return new ApplicationId.Builder()
-                .tenant(tenantName.value())
-                .applicationName(name)
-                .instanceName("myinst")
-                .build();
+        return ApplicationId.from(tenantName.value(), name, "myinst");
     }
 
     private void writeApplicationData(ApplicationId applicationId, long sessionId) throws Exception {

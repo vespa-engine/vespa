@@ -5,8 +5,8 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.lang.SettableOptional;
-import com.yahoo.transaction.Transaction;
 import com.yahoo.log.LogLevel;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 public class RemoteSession extends Session {
 
     private static final Logger log = Logger.getLogger(RemoteSession.class.getName());
-    private volatile ApplicationSet applicationSet = null;
+    private ApplicationSet applicationSet = null;
     private final ActivatedModelsBuilder applicationLoader;
     private final Clock clock;
 
@@ -69,18 +69,15 @@ public class RemoteSession extends Session {
                                                                      clock.instant()));
     }
 
-    public ApplicationSet ensureApplicationLoaded() {
-        if (applicationSet == null) {
-            applicationSet = loadApplication();
-        }
-        return applicationSet;
+    public synchronized ApplicationSet ensureApplicationLoaded() {
+        return applicationSet == null ? applicationSet = loadApplication() : applicationSet;
     }
 
     public Session.Status getStatus() {
         return zooKeeperClient.readStatus();
     }
 
-    public void deactivate() {
+    public synchronized void deactivate() {
         applicationSet = null;
     }
 

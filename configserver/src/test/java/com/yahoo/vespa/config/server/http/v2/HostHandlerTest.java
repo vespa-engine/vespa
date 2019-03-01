@@ -46,7 +46,8 @@ public class HostHandlerTest {
     private HostHandler hostHandler;
 
     static void addMockApplication(Tenant tenant, ApplicationId applicationId, long sessionId) {
-        tenant.getApplicationRepo().createPutApplicationTransaction(applicationId, sessionId).commit();
+        tenant.getApplicationRepo().createApplication(applicationId);
+        tenant.getApplicationRepo().createPutTransaction(applicationId, sessionId).commit();
         ApplicationPackage app = FilesApplicationPackage.fromFile(testApp);
         tenant.getLocalSessionRepo().addSession(new SessionHandlerTest.MockSession(sessionId, app, applicationId));
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
