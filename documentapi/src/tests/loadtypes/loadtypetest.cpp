@@ -1,52 +1,45 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/config/config.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <gmock/gmock.h>
+
+using namespace ::testing;
 
 namespace documentapi {
 
-struct LoadTypeTest : public CppUnit::TestFixture {
-
-    void testConfig();
-
-    CPPUNIT_TEST_SUITE(LoadTypeTest);
-    CPPUNIT_TEST(testConfig);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(LoadTypeTest);
-
-#define ASSERT_CONFIG_FAILURE(configId, error) \
-    try { \
-        LoadTypeSet createdFromConfigId(vespalib::stringref(configId)); \
-        CPPUNIT_FAIL("Config was expected to fail with error: " \
-                     + string(error)); \
-    } catch (config::InvalidConfigException& e) { \
-        CPPUNIT_ASSERT_CONTAIN(string(error), e.getMessage()); \
-    }
-
 void
-LoadTypeTest::testConfig()
+assertConfigFailure(const vespalib::string &configId, const vespalib::string &expError)
 {
-        // Using id 0 is illegal. Reserved for default type.
-    ASSERT_CONFIG_FAILURE(
+    try {
+        LoadTypeSet createdFromConfigId(configId);
+        FAIL() << "Config was expected to fail with error: " << expError;
+    } catch (config::InvalidConfigException &e) {
+        EXPECT_THAT(e.getMessage(), HasSubstr(expError));
+    }
+}
+
+TEST(LoadTypeTest, testConfig)
+{
+    // Using id 0 is illegal. Reserved for default type.
+    assertConfigFailure(
             "raw:"
             "type[1]\n"
             "type[0].id 0\n"
             "type[0].name \"foo\"\n"
             "type[0].priority \"\"",
             "Load type identifiers need to be");
-        // Using name "default" is illegal. Reserved for default type.
-    ASSERT_CONFIG_FAILURE(
+    // Using name "default" is illegal. Reserved for default type.
+    assertConfigFailure(
             "raw:"
             "type[1]\n"
             "type[0].id 1\n"
             "type[0].name \"default\"\n"
             "type[0].priority \"\"", "Load type names need to be");
-        // Identifiers need to be unique.
-    ASSERT_CONFIG_FAILURE(
+    // Identifiers need to be unique.
+    assertConfigFailure(
             "raw:"
             "type[2]\n"
             "type[0].id 1\n"
@@ -55,8 +48,8 @@ LoadTypeTest::testConfig()
             "type[1].id 1\n"
             "type[1].name \"testa\"\n"
             "type[1].priority \"\"",  "Load type identifiers need to be");
-        // Names need to be unique.
-    ASSERT_CONFIG_FAILURE(
+    // Names need to be unique.
+    assertConfigFailure(
             "raw:"
             "type[2]\n"
             "type[0].id 1\n"
@@ -80,3 +73,5 @@ LoadTypeTest::testConfig()
 }
 
 } // documentapi
+
+GTEST_MAIN_RUN_ALL_TESTS
