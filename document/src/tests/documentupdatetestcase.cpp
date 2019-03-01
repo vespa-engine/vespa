@@ -27,6 +27,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <fcntl.h>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <unistd.h>
 
@@ -88,6 +89,28 @@ void testRoundtripSerialize(const UpdateType& update, const DataType &type) {
             std::cerr << "Failed while processing update " << update << "\n";
     throw;
     }
+}
+
+void
+writeBufferToFile(const ByteBuffer &buf, const vespalib::string &fileName)
+{
+    auto file = std::fstream(fileName, std::ios::out | std::ios::binary);
+    file.write(buf.getBuffer(), buf.getPos());
+    assert(file.good());
+    file.close();
+}
+
+ByteBuffer::UP
+readBufferFromFile(const vespalib::string &fileName)
+{
+    auto file = std::fstream(fileName, std::ios::in | std::ios::binary | std::ios::ate);
+    auto size = file.tellg();
+    auto result = std::make_unique<ByteBuffer>(size);
+    file.seekg(0);
+    file.read(result->getBuffer(), size);
+    assert(file.good());
+    file.close();
+    return result;
 }
 
 }
@@ -445,17 +468,8 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     const std::string file_name = "data/crossplatform-java-cpp-doctypes.cfg";
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
-    int fd = open("data/serializeupdatejava.dat" , O_RDONLY);
-
-    int len = lseek(fd,0,SEEK_END);
-    ByteBuffer buf(len);
-    lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.getBuffer(), len) != len) {
-    	throw vespalib::Exception("read failed");
-    }
-    close(fd);
-
-    nbostream is(buf.getBufferAtPos(), buf.getRemaining());
+    auto buf = readBufferFromFile("data/serializeupdatejava.dat");
+    nbostream is(buf->getBufferAtPos(), buf->getRemaining());
     DocumentUpdate::UP updp(DocumentUpdate::create42(repo, is));
     DocumentUpdate& upd(*updp);
 
@@ -535,12 +549,7 @@ TEST(DocumentUpdateTest, testGenerateSerializedFile)
           .addUpdate(MapValueUpdate(StringFieldValue("foo"),
                         ArithmeticValueUpdate(ArithmeticValueUpdate::Mul, 2))));
     ByteBuffer::UP buf(serialize42(upd));
-
-    int fd = open("data/serializeupdatecpp.dat", O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
-	    throw vespalib::Exception("read failed");
-    }
-    close(fd);
+    writeBufferToFile(*buf, "data/serializeupdatecpp.dat");
 }
 
 
@@ -1042,6 +1051,83 @@ TEST(DocumentUpdateTest, tensor_modify_update_throws_if_cells_tensor_is_not_spar
     ASSERT_THROW(
             f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, std::move(cellsTensor))),
             vespalib::IllegalStateException);
+}
+
+struct TensorUpdateSerializeFixture {
+    std::unique_ptr<DocumentTypeRepo> repo;
+    const DocumentType &docType;
+
+    const TensorDataType &extractTensorDataType(const vespalib::string &fieldName) {
+        const auto &dataType = docType.getField(fieldName).getDataType();
+        return dynamic_cast<const TensorDataType &>(dataType);
+    }
+
+    TensorUpdateSerializeFixture()
+        : repo(makeDocumentTypeRepo()),
+          docType(*repo->getDocumentType("test"))
+    {
+    }
+
+    std::unique_ptr<DocumentTypeRepo> makeDocumentTypeRepo() {
+        config_builder::DocumenttypesConfigBuilderHelper builder;
+        builder.document(222, "test",
+                         Struct("test.header")
+                                 .addTensorField("sparse_tensor", "tensor(x{})")
+                                 .addTensorField("dense_tensor", "tensor(x[4])"),
+                         Struct("testdoc.body"));
+        return std::make_unique<DocumentTypeRepo>(builder.config());
+    }
+
+    std::unique_ptr<TensorFieldValue> makeTensor() {
+        return makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", "2"}}, 5)
+                                            .add({{"x", "3"}}, 7),
+                                    extractTensorDataType("sparse_tensor"));
+    }
+
+    const Field &getField(const vespalib::string &name) {
+        return docType.getField(name);
+    }
+
+    DocumentUpdate::UP makeUpdate() {
+        auto result = std::make_unique<DocumentUpdate>
+                (*repo, docType, DocumentId("id:test:test::0"));
+
+        result->addUpdate(FieldUpdate(getField("sparse_tensor"))
+                                  .addUpdate(AssignValueUpdate(*makeTensor()))
+                                  .addUpdate(TensorAddUpdate(makeTensor()))
+                                  .addUpdate(TensorRemoveUpdate(makeTensor())));
+        result->addUpdate(FieldUpdate(getField("dense_tensor"))
+                                  .addUpdate(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, makeTensor()))
+                                  .addUpdate(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, makeTensor()))
+                                  .addUpdate(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, makeTensor())));
+        return result;
+    }
+
+    void serializeUpdateToFile(const DocumentUpdate &update, const vespalib::string &fileName) {
+        ByteBuffer::UP buf = serializeHEAD(update);
+        writeBufferToFile(*buf, fileName);
+    }
+
+    DocumentUpdate::UP deserializeUpdateFromFile(const vespalib::string &fileName) {
+        auto buf = readBufferFromFile(fileName);
+        nbostream stream(buf->getBufferAtPos(), buf->getRemaining());
+        return DocumentUpdate::createHEAD(*repo, stream);
+    }
+
+};
+
+TEST(DocumentUpdateTest, tensor_update_file_java_can_be_deserialized)
+{
+    TensorUpdateSerializeFixture f;
+    auto update = f.deserializeUpdateFromFile("data/serialize-tensor-update-java.dat");
+    EXPECT_EQ(*f.makeUpdate(), *update);
+}
+
+TEST(DocumentUpdateTest, generate_serialized_tensor_update_file_cpp)
+{
+    TensorUpdateSerializeFixture f;
+    auto update = f.makeUpdate();
+    f.serializeUpdateToFile(*update, "data/serialize-tensor-update-cpp.dat");
 }
 
 
