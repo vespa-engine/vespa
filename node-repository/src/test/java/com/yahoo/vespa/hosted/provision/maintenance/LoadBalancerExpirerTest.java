@@ -56,16 +56,16 @@ public class LoadBalancerExpirerTest {
 
         // Expirer defers removal while nodes are still allocated to application
         expirer.maintain();
-        assertEquals(2, tester.loadBalancerService().loadBalancers().size());
+        assertEquals(2, tester.loadBalancerService().instances().size());
 
         // Expirer removes load balancers once nodes are deallocated
         dirtyNodesOf(app1);
         expirer.maintain();
-        assertFalse("Inactive load balancer removed", tester.loadBalancerService().loadBalancers().containsKey(lb1));
+        assertFalse("Inactive load balancer removed", tester.loadBalancerService().instances().containsKey(lb1));
 
         // Active load balancer is left alone
         assertFalse(loadBalancers.get().get(lb2).inactive());
-        assertTrue("Active load balancer is not removed", tester.loadBalancerService().loadBalancers().containsKey(lb2));
+        assertTrue("Active load balancer is not removed", tester.loadBalancerService().instances().containsKey(lb2));
     }
 
     private void dirtyNodesOf(ApplicationId application) {
