@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -81,7 +80,7 @@ public class LoadBalancerProvisioner {
         Map<HostName, Set<String>> hostnameToIpAdresses = nodes.stream()
                                                                .collect(Collectors.toMap(node -> HostName.from(node.hostname()),
                                                                                          this::reachableIpAddresses));
-        List<Real> reals = new ArrayList<>();
+        Set<Real> reals = new LinkedHashSet<>();
         hostnameToIpAdresses.forEach((hostname, ipAddresses) -> {
             ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress)));
         });
