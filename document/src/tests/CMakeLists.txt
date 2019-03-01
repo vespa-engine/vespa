@@ -4,6 +4,7 @@
 # NOTE: All new test classes should be added here.
 vespa_add_executable(document_gtest_runner_app TEST
     SOURCES
+    documentcalculatortestcase.cpp
     documentidtest.cpp
     documentupdatetestcase.cpp
     gtest_runner.cpp
@@ -25,7 +26,6 @@ vespa_add_executable(document_testrunner_app TEST
     teststringutil.cpp
     testbytebuffer.cpp
     stringtokenizertest.cpp
-    documentcalculatortestcase.cpp
     buckettest.cpp
     globalidtest.cpp
     documenttypetestcase.cpp
