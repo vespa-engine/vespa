@@ -286,7 +286,7 @@ public class ApplicationRepositoryTest {
 
         assertTrue(deployment2.isPresent());
         deployment2.get().activate(); // session 3
-        long activeSessionId = tester.tenant().getApplicationRepo().getSessionIdForApplication(tester.applicationId());
+        long activeSessionId = tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId());
 
         clock.advance(Duration.ofSeconds(10));
         Optional<com.yahoo.config.provision.Deployment> deployment3 = tester.redeployFromLocalActive();
@@ -296,7 +296,7 @@ public class ApplicationRepositoryTest {
         LocalSession deployment3session = ((com.yahoo.vespa.config.server.deploy.Deployment) deployment3.get()).session();
         assertNotEquals(activeSessionId, deployment3session);
         // No change to active session id
-        assertEquals(activeSessionId, tester.tenant().getApplicationRepo().getSessionIdForApplication(tester.applicationId()));
+        assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
         assertEquals(3, tester.tenant().getLocalSessionRepo().listSessions().size());
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
