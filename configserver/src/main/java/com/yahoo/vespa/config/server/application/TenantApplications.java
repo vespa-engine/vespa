@@ -135,7 +135,7 @@ public class TenantApplications {
      *
      * @param  applicationId an {@link ApplicationId}
      * @return session id of given application id.
-     * @throws IllegalArgumentException if the application does not exist
+     * @throws IllegalArgumentException if the application has no active session
      */
     public long requireActiveSessionOf(ApplicationId applicationId) {
         return activeSessionOf(applicationId)

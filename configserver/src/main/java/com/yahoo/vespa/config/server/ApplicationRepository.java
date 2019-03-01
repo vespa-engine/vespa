@@ -70,6 +70,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -263,8 +264,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     @Override
     public Optional<Instant> lastDeployTime(ApplicationId application) {
         Tenant tenant = tenantRepository.getTenant(application.tenant());
-        if (tenant == null) return Optional.empty();
-        LocalSession activeSession = getActiveSession(tenant, application);
+        if (tenant == null || ! tenant.getApplicationRepo().exists(application)) return Optional.empty();
+        OptionalLong activeSessionId = tenant.getApplicationRepo().activeSessionOf(application);
+        if ( ! activeSessionId.isPresent()) return Optional.empty();
+        LocalSession activeSession = tenant.getLocalSessionRepo().getSession(activeSessionId.getAsLong());
         if (activeSession == null) return Optional.empty();
         return Optional.of(Instant.ofEpochSecond(activeSession.getCreateTime()));
     }
