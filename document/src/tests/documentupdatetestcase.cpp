@@ -27,6 +27,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <fcntl.h>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <unistd.h>
 
@@ -1042,6 +1043,91 @@ TEST(DocumentUpdateTest, tensor_modify_update_throws_if_cells_tensor_is_not_spar
     ASSERT_THROW(
             f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, std::move(cellsTensor))),
             vespalib::IllegalStateException);
+}
+
+struct TensorUpdateSerializeFixture {
+    std::unique_ptr<DocumentTypeRepo> repo;
+    const DocumentType &docType;
+
+    const TensorDataType &extractTensorDataType(const vespalib::string &fieldName) {
+        const auto &dataType = docType.getField(fieldName).getDataType();
+        return dynamic_cast<const TensorDataType &>(dataType);
+    }
+
+    TensorUpdateSerializeFixture()
+        : repo(makeDocumentTypeRepo()),
+          docType(*repo->getDocumentType("test"))
+    {
+    }
+
+    std::unique_ptr<DocumentTypeRepo> makeDocumentTypeRepo() {
+        config_builder::DocumenttypesConfigBuilderHelper builder;
+        builder.document(222, "test",
+                         Struct("test.header")
+                                 .addTensorField("sparse_tensor", "tensor(x{})")
+                                 .addTensorField("dense_tensor", "tensor(x[4])"),
+                         Struct("testdoc.body"));
+        return std::make_unique<DocumentTypeRepo>(builder.config());
+    }
+
+    std::unique_ptr<TensorFieldValue> makeTensor() {
+        return makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", "2"}}, 5)
+                                            .add({{"x", "3"}}, 7),
+                                    extractTensorDataType("sparse_tensor"));
+    }
+
+    const Field &getField(const vespalib::string &name) {
+        return docType.getField(name);
+    }
+
+    DocumentUpdate::UP makeUpdate() {
+        auto result = std::make_unique<DocumentUpdate>
+                (*repo, docType, DocumentId("id:test:test::0"));
+
+        result->addUpdate(FieldUpdate(getField("sparse_tensor"))
+                                  .addUpdate(AssignValueUpdate(*makeTensor()))
+                                  .addUpdate(TensorAddUpdate(makeTensor()))
+                                  .addUpdate(TensorRemoveUpdate(makeTensor())));
+        result->addUpdate(FieldUpdate(getField("dense_tensor"))
+                                  .addUpdate(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, makeTensor()))
+                                  .addUpdate(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, makeTensor()))
+                                  .addUpdate(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, makeTensor())));
+        return result;
+    }
+
+    void serializeUpdateToFile(const DocumentUpdate &update, const vespalib::string &fileName) {
+        ByteBuffer::UP buf = serializeHEAD(update);
+        auto file = std::fstream(fileName, std::ios::out | std::ios::binary);
+        file.write(buf->getBuffer(), buf->getPos());
+        file.close();
+    }
+
+    DocumentUpdate::UP deserializeUpdateFromFile(const vespalib::string &fileName) {
+        auto file = std::fstream(fileName, std::ios::in | std::ios::binary | std::ios::ate);
+        auto size = file.tellg();
+        ByteBuffer buf(size);
+        file.seekg(0);
+        file.read(buf.getBuffer(), size);
+        file.close();
+
+        nbostream inStream(buf.getBufferAtPos(), buf.getRemaining());
+        return DocumentUpdate::createHEAD(*repo, inStream);
+    }
+
+};
+
+TEST(DocumentUpdateTest, tensor_update_file_java_can_be_deserialized)
+{
+    TensorUpdateSerializeFixture f;
+    auto update = f.deserializeUpdateFromFile("data/serialize-tensor-update-java.dat");
+    EXPECT_EQ(*f.makeUpdate(), *update);
+}
+
+TEST(DocumentUpdateTest, generate_serialized_tensor_update_file_cpp)
+{
+    TensorUpdateSerializeFixture f;
+    auto update = f.makeUpdate();
+    f.serializeUpdateToFile(*update, "data/serialize-tensor-update-cpp.dat");
 }
 
 

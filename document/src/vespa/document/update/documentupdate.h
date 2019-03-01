@@ -141,5 +141,8 @@ private:
     friend VespaDocumentSerializer;
 };
 
+std::ostream &operator<<(std::ostream &out, const DocumentUpdate &update);
+
+
 }
 

@@ -13,9 +13,11 @@ import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.document.serialization.DocumentUpdateFlags;
-import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
+import com.yahoo.document.update.TensorAddUpdate;
+import com.yahoo.document.update.TensorModifyUpdate;
+import com.yahoo.document.update.TensorRemoveUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
@@ -402,12 +404,14 @@ public class DocumentUpdateTestCase {
 
         GrowableByteBuffer buf = new GrowableByteBuffer(100, 2.0f);
         upd.serialize(DocumentSerializerFactory.create42(buf));
+        buf.flip();
 
-        int size = buf.position();
-        buf.position(0);
+        writeBufferToFile(buf, "src/tests/data/serializeupdatejava.dat");
+    }
 
-        FileOutputStream fos = new FileOutputStream("src/tests/data/serializeupdatejava.dat");
-        fos.write(buf.array(), 0, size);
+    private static void writeBufferToFile(GrowableByteBuffer buf, String fileName) throws IOException {
+        FileOutputStream fos = new FileOutputStream(fileName);
+        fos.write(buf.array(), 0, buf.remaining());
         fos.close();
     }
 
@@ -785,6 +789,70 @@ public class DocumentUpdateTestCase {
         result.addFieldUpdate(FieldUpdate.createAssign(docType.getField(tensorField),
                               createTensorFieldValue("{{x:0}:2.0}")));
         return result;
+    }
+
+    private static class TensorUpdateSerializeFixture {
+        private DocumentTypeManager docMan;
+        private DocumentType docType;
+
+        public TensorUpdateSerializeFixture() {
+            docMan = new DocumentTypeManager();
+            docType = new DocumentType("test");
+            docType.addHeaderField("sparse_tensor", new TensorDataType(TensorType.fromSpec("tensor(x{})")));
+            docType.addHeaderField("dense_tensor", new TensorDataType(TensorType.fromSpec("tensor(x[4])")));
+            docMan.registerDocumentType(docType);
+        }
+
+        Field getField(String name) {
+            return docType.getField(name);
+        }
+
+        TensorFieldValue createTensor() {
+            return new TensorFieldValue(Tensor.from("tensor(x{})", "{{x:2}:5, {x:3}:7}"));
+        }
+
+        DocumentUpdate createUpdate() {
+            var result = new DocumentUpdate(docType, "id:test:test::0");
+
+            result.addFieldUpdate(FieldUpdate.create(getField("sparse_tensor"))
+                    .addValueUpdate(new AssignValueUpdate(createTensor()))
+                    .addValueUpdate(new TensorAddUpdate(createTensor()))
+                    .addValueUpdate(new TensorRemoveUpdate(createTensor())));
+
+            result.addFieldUpdate(FieldUpdate.create(getField("dense_tensor"))
+                    .addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.REPLACE, createTensor()))
+                    .addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.ADD, createTensor()))
+                    .addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.MULTIPLY, createTensor())));
+            return result;
+        }
+
+        void serializeUpdateToFile(DocumentUpdate update, String fileName) throws IOException {
+            GrowableByteBuffer buf = new GrowableByteBuffer(100, 2.0f);
+            update.serialize(DocumentSerializerFactory.createHead(buf));
+            buf.flip();
+
+            writeBufferToFile(buf, fileName);
+        }
+
+        DocumentUpdate deserializeUpdateFromFile(String fileName) throws IOException {
+            byte[] data = DocumentTestCase.readFile(fileName);
+            DocumentDeserializer buf = DocumentDeserializerFactory.createHead(docMan, GrowableByteBuffer.wrap(data));
+            return new DocumentUpdate(buf);
+        }
+    }
+
+    @Test
+    public void tensor_update_file_cpp_can_be_deserialized() throws IOException {
+        var f = new TensorUpdateSerializeFixture();
+        var update = f.deserializeUpdateFromFile("src/tests/data/serialize-tensor-update-cpp.dat");
+        assertEquals(f.createUpdate(), update);
+    }
+
+    @Test
+    public void generate_serialized_tensor_update_file_java() throws IOException {
+        var f = new TensorUpdateSerializeFixture();
+        var update = f.createUpdate();
+        f.serializeUpdateToFile(update, "src/tests/data/serialize-tensor-update-java.dat");
     }
 
 }

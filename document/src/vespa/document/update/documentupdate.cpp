@@ -410,4 +410,11 @@ DocumentUpdate::reserialize()
     _needHardReserialize = false;
 }
 
+std::ostream &
+operator<<(std::ostream &out, const DocumentUpdate &update)
+{
+    update.print(out, false, "");
+    return out;
+}
+
 }
