@@ -26,6 +26,7 @@ public class CuratorCompletionWaiterTest {
                 fail("Waiting failed due to timeout");
             }
         });
+        t1.start();
         notifier.notifyCompletion();
         t1.join();
     }
