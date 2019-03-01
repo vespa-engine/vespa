@@ -191,23 +191,27 @@ public class Container extends AbstractService implements
         return (parent instanceof ContainerCluster) && (((ContainerCluster)parent).getDocproc() != null);
     }
 
-    private String myServiceType = null;
+    private ContainerServiceType myServiceType = null;
 
-    // TODO: hack to retain old service names, e.g. in monitoring config, vespa.log etc.
+    /** Subclasses must implement {@link #myServiceType()} for a custom service name. */
     @Override
-    public String getServiceType() {
-        if (myServiceType != null) {
-            return myServiceType;
+    public final String getServiceType() {
+        if (myServiceType == null) {
+            myServiceType = myServiceType();
         }
+        return myServiceType.name;
+    }
+
+    /** Subclasses must implement this for a custom service name. */
+    protected ContainerServiceType myServiceType() {
         if (parent instanceof ContainerCluster) {
             ContainerCluster cluster = (ContainerCluster)parent;
+            // TODO: The 'qrserver' name is retained for legacy reasons (e.g. system tests and log parsing).
             if (cluster.getSearch() != null && cluster.getDocproc() == null && cluster.getDocumentApi() == null) {
-                myServiceType = "qrserver";
-                return myServiceType;
+                return ContainerServiceType.QRSERVER;
             }
         }
-        myServiceType = super.getServiceType();
-        return myServiceType;
+        return ContainerServiceType.CONTAINER;
     }
 
     public void setClusterName(String name) {
