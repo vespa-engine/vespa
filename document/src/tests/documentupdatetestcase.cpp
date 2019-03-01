@@ -91,6 +91,28 @@ void testRoundtripSerialize(const UpdateType& update, const DataType &type) {
     }
 }
 
+void
+writeBufferToFile(const ByteBuffer &buf, const vespalib::string &fileName)
+{
+    auto file = std::fstream(fileName, std::ios::out | std::ios::binary);
+    file.write(buf.getBuffer(), buf.getPos());
+    assert(file.good());
+    file.close();
+}
+
+ByteBuffer::UP
+readBufferFromFile(const vespalib::string &fileName)
+{
+    auto file = std::fstream(fileName, std::ios::in | std::ios::binary | std::ios::ate);
+    auto size = file.tellg();
+    auto result = std::make_unique<ByteBuffer>(size);
+    file.seekg(0);
+    file.read(result->getBuffer(), size);
+    assert(file.good());
+    file.close();
+    return result;
+}
+
 }
 
 TEST(DocumentUpdateTest, testSimpleUsage)
@@ -446,17 +468,8 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     const std::string file_name = "data/crossplatform-java-cpp-doctypes.cfg";
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
-    int fd = open("data/serializeupdatejava.dat" , O_RDONLY);
-
-    int len = lseek(fd,0,SEEK_END);
-    ByteBuffer buf(len);
-    lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.getBuffer(), len) != len) {
-    	throw vespalib::Exception("read failed");
-    }
-    close(fd);
-
-    nbostream is(buf.getBufferAtPos(), buf.getRemaining());
+    auto buf = readBufferFromFile("data/serializeupdatejava.dat");
+    nbostream is(buf->getBufferAtPos(), buf->getRemaining());
     DocumentUpdate::UP updp(DocumentUpdate::create42(repo, is));
     DocumentUpdate& upd(*updp);
 
@@ -536,12 +549,7 @@ TEST(DocumentUpdateTest, testGenerateSerializedFile)
           .addUpdate(MapValueUpdate(StringFieldValue("foo"),
                         ArithmeticValueUpdate(ArithmeticValueUpdate::Mul, 2))));
     ByteBuffer::UP buf(serialize42(upd));
-
-    int fd = open("data/serializeupdatecpp.dat", O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
-	    throw vespalib::Exception("read failed");
-    }
-    close(fd);
+    writeBufferToFile(*buf, "data/serializeupdatecpp.dat");
 }
 
 
@@ -1097,21 +1105,13 @@ struct TensorUpdateSerializeFixture {
 
     void serializeUpdateToFile(const DocumentUpdate &update, const vespalib::string &fileName) {
         ByteBuffer::UP buf = serializeHEAD(update);
-        auto file = std::fstream(fileName, std::ios::out | std::ios::binary);
-        file.write(buf->getBuffer(), buf->getPos());
-        file.close();
+        writeBufferToFile(*buf, fileName);
     }
 
     DocumentUpdate::UP deserializeUpdateFromFile(const vespalib::string &fileName) {
-        auto file = std::fstream(fileName, std::ios::in | std::ios::binary | std::ios::ate);
-        auto size = file.tellg();
-        ByteBuffer buf(size);
-        file.seekg(0);
-        file.read(buf.getBuffer(), size);
-        file.close();
-
-        nbostream inStream(buf.getBufferAtPos(), buf.getRemaining());
-        return DocumentUpdate::createHEAD(*repo, inStream);
+        auto buf = readBufferFromFile(fileName);
+        nbostream stream(buf->getBufferAtPos(), buf->getRemaining());
+        return DocumentUpdate::createHEAD(*repo, stream);
     }
 
 };
