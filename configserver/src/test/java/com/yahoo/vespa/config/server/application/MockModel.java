@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
+
 /**
  * Model with two services, one that does not have a state port
  *
@@ -47,7 +49,7 @@ public class MockModel implements Model {
         ServiceInfo container = createServiceInfo(
                 hostname,
                 "foo", // name
-                "container-clustercontroller", // type
+                CLUSTERCONTROLLER_CONTAINER.serviceName,
                 ClusterSpec.Type.container,
                 statePort,
                 "state http external query");
