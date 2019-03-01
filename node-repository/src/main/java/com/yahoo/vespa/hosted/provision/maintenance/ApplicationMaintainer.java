@@ -70,18 +70,18 @@ public abstract class ApplicationMaintainer extends Maintainer {
     /** Returns the applications that should be maintained by this now. */
     protected abstract Set<ApplicationId> applicationsNeedingMaintenance();
 
-    /** Redeploy this application. A lock will be taken for the duration of the deployment activation */
+    /** Redeploy this application. */
     protected final void deployWithLock(ApplicationId application) {
         // An application might change its state between the time the set of applications is retrieved and the
         // time deployment happens. Lock the application and check if it's still active.
-        //
-        // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
-        try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
-            if ( ! isActive(application)) return; // became inactive since deployment was requested
-            Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
-            if ( ! deployment.isPresent()) return; // this will be done at another config server
-            log.log(LogLevel.DEBUG, this.getClass().getSimpleName() + " deploying " + application);
-            deployment.get().activate();
+        try {
+            try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(10))) {
+                if ( ! isActive(application)) return; // became inactive since deployment was requested
+            }
+            deployer.deployFromLocalActive(application).ifPresent(deployment -> { // if deployed on this config server
+                log.log(LogLevel.DEBUG, this.getClass().getSimpleName() + " deploying " + application);
+                deployment.activate();
+            });
         } catch (RuntimeException e) {
             log.log(LogLevel.WARNING, "Exception on maintenance redeploy", e);
         } finally {
