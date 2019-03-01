@@ -121,6 +121,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
         try (Lock lock = tenant.getApplicationRepo().lock(session.getApplicationId())) {
+            if ( ! tenant.getApplicationRepo().exists(session.getApplicationId()))
+                return; // Application was deleted.
+
             validateSessionStatus(session);
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
