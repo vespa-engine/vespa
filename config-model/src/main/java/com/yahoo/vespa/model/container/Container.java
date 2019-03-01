@@ -198,7 +198,7 @@ public abstract class Container extends AbstractService implements
         if (myServiceType == null) {
             myServiceType = myServiceType();
         }
-        return myServiceType.name;
+        return myServiceType.serviceName;
     }
 
     /** Subclasses must implement this for a custom service name. */
