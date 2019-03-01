@@ -18,6 +18,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.flag.Flags;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -199,7 +200,8 @@ public class NodeRepository extends AbstractComponent {
         node.allocation().ifPresent(allocation -> {
             trustedNodes.addAll(candidates.owner(allocation.owner()).asList());
             loadBalancers.owner(allocation.owner()).asList().stream()
-                         .map(LoadBalancer::networks)
+                         .map(LoadBalancer::instance)
+                         .map(LoadBalancerInstance::networks)
                          .forEach(trustedNetworks::addAll);
         });
         trustedPorts.add(22);

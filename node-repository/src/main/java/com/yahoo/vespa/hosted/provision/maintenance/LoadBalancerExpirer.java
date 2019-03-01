@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * Periodically remove inactive load balancers permanently.
  *
  * When an application is removed, any associated load balancers are only deactivated. This maintainer ensures that
- * such resources are eventually freed.
+ * underlying load balancer instances are eventually freed.
  *
  * @author mpolden
  */
@@ -50,7 +50,7 @@ public class LoadBalancerExpirer extends Maintainer {
                     continue;
                 }
                 try {
-                    service.remove(loadBalancer.id());
+                    service.remove(loadBalancer.id().application(), loadBalancer.id().cluster());
                     db.removeLoadBalancer(loadBalancer.id());
                 } catch (Exception e) {
                     failed.add(loadBalancer.id());

@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.lb.DnsZone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 
 import java.io.IOException;
@@ -44,14 +45,14 @@ public class LoadBalancerSerializer {
         Cursor root = slime.setObject();
 
         root.setString(idField, loadBalancer.id().serializedForm());
-        root.setString(hostnameField, loadBalancer.hostname().toString());
-        loadBalancer.dnsZone().ifPresent(dnsZone -> root.setString(dnsZoneField, dnsZone.id()));
+        root.setString(hostnameField, loadBalancer.instance().hostname().toString());
+        loadBalancer.instance().dnsZone().ifPresent(dnsZone -> root.setString(dnsZoneField, dnsZone.id()));
         Cursor portArray = root.setArray(portsField);
-        loadBalancer.ports().forEach(portArray::addLong);
+        loadBalancer.instance().ports().forEach(portArray::addLong);
         Cursor networkArray = root.setArray(networksField);
-        loadBalancer.networks().forEach(networkArray::addString);
+        loadBalancer.instance().networks().forEach(networkArray::addString);
         Cursor realArray = root.setArray(realsField);
-        loadBalancer.reals().forEach(real -> {
+        loadBalancer.instance().reals().forEach(real -> {
             Cursor realObject = realArray.addObject();
             realObject.setString(hostnameField, real.hostname().value());
             realObject.setString(ipAddressField, real.ipAddress());
@@ -94,11 +95,13 @@ public class LoadBalancerSerializer {
         });
 
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
-                                HostName.from(object.field(hostnameField).asString()),
-                                optionalField(object.field(dnsZoneField), DnsZone::new),
-                                ports,
-                                networks,
-                                reals,
+                                new LoadBalancerInstance(
+                                        HostName.from(object.field(hostnameField).asString()),
+                                        optionalField(object.field(dnsZoneField), DnsZone::new),
+                                        ports,
+                                        networks,
+                                        reals
+                                ),
                                 rotations,
                                 object.field(inactiveField).asBool());
     }

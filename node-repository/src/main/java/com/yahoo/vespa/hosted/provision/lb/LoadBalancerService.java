@@ -14,10 +14,10 @@ import java.util.Set;
 public interface LoadBalancerService {
 
     /** Create a load balancer for given application cluster. Implementations are expected to be idempotent */
-    LoadBalancer create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals);
+    LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals);
 
-    /** Permanently remove load balancer with given ID */
-    void remove(LoadBalancerId loadBalancer);
+    /** Permanently remove load balancer for given application cluster */
+    void remove(ApplicationId application, ClusterSpec.Id cluster);
 
     /** Returns the protocol supported by this load balancer service */
     Protocol protocol();
