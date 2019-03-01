@@ -12,10 +12,10 @@ public enum ContainerServiceType {
     LOGSERVER_CONTAINER("logserver-container"),
     METRICS_PROXY_CONTAINER("metrics-proxy-container");
 
-    public final String name;
+    public final String serviceName;
 
-    ContainerServiceType(String name) {
-        this.name = name;
+    ContainerServiceType(String serviceName) {
+        this.serviceName = serviceName;
     }
 
 }
