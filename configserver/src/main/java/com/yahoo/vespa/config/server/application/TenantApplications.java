@@ -84,7 +84,9 @@ public class TenantApplications {
 
     private Optional<ApplicationId> parseApplication(String appNode) {
         try {
-            return Optional.of(ApplicationId.fromSerializedForm(appNode));
+            ApplicationId id = ApplicationId.fromSerializedForm(appNode);
+            getSessionIdForApplication(id);
+            return Optional.of(id);
         } catch (IllegalArgumentException e) {
             log.log(LogLevel.INFO, TenantRepository.logPre(tenant)+"Unable to parse application with id '" + appNode + "', ignoring.");
             return Optional.empty();
