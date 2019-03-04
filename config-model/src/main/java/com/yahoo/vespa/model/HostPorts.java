@@ -42,13 +42,24 @@ public class HostPorts {
 
     private Optional<NetworkPorts> networkPortsList = Optional.empty();
 
+    /**
+     * Get the allocated network ports.
+     * Should be called after allocation is complete and flushPortReservations has been called
+     **/
     public Optional<NetworkPorts> networkPorts() { return networkPortsList; }
 
+    /**
+     * Add port allocation from previous deployments.
+     * Call this before starting port allocations, to re-use existing ports where possible
+     **/
     public void addNetworkPorts(NetworkPorts ports) {
         this.networkPortsList = Optional.of(ports);
         this.portFinder = new PortFinder(ports.allocations());
     }
 
+    /**
+     * Setup logging in order to send warnings back to the user.
+     **/
     public void useLogger(DeployLogger logger) {
         this.deployLogger = logger;
     }
@@ -81,6 +92,7 @@ public class HostPorts {
         return 0;
     }
 
+    /** Allocate a specific port number for a service */
     public int requireNetworkPort(int port, NetworkPortRequestor service, String suffix) {
         reservePort(service, port, suffix);
         String servType = service.getServiceType();
@@ -89,6 +101,7 @@ public class HostPorts {
         return port;
     }
 
+    /** Allocate a preferred port number for a service, fall back to using any dynamic port */
     public int wantNetworkPort(int port, NetworkPortRequestor service, String suffix) {
         if (portDB.containsKey(port)) {
             int fallback = nextAvailableNetworkPort();
@@ -102,10 +115,12 @@ public class HostPorts {
         return requireNetworkPort(port, service, suffix);
     }
 
+    /** Convenience method to allocate a preferred or required port number for a service */
     public int wantNetworkPort(int port, NetworkPortRequestor service, String suffix, boolean forceRequired) {
         return forceRequired ? requireNetworkPort(port, service, suffix) : wantNetworkPort(port, service, suffix);
     }
 
+    /** Allocate a dynamic port number for a service */
     public int allocateNetworkPort(NetworkPortRequestor service, String suffix) {
         String servType = service.getServiceType();
         String configId = service.getConfigId();
@@ -116,6 +131,7 @@ public class HostPorts {
         return port;
     }
 
+    /** Allocate all ports for a service */
     List<Integer> allocatePorts(NetworkPortRequestor service, int wantedPort) {
         List<Integer> ports = new ArrayList<>();
         final int count = service.getPortCount();
