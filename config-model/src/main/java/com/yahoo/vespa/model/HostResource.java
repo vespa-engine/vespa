@@ -28,31 +28,16 @@ import java.util.stream.Collectors;
  *
  * @author Ulf Lilleengen
  */
-public class HostResource implements Comparable<HostResource> {
+public class HostResource implements Comparable<HostResource>
+{
+    private final HostPorts hostPorts;
 
-    public final static int BASE_PORT = 19100;
-    final static int MAX_PORTS = 799;
+    public HostPorts ports() { return hostPorts; }
+
     private final Host host;
 
     /** Map from "sentinel name" to service */
     private final Map<String, Service> services = new LinkedHashMap<>();
-
-    private final Map<Integer, NetworkPortRequestor> portDB = new LinkedHashMap<>();
-
-    private int allocatedPorts = 0;
-
-    static class PortReservation {
-        int gotPort;
-        NetworkPortRequestor service;
-        String suffix;
-        PortReservation(int port, NetworkPortRequestor svc, String suf) {
-            this.gotPort = port;
-            this.service = svc;
-            this.suffix = suf;
-        }
-    }
-
-    private List<PortReservation> portReservations = new ArrayList<>();
 
     private Set<ClusterMembership> clusterMemberships = new LinkedHashSet<>();
 
@@ -61,12 +46,6 @@ public class HostResource implements Comparable<HostResource> {
 
     /** The current Vespa version running on this node, or empty if not known */
     private final Optional<Version> version;
-
-    private Optional<NetworkPorts> networkPortsList = Optional.empty();
-
-    public Optional<NetworkPorts> networkPorts() { return networkPortsList; }
-
-    public void addNetworkPorts(NetworkPorts ports) { this.networkPortsList = Optional.of(ports); }
 
     /**
      * Create a new {@link HostResource} bound to a specific {@link com.yahoo.vespa.model.Host}.
@@ -78,6 +57,7 @@ public class HostResource implements Comparable<HostResource> {
     }
 
     public HostResource(Host host, Optional<Version> version) {
+        this.hostPorts = new HostPorts(host.getHostname());
         this.host = host;
         this.version = version;
     }
@@ -92,26 +72,6 @@ public class HostResource implements Comparable<HostResource> {
     public Optional<Version> version() { return version; }
 
     /**
-     * Returns the baseport of the first available port range of length numPorts,
-     * or 0 if there is no range of that length available.
-     *
-     * @param numPorts  The length of the desired port range.
-     * @return  The baseport of the first available range, or 0 if no range is available.
-     */
-    public int nextAvailableBaseport(int numPorts) {
-        int range = 0;
-        int port = BASE_PORT;
-        for (; port < BASE_PORT + MAX_PORTS && (range < numPorts); port++) {
-            if (portDB.containsKey(port)) {
-                range = 0;
-                continue;
-            }
-            range++;
-        }
-        return range == numPorts ? port - range : 0;
-    }
-
-    /**
      * Adds service and allocates resources for it.
      *
      * @param service The Service to allocate resources for
@@ -119,118 +79,14 @@ public class HostResource implements Comparable<HostResource> {
      * @return  The allocated ports for the Service.
      */
     List<Integer> allocateService(DeployLogger deployLogger, AbstractService service, int wantedPort) {
-        List<Integer> ports = allocatePorts(deployLogger, service, wantedPort);
+        ports().useLogger(deployLogger);
+        List<Integer> ports = hostPorts.allocatePorts(service, wantedPort);
         assert (getService(service.getServiceName()) == null) :
                 ("There is already a service with name '" + service.getServiceName() + "' registered on " + this +
                 ". Most likely a programming error - all service classes must have unique names, even in different packages!");
 
         services.put(service.getServiceName(), service);
         return ports;
-    }
-
-    private List<Integer> allocatePorts(DeployLogger deployLogger, NetworkPortRequestor service, int wantedPort) {
-        List<Integer> ports = new ArrayList<>();
-        if (service.getPortCount() < 1)
-            return ports;
-
-        int serviceBasePort = BASE_PORT + allocatedPorts;
-        if (wantedPort > 0) {
-            if (service.requiresWantedPort() || canUseWantedPort(deployLogger, service, wantedPort, serviceBasePort))
-                serviceBasePort = wantedPort;
-        }
-        String[] suffixes = service.getPortSuffixes();
-        if (suffixes.length != service.getPortCount()) {
-            throw new IllegalArgumentException("service "+service+" had "+suffixes.length+" port suffixes, but port count "+service.getPortCount()+", mismatch");
-        }
-
-        reservePort(service, serviceBasePort, suffixes[0]);
-        ports.add(serviceBasePort);
-
-        int remainingPortsStart =  service.requiresConsecutivePorts() ?
-                serviceBasePort + 1:
-                BASE_PORT + allocatedPorts;
-        for (int i = 0; i < service.getPortCount() - 1; i++) {
-            int port = remainingPortsStart + i;
-            reservePort(service, port, suffixes[i+1]);
-            ports.add(port);
-        }
-        if (suffixes.length != service.getPortCount()) {
-            throw new IllegalArgumentException("service "+service+" had "+suffixes.length+" port suffixes, but port count "+service.getPortCount()+", mismatch");
-        }
-        return ports;
-    }
-
-    public void flushPortReservations() {
-        List<NetworkPorts.Allocation> list = new ArrayList<>();
-        for (PortReservation pr : portReservations) {
-            String servType = pr.service.getServiceType();
-            String configId = pr.service.getConfigId();
-            list.add(new NetworkPorts.Allocation(pr.gotPort, servType, configId, pr.suffix));
-        }
-        this.networkPortsList = Optional.of(new NetworkPorts(list));
-    }
-
-    private boolean canUseWantedPort(DeployLogger deployLogger, NetworkPortRequestor service, int wantedPort, int serviceBasePort) {
-        for (int i = 0; i < service.getPortCount(); i++) {
-            int port = wantedPort + i;
-            if (portDB.containsKey(port)) {
-                NetworkPortRequestor s = portDB.get(port);
-                deployLogger.log(Level.WARNING, service.getServiceName() +" cannot reserve port " + port + " on " +
-                        this + ": Already reserved for " + s.getServiceName() +
-                        ". Using default port range from " + serviceBasePort);
-                return false;
-            }
-            if (!service.requiresConsecutivePorts()) break;
-        }
-        return true;
-    }
-
-    /**
-     * Reserves the desired port for the given service, or throws as exception if the port
-     * is not available.
-     *
-     * @param service the service that wishes to reserve the port.
-     * @param port the port to be reserved.
-     */
-    void reservePort(NetworkPortRequestor service, int port, String suffix) {
-        if (portDB.containsKey(port)) {
-            portAlreadyReserved(service, port);
-        } else {
-            if (inVespasPortRange(port)) {
-                allocatedPorts++;
-                if (allocatedPorts > MAX_PORTS) {
-                    noMoreAvailablePorts();
-                }
-            }
-            portDB.put(port, service);
-            portReservations.add(new PortReservation(port, service, suffix));
-        }
-    }
-
-    private boolean inVespasPortRange(int port) {
-        return port >= BASE_PORT &&
-                port < BASE_PORT + MAX_PORTS;
-    }
-
-    private void portAlreadyReserved(NetworkPortRequestor service, int port) {
-        NetworkPortRequestor otherService = portDB.get(port);
-        int nextAvailablePort = nextAvailableBaseport(service.getPortCount());
-        if (nextAvailablePort == 0) {
-            noMoreAvailablePorts();
-        }
-        String msg = (service.getClass().equals(otherService.getClass()) && service.requiresWantedPort())
-                ? "You must set port explicitly for all instances of this service type, except the first one. "
-                : "";
-        throw new RuntimeException(service.getServiceName() + " cannot reserve port " + port +
-                    " on " + this + ": Already reserved for " + otherService.getServiceName() +
-                    ". " + msg + "Next available port is: " + nextAvailablePort + " ports used: " + portDB);
-    }
-
-    private void noMoreAvailablePorts() {
-        throw new RuntimeException
-            ("Too many ports are reserved in Vespa's port range (" +
-                    BASE_PORT  + ".." + (BASE_PORT+MAX_PORTS) + ") on " + this +
-                    ". Move one or more services to another host, or outside this port range.");
     }
 
     /**

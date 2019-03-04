@@ -279,7 +279,8 @@ public class ContainerClusterTest {
 
     private static ContainerCluster newContainerCluster() {
         DeployState deployState = DeployState.createTestState();
-        ContainerCluster cluster = new ContainerCluster(null, "subId", "name", deployState);
+        MockRoot root = new MockRoot("foo", deployState);
+        ContainerCluster cluster = new ContainerCluster(root, "subId", "name", deployState);
         addContainer(deployState.getDeployLogger(), cluster, "c1", "host-c1");
         addContainer(deployState.getDeployLogger(), cluster, "c2", "host-c2");
         return cluster;

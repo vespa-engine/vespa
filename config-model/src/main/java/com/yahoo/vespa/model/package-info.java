@@ -142,8 +142,8 @@ com.yahoo.config.model.producer.AbstractConfigProducer
 
     <p>Each {@link com.yahoo.vespa.model.Host Host} has an available
     dynamic port range running from {@link
-    com.yahoo.vespa.model.HostResource#BASE_PORT BASE_PORT} (currently 19100)
-    with {@link com.yahoo.vespa.model.HostResource#MAX_PORTS MAX_PORTS}
+    com.yahoo.vespa.model.HostPorts#BASE_PORT BASE_PORT} (currently 19100)
+    with {@link com.yahoo.vespa.model.HostPorts#MAX_PORTS MAX_PORTS}
     (currently 799) ports upwards. When an instance of a subclass of
     {@link com.yahoo.vespa.model.AbstractService  AbstractService} is
     assigned to a host, it is given the lowest available base port in

@@ -42,7 +42,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     private int id = 0;
 
     /** The actual base port for this Service. */
-    private int basePort;
+    private int basePort = 0;
 
     /** The ports allocated to this Service. */
     private List<Integer> ports = new ArrayList<>();
@@ -483,8 +483,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      *  currently uses the first port as container http port.
      */
     public void reservePortPrepended(int port, String suffix) {
-        hostResource.reservePort(this, port, suffix);
-        ports.add(0, port);
+        ports.add(0, hostResource.ports().requireNetworkPort(port, this, suffix));
     }
 
     public void setHostResource(HostResource hostResource) {
