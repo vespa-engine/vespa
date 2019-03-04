@@ -55,9 +55,9 @@ public final class Node {
     }
 
     /** Creates a node in the initial state (provisioned) */
-    public static Node create(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
+    public static Node create(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Optional<String> modelName, Flavor flavor, NodeType type) {
         return new Node(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
-                Optional.empty(), History.empty(), type, new Reports(), Optional.empty());
+                Optional.empty(), History.empty(), type, new Reports(), modelName);
     }
 
     /** Creates a node. See also the {@code create} helper methods. */

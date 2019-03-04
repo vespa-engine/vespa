@@ -218,6 +218,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private Node createNode(Inspector inspector) {
         Optional<String> parentHostname = optionalString(inspector.field("parentHostname"));
+        Optional<String> modelName = optionalString(inspector.field("modelName"));
         Set<String> ipAddresses = new HashSet<>();
         inspector.field("ipAddresses").traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
         Set<String> ipAddressPool = new HashSet<>();
@@ -229,6 +230,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 ipAddresses,
                 ipAddressPool,
                 parentHostname,
+                modelName,
                 nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),
                 nodeTypeFromSlime(inspector.field("type")));
     }

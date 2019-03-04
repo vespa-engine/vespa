@@ -74,7 +74,7 @@ public class NodePrioritizerTest {
 
     private static Node createParent(String hostname) {
         return Node.create("openid", Collections.singleton("127.0.0.1"), new HashSet<>(), hostname, Optional.empty(),
-                flavors.getFlavorOrThrow("host-large"), NodeType.host);
+                Optional.empty(), flavors.getFlavorOrThrow("host-large"), NodeType.host);
     }
 
     private static FlavorsConfig flavorsConfig() {

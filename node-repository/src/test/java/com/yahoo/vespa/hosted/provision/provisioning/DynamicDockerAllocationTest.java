@@ -292,7 +292,7 @@ public class DynamicDockerAllocationTest {
     }
 
     private void addAndAssignNode(ApplicationId id, String hostname, String parentHostname, ClusterSpec clusterSpec, Flavor flavor, int index, ProvisioningTester tester) {
-        Node node1a = Node.create("open1", Collections.singleton("127.0.0.100"), new HashSet<>(), hostname, Optional.of(parentHostname), flavor, NodeType.tenant);
+        Node node1a = Node.create("open1", Collections.singleton("127.0.0.100"), new HashSet<>(), hostname, Optional.of(parentHostname), Optional.empty(), flavor, NodeType.tenant);
         ClusterMembership clusterMembership1 = ClusterMembership.from(
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation
         Node node1aAllocation = node1a.allocate(id, clusterMembership1, Instant.now());

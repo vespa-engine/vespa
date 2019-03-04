@@ -94,11 +94,11 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(node55.with(node55.status().withWantToRetire(true).withWantToDeprovision(true)));
 
         /* Setup docker hosts (two of these will be reserved for spares */
-        nodes.add(createNode("dockerhost1", "dockerhost1.yahoo.com", ipAddresses, ipAddressPool, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
-        nodes.add(createNode("dockerhost2", "dockerhost2.yahoo.com", ipAddresses, ipAddressPool, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
-        nodes.add(createNode("dockerhost3", "dockerhost3.yahoo.com", ipAddresses, ipAddressPool, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
-        nodes.add(createNode("dockerhost4", "dockerhost4.yahoo.com", ipAddresses, ipAddressPool, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
-        nodes.add(createNode("dockerhost5", "dockerhost5.yahoo.com", ipAddresses, ipAddressPool, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
+        nodes.add(createNode("dockerhost1", "dockerhost1.yahoo.com", ipAddresses, ipAddressPool, Optional.empty(), Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
+        nodes.add(createNode("dockerhost2", "dockerhost2.yahoo.com", ipAddresses, ipAddressPool, Optional.empty(), Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
+        nodes.add(createNode("dockerhost3", "dockerhost3.yahoo.com", ipAddresses, ipAddressPool, Optional.empty(), Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
+        nodes.add(createNode("dockerhost4", "dockerhost4.yahoo.com", ipAddresses, ipAddressPool, Optional.empty(), Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
+        nodes.add(createNode("dockerhost5", "dockerhost5.yahoo.com", ipAddresses, ipAddressPool, Optional.empty(), Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
 
         // Config servers
         nodes.add(createNode("cfg1", "cfg1.yahoo.com", Collections.singleton("127.0.1.1"), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.config));

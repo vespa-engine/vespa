@@ -69,13 +69,13 @@ public class RetireIPv4OnlyNodesTest {
     private Node createNodeWithAddresses(String... addresses) {
         Set<String> ipAddresses = Arrays.stream(addresses).collect(Collectors.toSet());
         return Node.create("openstackid", ipAddresses, Collections.emptySet(), "hostname", Optional.empty(),
-                nodeFlavors.get(0), NodeType.tenant);
+                Optional.empty(), nodeFlavors.get(0), NodeType.tenant);
     }
 
     private Node createVMWithAddresses(String... addresses) {
         Set<String> ipAddresses = Arrays.stream(addresses).collect(Collectors.toSet());
         return Node.create("openstackid", ipAddresses, Collections.emptySet(),  "hostname", Optional.empty(),
-                nodeFlavors.get(1), NodeType.tenant);
+                Optional.empty(), nodeFlavors.get(1), NodeType.tenant);
     }
 
     private List<Flavor> initFlavors() {

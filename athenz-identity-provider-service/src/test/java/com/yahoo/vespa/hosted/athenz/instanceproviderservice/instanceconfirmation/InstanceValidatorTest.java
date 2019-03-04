@@ -219,7 +219,7 @@ public class InstanceValidatorTest {
         MockNodeFlavors flavors = new MockNodeFlavors();
         List<Node> nodeList = new ArrayList<>();
         for (int i = 0; i < num; i++) {
-            Node node = Node.create("foo" + i, ImmutableSet.of("::1" + i, "::2" + i, "::3" + i), Collections.emptySet(), "foo" + i, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant);
+            Node node = Node.create("foo" + i, ImmutableSet.of("::1" + i, "::2" + i, "::3" + i), Collections.emptySet(), "foo" + i, Optional.empty(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant);
             nodeList.add(node);
         }
         return nodeList;

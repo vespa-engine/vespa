@@ -38,20 +38,20 @@ public class DockerHostCapacityTest {
         flavorDocker2 = nodeFlavors.getFlavorOrThrow("docker2");
 
         // Create three docker hosts
-        host1 = Node.create("host1", Collections.singleton("::1"), generateIPs(2, 4), "host1", Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
-        host2 = Node.create("host2", Collections.singleton("::11"), generateIPs(12, 3), "host2", Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
-        host3 = Node.create("host3", Collections.singleton("::21"), generateIPs(22, 1), "host3", Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+        host1 = Node.create("host1", Collections.singleton("::1"), generateIPs(2, 4), "host1", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+        host2 = Node.create("host2", Collections.singleton("::11"), generateIPs(12, 3), "host2", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+        host3 = Node.create("host3", Collections.singleton("::21"), generateIPs(22, 1), "host3", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
 
         // Add two containers to host1
-        nodeA = Node.create("nodeA", Collections.singleton("::2"), Collections.emptySet(), "nodeA", Optional.of("host1"), flavorDocker, NodeType.tenant);
-        nodeB = Node.create("nodeB", Collections.singleton("::3"), Collections.emptySet(), "nodeB", Optional.of("host1"), flavorDocker, NodeType.tenant);
+        nodeA = Node.create("nodeA", Collections.singleton("::2"), Collections.emptySet(), "nodeA", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
+        nodeB = Node.create("nodeB", Collections.singleton("::3"), Collections.emptySet(), "nodeB", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
 
         // Add two containers to host 2 (same as host 1)
-        nodeC = Node.create("nodeC", Collections.singleton("::12"), Collections.emptySet(), "nodeC", Optional.of("host2"), flavorDocker, NodeType.tenant);
-        nodeD = Node.create("nodeD", Collections.singleton("::13"), Collections.emptySet(), "nodeD", Optional.of("host2"), flavorDocker, NodeType.tenant);
+        nodeC = Node.create("nodeC", Collections.singleton("::12"), Collections.emptySet(), "nodeC", Optional.of("host2"), Optional.empty(), flavorDocker, NodeType.tenant);
+        nodeD = Node.create("nodeD", Collections.singleton("::13"), Collections.emptySet(), "nodeD", Optional.of("host2"), Optional.empty(), flavorDocker, NodeType.tenant);
 
         // Add a larger container to host3
-        nodeE = Node.create("nodeE", Collections.singleton("::22"), Collections.emptySet(), "nodeE", Optional.of("host3"), flavorDocker2, NodeType.tenant);
+        nodeE = Node.create("nodeE", Collections.singleton("::22"), Collections.emptySet(), "nodeE", Optional.of("host3"), Optional.empty(), flavorDocker2, NodeType.tenant);
 
         // init docker host capacity
         nodes = new ArrayList<>();
@@ -80,7 +80,7 @@ public class DockerHostCapacityTest {
 
         // Add a new node to host1 to deplete the memory resource
         Node nodeF = Node.create("nodeF", Collections.singleton("::6"), Collections.emptySet(),
-                "nodeF", Optional.of("host1"), flavorDocker, NodeType.tenant);
+                "nodeF", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
         nodes.add(nodeF);
         capacity = new DockerHostCapacity(nodes);
         assertFalse(capacity.hasCapacity(host1, ResourceCapacity.of(flavorDocker)));
