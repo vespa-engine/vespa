@@ -69,8 +69,11 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
     }
     virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(vespalib::stringref name) override {
         auto itr = attributes.find(name);
-        ASSERT_TRUE(itr != attributes.end());
-        return itr->second;
+        if (itr != attributes.end()) {
+            return itr->second;
+        } else {
+            return std::shared_ptr<search::attribute::ReadableAttributeVector>();
+        }
     }
     void addIntAttribute(vespalib::stringref name) {
         attributes[name] = AttributeFactory::createAttribute(name, Config(BasicType::INT32));
@@ -81,6 +84,9 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
 
     MockGidToLidChangeHandler &getGidToLidChangeHandler() {
         return *_gidToLidChangeHandler;
+    }
+    void removeAttribute(vespalib::stringref name) {
+        attributes.erase(name);
     }
 };
 
@@ -304,6 +310,15 @@ TEST_F("require that imported attributes are instantiated with search cache if v
     EXPECT_EQUAL(2u, repo->size());
     f.assertImportedAttribute("imported_a", "ref", "target_a", true, repo->get("imported_a"));
     f.assertImportedAttribute("imported_b", "other_ref", "target_b", true, repo->get("imported_b"));
+}
+
+TEST_F("require that missing target attribute prevents creation of imported attribute", Fixture)
+{
+    f.parentReference->removeAttribute("target_a");
+    auto repo =  f.resolve();
+    EXPECT_EQUAL(1u, repo->size());
+    EXPECT_FALSE(repo->get("imported_a"));
+    EXPECT_TRUE(repo->get("imported_b"));
 }
 
 TEST_F("require that listeners are added", Fixture)
