@@ -314,15 +314,15 @@ public class DynamicDockerAllocationTest {
 
     private FlavorsConfig flavorsConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("host-large", 6., 6., 6, Flavor.Type.BARE_METAL);
-        b.addFlavor("host-small", 3., 3., 3, Flavor.Type.BARE_METAL);
-        b.addFlavor("host-medium", 4., 4., 4, Flavor.Type.BARE_METAL);
-        b.addFlavor("d-1", 1, 1., 1, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3", 3, 3., 3, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3-disk", 3, 3., 5, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3-mem", 3, 5., 3, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3-cpu", 5, 3., 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("host-large", 6., 6., 6, Flavor.Environment.BARE_METAL);
+        b.addFlavor("host-small", 3., 3., 3, Flavor.Environment.BARE_METAL);
+        b.addFlavor("host-medium", 4., 4., 4, Flavor.Environment.BARE_METAL);
+        b.addFlavor("d-1", 1, 1., 1, Flavor.Environment.DOCKER_CONTAINER);
+        b.addFlavor("d-2", 2, 2., 2, Flavor.Environment.DOCKER_CONTAINER);
+        b.addFlavor("d-3", 3, 3., 3, Flavor.Environment.DOCKER_CONTAINER);
+        b.addFlavor("d-3-disk", 3, 3., 5, Flavor.Environment.DOCKER_CONTAINER);
+        b.addFlavor("d-3-mem", 3, 5., 3, Flavor.Environment.DOCKER_CONTAINER);
+        b.addFlavor("d-3-cpu", 5, 3., 3, Flavor.Environment.DOCKER_CONTAINER);
         return b.build();
     }
 

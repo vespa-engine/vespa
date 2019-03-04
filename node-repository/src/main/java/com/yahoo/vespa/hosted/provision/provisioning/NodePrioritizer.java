@@ -248,7 +248,7 @@ class NodePrioritizer {
 
     private boolean isDocker() {
         Flavor flavor = getFlavor(requestedNodes);
-        return (flavor != null) && flavor.getType().equals(Flavor.Type.DOCKER_CONTAINER);
+        return (flavor != null) && flavor.environment().equals(Flavor.Environment.DOCKER_CONTAINER);
     }
 
     private static int compareForRelocation(Node a, Node b) {

@@ -98,6 +98,6 @@ public class FlavorSpareCount {
 
     @Override
     public String toString() {
-        return flavor.name() + " has " + numReady + " ready nodes and " + numActive + " active nodes";
+        return flavor.flavorName() + " has " + numReady + " ready nodes and " + numActive + " active nodes";
     }
 }

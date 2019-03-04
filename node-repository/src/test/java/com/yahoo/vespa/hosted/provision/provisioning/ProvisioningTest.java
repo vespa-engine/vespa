@@ -13,11 +13,11 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.internal.ConfigNodeFlavors;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
@@ -281,7 +281,7 @@ public class ProvisioningTest {
 
         assertEquals(12, tester.getNodes(application1, Node.State.active).size());
         for (Node node : tester.getNodes(application1, Node.State.active))
-            assertEquals("Node changed flavor in place", "dockerSmall", node.flavor().name());
+            assertEquals("Node changed flavor in place", "dockerSmall", node.flavor().flavorName());
         assertEquals("No nodes are retired",
                      0, tester.getNodes(application1, Node.State.active).retired().size());
     }
@@ -295,7 +295,7 @@ public class ProvisioningTest {
         config.defaultContainerFlavor("small");
         config.defaultContentFlavor("large");
         ProvisioningTester tester = new ProvisioningTester.Builder()
-                .zone(new Zone(new ConfigserverConfig(config), new NodeFlavors(new FlavorsConfig.Builder().build()))).build();
+                .zone(new Zone(new ConfigserverConfig(config), new ConfigNodeFlavors(new FlavorsConfig.Builder().build()))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -528,9 +528,9 @@ public class ProvisioningTest {
         String replacementFlavor = "new-default";
 
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor(flavorToRetire, 1., 1., 10, Flavor.Type.BARE_METAL).cost(2).retired(true);
+        b.addFlavor(flavorToRetire, 1., 1., 10, Flavor.Environment.BARE_METAL).cost(2).retired(true);
         FlavorsConfig.Flavor.Builder newDefault = b.addFlavor(replacementFlavor, 2., 2., 20,
-                                                              Flavor.Type.BARE_METAL).cost(2);
+                                                              Flavor.Environment.BARE_METAL).cost(2);
         b.addReplaces(flavorToRetire, newDefault);
 
         ProvisioningTester tester = new ProvisioningTester.Builder()
@@ -630,7 +630,7 @@ public class ProvisioningTest {
         // Deploy with flavor that will eventually be retired
         {
             FlavorConfigBuilder b = new FlavorConfigBuilder();
-            b.addFlavor(flavorToRetire, 1., 1., 10, Flavor.Type.BARE_METAL).cost(2);
+            b.addFlavor(flavorToRetire, 1., 1., 10, Flavor.Environment.BARE_METAL).cost(2);
 
             ProvisioningTester tester = new ProvisioningTester.Builder()
                     .flavorsConfig(b.build()).curator(curator).nameResolver(nameResolver).build();
@@ -644,9 +644,9 @@ public class ProvisioningTest {
         {
             // Retire "default" flavor and add "new-default" as replacement
             FlavorConfigBuilder b = new FlavorConfigBuilder();
-            b.addFlavor(flavorToRetire, 1., 1., 10, Flavor.Type.BARE_METAL).cost(2).retired(true);
+            b.addFlavor(flavorToRetire, 1., 1., 10, Flavor.Environment.BARE_METAL).cost(2).retired(true);
             FlavorsConfig.Flavor.Builder newDefault = b.addFlavor(replacementFlavor, 2., 2., 20,
-                                                                  Flavor.Type.BARE_METAL).cost(2);
+                                                                  Flavor.Environment.BARE_METAL).cost(2);
             b.addReplaces(flavorToRetire, newDefault);
 
             ProvisioningTester tester = new ProvisioningTester.Builder()
@@ -673,9 +673,9 @@ public class ProvisioningTest {
         String replacementFlavor = "new-default";
 
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor(flavorToRetire, 1., 1., 10, Flavor.Type.BARE_METAL).cost(2).retired(true);
+        b.addFlavor(flavorToRetire, 1., 1., 10, Flavor.Environment.BARE_METAL).cost(2).retired(true);
         FlavorsConfig.Flavor.Builder newDefault = b.addFlavor(replacementFlavor, 2., 2., 20,
-                                                              Flavor.Type.BARE_METAL).cost(2);
+                                                              Flavor.Environment.BARE_METAL).cost(2);
         b.addReplaces(flavorToRetire, newDefault);
 
         ProvisioningTester tester = new ProvisioningTester.Builder()
@@ -693,7 +693,7 @@ public class ProvisioningTest {
 
         List<Node> nodes = tester.getNodes(application).asList();
         assertTrue("Allocated nodes have flavor " + replacementFlavor,
-                   nodes.stream().allMatch(n -> n.flavor().name().equals(replacementFlavor)));
+                   nodes.stream().allMatch(n -> n.flavor().flavorName().equals(replacementFlavor)));
     }
 
     @Test
@@ -781,10 +781,10 @@ public class ProvisioningTest {
 
     private void assertCorrectFlavorPreferences(boolean largeIsStock) {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10).stock(largeIsStock);
-        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Type.BARE_METAL).cost(9);
+        b.addFlavor("large", 4., 8., 100, Flavor.Environment.BARE_METAL).cost(10).stock(largeIsStock);
+        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Environment.BARE_METAL).cost(9);
         b.addReplaces("large", largeVariant);
-        FlavorsConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Type.BARE_METAL).cost(11);
+        FlavorsConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Environment.BARE_METAL).cost(11);
         b.addReplaces("large-variant", largeVariantVariant);
 
         ProvisioningTester tester = new ProvisioningTester.Builder()

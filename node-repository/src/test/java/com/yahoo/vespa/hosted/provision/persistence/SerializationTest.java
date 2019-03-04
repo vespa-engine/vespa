@@ -94,7 +94,7 @@ public class SerializationTest {
         assertEquals(2, copy.allocation().get().restartGeneration().current());
         assertEquals(3, copy.status().reboot().wanted());
         assertEquals(4, copy.status().reboot().current());
-        assertEquals("large", copy.flavor().name());
+        assertEquals("large", copy.flavor().flavorName());
         assertEquals("1.2.3", copy.status().vespaVersion().get().toString());
         assertEquals(2, copy.status().failCount());
         assertEquals("memory_mcelog", copy.status().hardwareFailureDescription().get());

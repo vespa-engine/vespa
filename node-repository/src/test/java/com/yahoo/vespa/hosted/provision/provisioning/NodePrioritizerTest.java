@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.internal.ConfigNodeFlavors;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Assert;
@@ -25,7 +26,7 @@ import java.util.Optional;
  */
 public class NodePrioritizerTest {
 
-    private static NodeFlavors flavors = new NodeFlavors(flavorsConfig());
+    private static NodeFlavors flavors = new ConfigNodeFlavors(flavorsConfig());
 
     @Test
     public void relocated_nodes_are_preferred() {
@@ -79,9 +80,9 @@ public class NodePrioritizerTest {
 
     private static FlavorsConfig flavorsConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("host-large", 6., 6., 6, Flavor.Type.BARE_METAL);
-        b.addFlavor("d1", 1, 1., 1, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("host-large", 6., 6., 6, Flavor.Environment.BARE_METAL);
+        b.addFlavor("d1", 1, 1., 1, Flavor.Environment.DOCKER_CONTAINER);
+        b.addFlavor("d2", 2, 2., 2, Flavor.Environment.DOCKER_CONTAINER);
         return b.build();
     }
 }
