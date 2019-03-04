@@ -6,11 +6,9 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
-namespace search {
+namespace search { struct IDocumentMetaStoreContext; }
 
-struct IDocumentMetaStoreContext;
-
-namespace attribute {
+namespace search::attribute {
 
 class BitVectorSearchCache;
 class ReadableAttributeVector;
@@ -63,7 +61,7 @@ public:
         return _name;
     }
 
-    virtual std::unique_ptr<AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
+    std::unique_ptr<AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
 
 protected:
     vespalib::string                           _name;
@@ -74,5 +72,4 @@ protected:
     std::shared_ptr<BitVectorSearchCache>      _search_cache;
 };
 
-}
 }

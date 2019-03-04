@@ -39,8 +39,7 @@ ImportedAttributeVector::ImportedAttributeVector(vespalib::stringref name,
 {
 }
 
-ImportedAttributeVector::~ImportedAttributeVector() {
-}
+ImportedAttributeVector::~ImportedAttributeVector() = default;
 
 std::unique_ptr<AttributeReadGuard>
 ImportedAttributeVector::makeReadGuard(bool stableEnumGuard) const
