@@ -28,10 +28,11 @@ import java.util.stream.Collectors;
  *
  * @author Ulf Lilleengen
  */
-public class HostResource
-    extends HostPorts
-    implements Comparable<HostResource>
+public class HostResource implements Comparable<HostResource>
 {
+    private final HostPorts hostPorts;
+
+    public HostPorts ports() { return hostPorts; }
 
     private final Host host;
 
@@ -56,7 +57,7 @@ public class HostResource
     }
 
     public HostResource(Host host, Optional<Version> version) {
-        super(host.getHostname());
+        this.hostPorts = new HostPorts(host.getHostname());
         this.host = host;
         this.version = version;
     }
@@ -78,8 +79,8 @@ public class HostResource
      * @return  The allocated ports for the Service.
      */
     List<Integer> allocateService(DeployLogger deployLogger, AbstractService service, int wantedPort) {
-        useLogger(deployLogger);
-        List<Integer> ports = allocatePorts(service, wantedPort);
+        ports().useLogger(deployLogger);
+        List<Integer> ports = hostPorts.allocatePorts(service, wantedPort);
         assert (getService(service.getServiceName()) == null) :
                 ("There is already a service with name '" + service.getServiceName() + "' registered on " + this +
                 ". Most likely a programming error - all service classes must have unique names, even in different packages!");

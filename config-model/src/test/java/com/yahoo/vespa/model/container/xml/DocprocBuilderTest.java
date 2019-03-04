@@ -11,7 +11,7 @@ import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.search.config.QrStartConfig;
-import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.HostPorts;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
@@ -120,7 +120,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
     @Test
     public void testContainerMbusConfig() {
         assertThat(containerMbusConfig.enabled(), is(true));
-        assertTrue(containerMbusConfig.port() >= HostResource.BASE_PORT);
+        assertTrue(containerMbusConfig.port() >= HostPorts.BASE_PORT);
         assertThat(containerMbusConfig.maxpendingcount(), is(300));
         assertThat(containerMbusConfig.maxpendingsize(), is(100));
     }

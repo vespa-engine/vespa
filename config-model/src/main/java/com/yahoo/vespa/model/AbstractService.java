@@ -483,7 +483,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      *  currently uses the first port as container http port.
      */
     public void reservePortPrepended(int port, String suffix) {
-        ports.add(0, hostResource.requireNetworkPort(port, this, suffix));
+        ports.add(0, hostResource.ports().requireNetworkPort(port, this, suffix));
     }
 
     public void setHostResource(HostResource hostResource) {

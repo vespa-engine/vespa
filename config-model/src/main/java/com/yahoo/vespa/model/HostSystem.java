@@ -131,7 +131,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
                                                      hostSpec.version());
         hostResource.setFlavor(hostSpec.flavor());
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);
-        hostSpec.networkPorts().ifPresent(hostResource::addNetworkPorts);
+        hostSpec.networkPorts().ifPresent(np -> hostResource.ports().addNetworkPorts(np));
         hostname2host.put(host.getHostname(), hostResource);
         log.log(DEBUG, () -> "Added new host resource for " + host.getHostname() + " with flavor " + hostResource.getFlavor());
         return hostResource;
@@ -146,7 +146,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     public void dumpPortAllocations() {
         for (HostResource hr : getHosts()) {
-            hr.flushPortReservations();
+            hr.ports().flushPortReservations();
 /*
             System.out.println("port allocations for: "+hr.getHostname());
             NetworkPorts ports = hr.networkPorts().get();
@@ -193,7 +193,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     Set<HostSpec> getHostSpecs() {
         return getHosts().stream()
                 .map(host -> new HostSpec(host.getHostname(), Collections.emptyList(),
-                                          host.getFlavor(), host.primaryClusterMembership(), host.version(), host.networkPorts()))
+                                          host.getFlavor(), host.primaryClusterMembership(), host.version(), host.ports().networkPorts()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 

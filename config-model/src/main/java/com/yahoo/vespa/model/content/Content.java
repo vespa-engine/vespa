@@ -326,7 +326,7 @@ public class Content extends ConfigModel {
                     Container docprocService = new Container(indexingCluster, containerName, index,
                                                              modelContext.getDeployState().isHosted());
                     index++;
-                    docprocService.setBasePort(host.nextAvailableBaseport(docprocService.getPortCount()));
+                    docprocService.setBasePort(host.ports().nextAvailableBaseport(docprocService.getPortCount()));
                     docprocService.setHostResource(host);
                     docprocService.initService(modelContext.getDeployLogger());
                     nodes.add(docprocService);
