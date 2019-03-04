@@ -5,10 +5,8 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -19,13 +17,13 @@ public class Condition implements Predicate<FetchVector> {
 
     private final Type type;
     private final FetchVector.Dimension dimension;
-    private final Set<String> values;
+    private final List<String> values;
 
     public Condition(Type type, FetchVector.Dimension dimension, String... values) {
-        this(type, dimension, new HashSet<>(Arrays.asList(values)));
+        this(type, dimension, Arrays.asList(values));
     }
 
-    public Condition(Type type, FetchVector.Dimension dimension, Set<String> values) {
+    public Condition(Type type, FetchVector.Dimension dimension, List<String> values) {
         this.type = type;
         this.dimension = dimension;
         this.values = values;
@@ -49,7 +47,7 @@ public class Condition implements Predicate<FetchVector> {
         Objects.requireNonNull(wireCondition.dimension);
         FetchVector.Dimension dimension = DimensionHelper.fromWire(wireCondition.dimension);
 
-        Set<String> values = wireCondition.values == null ? Collections.emptySet() : wireCondition.values;
+        List<String> values = wireCondition.values == null ? List.of() : wireCondition.values;
 
         return new Condition(type, dimension, values);
     }

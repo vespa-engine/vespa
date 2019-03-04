@@ -18,7 +18,7 @@ public class ConditionTest {
     public void testWhitelist() {
         String hostname1 = "host1";
         Condition condition = new Condition(Condition.Type.WHITELIST, FetchVector.Dimension.HOSTNAME,
-                Stream.of(hostname1).collect(Collectors.toSet()));
+                Stream.of(hostname1).collect(Collectors.toList()));
         assertFalse(condition.test(new FetchVector()));
         assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.APPLICATION_ID, "foo")));
         assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, "bar")));
@@ -29,7 +29,7 @@ public class ConditionTest {
     public void testBlacklist() {
         String hostname1 = "host1";
         Condition condition = new Condition(Condition.Type.BLACKLIST, FetchVector.Dimension.HOSTNAME,
-                Stream.of(hostname1).collect(Collectors.toSet()));
+                Stream.of(hostname1).collect(Collectors.toList()));
         assertTrue(condition.test(new FetchVector()));
         assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.APPLICATION_ID, "foo")));
         assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, "bar")));
