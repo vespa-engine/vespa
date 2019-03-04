@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFact
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
@@ -641,12 +640,7 @@ public class ApplicationController {
      * @return the application with the deployment in the given zone removed
      */
     private LockedApplication deactivate(LockedApplication application, ZoneId zone) {
-        try {
-            configServer.deactivate(new DeploymentId(application.get().id(), zone));
-        }
-        catch (NoInstanceException ignored) {
-            // ok; already gone
-        }
+        configServer.deactivate(new DeploymentId(application.get().id(), zone));
         return application.withoutDeploymentIn(zone);
     }
 

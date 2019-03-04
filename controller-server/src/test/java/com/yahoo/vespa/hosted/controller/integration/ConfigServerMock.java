@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
@@ -204,24 +203,6 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             provision(deployment.zoneId(), deployment.applicationId());
 
         return new PreparedApplication() {
-
-            @Override
-            public void activate() {}
-
-            @Override
-            public List<Log> messages() {
-                Log warning = new Log();
-                warning.level = "WARNING";
-                warning.time  = 1;
-                warning.message = "The warning";
-
-                Log info = new Log();
-                info.level = "INFO";
-                info.time  = 2;
-                info.message = "The info";
-
-                return List.of(warning, info);
-            }
 
             @Override
             public PrepareResponse prepareResponse() {

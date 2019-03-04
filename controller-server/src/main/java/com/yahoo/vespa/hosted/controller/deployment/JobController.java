@@ -316,12 +316,7 @@ public class JobController {
     }
 
     public void deactivateTester(TesterId id, JobType type) {
-        try {
-            controller.configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
-        }
-        catch (NoInstanceException ignored) {
-            // Already gone -- great!
-        }
+        controller.configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
     }
 
     /** Returns a URI which points at a badge showing historic status of given length for the given job type for the given application. */
