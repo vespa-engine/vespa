@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogService;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.ResourceBundle;
@@ -70,15 +71,13 @@ public class OsgiLogHandlerTestCase {
     }
 
     @Test
-    // TODO: Remove deprecation annotation and replace calls to LogRecord.setMillis() when we no longer have to support Java 8
-    @SuppressWarnings("deprecation")
     public void requireThatJdk14PropertiesAreAvailableThroughServiceReference() {
         MyLogService logService = new MyLogService();
 
         Logger log = newLogger(logService);
         LogRecord record = new LogRecord(Level.INFO, "message");
         record.setLoggerName("loggerName");
-        record.setMillis(69);
+        record.setInstant(Instant.ofEpochMilli(69));
         Object[] parameters = new Object[0];
         record.setParameters(parameters);
         ResourceBundle resouceBundle = new MyResourceBundle();
