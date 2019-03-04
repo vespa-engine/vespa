@@ -144,7 +144,7 @@ public final class ControllerTester {
         // Make root logger use time from manual clock
         configureDefaultLogHandler(handler -> handler.setFilter(
                 record -> {
-                    record.setMillis(clock.millis());
+                    record.setInstant(clock.instant());
                     return true;
                 }));
     }

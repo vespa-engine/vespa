@@ -260,6 +260,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         return true;
     }
 
+    @SuppressWarnings("deprecation")
     private static CloseableHttpClient createHttpClient(RequestConfig config,
                                                         ServiceIdentityProvider sslContextProvider,
                                                         ZoneRegistry zoneRegistry,
@@ -277,6 +278,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .build();
     }
 
+    @SuppressWarnings("deprecation")
     private static class AthenzIdentityVerifierAdapter implements X509HostnameVerifier {
 
         private final AthenzIdentityVerifier verifier;

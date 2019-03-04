@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
+import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
@@ -14,14 +15,13 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import static java.time.Instant.ofEpochMilli;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 
 /**
  * @author  Bjorn Borud
  */
-// TODO: Remove annotation and replace setMillis with setInstant when we don't support Java 8 anymore.
-@SuppressWarnings("deprecation")
 public class VespaLogHandlerTestCase {
     protected static String hostname;
     protected static String pid;
@@ -43,7 +43,7 @@ public class VespaLogHandlerTestCase {
         pid = Util.getPID();
 
         record1 = new LogRecord(Level.INFO, "This is a test");
-        record1.setMillis(1100011348029L);
+        record1.setInstant(ofEpochMilli(1100011348029L));
         record1String = "1100011348.029\t"
             + hostname
             + "\t"
@@ -53,7 +53,7 @@ public class VespaLogHandlerTestCase {
             + "\tmy-test-config-id\tTST\tinfo\tThis is a test";
 
         record2 = new LogRecord(Level.FINE, "This is a test too");
-        record2.setMillis(1100021348029L);
+        record2.setInstant(ofEpochMilli(1100021348029L));
         record2.setLoggerName("com.yahoo.log.test");
         record2String = "1100021348.029\t"
             + hostname
@@ -63,7 +63,7 @@ public class VespaLogHandlerTestCase {
 
         record3 = new LogRecord(Level.WARNING, "another test");
         record3.setLoggerName("com.yahoo.log.test");
-        record3.setMillis(1107011348029L);
+        record3.setInstant(ofEpochMilli(1107011348029L));
         record3String = "1107011348.029\t"
             + hostname
             + "\t"
@@ -73,7 +73,7 @@ public class VespaLogHandlerTestCase {
 
         record4 = new LogRecord(Level.WARNING, "unicode \u00E6\u00F8\u00E5 test \u7881 unicode");
         record4.setLoggerName("com.yahoo.log.test");
-        record4.setMillis(1107011348029L);
+        record4.setInstant(ofEpochMilli(1107011348029L));
         record4String = "1107011348.029\t"
             + hostname
             + "\t"

@@ -2,6 +2,7 @@
 package com.yahoo.log;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -20,8 +21,6 @@ import static org.hamcrest.CoreMatchers.is;
  *
  * @author Bjorn Borud
  */
-// TODO: Remove annotation and replace setMillis with setInstant when we don't support Java 8 anymore.
-@SuppressWarnings("deprecation")
 public class LogSetupTestCase {
     // For testing zookeeper log records
     protected static LogRecord zookeeperLogRecord;
@@ -44,11 +43,11 @@ public class LogSetupTestCase {
 
         zookeeperLogRecord = new LogRecord(Level.WARNING, "zookeeper log record");
         zookeeperLogRecord.setLoggerName("org.apache.zookeeper.server.NIOServerCnxn");
-        zookeeperLogRecord.setMillis(1107011348029L);
+        zookeeperLogRecord.setInstant(Instant.ofEpochMilli(1107011348029L));
 
         curatorLogRecord = new LogRecord(Level.WARNING, "curator log record");
         curatorLogRecord.setLoggerName("org.apache.curator.utils.DefaultTracerDriver");
-        curatorLogRecord.setMillis(1107011348029L);
+        curatorLogRecord.setInstant(Instant.ofEpochMilli(1107011348029L));
 
         hostname = Util.getHostName();
         pid = Util.getPID();
@@ -62,15 +61,15 @@ public class LogSetupTestCase {
 
         zookeeperLogRecordError = new LogRecord(Level.SEVERE, "zookeeper error");
         zookeeperLogRecordError.setLoggerName("org.apache.zookeeper.server.NIOServerCnxn");
-        zookeeperLogRecordError.setMillis(1107011348029L);
+        zookeeperLogRecordError.setInstant(Instant.ofEpochMilli(1107011348029L));
 
         curatorLogRecordError = new LogRecord(Level.SEVERE, "curator log record");
         curatorLogRecordError.setLoggerName("org.apache.curator.utils.DefaultTracerDriver");
-        curatorLogRecordError.setMillis(1107011348029L);
+        curatorLogRecordError.setInstant(Instant.ofEpochMilli(1107011348029L));
 
         notzookeeperLogRecord = new LogRecord(Level.WARNING, "not zookeeper log record");
         notzookeeperLogRecord.setLoggerName("org.apache.foo.Bar");
-        notzookeeperLogRecord.setMillis(1107011348029L);
+        notzookeeperLogRecord.setInstant(Instant.ofEpochMilli(1107011348029L));
     }
 
     @Test

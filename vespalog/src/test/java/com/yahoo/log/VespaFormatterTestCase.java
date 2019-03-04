@@ -1,21 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.Ignore;
-
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author  Bjorn Borud
  */
-// TODO: Remove annotation and replace setMillis with setInstant when we don't support Java 8 anymore.
-@SuppressWarnings("deprecation")
 public class VespaFormatterTestCase {
 
     private String hostname;
@@ -36,7 +37,7 @@ public class VespaFormatterTestCase {
         pid = Util.getPID();
 
         testRecord1 = new LogRecord(Level.INFO, "this is a test");
-        testRecord1.setMillis(1098709021843L);
+        testRecord1.setInstant(Instant.ofEpochMilli(1098709021843L));
         testRecord1.setThreadID(123);
 
         expected1 = "1098709021.843\t"
@@ -59,7 +60,7 @@ public class VespaFormatterTestCase {
 
 
         testRecord2 = new LogRecord(Level.INFO, "this is a test");
-        testRecord2.setMillis(1098709021843L);
+        testRecord2.setInstant(Instant.ofEpochMilli(1098709021843L));
         testRecord2.setThreadID(123);
         testRecord2.setLoggerName("org.foo");
 
@@ -100,12 +101,12 @@ public class VespaFormatterTestCase {
     /**
      * test that {0} etc is replaced properly
      */
-        @Test
+    @Test
     public void testTextFormatting () {
         VespaFormatter formatter = new VespaFormatter(serviceName, app);
 
         LogRecord testRecord = new LogRecord(Level.INFO, "this {1} is {0} test");
-        testRecord.setMillis(1098709021843L);
+        testRecord.setInstant(Instant.ofEpochMilli(1098709021843L));
         testRecord.setThreadID(123);
         testRecord.setLoggerName("org.foo");
         Object[] params = { "a small", "message" };
