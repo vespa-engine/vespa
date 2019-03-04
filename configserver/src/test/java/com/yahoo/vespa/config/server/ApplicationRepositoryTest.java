@@ -7,6 +7,7 @@ import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
+import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -25,6 +26,7 @@ import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
@@ -118,6 +120,24 @@ public class ApplicationRepositoryTest {
         PrepareResult result = deployApp(testApp);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+    }
+
+    @Test
+    public void createFromActiveSession() {
+        PrepareResult result = deployApp(testApp);
+        long sessionId = applicationRepository.createSessionFromExisting(applicationId(),
+                                                                         new SilentDeployLogger(),
+                                                                         false,
+                                                                         timeoutBudget);
+        long originalSessionId = result.sessionId();
+        ApplicationMetaData originalApplicationMetaData = getApplicationMetaData(applicationId(), originalSessionId);
+        ApplicationMetaData applicationMetaData = getApplicationMetaData(applicationId(), sessionId);
+
+        assertNotEquals(sessionId, originalSessionId);
+        assertEquals(applicationMetaData.getApplicationName(), originalApplicationMetaData.getApplicationName());
+        assertEquals(applicationMetaData.getPreviousActiveGeneration(), originalApplicationMetaData.getGeneration().longValue());
+        assertNotEquals(applicationMetaData.getGeneration(), originalApplicationMetaData.getGeneration());
+        assertEquals(applicationMetaData.getDeployedByUser(), originalApplicationMetaData.getDeployedByUser());
     }
 
     @Test
@@ -339,4 +359,8 @@ public class ApplicationRepositoryTest {
         return ApplicationId.from(tenantName, ApplicationName.from("testapp"), InstanceName.defaultName());
     }
 
+    private ApplicationMetaData getApplicationMetaData(ApplicationId applicationId, long sessionId) {
+        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        return applicationRepository.getMetadataFromSession(tenant, sessionId);
+    }
 }
