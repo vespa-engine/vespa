@@ -14,7 +14,6 @@ vespa_add_executable(storageapi_gtest_runner_app TEST
 vespa_add_test(
     NAME storageapi_gtest_runner_app
     COMMAND storageapi_gtest_runner_app
-    DEPENDS storageapi_gtest_runner_app
 )
 
 # Runner for unit tests written in CppUnit (DEPRECATED).

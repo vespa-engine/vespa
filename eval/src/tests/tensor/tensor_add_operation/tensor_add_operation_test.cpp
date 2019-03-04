@@ -82,4 +82,4 @@ TEST(TensorAddTest, tensors_of_different_types_cannot_be_added_together)
     assertNullTensor(TensorSpec("tensor(x{},y[2])"), TensorSpec("tensor(x{},y[3])"));
 }
 
-GTEST_MAIN_RUN_ALL_TESTS
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -4,9 +4,11 @@
 # NOTE: All new test classes should be added here.
 vespa_add_executable(document_gtest_runner_app TEST
     SOURCES
+    documentcalculatortestcase.cpp
     documentidtest.cpp
     documentupdatetestcase.cpp
     gtest_runner.cpp
+    teststringutil.cpp
     DEPENDS
     document
     gtest
@@ -17,16 +19,13 @@ vespa_add_executable(document_gtest_runner_app TEST
 vespa_add_test(
     NAME document_gtest_runner_app
     COMMAND document_gtest_runner_app
-    DEPENDS document_gtest_runner_app
 )
 
 # Runner for unit tests written in CppUnit (DEPRECATED).
 vespa_add_executable(document_testrunner_app TEST
     SOURCES
-    teststringutil.cpp
     testbytebuffer.cpp
     stringtokenizertest.cpp
-    documentcalculatortestcase.cpp
     buckettest.cpp
     globalidtest.cpp
     documenttypetestcase.cpp

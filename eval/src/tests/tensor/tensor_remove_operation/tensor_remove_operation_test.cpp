@@ -92,4 +92,4 @@ TEST(TensorRemoveTest, all_cells_can_be_removed_from_a_mixed_tensor)
                  TensorSpec("tensor(x{},y[2])"));
 }
 
-GTEST_MAIN_RUN_ALL_TESTS
+GTEST_MAIN_RUN_ALL_TESTS()

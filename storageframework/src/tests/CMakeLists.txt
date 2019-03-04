@@ -13,7 +13,6 @@ vespa_add_executable(storageframework_gtest_runner_app TEST
 vespa_add_test(
     NAME storageframework_gtest_runner_app
     COMMAND storageframework_gtest_runner_app
-    DEPENDS storageframework_gtest_runner_app
 )
 
 # Runner for unit tests written in CppUnit (DEPRECATED).
