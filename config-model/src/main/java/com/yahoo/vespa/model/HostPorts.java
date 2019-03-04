@@ -67,11 +67,12 @@ public class HostPorts {
     /**
      * Returns the baseport of the first available port range of length numPorts,
      * or 0 if there is no range of that length available.
+     * TODO: remove this API
      *
      * @param numPorts  The length of the desired port range.
      * @return  The baseport of the first available range, or 0 if no range is available.
      */
-    public int nextAvailableBaseport(int numPorts) {
+    int nextAvailableBaseport(int numPorts) {
         int range = 0;
         int port = BASE_PORT;
         for (; port < BASE_PORT + MAX_PORTS && (range < numPorts); port++) {

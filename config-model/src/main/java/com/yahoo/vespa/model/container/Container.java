@@ -55,6 +55,7 @@ public abstract class Container extends AbstractService implements
     protected final AbstractConfigProducer parent;
     private final String name;
     private final boolean isHostedVespa;
+    private boolean requireSpecificPorts = true;
 
     private String clusterName = null;
     private Optional<String> hostResponseHeaderKey = Optional.empty();
@@ -210,7 +211,12 @@ public abstract class Container extends AbstractService implements
 
     @Override
     public int getWantedPort() {
-        return getHttp() == null ? BASEPORT: 0;
+        return requiresWantedPort() ? BASEPORT: 0;
+    }
+
+    /** instance can use any port number for its default HTTP server */
+    public void useDynamicPorts() {
+        requireSpecificPorts = false;
     }
 
     /**
@@ -218,7 +224,7 @@ public abstract class Container extends AbstractService implements
      */
     @Override
     public boolean requiresWantedPort() {
-        return getHttp() == null;
+        return requireSpecificPorts && (getHttp() == null);
     }
 
     public boolean requiresConsecutivePorts() {
