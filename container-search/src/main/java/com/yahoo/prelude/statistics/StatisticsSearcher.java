@@ -61,9 +61,9 @@ public class StatisticsSearcher extends Searcher {
     private static final String DOCS_COVERED_METRIC = "documents_covered";
     private static final String DOCS_TOTAL_METRIC = "documents_total";
     private static final String DEGRADED_METRIC = "degraded_queries";
-    private static final String RELEVANCE_AT_1_METRIC = "relevance_at_1";
-    private static final String RELEVANCE_AT_5_METRIC = "relevance_at_5";
-    private static final String RELEVANCE_AT_10_METRIC = "relevance_at_10";
+    private static final String RELEVANCE_AT_1_METRIC = "relevance.at_1";
+    private static final String RELEVANCE_AT_3_METRIC = "relevance.at_3";
+    private static final String RELEVANCE_AT_10_METRIC = "relevance.at_10";
 
     private final Counter queries; // basic counter
     private final Counter failedQueries; // basic counter
@@ -195,7 +195,7 @@ public class StatisticsSearcher extends Searcher {
     private Metric.Context createRelevanceMetricContext(String chainName, String rankProfile) {
         Map<String, String> dimensions = new HashMap<>();
         dimensions.put("chain", chainName);
-        dimensions.put("rankprofile", rankProfile);
+        dimensions.put("rankProfile", rankProfile);
         return metric.createContext(dimensions);
     }
 
@@ -366,7 +366,7 @@ public class StatisticsSearcher extends Searcher {
     }
 
     /**
-     * Effectively flattens the hits, and measures relevance @ 1, 5, and 10
+     * Effectively flattens the hits, and measures relevance @ 1, 3, and 10
      */
     private void addRelevanceMetrics(Query query, Execution execution, Result result) {
         Queue<Double> topScores = findTopRelevanceScores(10, result.hits());
@@ -375,7 +375,7 @@ public class StatisticsSearcher extends Searcher {
         }
         Metric.Context metricContext = getRelevanceMetricContext(execution, query);
         setRelevanceMetric(10, RELEVANCE_AT_10_METRIC, topScores, metricContext);  // min-queue: lowest values are polled first
-        setRelevanceMetric(5,  RELEVANCE_AT_5_METRIC,  topScores, metricContext);
+        setRelevanceMetric(3,  RELEVANCE_AT_3_METRIC,  topScores, metricContext);
         setRelevanceMetric(1,  RELEVANCE_AT_1_METRIC,  topScores, metricContext);
     }
 

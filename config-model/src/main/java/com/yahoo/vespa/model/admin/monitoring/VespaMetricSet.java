@@ -219,12 +219,12 @@ public class VespaMetricSet {
         metrics.add(new Metric("requestsOverQuota.rate"));
         metrics.add(new Metric("requestsOverQuota.count"));
 
-        metrics.add(new Metric("relevance_at_1.average"));
-        metrics.add(new Metric("relevance_at_1.count"));
-        metrics.add(new Metric("relevance_at_5.average"));
-        metrics.add(new Metric("relevance_at_5.count"));
-        metrics.add(new Metric("relevance_at_10.average"));
-        metrics.add(new Metric("relevance_at_10.count"));
+        metrics.add(new Metric("relevance.at_1.average"));
+        metrics.add(new Metric("relevance.at_1.count"));
+        metrics.add(new Metric("relevance.at_3.average"));
+        metrics.add(new Metric("relevance.at_3.count"));
+        metrics.add(new Metric("relevance.at_10.average"));
+        metrics.add(new Metric("relevance.at_10.count"));
 
         // Errors from qrserver
         metrics.add(new Metric("error.timeout.rate"));
