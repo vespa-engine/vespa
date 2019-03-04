@@ -9,7 +9,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 public class PortFinder {
+
+    private static final Logger log = Logger.getLogger(PortFinder.class.getName());
 
     private final Map<String, Allocation> byKeys = new HashMap<>();
     private final Map<Integer, Allocation> byPorts = new TreeMap<>();
@@ -35,7 +40,9 @@ public class PortFinder {
     public int findPort(Allocation request) {
         String key = request.key();
         if (byKeys.containsKey(key)) {
-            return byKeys.get(key).port;
+            int port = byKeys.get(key).port;
+            log.log(Level.INFO, "Re-using port "+port+" for allocation "+request);
+            return port;
         }
         int port = request.port;
         while (byPorts.containsKey(port)) {
