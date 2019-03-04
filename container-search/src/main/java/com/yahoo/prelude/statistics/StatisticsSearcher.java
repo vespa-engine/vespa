@@ -202,9 +202,17 @@ public class StatisticsSearcher extends Searcher {
     private Metric.Context getRelevanceMetricContext(Execution execution, Query query) {
         String chain = execution.chain().getId().stringValue();
         String rankProfile = query.getRanking().getProfile();
-        return relevanceContexts
-                .computeIfAbsent(chain, k -> new HashMap<>())
-                .computeIfAbsent(rankProfile, k -> createRelevanceMetricContext(chain, rankProfile));
+        Map<String, Metric.Context> chainContext = relevanceContexts.get(chain);  // CopyOnWriteHashMap - don't use computeIfAbsent
+        if (chainContext == null) {
+            chainContext = new CopyOnWriteHashMap<>();
+            relevanceContexts.put(chain, chainContext);
+        }
+        Metric.Context metricContext = chainContext.get(rankProfile);
+        if (metricContext == null) {
+            metricContext = createRelevanceMetricContext(chain, rankProfile);
+            chainContext.put(rankProfile, metricContext);
+        }
+        return metricContext;
     }
 
     /**
