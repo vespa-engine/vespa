@@ -61,13 +61,18 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
         try {
             boolean couldSend = channel.sendPacket(queryPacket);
             if (!couldSend) {
-                pendingSearchError = ErrorMessage.createBackendCommunicationError("Could not reach '" + getName() + "'");
+                setPendingError("Could not reach '" + getName() + "'");
             }
         } catch (InvalidChannelException e) {
-            pendingSearchError = ErrorMessage.createBackendCommunicationError("Invalid channel " + getName());
+            setPendingError("Invalid channel " + getName());
         } catch (IllegalStateException e) {
-            pendingSearchError = ErrorMessage.createBackendCommunicationError("Illegal state in FS4: " + e.getMessage());
+            setPendingError("Illegal state in FS4: " + e.getMessage());
         }
+    }
+
+    private void setPendingError(String message) {
+        pendingSearchError = ErrorMessage.createBackendCommunicationError(message);
+        responseAvailable();
     }
 
     @Override
