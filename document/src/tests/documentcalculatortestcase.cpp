@@ -81,7 +81,7 @@ TEST_F(DocumentCalculatorTest, testDivideByZero) {
 
     Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     EXPECT_THROW(calc.evaluate(doc, std::move(variables)),
-            vespalib::IllegalArgumentException);
+                 vespalib::IllegalArgumentException);
 }
 
 TEST_F(DocumentCalculatorTest, testModByZero) {
@@ -90,7 +90,7 @@ TEST_F(DocumentCalculatorTest, testModByZero) {
 
     Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     EXPECT_THROW(calc.evaluate(doc, std::move(variables)),
-            vespalib::IllegalArgumentException);
+                 vespalib::IllegalArgumentException);
 }
 
 TEST_F(DocumentCalculatorTest, testFieldNotSet) {
@@ -102,7 +102,7 @@ TEST_F(DocumentCalculatorTest, testFieldNotSet) {
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(2));
     EXPECT_THROW(calc.evaluate(doc, std::move(variables)),
-            vespalib::IllegalArgumentException);
+                 vespalib::IllegalArgumentException);
 }
 
 TEST_F(DocumentCalculatorTest, testFieldNotFound) {
@@ -115,7 +115,7 @@ TEST_F(DocumentCalculatorTest, testFieldNotFound) {
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(2));
     EXPECT_THROW(calc.evaluate(doc, std::move(variables)),
-            vespalib::IllegalArgumentException);
+                 vespalib::IllegalArgumentException);
 }
 
 TEST_F(DocumentCalculatorTest, testByteSubtractionZeroResult) {
