@@ -4,9 +4,6 @@
 #include <vespa/config/config.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <gmock/gmock.h>
-
-using namespace ::testing;
 
 namespace documentapi {
 
@@ -17,7 +14,7 @@ assertConfigFailure(const vespalib::string &configId, const vespalib::string &ex
         LoadTypeSet createdFromConfigId(configId);
         FAIL() << "Config was expected to fail with error: " << expError;
     } catch (config::InvalidConfigException &e) {
-        EXPECT_THAT(e.getMessage(), HasSubstr(expError));
+        EXPECT_TRUE(e.getMessage().find(expError) != std::string::npos);
     }
 }
 
