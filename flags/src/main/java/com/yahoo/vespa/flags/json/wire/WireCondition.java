@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * @author hakonhall
@@ -15,5 +15,5 @@ import java.util.Set;
 public class WireCondition {
     @JsonProperty("type") public String type;
     @JsonProperty("dimension") public String dimension;
-    @JsonProperty("values") public Set<String> values;
+    @JsonProperty("values") public List<String> values;
 }

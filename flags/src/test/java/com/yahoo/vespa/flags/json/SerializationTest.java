@@ -8,8 +8,7 @@ import com.yahoo.vespa.flags.json.wire.WireFlagData;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anEmptyMap;
@@ -74,12 +73,12 @@ public class SerializationTest {
         WireCondition whitelistCondition = wireData.rules.get(0).andConditions.get(0);
         assertThat(whitelistCondition.type, equalTo("whitelist"));
         assertThat(whitelistCondition.dimension, equalTo("application"));
-        assertThat(whitelistCondition.values, equalTo(new HashSet<>(Arrays.asList("a1", "a2"))));
+        assertThat(whitelistCondition.values, equalTo(List.of("a1", "a2")));
         // second condition
         WireCondition blacklistCondition = wireData.rules.get(0).andConditions.get(1);
         assertThat(blacklistCondition.type, equalTo("blacklist"));
         assertThat(blacklistCondition.dimension, equalTo("hostname"));
-        assertThat(blacklistCondition.values, equalTo(new HashSet<>(Arrays.asList("h1"))));
+        assertThat(blacklistCondition.values, equalTo(List.of("h1")));
 
         // attributes
         assertThat(wireData.defaultFetchVector, notNullValue());
