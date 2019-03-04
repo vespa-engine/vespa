@@ -444,10 +444,6 @@ sub http_upload_lowlevel {
     `$CURL_POST $url`;
   } else {
     my $TAR="tar -C $app --dereference --exclude='.[a-zA-Z0-9]*' --exclude=ext -cf - . --transform=\"s#^#application/#\" ";
-    my $appPath = `readlink -m $app`;
-    my $appName = `basename $appPath`;
-    chomp($appName);
-    $url = add_url_property($url, "name=$appName");
     print "Uploading application '$app' using $url\n";
     if (-f $app) {
       `cat $app | $CURL_POST_ZIP $url`;
