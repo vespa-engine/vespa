@@ -51,6 +51,10 @@ public class PortFinder {
         return port;
     }
 
+    public boolean isFree(int port) {
+        return !byPorts.containsKey(port);
+    }
+
     public PortFinder(Collection<Allocation> allocations) {
         for (Allocation a : allocations) {
             use(a);

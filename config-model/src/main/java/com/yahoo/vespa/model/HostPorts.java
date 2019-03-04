@@ -76,7 +76,7 @@ public class HostPorts {
         int range = 0;
         int port = BASE_PORT;
         for (; port < BASE_PORT + MAX_PORTS && (range < numPorts); port++) {
-            if (portDB.containsKey(port)) {
+            if (!isFree(port)) {
                 range = 0;
                 continue;
             }
@@ -88,9 +88,13 @@ public class HostPorts {
     private int nextAvailableNetworkPort() {
         int port = BASE_PORT;
         for (; port < BASE_PORT + MAX_PORTS; port++) {
-            if (!portDB.containsKey(port)) return port;
+            if (isFree(port)) return port;
         }
         return 0;
+    }
+
+    private boolean isFree(int port) {
+        return portFinder.isFree(port) && !portDB.containsKey(port);
     }
 
     /** Allocate a specific port number for a service */
