@@ -15,6 +15,8 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.Hit;
+import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 import com.yahoo.statistics.Counter;
@@ -23,6 +25,8 @@ import com.yahoo.statistics.Value;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.logging.Level;
 
 import static com.yahoo.container.protect.Error.*;
@@ -57,6 +61,9 @@ public class StatisticsSearcher extends Searcher {
     private static final String DOCS_COVERED_METRIC = "documents_covered";
     private static final String DOCS_TOTAL_METRIC = "documents_total";
     private static final String DEGRADED_METRIC = "degraded_queries";
+    private static final String RELEVANCE_AT_1_METRIC = "relevance.at_1";
+    private static final String RELEVANCE_AT_3_METRIC = "relevance.at_3";
+    private static final String RELEVANCE_AT_10_METRIC = "relevance.at_10";
 
     private final Counter queries; // basic counter
     private final Counter failedQueries; // basic counter
@@ -79,6 +86,7 @@ public class StatisticsSearcher extends Searcher {
     private Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
     private Map<String, Metric.Context> statePageOnlyContexts = new CopyOnWriteHashMap<>();
     private Map<String, Map<DegradedReason, Metric.Context>> degradedReasonContexts = new CopyOnWriteHashMap<>();
+    private Map<String, Map<String, Metric.Context>> relevanceContexts = new CopyOnWriteHashMap<>();
     private java.util.Timer scheduler = new java.util.Timer(true);
 
     private class PeakQpsReporter extends java.util.TimerTask {
@@ -184,6 +192,21 @@ public class StatisticsSearcher extends Searcher {
         return DegradedReason.non_ideal_state;
     }
 
+    private Metric.Context createRelevanceMetricContext(String chainName, String rankProfile) {
+        Map<String, String> dimensions = new HashMap<>();
+        dimensions.put("chain", chainName);
+        dimensions.put("rankProfile", rankProfile);
+        return metric.createContext(dimensions);
+    }
+
+    private Metric.Context getRelevanceMetricContext(Execution execution, Query query) {
+        String chain = execution.chain().getId().stringValue();
+        String rankProfile = query.getRanking().getProfile();
+        return relevanceContexts
+                .computeIfAbsent(chain, k -> new HashMap<>())
+                .computeIfAbsent(rankProfile, k -> createRelevanceMetricContext(chain, rankProfile));
+    }
+
     /**
      * Generate statistics for the query passing through this Searcher
      * 1) Add 1 to total query count
@@ -242,11 +265,11 @@ public class StatisticsSearcher extends Searcher {
             metric.add(EMPTY_RESULTS_METRIC, 1, metricContext);
         }
 
-        // Update running averages
-        //setAverages();
+        addRelevanceMetrics(query, execution, result);
 
         return result;
     }
+
 
     private void logQuery(com.yahoo.search.Query query) {
         // Don't parse the query if it's not necessary for the logging Query.toString triggers parsing
@@ -340,6 +363,50 @@ public class StatisticsSearcher extends Searcher {
         // Would be nice to have chain as a dimension as
         // we can separate errors from different chains
         return context;
+    }
+
+    /**
+     * Effectively flattens the hits, and measures relevance @ 1, 3, and 10
+     */
+    private void addRelevanceMetrics(Query query, Execution execution, Result result) {
+        Queue<Double> topScores = findTopRelevanceScores(10, result.hits());
+        if (topScores.isEmpty()) {
+            return;
+        }
+        Metric.Context metricContext = getRelevanceMetricContext(execution, query);
+        setRelevanceMetric(10, RELEVANCE_AT_10_METRIC, topScores, metricContext);  // min-queue: lowest values are polled first
+        setRelevanceMetric(3,  RELEVANCE_AT_3_METRIC,  topScores, metricContext);
+        setRelevanceMetric(1,  RELEVANCE_AT_1_METRIC,  topScores, metricContext);
+    }
+
+    private static Queue<Double> findTopRelevanceScores(int n, HitGroup hits) {
+        PriorityQueue<Double> heap = new PriorityQueue<>(n);
+        for (var iterator = hits.unorderedDeepIterator(); iterator.hasNext(); ) {
+            Hit hit = iterator.next();
+            if (hit instanceof ErrorHit || hit.getRelevance() == null) {
+                continue;
+            }
+            double score = hit.getRelevance().getScore();
+            if (Double.isNaN(score)) {
+                continue;
+            }
+            if (heap.size() < n) {
+                heap.add(score);
+            } else if (score > heap.peek()) {
+                heap.remove();
+                heap.add(score);
+            }
+        }
+        return heap;
+    }
+
+    private void setRelevanceMetric(int pos, String name, Queue<Double> minQueue, Metric.Context context) {
+        while (minQueue.size() > pos) {
+            minQueue.remove();
+        }
+        if (minQueue.size() == pos) {
+            metric.set(name, minQueue.poll(), context);
+        }
     }
 
 }
