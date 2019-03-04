@@ -13,7 +13,7 @@ import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.config.model.api.container.ContainerServiceType;
+import com.yahoo.vespa.model.container.ContainerServiceType;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;

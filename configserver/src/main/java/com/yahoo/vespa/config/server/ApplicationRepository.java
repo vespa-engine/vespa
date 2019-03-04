@@ -12,7 +12,6 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
@@ -75,7 +74,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static java.nio.file.Files.readAttributes;
 
 /**
@@ -337,8 +335,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         // TODO: It would be nice to have a simple check to verify pathSuffix doesn't contain /../ components.
         String relativePath = "clustercontroller-status/" + pathSuffix;
 
-        return httpProxy.get(getApplication(applicationId), hostName,
-                             CLUSTERCONTROLLER_CONTAINER.serviceName, relativePath);
+        return httpProxy.get(getApplication(applicationId), hostName, "container-clustercontroller", relativePath);
     }
 
     public Long getApplicationGeneration(ApplicationId applicationId) {

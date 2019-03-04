@@ -14,7 +14,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -55,7 +54,7 @@ public class ServiceModelTest {
             service1.clustername = "examplecluster";
             service1.clustertype = "somethingservers";
             service1.index = 2L;
-            service1.type = CLUSTERCONTROLLER_CONTAINER.serviceName;
+            service1.type = "container-clustercontroller";
             service1.name = "clustercontroller";
             service1.configid = "clustercontroller/lbl.0";
             ServicePort port = new ServicePort();

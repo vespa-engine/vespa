@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -63,7 +62,7 @@ public class LbServicesProducerTest {
     public void testConfigAliases() throws IOException, SAXException {
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
         LbServicesConfig conf = getLbServicesConfig(Zone.defaultZone(), testModel);
-        final LbServicesConfig.Tenants.Applications.Hosts.Services services = conf.tenants("foo").applications("foo:prod:default:default").hosts("foo.foo.yahoo.com").services(QRSERVER.serviceName);
+        final LbServicesConfig.Tenants.Applications.Hosts.Services services = conf.tenants("foo").applications("foo:prod:default:default").hosts("foo.foo.yahoo.com").services("qrserver");
         assertThat(services.servicealiases().size(), is(1));
         assertThat(services.endpointaliases().size(), is(2));
 
@@ -107,7 +106,7 @@ public class LbServicesProducerTest {
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().rotations(rotations));
         RegionName regionName = RegionName.from("us-east-1");
         LbServicesConfig conf = getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
-        final LbServicesConfig.Tenants.Applications.Hosts.Services services = conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").hosts("foo.foo.yahoo.com").services(QRSERVER.serviceName);
+        final LbServicesConfig.Tenants.Applications.Hosts.Services services = conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").hosts("foo.foo.yahoo.com").services("qrserver");
         assertThat(services.servicealiases().size(), is(1));
         assertThat(services.endpointaliases().size(), is(4));
 

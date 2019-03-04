@@ -2,8 +2,8 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -198,7 +199,7 @@ public abstract class Container extends AbstractService implements
         if (myServiceType == null) {
             myServiceType = myServiceType();
         }
-        return myServiceType.serviceName;
+        return myServiceType.name;
     }
 
     /** Subclasses must implement this for a custom service name. */
