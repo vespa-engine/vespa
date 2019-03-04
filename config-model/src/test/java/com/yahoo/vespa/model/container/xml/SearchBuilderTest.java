@@ -18,7 +18,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static com.yahoo.test.Matchers.hasItemWithMethod;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -100,7 +99,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     public void cluster_with_only_search_gets_qrserver_as_service_name() throws Exception {
         createClusterWithOnlyDefaultChains();
         ContainerCluster cluster = (ContainerCluster)root.getChildren().get("default");
-        assertThat(cluster.getContainers().get(0).getServiceName(), is(QRSERVER.serviceName));
+        assertThat(cluster.getContainers().get(0).getServiceName(), is("qrserver"));
     }
 
     @Test

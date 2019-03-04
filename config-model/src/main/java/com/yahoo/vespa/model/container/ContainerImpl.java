@@ -1,6 +1,5 @@
 package com.yahoo.vespa.model.container;
 
-import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
 /**

@@ -31,9 +31,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
-
 /**
  * Checks for convergence of config generation for a given application.
  *
@@ -47,8 +44,8 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     private static final String statePath = "/state/v1/";
     private static final String configSubPath = "config";
     private final static Set<String> serviceTypesToCheck = new HashSet<>(Arrays.asList(
-            CONTAINER.serviceName,
-            QRSERVER.serviceName,
+            "container",
+            "qrserver",
             "searchnode",
             "storagenode",
             "distributor"

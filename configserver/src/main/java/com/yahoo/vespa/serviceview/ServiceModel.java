@@ -21,14 +21,14 @@ import com.yahoo.vespa.serviceview.bindings.ServiceView;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
-
 /**
  * A transposed view for cloud.config.model.
  *
  * @author Steinar Knutsen
  */
 public final class ServiceModel {
+
+    private static final String CLUSTERCONTROLLER_TYPENAME = "container-clustercontroller";
 
     private static final String CONTENT_CLUSTER_TYPENAME = "content";
 
@@ -169,7 +169,7 @@ public final class ServiceModel {
 
     private Service getFirstClusterController() {
         // This is used assuming all cluster controllers know of all fleet controllers in an application
-        return getFirstServiceInstanceByType(CLUSTERCONTROLLER_CONTAINER.serviceName);
+        return getFirstServiceInstanceByType(CLUSTERCONTROLLER_TYPENAME);
     }
 
     private StringBuilder getLinkBuilder(String uriBase) {
