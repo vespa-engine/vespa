@@ -415,20 +415,12 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
     }
 
-    private FS4Properties getBackEndTrace(FS4Properties [] propsArray) {
-        if (propsArray == null) return null;
-        for (FS4Properties properties : propsArray) {
-            if ("trace".equals(properties.getName())) {
-                return properties;
-            }
-        }
-        return null;
-    }
-
     private void addBackendTrace(Query query, QueryResultPacket resultPacket) {
-        FS4Properties traceProps = getBackEndTrace(resultPacket.propsArray);
-        if (traceProps != null ) {
-            for (FS4Properties.Entry entry : traceProps.getEntries()) {
+        if (resultPacket.propsArray == null) return;
+        for (FS4Properties properties : resultPacket.propsArray) {
+            if ( ! properties.getName().startsWith("trace")) continue;
+            for (FS4Properties.Entry entry : properties.getEntries()) {
+                if (!entry.key.equals("slime")) continue;
                 Slime trace = BinaryFormat.decode(entry.getValue());
                 query.trace("Backend trace :" + entry.key + " => " + Utf8.toString(JsonFormat.toJsonBytes(trace)), query.getTraceLevel());
             }
