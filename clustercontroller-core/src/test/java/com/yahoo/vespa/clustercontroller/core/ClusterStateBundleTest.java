@@ -19,7 +19,7 @@ public class ClusterStateBundleTest {
         return AnnotatedClusterState.withoutAnnotations(stateOf(state));
     }
 
-    private static ClusterStateBundle createTestBundle(boolean modifyDefaultSpace) {
+    private static ClusterStateBundle.Builder createTestBundleBuilder(boolean modifyDefaultSpace) {
         return ClusterStateBundle
                 .builder(annotatedStateOf("distributor:2 storage:2"))
                 .bucketSpaces("default", "global", "narnia")
@@ -33,8 +33,11 @@ public class ClusterStateBundleTest {
                                 .setNodeState(Node.ofDistributor(0), new NodeState(NodeType.DISTRIBUTOR, State.DOWN));
                     }
                     return derived;
-                })
-                .deriveAndBuild();
+                });
+    }
+
+    private static ClusterStateBundle createTestBundle(boolean modifyDefaultSpace) {
+        return createTestBundleBuilder(modifyDefaultSpace).deriveAndBuild();
     }
 
     private static ClusterStateBundle createTestBundle() {
@@ -94,6 +97,24 @@ public class ClusterStateBundleTest {
                 "default 'distributor:2 storage:2 .0.s:d', " +
                 "global 'distributor:2 storage:2', " +
                 "narnia 'distributor:2 .0.s:d storage:2')"));
+    }
+
+    @Test
+    public void deferred_activation_is_enabled_by_default() {
+        ClusterStateBundle bundle = createTestBundle();
+        assertTrue(bundle.deferredActivation());
+    }
+
+    @Test
+    public void can_build_bundle_with_deferred_activation_enabled() {
+        var bundle = createTestBundleBuilder(false).deferredActivation(true).deriveAndBuild();
+        assertTrue(bundle.deferredActivation());
+    }
+
+    @Test
+    public void can_build_bundle_with_deferred_activation_disabled() {
+        var bundle = createTestBundleBuilder(false).deferredActivation(false).deriveAndBuild();
+        assertFalse(bundle.deferredActivation());
     }
 
 }

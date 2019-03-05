@@ -98,8 +98,8 @@ public class SystemStateBroadcaster {
             return false; // Can't set state on nodes we don't know where are
         }
         if (node.getReportedState().getState() == State.MAINTENANCE ||
-                node.getReportedState().getState() == State.DOWN ||
-                node.getReportedState().getState() == State.STOPPING)
+            node.getReportedState().getState() == State.DOWN ||
+            node.getReportedState().getState() == State.STOPPING)
         {
             return false; // No point in sending system state to nodes that can't receive messages or don't want them
         }
@@ -123,8 +123,8 @@ public class SystemStateBroadcaster {
      * object and updates the broadcaster's last known in-sync cluster state version.
      */
     void checkIfClusterStateIsAckedByAllDistributors(DatabaseHandler database,
-                                                        DatabaseHandler.Context dbContext,
-                                                        FleetController fleetController) throws InterruptedException {
+                                                     DatabaseHandler.Context dbContext,
+                                                     FleetController fleetController) throws InterruptedException {
         if ((clusterStateBundle == null) || (lastClusterStateInSync == clusterStateBundle.getVersion())) {
             return; // Nothing to do for the current state
         }
