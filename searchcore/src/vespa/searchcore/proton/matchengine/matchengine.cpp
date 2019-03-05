@@ -2,9 +2,12 @@
 #include "matchengine.h"
 #include <vespa/searchcore/proton/common/state_reporter_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
-#include <algorithm>
+#include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/data/slime/binary_format.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
+
 LOG_SETUP(".proton.matchengine.matchengine");
 
 namespace {
@@ -113,9 +116,9 @@ void
 MatchEngine::performSearch(search::engine::SearchRequest::Source req,
                            search::engine::SearchClient &client)
 {
-    search::engine::SearchReply::UP ret(new search::engine::SearchReply);
+   auto ret = std::make_unique<search::engine::SearchReply>();
 
-    if (req.get() != NULL) {
+    if (req.get()) {
         ISearchHandler::SP searchHandler;
         vespalib::SimpleThreadBundle::UP threadBundle = _threadBundlePool.obtain();
         { // try to find the match handler corresponding to the specified search doc type
@@ -123,7 +126,7 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
             DocTypeName docTypeName(*req.get());
             searchHandler = _handlers.getHandler(docTypeName);
         }
-        if (searchHandler.get() != NULL) {
+        if (searchHandler) {
             ret = searchHandler->match(searchHandler, *req.get(), *threadBundle);
         } else {
             HandlerMap<ISearchHandler>::Snapshot::UP snapshot;
@@ -140,6 +143,14 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
     }
     ret->request = req.release();
     ret->setDistributionKey(_distributionKey);
+    if (ret->request->getTraceLevel() > 0) {
+        vespalib::asciistream os;
+        os << "trace-" << _distributionKey;
+        search::fef::Properties & trace = ret->propertiesMap.lookupCreate(os.str());
+        vespalib::SmartBuffer output(4096);
+        vespalib::slime::BinaryFormat::encode(ret->request->trace().getRoot(), output);
+        trace.add("slime", output.obtain().make_stringref());
+    }
     client.searchDone(std::move(ret));
 }
 

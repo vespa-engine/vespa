@@ -14,7 +14,8 @@ Request::Request(const fastos::TimeStamp &start_time)
       location(),
       propertiesMap(),
       stackItems(0),
-      stackDump()
+      stackDump(),
+      _trace(start_time)
 {
 }
 
