@@ -32,7 +32,7 @@ public:
     uint32_t getTraceLevel() const { return _traceLevel; }
     Request & setTraceLevel(uint32_t traceLevel) { _traceLevel = traceLevel; return *this; }
 
-    Trace & trace() { return _trace; }
+    Trace & trace() const { return _trace; }
 private:
     const fastos::TimeStamp _startTime;
     fastos::TimeStamp       _timeOfDoom;

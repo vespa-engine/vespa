@@ -14,6 +14,7 @@
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.matcher");
@@ -203,6 +204,17 @@ Matcher::computeNumThreadsPerSearch(Blueprint::HitEstimate hits, const Propertie
     return threads;
 }
 
+namespace {
+    void traceQuery(const SearchRequest &request, const Query & query) {
+        if (request.getTraceLevel() > 3) {
+            if (query.peekRoot()) {
+                vespalib::slime::ObjectInserter inserter(request.trace().createCursor("blueprint"), "optimized");
+                query.peekRoot()->asSlime(inserter);
+            }
+        }
+    }
+}
+
 SearchReply::UP
 Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundle,
                ISearchContext &searchContext, IAttributeContext &attrContext, SessionManager &sessionMgr,
@@ -240,6 +252,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         if (!mtf->valid()) {
             reply->errorCode = ECODE_QUERY_PARSE_ERROR;
             reply->errorMessage = "query execution failed (invalid query)";
+            traceQuery(request, mtf->query());
             return reply;
         }
 
@@ -274,6 +287,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             sessionMgr.insert(std::move(session));
         }
         reply = std::move(result->_reply);
+        traceQuery(request, mtf->query());
 
         uint32_t numActiveLids = metaStore.getNumActiveLids();
         // note: this is actually totalSpace+1, since 0 is reserved
