@@ -3,6 +3,7 @@
 #pragma once
 
 #include "propertiesmap.h"
+#include "trace.h"
 #include <vespa/fastos/timestamp.h>
 
 namespace search::engine {
