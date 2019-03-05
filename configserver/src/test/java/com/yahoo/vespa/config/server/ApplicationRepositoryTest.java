@@ -1,8 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -49,9 +48,8 @@ import java.util.Set;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -84,6 +82,9 @@ public class ApplicationRepositoryTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Rule
+    public final WireMockRule wireMock = new WireMockRule(options().port(8080), true);
 
     @Before
     public void setup() {
@@ -150,17 +151,25 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogs() {
-        WireMockServer wireMock = new WireMockServer(wireMockConfig().port(8080));
-        wireMock.start();
-        WireMock.configureFor("localhost", wireMock.port());
-        stubFor(get(urlEqualTo("/logs"))
-                .willReturn(aResponse()
-                        .withStatus(200)));
-        wireMock.start();
+        wireMock.stubFor(get(urlEqualTo("/logs")).willReturn(aResponse().withStatus(200)));
         deployApp(testAppLogServerWithContainer);
-        HttpResponse response = applicationRepository.getLogs(applicationId(), "");
+        HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.empty(), "");
         assertEquals(200, response.getStatus());
-        wireMock.stop();
+    }
+
+    @Test
+    public void getLogsForHostname() {
+        wireMock.stubFor(get(urlEqualTo("/logs")).willReturn(aResponse().withStatus(200)));
+        deployApp(testAppLogServerWithContainer);
+        HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.of("localhost"), "");
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void refuseToGetLogsFromHostnameNotInApplication() {
+        deployApp(testAppLogServerWithContainer);
+        HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.of("host123.fake.yahoo.com"), "");
+        assertEquals(200, response.getStatus());
     }
 
     @Test
