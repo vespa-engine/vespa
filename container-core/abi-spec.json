@@ -94,21 +94,8 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.concurrent.Executor)",
-      "protected void <init>(java.util.concurrent.Executor, com.yahoo.container.handler.LogReader)",
+      "public void <init>(java.util.concurrent.Executor, com.yahoo.container.core.LogHandlerConfig)",
       "public com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.container.handler.LogReader": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "protected org.json.JSONObject readLogs(java.lang.String, long, long)"
     ],
     "fields": []
   },
