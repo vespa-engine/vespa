@@ -9,7 +9,11 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 
-namespace vespalib { class ObjectVisitor; };
+namespace vespalib { class ObjectVisitor; }
+namespace vespalib::slime {
+    class Cursor;
+    class Inserter;
+}
 
 namespace search::queryeval {
 
@@ -173,6 +177,7 @@ public:
 
     // for debug dumping
     vespalib::string asString() const;
+    vespalib::slime::Cursor & asSlime(const vespalib::slime::Inserter & cursor) const;
     virtual vespalib::string getClassName() const;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     virtual bool isEquiv() const { return false; }

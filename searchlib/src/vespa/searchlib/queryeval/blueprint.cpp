@@ -6,7 +6,9 @@
 #include "equiv_blueprint.h"
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/objectdumper.h>
+#include <vespa/vespalib/objects/object2slime.h>
 #include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <map>
 
 #include <vespa/log/log.h>
@@ -115,6 +117,15 @@ Blueprint::asString() const
     vespalib::ObjectDumper dumper;
     visit(dumper, "", this);
     return dumper.toString();
+}
+
+vespalib::slime::Cursor &
+Blueprint::asSlime(const vespalib::slime::Inserter & inserter) const
+{
+    vespalib::slime::Cursor & cursor = inserter.insertObject();
+    vespalib::Object2Slime dumper(cursor);
+    visit(dumper, "", this);
+    return cursor;
 }
 
 vespalib::string
