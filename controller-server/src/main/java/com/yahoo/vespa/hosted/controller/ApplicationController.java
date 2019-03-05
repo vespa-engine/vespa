@@ -26,8 +26,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFact
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -644,7 +644,7 @@ public class ApplicationController {
         try {
             configServer.deactivate(new DeploymentId(application.get().id(), zone));
         }
-        catch (NoInstanceException ignored) {
+        catch (NotFoundException ignored) {
             // ok; already gone
         }
         return application.withoutDeploymentIn(zone);

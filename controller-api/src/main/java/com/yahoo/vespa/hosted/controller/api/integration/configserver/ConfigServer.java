@@ -23,6 +23,7 @@ import java.util.Set;
 public interface ConfigServer {
 
     interface PreparedApplication {
+        // TODO: Remove the two methods below
         void activate();
         List<Log> messages();
         PrepareResponse prepareResponse();
@@ -32,7 +33,7 @@ public interface ConfigServer {
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname);
 
-    void deactivate(DeploymentId deployment) throws NoInstanceException;
+    void deactivate(DeploymentId deployment) throws NotFoundException;
 
     boolean isSuspended(DeploymentId deployment);
 

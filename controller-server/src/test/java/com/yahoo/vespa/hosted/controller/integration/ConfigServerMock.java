@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalanc
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -205,10 +206,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
         return new PreparedApplication() {
 
-            @Override
+            // TODO: Remove when no longer part of interface
             public void activate() {}
 
-            @Override
+            // TODO: Remove when no longer part of interface
             public List<Log> messages() {
                 Log warning = new Log();
                 warning.level = "WARNING";
@@ -272,10 +273,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public void deactivate(DeploymentId deployment) {
-        applications.remove(deployment.applicationId());
+    public void deactivate(DeploymentId deployment) throws NotFoundException {
+        ApplicationId applicationId = deployment.applicationId();
         nodeRepository().removeByHostname(deployment.zoneId(),
-                                          nodeRepository().list(deployment.zoneId(), deployment.applicationId()));
+                                          nodeRepository().list(deployment.zoneId(), applicationId));
+        if ( ! applications.containsKey(applicationId))
+            throw new NotFoundException("No application with id " + applicationId + " exists, cannot deactivate");
+        applications.remove(applicationId);
         serviceStatus.remove(deployment);
     }
 

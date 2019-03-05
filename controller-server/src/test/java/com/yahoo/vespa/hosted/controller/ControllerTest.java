@@ -506,6 +506,24 @@ public class ControllerTest {
         assertFalse(tester.configServer().isSuspended(deployment2));
     }
 
+    // Application may already have been deleted, or deployment failed without response, test that deleting a
+    // second time will not fail
+    @Test
+    public void testDeletingApplicationThatHasAlreadyBeenDeleted() {
+        DeploymentTester tester = new DeploymentTester();
+        Application app = tester.createApplication("app2", "tenant1", 1, 12L);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-east-3")
+                .region("us-west-1")
+                .build();
+
+        ZoneId zone = ZoneId.from("prod", "us-west-1");
+        tester.controller().applications().deploy(app.id(), zone, Optional.of(applicationPackage), DeployOptions.none());
+        tester.controller().applications().deactivate(app.id(), ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
+        tester.controller().applications().deactivate(app.id(), ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
+    }
+
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {
         Version next = Version.fromString("6.2");
         tester.upgradeSystem(next);
