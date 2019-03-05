@@ -4,6 +4,7 @@ package com.yahoo.prelude.fastsearch;
 import com.yahoo.collections.TinyIdentitySet;
 import com.yahoo.fs4.DocsumPacket;
 import com.yahoo.fs4.DocumentInfo;
+import com.yahoo.fs4.FS4Properties;
 import com.yahoo.fs4.Packet;
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.fs4.QueryPacketData;
@@ -29,6 +30,10 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.slime.BinaryFormat;
+import com.yahoo.slime.JsonFormat;
+import com.yahoo.slime.Slime;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.objects.BufferSerializer;
 
 import java.io.IOException;
@@ -410,8 +415,30 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
     }
 
+    private FS4Properties getBackEndTrace(FS4Properties [] propsArray) {
+        if (propsArray == null) return null;
+        for (FS4Properties properties : propsArray) {
+            if ("trace".equals(properties.getName())) {
+                return properties;
+            }
+        }
+        return null;
+    }
+
+    private void addBackendTrace(Query query, QueryResultPacket resultPacket) {
+        FS4Properties traceProps = getBackEndTrace(resultPacket.propsArray);
+        if (traceProps != null ) {
+            for (FS4Properties.Entry entry : traceProps.getEntries()) {
+                Slime trace = BinaryFormat.decode(entry.getValue());
+                query.trace("Backend trace :" + entry.key + " => " + Utf8.toString(JsonFormat.toJsonBytes(trace)), query.getTraceLevel());
+            }
+        }
+    }
+
     void addMetaInfo(Query query, QueryPacketData queryPacketData, QueryResultPacket resultPacket, Result result) {
         result.setTotalHitCount(resultPacket.getTotalDocumentCount());
+
+        addBackendTrace(query, resultPacket);
 
         // Grouping
         if (resultPacket.getGroupData() != null) {
