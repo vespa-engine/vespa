@@ -100,6 +100,22 @@ setValue(DocumentIdT lid,
     }
 }
 
+void
+setTensorValue(DocumentIdT lid, Document &doc,
+               const vespalib::string &fieldName,
+               const IAttributeVector &attr)
+{
+    const auto &tensorAttribute = static_cast<const TensorAttribute &>(attr);
+    auto tensor = tensorAttribute.getTensor(lid);
+    if (tensor) {
+        auto tensorField = doc.getField(fieldName).createValue(); 
+        dynamic_cast<TensorFieldValue &>(*tensorField) = std::move(tensor);
+        doc.setValue(fieldName, *tensorField);
+    } else {
+        doc.remove(fieldName);
+    }
+}
+
 }
 
 void
@@ -136,8 +152,7 @@ DocumentFieldRetriever::populate(DocumentIdT lid,
         // Predicate attribute doesn't store documents, it only indexes them.
         break;
     case BasicType::TENSOR:
-        // Tensor attribute is not authorative.  Partial updates must update
-        // document store.
+        setTensorValue(lid, doc, fieldName, attr);
         break;
     case BasicType::REFERENCE:
         // Reference attribute doesn't store full document id.
