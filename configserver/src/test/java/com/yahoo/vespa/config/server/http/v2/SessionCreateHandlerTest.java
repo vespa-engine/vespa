@@ -108,15 +108,6 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Request contains no Content-Type header");
     }
 
-    @Test
-    public void require_that_application_name_is_given_from_parameter() throws IOException {
-        Map<String, String> params = Collections.singletonMap("name", "ulfio");
-        File outFile = CompressedApplicationInputStreamTest.createTarFile();
-        createHandler().handle(post(outFile, postHeaders, params));
-        assertTrue(sessionFactory.createCalled);
-        assertThat(sessionFactory.applicationName, is("ulfio"));
-    }
-
     private void assertFromParameter(String expected, String from) throws IOException {
         HttpRequest request = post(Collections.singletonMap("from", from));
         sessionFactory.applicationPackage = testApp;

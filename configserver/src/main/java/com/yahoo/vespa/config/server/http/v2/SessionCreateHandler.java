@@ -11,7 +11,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.application.UriPattern;
-import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
@@ -61,9 +60,8 @@ public class SessionCreateHandler extends SessionHandler {
             sessionId = applicationRepository.createSessionFromExisting(applicationId, logger, false, timeoutBudget);
         } else {
             validateDataAndHeader(request);
-            String name = getNameProperty(request, logger);
-            // TODO: we are always using instance name 'default' here, fix
-            ApplicationId applicationId = ApplicationId.from(tenantName, ApplicationName.from(name), InstanceName.defaultName());
+            // TODO: Avoid using application id here at all
+            ApplicationId applicationId = ApplicationId.from(tenantName, ApplicationName.defaultName(), InstanceName.defaultName());
             sessionId = applicationRepository.createSession(applicationId, timeoutBudget, request.getData(), request.getHeader(ApplicationApiHandler.contentTypeHeader));
         }
         return createResponse(request, tenantName, deployLog, sessionId);
@@ -91,16 +89,6 @@ public class SessionCreateHandler extends SessionHandler {
     private static DeployHandlerLogger createLogger(HttpRequest request, Slime deployLog, TenantName tenant) {
         return SessionHandler.createLogger(deployLog, request,
                                            new ApplicationId.Builder().tenant(tenant).applicationName("-").build());
-    }
-
-    private static String getNameProperty(HttpRequest request, DeployLogger logger) {
-        String name = request.getProperty("name");
-        // TODO: Do we need validation of this parameter?
-        if (name == null) {
-            name = "default";
-            logger.log(LogLevel.INFO, "No application name given, using '" + name + "'");
-        }
-        return name;
     }
 
     static void validateDataAndHeader(HttpRequest request) {

@@ -203,13 +203,11 @@ public class SessionHandlerTest {
         public boolean createFromCalled = false;
         public boolean doThrow = false;
         public File applicationPackage;
-        public String applicationName;
 
         @Override
         public LocalSession createSession(File applicationDirectory, ApplicationId applicationId,
                                           TimeoutBudget timeoutBudget) {
             createCalled = true;
-            this.applicationName = applicationId.application().value();
             if (doThrow) {
                 throw new RuntimeException("foo");
             }
