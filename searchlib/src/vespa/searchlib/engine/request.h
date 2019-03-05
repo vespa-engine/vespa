@@ -26,13 +26,17 @@ public:
 
     bool should_drop_sort_data() const;
 
+    uint32_t getTraceLevel() const { return _traceLevel; }
+    Request & setTraceLevel(uint32_t traceLevel) { _traceLevel = traceLevel; return *this; }
+
 private:
     const fastos::TimeStamp _startTime;
     fastos::TimeStamp       _timeOfDoom;
+    uint32_t                _traceLevel;
 public:
     /// Everything here should move up to private section and have accessors
-    vespalib::string   ranking;
     uint32_t           queryFlags;
+    vespalib::string   ranking;
     vespalib::string   location;
     PropertiesMap      propertiesMap;
     uint32_t           stackItems;
