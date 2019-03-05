@@ -11,7 +11,7 @@ PropertiesMap::PropertiesMap()
     : _propertiesMap()
 { }
 
-PropertiesMap::~PropertiesMap() { }
+PropertiesMap::~PropertiesMap() = default;
 
 fef::Properties &
 PropertiesMap::lookupCreate(vespalib::stringref name)

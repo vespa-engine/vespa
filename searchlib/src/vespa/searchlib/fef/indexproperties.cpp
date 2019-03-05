@@ -388,6 +388,24 @@ DiversityCutoffStrategy::lookup(const Properties &props, const vespalib::string 
     return lookupString(props, NAME, defaultValue);
 }
 
+}
+
+namespace trace {
+
+const vespalib::string Level::NAME("tracelevel");
+const uint32_t Level::DEFAULT_VALUE(0);
+
+uint32_t
+Level::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+uint32_t
+Level::lookup(const Properties &props, uint32_t defaultValue)
+{
+    return lookupUint32(props, NAME, defaultValue);
+}
 
 }
 
