@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -319,7 +319,7 @@ public class JobController {
         try {
             controller.configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
         }
-        catch (NoInstanceException ignored) {
+        catch (NotFoundException ignored) {
             // Already gone -- great!
         }
     }
