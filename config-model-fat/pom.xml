@@ -91,6 +91,7 @@
               com.yahoo.config,
               com.yahoo.config.application.api,
               com.yahoo.config.model.api,
+              com.yahoo.config.model.api.container,
               com.yahoo.config.provision,
               ai.vespa.rankingexpression.importer.configmodelview,
               com.yahoo.io.reader,

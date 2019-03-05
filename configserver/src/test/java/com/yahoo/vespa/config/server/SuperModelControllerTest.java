@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -146,7 +147,7 @@ public class SuperModelControllerTest {
         assertThat(hosts.hostname(), is(host));
         for (Map.Entry<String, Applications.Hosts.Services> e : app.hosts(host).services().entrySet()) {
             System.out.println(e.getKey());
-            if ("qrserver".equals(e.getKey())) {
+            if (QRSERVER.serviceName.equals(e.getKey())) {
                 Applications.Hosts.Services s = e.getValue();
                 System.out.println(s);
                 assertThat(s.type(), is("qrserver"));

@@ -19,6 +19,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
+
 /**
  * Produces lb-services cfg
  *
@@ -68,8 +71,8 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         boolean activeRotation = false;
         for (HostInfo hostInfo : app.getModel().getHosts()) {
             Optional<ServiceInfo> container = hostInfo.getServices().stream().filter(
-                    serviceInfo -> serviceInfo.getServiceType().equals("container") ||
-                                   serviceInfo.getServiceType().equals("qrserver")).
+                    serviceInfo -> serviceInfo.getServiceType().equals(CONTAINER.serviceName) ||
+                                   serviceInfo.getServiceType().equals(QRSERVER.serviceName)).
                     findAny();
             if (container.isPresent()) {
                 activeRotation |= Boolean.valueOf(container.get().getProperty("activeRotation").orElse("false"));

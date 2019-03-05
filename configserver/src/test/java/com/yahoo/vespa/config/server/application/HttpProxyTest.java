@@ -12,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.net.URL;
 
+import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -39,8 +40,8 @@ public class HttpProxyTest {
         HttpResponse response = new StaticResponse(200, "application/json", "body");
         when(fetcher.get(actualParams.capture(), actualUrl.capture())).thenReturn(response);
 
-        HttpResponse actualResponse = proxy.get(
-                applicationMock, hostname, "container-clustercontroller", "clustercontroller-status/v1/clusterName");
+        HttpResponse actualResponse = proxy.get(applicationMock, hostname, CLUSTERCONTROLLER_CONTAINER.serviceName,
+                                                "clustercontroller-status/v1/clusterName");
 
         assertEquals(1, actualParams.getAllValues().size());
         assertEquals(2000, actualParams.getValue().readTimeoutMs);
@@ -58,7 +59,7 @@ public class HttpProxyTest {
     public void testFetchException() {
         when(fetcher.get(any(), any())).thenThrow(new RequestTimeoutException("timed out"));
 
-        HttpResponse actualResponse = proxy.get(
-                applicationMock, hostname, "container-clustercontroller", "clustercontroller-status/v1/clusterName");
+        HttpResponse actualResponse = proxy.get(applicationMock, hostname, CLUSTERCONTROLLER_CONTAINER.serviceName,
+                                                "clustercontroller-status/v1/clusterName");
     }
 }
