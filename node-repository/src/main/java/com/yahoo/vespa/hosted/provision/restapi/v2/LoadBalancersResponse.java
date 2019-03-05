@@ -59,17 +59,17 @@ public class LoadBalancersResponse extends HttpResponse {
             lbObject.setString("tenant", lb.id().application().tenant().value());
             lbObject.setString("instance", lb.id().application().instance().value());
             lbObject.setString("cluster", lb.id().cluster().value());
-            lbObject.setString("hostname", lb.hostname().value());
-            lb.dnsZone().ifPresent(dnsZone -> lbObject.setString("dnsZone", dnsZone.id()));
+            lbObject.setString("hostname", lb.instance().hostname().value());
+            lb.instance().dnsZone().ifPresent(dnsZone -> lbObject.setString("dnsZone", dnsZone.id()));
 
             Cursor networkArray = lbObject.setArray("networks");
-            lb.networks().forEach(networkArray::addString);
+            lb.instance().networks().forEach(networkArray::addString);
 
             Cursor portArray = lbObject.setArray("ports");
-            lb.ports().forEach(portArray::addLong);
+            lb.instance().ports().forEach(portArray::addLong);
 
             Cursor realArray = lbObject.setArray("reals");
-            lb.reals().forEach(real -> {
+            lb.instance().reals().forEach(real -> {
                 Cursor realObject = realArray.addObject();
                 realObject.setString("hostname", real.hostname().value());
                 realObject.setString("ipAddress", real.ipAddress());

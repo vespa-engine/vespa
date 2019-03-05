@@ -17,10 +17,10 @@ import java.util.Set;
  */
 public class LoadBalancerServiceMock implements LoadBalancerService {
 
-    private final Map<LoadBalancerId, LoadBalancer> loadBalancers = new HashMap<>();
+    private final Map<LoadBalancerId, LoadBalancerInstance> instances = new HashMap<>();
 
-    public Map<LoadBalancerId, LoadBalancer> loadBalancers() {
-        return Collections.unmodifiableMap(loadBalancers);
+    public Map<LoadBalancerId, LoadBalancerInstance> instances() {
+        return Collections.unmodifiableMap(instances);
     }
 
     @Override
@@ -29,22 +29,21 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancer create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals) {
-        LoadBalancer loadBalancer = new LoadBalancer(
-                new LoadBalancerId(application, cluster),
+    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals) {
+        LoadBalancerId id = new LoadBalancerId(application, cluster);
+        LoadBalancerInstance instance = new LoadBalancerInstance(
                 HostName.from("lb-" + application.toShortString() + "-" + cluster.value()),
                 Optional.of(new DnsZone("zone-id-1")),
                 Collections.singleton(4443),
                 ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),
-                reals,
-                false);
-        loadBalancers.put(loadBalancer.id(), loadBalancer);
-        return loadBalancer;
+                reals);
+        instances.put(id, instance);
+        return instance;
     }
 
     @Override
-    public void remove(LoadBalancerId loadBalancer) {
-        loadBalancers.remove(loadBalancer);
+    public void remove(ApplicationId application, ClusterSpec.Id cluster) {
+        instances.remove(new LoadBalancerId(application, cluster));
     }
 
 }

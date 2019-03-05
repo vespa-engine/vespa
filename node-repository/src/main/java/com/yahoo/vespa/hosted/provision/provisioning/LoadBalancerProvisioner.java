@@ -11,12 +11,12 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -52,8 +52,11 @@ public class LoadBalancerProvisioner {
             try (Mutex loadBalancersLock = db.lockLoadBalancers()) {
                 Map<LoadBalancerId, LoadBalancer> loadBalancers = new LinkedHashMap<>();
                 for (Map.Entry<ClusterSpec, List<Node>> kv : activeContainers(application).entrySet()) {
-                    LoadBalancer loadBalancer = create(application, kv.getKey().id(), kv.getValue())
-                            .with(kv.getKey().rotations());
+                    LoadBalancerId id = new LoadBalancerId(application, kv.getKey().id());
+                    LoadBalancerInstance instance = create(application, kv.getKey().id(), kv.getValue());
+                    // Load balancer is always re-activated here to avoid reallocation if an application/cluster is
+                    // deleted and then redeployed.
+                    LoadBalancer loadBalancer = new LoadBalancer(id, instance, kv.getKey().rotations(), false);
                     loadBalancers.put(loadBalancer.id(), loadBalancer);
                     db.writeLoadBalancer(loadBalancer);
                 }
@@ -77,11 +80,11 @@ public class LoadBalancerProvisioner {
         }
     }
 
-    private LoadBalancer create(ApplicationId application, ClusterSpec.Id cluster, List<Node> nodes) {
+    private LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, List<Node> nodes) {
         Map<HostName, Set<String>> hostnameToIpAdresses = nodes.stream()
                                                                .collect(Collectors.toMap(node -> HostName.from(node.hostname()),
                                                                                          this::reachableIpAddresses));
-        List<Real> reals = new ArrayList<>();
+        Set<Real> reals = new LinkedHashSet<>();
         hostnameToIpAdresses.forEach((hostname, ipAddresses) -> {
             ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress)));
         });
@@ -92,6 +95,7 @@ public class LoadBalancerProvisioner {
     private Map<ClusterSpec, List<Node>> activeContainers(ApplicationId application) {
         return new NodeList(nodeRepository.getNodes(Node.State.active))
                 .owner(application)
+                .filter(node -> node.state().isAllocated())
                 .type(ClusterSpec.Type.container)
                 .asList()
                 .stream()

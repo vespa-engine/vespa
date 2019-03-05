@@ -12,10 +12,12 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Test;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -24,6 +26,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -54,11 +57,11 @@ public class LoadBalancerProvisionerTest {
 
         assertEquals(app1, loadBalancers.get().get(0).id().application());
         assertEquals(containerCluster1, loadBalancers.get().get(0).id().cluster());
-        assertEquals(Collections.singleton(4443), loadBalancers.get().get(0).ports());
-        assertEquals("127.0.0.1", get(loadBalancers.get().get(0).reals(), 0).ipAddress());
-        assertEquals(4080, get(loadBalancers.get().get(0).reals(), 0).port());
-        assertEquals("127.0.0.2", get(loadBalancers.get().get(0).reals(), 1).ipAddress());
-        assertEquals(4080, get(loadBalancers.get().get(0).reals(), 1).port());
+        assertEquals(Collections.singleton(4443), loadBalancers.get().get(0).instance().ports());
+        assertEquals("127.0.0.1", get(loadBalancers.get().get(0).instance().reals(), 0).ipAddress());
+        assertEquals(4080, get(loadBalancers.get().get(0).instance().reals(), 0).port());
+        assertEquals("127.0.0.2", get(loadBalancers.get().get(0).instance().reals(), 1).ipAddress());
+        assertEquals(4080, get(loadBalancers.get().get(0).instance().reals(), 1).port());
         assertEquals(rotationsCluster1, loadBalancers.get().get(0).rotations());
 
         // A container is failed
@@ -71,13 +74,13 @@ public class LoadBalancerProvisionerTest {
                                       clusterRequest(ClusterSpec.Type.container, containerCluster1),
                                       clusterRequest(ClusterSpec.Type.content, contentCluster)));
         LoadBalancer loadBalancer = tester.nodeRepository().loadBalancers().owner(app1).asList().get(0);
-        assertEquals(2, loadBalancer.reals().size());
-        assertTrue("Failed node is removed", loadBalancer.reals().stream()
+        assertEquals(2, loadBalancer.instance().reals().size());
+        assertTrue("Failed node is removed", loadBalancer.instance().reals().stream()
                                                          .map(Real::hostname)
                                                          .map(HostName::value)
                                                          .noneMatch(hostname -> hostname.equals(toFail.hostname())));
-        assertEquals(containers.get().get(0).hostname(), get(loadBalancer.reals(), 0).hostname().value());
-        assertEquals(containers.get().get(1).hostname(), get(loadBalancer.reals(), 1).hostname().value());
+        assertEquals(containers.get().get(0).hostname(), get(loadBalancer.instance().reals(), 0).hostname().value());
+        assertEquals(containers.get().get(1).hostname(), get(loadBalancer.instance().reals(), 1).hostname().value());
 
         // Add another container cluster
         Set<RotationName> rotationsCluster2 = Set.of(RotationName.from("r2-1"), RotationName.from("r2-2"));
@@ -97,7 +100,9 @@ public class LoadBalancerProvisionerTest {
                                                 .sorted()
                                                 .collect(Collectors.toList());
         List<HostName> reals = loadBalancers.get().stream()
-                                            .flatMap(lb -> lb.reals().stream())
+                                            .map(LoadBalancer::instance)
+                                            .map(LoadBalancerInstance::reals)
+                                            .flatMap(Collection::stream)
                                             .map(Real::hostname)
                                             .sorted()
                                             .collect(Collectors.toList());
@@ -111,6 +116,17 @@ public class LoadBalancerProvisionerTest {
 
         assertEquals(2, loadBalancers.get().size());
         assertTrue("Deactivated load balancers", loadBalancers.get().stream().allMatch(LoadBalancer::inactive));
+
+        // Application is redeployed with one cluster and load balancer is re-activated
+        tester.activate(app1, prepare(app1,
+                                      clusterRequest(ClusterSpec.Type.container, containerCluster1),
+                                      clusterRequest(ClusterSpec.Type.content, contentCluster)));
+        assertFalse("Re-activated load balancer for " + containerCluster1,
+                    loadBalancers.get().stream()
+                                 .filter(lb -> lb.id().cluster().equals(containerCluster1))
+                                 .findFirst()
+                                 .orElseThrow()
+                                 .inactive());
     }
 
     private ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id) {
