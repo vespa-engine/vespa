@@ -130,7 +130,7 @@ public class HostPorts {
         String servType = service.getServiceType();
         String configId = service.getConfigId();
         int fallback = nextAvailableNetworkPort();
-        int port = portFinder.findPort(new NetworkPorts.Allocation(fallback, servType, configId, suffix));
+        int port = portFinder.findPort(new NetworkPorts.Allocation(fallback, servType, configId, suffix), hostname);
         reservePort(service, port, suffix);
         portFinder.use(new NetworkPorts.Allocation(port, servType, configId, suffix));
         return port;
