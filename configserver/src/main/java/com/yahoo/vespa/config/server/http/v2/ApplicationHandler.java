@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.inject.Inject;
-
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -23,6 +22,7 @@ import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.time.Duration;
+import java.util.Optional;
 
 /**
  * Operations on applications (delete, wait for config convergence, restart, application content etc.)
@@ -97,9 +97,9 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isLogRequest(request)) {
-            String apiParams = request.getUri().getQuery();
-            apiParams = apiParams == null ? "" : "?" + apiParams;
-            return applicationRepository.getLogs(applicationId, apiParams);
+            Optional<String> hostname = Optional.ofNullable(request.getProperty("hostname"));
+            String apiParams = Optional.ofNullable(request.getUri().getQuery()).map(q -> "?" + q).orElse("");
+            return applicationRepository.getLogs(applicationId, hostname, apiParams);
         }
 
         if (isIsSuspendedRequest(request)) {

@@ -28,8 +28,8 @@ import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -98,6 +98,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final ConfigserverConfig configserverConfig;
     private final FileDistributionStatus fileDistributionStatus;
     private final Orchestrator orchestrator;
+    private final LogRetriever logRetriever = new LogRetriever();
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -459,9 +460,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Logs ----------------------------------------------------------------
 
-    public HttpResponse getLogs(ApplicationId applicationId, String apiParams) {
-        String logServerURI = getLogServerURI(applicationId) + apiParams;
-        LogRetriever logRetriever = new LogRetriever();
+    public HttpResponse getLogs(ApplicationId applicationId, Optional<String> hostname, String apiParams) {
+        String logServerURI = getLogServerURI(applicationId, hostname) + apiParams;
         return logRetriever.getLogs(logServerURI);
     }
 
@@ -682,15 +682,26 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private String getLogServerURI(ApplicationId applicationId) {
+    private String getLogServerURI(ApplicationId applicationId, Optional<String> hostname) {
         Application application = getApplication(applicationId);
         Collection<HostInfo> hostInfos = application.getModel().getHosts();
 
+        // In ServiceInfo: node-admin does not have
+        // 1) Correct ports
+        // 2) logserver
+        // Assume if hostname is set that this is node-admin hostname
+        // TODO: Fix and simplify this once the above to problems have been fixed
+        if (hostname.isPresent()) {
+            HostInfo logServerHostInfo = hostInfos.stream()
+                    .filter(host -> host.getHostname().equalsIgnoreCase(hostname.get()))
+                    .findFirst().orElseThrow(() ->
+                            new IllegalArgumentException("Host " + hostname.get() + " does not belong to " + applicationId));
+            return "http://" + logServerHostInfo.getHostname() + ":8080/logs";
+        }
+
         HostInfo logServerHostInfo = hostInfos.stream()
                 .filter(host -> host.getServices().stream()
-                        .filter(serviceInfo ->
-                                        serviceInfo.getServiceType().equalsIgnoreCase("logserver"))
-                                .count() > 0)
+                        .anyMatch(serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver")))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HostInfo for LogServer"));
 
         ServiceInfo containerServiceInfo = logServerHostInfo.getServices().stream()
@@ -698,8 +709,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
 
         int port = containerServiceInfo.getPorts().stream()
-                .filter(portInfo -> portInfo.getTags().stream()
-                        .filter(tag -> tag.equalsIgnoreCase("http")).count() > 0)
+                .filter(portInfo -> portInfo.getTags().stream().anyMatch(tag -> tag.equalsIgnoreCase("http")))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
                 .getPort();
 
