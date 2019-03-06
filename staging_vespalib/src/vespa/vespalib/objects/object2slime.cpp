@@ -6,7 +6,7 @@
 namespace vespalib {
 
 Object2Slime::Object2Slime(slime::Cursor & cursor)
-    : _cursor(&cursor),
+    : _cursor(cursor),
       _stack()
 {
 }
@@ -21,10 +21,10 @@ Object2Slime::openStruct(const vespalib::string &name, const vespalib::string &t
     _stack.push_back(_cursor);
 
     if (name.empty()) {
-        _cursor = & _cursor->setObject(type);
+        _cursor = _cursor.get().setObject(type);
     } else {
-        _cursor = & _cursor->setObject(name);
-        _cursor->setString("[type]", type);
+        _cursor = _cursor.get().setObject(name);
+        _cursor.get().setString("[type]", type);
     }
 }
 
@@ -38,37 +38,37 @@ Object2Slime::closeStruct()
 void
 Object2Slime::visitBool(const vespalib::string &name, bool value)
 {
-    _cursor->setBool(name, value);
+    _cursor.get().setBool(name, value);
 }
 
 void
 Object2Slime::visitInt(const vespalib::string &name, int64_t value)
 {
-    _cursor->setLong(name, value);
+    _cursor.get().setLong(name, value);
 }
 
 void
 Object2Slime::visitFloat(const vespalib::string &name, double value)
 {
-    _cursor->setDouble(name, value);
+    _cursor.get().setDouble(name, value);
 }
 
 void
 Object2Slime::visitString(const vespalib::string &name, const vespalib::string &value)
 {
-    _cursor->setString(name, value);
+    _cursor.get().setString(name, value);
 }
 
 void
 Object2Slime::visitNull(const vespalib::string &name)
 {
-    _cursor->setNix(name);
+    _cursor.get().setNix(name);
 }
 
 void
 Object2Slime::visitNotImplemented()
 {
-    _cursor->setNix("not_implemented");
+    _cursor.get().setNix("not_implemented");
 }
 
-} // namespace vespalib
+}

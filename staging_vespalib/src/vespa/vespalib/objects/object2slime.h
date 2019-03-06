@@ -15,8 +15,8 @@ namespace slime { class Cursor; }
 class Object2Slime : public ObjectVisitor
 {
 private:
-    slime::Cursor * _cursor;
-    std::vector<slime::Cursor *> _stack;
+    std::reference_wrapper<slime::Cursor> _cursor;
+    std::vector<std::reference_wrapper<slime::Cursor>> _stack;
 
 public:
     Object2Slime(slime::Cursor & cursor);
