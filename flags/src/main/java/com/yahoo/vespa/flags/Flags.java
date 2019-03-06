@@ -64,6 +64,11 @@ public class Flags {
             "Whether to use a dedicated node for the logserver.", "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_DOCKER_91 = defineFeatureFlag(
+            "use-docker-91", false,
+            "Whether to upgrade to Docker version 1.13.1-91.git07f3374", "Takes effect after restart of host admin",
+            HOSTNAME);
+
     public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
             "container-cpu-cap", 0,
             "Hard limit on how many CPUs a container may use. This value is multiplied by CPU allocated to node, so " +
