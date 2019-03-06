@@ -14,4 +14,38 @@
     <version>7-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
+    <build>
+        <plugins>
+            <plugin>
+                <!-- Trick to package bundle before test phase, see test_bundles pom -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>package-cert-p</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <!-- Trick to avoid replacing the jar created above in the package phase, which is not allowed. -->
+                        <id>default-jar</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- Packaged as jar, not bundle, so must skip maven-bundle-plugin -->
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>package-test-bundles</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

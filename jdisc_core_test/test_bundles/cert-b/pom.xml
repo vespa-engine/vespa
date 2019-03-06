@@ -20,6 +20,17 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
+                <executions>
+                    <!-- Trick to package bundle before test phase, see test_bundles pom -->
+                    <execution>
+                        <id>package-cert-b</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>generate-osgi-manifest</goal>
+                            <goal>assemble-container-plugin</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                 </configuration>
