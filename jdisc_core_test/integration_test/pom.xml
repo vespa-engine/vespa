@@ -265,7 +265,7 @@
                 <executions>
                     <execution>
                         <id>copy-dependencies</id>
-                        <phase>compile</phase>
+                        <phase>process-test-classes</phase>
                         <goals>
                             <goal>copy-dependencies</goal>
                         </goals>
@@ -277,7 +277,7 @@
                     <execution>
                         <!-- we need an explicit copy of cert-a for the pre-install in cert-oa-path's manifest -->
                         <id>cert-a</id>
-                        <phase>compile</phase>
+                        <phase>process-test-classes</phase>
                         <goals>
                             <goal>copy-dependencies</goal>
                         </goals>
