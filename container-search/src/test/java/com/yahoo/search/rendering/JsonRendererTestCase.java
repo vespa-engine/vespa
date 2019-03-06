@@ -255,7 +255,10 @@ public class JsonRendererTestCase {
                 + "                    {"
                 + "                        \"children\": ["
                 + "                            {"
-                + "                                \"message\": { \"colour\": \"yellow\"}"
+                + "                                \"message\": ["
+                + "                                    { \"colour\": \"yellow\"},"
+                + "                                    { \"colour\": \"green\"}"
+                + "                                 ]"
                 + "                            }"
                 + "                        ]"
                 + "                    },"
@@ -277,9 +280,14 @@ public class JsonRendererTestCase {
         Execution e2 = new Execution(new Chain<Searcher>(), execution.context());
         Query subQuery = new Query("/?query=b&tracelevel=1");
         e2.search(subQuery);
+        Value.ArrayValue access = new Value.ArrayValue();
         Slime slime = new Slime();
         slime.setObject().setString("colour","yellow");
-        subQuery.trace(new SlimeAdapter(slime.get()), 1);
+        access.add(new SlimeAdapter(slime.get()));
+        slime = new Slime();
+        slime.setObject().setString("colour","green");
+        access.add(new SlimeAdapter(slime.get()));
+        subQuery.trace(access, 1);
         q.trace("marker", 1);
         String summary = render(execution, r);
         assertEqualJson(expected, summary);

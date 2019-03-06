@@ -2,6 +2,7 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.collections.TinyIdentitySet;
+import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.fs4.DocsumPacket;
 import com.yahoo.fs4.DocumentInfo;
@@ -418,14 +419,16 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     private void addBackendTrace(Query query, QueryResultPacket resultPacket) {
         if (resultPacket.propsArray == null) return;
+        Value.ArrayValue traces = new Value.ArrayValue();
         for (FS4Properties properties : resultPacket.propsArray) {
             if ( ! properties.getName().startsWith("trace")) continue;
             for (FS4Properties.Entry entry : properties.getEntries()) {
                 if (!entry.key.equals("slime")) continue;
-                SlimeAdapter adapter = new SlimeAdapter(BinaryFormat.decode(entry.getValue()).get());
-                query.trace(adapter, query.getTraceLevel());
+                traces.add(new SlimeAdapter(BinaryFormat.decode(entry.getValue()).get()));
+
             }
         }
+        query.trace(traces, query.getTraceLevel());
     }
 
     void addMetaInfo(Query query, QueryPacketData queryPacketData, QueryResultPacket resultPacket, Result result) {
