@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -24,7 +24,7 @@ public:
     /**
      * Will give you a trace entry. It will also add a timestamp relative to the creation of the trace.
      * @param name
-     * @return
+     * @return a Cursor to use for further tracing.
      */
     Cursor & createCursor(vespalib::stringref name);
     vespalib::string toString() const;
