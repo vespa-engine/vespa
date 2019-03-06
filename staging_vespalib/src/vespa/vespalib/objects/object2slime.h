@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "objectvisitor.h"
@@ -10,7 +10,7 @@ namespace slime { class Cursor; }
 
 /**
  * This is a concrete object visitor that will build up a structured
- * human-readable string representation of an object.
+ * slime representation of an object.
  **/
 class Object2Slime : public ObjectVisitor
 {
@@ -19,12 +19,6 @@ private:
     std::vector<slime::Cursor *> _stack;
 
 public:
-    /**
-     * Create an object dumper with the given indent size; default is
-     * 4 spaces per indent level.
-     *
-     * @param indent indent size in number of spaces
-     **/
     Object2Slime(slime::Cursor & cursor);
     ~Object2Slime();
 
