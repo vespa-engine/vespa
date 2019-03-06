@@ -60,28 +60,28 @@ public class NodeAdminImplTest {
         nodeAdmin.refreshContainersToRun(Set.of(context1));
         inOrder.verify(nodeAgent1).start();
         inOrder.verify(nodeAgent2, never()).start();
-        inOrder.verify(nodeAgent1, never()).stop();
+        inOrder.verify(nodeAgent1, never()).stopForRemoval();
 
         nodeAdmin.refreshContainersToRun(Set.of(context1));
         inOrder.verify(nodeAgentWithSchedulerFactory, never()).create(any());
         inOrder.verify(nodeAgent1, never()).start();
-        inOrder.verify(nodeAgent1, never()).stop();
+        inOrder.verify(nodeAgent1, never()).stopForRemoval();
 
         nodeAdmin.refreshContainersToRun(Set.of());
         inOrder.verify(nodeAgentWithSchedulerFactory, never()).create(any());
-        verify(nodeAgent1).stop();
+        verify(nodeAgent1).stopForRemoval();
 
         nodeAdmin.refreshContainersToRun(Set.of(context2));
         inOrder.verify(nodeAgent2).start();
-        inOrder.verify(nodeAgent2, never()).stop();
-        inOrder.verify(nodeAgent1, never()).stop();
+        inOrder.verify(nodeAgent2, never()).stopForRemoval();
+        inOrder.verify(nodeAgent1, never()).stopForRemoval();
 
         nodeAdmin.refreshContainersToRun(Set.of());
         inOrder.verify(nodeAgentWithSchedulerFactory, never()).create(any());
         inOrder.verify(nodeAgent2, never()).start();
-        inOrder.verify(nodeAgent2).stop();
+        inOrder.verify(nodeAgent2).stopForRemoval();
         inOrder.verify(nodeAgent1, never()).start();
-        inOrder.verify(nodeAgent1, never()).stop();
+        inOrder.verify(nodeAgent1, never()).stopForRemoval();
     }
 
     @Test

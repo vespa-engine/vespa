@@ -137,7 +137,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public void stop() {
+    public void stopForRemoval() {
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
@@ -213,16 +213,21 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Optional<Container> removeContainerIfNeededUpdateContainerState(
             NodeAgentContext context, Optional<Container> existingContainer) {
-        return existingContainer
-                .flatMap(container -> removeContainerIfNeeded(context, container))
-                .map(container -> {
-                        shouldRestartServices(context.node()).ifPresent(restartReason -> {
-                            context.log(logger, "Will restart services: " + restartReason);
-                            restartServices(context, container);
-                            currentRestartGeneration = context.node().getWantedRestartGeneration();
-                        });
-                        return container;
-                });
+        if (existingContainer.isPresent()) {
+            Optional<String> reason = shouldRemoveContainer(context.node(), existingContainer.get());
+            if (reason.isPresent()) {
+                removeContainer(context, existingContainer.get(), reason.get(), false);
+                return Optional.empty();
+            }
+
+            shouldRestartServices(context.node()).ifPresent(restartReason -> {
+                context.log(logger, "Will restart services: " + restartReason);
+                restartServices(context, existingContainer.get());
+                currentRestartGeneration = context.node().getWantedRestartGeneration();
+            });
+        }
+
+        return existingContainer;
     }
 
     private Optional<String> shouldRestartServices(NodeSpec node) {
@@ -245,8 +250,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    @Override
-    public void stopServices() {
+    private void stopServices() {
         NodeAgentContext context = contextSupplier.currentContext();
         context.log(logger, "Stopping services");
         if (containerState == ABSENT) return;
@@ -259,6 +263,11 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
+    public void stopForHostSuspension() {
+        NodeAgentContext context = contextSupplier.currentContext();
+        getContainer(context).ifPresent(container -> removeContainer(context, container, "suspending host", true));
+    }
+
     public void suspend() {
         NodeAgentContext context = contextSupplier.currentContext();
         context.log(logger, "Suspending services on node");
@@ -306,32 +315,31 @@ public class NodeAgentImpl implements NodeAgent {
         return Optional.empty();
     }
 
-    private Optional<Container> removeContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
-        Optional<String> removeReason = shouldRemoveContainer(context.node(), existingContainer);
-        if (removeReason.isPresent()) {
-            context.log(logger, "Will remove container: " + removeReason.get());
+    private void removeContainer(NodeAgentContext context, Container existingContainer, String reason, boolean alreadySuspended) {
+        context.log(logger, "Will remove container: " + reason);
 
-            if (existingContainer.state.isRunning()) {
+        if (existingContainer.state.isRunning()) {
+            if (!alreadySuspended) {
                 orchestratorSuspendNode(context);
-
-                try {
-                    if (context.node().getState() != NodeState.dirty) {
-                        suspend();
-                    }
-                    stopServices();
-                } catch (Exception e) {
-                    context.log(logger, LogLevel.WARNING, "Failed stopping services, ignoring", e);
-                }
             }
-            storageMaintainer.handleCoreDumpsForContainer(context, Optional.of(existingContainer));
-            dockerOperations.removeContainer(context, existingContainer);
-            currentRebootGeneration = context.node().getWantedRebootGeneration();
-            containerState = ABSENT;
-            context.log(logger, "Container successfully removed, new containerState is " + containerState);
-            return Optional.empty();
+
+            try {
+                if (context.node().getState() != NodeState.dirty) {
+                    suspend();
+                }
+                stopServices();
+            } catch (Exception e) {
+                context.log(logger, LogLevel.WARNING, "Failed stopping services, ignoring", e);
+            }
         }
-        return Optional.of(existingContainer);
+
+        storageMaintainer.handleCoreDumpsForContainer(context, Optional.of(existingContainer));
+        dockerOperations.removeContainer(context, existingContainer);
+        currentRebootGeneration = context.node().getWantedRebootGeneration();
+        containerState = ABSENT;
+        context.log(logger, "Container successfully removed, new containerState is " + containerState);
     }
+
 
     private void updateContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
         ContainerResources wantedContainerResources = getContainerResources(context.node());

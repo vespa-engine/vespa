@@ -9,18 +9,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
  * @author bakksjo
  */
 public interface NodeAgent {
-
-    /**
-     * Stop services running on node. Depending on the state of the node, {@link #suspend()} might need to be
-     * called before calling this method.
-     */
-    void stopServices();
-
-    /**
-     * Suspend node. Take node offline (e.g. take node out of VIP, drain traffic, prepare for restart etc.)
-     */
-    void suspend();
-
     /**
      * Starts the agent. After this method is called, the agent will asynchronously maintain the node, continuously
      * striving to make the current state equal to the wanted state.
@@ -28,11 +16,16 @@ public interface NodeAgent {
     void start();
 
     /**
+     * Stop the node in anticipation of host suspension, e.g. reboot or docker upgrade.
+     */
+    void stopForHostSuspension();
+
+    /**
      * Signals to the agent that the node is at the end of its lifecycle and no longer needs a managing agent.
      * Cleans up any resources the agent owns, such as threads, connections etc. Cleanup is synchronous; when this
      * method returns, no more actions will be taken by the agent.
      */
-    void stop();
+    void stopForRemoval();
 
     /**
      * Updates metric receiver with the latest node-agent stats

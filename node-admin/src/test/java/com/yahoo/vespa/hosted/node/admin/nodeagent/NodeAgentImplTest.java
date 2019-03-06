@@ -156,7 +156,7 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, never()).startServices(eq(context));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
 
-        nodeAgent.suspend();
+        nodeAgent.stopForHostSuspension();
         nodeAgent.doConverge(context);
         inOrder.verify(dockerOperations, never()).startServices(eq(context));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context)); // Expect a resume, but no start services
@@ -166,10 +166,11 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, never()).startServices(eq(context));
         inOrder.verify(dockerOperations, never()).resumeNode(eq(context));
 
-        nodeAgent.suspend();
-        nodeAgent.stopServices();
+        nodeAgent.stopForHostSuspension();
         nodeAgent.doConverge(context);
-        inOrder.verify(dockerOperations, times(1)).startServices(eq(context));
+        inOrder.verify(dockerOperations, times(1)).createContainer(eq(context), any());
+        inOrder.verify(dockerOperations, times(1)).startContainer(eq(context));
+        inOrder.verify(dockerOperations, times(0)).startServices(eq(context)); // done as part of startContainer
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
     }
 
