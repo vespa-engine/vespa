@@ -678,6 +678,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         trace(message, false, traceLevel);
     }
 
+    public void trace(Object message, int traceLevel) {
+        if ( ! isTraceable(traceLevel)) return;
+        getContext(true).trace(message, 0);
+    }
+
     /**
      * Adds a trace message to this query
      * if the trace level of the query is sufficiently high.

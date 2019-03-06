@@ -229,7 +229,8 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testEmptyTracing() throws IOException, InterruptedException, ExecutionException {
+    public void testTracingOfSlime() throws IOException, InterruptedException, ExecutionException {
+        // which clearly shows a trace child is created once too often...
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"fields\": {\n"
@@ -237,8 +238,64 @@ public class JsonRendererTestCase {
                 + "        },\n"
                 + "        \"id\": \"toplevel\",\n"
                 + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+                + "    },\n"
+                + "    \"trace\": {\n"
+                + "        \"children\": [\n"
+                + "            {\n"
+                + "                \"message\": \"No query profile is used\"\n"
+                + "            },\n"
+                + "            {\n"
+                + "                \"children\": [\n"
+                + "                    {\n"
+                + "                        \"message\": \"something\"\n"
+                + "                    },\n"
+                + "                    {\n"
+                + "                        \"message\": \"something else\""
+                + "                    },\n"
+                + "                    {\n"
+                + "                        \"children\": [\n"
+                + "                            {\n"
+                + "                                \"message\": { \"colour\": \"yellow\"}"
+                + "                            }\n"
+                + "                        ]\n"
+                + "                    },\n"
+                + "                    {\n"
+                + "                        \"message\": \"marker\""
+                + "                    }\n"
+                + "                ]\n"
+                + "            }\n"
+                + "        ]"
+                + "    }"
+                + "}";
+        Query q = new Query("/?query=a&tracelevel=1");
+        Execution execution = new Execution(Execution.Context.createContextStub());
+        Result r = new Result(q);
+
+        execution.search(q);
+        q.trace("something", 1);
+        q.trace("something else", 1);
+        Execution e2 = new Execution(new Chain<Searcher>(), execution.context());
+        Query subQuery = new Query("/?query=b&tracelevel=1");
+        e2.search(subQuery);
+        Slime slime = new Slime();
+        slime.setObject().setString("colour","yellow");
+        subQuery.trace(new SlimeAdapter(slime.get()), 1);
+        q.trace("marker", 1);
+        String summary = render(execution, r);
+        assertEqualJson(expected, summary);
+    }
+
+    @Test
+    public void testEmptyTracing() throws IOException, InterruptedException, ExecutionException {
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Query q = new Query("/?query=a&tracelevel=0");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
@@ -259,31 +316,31 @@ public class JsonRendererTestCase {
     @SuppressWarnings("unchecked")
     @Test
     public void testTracingWithEmptySubtree() throws IOException, InterruptedException, ExecutionException {
-        String expected =  "{\n"
-                + "    \"root\": {\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    },\n"
-                + "    \"trace\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"message\": \"No query profile is used\"\n"
-                + "            },\n"
-                + "            {\n"
-                + "                \"message\": \"Resolved properties:\\ntracelevel=10 (value from request)\\nquery=a (value from request)\\n\"\n"
-                + "            },\n"
-                + "            {\n"
-                + "                \"children\": [\n"
-                + "                    {\n"
-                + "                        \"timestamp\": 42\n"
-                + "                    }\n"
-                + "                ]\n"
-                + "            }\n"
-                + "        ]\n"
-                + "    }\n"
+        String expected =  "{"
+                + "    \"root\": {"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    },"
+                + "    \"trace\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"message\": \"No query profile is used\""
+                + "            },"
+                + "            {"
+                + "                \"message\": \"Resolved properties:\\ntracelevel=10 (value from request)\\nquery=a (value from request)\\n\""
+                + "            },"
+                + "            {"
+                + "                \"children\": ["
+                + "                    {"
+                + "                        \"timestamp\": 42"
+                + "                    }"
+                + "                ]"
+                + "            }"
+                + "        ]"
+                + "    }"
                 + "}";
         Query q = new Query("/?query=a&tracelevel=10");
         Execution execution = new Execution(Execution.Context.createContextStub());
@@ -1218,12 +1275,13 @@ public class JsonRendererTestCase {
 
     @SuppressWarnings("unchecked")
     private void assertEqualJson(String expected, String generated) throws IOException {
+        assertEquals("", validateJSON(expected));
+        assertEquals("", validateJSON(generated));
+
         ObjectMapper m = new ObjectMapper();
         Map<String, Object> exp = m.readValue(expected, Map.class);
         Map<String, Object> gen = m.readValue(generated, Map.class);
         assertEquals(exp, gen);
-        assertEquals("", validateJSON(expected));
-        assertEquals("", validateJSON(generated));
     }
 
     private String validateJSON(String presumablyValidJson) {

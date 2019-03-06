@@ -18,7 +18,6 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.lang.MutableBoolean;
-import com.yahoo.prelude.hitfield.HitField;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution.Trace;
 import com.yahoo.processing.rendering.AsynchronousSectionedRenderer;
@@ -185,7 +184,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                     header();
                     generator.writeStartObject();
                 }
-                generator.writeStringField(TRACE_MESSAGE, payload.toString());
+                generator.writeFieldName(TRACE_MESSAGE);
+                fieldConsumer.renderFieldContentsDirect(payload);
                 dirty = true;
             }
             if (dirty) {
@@ -763,17 +763,32 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderInspector(Inspector data) throws IOException {
-            StringBuilder intermediate = new StringBuilder();
             Inspector asMap = wrapAsMap(data);
             if (asMap != null) {
+                StringBuilder intermediate = new StringBuilder();
                 JsonRender.render(asMap, intermediate, true);
+                generator.writeRawValue(intermediate.toString());
             } else {
-                JsonRender.render(data, intermediate, true);
+                renderInspectorDirect(data);
             }
+
+        }
+
+        private void renderInspectorDirect(Inspector data) throws IOException {
+            StringBuilder intermediate = new StringBuilder();
+            JsonRender.render(data, intermediate, true);
             generator.writeRawValue(intermediate.toString());
         }
 
         private void renderFieldContents(Object field) throws IOException {
+            if (field instanceof Inspectable) {
+                renderInspector(((Inspectable)field).inspect());
+            } else {
+                renderFieldContentsDirect(field);
+            }
+        }
+
+        private void renderFieldContentsDirect(Object field) throws IOException {
             if (field == null) {
                 generator.writeNull();
             } else if (field instanceof Boolean) {
@@ -785,7 +800,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof Tensor) {
                 renderTensor(Optional.of((Tensor)field));
             } else if (field instanceof Inspectable) {
-                renderInspector(((Inspectable)field).inspect());
+                renderInspectorDirect(((Inspectable)field).inspect());
             } else if (field instanceof JsonProducer) {
                 generator.writeRawValue(((JsonProducer) field).toJson());
             } else if (field instanceof StringFieldValue) {
