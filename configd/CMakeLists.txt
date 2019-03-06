@@ -2,6 +2,7 @@
 vespa_define_module(
     APPS
     src/apps/sentinel
+    src/apps/cmd
     src/apps/su
 
     TESTS
