@@ -1,11 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "trace.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/fastos/timestamp.h>
 
 namespace search::engine {
-
 
 Trace::Trace(const fastos::TimeStamp &start_time)
     : _trace(std::make_unique<vespalib::Slime>()),
@@ -22,7 +21,6 @@ Trace::createCursor(vespalib::stringref name) {
     Cursor & trace = _traces.addObject();
     trace.setString("tag", name);
     return trace;
-
 }
 
 vespalib::string
