@@ -19,13 +19,13 @@ public class SystemStateBroadcaster {
     private final Timer timer;
     private final Object monitor;
     private ClusterStateBundle clusterStateBundle;
-    private final List<SetClusterStateRequest> replies = new LinkedList<>();
+    private final List<SetClusterStateRequest> setClusterStateReplies = new LinkedList<>();
 
     private final static long minTimeBetweenNodeErrorLogging = 10 * 60 * 1000;
     private final Map<Node, Long> lastErrorReported = new TreeMap<>();
     private int lastClusterStateInSync = 0;
 
-    private final ClusterStateWaiter waiter = new ClusterStateWaiter();
+    private final SetClusterStateWaiter setClusterStateWaiter = new SetClusterStateWaiter();
 
     public SystemStateBroadcaster(Timer timer, Object monitor) {
         this.timer = timer;
@@ -56,19 +56,21 @@ public class SystemStateBroadcaster {
         long time = timer.getCurrentTimeInMillis();
         Long lastReported = lastErrorReported.get(info.getNode());
         boolean alreadySeen = (lastReported != null && time - lastReported < minTimeBetweenNodeErrorLogging);
-        log.log(nodeOk && !alreadySeen ? LogLevel.WARNING : LogLevel.DEBUG, message);
-        if (!alreadySeen) lastErrorReported.put(info.getNode(), time);
+        log.log((nodeOk && !alreadySeen) ? LogLevel.WARNING : LogLevel.DEBUG, message);
+        if (!alreadySeen) {
+            lastErrorReported.put(info.getNode(), time);
+        }
     }
 
     public boolean processResponses() {
         boolean anyResponsesFound = false;
         synchronized(monitor) {
-            for(SetClusterStateRequest req : replies) {
+            for (SetClusterStateRequest req : setClusterStateReplies) {
                 anyResponsesFound = true;
 
                 NodeInfo info = req.getNodeInfo();
                 boolean nodeOk = info.getReportedState().getState().oneOf("uir");
-                int version = req.getSystemStateVersion();
+                int version = req.getClusterStateVersion();
 
                 if (req.getReply().isError()) {
                     info.setSystemStateVersionAcknowledged(version, false);
@@ -85,7 +87,7 @@ public class SystemStateBroadcaster {
                     lastErrorReported.remove(info.getNode());
                 }
             }
-            replies.clear();
+            setClusterStateReplies.clear();
         }
         return anyResponsesFound;
     }
@@ -159,11 +161,11 @@ public class SystemStateBroadcaster {
                 ClusterStateBundle modifiedBundle = clusterStateBundle.cloneWithMapper(state -> buildModifiedClusterState(state, dbContext));
                 log.log(LogLevel.DEBUG, "Sending modified cluster state version " + baselineState.getVersion()
                         + " to node " + node + ": " + modifiedBundle);
-                communicator.setSystemState(modifiedBundle, node, waiter);
+                communicator.setSystemState(modifiedBundle, node, setClusterStateWaiter);
             } else {
                 log.log(LogLevel.DEBUG, "Sending system state version " + baselineState.getVersion() + " to node " + node
                         + ". (went down time " + node.getWentDownWithStartTime() + ", node start time " + node.getStartTimestamp() + ")");
-                communicator.setSystemState(clusterStateBundle, node, waiter);
+                communicator.setSystemState(clusterStateBundle, node, setClusterStateWaiter);
             }
         }
 
@@ -188,12 +190,19 @@ public class SystemStateBroadcaster {
         return newState;
     }
 
-    private class ClusterStateWaiter implements Communicator.Waiter<SetClusterStateRequest> {
+    private class SetClusterStateWaiter implements Communicator.Waiter<SetClusterStateRequest> {
         @Override
         public void done(SetClusterStateRequest reply) {
             synchronized (monitor) {
-                replies.add(reply);
+                setClusterStateReplies.add(reply);
             }
+        }
+    }
+
+    private class ActivateClusterStateVersionWaiter implements Communicator.Waiter<ActivateClusterStateVersionRequest> {
+        @Override
+        public void done(ActivateClusterStateVersionRequest reply) {
+            // TODO
         }
     }
 

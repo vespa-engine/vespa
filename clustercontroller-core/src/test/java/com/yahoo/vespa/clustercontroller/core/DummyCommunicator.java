@@ -47,6 +47,14 @@ public class DummyCommunicator implements Communicator, NodeLookup {
 
     }
 
+    public class DummyActivateClusterStateVersionRequest extends ActivateClusterStateVersionRequest {
+
+        public DummyActivateClusterStateVersionRequest(NodeInfo nodeInfo, int stateVersion) {
+            super(nodeInfo, stateVersion);
+        }
+
+    }
+
     private Map<Node, DummyGetNodeStateRequest> getNodeStateRequests = new TreeMap<>();
 
     public DummyCommunicator(List<Node> nodeList, Timer timer) {
@@ -96,6 +104,13 @@ public class DummyCommunicator implements Communicator, NodeLookup {
         } else {
             deferredClusterStateAcks.add(new Pair<>(waiter, req));
         }
+    }
+
+    @Override
+    public void activateClusterStateVersion(int clusterStateVersion, NodeInfo node, Waiter<ActivateClusterStateVersionRequest> waiter) {
+        var req = new DummyActivateClusterStateVersionRequest(node, clusterStateVersion);
+        req.setReply(new ActivateClusterStateVersionRequest.Reply());
+        waiter.done(req);
     }
 
     public void sendAllDeferredDistributorClusterStateAcks() {
