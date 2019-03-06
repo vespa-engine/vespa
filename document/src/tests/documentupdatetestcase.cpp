@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/configbuilder.h>
@@ -1050,7 +1051,7 @@ TEST(DocumentUpdateTest, tensor_modify_update_throws_if_cells_tensor_is_not_spar
     auto cellsTensor = f.makeTensor(f.spec().add({{"x", 0}}, 2)); // creates a dense cells tensor
     ASSERT_THROW(
             f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, std::move(cellsTensor))),
-            vespalib::IllegalStateException);
+            document::WrongTensorTypeException);
 }
 
 struct TensorUpdateSerializeFixture {

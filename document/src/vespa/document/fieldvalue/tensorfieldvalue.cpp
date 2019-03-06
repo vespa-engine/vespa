@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensorfieldvalue.h"
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/eval/tensor/tensor.h>
@@ -12,6 +13,7 @@
 using vespalib::slime::JsonFormat;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::SlimeBinaryFormat;
+using vespalib::eval::ValueType;
 using namespace vespalib::xml;
 
 namespace document {
@@ -19,6 +21,13 @@ namespace document {
 namespace {
 
 TensorDataType emptyTensorDataType;
+
+vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
+{
+    return vespalib::make_string("Field tensor type is '%s' but tensor type is '%s'",
+                                 fieldTensorType.to_spec().c_str(),
+                                 tensorType.to_spec().c_str());
+}
 
 }
 
@@ -66,12 +75,17 @@ TensorFieldValue &
 TensorFieldValue::operator=(const TensorFieldValue &rhs)
 {
     if (this != &rhs) {
-        if (rhs._tensor) {
-            _tensor = rhs._tensor->clone();
+        if (&_dataType == &rhs._dataType || !rhs._tensor ||
+            _dataType.isAssignableType(rhs._tensor->type())) {
+            if (rhs._tensor) {
+                _tensor = rhs._tensor->clone();
+            } else {
+                _tensor.reset();
+            }
+            _altered = true;
         } else {
-            _tensor.reset();
+            throw WrongTensorTypeException(makeWrongTensorTypeMsg(_dataType.getTensorType(), rhs._tensor->type()), VESPA_STRLOC);
         }
-        _altered = true;
     }
     return *this;
 }
@@ -80,8 +94,12 @@ TensorFieldValue::operator=(const TensorFieldValue &rhs)
 TensorFieldValue &
 TensorFieldValue::operator=(std::unique_ptr<Tensor> rhs)
 {
-    _tensor = std::move(rhs);
-    _altered = true;
+    if (!rhs || _dataType.isAssignableType(rhs->type())) {
+        _tensor = std::move(rhs);
+        _altered = true;
+    } else {
+        throw WrongTensorTypeException(makeWrongTensorTypeMsg(_dataType.getTensorType(), rhs->type()), VESPA_STRLOC);
+    }
     return *this;
 }
 
@@ -165,8 +183,12 @@ TensorFieldValue::assign(const FieldValue &value)
 void
 TensorFieldValue::assignDeserialized(std::unique_ptr<Tensor> rhs)
 {
-    _tensor = std::move(rhs);
-    _altered = false; // Serialized form already exists
+    if (!rhs || _dataType.isAssignableType(rhs->type())) {
+        _tensor = std::move(rhs);
+        _altered = false; // Serialized form already exists
+    } else {
+        throw WrongTensorTypeException(makeWrongTensorTypeMsg(_dataType.getTensorType(), rhs->type()), VESPA_STRLOC);
+    }
 }
 
 

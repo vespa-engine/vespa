@@ -539,6 +539,14 @@ FeedHandler::considerUpdateOperationForRejection(FeedToken &token, UpdateOperati
             token->setResult(make_unique<UpdateResult>(Result::TRANSIENT_ERROR, message), false);
             token->fail();
             return true;
+        } catch (document::WrongTensorTypeException &e) {
+            auto message = make_string("Update operation rejected for document '%s' of type '%s': 'Wrong tensor type: %s'",
+                                       update.getId().toString().c_str(),
+                                       _docTypeName.toString().c_str(),
+                                       e.getMessage().c_str());
+            token->setResult(make_unique<UpdateResult>(Result::TRANSIENT_ERROR, message), false);
+            token->fail();
+            return true;
         }
     }
     return false;

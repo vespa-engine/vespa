@@ -138,5 +138,6 @@ public:
     VESPA_DEFINE_EXCEPTION_SPINE(FieldNotFoundException);
 };
 
-}
+VESPA_DEFINE_EXCEPTION(WrongTensorTypeException, vespalib::Exception);
 
+}
