@@ -4,6 +4,7 @@ install_config_definition(src/main/resources/configdefinitions/container-documen
 install_config_definition(src/main/resources/configdefinitions/container-http.def container.core.container-http.def)
 install_config_definition(src/main/resources/configdefinitions/health-monitor.def container.jdisc.config.health-monitor.def)
 install_config_definition(src/main/resources/configdefinitions/http-filter.def container.core.http.http-filter.def)
+install_config_definition(src/main/resources/configdefinitions/log-handler.def container.core.log-handler.def)
 install_config_definition(src/main/resources/configdefinitions/metrics-presentation.def metrics.metrics-presentation.def)
 install_config_definition(src/main/resources/configdefinitions/mockservice.def container.handler.test.mockservice.def)
 install_config_definition(src/main/resources/configdefinitions/qr-searchers.def container.qr-searchers.def)
