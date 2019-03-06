@@ -40,6 +40,15 @@ public class LogHandler extends ThreadedHttpRequestHandler {
                 .map(Long::valueOf).map(Instant::ofEpochMilli).orElseGet(Instant::now);
 
         try {
+            if (request.hasProperty("streaming")) {
+                return new HttpResponse(200) {
+                    @Override
+                    public void render(OutputStream outputStream) {
+                        logReader.writeLogs(outputStream, earliestLogThreshold, latestLogThreshold);
+                    }
+                };
+            }
+
             JSONObject logJson = logReader.readLogs(earliestLogThreshold, latestLogThreshold);
             responseJSON.put("logs", logJson);
         } catch (IOException | JSONException e) {
