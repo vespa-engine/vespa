@@ -79,7 +79,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
         // Stop and remove NodeAgents that should no longer be running
         diff(nodeAgentWithSchedulerByHostname.keySet(), nodeAgentContextsByHostname.keySet())
-                .forEach(hostname -> nodeAgentWithSchedulerByHostname.remove(hostname).stop());
+                .forEach(hostname -> nodeAgentWithSchedulerByHostname.remove(hostname).stopForRemoval());
 
         // Start NodeAgent for hostnames that should be running, but aren't yet
         diff(nodeAgentContextsByHostname.keySet(), nodeAgentWithSchedulerByHostname.keySet()).forEach(hostname ->  {
@@ -156,10 +156,7 @@ public class NodeAdminImpl implements NodeAdmin {
         hostnames.parallelStream()
                 .filter(nodeAgentWithSchedulerByHostname::containsKey)
                 .map(nodeAgentWithSchedulerByHostname::get)
-                .forEach(nodeAgent -> {
-                    nodeAgent.suspend();
-                    nodeAgent.stopServices();
-                });
+                .forEach(NodeAgentWithScheduler::stopForHostSuspension);
     }
 
     @Override
@@ -170,7 +167,7 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public void stop() {
         // Stop all node-agents in parallel, will block until the last NodeAgent is stopped
-        nodeAgentWithSchedulerByHostname.values().parallelStream().forEach(NodeAgent::stop);
+        nodeAgentWithSchedulerByHostname.values().parallelStream().forEach(NodeAgent::stopForRemoval);
     }
 
     // Set-difference. Returns minuend minus subtrahend.
@@ -189,10 +186,9 @@ public class NodeAdminImpl implements NodeAdmin {
             this.nodeAgentScheduler = nodeAgentScheduler;
         }
 
-        @Override public void stopServices() { nodeAgent.stopServices(); }
-        @Override public void suspend() { nodeAgent.suspend(); }
         @Override public void start() { nodeAgent.start(); }
-        @Override public void stop() { nodeAgent.stop(); }
+        @Override public void stopForHostSuspension() { nodeAgent.stopForHostSuspension(); }
+        @Override public void stopForRemoval() { nodeAgent.stopForRemoval(); }
         @Override public void updateContainerNodeMetrics() { nodeAgent.updateContainerNodeMetrics(); }
         @Override public boolean isDownloadingImage() { return nodeAgent.isDownloadingImage(); }
         @Override public int getAndResetNumberOfUnhandledExceptions() { return nodeAgent.getAndResetNumberOfUnhandledExceptions(); }

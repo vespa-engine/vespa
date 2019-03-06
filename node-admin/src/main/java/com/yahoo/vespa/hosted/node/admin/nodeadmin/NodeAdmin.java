@@ -52,7 +52,7 @@ public interface NodeAdmin {
     void start();
 
     /**
-     * Stop the NodeAgent. Will not delete the storage or stop the container.
+     * Stop the NodeAgents. Will not delete the storage or stop the container.
      */
     void stop();
 }
