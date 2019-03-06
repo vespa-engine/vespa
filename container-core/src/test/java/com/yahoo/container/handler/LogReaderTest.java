@@ -4,10 +4,15 @@ package com.yahoo.container.handler;
 import org.json.JSONObject;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Scanner;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -19,7 +24,7 @@ public class LogReaderTest {
     public void testThatFilesAreWrittenCorrectlyToOutputStream() throws Exception{
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
         JSONObject json = logReader.readLogs(Instant.ofEpochMilli(21), Instant.now());
-        String expected = "{\"subfolder-log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl\",\"log1.log\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGU=\"}";
+        String expected = "{\"subfolder-log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxlCg==\",\"log1.log\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGUK\"}";
         String actual = json.toString();
         assertEquals(expected, actual);
     }
@@ -37,8 +42,22 @@ public class LogReaderTest {
     public void testThatLogsNotMatchingRegexAreExcluded() throws Exception {
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*2\\.log"));
         JSONObject json = logReader.readLogs(Instant.ofEpochMilli(21), Instant.now());
-        String expected = "{\"subfolder-log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl\"}";
+        String expected = "{\"subfolder-log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxlCg==\"}";
         String actual = json.toString();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testZippedStreaming() throws IOException {
+        ByteArrayOutputStream zippedBaos = new ByteArrayOutputStream();
+        LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
+        logReader.writeLogs(zippedBaos, Instant.ofEpochMilli(21), Instant.now());
+        GZIPInputStream unzippedIs = new GZIPInputStream(new ByteArrayInputStream(zippedBaos.toByteArray()));
+
+        Scanner s = new Scanner(unzippedIs).useDelimiter("\\A");
+        String actual = s.hasNext() ? s.next() : "";
+
+        String expected = "This is one log file\nThis is another log file\n";
         assertEquals(expected, actual);
     }
 }
