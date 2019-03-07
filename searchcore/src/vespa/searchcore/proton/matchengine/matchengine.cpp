@@ -50,7 +50,6 @@ MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t di
       _threadBundlePool(std::max(size_t(1), threadsPerSearch)),
       _nodeUp(false)
 {
-    // empty
 }
 
 MatchEngine::~MatchEngine()
@@ -106,9 +105,7 @@ MatchEngine::search(search::engine::SearchRequest::Source request,
 
         return ret;
     }
-    vespalib::Executor::Task::UP task;
-    task.reset(new SearchTask(*this, std::move(request), client));
-    _executor.execute(std::move(task));
+    _executor.execute(std::make_unique<SearchTask>(*this, std::move(request), client));
     return search::engine::SearchReply::UP();
 }
 
@@ -144,11 +141,10 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
     ret->request = req.release();
     ret->setDistributionKey(_distributionKey);
     if (ret->request->getTraceLevel() > 0) {
-        vespalib::asciistream os;
-        os << "trace-" << _distributionKey;
-        search::fef::Properties & trace = ret->propertiesMap.lookupCreate(os.str());
+        ret->request->trace().getRoot().setLong("distribution-key", _distributionKey);
+        search::fef::Properties & trace = ret->propertiesMap.lookupCreate("trace");
         vespalib::SmartBuffer output(4096);
-        vespalib::slime::BinaryFormat::encode(ret->request->trace().getRoot(), output);
+        vespalib::slime::BinaryFormat::encode(ret->request->trace().getSlime(), output);
         trace.add("slime", output.obtain().make_stringref());
     }
     client.searchDone(std::move(ret));

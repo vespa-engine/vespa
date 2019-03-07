@@ -241,7 +241,7 @@ TEST("verify trace") {
            "    ],"
            "    creation_time: 7"
            "}",
-           t.getRoot());
+           t.getSlime());
 
     t.createCursor("tag_a");
     verify("{"
@@ -252,7 +252,7 @@ TEST("verify trace") {
            "    ],"
            "    creation_time: 7"
            "}",
-           t.getRoot());
+           t.getSlime());
     Trace::Cursor & tagB = t.createCursor("tag_b");
     tagB.setLong("long", 19);
     verify("{"
@@ -267,7 +267,7 @@ TEST("verify trace") {
            "    ],"
            "    creation_time: 7"
            "}",
-           t.getRoot());
+           t.getSlime());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

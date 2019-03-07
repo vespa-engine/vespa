@@ -28,7 +28,8 @@ public:
      */
     Cursor & createCursor(vespalib::stringref name);
     vespalib::string toString() const;
-    vespalib::Slime & getRoot() const { return *_trace; }
+    Cursor & getRoot() const { return _root; }
+    vespalib::Slime & getSlime() const { return *_trace; }
 private:
     std::unique_ptr<vespalib::Slime> _trace;
     Cursor & _root;
