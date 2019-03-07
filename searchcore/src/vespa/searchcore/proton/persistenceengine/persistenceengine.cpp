@@ -394,6 +394,12 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
                             make_string("Update operation rejected for document '%s' of type '%s'.",
                                         upd->getId().toString().c_str(), e.getDocumentTypeName().c_str()));
 
+    } catch (document::WrongTensorTypeException &e) {
+        return UpdateResult(Result::TRANSIENT_ERROR,
+                            make_string("Update operation rejected for document '%s' of type '%s': 'Wrong tensor type: %s'",
+                                        upd->getId().toString().c_str(),
+                                        upd->getType().getName().c_str(),
+                                        e.getMessage().c_str()));
     }
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     DocTypeName docType(upd->getType());

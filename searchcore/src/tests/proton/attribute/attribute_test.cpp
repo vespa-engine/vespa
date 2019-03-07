@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config-attributes.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
@@ -683,7 +684,8 @@ TEST_F("require that attribute writer handles tensor assign update", Fixture)
     DocumentUpdate upd(*builder.getDocumentTypeRepo(), dt, DocumentId("doc::1"));
     auto new_tensor = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} },
                                    {"x", "y"});
-    TensorFieldValue new_value;
+    TensorDataType xySparseTensorDataType(vespalib::eval::ValueType::from_spec("tensor(x{},y{})"));
+    TensorFieldValue new_value(xySparseTensorDataType);
     new_value = new_tensor->clone();
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(AssignValueUpdate(new_value)));

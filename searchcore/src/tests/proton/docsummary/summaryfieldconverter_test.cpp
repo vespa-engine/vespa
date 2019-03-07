@@ -16,6 +16,7 @@
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/datatype/referencedatatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -82,6 +83,7 @@ using document::SpanTree;
 using document::StringFieldValue;
 using document::StructDataType;
 using document::StructFieldValue;
+using document::TensorDataType;
 using document::TensorFieldValue;
 using document::UrlDataType;
 using document::WeightedSetDataType;
@@ -92,6 +94,7 @@ using search::linguistics::TERM;
 using vespa::config::search::SummarymapConfig;
 using vespa::config::search::SummarymapConfigBuilder;
 using vespalib::Slime;
+using vespalib::eval::ValueType;
 using vespalib::geo::ZCurve;
 using vespalib::slime::Cursor;
 using vespalib::string;
@@ -230,7 +233,7 @@ DocumenttypesConfig getDocumenttypesConfig() {
                      .addField("float", DataType::T_FLOAT)
                      .addField("chinese", DataType::T_STRING)
                      .addField("predicate", DataType::T_PREDICATE)
-                     .addField("tensor", DataType::T_TENSOR)
+                     .addTensorField("tensor", "tensor(x{},y{})")
                      .addField("ref", ref_type_id)
                      .addField("nested", Struct("indexingdocument.header.nested")
                                .addField("inner_ref", ref_type_id)),
@@ -683,7 +686,8 @@ createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
 void
 Test::requireThatTensorIsNotConverted()
 {
-    TensorFieldValue tensorFieldValue;
+    TensorDataType tensorDataType(ValueType::from_spec("tensor(x{},y{})"));
+    TensorFieldValue tensorFieldValue(tensorDataType);
     tensorFieldValue = createTensor({ {{{"x", "4"}, {"y", "5"}}, 7} },
                                     {"x", "y"});
     Document doc(getDocType(), DocumentId("doc:scheme:"));

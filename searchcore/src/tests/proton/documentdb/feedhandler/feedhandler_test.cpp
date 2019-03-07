@@ -1,9 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/persistence/spi/result.h>
+#include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/test/test_utils.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
@@ -42,6 +46,8 @@ using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::GlobalId;
+using document::TensorDataType;
+using document::TensorFieldValue;
 using search::IDestructorCallback;
 using search::SerialNum;
 using search::index::schema::CollectionType;
@@ -58,6 +64,10 @@ using vespalib::ThreadStackExecutor;
 using vespalib::ThreadStackExecutorBase;
 using vespalib::makeClosure;
 using vespalib::makeTask;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::ValueType;
+using vespalib::tensor::test::makeTensor;
+using vespalib::tensor::Tensor;
 
 using namespace proton;
 using namespace search::index;
@@ -281,6 +291,8 @@ SchemaContext::SchemaContext()
     : schema(new Schema()),
       builder()
 {
+    schema->addAttributeField(Schema::AttributeField("tensor", DataType::TENSOR, CollectionType::SINGLE));
+    schema->addAttributeField(Schema::AttributeField("tensor2", DataType::TENSOR, CollectionType::SINGLE));
     addField("i1");
 }
 
@@ -312,6 +324,8 @@ struct TwoFieldsSchemaContext : public SchemaContext {
     }
 };
 
+TensorDataType tensor1DType(ValueType::from_spec("tensor(x{})"));
+
 struct UpdateContext {
     DocumentUpdate::SP update;
     BucketId           bucketId;
@@ -324,7 +338,19 @@ struct UpdateContext {
         const auto &docType = update->getType();
         const auto &field = docType.getField(fieldName);
         auto fieldValue = field.createValue();
-        fieldValue->assign(document::StringFieldValue("new value"));
+        if (fieldName == "tensor") {
+            dynamic_cast<TensorFieldValue &>(*fieldValue) =
+                makeTensor<Tensor>(TensorSpec("tensor(x{},y{})").
+                                   add({{"x","8"},{"y","9"}}, 11));
+        } else if (fieldName == "tensor2") {
+            auto tensorFieldValue = std::make_unique<TensorFieldValue>(tensor1DType);
+            *tensorFieldValue =
+                makeTensor<Tensor>(TensorSpec("tensor(x{})").
+                                   add({{"x","8"}}, 11));
+            fieldValue = std::move(tensorFieldValue);
+        } else {
+            fieldValue->assign(document::StringFieldValue("new value"));
+        }
         document::AssignValueUpdate assignValueUpdate(*fieldValue);
         document::FieldUpdate fieldUpdate(field);
         fieldUpdate.addUpdate(assignValueUpdate);
@@ -711,8 +737,13 @@ checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
     if (expectReject) {
         TEST_DO(f.feedView.checkCounts(0, 0u, 0, 0u));
         EXPECT_EQUAL(Result::TRANSIENT_ERROR, token.getResult()->getErrorCode());
-        EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Field not found'",
-                     token.getResult()->getErrorMessage());
+        if (fieldName == "tensor2") {
+            EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Wrong tensor type: Field tensor type is 'tensor(x{},y{})' but other tensor type is 'tensor(x{})''",
+                         token.getResult()->getErrorMessage());
+        } else {
+            EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Field not found'",
+                         token.getResult()->getErrorMessage());
+        }
     } else {
         if (existing) {
             TEST_DO(f.feedView.checkCounts(1, 16u, 0, 0u));
@@ -756,6 +787,18 @@ TEST_F("require that update with different document type repo can be rejected, p
 {
     TwoFieldsSchemaContext schema;
     checkUpdate(f, schema, "i2", true, false);
+}
+
+TEST_F("require that tensor update with correct tensor type works", FeedHandlerFixture)
+{
+    TwoFieldsSchemaContext schema;
+    checkUpdate(f, schema, "tensor", false, true);
+}
+
+TEST_F("require that tensor update with wrong tensor type fails", FeedHandlerFixture)
+{
+    TwoFieldsSchemaContext schema;
+    checkUpdate(f, schema, "tensor2", true, true);
 }
 
 TEST_F("require that put with different document type repo is ok", FeedHandlerFixture)

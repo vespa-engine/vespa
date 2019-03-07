@@ -10,7 +10,7 @@ using namespace document;
 namespace search::index {
 namespace {
 
-TensorDataType tensorDataType;
+TensorDataType tensorDataType(vespalib::eval::ValueType::from_spec("tensor(x{}, y{})"));
 
 const DataType *convert(Schema::DataType type) {
     switch (type) {
@@ -254,6 +254,7 @@ struct TypeCache {
         return types.find(key)->second;
     }
 };
+
 }  // namespace
 
 document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
@@ -296,8 +297,12 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
             continue;   // taken as index field
 
         const DataType *primitiveType = convert(field.getDataType());
-        header_struct.addField(field.getName(), type_cache.getType(
+        if (primitiveType->getId() == DataType::T_TENSOR) {
+            header_struct.addTensorField(field.getName(), dynamic_cast<const TensorDataType &>(*primitiveType).getTensorType().to_spec());
+        } else {
+            header_struct.addField(field.getName(), type_cache.getType(
                         primitiveType->getId(), field.getCollectionType()));
+        }
         usedFields.insert(field.getName());
     }
 
@@ -307,8 +312,12 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         if (usf != usedFields.end())
             continue;   // taken as index field or attribute field
         const DataType *primitiveType(convert(field.getDataType()));
-        header_struct.addField(field.getName(), type_cache.getType(
+        if (primitiveType->getId() == DataType::T_TENSOR) {
+            header_struct.addTensorField(field.getName(), dynamic_cast<const TensorDataType &>(*primitiveType).getTensorType().to_spec());
+        } else {
+            header_struct.addField(field.getName(), type_cache.getType(
                         primitiveType->getId(), field.getCollectionType()));
+        }
         usedFields.insert(field.getName());
     }
 

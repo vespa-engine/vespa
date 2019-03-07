@@ -9,14 +9,14 @@
 namespace vespalib::tensor::test {
 
 template <typename T>
-std::unique_ptr<const T>
+std::unique_ptr<T>
 makeTensor(const vespalib::eval::TensorSpec &spec)
 {
     auto value = DefaultTensorEngine::ref().from_spec(spec);
-    const T *tensor = dynamic_cast<const T *>(value->as_tensor());
+    T *tensor = dynamic_cast<T *>(value.get());
     ASSERT_TRUE(tensor);
     value.release();
-    return std::unique_ptr<const T>(tensor);
+    return std::unique_ptr<T>(tensor);
 }
 
 }

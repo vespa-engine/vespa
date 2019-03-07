@@ -176,8 +176,13 @@ void
 createFV(FieldValue & value, const DocumentTypeRepo & repo, nbostream & stream, const DocumentType & doc_type, uint32_t version)
 {
     FixedTypeRepo frepo(repo, doc_type);
-    VespaDocumentDeserializer deserializer(frepo, stream, version);
-    deserializer.read(value);
+    try {
+        VespaDocumentDeserializer deserializer(frepo, stream, version);
+        deserializer.read(value);
+    } catch (WrongTensorTypeException &) {
+        // A tensor field will appear to have no tensor if the stored tensor
+        // cannot be assigned to the tensor field.
+    }
 }
 
 }

@@ -104,4 +104,6 @@ DocumentTypeNotFoundException::~DocumentTypeNotFoundException() throw()
 {
 }
 
+VESPA_IMPLEMENT_EXCEPTION(WrongTensorTypeException, vespalib::Exception);
+
 }
