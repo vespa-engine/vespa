@@ -2,54 +2,45 @@
 package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.container.jdisc.HttpResponse;
+import org.apache.http.Header;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import java.io.UncheckedIOException;
+import java.util.Optional;
 
 public class LogRetriever {
-
-    private final static Logger log = Logger.getLogger(LogRetriever.class.getName());
 
     public HttpResponse getLogs(String logServerHostname) {
         HttpGet get = new HttpGet(logServerHostname);
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            org.apache.http.HttpResponse response = httpClient.execute(get);
-            String responseBody = EntityUtils.toString(response.getEntity(), "UTF-8");
-            return new LogsResponse(response.getStatusLine().getStatusCode()) {
-                @Override
-                public void render(OutputStream outputStream) throws IOException {
-                    if (response.getEntity() != null ) outputStream.write(responseBody.getBytes());
-                }
-            };
+            return new ProxyResponse(httpClient.execute(get));
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed to retrieve logs from log server", e);
-            return new LogsResponse(404) {
-                @Override
-                public void render(OutputStream outputStream) throws IOException {
-                    outputStream.write(e.toString().getBytes());
-                }
-
-            };
+            throw new UncheckedIOException(e);
         }
-
     }
 
-    private abstract static class LogsResponse extends HttpResponse {
+    private static class ProxyResponse extends HttpResponse {
+        private final org.apache.http.HttpResponse clientResponse;
 
-        LogsResponse(int status) {
-            super(status);
+        private ProxyResponse(org.apache.http.HttpResponse clientResponse) {
+            super(clientResponse.getStatusLine().getStatusCode());
+            this.clientResponse = clientResponse;
         }
 
         @Override
         public String getContentType() {
-            return "application/json";
+            return Optional.ofNullable(clientResponse.getFirstHeader("Content-Type"))
+                    .map(Header::getValue)
+                    .orElseGet(super::getContentType);
+        }
+
+        @Override
+        public void render(OutputStream outputStream) throws IOException {
+            clientResponse.getEntity().writeTo(outputStream);
         }
     }
 }

@@ -42,6 +42,10 @@ public class LogHandler extends ThreadedHttpRequestHandler {
         try {
             if (request.hasProperty("streaming")) {
                 return new HttpResponse(200) {
+                    {
+                        headers().add("Content-Encoding", "gzip");
+                    }
+
                     @Override
                     public void render(OutputStream outputStream) {
                         logReader.writeLogs(outputStream, earliestLogThreshold, latestLogThreshold);
@@ -64,6 +68,11 @@ public class LogHandler extends ThreadedHttpRequestHandler {
                 OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
                 outputStreamWriter.write(responseJSON.toString());
                 outputStreamWriter.close();
+            }
+
+            @Override
+            public String getContentType() {
+                return "application/json";
             }
         };
     }
