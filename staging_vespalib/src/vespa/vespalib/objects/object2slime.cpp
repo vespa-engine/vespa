@@ -19,11 +19,10 @@ Object2Slime::~Object2Slime() = default;
 void
 Object2Slime::openStruct(const vespalib::string &name, const vespalib::string &type)
 {
-    _stack.push_back(_cursor);
-
     if (name.empty()) {
-        _cursor = _cursor.get().setObject(type);
+        _cursor.get().setString("[type]", type);
     } else {
+        _stack.push_back(_cursor);
         _cursor = _cursor.get().setObject(name);
         _cursor.get().setString("[type]", type);
     }
@@ -32,8 +31,10 @@ Object2Slime::openStruct(const vespalib::string &name, const vespalib::string &t
 void
 Object2Slime::closeStruct()
 {
-   _cursor = _stack.back();
-   _stack.pop_back();
+    if ( ! _stack.empty()) {
+        _cursor = _stack.back();
+        _stack.pop_back();
+    }
 }
 
 void
