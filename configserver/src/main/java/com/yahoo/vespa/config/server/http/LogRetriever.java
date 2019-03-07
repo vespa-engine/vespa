@@ -3,8 +3,8 @@ package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.container.jdisc.HttpResponse;
 import org.apache.http.Header;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
@@ -14,9 +14,11 @@ import java.util.Optional;
 
 public class LogRetriever {
 
+    private final HttpClient httpClient = HttpClientBuilder.create().build();
+
     public HttpResponse getLogs(String logServerHostname) {
         HttpGet get = new HttpGet(logServerHostname);
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+        try {
             return new ProxyResponse(httpClient.execute(get));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
