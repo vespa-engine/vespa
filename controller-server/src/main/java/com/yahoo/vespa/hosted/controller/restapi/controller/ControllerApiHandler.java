@@ -91,7 +91,7 @@ public class ControllerApiHandler extends LoggingRequestHandler {
     private HttpResponse notFound(Path path) { return ErrorResponse.notFoundError("Nothing at " + path); }
 
     private HttpResponse root(HttpRequest request) {
-        return new ResourceResponse(request, "maintenance");
+        return new ResourceResponse(request, "jobs/upgrader", "maintenance");
     }
 
     private HttpResponse setActive(String jobName, boolean active) {

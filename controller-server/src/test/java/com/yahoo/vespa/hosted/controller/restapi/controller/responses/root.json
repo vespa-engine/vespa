@@ -1,7 +1,10 @@
 {
-  "resources":[
+  "resources": [
     {
-      "url":"http://localhost:8080/controller/v1/maintenance/"
+      "url": "http://localhost:8080/controller/v1/jobs/upgrader/"
+    },
+    {
+      "url": "http://localhost:8080/controller/v1/maintenance/"
     }
   ]
 }
