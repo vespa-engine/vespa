@@ -1042,7 +1042,7 @@ TEST(DocumentUpdateTest, tensor_remove_update_throws_if_address_tensor_is_not_sp
     auto addressTensor = f.makeTensor(f.spec().add({{"x", 0}}, 2)); // creates a dense address tensor
     ASSERT_THROW(
             f.assertRoundtripSerialize(TensorRemoveUpdate(std::move(addressTensor))),
-            vespalib::IllegalStateException);
+            document::WrongTensorTypeException);
 }
 
 TEST(DocumentUpdateTest, tensor_modify_update_throws_if_cells_tensor_is_not_sparse)

@@ -6,6 +6,7 @@ namespace vespalib::tensor { class Tensor; }
 
 namespace document {
 
+class TensorDataType;
 class TensorFieldValue;
 
 /**
@@ -16,6 +17,7 @@ class TensorFieldValue;
  */
 class TensorRemoveUpdate : public ValueUpdate {
 private:
+    std::unique_ptr<const TensorDataType> _tensorType;
     std::unique_ptr<TensorFieldValue> _tensor;
 
     TensorRemoveUpdate();
@@ -23,7 +25,7 @@ private:
     ACCEPT_UPDATE_VISITOR;
 
 public:
-    TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> &&tensor);
+    TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor);
     ~TensorRemoveUpdate() override;
     TensorRemoveUpdate &operator=(const TensorRemoveUpdate &rhs);
     TensorRemoveUpdate &operator=(TensorRemoveUpdate &&rhs);
