@@ -28,6 +28,9 @@ struct MapNames
 
     /** name of model property collection **/
     static const vespalib::string MODEL;
+
+    /** name of trace property collection **/
+    static const vespalib::string TRACE;
 };
 
 } // namespace search

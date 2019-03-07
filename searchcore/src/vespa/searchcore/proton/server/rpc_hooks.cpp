@@ -196,6 +196,10 @@ RPCHooksBase::RPCHooksBase(Params &params)
     : _proton(params.proton),
       _docsumByRPC(new DocsumByRPC(_proton.getDocsumBySlime())),
       _orb(std::make_unique<FRT_Supervisor>()),
+      _proto_rpc_adapter(std::make_unique<ProtoRpcAdapter>(
+                      _proton.get_search_server(),
+                      _proton.get_docsum_server(),
+                      _proton.get_monitor_server(), *_orb)),
       _regAPI(*_orb, params.slobrok_config),
       _stateLock(),
       _stateCond(),

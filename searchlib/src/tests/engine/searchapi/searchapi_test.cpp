@@ -37,6 +37,7 @@ TEST("propertyNames") {
     EXPECT_EQUAL(search::MapNames::HIGHLIGHTTERMS, "highlightterms");
     EXPECT_EQUAL(search::MapNames::MATCH, "match");
     EXPECT_EQUAL(search::MapNames::CACHES, "caches");
+    EXPECT_EQUAL(search::MapNames::TRACE, "trace");
 }
 
 TEST("convertToReques") {

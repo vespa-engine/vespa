@@ -13,6 +13,7 @@ struct MonitorReply
     bool                      mld;
     bool                      activeDocsRequested;
     uint32_t                  partid;
+    int32_t                   distribution_key;
     uint32_t                  timestamp;
     uint32_t                  totalNodes;  // mld
     uint32_t                  activeNodes; // mld

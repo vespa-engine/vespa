@@ -118,7 +118,7 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
     const search::engine::SearchRequest * searchRequest = req.get();
     if (searchRequest) {
         // 3 is the minimum level required for backend tracing.
-        searchRequest->setTraceLevel(search::fef::indexproperties::trace::Level::lookup(searchRequest->propertiesMap.modelOverrides()), 3);
+        searchRequest->setTraceLevel(search::fef::indexproperties::trace::Level::lookup(searchRequest->propertiesMap.modelOverrides(), searchRequest->getTraceLevel()), 3);
         ISearchHandler::SP searchHandler;
         vespalib::SimpleThreadBundle::UP threadBundle = _threadBundlePool.obtain();
         { // try to find the match handler corresponding to the specified search doc type

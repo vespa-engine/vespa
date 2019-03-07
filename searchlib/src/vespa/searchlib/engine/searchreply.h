@@ -42,6 +42,8 @@ public:
         uint32_t getDegradeReason() const { return _degradeReason; }
         uint16_t getNodesQueried() const { return _nodesQueried; }
         uint16_t getNodesReplied() const { return _nodesReplied; }
+        bool wasDegradedByMatchPhase() const { return ((_degradeReason & MATCH_PHASE) != 0); }
+        bool wasDegradedByTimeout() const { return ((_degradeReason & TIMEOUT) != 0); }
 
         Coverage & setCovered(uint64_t v) { _covered = v; return *this; }
         Coverage & setActive(uint64_t v) { _active = v; return *this; }

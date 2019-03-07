@@ -482,6 +482,23 @@ size_t Proton::getNumActiveDocs() const
     return numDocs;
 }
 
+search::engine::SearchServer &
+Proton::get_search_server()
+{
+    return *_matchEngine;
+}
+
+search::engine::DocsumServer &
+Proton::get_docsum_server()
+{
+    return *_summaryEngine;
+}
+
+search::engine::MonitorServer &
+Proton::get_monitor_server()
+{
+    return *this;
+}
 
 vespalib::string
 Proton::getDelayedConfigs() const
@@ -631,6 +648,7 @@ Proton::ping(MonitorRequest::UP request, MonitorClient & client)
     BootstrapConfig::SP configSnapshot = getActiveConfigSnapshot();
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     ret.partid = protonConfig.partition;
+    ret.distribution_key = protonConfig.distributionkey;
     ret.timestamp = (_matchEngine->isOnline()) ? 42 : 0;
     ret.activeDocs = getNumActiveDocs();
     ret.activeDocsRequested = request->reportActiveDocs;

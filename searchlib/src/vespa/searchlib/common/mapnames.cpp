@@ -10,5 +10,6 @@ const vespalib::string MapNames::HIGHLIGHTTERMS("highlightterms");
 const vespalib::string MapNames::MATCH("match");
 const vespalib::string MapNames::CACHES("caches");
 const vespalib::string MapNames::MODEL("model");
+const vespalib::string MapNames::TRACE("trace");
 
 } // namespace search

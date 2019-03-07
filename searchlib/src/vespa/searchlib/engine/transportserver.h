@@ -3,7 +3,6 @@
 #pragma once
 
 #include "transport_metrics.h"
-#include "source_description.h"
 #include "searchapi.h"
 #include "docsumapi.h"
 #include "monitorapi.h"
@@ -67,7 +66,6 @@ private:
     bool                    _failed;       // flag indicating a critical failure
     bool                    _doListen;     // flag telling us to accept requests or not
     FastOS_ThreadPool       _threadPool;   // thread pool owning transport thread
-    SourceDescription       _sourceDesc;   // description of where requests are coming from
     vespalib::string        _listenSpec;   // where to listen; FNET connect spec
     FNET_Connector         *_listener;     // object accepting incoming connections
     std::set<FNET_Channel*> _clients;      // the admin channel of all client connections

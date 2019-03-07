@@ -36,3 +36,5 @@ vespa_add_library(searchlib
     staging_vespalib
     atomic
 )
+
+vespa_add_target_package_dependency(searchlib Protobuf)
