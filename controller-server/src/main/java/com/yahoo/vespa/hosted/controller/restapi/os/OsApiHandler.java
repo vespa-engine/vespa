@@ -7,7 +7,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
@@ -17,6 +16,7 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
+import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
@@ -38,17 +38,17 @@ import java.util.logging.Level;
  * @author mpolden
  */
 @SuppressWarnings("unused") // Injected
-public class OsApiHandler extends LoggingRequestHandler {
+public class OsApiHandler extends AuditLoggingRequestHandler {
 
     private final Controller controller;
 
     public OsApiHandler(Context ctx, Controller controller) {
-        super(ctx);
+        super(ctx, controller.auditLogger());
         this.controller = controller;
     }
 
     @Override
-    public HttpResponse handle(HttpRequest request) {
+    public HttpResponse auditAndHandle(HttpRequest request) {
         try {
             switch (request.getMethod()) {
                 case GET: return get(request);

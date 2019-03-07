@@ -107,6 +107,8 @@ public class ZoneApiTest extends ControllerContainerTest {
         assertEquals("/nodes/v2/node/node1", proxy.lastReceived().get().getConfigServerRequest());
         assertEquals("PATCH", proxy.lastReceived().get().getMethod());
         assertEquals("{\"currentRestartGeneration\": 1}", proxy.lastRequestBody().get());
+
+        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().get().entries().isEmpty());
     }
 
     @Test

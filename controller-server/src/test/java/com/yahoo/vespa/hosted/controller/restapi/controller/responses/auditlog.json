@@ -1,0 +1,17 @@
+{
+  "entries": [
+    {
+      "time": "2019-03-01T14:13:14Z",
+      "user": "operator2",
+      "method": "POST",
+      "url": "http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42",
+      "data": "broken"
+    },
+    {
+      "time": "2019-03-01T12:13:14Z",
+      "user": "operator1",
+      "method": "POST",
+      "url": "http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer"
+    }
+  ]
+}

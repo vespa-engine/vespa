@@ -1,6 +1,9 @@
 {
   "resources": [
     {
+      "url": "http://localhost:8080/controller/v1/auditlog/"
+    },
+    {
       "url": "http://localhost:8080/controller/v1/jobs/upgrader/"
     },
     {

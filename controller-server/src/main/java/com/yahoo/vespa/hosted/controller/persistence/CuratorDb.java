@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -86,6 +87,7 @@ public class CuratorDb {
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
     private final RoutingPolicySerializer routingPolicySerializer = new RoutingPolicySerializer();
+    private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -187,6 +189,11 @@ public class CuratorDb {
     public Lock lockRoutingPolicies() {
         return lock(lockRoot.append("routingPolicies"), defaultLockTimeout);
     }
+
+    public Lock lockAuditLog() {
+        return lock(lockRoot.append("auditLog"), defaultLockTimeout);
+    }
+
     // -------------- Helpers ------------------------------------------
 
     /** Try locking with a low timeout, meaning it is OK to fail lock acquisition.
@@ -429,6 +436,17 @@ public class CuratorDb {
                       .sorted();
     }
 
+    // -------------- Audit log -----------------------------------------------
+
+    public AuditLog readAuditLog() {
+        return readSlime(auditLogPath()).map(auditLogSerializer::fromSlime)
+                                        .orElse(AuditLog.empty);
+    }
+
+    public void writeAuditLog(AuditLog log) {
+        curator.set(auditLogPath(), asJson(auditLogSerializer.toSlime(log)));
+    }
+
     // -------------- Provisioning (called by internal code) ------------------
 
     @SuppressWarnings("unused")
@@ -549,6 +567,10 @@ public class CuratorDb {
 
     private static Path routingPolicyPath(ApplicationId application) {
         return routingPoliciesRoot.append(application.serializedForm());
+    }
+
+    private static Path auditLogPath() {
+        return root.append("auditLog");
     }
 
     private static Path provisionStatePath() {
