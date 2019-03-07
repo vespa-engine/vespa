@@ -34,7 +34,7 @@ public class FS4SearchInvokerTestCase {
         var interleave = new InterleavedSearchInvoker(Collections.singleton(fs4invoker), searcher, cluster);
 
         long start = System.currentTimeMillis();
-        interleave.search(query, QueryPacket.create(null, null), null, null);
+        interleave.search(query, QueryPacket.create(null, null), null);
         long elapsed = System.currentTimeMillis() - start;
 
         assertThat("Connection error should fail fast", elapsed, Matchers.lessThan(500L));
@@ -43,7 +43,7 @@ public class FS4SearchInvokerTestCase {
     private static VespaBackEndSearcher mockSearcher() {
         return new VespaBackEndSearcher() {
             @Override
-            protected Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
+            protected Result doSearch2(Query query, QueryPacket queryPacket, Execution execution) {
                 return null;
             }
 
