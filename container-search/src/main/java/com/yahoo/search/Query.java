@@ -786,7 +786,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         } catch (IllegalArgumentException e) {
             return "Invalid query: " + Exceptions.toMessageString(e);
         } catch (RuntimeException e) {
-            return "Unepected error parsing or serializing query: " + Exceptions.toMessageString(e);
+            return "Unexpected error parsing or serializing query: " + Exceptions.toMessageString(e);
         }
     }
 
