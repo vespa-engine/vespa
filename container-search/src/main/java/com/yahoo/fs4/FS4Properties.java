@@ -15,7 +15,6 @@ public class FS4Properties {
             key = Utf8.toString(k);
             val = v;
         }
-        public final String getValueString() { return Utf8.toString(val); }
         public final byte [] getValue() { return val; }
     };
 
