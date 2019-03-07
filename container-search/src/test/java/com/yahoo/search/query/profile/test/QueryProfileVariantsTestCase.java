@@ -8,7 +8,6 @@ import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.profile.BackedOverridableQueryProfile;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import org.junit.Test;
 
@@ -16,6 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -80,6 +80,27 @@ public class QueryProfileVariantsTestCase {
         assertEquals("a.b",cprofile.get("a.b"));
         assertEquals("a.b.x1",cprofile.get("a.b", toMap("x=x1")));
         assertEquals("a.b.x2",cprofile.get("a.b", toMap("x=x2")));
+    }
+
+    @Test
+    public void testOverlappingProfiles() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setDimensions(new String[] {"region", "model", "bucket"});
+        profile.set("a", "us,nokia,*  : a", new String[] {"us", "nokia", null     }, null);
+        profile.set("b", "us,nokia,*  : b", new String[] {"us", "nokia", null     }, null);
+        profile.set("c", "us,*,bucket1: c", new String[] {"us", null,    "bucket1"}, null);
+        profile.set("d", "us,*,bucket1: d", new String[] {"us", null,    "bucket1"}, null);
+
+        CompiledQueryProfile cprofile = profile.compile(null);
+        var parameters = toMap("region=us", "model=nokia", "bucket=bucket1");
+        assertEquals("us,nokia,*  : a", cprofile.get("a", parameters));
+        assertEquals("us,nokia,*  : b", cprofile.get("b", parameters));
+        assertEquals("us,*,bucket1: c", cprofile.get("c", parameters));
+        assertEquals("us,*,bucket1: d", cprofile.get("d", parameters));
+
+        String listedKeys =
+                cprofile.listValues("", parameters).keySet().stream().sorted().collect(Collectors.joining(", "));
+        assertEquals("a, b, c, d", listedKeys);
     }
 
     @Test

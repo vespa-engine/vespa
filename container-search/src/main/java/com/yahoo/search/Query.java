@@ -424,7 +424,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Calls properties.set on all entries in requestMap */
     private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties) {
-        for (Map.Entry<String, String> entry : requestMap.entrySet()) {
+        for (var entry : requestMap.entrySet()) {
             try {
                 properties.set(entry.getKey(), entry.getValue(), requestMap);
             }
@@ -771,7 +771,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /**
      * Serialize this query as YQL+. This method will never throw exceptions,
-     * but instead return a human readable error message if a problem occured
+     * but instead return a human readable error message if a problem occurred while
      * serializing the query. Hits and offset information will be included if
      * different from default, while linguistics metadata are not added.
      *
@@ -783,9 +783,10 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             return yqlRepresentation(true);
         } catch (NullItemException e) {
             return "Query currently a placeholder, NullItem encountered.";
+        } catch (IllegalArgumentException e) {
+            return "Invalid query: " + Exceptions.toMessageString(e);
         } catch (RuntimeException e) {
-            return "Failed serializing query as YQL+, please file a ticket including the query causing this: "
-                    + Exceptions.toMessageString(e);
+            return "Unexpected error parsing or serializing query: " + Exceptions.toMessageString(e);
         }
     }
 

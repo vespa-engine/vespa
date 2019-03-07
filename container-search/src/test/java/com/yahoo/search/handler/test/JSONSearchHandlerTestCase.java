@@ -304,11 +304,11 @@ public class JSONSearchHandlerTestCase {
 
         JSONObject select = new JSONObject();
 
-            JSONObject where = new JSONObject();
-            where.put("where", "where");
+        JSONObject where = new JSONObject();
+        where.put("where", "where");
 
-            JSONObject grouping = new JSONObject();
-            grouping.put("grouping", "grouping");
+        JSONObject grouping = new JSONObject();
+        grouping.put("grouping", "grouping");
 
         select.put("where", where);
         select.put("grouping", grouping);
@@ -342,6 +342,54 @@ public class JSONSearchHandlerTestCase {
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, root.toString(), JSON_CONTENT_TYPE).readAll();
         assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where default contains \\\"bad\\\";\"}}]}}",
                      result);
+    }
+
+    @Test
+    public void testJsonWithWhereAndGroupingUnderSelect() {
+        String query = "{\n" +
+                       "  \"select\": {\n" +
+                       "    \"where\": {\n" +
+                       "      \"contains\": [\n" +
+                       "        \"field\",\n" +
+                       "        \"term\"\n" +
+                       "      ]\n" +
+                       "    },\n" +
+                       "    \"grouping\":[\n" +
+                       "      {\n" +
+                       "        \"all\": {\n" +
+                       "          \"output\": \"count()\"\n" +
+                       "        }\n" +
+                       "      }\n" +
+                       "    ]\n" +
+                       "  }\n" +
+                       "}\n";
+        String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, query, JSON_CONTENT_TYPE).readAll();
+
+        String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where field contains \\\"term\\\" | all(output(count()));\"}}]}}";
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testJsonWithWhereAndGroupingSeparate() {
+        String query = "{\n" +
+                       "  \"select.where\": {\n" +
+                       "    \"contains\": [\n" +
+                       "      \"field\",\n" +
+                       "      \"term\"\n" +
+                       "    ]\n" +
+                       "  },\n" +
+                       "  \"select.grouping\":[\n" +
+                       "    {\n" +
+                       "      \"all\": {\n" +
+                       "        \"output\": \"count()\"\n" +
+                       "      }\n" +
+                       "    }\n" +
+                       "  ]\n" +
+                       "}\n";
+        String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, query, JSON_CONTENT_TYPE).readAll();
+
+        String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where field contains \\\"term\\\" | all(output(count()));\"}}]}}";
+        assertEquals(expected, result);
     }
 
     @Test

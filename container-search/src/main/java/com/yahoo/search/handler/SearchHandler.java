@@ -517,47 +517,36 @@ public class SearchHandler extends LoggingRequestHandler {
         return com.yahoo.text.Lowercase.toLowerCase(header.trim());
     }
 
+    /** Add properties POSTed as a JSON payload, if any, to the request map */
     private Map<String, String> requestMapFromRequest(HttpRequest request) {
-
-        if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST
-            && JSON_CONTENT_TYPE.equals(getMediaType(request)))
-        {
-            Inspector inspector;
-            try {
-                byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
-                inspector = SlimeUtils.jsonToSlime(byteArray).get();
-                if (inspector.field("error_message").valid()){
-                    throw new QueryException("Illegal query: " + inspector.field("error_message").asString() + ", at: " +
-                                             new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
-                }
-
-            } catch (IOException e) {
-                throw new RuntimeException("Problem with reading from input-stream", e);
-            }
-
-            // Create request-mapping
-            Map<String, String> requestMap = new HashMap<>();
-
-            createRequestMapping(inspector, requestMap, "");
-
-            requestMap.putAll(request.propertyMap());
-
-            // Throws QueryException if query contains both yql- and select-parameter
-            if (requestMap.containsKey("yql") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) ) {
-                throw new QueryException("Illegal query: Query contains both yql- and select-parameter");
-            }
-
-            // Throws QueryException if query contains both query- and select-parameter
-            if (requestMap.containsKey("query") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) ) {
-                throw new QueryException("Illegal query: Query contains both query- and select-parameter");
-            }
-
-            return requestMap;
-
-        } else {
+        if (request.getMethod() != com.yahoo.jdisc.http.HttpRequest.Method.POST
+            ||  ! JSON_CONTENT_TYPE.equals(getMediaType(request)))
             return request.propertyMap();
 
+        Inspector inspector;
+        try {
+            byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
+            inspector = SlimeUtils.jsonToSlime(byteArray).get();
+            if (inspector.field("error_message").valid()) {
+                throw new QueryException("Illegal query: " + inspector.field("error_message").asString() + " at: '" +
+                                         new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Problem reading POSTed data", e);
         }
+
+        // Add fields from JSON to the request map
+        Map<String, String> requestMap = new HashMap<>();
+        createRequestMapping(inspector, requestMap, "");
+        requestMap.putAll(request.propertyMap());
+
+        if (requestMap.containsKey("yql") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) )
+            throw new QueryException("Illegal query: Query contains both yql and select parameter");
+        if (requestMap.containsKey("query") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) )
+            throw new QueryException("Illegal query: Query contains both query and select parameter");
+
+        return requestMap;
     }
 
     public void createRequestMapping(Inspector inspector, Map<String, String> map, String parent) {
@@ -577,14 +566,14 @@ public class SearchHandler extends LoggingRequestHandler {
                     map.put(qualifiedKey , value.asString());
                     break;
                 case ARRAY:
-                    map.put(qualifiedKey, value.asString());
+                    map.put(qualifiedKey, value.toString()); // XXX: Causes parsing the JSON twice (Query.setPropertiesFromRequestMap)
                     break;
                 case OBJECT:
                     if (qualifiedKey.equals("select.where") || qualifiedKey.equals("select.grouping")) {
-                        map.put(qualifiedKey, value.toString());
+                        map.put(qualifiedKey, value.toString());  // XXX: Causes parsing the JSON twice (Query.setPropertiesFromRequestMap)
                         break;
                     }
-                    createRequestMapping(value, map, qualifiedKey+".");
+                    createRequestMapping(value, map, qualifiedKey + ".");
                     break;
             }
 

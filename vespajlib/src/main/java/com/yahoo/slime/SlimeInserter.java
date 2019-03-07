@@ -4,8 +4,9 @@ package com.yahoo.slime;
 /**
  * Helper class for inserting values into a Slime object.
  * For justification read Inserter documentation.
- **/
+ */
 public final class SlimeInserter implements Inserter {
+
     private Slime target;
 
     public SlimeInserter(Slime target) {
@@ -26,4 +27,5 @@ public final class SlimeInserter implements Inserter {
     public final Cursor insertDATA(byte[] value)   { return target.setData(value); }
     public final Cursor insertARRAY()              { return target.setArray(); }
     public final Cursor insertOBJECT()             { return target.setObject(); }
+
 }

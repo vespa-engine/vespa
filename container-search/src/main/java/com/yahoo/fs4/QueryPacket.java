@@ -237,7 +237,7 @@ public class QueryPacket extends Packet {
          * such a way the comparing SORTDATA for two different hits
          * will reproduce the order in which the data were returned when
          * using sortspec.  For now we simply drop these. If they
-         * become necessar, QueryResultPacket must be
+         * become necessary, QueryResultPacket must be
          * updated to be able to read the sort data.
          */
         flags |= QFLAG_DROP_SORTDATA;

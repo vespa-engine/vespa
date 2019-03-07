@@ -150,15 +150,14 @@ public class SelectParser implements Parser {
 
     private QueryTree buildTree() {
         Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getWhereString().getBytes()).get();
-        if (inspector.field("error_message").valid()){
-            throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
+        if (inspector.field("error_message").valid()) {
+            throw new QueryException("Illegal query: " + inspector.field("error_message").asString() +
+                                     " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
         }
 
         Item root = walkJson(inspector);
         connectItems();
-        QueryTree newTree = new QueryTree(root);
-
-        return newTree;
+        return new QueryTree(root);
     }
 
     private Item walkJson(Inspector inspector){
@@ -213,7 +212,8 @@ public class SelectParser implements Parser {
         List<String> operations = new ArrayList<>();
         Inspector inspector = SlimeUtils.jsonToSlime(grouping.getBytes()).get();
         if (inspector.field("error_message").valid()){
-            throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
+            throw new QueryException("Illegal query: "+inspector.field("error_message").asString() +
+                                     " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
         }
 
         inspector.traverse( (ArrayTraverser) (key, value) -> {
@@ -786,7 +786,7 @@ public class SelectParser implements Parser {
         String possibleLeafFunctionName = (possibleLeafFunction.size() > 1) ? getInspectorKey(possibleLeafFunction.get(1)) : "";
         if (FUNCTION_CALLS.contains(key)) {
             return instantiateCompositeLeaf(field, key, value);
-        } else if(!possibleLeafFunctionName.equals("")){
+        } else if ( ! possibleLeafFunctionName.equals("")){
            return instantiateCompositeLeaf(field, possibleLeafFunctionName, valueListFromInspector(value).get(1).field(possibleLeafFunctionName));
         } else {
             return instantiateWordItem(field, key, value);
@@ -815,7 +815,11 @@ public class SelectParser implements Parser {
 
     @NonNull
     private Item instantiateWordItem(String field, String key, Inspector value) {
-        String wordData = getChildrenMap(value).get(1).asString();
+        var children = getChildrenMap(value);
+        if (children.size() < 2)
+            throw new IllegalArgumentException("Expected at least 2 children of '" + key + "', but got " + children.size());
+
+        String wordData = children.get(1).asString();
         return instantiateWordItem(field, wordData, key, value, false, decideParsingLanguage(value, wordData));
     }
 

@@ -1,6 +1,7 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 # Contributing to Vespa
 Contributions to [Vespa](http://github.com/vespa-engine/vespa),
+[Vespa system tests](http://github.com/vespa-engine/system-test),
 [Vespa samples](https://github.com/vespa-engine/sample-apps)
 and the [Vespa documentation](http://github.com/vespa-engine/documentation) are welcome.
 This documents tells you what you need to know to contribute.
