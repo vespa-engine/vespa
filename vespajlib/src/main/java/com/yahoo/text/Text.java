@@ -109,6 +109,33 @@ public final class Text {
         return OptionalInt.empty();
     }
 
+    /** Returns whether the given code point is displayable. */
+    public static boolean isDisplayable(int codePoint) {
+        switch (Character.getType(codePoint)) {
+            case Character.CONNECTOR_PUNCTUATION :
+            case Character.DASH_PUNCTUATION :
+            case Character.START_PUNCTUATION :
+            case Character.END_PUNCTUATION :
+            case Character.INITIAL_QUOTE_PUNCTUATION :
+            case Character.FINAL_QUOTE_PUNCTUATION:
+            case Character.OTHER_PUNCTUATION :
+            case Character.LETTER_NUMBER :
+            case Character.OTHER_LETTER :
+            case Character.LOWERCASE_LETTER :
+            case Character.TITLECASE_LETTER :
+            case Character.MODIFIER_LETTER :
+            case Character.UPPERCASE_LETTER :
+            case Character.DECIMAL_DIGIT_NUMBER :
+            case Character.OTHER_NUMBER :
+            case Character.CURRENCY_SYMBOL :
+            case Character.OTHER_SYMBOL :
+            case Character.MATH_SYMBOL :
+                return true;
+            default :
+                return false;
+        }
+    }
+
     private static StringBuilder lazy(StringBuilder sb, String s, int i) {
         if (sb == null) {
             sb = new StringBuilder(s.substring(0, i));

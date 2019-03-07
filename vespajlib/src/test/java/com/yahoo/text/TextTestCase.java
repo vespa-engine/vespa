@@ -7,6 +7,7 @@ import java.util.OptionalInt;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class TextTestCase {
 
@@ -45,6 +46,19 @@ public class TextTestCase {
     public void testThatHighSurrogateRequireLowSurrogate() {
         assertEquals(OptionalInt.of(0xD800), Text.validateTextString(new StringBuilder().appendCodePoint(0xD800).toString()));
         assertEquals(OptionalInt.of(0xD800), Text.validateTextString(new StringBuilder().appendCodePoint(0xD800).append(0x0000).toString()));
+    }
+
+    @Test
+    public void testIsDisplayable() {
+        assertTrue(Text.isDisplayable('A'));
+        assertTrue(Text.isDisplayable('a'));
+        assertTrue(Text.isDisplayable('5'));
+        assertTrue(Text.isDisplayable(','));
+        assertTrue(Text.isDisplayable('\"'));
+        assertTrue(Text.isDisplayable('}'));
+        assertTrue(Text.isDisplayable('-'));
+        assertFalse(Text.isDisplayable(' '));
+        assertFalse(Text.isDisplayable(0));
     }
 
 }

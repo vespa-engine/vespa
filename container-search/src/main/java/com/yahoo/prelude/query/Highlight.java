@@ -8,7 +8,7 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
 /**
  * Class encapsulating information on extra highlight-terms for a query
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Lidal</a>
+ * @author Mathias Lidal
  */
 public class Highlight implements Cloneable {
 

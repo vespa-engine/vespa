@@ -1,9 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8;
+import org.w3c.dom.CharacterData;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A port of the C++ json decoder intended to be fast.
@@ -56,7 +59,7 @@ public class JsonDecoder {
             case '-': case '0': case '1': case '2': case '3': case '4': case '5':
             case '6': case '7': case '8': case '9': decodeNumber(inserter); return;
         }
-        in.fail("invalid initial character for value");
+        in.fail("Expected start of value but got " + characterToReadableString(c));
     }
 
     @SuppressWarnings("fallthrough")
@@ -86,14 +89,13 @@ public class JsonDecoder {
         }
     }
 
-    private void expect(byte [] expected) {
-        int i;
-        for (i = 0; i < expected.length && skip(expected[i]); i++)
-            ;
-        if (i != expected.length) {
-            in.fail("unexpected character");
+    private void expect(byte[] expected) {
+        for (int i = 0; i < expected.length; i++) {
+            if ( ! skip(expected[i])) {
+                in.fail("Unexpected " + characterToReadableString(c));
+                return;
+            }
         }
-
     }
 
     private void decodeArray(Inserter inserter) {
@@ -170,7 +172,7 @@ public class JsonDecoder {
                 case 't': buf.write((byte) '\t'); break;
                 case 'u': writeUtf8(dequoteUtf16(), buf, 0xffffff80); continue;
                 default:
-                    in.fail("invalid quoted char(" + c + ")");
+                    in.fail("Invalid quoted char(" + c + ")");
                     break;
                 }
                 next();
@@ -185,7 +187,7 @@ public class JsonDecoder {
                 }
                 break;
             case '\0':
-                in.fail("unterminated string");
+                in.fail("Unterminated string");
                 return Utf8.toString(buf.toByteArray());
             default:
                 buf.write(c);
@@ -216,10 +218,10 @@ public class JsonDecoder {
                 if (low >= 0xdc00 && low < 0xe000) {
                     codepoint = 0x10000 + ((codepoint - 0xd800) << 10) + (low - 0xdc00);
                 } else {
-                    in.fail("missing low surrogate");
+                    in.fail("Missing low surrogate");
                 }
             } else if (codepoint < 0xe000) { // low
-                in.fail("unexpected low surrogate");
+                in.fail("Unexpected low surrogate");
             }
         }
         return codepoint;
@@ -246,7 +248,7 @@ public class JsonDecoder {
             case 'e': case 'E': ret = (ret << 4) | 0xe; break;
             case 'f': case 'F': ret = (ret << 4) | 0xf; break;
             default:
-                in.fail("invalid hex character");
+                in.fail("Invalid hex character");
                 return 0;
             }
             next();
@@ -255,7 +257,7 @@ public class JsonDecoder {
     }
 
     private void next() {
-        if (!in.eof()) {
+        if ( ! in.eof()) {
             c = in.getByte();
         } else {
             c = 0;
@@ -279,6 +281,15 @@ public class JsonDecoder {
             default: return;
             }
         }
+    }
+
+    private String characterToReadableString(int codePoint) {
+        if (codePoint == 0)
+            return "end of data";
+        else if (Text.isDisplayable(codePoint))
+            return "character '" + String.valueOf(Character.toChars(c)) + "'";
+        else
+            return "character code " + c;
     }
 
 }
