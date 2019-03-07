@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_attribute_aspect_delayer_test_app TEST
     DEPENDS
     searchcore_attribute
     searchcore_pcommon
+    gtest
 )
 vespa_add_test(NAME searchcore_attribute_aspect_delayer_test_app COMMAND searchcore_attribute_aspect_delayer_test_app)
