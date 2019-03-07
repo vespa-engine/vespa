@@ -96,7 +96,7 @@ TEST("require that wrong tensor type for special case assign throws exception")
     TensorFieldValue tensorFieldValue(xSparseTensorDataType);
     EXPECT_EXCEPTION(tensorFieldValue = makeSimpleTensor(),
                      document::WrongTensorTypeException,
-                     "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but tensor type is 'tensor(x{},y{})'");
+                     "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but other tensor type is 'tensor(x{},y{})'");
 }
 
 TEST("require that wrong tensor type for copy assign throws exception")
@@ -106,7 +106,7 @@ TEST("require that wrong tensor type for copy assign throws exception")
     simpleTensorFieldValue = makeSimpleTensor();
     EXPECT_EXCEPTION(tensorFieldValue = simpleTensorFieldValue,
                      document::WrongTensorTypeException,
-                     "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but tensor type is 'tensor(x{},y{})'");
+                     "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but other tensor type is 'tensor(x{},y{})'");
 }
 
 TEST("require that wrong tensor type for assignDeserialized throws exception")
@@ -114,7 +114,7 @@ TEST("require that wrong tensor type for assignDeserialized throws exception")
     TensorFieldValue tensorFieldValue(xSparseTensorDataType);
     EXPECT_EXCEPTION(tensorFieldValue.assignDeserialized(makeSimpleTensor()),
                      document::WrongTensorTypeException,
-                     "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but tensor type is 'tensor(x{},y{})'");
+                     "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but other tensor type is 'tensor(x{},y{})'");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

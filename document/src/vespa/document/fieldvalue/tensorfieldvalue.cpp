@@ -24,7 +24,7 @@ TensorDataType emptyTensorDataType;
 
 vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
 {
-    return vespalib::make_string("Field tensor type is '%s' but tensor type is '%s'",
+    return vespalib::make_string("Field tensor type is '%s' but other tensor type is '%s'",
                                  fieldTensorType.to_spec().c_str(),
                                  tensorType.to_spec().c_str());
 }

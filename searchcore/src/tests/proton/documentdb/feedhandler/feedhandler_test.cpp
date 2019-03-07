@@ -738,7 +738,7 @@ checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
         TEST_DO(f.feedView.checkCounts(0, 0u, 0, 0u));
         EXPECT_EQUAL(Result::TRANSIENT_ERROR, token.getResult()->getErrorCode());
         if (fieldName == "tensor2") {
-            EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Wrong tensor type: Field tensor type is 'tensor(x{},y{})' but tensor type is 'tensor(x{})''",
+            EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Wrong tensor type: Field tensor type is 'tensor(x{},y{})' but other tensor type is 'tensor(x{})''",
                          token.getResult()->getErrorMessage());
         } else {
             EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Field not found'",
