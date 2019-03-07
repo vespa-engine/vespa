@@ -310,6 +310,9 @@ public class Execution {
          * Adds a trace message to this trace, if this trace has at most the given trace level
          */
         public void trace(String message, int traceLevel) {
+            trace((Object)message, traceLevel);
+        }
+        public void trace(Object message, int traceLevel) {
             if (this.traceLevel >= traceLevel) {
                 traceNode.add(new TraceNode(message, timestamp(traceLevel, forceTimestamps)));
             }

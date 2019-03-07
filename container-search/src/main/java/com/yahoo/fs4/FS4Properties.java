@@ -10,11 +10,12 @@ public class FS4Properties {
 
     static public class Entry {
         public final String key;
-        public final String val;
+        private final byte [] val;
         public Entry(byte[] k, byte[] v) {
             key = Utf8.toString(k);
-            val = Utf8.toString(v);
+            val = v;
         }
+        public final byte [] getValue() { return val; }
     };
 
     private Entry[] entries;

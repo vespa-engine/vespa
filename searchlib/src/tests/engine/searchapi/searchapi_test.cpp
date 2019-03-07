@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("searchapi_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/engine/searchapi.h>
 #include <vespa/searchlib/engine/packetconverter.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/log/log.h>
+LOG_SETUP("searchapi_test");
 
 using namespace search::engine;
 using namespace search::fs4transport;
@@ -28,18 +30,8 @@ template <typename T> void copyPacket(T &src, T &dst) {
 
 } // namespace <unnamed>
 
-class Test : public vespalib::TestApp
-{
-public:
-    void propertyNames();
-    void convertToRequest();
-    void convertFromReply();
-    int Main() override;
-};
 
-void
-Test::propertyNames()
-{
+TEST("propertyNames") {
     EXPECT_EQUAL(search::MapNames::RANK, "rank");
     EXPECT_EQUAL(search::MapNames::FEATURE, "feature");
     EXPECT_EQUAL(search::MapNames::HIGHLIGHTTERMS, "highlightterms");
@@ -47,9 +39,7 @@ Test::propertyNames()
     EXPECT_EQUAL(search::MapNames::CACHES, "caches");
 }
 
-void
-Test::convertToRequest()
-{
+TEST("convertToReques") {
     FS4Packet_QUERYX src;
     src._offset = 2u;
     src._maxhits = 3u;
@@ -116,9 +106,7 @@ Test::convertToRequest()
     }
 }
 
-void
-Test::convertFromReply()
-{
+TEST("convertFromReply") {
     SearchReply src;
     src.offset = 1u;
     src.totalHitCount = 2u;
@@ -240,14 +228,46 @@ Test::convertFromReply()
     }
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("searchapi_test");
-    propertyNames();
-    convertToRequest();
-    convertFromReply();
-    TEST_DONE();
+void verify(vespalib::stringref expected, const vespalib::Slime & slime) {
+    vespalib::Slime expectedSlime;
+    vespalib::slime::JsonFormat::decode(expected, expectedSlime);
+    EXPECT_EQUAL(expectedSlime, slime);
 }
 
-TEST_APPHOOK(Test);
+TEST("verify trace") {
+    Trace t(7);
+    verify("{"
+           "    traces: ["
+           "    ],"
+           "    creation_time: 7"
+           "}",
+           t.getSlime());
+
+    t.createCursor("tag_a");
+    verify("{"
+           "    traces: ["
+           "        {"
+           "            tag: 'tag_a'"
+           "        }"
+           "    ],"
+           "    creation_time: 7"
+           "}",
+           t.getSlime());
+    Trace::Cursor & tagB = t.createCursor("tag_b");
+    tagB.setLong("long", 19);
+    verify("{"
+           "    traces: ["
+           "        {"
+           "            tag: 'tag_a'"
+           "        },"
+           "        {"
+           "            tag: 'tag_b',"
+           "            long: 19"
+           "        }"
+           "    ],"
+           "    creation_time: 7"
+           "}",
+           t.getSlime());
+}
+
+TEST_MAIN() { TEST_RUN_ALL(); }

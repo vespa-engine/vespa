@@ -5,6 +5,7 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -178,6 +179,7 @@ public:
     void testSearchCreation();
     void testBlueprintMakeNew();
     void requireThatAsStringWorks();
+    void requireThatAsSlimeWorks();
     void requireThatVisitMembersWorks();
     void requireThatDocIdLimitInjectionWorks();
     int Main() override;
@@ -698,6 +700,58 @@ getExpectedBlueprint()
            "}\n";
 }
 
+vespalib::string
+getExpectedSlimeBlueprint() {
+    return "{"
+           "    '[type]': '(anonymous namespace)::MyOr',"
+           "     isTermLike: true,"
+           "     fields: {"
+           "        '[type]': 'FieldList',"
+           "        '[0]': {"
+           "            '[type]': 'Field',"
+           "            fieldId: 5,"
+           "            handle: 7,"
+           "            isFilter: false"
+           "        }"
+           "    },"
+           "    estimate: {"
+           "        '[type]': 'HitEstimate',"
+           "        empty: false,"
+           "        estHits: 9,"
+           "        tree_size: 2,"
+           "        allow_termwise_eval: 0"
+           "    },"
+           "    sourceId: 4294967295,"
+           "    docid_limit: 0,"
+           "    children: {"
+           "        '[type]': 'std::vector',"
+           "        '[0]': {"
+           "            isTermLike: true,"
+           "            fields: {"
+           "                '[type]': 'FieldList',"
+           "                '[0]': {"
+           "                    '[type]': 'Field',"
+           "                    fieldId: 5,"
+           "                    handle: 7,"
+           "                    isFilter: false"
+           "                }"
+           "            },"
+           "            '[type]': '(anonymous namespace)::MyTerm',"
+           "            estimate: {"
+           "                '[type]': 'HitEstimate',"
+           "                empty: false,"
+           "                estHits: 9,"
+           "                tree_size: 1,"
+           "                allow_termwise_eval: 1"
+           "            },"
+           "            sourceId: 4294967295,"
+           "            docid_limit: 0"
+           "        }"
+           "    }"
+           "}";
+}
+
+
 struct BlueprintFixture
 {
     MyOr _blueprint;
@@ -711,6 +765,18 @@ Test::requireThatAsStringWorks()
 {
     BlueprintFixture f;
     EXPECT_EQUAL(getExpectedBlueprint(), f._blueprint.asString());
+}
+
+void
+Test::requireThatAsSlimeWorks()
+{
+    BlueprintFixture f;
+    vespalib::Slime slime;
+    f._blueprint.asSlime(vespalib::slime::SlimeInserter(slime));
+    auto s = slime.toString();
+    vespalib::Slime expectedSlime;
+    vespalib::slime::JsonFormat::decode(getExpectedSlimeBlueprint(), expectedSlime);
+    EXPECT_EQUAL(expectedSlime, slime);
 }
 
 void
@@ -749,6 +815,7 @@ Test::Main()
     testSearchCreation();
     testBlueprintMakeNew();
     requireThatAsStringWorks();
+    requireThatAsSlimeWorks();
     requireThatVisitMembersWorks();
     requireThatDocIdLimitInjectionWorks();
     TEST_DONE();

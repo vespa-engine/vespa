@@ -1,8 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "packetconverter.h"
+#include <vespa/searchlib/fef/indexproperties.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".engine.packetconverter");
+
+using search::fef::Property;
+using search::fef::Properties;
 
 namespace {
 
@@ -14,8 +19,8 @@ struct FS4PropertiesBuilder : public search::fef::IPropertiesVisitor {
     uint32_t idx;
     search::fs4transport::FS4Properties &props;
     FS4PropertiesBuilder(search::fs4transport::FS4Properties &p) : idx(0), props(p) {}
-    void visitProperty(const search::fef::Property::Value &key,
-                               const search::fef::Property &values) override
+    void visitProperty(const Property::Value &key,
+                       const Property &values) override
     {
         for (uint32_t i = 0; i < values.size(); ++i) {
             props.setKey(idx, key.data(), key.size());
@@ -39,7 +44,7 @@ PacketConverter::fillPacketProperties(const PropertiesMap &source, PropsVector& 
     PropertiesMap::ITR end = source.end();
     for (uint32_t i = 0; itr != end; ++itr, ++i) {
         const vespalib::string &name = itr->first;
-        const search::fef::Properties &values = itr->second;
+        const Properties &values = itr->second;
         target[i].setName(name.c_str(), name.size());
         target[i].allocEntries(values.numValues());
         FS4PropertiesBuilder builder(target[i]);
@@ -58,9 +63,8 @@ PacketConverter::toSearchRequest(const QUERYX &packet, SearchRequest &request)
     request.queryFlags = packet.getQueryFlags();
     request.ranking    = packet._ranking;
 
-    for (uint32_t i = 0; i < packet._propsVector.size(); ++i) {
-        const FS4Properties &src = packet._propsVector[i];
-        search::fef::Properties &dst = request.propertiesMap.lookupCreate(src.getName());
+    for (const FS4Properties &src : packet._propsVector) {
+        Properties &dst = request.propertiesMap.lookupCreate(src.getName());
         for (uint32_t e = 0; e < src.size(); ++e) {
             dst.add(vespalib::stringref(src.getKey(e), src.getKeyLen(e)),
                     vespalib::stringref(src.getValue(e), src.getValueLen(e)));
@@ -72,6 +76,7 @@ PacketConverter::toSearchRequest(const QUERYX &packet, SearchRequest &request)
     request.location        = packet._location;
     request.stackItems      = packet._numStackItems;
     request.stackDump.assign( packet._stackDump.begin(), packet._stackDump.end());
+    request.setTraceLevel(search::fef::indexproperties::trace::Level::lookup(request.propertiesMap.modelOverrides()));
 }
 
 void
@@ -100,7 +105,7 @@ PacketConverter::fromSearchReply(const SearchReply &reply, QUERYRESULTX &packet)
     packet._totNumDocs = reply.totalHitCount;
     packet._maxRank    = reply.maxRank;
     packet.setDistributionKey(reply.getDistributionKey());
-    if (reply.sortIndex.size() > 0) {
+    if ( ! reply.sortIndex.empty()) {
         packet._features |= QRF_SORTDATA;
         uint32_t idxCnt = reply.sortIndex.size();
         LOG_ASSERT(reply.sortIndex.size() == reply.hits.size()+1);
@@ -112,7 +117,7 @@ PacketConverter::fromSearchReply(const SearchReply &reply, QUERYRESULTX &packet)
         }
         memcpy(packet._sortData, &(reply.sortData[0]), reply.sortData.size());
     }
-    if (reply.groupResult.size() > 0) {
+    if ( ! reply.groupResult.empty()) {
         packet._features |= QRF_GROUPDATA;
         packet.AllocateGroupData(reply.groupResult.size());
         memcpy(packet._groupData, &(reply.groupResult[0]), reply.groupResult.size());
@@ -123,8 +128,10 @@ PacketConverter::fromSearchReply(const SearchReply &reply, QUERYRESULTX &packet)
     packet._coverageDegradeReason = reply.coverage.getDegradeReason();
     packet.setNodesQueried(reply.coverage.getNodesQueried());
     packet.setNodesReplied(reply.coverage.getNodesReplied());
-    if (reply.request && (reply.request->queryFlags & QFLAG_COVERAGE_NODES)) {
-        packet._features |= QRF_COVERAGE_NODES;
+    if (reply.request) {
+        if (reply.request->queryFlags & QFLAG_COVERAGE_NODES) {
+            packet._features |= QRF_COVERAGE_NODES;
+        }
     }
     if (reply.useWideHits) {
         packet._features |= QRF_MLD;
@@ -150,9 +157,8 @@ PacketConverter::toDocsumRequest(const GETDOCSUMSX &packet, DocsumRequest &reque
     request.ranking           = packet._ranking;
     request.queryFlags        = packet._qflags;
     request.resultClassName   = packet._resultClassName;
-    for (uint32_t i = 0; i < packet._propsVector.size(); ++i) {
-        const FS4Properties &src = packet._propsVector[i];
-        search::fef::Properties &dst = request.propertiesMap.lookupCreate(src.getName());
+    for (const FS4Properties &src : packet._propsVector) {
+        Properties &dst = request.propertiesMap.lookupCreate(src.getName());
         for (uint32_t e = 0; e < src.size(); ++e) {
             dst.add(vespalib::stringref(src.getKey(e), src.getKeyLen(e)),
                     vespalib::stringref(src.getValue(e), src.getValueLen(e)));
@@ -169,8 +175,7 @@ PacketConverter::toDocsumRequest(const GETDOCSUMSX &packet, DocsumRequest &reque
         request.hits[i].gid      = packet._docid[i]._gid;
         request.hits[i].path     = packet._docid[i]._partid;
     }
-    search::fef::Property sessionId =
-        request.propertiesMap.rankProperties().lookup("sessionId");
+    Property sessionId = request.propertiesMap.rankProperties().lookup("sessionId");
     if (sessionId.found()) {
         vespalib::string id = sessionId.get();
         request.sessionId.assign(id.begin(), id.end());
@@ -198,7 +203,7 @@ PacketConverter::toDocsumReplyElement(const DOCSUM &packet, DocsumReply::Docsum 
 void
 PacketConverter::fromDocsumReplyElement(const DocsumReply::Docsum &docsum, DOCSUM &packet)
 {
-    if (docsum.data.get() != 0) {
+    if (docsum.data.get() != nullptr) {
         packet.SetBuf(docsum.data.c_str(), docsum.data.size());
     }
     packet.setGid(docsum.gid);

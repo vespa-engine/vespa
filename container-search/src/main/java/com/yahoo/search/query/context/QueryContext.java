@@ -31,9 +31,12 @@ public class QueryContext implements Cloneable {
 
     /** Adds a context message to this context */
     public void trace(String message, int traceLevel) {
-        owner.getModel().getExecution().trace().trace(message,traceLevel);
+        trace((Object)message, traceLevel);
     }
 
+    public void trace(Object message, int traceLevel) {
+        owner.getModel().getExecution().trace().trace(message,traceLevel);
+    }
     /**
      * Adds a key-value which will be logged to the access log for this query (by doing toString() on the value
      * Multiple values may be set to the same key. A value cannot be removed once set.

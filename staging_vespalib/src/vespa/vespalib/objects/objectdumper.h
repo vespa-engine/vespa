@@ -60,15 +60,14 @@ public:
      **/
     vespalib::string toString() const { return _str; }
 
-    virtual void openStruct(const vespalib::string &name, const vespalib::string &type) override;
-    virtual void closeStruct() override;
-    virtual void visitBool(const vespalib::string &name, bool value) override;
-    virtual void visitInt(const vespalib::string &name, int64_t value) override;
-    virtual void visitFloat(const vespalib::string &name, double value) override;
-    virtual void visitString(const vespalib::string &name, const vespalib::string &value) override;
-    virtual void visitNull(const vespalib::string &name) override;
-    virtual void visitNotImplemented() override;
+    void openStruct(const vespalib::string &name, const vespalib::string &type) override;
+    void closeStruct() override;
+    void visitBool(const vespalib::string &name, bool value) override;
+    void visitInt(const vespalib::string &name, int64_t value) override;
+    void visitFloat(const vespalib::string &name, double value) override;
+    void visitString(const vespalib::string &name, const vespalib::string &value) override;
+    void visitNull(const vespalib::string &name) override;
+    void visitNotImplemented() override;
 };
 
 } // namespace vespalib
-

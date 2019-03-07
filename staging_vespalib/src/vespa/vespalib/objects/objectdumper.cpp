@@ -41,8 +41,7 @@ ObjectDumper::ObjectDumper(int indent)
 {
 }
 
-ObjectDumper::~ObjectDumper() {
-}
+ObjectDumper::~ObjectDumper() = default;
 
 //-----------------------------------------------------------------------------
 

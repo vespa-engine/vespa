@@ -8,12 +8,14 @@ namespace search::engine {
 Request::Request(const fastos::TimeStamp &start_time)
     : _startTime(start_time),
       _timeOfDoom(fastos::TimeStamp(fastos::TimeStamp::FUTURE)),
-      ranking(),
+      _traceLevel(0),
       queryFlags(0),
+      ranking(),
       location(),
       propertiesMap(),
       stackItems(0),
-      stackDump()
+      stackDump(),
+      _trace(start_time)
 {
 }
 

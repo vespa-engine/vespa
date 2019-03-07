@@ -13,6 +13,7 @@ vespa_add_library(searchlib_engine OBJECT
     searchreply.cpp
     searchrequest.cpp
     source_description.cpp
+    trace.cpp
     transport_metrics.cpp
     transportserver.cpp
     DEPENDS

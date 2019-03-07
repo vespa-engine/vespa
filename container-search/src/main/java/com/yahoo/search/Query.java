@@ -678,6 +678,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         trace(message, false, traceLevel);
     }
 
+    public void trace(Object message, int traceLevel) {
+        if ( ! isTraceable(traceLevel)) return;
+        getContext(true).trace(message, 0);
+    }
+
     /**
      * Adds a trace message to this query
      * if the trace level of the query is sufficiently high.
@@ -1027,13 +1032,17 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
         // TODO: Push down
         mapCount += ranking.getProperties().encode(buffer, encodeQueryData);
-        if (encodeQueryData) mapCount += ranking.getFeatures().encode(buffer);
+        if (encodeQueryData) {
+            mapCount += ranking.getFeatures().encode(buffer);
 
-        // TODO: Push down
-        if (encodeQueryData && presentation.getHighlight() != null) mapCount += MapEncoder.encodeStringMultiMap(Highlight.HIGHLIGHTTERMS, presentation.getHighlight().getHighlightTerms(), buffer);
+            // TODO: Push down
+            if (presentation.getHighlight() != null) {
+                mapCount += MapEncoder.encodeStringMultiMap(Highlight.HIGHLIGHTTERMS, presentation.getHighlight().getHighlightTerms(), buffer);
+            }
 
-        // TODO: Push down
-        if (encodeQueryData) mapCount += MapEncoder.encodeSingleValue("model", "searchpath", model.getSearchPath(), buffer);
+            // TODO: Push down
+            mapCount += MapEncoder.encodeMap("model", createModelMap(), buffer);
+        }
         mapCount += MapEncoder.encodeSingleValue(DocumentDatabase.MATCH_PROPERTY, DocumentDatabase.SEARCH_DOC_TYPE_KEY, model.getDocumentDb(), buffer);
 
         mapCount += MapEncoder.encodeMap("caches", createCacheSettingMap(), buffer);
@@ -1055,6 +1064,13 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         if (ranking.getQueryCache())
             return Collections.singletonMap("query", true);
         return Collections.<String,Boolean>emptyMap();
+    }
+
+    private Map<String, String> createModelMap() {
+        Map<String, String> m = new HashMap<>();
+        if (model.getSearchPath() != null) m.put("searchpath", model.getSearchPath());
+        if (getTraceLevel() > 0) m.put("tracelevel", String.valueOf(getTraceLevel()));
+        return m;
     }
 
     /**

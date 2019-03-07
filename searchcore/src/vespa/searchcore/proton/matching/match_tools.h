@@ -132,6 +132,7 @@ public:
     std::unique_ptr<AttributeOperationTask> createOnSummaryTask() const;
 
     const RequestContext & requestContext() const { return _requestContext; }
+    const Query & query() const { return _query; }
 };
 
 }

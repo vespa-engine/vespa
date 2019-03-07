@@ -17,20 +17,20 @@ SearchRequest::SearchRequest(const fastos::TimeStamp &start_time)
       sessionId()
 { }
 
-SearchRequest::~SearchRequest() {}
+SearchRequest::~SearchRequest() = default;
 
 void SearchRequest::Source::lazyDecode() const
 {
-    if ((_request.get() == NULL) && (_fs4Packet != NULL)) {
-        _request.reset(new SearchRequest(_start));
+    if (!_request && (_fs4Packet != nullptr)) {
+        _request = std::make_unique<SearchRequest>(_start);
         PacketConverter::toSearchRequest(*_fs4Packet, *_request);
         _fs4Packet->Free();
-        _fs4Packet = NULL;
+        _fs4Packet = nullptr;
     }
 }
 
 SearchRequest::Source::~Source() {
-    if (_fs4Packet != NULL) {
+    if (_fs4Packet != nullptr) {
         _fs4Packet->Free();
     }
 }

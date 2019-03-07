@@ -5,6 +5,7 @@ vespa_add_library(staging_vespalib_vespalib_objects OBJECT
     namedobject.cpp
     objectvisitor.cpp
     objectdumper.cpp
+    object2slime.cpp
     visit.cpp
     objectpredicate.cpp
     objectoperation.cpp

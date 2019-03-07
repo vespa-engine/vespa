@@ -3,6 +3,7 @@
 #pragma once
 
 #include "propertiesmap.h"
+#include "trace.h"
 #include <vespa/fastos/timestamp.h>
 
 namespace search::engine {
@@ -11,6 +12,8 @@ class Request
 {
 public:
     Request(const fastos::TimeStamp &start_time);
+    Request(const Request &) = delete;
+    Request & operator =(const Request &) = delete;
     virtual ~Request();
     void setTimeout(const fastos::TimeStamp & timeout);
     fastos::TimeStamp getStartTime() const { return _startTime; }
@@ -26,17 +29,24 @@ public:
 
     bool should_drop_sort_data() const;
 
+    uint32_t getTraceLevel() const { return _traceLevel; }
+    Request & setTraceLevel(uint32_t traceLevel) { _traceLevel = traceLevel; return *this; }
+
+    Trace & trace() const { return _trace; }
 private:
     const fastos::TimeStamp _startTime;
     fastos::TimeStamp       _timeOfDoom;
+    uint32_t                _traceLevel;
 public:
     /// Everything here should move up to private section and have accessors
-    vespalib::string   ranking;
     uint32_t           queryFlags;
+    vespalib::string   ranking;
     vespalib::string   location;
     PropertiesMap      propertiesMap;
     uint32_t           stackItems;
     std::vector<char>  stackDump;
+private:
+    mutable Trace      _trace;
 };
 
 }

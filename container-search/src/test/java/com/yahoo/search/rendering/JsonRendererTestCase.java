@@ -95,24 +95,24 @@ public class JsonRendererTestCase {
 
     @Test
     public void testDocumentId() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"fields\": {\n"
-                + "                    \"documentid\": \"id:unittest:smoke::whee\"\n"
-                + "                },\n"
-                + "                \"id\": \"id:unittest:smoke::whee\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"fields\": {"
+                + "                    \"documentid\": \"id:unittest:smoke::whee\""
+                + "                },"
+                + "                \"id\": \"id:unittest:smoke::whee\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("docIdTest");
         h.setField("documentid", new DocumentId("id:unittest:smoke::whee"));
@@ -124,34 +124,34 @@ public class JsonRendererTestCase {
 
     @Test
     public void testDataTypes() throws IOException, InterruptedException, ExecutionException, JSONException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"fields\": {\n"
-                + "                    \"double\": 0.00390625,\n"
-                + "                    \"float\": 14.29,\n"
-                + "                    \"integer\": 1,\n"
-                + "                    \"long\": 4398046511104,\n"
-                + "                    \"bool\": true,\n"
-                + "                    \"object\": \"thingie\",\n"
-                + "                    \"string\": \"stuff\",\n"
-                + "                    \"predicate\": \"a in [b]\",\n"
-                + "                    \"tensor1\": { \"cells\": [ { \"address\": {\"x\": \"a\"}, \"value\":2.0 } ] },\n"
-                + "                    \"tensor2\": { \"cells\": [] },\n"
-                + "                    \"tensor3\": { \"cells\": [ { \"address\": {\"x\": \"a\", \"y\": \"0\"}, \"value\":2.0 }, { \"address\": {\"x\": \"a\", \"y\": \"1\"}, \"value\":-1.0 } ] }\n"
-                + "                },\n"
-                + "                \"id\": \"datatypestuff\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"fields\": {"
+                + "                    \"double\": 0.00390625,"
+                + "                    \"float\": 14.29,"
+                + "                    \"integer\": 1,"
+                + "                    \"long\": 4398046511104,"
+                + "                    \"bool\": true,"
+                + "                    \"object\": \"thingie\","
+                + "                    \"string\": \"stuff\","
+                + "                    \"predicate\": \"a in [b]\","
+                + "                    \"tensor1\": { \"cells\": [ { \"address\": {\"x\": \"a\"}, \"value\":2.0 } ] },"
+                + "                    \"tensor2\": { \"cells\": [] },"
+                + "                    \"tensor3\": { \"cells\": [ { \"address\": {\"x\": \"a\", \"y\": \"0\"}, \"value\":2.0 }, { \"address\": {\"x\": \"a\", \"y\": \"1\"}, \"value\":-1.0 } ] }"
+                + "                },"
+                + "                \"id\": \"datatypestuff\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("datatypestuff");
         // the floating point values are chosen to get a deterministic string representation
@@ -176,42 +176,42 @@ public class JsonRendererTestCase {
     @Test
     public void testTracing() throws IOException, InterruptedException, ExecutionException {
         // which clearly shows a trace child is created once too often...
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    },\n"
-                + "    \"trace\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"message\": \"No query profile is used\"\n"
-                + "            },\n"
-                + "            {\n"
-                + "                \"children\": [\n"
-                + "                    {\n"
-                + "                        \"message\": \"something\"\n"
-                + "                    },\n"
-                + "                    {\n"
-                + "                        \"message\": \"something else\"\n"
-                + "                    },\n"
-                + "                    {\n"
-                + "                        \"children\": [\n"
-                + "                            {\n"
-                + "                                \"message\": \"yellow\"\n"
-                + "                            }\n"
-                + "                        ]\n"
-                + "                    },\n"
-                + "                    {\n"
-                + "                        \"message\": \"marker\"\n"
-                + "                    }\n"
-                + "                ]\n"
-                + "            }\n"
-                + "        ]\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    },"
+                + "    \"trace\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"message\": \"No query profile is used\""
+                + "            },"
+                + "            {"
+                + "                \"children\": ["
+                + "                    {"
+                + "                        \"message\": \"something\""
+                + "                    },"
+                + "                    {"
+                + "                        \"message\": \"something else\""
+                + "                    },"
+                + "                    {"
+                + "                        \"children\": ["
+                + "                            {"
+                + "                                \"message\": \"yellow\""
+                + "                            }"
+                + "                        ]"
+                + "                    },"
+                + "                    {"
+                + "                        \"message\": \"marker\""
+                + "                    }"
+                + "                ]"
+                + "            }"
+                + "        ]"
+                + "    }"
+                + "}";
         Query q = new Query("/?query=a&tracelevel=1");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
@@ -229,16 +229,81 @@ public class JsonRendererTestCase {
     }
 
     @Test
+    public void testTracingOfSlime() throws IOException, InterruptedException, ExecutionException {
+        // which clearly shows a trace child is created once too often...
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    },"
+                + "    \"trace\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"message\": \"No query profile is used\""
+                + "            },"
+                + "            {"
+                + "                \"children\": ["
+                + "                    {"
+                + "                        \"message\": \"something\""
+                + "                    },"
+                + "                    {"
+                + "                        \"message\": \"something else\""
+                + "                    },"
+                + "                    {"
+                + "                        \"children\": ["
+                + "                            {"
+                + "                                \"message\": ["
+                + "                                    { \"colour\": \"yellow\"},"
+                + "                                    { \"colour\": \"green\"}"
+                + "                                 ]"
+                + "                            }"
+                + "                        ]"
+                + "                    },"
+                + "                    {"
+                + "                        \"message\": \"marker\""
+                + "                    }"
+                + "                ]"
+                + "            }"
+                + "        ]"
+                + "    }"
+                + "}";
+        Query q = new Query("/?query=a&tracelevel=1");
+        Execution execution = new Execution(Execution.Context.createContextStub());
+        Result r = new Result(q);
+
+        execution.search(q);
+        q.trace("something", 1);
+        q.trace("something else", 1);
+        Execution e2 = new Execution(new Chain<Searcher>(), execution.context());
+        Query subQuery = new Query("/?query=b&tracelevel=1");
+        e2.search(subQuery);
+        Value.ArrayValue access = new Value.ArrayValue();
+        Slime slime = new Slime();
+        slime.setObject().setString("colour","yellow");
+        access.add(new SlimeAdapter(slime.get()));
+        slime = new Slime();
+        slime.setObject().setString("colour","green");
+        access.add(new SlimeAdapter(slime.get()));
+        subQuery.trace(access, 1);
+        q.trace("marker", 1);
+        String summary = render(execution, r);
+        assertEqualJson(expected, summary);
+    }
+
+    @Test
     public void testEmptyTracing() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Query q = new Query("/?query=a&tracelevel=0");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
@@ -259,31 +324,31 @@ public class JsonRendererTestCase {
     @SuppressWarnings("unchecked")
     @Test
     public void testTracingWithEmptySubtree() throws IOException, InterruptedException, ExecutionException {
-        String expected =  "{\n"
-                + "    \"root\": {\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    },\n"
-                + "    \"trace\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"message\": \"No query profile is used\"\n"
-                + "            },\n"
-                + "            {\n"
-                + "                \"message\": \"Resolved properties:\\ntracelevel=10 (value from request)\\nquery=a (value from request)\\n\"\n"
-                + "            },\n"
-                + "            {\n"
-                + "                \"children\": [\n"
-                + "                    {\n"
-                + "                        \"timestamp\": 42\n"
-                + "                    }\n"
-                + "                ]\n"
-                + "            }\n"
-                + "        ]\n"
-                + "    }\n"
+        String expected =  "{"
+                + "    \"root\": {"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    },"
+                + "    \"trace\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"message\": \"No query profile is used\""
+                + "            },"
+                + "            {"
+                + "                \"message\": \"Resolved properties:\\ntracelevel=10 (value from request)\\nquery=a (value from request)\\n\""
+                + "            },"
+                + "            {"
+                + "                \"children\": ["
+                + "                    {"
+                + "                        \"timestamp\": 42"
+                + "                    }"
+                + "                ]"
+                + "            }"
+                + "        ]"
+                + "    }"
                 + "}";
         Query q = new Query("/?query=a&tracelevel=10");
         Execution execution = new Execution(Execution.Context.createContextStub());
@@ -314,14 +379,14 @@ public class JsonRendererTestCase {
     @Test
     public void trace_is_not_included_if_tracelevel_0() throws IOException, ExecutionException, InterruptedException {
         String expected =
-                "{\n" +
-                "  \"root\": {\n" +
-                "    \"id\": \"toplevel\",\n" +
-                "    \"relevance\": 1.0,\n" +
-                "    \"fields\": {\n" +
-                "      \"totalCount\": 0\n" +
-                "    }\n" +
-                "  }\n" +
+                "{" +
+                "  \"root\": {" +
+                "    \"id\": \"toplevel\"," +
+                "    \"relevance\": 1.0," +
+                "    \"fields\": {" +
+                "      \"totalCount\": 0" +
+                "    }" +
+                "  }" +
                 "}";
         Query q = new Query("/?query=a&tracelevel=0");
         Execution execution = new Execution(Execution.Context.createContextStub());
@@ -334,37 +399,37 @@ public class JsonRendererTestCase {
 
     @Test
     public void testTracingOfNodesWithBothChildrenAndData() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    },\n"
-                + "    \"trace\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"message\": \"No query profile is used\"\n"
-                + "            },\n"
-                + "            {\n"
-                + "                \"children\": [\n"
-                + "                    {\n"
-                + "                        \"message\": \"string payload\",\n"
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    },"
+                + "    \"trace\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"message\": \"No query profile is used\""
+                + "            },"
+                + "            {"
+                + "                \"children\": ["
+                + "                    {"
+                + "                        \"message\": \"string payload\","
                 + "                        \"children\": ["
-                + "                            {\n"
+                + "                            {"
                 + "                                \"message\": \"leafnode\""
-                + "                            }\n"
-                + "                        ]\n"
-                + "                    },\n"
-                + "                    {\n"
-                + "                        \"message\": \"something\"\n"
-                + "                    }\n"
-                + "                ]\n"
-                + "            }\n"
-                + "        ]\n"
-                + "    }\n"
-                + "}\n";
+                + "                            }"
+                + "                        ]"
+                + "                    },"
+                + "                    {"
+                + "                        \"message\": \"something\""
+                + "                    }"
+                + "                ]"
+                + "            }"
+                + "        ]"
+                + "    }"
+                + "}";
         Query q = new Query("/?query=a&tracelevel=1");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
@@ -380,32 +445,32 @@ public class JsonRendererTestCase {
 
     @Test
     public void testTracingOfNodesWithBothChildrenAndDataAndEmptySubnode() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    },\n"
-                + "    \"trace\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"message\": \"No query profile is used\"\n"
-                + "            },\n"
-                + "            {\n"
-                + "                \"children\": [\n"
-                + "                    {\n"
-                + "                        \"message\": \"string payload\"\n"
-                + "                    },\n"
-                + "                    {\n"
-                + "                        \"message\": \"something\"\n"
-                + "                    }\n"
-                + "                ]\n"
-                + "            }\n"
-                + "        ]\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    },"
+                + "    \"trace\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"message\": \"No query profile is used\""
+                + "            },"
+                + "            {"
+                + "                \"children\": ["
+                + "                    {"
+                + "                        \"message\": \"string payload\""
+                + "                    },"
+                + "                    {"
+                + "                        \"message\": \"something\""
+                + "                    }"
+                + "                ]"
+                + "            }"
+                + "        ]"
+                + "    }"
+                + "}";
         Query q = new Query("/?query=a&tracelevel=1");
         Execution execution = new Execution(
                 Execution.Context.createContextStub());
@@ -421,38 +486,38 @@ public class JsonRendererTestCase {
 
     @Test
     public void testTracingOfNestedNodesWithDataAndSubnodes() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    },\n"
-                + "    \"trace\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"message\": \"No query profile is used\"\n"
-                + "            },\n"
-                + "            {\n"
-                + "                \"children\": [\n"
-                + "                    {\n"
-                + "                        \"message\": \"string payload\",\n"
-                + "                        \"children\": [\n"
-                + "                            {\n"
-                + "                                \"children\": [\n"
-                + "                                    {\n"
-                + "                                        \"message\": \"in OO languages, nesting is for birds\"\n"
-                + "                                    }\n"
-                + "                                ]\n"
-                + "                            }\n"
-                + "                        ]\n"
-                + "                    }\n"
-                + "                ]\n"
-                + "            }\n"
-                + "        ]\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    },"
+                + "    \"trace\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"message\": \"No query profile is used\""
+                + "            },"
+                + "            {"
+                + "                \"children\": ["
+                + "                    {"
+                + "                        \"message\": \"string payload\","
+                + "                        \"children\": ["
+                + "                            {"
+                + "                                \"children\": ["
+                + "                                    {"
+                + "                                        \"message\": \"in OO languages, nesting is for birds\""
+                + "                                    }"
+                + "                                ]"
+                + "                            }"
+                + "                        ]"
+                + "                    }"
+                + "                ]"
+                + "            }"
+                + "        ]"
+                + "    }"
+                + "}";
         Query q = new Query("/?query=a&tracelevel=1");
         Execution execution = new Execution(
                 Execution.Context.createContextStub());
@@ -470,67 +535,67 @@ public class JsonRendererTestCase {
 
     @Test
     public void test() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"children\": [\n"
-                + "                    {\n"
-                + "                        \"fields\": {\n"
-                + "                            \"c\": \"d\"\n"
-                + "                        },\n"
-                + "                        \"id\": \"http://localhost/1\",\n"
-                + "                        \"relevance\": 0.9,\n"
-                + "                        \"types\": [\n"
-                + "                            \"summary\"\n"
-                + "                        ]\n"
-                + "                    }\n"
-                + "                ],\n"
-                + "                \"id\": \"usual\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            },\n"
-                + "            {\n"
-                + "                \"fields\": {\n"
-                + "                    \"e\": \"f\"\n"
-                + "                },\n"
-                + "                \"id\": \"type grouphit\",\n"
-                + "                \"relevance\": 1.0,\n"
-                + "                \"types\": [\n"
-                + "                    \"grouphit\"\n"
-                + "                ]\n"
-                + "            },\n"
-                + "            {\n"
-                + "                \"fields\": {\n"
-                + "                    \"b\": \"foo\"\n"
-                + "                },\n"
-                + "                \"id\": \"http://localhost/\",\n"
-                + "                \"relevance\": 0.95,\n"
-                + "                \"types\": [\n"
-                + "                    \"summary\"\n"
-                + "                ]\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"coverage\": {\n"
-                + "            \"coverage\": 100,\n"
-                + "            \"documents\": 500,\n"
-                + "            \"full\": true,\n"
-                + "            \"nodes\": 1,\n"
-                + "            \"results\": 1,\n"
-                + "            \"resultsFull\": 1\n"
-                + "        },\n"
-                + "        \"errors\": [\n"
-                + "            {\n"
-                + "                \"code\": 18,\n"
-                + "                \"message\": \"boom\",\n"
-                + "                \"summary\": \"Internal server error.\"\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"children\": ["
+                + "                    {"
+                + "                        \"fields\": {"
+                + "                            \"c\": \"d\""
+                + "                        },"
+                + "                        \"id\": \"http://localhost/1\","
+                + "                        \"relevance\": 0.9,"
+                + "                        \"types\": ["
+                + "                            \"summary\""
+                + "                        ]"
+                + "                    }"
+                + "                ],"
+                + "                \"id\": \"usual\","
+                + "                \"relevance\": 1.0"
+                + "            },"
+                + "            {"
+                + "                \"fields\": {"
+                + "                    \"e\": \"f\""
+                + "                },"
+                + "                \"id\": \"type grouphit\","
+                + "                \"relevance\": 1.0,"
+                + "                \"types\": ["
+                + "                    \"grouphit\""
+                + "                ]"
+                + "            },"
+                + "            {"
+                + "                \"fields\": {"
+                + "                    \"b\": \"foo\""
+                + "                },"
+                + "                \"id\": \"http://localhost/\","
+                + "                \"relevance\": 0.95,"
+                + "                \"types\": ["
+                + "                    \"summary\""
+                + "                ]"
+                + "            }"
+                + "        ],"
+                + "        \"coverage\": {"
+                + "            \"coverage\": 100,"
+                + "            \"documents\": 500,"
+                + "            \"full\": true,"
+                + "            \"nodes\": 1,"
+                + "            \"results\": 1,"
+                + "            \"resultsFull\": 1"
+                + "        },"
+                + "        \"errors\": ["
+                + "            {"
+                + "                \"code\": 18,"
+                + "                \"message\": \"boom\","
+                + "                \"summary\": \"Internal server error.\""
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
                 + "}";
         Query q = new Query("/?query=a&tracelevel=5");
         Execution execution = new Execution(Execution.Context.createContextStub());
@@ -557,28 +622,28 @@ public class JsonRendererTestCase {
 
     @Test
     public void testCoverage() throws InterruptedException, ExecutionException, IOException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"coverage\": {\n"
-                + "            \"coverage\": 83,\n"
-                + "            \"documents\": 500,\n"
-                + "            \"degraded\" : {\n"
-                + "                \"match-phase\" : true,\n"
-                + "                \"timeout\" : false,\n"
-                + "                \"adaptive-timeout\" : true,\n"
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"coverage\": {"
+                + "            \"coverage\": 83,"
+                + "            \"documents\": 500,"
+                + "            \"degraded\" : {"
+                + "                \"match-phase\" : true,"
+                + "                \"timeout\" : false,"
+                + "                \"adaptive-timeout\" : true,"
                 + "                \"non-ideal-state\" : false"
-                + "            },\n"
-                + "            \"full\": false,\n"
-                + "            \"nodes\": 1,\n"
-                + "            \"results\": 1,\n"
-                + "            \"resultsFull\": 0\n"
-                + "        },\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
+                + "            },"
+                + "            \"full\": false,"
+                + "            \"nodes\": 1,"
+                + "            \"results\": 1,"
+                + "            \"resultsFull\": 0"
+                + "        },"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
                 + "}";
         Query q = new Query("/?query=a&tracelevel=5");
         Execution execution = new Execution(Execution.Context.createContextStub());
@@ -591,27 +656,27 @@ public class JsonRendererTestCase {
 
     @Test
     public void testMoreTypes() throws InterruptedException, ExecutionException, IOException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"fields\": {\n"
-                + "                    \"bigDecimal\": 3.402823669209385e+38,\n"
-                + "                    \"bigInteger\": 340282366920938463463374607431768211455,\n"
-                + "                    \"byte\": 8,\n"
-                + "                    \"short\": 16\n"
-                + "                },\n"
-                + "                \"id\": \"moredatatypestuff\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"fields\": {"
+                + "                    \"bigDecimal\": 3.402823669209385e+38,"
+                + "                    \"bigInteger\": 340282366920938463463374607431768211455,"
+                + "                    \"byte\": 8,"
+                + "                    \"short\": 16"
+                + "                },"
+                + "                \"id\": \"moredatatypestuff\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("moredatatypestuff");
         h.setField("byte", Byte.valueOf((byte) 8));
@@ -629,24 +694,24 @@ public class JsonRendererTestCase {
 
     @Test
     public void testNullField() throws InterruptedException, ExecutionException, IOException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"fields\": {\n"
-                + "                    \"null\": null\n"
-                + "                },\n"
-                + "                \"id\": \"nullstuff\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"fields\": {"
+                + "                    \"null\": null"
+                + "                },"
+                + "                \"id\": \"nullstuff\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("nullstuff");
         h.setField("null", null);
@@ -658,22 +723,22 @@ public class JsonRendererTestCase {
 
     @Test
     public void testHitWithSource() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"id\": \"datatypestuff\",\n"
-                + "                \"relevance\": 1.0,\n"
-                + "                \"source\": \"unit test\"\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"id\": \"datatypestuff\","
+                + "                \"relevance\": 1.0,"
+                + "                \"source\": \"unit test\""
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("datatypestuff");
         h.setSource("unit test");
@@ -685,23 +750,23 @@ public class JsonRendererTestCase {
 
     @Test
     public void testErrorWithStackTrace() throws InterruptedException, ExecutionException, IOException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"errors\": [\n"
-                + "            {\n"
-                + "                \"code\": 1234,\n"
-                + "                \"message\": \"top of the day\",\n"
-                + "                \"stackTrace\": \"java.lang.Throwable\\n\\tat com.yahoo.search.rendering.JsonRendererTestCase.testErrorWithStackTrace(JsonRendererTestCase.java:732)\\n\",\n"
-                + "                \"summary\": \"hello\"\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"errors\": ["
+                + "            {"
+                + "                \"code\": 1234,"
+                + "                \"message\": \"top of the day\","
+                + "                \"stackTrace\": \"java.lang.Throwable\\n\\tat com.yahoo.search.rendering.JsonRendererTestCase.testErrorWithStackTrace(JsonRendererTestCase.java:732)\\n\","
+                + "                \"summary\": \"hello\""
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Query q = new Query("/?query=a&tracelevel=5");
         Result r = new Result(q);
         Throwable t = new Throwable();
@@ -724,45 +789,45 @@ public class JsonRendererTestCase {
 
     @Test
     public void testGrouping() throws InterruptedException, ExecutionException, IOException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"children\": [\n"
-                + "                    {\n"
-                + "                        \"children\": [\n"
-                + "                            {\n"
-                + "                                \"fields\": {\n"
-                + "                                    \"count()\": 7\n"
-                + "                                },\n"
-                + "                                \"value\": \"Jones\",\n"
-                + "                                \"id\": \"group:string:Jones\",\n"
-                + "                                \"relevance\": 1.0\n"
-                + "                            }\n"
-                + "                        ],\n"
-                + "                        \"continuation\": {\n"
-                + "                            \"next\": \"CCCC\",\n"
-                + "                            \"prev\": \"BBBB\"\n"
-                + "                        },\n"
-                + "                        \"id\": \"grouplist:customer\",\n"
-                + "                        \"label\": \"customer\",\n"
-                + "                        \"relevance\": 1.0\n"
-                + "                    }\n"
-                + "                ],\n"
-                + "                \"continuation\": {\n"
-                + "                    \"this\": \"AAAA\"\n"
-                + "                },\n"
-                + "                \"id\": \"group:root:0\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"children\": ["
+                + "                    {"
+                + "                        \"children\": ["
+                + "                            {"
+                + "                                \"fields\": {"
+                + "                                    \"count()\": 7"
+                + "                                },"
+                + "                                \"value\": \"Jones\","
+                + "                                \"id\": \"group:string:Jones\","
+                + "                                \"relevance\": 1.0"
+                + "                            }"
+                + "                        ],"
+                + "                        \"continuation\": {"
+                + "                            \"next\": \"CCCC\","
+                + "                            \"prev\": \"BBBB\""
+                + "                        },"
+                + "                        \"id\": \"grouplist:customer\","
+                + "                        \"label\": \"customer\","
+                + "                        \"relevance\": 1.0"
+                + "                    }"
+                + "                ],"
+                + "                \"continuation\": {"
+                + "                    \"this\": \"AAAA\""
+                + "                },"
+                + "                \"id\": \"group:root:0\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = newEmptyResult();
         RootGroup rg = new RootGroup(0, new Continuation() {
             @Override
@@ -810,44 +875,44 @@ public class JsonRendererTestCase {
 
     @Test
     public void testGroupingWithBucket() throws InterruptedException, ExecutionException, IOException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"children\": [\n"
-                + "                    {\n"
-                + "                        \"children\": [\n"
-                + "                            {\n"
-                + "                                \"fields\": {\n"
-                + "                                    \"something()\": 7\n"
-                + "                                },\n"
-                + "                                \"limits\": {\n"
-                + "                                    \"from\": \"1.0\",\n"
-                + "                                    \"to\": \"2.0\"\n"
-                + "                                },\n"
-                + "                                \"id\": \"group:double_bucket:1.0:2.0\",\n"
-                + "                                \"relevance\": 1.0\n"
-                + "                            }\n"
-                + "                        ],\n"
-                + "                        \"id\": \"grouplist:customer\",\n"
-                + "                        \"label\": \"customer\",\n"
-                + "                        \"relevance\": 1.0\n"
-                + "                    }\n"
-                + "                ],\n"
-                + "                \"continuation\": {\n"
-                + "                    \"this\": \"AAAA\"\n"
-                + "                },\n"
-                + "                \"id\": \"group:root:0\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"children\": ["
+                + "                    {"
+                + "                        \"children\": ["
+                + "                            {"
+                + "                                \"fields\": {"
+                + "                                    \"something()\": 7"
+                + "                                },"
+                + "                                \"limits\": {"
+                + "                                    \"from\": \"1.0\","
+                + "                                    \"to\": \"2.0\""
+                + "                                },"
+                + "                                \"id\": \"group:double_bucket:1.0:2.0\","
+                + "                                \"relevance\": 1.0"
+                + "                            }"
+                + "                        ],"
+                + "                        \"id\": \"grouplist:customer\","
+                + "                        \"label\": \"customer\","
+                + "                        \"relevance\": 1.0"
+                + "                    }"
+                + "                ],"
+                + "                \"continuation\": {"
+                + "                    \"this\": \"AAAA\""
+                + "                },"
+                + "                \"id\": \"group:root:0\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = newEmptyResult();
         RootGroup rg = new RootGroup(0, new Continuation() {
             @Override
@@ -873,40 +938,40 @@ public class JsonRendererTestCase {
 
     @Test
     public void testJsonObjects() throws InterruptedException, ExecutionException, IOException, JSONException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"fields\": {\n"
-                + "                    \"inspectable\": {\n"
-                + "                        \"a\": \"b\"\n"
-                + "                    },\n"
-                + "                    \"jackson\": {\n"
-                + "                        \"Nineteen-eighty-four\": 1984\n"
-                + "                    },\n"
-                + "                    \"json producer\": {\n"
-                + "                        \"long in structured\": 7809531904\n"
-                + "                    },\n"
-                + "                    \"org.json array\": [\n"
-                + "                        true,\n"
-                + "                        true,\n"
-                + "                        false\n"
-                + "                    ],\n"
-                + "                    \"org.json object\": {\n"
-                + "                        \"forty-two\": 42\n"
-                + "                    }\n"
-                + "                },\n"
-                + "                \"id\": \"json objects\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"fields\": {"
+                + "                    \"inspectable\": {"
+                + "                        \"a\": \"b\""
+                + "                    },"
+                + "                    \"jackson\": {"
+                + "                        \"Nineteen-eighty-four\": 1984"
+                + "                    },"
+                + "                    \"json producer\": {"
+                + "                        \"long in structured\": 7809531904"
+                + "                    },"
+                + "                    \"org.json array\": ["
+                + "                        true,"
+                + "                        true,"
+                + "                        false"
+                + "                    ],"
+                + "                    \"org.json object\": {"
+                + "                        \"forty-two\": 42"
+                + "                    }"
+                + "                },"
+                + "                \"id\": \"json objects\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 0"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("json objects");
         JSONObject o = new JSONObject();
@@ -936,24 +1001,24 @@ public class JsonRendererTestCase {
 
     @Test
     public void testFieldValueInHit() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"fields\": {\n"
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"fields\": {"
                 + "                    \"fromDocumentApi\":{\"integerField\":123, \"stringField\":\"abc\"}"
-                + "                },\n"
-                + "                \"id\": \"fieldValueTest\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+                + "                },"
+                + "                \"id\": \"fieldValueTest\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("fieldValueTest");
         StructDataType structType = new StructDataType("jsonRenderer");
@@ -971,21 +1036,21 @@ public class JsonRendererTestCase {
 
     @Test
     public void testHiddenFields() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"id\": \"hiddenFields\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"id\": \"hiddenFields\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = newEmptyResult();
         Hit h = createHitWithOnlyHiddenFields();
         r.hits().add(h);
@@ -996,27 +1061,27 @@ public class JsonRendererTestCase {
 
     @Test
     public void testDebugRendering() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"fields\": {\n"
-                + "                    \"NaN\": \"NaN\",\n"
-                + "                    \"emptyString\": \"\",\n"
-                + "                    \"emptyStringFieldValue\": \"\",\n"
-                + "                    \"$vespaImplementationDetail\": \"Hello, World!\"\n"
-                + "                },\n"
-                + "                \"id\": \"hiddenFields\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"fields\": {"
+                + "                    \"NaN\": \"NaN\","
+                + "                    \"emptyString\": \"\","
+                + "                    \"emptyStringFieldValue\": \"\","
+                + "                    \"$vespaImplementationDetail\": \"Hello, World!\""
+                + "                },"
+                + "                \"id\": \"hiddenFields\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = new Result(new Query("/?renderer.json.debug=true"));
         Hit h = createHitWithOnlyHiddenFields();
         r.hits().add(h);
@@ -1062,24 +1127,24 @@ public class JsonRendererTestCase {
 
     @Test
     public void testJsonCallback() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"fields\": {\n"
-                + "                    \"documentid\": \"id:unittest:smoke::whee\"\n"
-                + "                },\n"
-                + "                \"id\": \"id:unittest:smoke::whee\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"fields\": {"
+                + "                    \"documentid\": \"id:unittest:smoke::whee\""
+                + "                },"
+                + "                \"id\": \"id:unittest:smoke::whee\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
 
         String jsonCallback = "some_function_name";
         Result r = newEmptyResult(new String[] {"query=a", "jsoncallback="+jsonCallback} );
@@ -1100,28 +1165,28 @@ public class JsonRendererTestCase {
 
     @Test
     public void testMapInField() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"fields\": {\n"
-                + "                    \"structured\": {\n"
-                + "                        \"foo\": \"string foo\",\n"
-                + "                        \"bar\": [\"array bar elem 1\", \"array bar elem 2\"],\n"
-                + "                        \"baz\": {\"f1\": \"object baz field 1\", \"f2\": \"object baz field 2\"}\n"
-                + "                    }\n"
-                + "                },\n"
-                + "                \"id\": \"MapInField\",\n"
-                + "                \"relevance\": 1.0\n"
-                + "            }\n"
-                + "        ],\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 1\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    }\n"
-                + "}\n";
+        String expected = "{"
+                + "    \"root\": {"
+                + "        \"children\": ["
+                + "            {"
+                + "                \"fields\": {"
+                + "                    \"structured\": {"
+                + "                        \"foo\": \"string foo\","
+                + "                        \"bar\": [\"array bar elem 1\", \"array bar elem 2\"],"
+                + "                        \"baz\": {\"f1\": \"object baz field 1\", \"f2\": \"object baz field 2\"}"
+                + "                    }"
+                + "                },"
+                + "                \"id\": \"MapInField\","
+                + "                \"relevance\": 1.0"
+                + "            }"
+                + "        ],"
+                + "        \"fields\": {"
+                + "            \"totalCount\": 1"
+                + "        },"
+                + "        \"id\": \"toplevel\","
+                + "        \"relevance\": 1.0"
+                + "    }"
+                + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("MapInField");
         Value.ArrayValue atop = new Value.ArrayValue();
@@ -1164,7 +1229,7 @@ public class JsonRendererTestCase {
         String summary = render(result);
 
         String expected =
-                "{  \n" +
+                "{  " +
                 "   \"root\":{  " +
                 "      \"id\":\"toplevel\"," +
                 "      \"relevance\":1.0," +
@@ -1176,13 +1241,13 @@ public class JsonRendererTestCase {
                 "            \"id\":\"http://abc.html/\"," +
                 "            \"relevance\":1.0," +
                 "            \"fields\":{  " +
-                "               \"sddocname\":\"one\",\n" +
-                "               \"dynteaser\":\"Feeding <hi>documents</hi> into Vespa is<sep />increment of a set of <hi>documents</hi> fed into Vespa <sep />float in XML when <hi>document</hi> attribute is int<sep />\"\n" +
-                "            }\n" +
-                "         }\n" +
-                "      ]\n" +
-                "   }\n" +
-                "}\n";
+                "               \"sddocname\":\"one\"," +
+                "               \"dynteaser\":\"Feeding <hi>documents</hi> into Vespa is<sep />increment of a set of <hi>documents</hi> fed into Vespa <sep />float in XML when <hi>document</hi> attribute is int<sep />\"" +
+                "            }" +
+                "         }" +
+                "      ]" +
+                "   }" +
+                "}";
         assertEqualJson(expected, summary);
     }
 
@@ -1218,12 +1283,13 @@ public class JsonRendererTestCase {
 
     @SuppressWarnings("unchecked")
     private void assertEqualJson(String expected, String generated) throws IOException {
+        assertEquals("", validateJSON(expected));
+        assertEquals("", validateJSON(generated));
+
         ObjectMapper m = new ObjectMapper();
         Map<String, Object> exp = m.readValue(expected, Map.class);
         Map<String, Object> gen = m.readValue(generated, Map.class);
         assertEquals(exp, gen);
-        assertEquals("", validateJSON(expected));
-        assertEquals("", validateJSON(generated));
     }
 
     private String validateJSON(String presumablyValidJson) {

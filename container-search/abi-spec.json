@@ -1752,6 +1752,7 @@
       "public java.lang.String toDetailString()",
       "public int encode(java.nio.ByteBuffer)",
       "public void trace(java.lang.String, int)",
+      "public void trace(java.lang.Object, int)",
       "public void trace(java.lang.String, boolean, int)",
       "public varargs void trace(boolean, int, java.lang.Object[])",
       "public void attachContext(com.yahoo.search.Query)",
@@ -5370,6 +5371,7 @@
     "methods": [
       "public void <init>(int, com.yahoo.search.Query)",
       "public void trace(java.lang.String, int)",
+      "public void trace(java.lang.Object, int)",
       "public void logValue(java.lang.String, java.lang.Object)",
       "public java.util.Iterator logValueIterator()",
       "public void setProperty(java.lang.String, java.lang.Object)",

@@ -127,6 +127,7 @@
       "public void setForceTimestamps(boolean)",
       "public boolean getForceTimestamps()",
       "public void trace(java.lang.String, int)",
+      "public void trace(java.lang.Object, int)",
       "public void logValue(java.lang.String, java.lang.String)",
       "public java.util.Iterator logValueIterator()",
       "public com.yahoo.yolean.trace.TraceVisitor accept(com.yahoo.yolean.trace.TraceVisitor)",

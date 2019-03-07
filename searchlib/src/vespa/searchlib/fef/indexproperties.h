@@ -310,6 +310,20 @@ namespace matchphase {
 
 } // namespace matchphase
 
+namespace trace {
+
+    /**
+ * Property for the heap size used in the hit collector.
+ **/
+    struct Level {
+        static const vespalib::string NAME;
+        static const uint32_t DEFAULT_VALUE;
+        static uint32_t lookup(const Properties &props);
+        static uint32_t lookup(const Properties &props, uint32_t defaultValue);
+    };
+
+}
+
 
 namespace hitcollector {
 

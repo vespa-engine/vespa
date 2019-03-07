@@ -6,8 +6,7 @@
 #include "reference_attribute.h"
 #include <vespa/searchlib/query/queryterm.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
         const ImportedAttributeVector &imported_attribute,
@@ -24,8 +23,7 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
     _targetLids = _reference_attribute.getTargetLids();
 }
 
-ImportedAttributeVectorReadGuard::~ImportedAttributeVectorReadGuard() {
-}
+ImportedAttributeVectorReadGuard::~ImportedAttributeVectorReadGuard() = default;
 
 const vespalib::string& ImportedAttributeVectorReadGuard::getName() const {
     return _imported_attribute.getName();
@@ -168,5 +166,4 @@ long ImportedAttributeVectorReadGuard::onSerializeForDescendingSort(DocId doc,
     return _target_attribute.serializeForDescendingSort(getTargetLid(doc), serTo, available, bc);
 }
 
-}
 }
