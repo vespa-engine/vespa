@@ -290,15 +290,15 @@ Test::testBuilder()
         boost::split(lines, xml, boost::is_any_of("\n"));
         itr = lines.begin();
         EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"doc::1\">", *itr++);
-        EXPECT_EQUAL("<ia>foo bar baz</ia>", *itr++);
-        EXPECT_EQUAL("<ib>", *itr++);
-        EXPECT_EQUAL("<item>foo</item>", *itr++);
-        EXPECT_EQUAL("<item>bar baz</item>", *itr++);
-        EXPECT_EQUAL("</ib>", *itr++);
-        EXPECT_EQUAL("<ic>", *itr++);
-        EXPECT_EQUAL("<item weight=\"20\">bar baz</item>", *itr++);
-        EXPECT_EQUAL("<item weight=\"1\">foo</item>", *itr++);
-        EXPECT_EQUAL("</ic>", *itr++);
+        EXPECT_EQUAL("<sj>", *itr++);
+        EXPECT_EQUAL(empty +"<item weight=\"46\" binaryencoding=\"base64\">" +
+                   vespalib::Base64::encode(raw1w1) +
+                   "</item>", *itr++);
+        EXPECT_EQUAL(empty + "<item weight=\"45\" binaryencoding=\"base64\">" +
+                   vespalib::Base64::encode(raw1w0) +
+                   "</item>", *itr++);
+        EXPECT_EQUAL("</sj>", *itr++);
+        EXPECT_EQUAL("<sa>127</sa>", *itr++);
         EXPECT_EQUAL("<iu>", *itr++);
         EXPECT_EQUAL("<all>http://www.example.com:81/fluke?ab=2#4</all>", *itr++);
         EXPECT_EQUAL("<host>www.example.com</host>", *itr++);
@@ -308,6 +308,44 @@ Test::testBuilder()
         EXPECT_EQUAL("<query>ab=2</query>", *itr++);
         EXPECT_EQUAL("<fragment>4</fragment>", *itr++);
         EXPECT_EQUAL("</iu>", *itr++);
+        EXPECT_EQUAL("<sf>9876.54</sf>", *itr++);
+        EXPECT_EQUAL("<aa>2147483647</aa>", *itr++);
+        EXPECT_EQUAL("<aap2>", *itr++);
+        EXPECT_EQUAL("<item>1047806</item>", *itr++);
+        EXPECT_EQUAL("<item>1048322</item>", *itr++);
+        EXPECT_EQUAL("</aap2>", *itr++);
+        EXPECT_EQUAL("<se>1234.56</se>", *itr++);
+        EXPECT_EQUAL("<sg>foo bar</sg>", *itr++);
+        EXPECT_EQUAL("<ia>foo bar baz</ia>", *itr++);
+        EXPECT_EQUAL("<si>", *itr++);
+        EXPECT_EQUAL(empty + "<item binaryencoding=\"base64\">" +
+                   vespalib::Base64::encode(raw1a0) +
+                   "</item>", *itr++);
+        EXPECT_EQUAL(empty + "<item binaryencoding=\"base64\">" +
+                   vespalib::Base64::encode(raw1a1) +
+                   "</item>", *itr++);
+        EXPECT_EQUAL("</si>", *itr++);
+        EXPECT_EQUAL("<ae>", *itr++);
+        EXPECT_EQUAL("<item>10.5</item>", *itr++);
+        EXPECT_EQUAL("</ae>", *itr++);
+        EXPECT_EQUAL("<ib>", *itr++);
+        EXPECT_EQUAL("<item>foo</item>", *itr++);
+        EXPECT_EQUAL("<item>bar baz</item>", *itr++);
+        EXPECT_EQUAL("</ib>", *itr++);
+        EXPECT_EQUAL("<sd>2147483648</sd>", *itr++);
+        EXPECT_EQUAL("<ah>", *itr++);
+        EXPECT_EQUAL("<item weight=\"3\">20.5</item>", *itr++);
+        EXPECT_EQUAL("</ah>", *itr++);
+        EXPECT_EQUAL("<sb>32767</sb>", *itr++);
+        EXPECT_EQUAL("<ic>", *itr++);
+        EXPECT_EQUAL("<item weight=\"20\">bar baz</item>", *itr++);
+        EXPECT_EQUAL("<item weight=\"1\">foo</item>", *itr++);
+        EXPECT_EQUAL("</ic>", *itr++);
+        EXPECT_EQUAL("<ac>foo baz</ac>", *itr++);
+        EXPECT_EQUAL("<awp2>", *itr++);
+        EXPECT_EQUAL("<item weight=\"43\">1048370</item>", *itr++);
+        EXPECT_EQUAL("<item weight=\"44\">1048382</item>", *itr++);
+        EXPECT_EQUAL("</awp2>", *itr++);
         EXPECT_EQUAL("<iau>", *itr++);
         EXPECT_EQUAL("<item>", *itr++);
         EXPECT_EQUAL("<all>http://www.example.com:82/fluke?ab=2#8</all>", *itr++);
@@ -328,6 +366,15 @@ Test::testBuilder()
         EXPECT_EQUAL("<fragment>9</fragment>", *itr++);
         EXPECT_EQUAL("</item>", *itr++);
         EXPECT_EQUAL("</iau>", *itr++);
+        EXPECT_EQUAL("<asp2>1047758</asp2>", *itr++);
+        EXPECT_EQUAL("<sc>2147483647</sc>", *itr++);
+        EXPECT_EQUAL("<ai>", *itr++);
+        EXPECT_EQUAL("<item weight=\"4\">bar</item>", *itr++);
+        EXPECT_EQUAL("</ai>", *itr++);
+        EXPECT_EQUAL("<asp1>1001</asp1>", *itr++);
+        EXPECT_EQUAL("<ad>", *itr++);
+        EXPECT_EQUAL("<item>10</item>", *itr++);
+        EXPECT_EQUAL("</ad>", *itr++);
         EXPECT_EQUAL("<iwu>", *itr++);
         EXPECT_EQUAL("<item weight=\"4\">", *itr++);
         EXPECT_EQUAL("<all>http://www.example.com:83/fluke?ab=2#12</all>", *itr++);
@@ -348,71 +395,24 @@ Test::testBuilder()
         EXPECT_EQUAL("<fragment>13</fragment>", *itr++);
         EXPECT_EQUAL("</item>", *itr++);
         EXPECT_EQUAL("</iwu>", *itr++);
-        EXPECT_EQUAL("<aa>2147483647</aa>", *itr++);
         EXPECT_EQUAL("<ab>1234.56</ab>", *itr++);
-        EXPECT_EQUAL("<ac>foo baz</ac>", *itr++);
-        EXPECT_EQUAL("<ad>", *itr++);
-        EXPECT_EQUAL("<item>10</item>", *itr++);
-        EXPECT_EQUAL("</ad>", *itr++);
-        EXPECT_EQUAL("<ae>", *itr++);
-        EXPECT_EQUAL("<item>10.5</item>", *itr++);
-        EXPECT_EQUAL("</ae>", *itr++);
-        EXPECT_EQUAL("<af>", *itr++);
-        EXPECT_EQUAL("<item>foo</item>", *itr++);
-        EXPECT_EQUAL("</af>", *itr++);
         EXPECT_EQUAL("<ag>", *itr++);
         EXPECT_EQUAL("<item weight=\"2\">20</item>", *itr++);
         EXPECT_EQUAL("</ag>", *itr++);
-        EXPECT_EQUAL("<ah>", *itr++);
-        EXPECT_EQUAL("<item weight=\"3\">20.5</item>", *itr++);
-        EXPECT_EQUAL("</ah>", *itr++);
-        EXPECT_EQUAL("<ai>", *itr++);
-        EXPECT_EQUAL("<item weight=\"4\">bar</item>", *itr++);
-        EXPECT_EQUAL("</ai>", *itr++);
-        EXPECT_EQUAL("<asp1>1001</asp1>", *itr++);
-        EXPECT_EQUAL("<asp2>1047758</asp2>", *itr++);
-        EXPECT_EQUAL("<aap1>", *itr++);
-        EXPECT_EQUAL("<item>1004</item>", *itr++);
-        EXPECT_EQUAL("<item>1005</item>", *itr++);
-        EXPECT_EQUAL("</aap1>", *itr++);
-        EXPECT_EQUAL("<aap2>", *itr++);
-        EXPECT_EQUAL("<item>1047806</item>", *itr++);
-        EXPECT_EQUAL("<item>1048322</item>", *itr++);
-        EXPECT_EQUAL("</aap2>", *itr++);
         EXPECT_EQUAL("<awp1>", *itr++);
         EXPECT_EQUAL("<item weight=\"41\">1010</item>", *itr++);
         EXPECT_EQUAL("<item weight=\"42\">1011</item>", *itr++);
         EXPECT_EQUAL("</awp1>", *itr++);
-        EXPECT_EQUAL("<awp2>", *itr++);
-        EXPECT_EQUAL("<item weight=\"43\">1048370</item>", *itr++);
-        EXPECT_EQUAL("<item weight=\"44\">1048382</item>", *itr++);
-        EXPECT_EQUAL("</awp2>", *itr++);
-        EXPECT_EQUAL("<sa>127</sa>", *itr++);
-        EXPECT_EQUAL("<sb>32767</sb>", *itr++);
-        EXPECT_EQUAL("<sc>2147483647</sc>", *itr++);
-        EXPECT_EQUAL("<sd>2147483648</sd>", *itr++);
-        EXPECT_EQUAL("<se>1234.56</se>", *itr++);
-        EXPECT_EQUAL("<sf>9876.54</sf>", *itr++);
-        EXPECT_EQUAL("<sg>foo bar</sg>", *itr++);
+        EXPECT_EQUAL("<aap1>", *itr++);
+        EXPECT_EQUAL("<item>1004</item>", *itr++);
+        EXPECT_EQUAL("<item>1005</item>", *itr++);
+        EXPECT_EQUAL("</aap1>", *itr++);
         EXPECT_EQUAL(empty + "<sh binaryencoding=\"base64\">" +
                    vespalib::Base64::encode(raw1s) +
                    "</sh>", *itr++);
-        EXPECT_EQUAL("<si>", *itr++);
-        EXPECT_EQUAL(empty + "<item binaryencoding=\"base64\">" +
-                   vespalib::Base64::encode(raw1a0) +
-                   "</item>", *itr++);
-        EXPECT_EQUAL(empty + "<item binaryencoding=\"base64\">" +
-                   vespalib::Base64::encode(raw1a1) +
-                   "</item>", *itr++);
-        EXPECT_EQUAL("</si>", *itr++);
-        EXPECT_EQUAL("<sj>", *itr++);
-        EXPECT_EQUAL(empty +"<item weight=\"46\" binaryencoding=\"base64\">" +
-                   vespalib::Base64::encode(raw1w1) +
-                   "</item>", *itr++);
-        EXPECT_EQUAL(empty + "<item weight=\"45\" binaryencoding=\"base64\">" +
-                   vespalib::Base64::encode(raw1w0) +
-                   "</item>", *itr++);
-        EXPECT_EQUAL("</sj>", *itr++);
+        EXPECT_EQUAL("<af>", *itr++);
+        EXPECT_EQUAL("<item>foo</item>", *itr++);
+        EXPECT_EQUAL("</af>", *itr++);
         EXPECT_EQUAL("</document>", *itr++);
         EXPECT_TRUE(itr == lines.end());
 #if 1
@@ -434,9 +434,9 @@ Test::testBuilder()
         boost::split(lines, xml, boost::is_any_of("\n"));
         itr = lines.begin();
         EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"doc::2\">", *itr++);
-        EXPECT_EQUAL("<ia>yes</ia>", *itr++);
-        EXPECT_EQUAL("<aa>20</aa>", *itr++);
         EXPECT_EQUAL("<sa>10</sa>", *itr++);
+        EXPECT_EQUAL("<aa>20</aa>", *itr++);
+        EXPECT_EQUAL("<ia>yes</ia>", *itr++);
         EXPECT_EQUAL("</document>", *itr++);
         EXPECT_TRUE(itr == lines.end());
     }

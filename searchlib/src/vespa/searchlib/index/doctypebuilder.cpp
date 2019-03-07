@@ -266,7 +266,6 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
     Struct header_struct("searchdocument.header");
     header_struct.setId(-1505212454);
 
-    int32_t field_id = 0;
     for (size_t i = 0; i < _iFields._textFields.size(); ++i) {
         const Schema::IndexField &field =
             _schema.getIndexField(_iFields._textFields[i]);
@@ -275,7 +274,6 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         assert(field.getDataType() == schema::DataType::STRING);
         header_struct.addField(field.getName(), type_cache.getType(
                         DataType::T_STRING, field.getCollectionType()));
-        header_struct.sstruct.field.back().id = field_id++;
         usedFields.insert(field.getName());
     }
 
@@ -288,7 +286,6 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         assert(field.getDataType() == schema::DataType::STRING);
         header_struct.addField(field.getName(), type_cache.getType(
                         uri_type, field.getCollectionType()));
-        header_struct.sstruct.field.back().id = field_id++;
         usedFields.insert(field.getName());
     }
 
@@ -301,7 +298,6 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         const DataType *primitiveType = convert(field.getDataType());
         header_struct.addField(field.getName(), type_cache.getType(
                         primitiveType->getId(), field.getCollectionType()));
-        header_struct.sstruct.field.back().id = field_id++;
         usedFields.insert(field.getName());
     }
 
@@ -313,7 +309,6 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         const DataType *primitiveType(convert(field.getDataType()));
         header_struct.addField(field.getName(), type_cache.getType(
                         primitiveType->getId(), field.getCollectionType()));
-        header_struct.sstruct.field.back().id = field_id++;
         usedFields.insert(field.getName());
     }
 
