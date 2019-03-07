@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,7 +41,9 @@ public interface ConfigServer {
 
     Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
 
-    Optional<Logs> getLogs(DeploymentId deployment, HashMap<String, String> queryParameters);
+    Optional<Logs> getLogs(DeploymentId deployment, Map<String, String> queryParameters);
+
+    InputStream getLogStream(DeploymentId deployment, Map<String, String> queryParameters);
 
     List<String> getContentClusters(DeploymentId deployment);
 
