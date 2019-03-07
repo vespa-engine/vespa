@@ -96,7 +96,6 @@
       <plugin>
         <groupId>com.helger.maven</groupId>
         <artifactId>ph-javacc-maven-plugin</artifactId>
-        <version>4.0.3</version>
         <executions>
           <execution>
             <phase>generate-sources</phase>
