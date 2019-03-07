@@ -3,10 +3,8 @@ package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.ChannelTimeoutException;
-import com.yahoo.fs4.DocsumPacket;
 import com.yahoo.fs4.GetDocSumsPacket;
 import com.yahoo.fs4.Packet;
-import com.yahoo.fs4.QueryPacket;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
@@ -16,7 +14,6 @@ import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
-import com.yahoo.search.result.HitGroup;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -30,16 +27,12 @@ import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.hitIterator;
  */
 public class FS4FillInvoker extends FillInvoker {
 
-    private final String serverId;
     private final VespaBackEndSearcher searcher;
     private FS4Channel channel;
 
     private int expectedFillResults = 0;
-    private CacheKey summaryCacheKey = null;
-    private DocsumPacketKey[] summaryPacketKeys = null;
 
     public FS4FillInvoker(VespaBackEndSearcher searcher, Query query, FS4ResourcePool fs4ResourcePool, String hostname, int port) {
-        this.serverId = fs4ResourcePool.getServerId();
         this.searcher = searcher;
         Backend backend = fs4ResourcePool.getBackend(hostname, port);
         this.channel = backend.openChannel();
@@ -47,8 +40,7 @@ public class FS4FillInvoker extends FillInvoker {
     }
 
     // fdispatch code path
-    public FS4FillInvoker(String serverId, VespaBackEndSearcher searcher, Query query, Backend backend) {
-        this.serverId = serverId;
+    public FS4FillInvoker(VespaBackEndSearcher searcher, Query query, Backend backend) {
         this.searcher = searcher;
         this.channel = backend.openChannel();
         channel.setQuery(query);
@@ -56,21 +48,9 @@ public class FS4FillInvoker extends FillInvoker {
 
     @Override
     protected void sendFillRequest(Result result, String summaryClass) {
-        summaryCacheKey = null;
-        if (searcher.getCacheControl().useCache(channel.getQuery())) {
-            summaryCacheKey = fetchCacheKeyFromHits(result.hits(), summaryClass);
-            if (summaryCacheKey == null) {
-                QueryPacket queryPacket = QueryPacket.create(serverId, channel.getQuery());
-                summaryCacheKey = new CacheKey(queryPacket);
-            }
-            boolean cacheFound = cacheLookupTwoPhase(summaryCacheKey, result, summaryClass);
-            if (!cacheFound) {
-                summaryCacheKey = null;
-            }
-        }
 
         if (countFastHits(result) > 0) {
-            summaryPacketKeys = getPacketKeys(result, summaryClass);
+            DocsumPacketKey[] summaryPacketKeys = getPacketKeys(result, summaryClass);
             if (summaryPacketKeys.length == 0) {
                 expectedFillResults = 0;
             } else {
@@ -130,9 +110,6 @@ public class FS4FillInvoker extends FillInvoker {
                     "Error filling hits with summary fields, source: " + getName() + " Exception thrown: " + e.getMessage()));
             return;
         }
-        if (skippedHits == 0 && summaryCacheKey != null) {
-            searcher.getCacheControl().updateCacheEntry(summaryCacheKey, channel.getQuery(), summaryPacketKeys, receivedPackets);
-        }
 
         if (skippedHits > 0)
             result.hits().addError(
@@ -161,50 +138,6 @@ public class FS4FillInvoker extends FillInvoker {
             channel.close();
             channel = null;
         }
-    }
-
-    private boolean cacheLookupTwoPhase(CacheKey cacheKey, Result result, String summaryClass) {
-        Query query = result.getQuery();
-        PacketWrapper packetWrapper = searcher.getCacheControl().lookup(cacheKey, query);
-
-        if (packetWrapper == null) {
-            return false;
-        }
-        if (packetWrapper.getNumPackets() != 0) {
-            for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
-                Hit hit = i.next();
-
-                if (hit instanceof FastHit) {
-                    FastHit fastHit = (FastHit) hit;
-                    DocsumPacketKey key = new DocsumPacketKey(fastHit.getGlobalId(), fastHit.getPartId(), summaryClass);
-
-                    if (searcher.fillHit(fastHit, (DocsumPacket) packetWrapper.getPacket(key), summaryClass).ok) {
-                        fastHit.setCached(true);
-                    }
-
-                }
-            }
-            result.hits().setSorted(false);
-            result.analyzeHits();
-        }
-
-        return true;
-    }
-
-    private CacheKey fetchCacheKeyFromHits(HitGroup hits, String summaryClass) {
-        for (Iterator<Hit> i = hits.unorderedDeepIterator(); i.hasNext();) {
-            Hit h = i.next();
-            if (h instanceof FastHit) {
-                FastHit hit = (FastHit) h;
-                if (hit.isFilled(summaryClass)) {
-                    continue;
-                }
-                if (hit.getCacheKey() != null) {
-                    return hit.getCacheKey();
-                }
-            }
-        }
-        return null;
     }
 
     private int countFastHits(Result result) {

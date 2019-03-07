@@ -18,7 +18,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
-import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
@@ -93,7 +92,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
     }
 
     @Override
-    public Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
+    public Result doSearch2(Query query, QueryPacket queryPacket, Execution execution) {
         // TODO refactor this method into smaller methods, it's hard to see the actual code
         lazyTrace(query, 7, "Routing to storage cluster ", getStorageClusterRouteSpec());
 

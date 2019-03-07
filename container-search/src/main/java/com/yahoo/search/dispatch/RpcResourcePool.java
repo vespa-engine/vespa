@@ -50,8 +50,7 @@ public class RpcResourcePool {
     public Optional<FillInvoker> getFillInvoker(Query query, VespaBackEndSearcher searcher, DocumentDatabase documentDb) {
         if (query.properties().getBoolean(dispatchSummaries, true)
             && ! searcher.summaryNeedsQuery(query)
-            && query.getRanking().getLocation() == null
-            && ! searcher.getCacheControl().useCache(query))
+            && query.getRanking().getLocation() == null)
         {
             return Optional.of(new RpcFillInvoker(this, documentDb));
         } else {

@@ -5,7 +5,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
@@ -33,7 +32,7 @@ public class PartialFillTestCase {
 
     public static class FS4 extends VespaBackEndSearcher {
         public List<Result> history = new ArrayList<>();
-        protected Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
+        protected Result doSearch2(Query query, QueryPacket queryPacket, Execution execution) {
             return new Result(query);
         }
         protected void doPartialFill(Result result, String summaryClass) {
@@ -42,7 +41,7 @@ public class PartialFillTestCase {
     }
 
     public static class BadFS4 extends VespaBackEndSearcher {
-        protected Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
+        protected Result doSearch2(Query query, QueryPacket queryPacket, Execution execution) {
             return new Result(query);
         }
         protected void doPartialFill(Result result, String summaryClass) {

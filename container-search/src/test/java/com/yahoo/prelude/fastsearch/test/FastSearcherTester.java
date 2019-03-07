@@ -3,10 +3,8 @@ package com.yahoo.prelude.fastsearch.test;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.net.HostName;
-import com.yahoo.prelude.fastsearch.CacheParams;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FastSearcher;
@@ -61,7 +59,6 @@ class FastSearcherTester {
                                         mockDispatcher,
                                         new SummaryParameters(null),
                                         new ClusterParams("testhittype"),
-                                        new CacheParams(100, 1e64),
                                         new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder()));
     }
 

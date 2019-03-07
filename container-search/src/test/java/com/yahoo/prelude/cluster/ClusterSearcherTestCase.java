@@ -10,7 +10,6 @@ import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
-import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -201,7 +200,7 @@ public class ClusterSearcherTestCase {
         }
 
         @Override
-        protected com.yahoo.search.Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
+        protected com.yahoo.search.Result doSearch2(Query query, QueryPacket queryPacket, Execution execution) {
             return null; // search() is overriden, this should never be called
         }
 

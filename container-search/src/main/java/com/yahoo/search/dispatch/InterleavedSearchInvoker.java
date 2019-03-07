@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.fs4.QueryPacket;
-import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -96,7 +95,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     }
 
     @Override
-    protected Result getSearchResult(CacheKey cacheKey, Execution execution) throws IOException {
+    protected Result getSearchResult(Execution execution) throws IOException {
         long nextTimeout = query.getTimeLeft();
         try {
             while (!invokers.isEmpty() && nextTimeout >= 0) {
@@ -105,7 +104,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     log.fine(() -> "Search timed out with " + askedNodes + " requests made, " + answeredNodes + " responses received");
                     break;
                 } else {
-                    mergeResult(invoker.getSearchResult(cacheKey, execution));
+                    mergeResult(invoker.getSearchResult(execution));
                     ejectInvoker(invoker);
                 }
                 nextTimeout = nextTimeout();

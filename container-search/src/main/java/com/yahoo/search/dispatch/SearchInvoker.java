@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.fs4.QueryPacket;
-import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -30,16 +29,16 @@ public abstract class SearchInvoker extends CloseableInvoker {
      * nodes, the provided {@link Execution} may be used to retrieve document summaries required
      * for correct result windowing.
      */
-    public Result search(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) throws IOException {
+    public Result search(Query query, QueryPacket queryPacket, Execution execution) throws IOException {
         sendSearchRequest(query, queryPacket);
-        Result result = getSearchResult(cacheKey, execution);
+        Result result = getSearchResult(execution);
         setFinalStatus(result.hits().getError() == null);
         return result;
     }
 
     protected abstract void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException;
 
-    protected abstract Result getSearchResult(CacheKey cacheKey, Execution execution) throws IOException;
+    protected abstract Result getSearchResult(Execution execution) throws IOException;
 
     protected void setMonitor(ResponseMonitor<SearchInvoker> monitor) {
         this.monitor = monitor;
