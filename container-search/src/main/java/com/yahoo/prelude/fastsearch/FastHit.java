@@ -44,7 +44,6 @@ public class FastHit extends Hit {
     private URI indexUri = null;
 
     private transient QueryPacketData queryPacketData = null;
-    private transient CacheKey cacheKey = null;
 
     /**
      * Summaries added to this hit which are not yet decoded into fields.
@@ -148,10 +147,6 @@ public class FastHit extends Hit {
 
     /** Returns a serial encoding of the query which produced this hit, ot null if not available. */
     public QueryPacketData getQueryPacketData() { return queryPacketData; }
-
-    CacheKey getCacheKey() { return cacheKey; }
-
-    void setCacheKey(CacheKey cacheKey) { this.cacheKey = cacheKey; }
 
     /** For internal use */
     public void addSummary(DocsumDefinition docsumDef, Inspector value) {

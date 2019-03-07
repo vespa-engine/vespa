@@ -11,27 +11,21 @@ import com.yahoo.container.search.Fs4Config;
 import com.yahoo.document.GlobalId;
 import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.Packet;
-import com.yahoo.fs4.QueryPacket;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.BackendTestCase;
 import com.yahoo.fs4.test.QueryTestCase;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
-import com.yahoo.prelude.fastsearch.CacheControl;
-import com.yahoo.prelude.fastsearch.CacheKey;
-import com.yahoo.prelude.fastsearch.CacheParams;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.FastSearcher;
-import com.yahoo.prelude.fastsearch.PacketWrapper;
 import com.yahoo.prelude.fastsearch.SummaryParameters;
 import com.yahoo.prelude.fastsearch.test.fs4mock.MockBackend;
 import com.yahoo.prelude.fastsearch.test.fs4mock.MockFS4ResourcePool;
 import com.yahoo.prelude.fastsearch.test.fs4mock.MockFSChannel;
-import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.execution.Execution.Trace;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -47,7 +41,6 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -87,13 +80,9 @@ public class FastSearcherTestCase {
                                                      new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     new CacheParams(100, 1e64),
                                                      documentdbInfoConfig);
 
         MockFSChannel.setEmptyDocsums(false);
-
-
-        assertEquals(100, fastSearcher.getCacheControl().capacity()); // Default cache = 100Mb
 
         Result result = doSearch(fastSearcher, new Query("?query=ignored"), 0, 10);
 
@@ -108,7 +97,6 @@ public class FastSearcherTestCase {
                                                      new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     new CacheParams(100, 1e64),
                                                      documentdbInfoConfig);
 
         String query = "?junkparam=ignored";
@@ -141,7 +129,6 @@ public class FastSearcherTestCase {
                 new MockDispatcher("a", nodes, mockFs4ResourcePool, 1, new VipStatus()),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
-                new CacheParams(0, 0),
                 documentdbConfigWithOneDb);
 
         { // No direct.summaries
@@ -181,7 +168,6 @@ public class FastSearcherTestCase {
                                                      new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     new CacheParams(100, 1e64),
                                                      documentdbConfigWithOneDb);
 
         Query query = new Query("?query=foo&model.restrict=testDb");
@@ -203,8 +189,6 @@ public class FastSearcherTestCase {
     public void testSearch() {
         FastSearcher fastSearcher = createFastSearcher();
 
-        assertEquals(100, fastSearcher.getCacheControl().capacity()); // Default cache =100MB
-
         Result result = doSearch(fastSearcher, new Query("?query=ignored"), 0, 10);
 
         Execution execution = new Execution(chainedAsSearchChain(fastSearcher), Execution.Context.createContextStub());
@@ -222,26 +206,9 @@ public class FastSearcherTestCase {
         execution.fill(result);
         assertCorrectHit1((FastHit) result.hits().get(0));
         for (int i = 0; i < result.getHitCount(); i++) {
-            assertTrue(result.hits().get(i) + " should be cached",
+            assertFalse(result.hits().get(i) + " should never be cached",
                     result.hits().get(i).isCached());
         }
-
-        // outside-range cache hit
-        result = doSearch(fastSearcher,new Query("?query=ignored"), 6, 3);
-        // fill should still work (nop)
-        execution.fill(result);
-
-        result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 10);
-        assertEquals(2, result.getHitCount());
-        assertCorrectHit1((FastHit) result.hits().get(0));
-        assertTrue("All hits are cached and the result knows it",
-                result.isCached());
-        for (int i = 0; i < result.getHitCount(); i++) {
-            assertTrue(result.hits().get(i) + " should be cached",
-                    result.hits().get(i).isCached());
-        }
-
-        clearCache(fastSearcher);
 
         result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 10);
         assertEquals(2, result.getHitCount());
@@ -253,7 +220,6 @@ public class FastSearcherTestCase {
         }
 
         // Test that partial result sets can be retrieved from the cache
-        clearCache(fastSearcher);
         result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 1);
         assertEquals(1, result.getConcreteHitCount());
         execution.fill(result);
@@ -261,21 +227,20 @@ public class FastSearcherTestCase {
         result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 2);
         assertEquals(2, result.getConcreteHitCount());
         execution.fill(result);
-        // First hit should be cached but not second hit
-        assertTrue(result.hits().get(0).isCached());
+        // No hit should be cached
+        assertFalse(result.hits().get(0).isCached());
         assertFalse(result.hits().get(1).isCached());
 
-        // Check that the entire result set is returned from cache now
+        // Still nothing cached
         result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 2);
         assertEquals(2, result.getConcreteHitCount());
         execution.fill(result);
         // both first and second should now be cached
-        assertTrue(result.hits().get(0).isCached());
-        assertTrue(result.hits().get(1).isCached());
+        assertFalse(result.hits().get(0).isCached());
+        assertFalse(result.hits().get(1).isCached());
 
         // Tests that the cache _hit_ is not returned if _another_
         // hit is requested
-        clearCache(fastSearcher);
 
         result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 1);
         assertEquals(1, result.getConcreteHitCount());
@@ -313,8 +278,6 @@ public class FastSearcherTestCase {
     @Test
     public void testThatPropertiesAreReencoded() throws Exception {
         FastSearcher fastSearcher = createFastSearcher();
-
-        assertEquals(100, fastSearcher.getCacheControl().capacity()); // Default cache =100MB
 
         Query query = new Query("?query=ignored&dispatch.summaries=false");
         query.getRanking().setQueryCache(true);
@@ -374,84 +337,7 @@ public class FastSearcherTestCase {
                                 new MockDispatcher("a", Collections.emptyList()),
                                 new SummaryParameters(null),
                                 new ClusterParams("testhittype"),
-                                new CacheParams(100, 1e64),
                                 config);
-    }
-
-    @Ignore
-    public void testSinglePhaseCachedSupersets() {
-        Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
-        MockFSChannel.resetDocstamp();
-        FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
-                                                     new FS4ResourcePool("container.0", 1),
-                                                     new MockDispatcher("a", Collections.emptyList()),
-                                                     new SummaryParameters(null),
-                                                     new ClusterParams("testhittype"),
-                                                     new CacheParams(100, 1e64),
-                                                     documentdbInfoConfig);
-
-        CacheControl c = fastSearcher.getCacheControl();
-
-        Result result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 2);
-        Query q = new Query("?query=ignored");
-        ((WordItem) q.getModel().getQueryTree().getRoot()).setUniqueID(1);
-        QueryPacket queryPacket = QueryPacket.create("container.0", q);
-        CacheKey k = new CacheKey(queryPacket);
-        PacketWrapper p = c.lookup(k, q);
-        assertEquals(1, p.getResultPackets().size());
-
-        result = doSearch(fastSearcher,new Query("?query=ignored"), 1, 1);
-        p = c.lookup(k, q);
-        // ensure we don't get redundant QueryResultPacket instances
-        // in the cache
-        assertEquals(1, p.getResultPackets().size());
-
-        assertEquals(1, result.getConcreteHitCount());
-        for (int i = 0; i < result.getHitCount(); i++) {
-            assertTrue(result.hits().get(i).isCached());
-        }
-
-        result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 1);
-        p = c.lookup(k, q);
-        assertEquals(1, p.getResultPackets().size());
-        assertEquals(1, result.getConcreteHitCount());
-        for (int i = 0; i < result.getHitCount(); i++) {
-            assertTrue(result.hits().get(i).isCached());
-        }
-
-    }
-
-    @Test
-    public void testMultiPhaseCachedSupersets() {
-        Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
-        MockFSChannel.resetDocstamp();
-        FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
-                                                     new FS4ResourcePool("container.0", 1),
-                                                     new MockDispatcher("a", Collections.emptyList()),
-                                                     new SummaryParameters(null),
-                                                     new ClusterParams("testhittype"),
-                                                     new CacheParams(100, 1e64),
-                                                     documentdbInfoConfig);
-
-        Result result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 2);
-        result = doSearch(fastSearcher,new Query("?query=ignored"), 1, 1);
-        assertEquals(1, result.getConcreteHitCount());
-        for (int i = 0; i < result.getHitCount(); i++) {
-            assertTrue(result.hits().get(i).isCached());
-            if (!result.hits().get(i).isMeta()) {
-                assertTrue(result.hits().get(i).getFilled().isEmpty());
-            }
-        }
-
-        result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 1);
-        assertEquals(1, result.getConcreteHitCount());
-        for (int i = 0; i < result.getHitCount(); i++) {
-            assertTrue(result.hits().get(i).isCached());
-            if (!result.hits().get(i).isMeta()) {
-                assertTrue(result.hits().get(i).getFilled().isEmpty());
-            }
-        }
-
     }
 
     @Test
@@ -461,7 +347,6 @@ public class FastSearcherTestCase {
                                                      new MockDispatcher(new Node(0, "host0", 123, 0)),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     new CacheParams(100, 1e64),
                                                      documentdbInfoConfig);
         Query q = new Query("?query=foo");
         GroupingRequest request1 = GroupingRequest.newInstance(q);
@@ -489,7 +374,6 @@ public class FastSearcherTestCase {
                                                      dispatcher,
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     new CacheParams(100, 1e64),
                                                      documentdbInfoConfig);
         Query q = new Query("?query=foo");
         GroupingRequest request1 = GroupingRequest.newInstance(q);
@@ -529,7 +413,6 @@ public class FastSearcherTestCase {
                                                      new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     new CacheParams(0, 0.0d),
                                                      documentdbInfoConfig);
         server.dispatch.packetData = BackendTestCase.PONG;
         server.dispatch.setNoChannel();
@@ -542,10 +425,6 @@ public class FastSearcherTestCase {
         server.worker.join();
         pong.setPingInfo("blbl");
         assertEquals("Result of pinging using blbl", pong.toString());
-    }
-
-    private void clearCache(FastSearcher fastSearcher) {
-        fastSearcher.getCacheControl().clear();
     }
 
     private void assertCorrectTypes1(FastHit hit) {

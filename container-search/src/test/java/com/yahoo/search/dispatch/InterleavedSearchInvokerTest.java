@@ -47,7 +47,7 @@ public class InterleavedSearchInvokerTest {
         expectedEvents.add(new Event(4900, 100, 1));
         expectedEvents.add(new Event(4800, 100, 2));
 
-        invoker.search(query, null, null, null);
+        invoker.search(query, null, null);
 
         assertTrue("All test scenario events processed", expectedEvents.isEmpty());
     }
@@ -61,7 +61,7 @@ public class InterleavedSearchInvokerTest {
         expectedEvents.add(new Event(4700, 300, 1));
         expectedEvents.add(null);
 
-        Result result = invoker.search(query, null, null, null);
+        Result result = invoker.search(query, null, null);
 
         assertTrue("All test scenario events processed", expectedEvents.isEmpty());
         assertNotNull("Result is marked as an error", result.hits().getErrorHit());
@@ -78,7 +78,7 @@ public class InterleavedSearchInvokerTest {
         expectedEvents.add(new Event(2400, 100, 2));
         expectedEvents.add(new Event(0, 0, null));
 
-        Result result = invoker.search(query, null, null, null);
+        Result result = invoker.search(query, null, null);
 
         assertTrue("All test scenario events processed", expectedEvents.isEmpty());
         assertNotNull("Result is marked as an error", result.hits().getErrorHit());
@@ -95,7 +95,7 @@ public class InterleavedSearchInvokerTest {
         expectedEvents.add(new Event(null, 100, 0));
         expectedEvents.add(new Event(null, 200, 1));
 
-        Result result = invoker.search(query, null, null, null);
+        Result result = invoker.search(query, null, null);
 
         Coverage cov = result.getCoverage(true);
         assertThat(cov.getDocs(), is(100000L));
@@ -116,7 +116,7 @@ public class InterleavedSearchInvokerTest {
         expectedEvents.add(new Event(null, 100, 0));
         expectedEvents.add(new Event(null, 200, 1));
 
-        Result result = invoker.search(query, null, null, null);
+        Result result = invoker.search(query, null, null);
 
         Coverage cov = result.getCoverage(true);
         assertThat(cov.getDocs(), is(23420L));
@@ -138,7 +138,7 @@ public class InterleavedSearchInvokerTest {
         expectedEvents.add(new Event(null, 100, 0));
         expectedEvents.add(new Event(null, 200, 1));
 
-        Result result = invoker.search(query, null, null, null);
+        Result result = invoker.search(query, null, null);
 
         Coverage cov = result.getCoverage(true);
         assertThat(cov.getDocs(), is(9900L));
@@ -160,7 +160,7 @@ public class InterleavedSearchInvokerTest {
         expectedEvents.add(new Event(null, 100, 0));
         expectedEvents.add(null);
 
-        Result result = invoker.search(query, null, null, null);
+        Result result = invoker.search(query, null, null);
 
         Coverage cov = result.getCoverage(true);
         assertThat(cov.getDocs(), is(50155L));
@@ -185,7 +185,7 @@ public class InterleavedSearchInvokerTest {
         expectedEvents.add(new Event(null,   1, 1));
         expectedEvents.add(new Event(null, 100, 0));
 
-        Result result = invoker.search(query, null, null, null);
+        Result result = invoker.search(query, null, null);
 
         Coverage cov = result.getCoverage(true);
         assertThat(cov.getDocs(), is(50155L));

@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.fs4.QueryPacket;
-import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Coverage;
@@ -44,7 +43,7 @@ public class SearchErrorInvoker extends SearchInvoker {
     }
 
     @Override
-    protected Result getSearchResult(CacheKey cacheKey, Execution execution) throws IOException {
+    protected Result getSearchResult(Execution execution) throws IOException {
         Result res = new Result(query, message);
         if (coverage != null) {
             res.setCoverage(coverage);

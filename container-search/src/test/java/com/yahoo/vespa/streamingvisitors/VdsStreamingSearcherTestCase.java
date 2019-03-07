@@ -4,8 +4,6 @@ package com.yahoo.vespa.streamingvisitors;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.messagebus.routing.Route;
-import com.yahoo.prelude.fastsearch.CacheKey;
-import com.yahoo.prelude.fastsearch.CacheParams;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.document.select.parser.ParseException;
@@ -139,9 +137,8 @@ public class VdsStreamingSearcherTestCase {
 
     private static Result executeQuery(VdsStreamingSearcher searcher, Query query) {
         QueryPacket queryPacket = QueryPacket.create("container.0", query);
-        CacheKey cacheKey = new CacheKey(queryPacket);
         Execution execution = new Execution(new Execution.Context(null, null, null, null, null));
-        return searcher.doSearch2(query, queryPacket, cacheKey, execution);
+        return searcher.doSearch2(query, queryPacket, execution);
     }
 
     private static Query[] generateTestQueries(String queryString) {
@@ -207,7 +204,6 @@ public class VdsStreamingSearcherTestCase {
         searcher.init("container.0",
                       new SummaryParameters("default"),
                       new ClusterParams("clusterName"),
-                      new CacheParams(100, 1e64),
                       config);
 
         // Magic query values are used to trigger specific behaviors from mock visitor.

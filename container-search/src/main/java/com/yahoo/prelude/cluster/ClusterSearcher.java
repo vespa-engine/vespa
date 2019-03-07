@@ -17,8 +17,6 @@ import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
-import com.yahoo.prelude.fastsearch.CacheControl;
-import com.yahoo.prelude.fastsearch.CacheParams;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FastSearcher;
@@ -127,7 +125,6 @@ public class ClusterSearcher extends Searcher {
         maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(),
                                                               DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
 
-        CacheParams cacheParams = new CacheParams(createCache(clusterConfig, clusterModelName));
         SummaryParameters docSumParams = new SummaryParameters(qrsConfig
                 .com().yahoo().prelude().fastsearch().FastSearcher().docsum()
                 .defaultclass());
@@ -144,7 +141,7 @@ public class ClusterSearcher extends Searcher {
         if (searchClusterConfig.indexingmode() == STREAMING) {
             VdsStreamingSearcher searcher = vdsCluster(fs4ResourcePool.getServerId(),
                                                        searchClusterIndex,
-                                                       searchClusterConfig, cacheParams, docSumParams,
+                                                       searchClusterConfig, docSumParams,
                                                        documentDbConfig);
             addBackendSearcher(searcher);
         } else {
@@ -153,8 +150,7 @@ public class ClusterSearcher extends Searcher {
                 try {
                     if ( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {
                         Backend dispatchBackend = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
-                        FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool,
-                                                               cacheParams, docSumParams,
+                        FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool, docSumParams,
                                                                documentDbConfig, dispatchBackend, dispatcher, dispatcherIndex);
                         addBackendSearcher(searcher);
                     }
@@ -196,7 +192,6 @@ public class ClusterSearcher extends Searcher {
 
     private static FastSearcher searchDispatch(int searchclusterIndex,
                                                FS4ResourcePool fs4ResourcePool,
-                                               CacheParams cacheParams,
                                                SummaryParameters docSumParams,
                                                DocumentdbInfoConfig documentdbInfoConfig,
                                                Backend backend,
@@ -204,14 +199,13 @@ public class ClusterSearcher extends Searcher {
                                                int dispatcherIndex) {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
                                                         dispatcherIndex);
-        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams,
+        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams,
                                 documentdbInfoConfig);
     }
 
     private static VdsStreamingSearcher vdsCluster(String serverId,
                                                    int searchclusterIndex,
                                                    QrSearchersConfig.Searchcluster searchClusterConfig,
-                                                   CacheParams cacheParams,
                                                    SummaryParameters docSumParams,
                                                    DocumentdbInfoConfig documentdbInfoConfig)
     {
@@ -224,7 +218,7 @@ public class ClusterSearcher extends Searcher {
         searcher.setSearchClusterConfigId(searchClusterConfig.rankprofiles().configid());
         searcher.setDocumentType(searchClusterConfig.searchdef(0));
         searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());
-        searcher.init(serverId, docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
+        searcher.init(serverId, docSumParams, clusterParams, documentdbInfoConfig);
         return searcher;
     }
 
@@ -242,14 +236,6 @@ public class ClusterSearcher extends Searcher {
 
     private Backend createBackend(QrSearchersConfig.Searchcluster.Dispatcher disp) {
         return fs4ResourcePool.getBackend(disp.host(), disp.port());
-    }
-
-    private static CacheControl createCache(ClusterConfig config, String clusterModelName) {
-        log.log(Level.INFO, "Enabling cache for search cluster "
-                            + clusterModelName + " (size=" + config.cacheSize()
-                            + ", timeout=" + config.cacheTimeout() + ")");
-
-        return new CacheControl(config.cacheSize(), config.cacheTimeout());
     }
 
     ClusterMonitor getMonitor() {

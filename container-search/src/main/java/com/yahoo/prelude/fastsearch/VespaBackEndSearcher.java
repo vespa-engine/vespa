@@ -12,7 +12,6 @@ import com.yahoo.fs4.QueryPacket;
 import com.yahoo.fs4.QueryPacketData;
 import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.io.HexDump;
 import com.yahoo.log.LogLevel;
 import com.yahoo.prelude.ConfigurationException;
 import com.yahoo.prelude.query.Item;
@@ -33,9 +32,6 @@ import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.slime.BinaryFormat;
-import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.Slime;
-import com.yahoo.text.Utf8;
 import com.yahoo.vespa.objects.BufferSerializer;
 
 import java.io.IOException;
@@ -80,17 +76,11 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     /** The name of this source */
     private String name;
 
-    /** Cache wrapper */
-    private CacheControl cacheControl = null;
-
     public final String getName() { return name; }
     protected final String getDefaultDocsumClass() { return defaultDocsumClass; }
 
     /** Sets default document summary class. Default is null */
     private void setDefaultDocsumClass(String docsumClass) { defaultDocsumClass = docsumClass; }
-
-    /** Returns the packet cache controller of this */
-    public final CacheControl getCacheControl() { return cacheControl; }
 
     public final Logger getLogger() { return super.getLogger(); }
 
@@ -100,10 +90,9 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      *
      * @param query the query to search
      * @param queryPacket the serialized query representation to pass to the search cluster
-     * @param cacheKey the cache key created from the query packet, or null if caching is not used
      * @param execution the query execution context
      */
-    protected abstract Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution);
+    protected abstract Result doSearch2(Query query, QueryPacket queryPacket, Execution execution);
 
     protected abstract void doPartialFill(Result result, String summaryClass);
 
@@ -131,28 +120,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return false;
     }
 
-    private Result cacheLookupFirstPhase(CacheKey key, QueryPacketData queryPacketData, Query query, int offset, int hits, String summaryClass) {
-        PacketWrapper packetWrapper = cacheControl.lookup(key, query);
-
-        if (packetWrapper == null) return null;
-
-        // Check if the cache entry contains the requested hits
-        List<DocumentInfo> documents = packetWrapper.getDocuments(offset, hits);
-        if (documents == null) return null;
-
-        if (query.getPresentation().getSummary() == null)
-            query.getPresentation().setSummary(getDefaultDocsumClass());
-        Result result = new Result(query);
-        QueryResultPacket resultPacket = packetWrapper.getFirstResultPacket();
-
-        addMetaInfo(query, queryPacketData, resultPacket, result);
-        if (packetWrapper.getNumPackets() == 0)
-            addUnfilledHits(result, documents, true, queryPacketData, key, packetWrapper.distributionKey());
-        else
-            addCachedHits(result, packetWrapper, summaryClass, documents);
-        return result;
-    }
-
     public String getServerId() { return serverId; }
 
     protected DocumentDatabase getDocumentDatabase(Query query) {
@@ -174,7 +141,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     }
 
     public final void init(String serverId, SummaryParameters docSumParams, ClusterParams clusterParams,
-                           CacheParams cacheParams, DocumentdbInfoConfig documentdbInfoConfig) {
+                           DocumentdbInfoConfig documentdbInfoConfig) {
         this.serverId = serverId;
         this.name = clusterParams.searcherName;
 
@@ -190,12 +157,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                 }
                 documentDbs.put(docDb.name(), db);
             }
-        }
-
-        if (cacheParams.cacheControl == null) {
-            this.cacheControl = new CacheControl(cacheParams.cacheMegaBytes, cacheParams.cacheTimeOutSeconds);
-        } else {
-            this.cacheControl = cacheParams.cacheControl;
         }
     }
 
@@ -230,14 +191,9 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             getLogger().fine("made QueryPacket: " + queryPacket);
 
         Result result = null;
-        CacheKey cacheKey = null;
-        if (cacheControl.useCache(query)) {
-            cacheKey = new CacheKey(queryPacket);
-            result = getCached(cacheKey, queryPacket.getQueryPacketData(), query);
-        }
 
         if (result == null) {
-            result = doSearch2(query, queryPacket, cacheKey, execution);
+            result = doSearch2(query, queryPacket, execution);
             if (isLoggingFine())
                 getLogger().fine("Result NOT retrieved from cache");
 
@@ -255,34 +211,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         if (compressionLimit != 0)
             queryPacket.setCompressionType(query.properties().getString(PACKET_COMPRESSION_TYPE, "lz4"));
         return queryPacket;
-    }
-
-    /**
-     * Returns a cached result, or null if no result was cached for this key
-     *
-     * @param cacheKey the cache key created from the query packet
-     * @param queryPacketData a serialization of the query, to avoid having to recompute this, or null if not available
-     * @param query the query, used for tracing, lookup of result window and result creation
-     */
-    private Result getCached(CacheKey cacheKey, QueryPacketData queryPacketData, Query query) {
-        if (query.getTraceLevel() >= 6) {
-            query.trace("Cache key hash: " + cacheKey.hashCode(), 6);
-            if (query.getTraceLevel() >= 8) {
-                query.trace("Cache key: " + HexDump.toHexString(cacheKey.getCopyOfFullKey()), 8);
-            }
-        }
-
-        Result result = cacheLookupFirstPhase(cacheKey, queryPacketData, query, query.getOffset(), query.getHits(), query.getPresentation().getSummary());
-        if (result == null) return null;
-
-        if (isLoggingFine()) {
-            getLogger().fine("Result retrieved from cache: " + result);
-        }
-        if (query.getTraceLevel() >= 1) {
-            query.trace(getName() + " cached response: " + result, false, 1);
-        }
-        result.trace(getName());
-        return result;
     }
 
     private List<Result> partitionHits(Result result, String summaryClass) {
@@ -525,46 +453,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return new FillHitsResult(skippedHits, lastError);
     }
 
-    private boolean addCachedHits(Result result,
-                                  PacketWrapper packetWrapper,
-                                  String summaryClass,
-                                  List<DocumentInfo> documents) {
-        boolean filledAllOfEm = true;
-        Query myQuery = result.getQuery();
-
-        for (DocumentInfo document : documents) {
-            FastHit hit = new FastHit();
-            hit.setQuery(myQuery);
-
-            hit.setFillable();
-            hit.setCached(true);
-
-            extractDocumentInfo(hit, document);
-
-            DocsumPacket docsum = (DocsumPacket) packetWrapper.getPacket(document.getGlobalId(), document.getPartId(), summaryClass);
-
-            if (docsum != null) {
-                byte[] docsumdata = docsum.getData();
-
-                if (docsumdata.length > 0) {
-                    String error = decodeSummary(summaryClass, hit, docsumdata);
-                    if (error != null) {
-                        filledAllOfEm = false;
-                    }
-                } else {
-                    filledAllOfEm = false;
-                }
-            } else {
-                filledAllOfEm = false;
-            }
-
-            result.hits().add(hit);
-
-        }
-
-        return filledAllOfEm;
-    }
-
     private void extractDocumentInfo(FastHit hit, DocumentInfo document) {
         hit.setSource(getName());
 
@@ -602,16 +490,13 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      * created from a cache in the current call path.
      *
      * @param queryPacketData binary data from first phase of search, or null
-     * @param cacheKey the key this hit should match in the packet cache, or null
      * @param channelDistributionKey distribution key of the node producing these hits.
      *                               Only set if produced directly by a search node, not dispatch
      *                               (in which case it is not set in the received packets.)
      */
     void addUnfilledHits(Result result,
                             List<DocumentInfo> documents,
-                            boolean fromCache,
                             QueryPacketData queryPacketData,
-                            CacheKey cacheKey,
                             Optional<Integer> channelDistributionKey) {
         Query myQuery = result.getQuery();
 
@@ -622,10 +507,9 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                 hit.setQuery(myQuery);
                 if (queryPacketData != null)
                     hit.setQueryPacketData(queryPacketData);
-                hit.setCacheKey(cacheKey);
 
                 hit.setFillable();
-                hit.setCached(fromCache);
+                hit.setCached(false);
 
                 extractDocumentInfo(hit, document);
                 channelDistributionKey.ifPresent(hit::setDistributionKey);

@@ -69,13 +69,12 @@ public class FastSearcher extends VespaBackEndSearcher {
      *                   backend.
      * @param docSumParams  document summary parameters
      * @param clusterParams the cluster number, and other cluster backend parameters
-     * @param cacheParams   the size, lifetime, and controller of our cache
      * @param documentdbInfoConfig document database parameters
      */
-    public FastSearcher(Backend dispatchBackend, FS4ResourcePool fs4ResourcePool,
-                        Dispatcher dispatcher, SummaryParameters docSumParams, ClusterParams clusterParams,
-                        CacheParams cacheParams, DocumentdbInfoConfig documentdbInfoConfig) {
-        init(fs4ResourcePool.getServerId(), docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
+    public FastSearcher(Backend dispatchBackend, FS4ResourcePool fs4ResourcePool, Dispatcher dispatcher,
+                        SummaryParameters docSumParams, ClusterParams clusterParams,
+                        DocumentdbInfoConfig documentdbInfoConfig) {
+        init(fs4ResourcePool.getServerId(), docSumParams, clusterParams, documentdbInfoConfig);
         this.dispatchBackend = dispatchBackend;
         this.dispatcher = dispatcher;
         this.fs4InvokerFactory = new FS4InvokerFactory(fs4ResourcePool, dispatcher.searchCluster(), this);
@@ -146,11 +145,11 @@ public class FastSearcher extends VespaBackEndSearcher {
     }
 
     @Override
-    public Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
+    public Result doSearch2(Query query, QueryPacket queryPacket, Execution execution) {
         if (dispatcher.searchCluster().groupSize() == 1)
             forceSinglePassGrouping(query);
         try(SearchInvoker invoker = getSearchInvoker(query)) {
-            Result result = invoker.search(query, queryPacket, cacheKey, execution);
+            Result result = invoker.search(query, queryPacket, execution);
 
             if (query.properties().getBoolean(Ranking.RANKFEATURES, false)) {
                 // There is currently no correct choice for which
@@ -238,7 +237,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         if (direct.isPresent()) {
             return fs4InvokerFactory.getFillInvoker(query, direct.get());
         }
-        return new FS4FillInvoker(getServerId(), this, query, dispatchBackend);
+        return new FS4FillInvoker(this, query, dispatchBackend);
     }
 
     /**

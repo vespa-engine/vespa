@@ -3,7 +3,6 @@ package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.ChannelTimeoutException;
-import com.yahoo.fs4.Packet;
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.fs4.mplex.FS4Channel;
@@ -76,7 +75,7 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
     }
 
     @Override
-    protected Result getSearchResult(CacheKey cacheKey, Execution execution) throws IOException {
+    protected Result getSearchResult(Execution execution) throws IOException {
         if (pendingSearchError != null) {
             return errorResult(pendingSearchError);
         }
@@ -110,24 +109,8 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
 
         searcher.addMetaInfo(query, queryPacket.getQueryPacketData(), resultPacket, result);
 
-        searcher.addUnfilledHits(result, resultPacket.getDocuments(), false, queryPacket.getQueryPacketData(), cacheKey, distributionKey());
-        Packet[] packets;
-        CacheControl cacheControl = searcher.getCacheControl();
-        PacketWrapper packetWrapper = cacheControl.lookup(cacheKey, query);
+        searcher.addUnfilledHits(result, resultPacket.getDocuments(), queryPacket.getQueryPacketData(), distributionKey());
 
-        if (packetWrapper != null) {
-            cacheControl.updateCacheEntry(cacheKey, query, resultPacket);
-        } else {
-            if (resultPacket.getCoverageFeature() && !resultPacket.getCoverageFull()) {
-                // Don't add error here, it was done in first phase
-                // No check if packetWrapper already exists, since incomplete
-                // first phase data won't be cached anyway.
-            } else {
-                packets = new Packet[1];
-                packets[0] = resultPacket;
-                cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets, distributionKey());
-            }
-        }
         return result;
     }
 

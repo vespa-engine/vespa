@@ -8,7 +8,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.prelude.IndexModel;
-import com.yahoo.prelude.fastsearch.CacheControl;
 import com.yahoo.prelude.querytransform.RecallSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.Model;
@@ -201,7 +200,7 @@ public class GUIHandler extends LoggingRequestHandler {
                                 Query.SEARCH_CHAIN.toString(), Query.TIMEOUT.toString(), "trace", "tracelevel",
                                 Query.TRACE_LEVEL.toString(), Model.MODEL, Ranking.RANKING, "collapse", "collapsesize","collapsefield",
                                 Presentation.PRESENTATION, "pos", "streaming", "rules", RecallSearcher.recallName.toString(), "user",
-                                CacheControl.nocachewrite.toString(), "metrics", "");
+                                "metrics", "");
             json.put("levelZeroParameters", levelZeroParameters);
 
             return json.toString();
