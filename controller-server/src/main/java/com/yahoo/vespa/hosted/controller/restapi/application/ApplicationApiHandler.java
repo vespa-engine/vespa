@@ -96,8 +96,6 @@ import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -414,15 +412,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Instant until = controller.clock().instant().plus(DeploymentTrigger.maxPause);
         controller.applications().deploymentTrigger().pauseJob(id, type, until);
         return new MessageResponse(type.jobName() + " for " + id + " paused for " + DeploymentTrigger.maxPause);
-    }
-
-    private HashMap<String, String> getParameters(String query) {
-        HashMap<String, String> keyValPair = new HashMap<>();
-        Arrays.stream(query.split("&")).forEach(pair -> {
-            String[] splitPair = pair.split("=");
-            keyValPair.put(splitPair[0], splitPair[1]);
-        });
-        return keyValPair;
     }
 
     private void toSlime(Cursor object, Application application, HttpRequest request) {
