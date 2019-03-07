@@ -277,6 +277,7 @@ public class ProvisioningTester {
                                                 hostIps,
                                                 ipAddressPool,
                                                 Optional.empty(),
+                                                Optional.empty(),
                                                 nodeFlavors.getFlavorOrThrow(flavor),
                                                 type));
         }

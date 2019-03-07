@@ -31,7 +31,7 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the provisioned physical host */
     public Node generateHost() {
-        return Node.create(id, Set.of(), Set.of(), hostHostname, Optional.empty(), hostFlavor, NodeType.host);
+        return Node.create(id, Set.of(), Set.of(), hostHostname, Optional.empty(), Optional.empty(), hostFlavor, NodeType.host);
     }
 
     /** Generate {@link Node} instance representing the node running on this physical host */

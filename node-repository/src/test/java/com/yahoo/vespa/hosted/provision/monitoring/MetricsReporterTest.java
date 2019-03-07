@@ -121,7 +121,7 @@ public class MetricsReporterTest {
         // Allow 4 containers
         Set<String> ipAddressPool = ImmutableSet.of("::2", "::3", "::4", "::5");
 
-        Node dockerHost = Node.create("openStackId1", Collections.singleton("::1"), ipAddressPool, "dockerHost", Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+        Node dockerHost = Node.create("openStackId1", Collections.singleton("::1"), ipAddressPool, "dockerHost", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
         nodeRepository.addNodes(Collections.singletonList(dockerHost));
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
