@@ -3105,6 +3105,7 @@
     "methods": [
       "public static boolean isTextCharacter(int)",
       "public static java.util.OptionalInt validateTextString(java.lang.String)",
+      "public static boolean isDisplayable(int)",
       "public static java.lang.String stripInvalidCharacters(java.lang.String)"
     ],
     "fields": []
