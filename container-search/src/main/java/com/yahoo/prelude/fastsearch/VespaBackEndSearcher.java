@@ -423,9 +423,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         for (FS4Properties properties : resultPacket.propsArray) {
             if ( ! properties.getName().equals("trace")) continue;
             for (FS4Properties.Entry entry : properties.getEntries()) {
-                if (!entry.key.equals("slime")) continue;
                 traces.add(new SlimeAdapter(BinaryFormat.decode(entry.getValue()).get()));
-
             }
         }
         query.trace(traces, query.getTraceLevel());
