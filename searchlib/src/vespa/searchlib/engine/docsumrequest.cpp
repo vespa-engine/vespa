@@ -8,14 +8,11 @@ namespace search::engine {
 DocsumRequest::DocsumRequest()
     : DocsumRequest(false) {}
 
-DocsumRequest::DocsumRequest(const fastos::TimeStamp &start_time)
-    : DocsumRequest(start_time, false) {}
-
 DocsumRequest::DocsumRequest(bool useRootSlime_)
-    : DocsumRequest(fastos::ClockSystem::now(), useRootSlime_) {}
+    : DocsumRequest(RelativeTime(std::make_unique<FastosClock>()), useRootSlime_) {}
 
-DocsumRequest::DocsumRequest(const fastos::TimeStamp &start_time, bool useRootSlime_)
-    : Request(start_time),
+DocsumRequest::DocsumRequest(RelativeTime relativeTime, bool useRootSlime_)
+    : Request(std::move(relativeTime)),
       _flags(0u),
       resultClassName(),
       useWideHits(false),
@@ -28,16 +25,16 @@ DocsumRequest::~DocsumRequest() = default;
 
 void DocsumRequest::Source::lazyDecode() const
 {
-    if ((_request.get() == NULL) && (_fs4Packet != NULL)) {
-        _request.reset(new DocsumRequest(_start));
+    if ( !_request && (_fs4Packet != nullptr)) {
+        _request = std::make_unique<DocsumRequest>(_relativeTime, false);
         PacketConverter::toDocsumRequest(*_fs4Packet, *_request);
         _fs4Packet->Free();
-        _fs4Packet = NULL;
+        _fs4Packet = nullptr;
     }
 }
 
 DocsumRequest::Source::~Source() {
-    if (_fs4Packet != NULL) {
+    if (_fs4Packet != nullptr) {
         _fs4Packet->Free();
     }
 }

@@ -1,5 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #pragma once
+
 /**
  * @class vespalib::Cloneable
  * @brief Superclass for objects implementing clone() deep copy.
@@ -19,7 +21,7 @@ public:
      * don't need to cast it to get the correct type.
      */
     virtual Cloneable* clone() const = 0;
-    virtual ~Cloneable() {}
+    virtual ~Cloneable() = default;
 };
 
 } // namespace vespalib

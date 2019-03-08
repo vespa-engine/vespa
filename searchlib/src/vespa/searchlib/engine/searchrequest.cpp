@@ -6,10 +6,10 @@
 namespace search::engine {
 
 SearchRequest::SearchRequest()
-    : SearchRequest(fastos::ClockSystem::now()) {}
+    : SearchRequest(RelativeTime(std::make_unique<FastosClock>())) {}
 
-SearchRequest::SearchRequest(const fastos::TimeStamp &start_time)
-    : Request(start_time),
+SearchRequest::SearchRequest(RelativeTime relativeTime)
+    : Request(std::move(relativeTime)),
       offset(0),
       maxhits(10),
       sortSpec(),
@@ -19,10 +19,34 @@ SearchRequest::SearchRequest(const fastos::TimeStamp &start_time)
 
 SearchRequest::~SearchRequest() = default;
 
+
+SearchRequest::Source::Source(SearchRequest * request)
+    : _request(request),
+      _fs4Packet(nullptr),
+      _desc(0),
+      _relativeTime(_request->getRelativeTime())
+{ }
+
+SearchRequest::Source::Source(FS4Packet_QUERYX *query, SourceDescription desc)
+    : _request(),
+    _fs4Packet(query),
+    _desc(desc),
+    _relativeTime(std::make_unique<FastosClock>())
+{ }
+
+SearchRequest::Source::Source(Source && rhs) noexcept
+    : _request(std::move(rhs._request)),
+      _fs4Packet(rhs._fs4Packet),
+      _desc(std::move(rhs._desc)),
+      _relativeTime(std::move(rhs._relativeTime))
+{
+    rhs._fs4Packet = nullptr;
+}
+
 void SearchRequest::Source::lazyDecode() const
 {
-    if (!_request && (_fs4Packet != nullptr)) {
-        _request = std::make_unique<SearchRequest>(_start);
+    if ( ! _request && (_fs4Packet != nullptr)) {
+        _request = std::make_unique<SearchRequest>(_relativeTime);
         PacketConverter::toSearchRequest(*_fs4Packet, *_request);
         _fs4Packet->Free();
         _fs4Packet = nullptr;

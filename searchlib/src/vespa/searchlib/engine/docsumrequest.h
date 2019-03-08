@@ -26,20 +26,20 @@ public:
         mutable FS4Packet_GETDOCSUMSX *_fs4Packet;
         void lazyDecode() const;
         const SourceDescription _desc;
-        const fastos::TimeStamp _start;
+        const RelativeTime _relativeTime;
     public:
 
-        Source(DocsumRequest * request) : _request(request), _fs4Packet(NULL), _desc(0), _start(_request->getStartTime()) {}
-        Source(DocsumRequest::UP request) : _request(std::move(request)), _fs4Packet(NULL), _desc(0), _start(_request->getStartTime()) {}
-        Source(FS4Packet_GETDOCSUMSX *query, SourceDescription desc) : _request(), _fs4Packet(query), _desc(desc), _start(fastos::ClockSystem::now()) { }
+        Source(DocsumRequest * request) : _request(request), _fs4Packet(nullptr), _desc(0), _relativeTime(_request->getRelativeTime()) {}
+        Source(DocsumRequest::UP request) : _request(std::move(request)), _fs4Packet(nullptr), _desc(0), _relativeTime(_request->getRelativeTime()) {}
+        Source(FS4Packet_GETDOCSUMSX *query, SourceDescription desc) : _request(), _fs4Packet(query), _desc(desc), _relativeTime(std::make_unique<FastosClock>()) { }
 
-        Source(Source && rhs)
+        Source(Source && rhs) noexcept
           : _request(std::move(rhs._request)),
             _fs4Packet(rhs._fs4Packet),
             _desc(std::move(rhs._desc)),
-            _start(rhs._start)
+            _relativeTime(std::move(rhs._relativeTime))
         {
-            rhs._fs4Packet = NULL;
+            rhs._fs4Packet = nullptr;
         }
 
         ~Source();
@@ -61,8 +61,7 @@ public:
         }
     };
 
-    class Hit
-    {
+    class Hit {
     public:
         Hit() : gid(), docid(0), path(0) {}
         Hit(const document::GlobalId & gid_) : gid(gid_), docid(0), path(0) {}
@@ -83,10 +82,9 @@ public:
     std::vector<char> sessionId;
 
     DocsumRequest();
-    explicit DocsumRequest(const fastos::TimeStamp &start_time);
     explicit DocsumRequest(bool useRootSlime_);
-    DocsumRequest(const fastos::TimeStamp &start_time, bool useRootSlime_);
-    ~DocsumRequest();
+    DocsumRequest(RelativeTime relativeTime, bool useRootSlime_);
+    ~DocsumRequest() override;
 
     bool useRootSlime() const { return _useRootSlime; }
 };

@@ -3,22 +3,56 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/memory.h>
+#include <vespa/fastos/timestamp.h>
 
-namespace fastos { class TimeStamp; }
 namespace vespalib { class Slime; }
 namespace vespalib::slime { class Cursor; }
 
 namespace search::engine {
 
-    /**
-     * Used for adding traces to a request. Acquire a new Cursor for everytime you want to trace something.
-     * Note that it is not thread safe. All use of any cursor aquired must be thread safe.
-     */
+class Clock {
+public:
+    virtual ~Clock() = default;
+    virtual fastos::TimeStamp now() const = 0;
+    virtual Clock * clone() const = 0;
+};
+
+class FastosClock : public Clock {
+public:
+    fastos::TimeStamp now() const override { return fastos::ClockSystem::now(); }
+    FastosClock * clone() const override { return new FastosClock(*this); }
+};
+
+class CountingClock : public Clock {
+public:
+    CountingClock(int64_t start) : _nextTime(start) { }
+    fastos::TimeStamp now() const override { return _nextTime++; }
+    CountingClock * clone() const override { return new CountingClock(*this); }
+private:
+    mutable int64_t _nextTime;
+};
+
+class RelativeTime {
+public:
+    RelativeTime(std::unique_ptr<Clock> clock);
+    fastos::TimeStamp timeOfDawn() const { return _start; }
+    fastos::TimeStamp timeSinceDawn() const { return _clock->now() - _start; }
+    fastos::TimeStamp now() const { return _clock->now(); }
+private:
+    fastos::TimeStamp             _start;
+    vespalib::CloneablePtr<Clock> _clock;
+};
+
+/**
+ * Used for adding traces to a request. Acquire a new Cursor for everytime you want to trace something.
+ * Note that it is not thread safe. All use of any cursor aquired must be thread safe.
+ */
 class Trace
 {
 public:
     using Cursor = vespalib::slime::Cursor;
-    Trace(const fastos::TimeStamp &start_time);
+    Trace(const RelativeTime & relativeTime);
     ~Trace();
 
     /**
@@ -32,8 +66,9 @@ public:
     vespalib::Slime & getSlime() const { return *_trace; }
 private:
     std::unique_ptr<vespalib::Slime> _trace;
-    Cursor & _root;
-    Cursor & _traces;
+    Cursor              & _root;
+    Cursor              & _traces;
+    const RelativeTime  & _relativeTime;
 };
 
 }

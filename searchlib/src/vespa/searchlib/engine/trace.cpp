@@ -2,16 +2,21 @@
 
 #include "trace.h"
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/fastos/timestamp.h>
 
 namespace search::engine {
 
-Trace::Trace(const fastos::TimeStamp &start_time)
+RelativeTime::RelativeTime(std::unique_ptr<Clock> clock)
+    : _start(clock->now()),
+      _clock(std::move(clock))
+{}
+
+Trace::Trace(const RelativeTime & relativeTime)
     : _trace(std::make_unique<vespalib::Slime>()),
       _root(_trace->setObject()),
-      _traces(_root.setArray("traces"))
+      _traces(_root.setArray("traces")),
+      _relativeTime(relativeTime)
 {
-   _root.setLong("creation_time", start_time);
+   _root.setLong("creation_time", _relativeTime.timeOfDawn());
 }
 
 Trace::~Trace() = default;
@@ -20,6 +25,7 @@ Trace::Cursor &
 Trace::createCursor(vespalib::stringref name) {
     Cursor & trace = _traces.addObject();
     trace.setString("tag", name);
+    trace.setLong("time", _relativeTime.timeSinceDawn());
     return trace;
 }
 

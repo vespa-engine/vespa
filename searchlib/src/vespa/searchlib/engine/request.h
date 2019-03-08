@@ -11,16 +11,17 @@ namespace search::engine {
 class Request
 {
 public:
-    Request(const fastos::TimeStamp &start_time);
+    Request(RelativeTime && relativeTime);
     Request(const Request &) = delete;
     Request & operator =(const Request &) = delete;
     virtual ~Request();
     void setTimeout(const fastos::TimeStamp & timeout);
-    fastos::TimeStamp getStartTime() const { return _startTime; }
+    fastos::TimeStamp getStartTime() const { return _relativeTime.timeOfDawn(); }
     fastos::TimeStamp getTimeOfDoom() const { return _timeOfDoom; }
-    fastos::TimeStamp getTimeout() const { return _timeOfDoom -_startTime; }
+    fastos::TimeStamp getTimeout() const { return _timeOfDoom - getStartTime(); }
     fastos::TimeStamp getTimeUsed() const;
     fastos::TimeStamp getTimeLeft() const;
+    const RelativeTime & getRelativeTime() { return _relativeTime; }
     bool expired() const { return getTimeLeft() <= 0l; }
 
     const vespalib::stringref getStackRef() const {
@@ -34,7 +35,7 @@ public:
 
     Trace & trace() const { return _trace; }
 private:
-    const fastos::TimeStamp _startTime;
+    RelativeTime            _relativeTime;
     fastos::TimeStamp       _timeOfDoom;
     uint32_t                _traceLevel;
 public:
