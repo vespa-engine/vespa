@@ -4,8 +4,9 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/datatype/datatype.h>
-#include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/doublefieldvalue.h>
@@ -14,9 +15,12 @@
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/structfieldvalue.h>
+#include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/test/test_utils.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/test.h>
@@ -32,6 +36,7 @@
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -54,6 +59,8 @@ using document::PositionDataType;
 using document::PredicateFieldValue;
 using document::StringFieldValue;
 using document::StructFieldValue;
+using document::TensorDataType;
+using document::TensorFieldValue;
 using document::WeightedSetFieldValue;
 using search::AttributeFactory;
 using search::AttributeGuard;
@@ -72,6 +79,7 @@ using search::attribute::Config;
 using search::attribute::IAttributeVector;
 using search::index::Schema;
 using search::index::schema::DataType;
+using search::tensor::TensorAttribute;
 using storage::spi::Bucket;
 using storage::spi::GetResult;
 using storage::spi::PartitionId;
@@ -79,6 +87,10 @@ using storage::spi::Timestamp;
 using storage::spi::test::makeSpiBucket;
 using vespalib::make_string;
 using vespalib::string;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::ValueType;
+using vespalib::tensor::test::makeTensor;
+using vespalib::tensor::Tensor;
 using namespace document::config_builder;
 using namespace search::index;
 
@@ -95,6 +107,10 @@ const char dyn_field_n[] = "dynamic null field"; // not in document, not in attr
 const char dyn_field_nai[] = "dynamic null attr int field"; // in document, not in attribute
 const char dyn_field_nas[] = "dynamic null attr string field"; // in document, not in attribute
 const char position_field[] = "position_field";
+vespalib::string dyn_field_tensor("dynamic_tensor_field");
+vespalib::string tensor_spec("tensor(x{})");
+std::unique_ptr<Tensor> static_tensor = makeTensor<Tensor>(TensorSpec(tensor_spec).add({{"x", "1"}}, 1.5));
+std::unique_ptr<Tensor> dynamic_tensor = makeTensor<Tensor>(TensorSpec(tensor_spec).add({{"x", "2"}}, 3.5));
 const char zcurve_field[] = "position_field_zcurve";
 const char dyn_field_p[] = "dynamic predicate field";
 const char dyn_arr_field_i[] = "dynamic int array field";
@@ -115,6 +131,7 @@ const PredicateFieldValue static_value_p;
 const int32_t dyn_weight = 21;
 const int64_t static_zcurve_value = 1118035438880ll;
 const int64_t dynamic_zcurve_value = 6145423666930817152ll;
+const TensorDataType tensorDataType(ValueType::from_spec(tensor_spec));
 
 struct MyDocumentStore : proton::test::DummyDocumentStore {
     mutable std::unique_ptr<Document> _testDoc;
@@ -145,6 +162,9 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         doc->set(dyn_field_nas, static_value_s);
         doc->set(zcurve_field, static_zcurve_value);
         doc->setValue(dyn_field_p, static_value_p);
+        TensorFieldValue tensorFieldValue(tensorDataType);
+        tensorFieldValue = static_tensor->clone();
+        doc->setValue(dyn_field_tensor, tensorFieldValue);
         FieldValue::UP fv = PositionDataType::getInstance().createFieldValue();
         StructFieldValue &pos = static_cast<StructFieldValue &>(*fv);
         pos.set(PositionDataType::FIELD_X, 42);
@@ -188,6 +208,7 @@ document::DocumenttypesConfig getRepoConfig() {
                      .addField(dyn_wset_field_n, Wset(document::DataType::T_FLOAT))
                      .addField(position_field,
                                PositionDataType::getInstance().getId())
+                     .addTensorField(dyn_field_tensor, tensor_spec)
                      .addField(zcurve_field, document::DataType::T_LONG));
      return builder.config();
 }
@@ -208,6 +229,8 @@ convertDataType(Schema::DataType t)
         return BasicType::STRING;
     case DataType::BOOLEANTREE:
         return BasicType::PREDICATE;
+    case DataType::TENSOR:
+        return BasicType::TENSOR;
     default:
         throw std::runtime_error(make_string("Data type %u not handled", (uint32_t)t));
     }
@@ -231,7 +254,11 @@ convertCollectionType(Schema::CollectionType ct)
 search::attribute::Config
 convertConfig(Schema::DataType t, Schema::CollectionType ct)
 {
-    return search::attribute::Config(convertDataType(t), convertCollectionType(ct));
+    search::attribute::Config cfg(convertDataType(t), convertCollectionType(ct));
+    if (cfg.basicType().type() == BasicType::TENSOR) {
+        cfg.setTensorType(ValueType::from_spec(tensor_spec));
+    }
+    return cfg;
 }
 
 struct Fixture {
@@ -275,6 +302,11 @@ struct Fixture {
         }
         attr->commit();
     }
+    void addTensorAttribute(const char *name, const Tensor &val) {
+        TensorAttribute *attr = addAttribute<TensorAttribute>(name, schema::DataType::TENSOR, schema::CollectionType::SINGLE);
+        attr->setTensor(lid, val);
+        attr->commit();
+    }
 
     Fixture()
         : repo(getRepoConfig()),
@@ -311,6 +343,7 @@ struct Fixture {
                 dyn_field_nas, DataType::STRING, ct);
         addAttribute<IntegerAttribute>(
                 zcurve_field, dynamic_zcurve_value, DataType::INT64, ct);
+        addTensorAttribute(dyn_field_tensor.c_str(), *dynamic_tensor);
         PredicateAttribute *attr = addAttribute<PredicateAttribute>(
                 dyn_field_p, DataType::BOOLEANTREE, ct);
         attr->getIndex().indexEmptyDocument(lid);
@@ -491,6 +524,18 @@ TEST_F("require that zero values in multivalue attribute removes fields", Fixtur
     EXPECT_EQUAL(docPtr, doc.get());
     ASSERT_FALSE(doc->hasValue(dyn_arr_field_i));
     ASSERT_FALSE(doc->hasValue(dyn_wset_field_i));
+}
+
+TEST_F("require that tensor attribute can be retrieved", Fixture) {
+    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
+    ASSERT_TRUE(doc.get());
+
+    FieldValue::UP value = doc->getValue(dyn_field_tensor);
+    ASSERT_TRUE(value.get());
+    TensorFieldValue *tensor_value =
+        dynamic_cast<TensorFieldValue *>(value.get());
+    ASSERT_TRUE(tensor_value->getAsTensorPtr()->equals(*dynamic_tensor));
 }
 
 }  // namespace
