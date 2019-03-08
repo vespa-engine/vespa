@@ -81,7 +81,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -137,7 +136,7 @@ public final class ContainerCluster
     public static final String BINDINGS_OVERVIEW_HANDLER_CLASS = BindingsOverviewHandler.class.getName();
     public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
     public static final String STATISTICS_HANDLER_CLASS = "com.yahoo.container.config.StatisticsRequestHandler";
-    public static final String LOG_HANDLER_CLASS = "com.yahoo.container.handler.LogHandler";
+    public static final String LOG_HANDLER_CLASS = com.yahoo.container.handler.LogHandler.class.getName();
     public static final String DEFAULT_LINGUISTICS_PROVIDER = "com.yahoo.language.provider.DefaultLinguisticsProvider";
     public static final String CMS = "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
     public static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
