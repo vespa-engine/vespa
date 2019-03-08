@@ -17,24 +17,45 @@ using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::tensor::Tensor;
 using vespalib::make_string;
+using vespalib::eval::ValueType;
 
 namespace document {
+
+namespace {
+
+std::unique_ptr<const TensorDataType>
+convertToCompatibleType(const TensorDataType &tensorType)
+{
+    std::vector<ValueType::Dimension> list;
+    for (const auto &dim : tensorType.getTensorType().dimensions()) {
+        if (dim.is_mapped()) {
+            list.emplace_back(dim.name);
+        }
+    }
+    return std::make_unique<const TensorDataType>(ValueType::tensor_type(std::move(list)));
+}
+
+}
 
 IMPLEMENT_IDENTIFIABLE(TensorRemoveUpdate, ValueUpdate);
 
 TensorRemoveUpdate::TensorRemoveUpdate()
-    : _tensor()
+    : _tensorType(),
+      _tensor()
 {
 }
 
 TensorRemoveUpdate::TensorRemoveUpdate(const TensorRemoveUpdate &rhs)
-    : _tensor(rhs._tensor->clone())
+    : _tensorType(rhs._tensorType->clone()),
+      _tensor(rhs._tensor->clone())
 {
 }
 
-TensorRemoveUpdate::TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> &&tensor)
-    : _tensor(std::move(tensor))
+TensorRemoveUpdate::TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor)
+    : _tensorType(Identifiable::cast<const TensorDataType &>(*tensor->getDataType()).clone()),
+      _tensor(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
 {
+    *_tensor = *tensor;
 }
 
 TensorRemoveUpdate::~TensorRemoveUpdate() = default;
@@ -42,13 +63,19 @@ TensorRemoveUpdate::~TensorRemoveUpdate() = default;
 TensorRemoveUpdate &
 TensorRemoveUpdate::operator=(const TensorRemoveUpdate &rhs)
 {
-    _tensor.reset(rhs._tensor->clone());
+    if (&rhs != this) {
+        _tensor.reset();
+        _tensorType.reset(rhs._tensorType->clone());
+        _tensor.reset(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()));
+        *_tensor = *rhs._tensor;
+    }
     return *this;
 }
 
 TensorRemoveUpdate &
 TensorRemoveUpdate::operator=(TensorRemoveUpdate &&rhs)
 {
+    _tensorType = std::move(rhs._tensorType);
     _tensor = std::move(rhs._tensor);
     return *this;
 }
@@ -138,7 +165,8 @@ verifyAddressTensorIsSparse(const std::unique_ptr<Tensor> &addressTensor)
 void
 TensorRemoveUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &type, nbostream &stream)
 {
-    auto tensor = type.createFieldValue();
+    _tensorType = convertToCompatibleType(Identifiable::cast<const TensorDataType &>(type));
+    auto tensor = _tensorType->createFieldValue();
     if (tensor->inherits(TensorFieldValue::classId)) {
         _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));
     } else {
