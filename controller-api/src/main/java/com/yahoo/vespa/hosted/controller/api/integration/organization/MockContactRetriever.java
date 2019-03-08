@@ -17,8 +17,6 @@ public class MockContactRetriever extends AbstractComponent implements ContactRe
 
     private final Map<PropertyId, Contact> contacts = new HashMap<>();
 
-
-
     @Override
     public Contact getContact(Optional<PropertyId> propertyId) {
         return contacts.getOrDefault(propertyId.get(), contact());
@@ -27,7 +25,6 @@ public class MockContactRetriever extends AbstractComponent implements ContactRe
     public void addContact(PropertyId propertyId, Contact contact) {
         contacts.put(propertyId, contact);
     }
-
 
     public Contact contact() {
         return new Contact(URI.create("contacts.tld"), URI.create("properties.tld"), URI.create("issues.tld"), Collections.emptyList(), "queue", Optional.of("component"));
