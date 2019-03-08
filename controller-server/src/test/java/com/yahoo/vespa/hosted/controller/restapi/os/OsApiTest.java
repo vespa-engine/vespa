@@ -129,7 +129,7 @@ public class OsApiTest extends ControllerContainerTest {
         assertResponse(new Request("http://localhost:8080/os/v1/firmware/dev/", "", Request.Method.DELETE),
                        "{\"error-code\":\"NOT_FOUND\",\"message\":\"No zones at path '/os/v1/firmware/dev'\"}", 404);
 
-        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().get().entries().isEmpty());
+        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
     }
 
     private void upgradeAndUpdateStatus() {

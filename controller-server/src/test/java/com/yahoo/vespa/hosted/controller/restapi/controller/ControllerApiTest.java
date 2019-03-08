@@ -54,7 +54,7 @@ public class ControllerApiTest extends ControllerContainerTest {
                        "{\"message\":\"Re-activated job 'DeploymentExpirer'\"}",
                               200);
 
-        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().get().entries().isEmpty());
+        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
     }
 
     @Test
@@ -112,7 +112,7 @@ public class ControllerApiTest extends ControllerContainerTest {
                 "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.43\":\"broken\"}]}",
                 200);
 
-        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().get().entries().isEmpty());
+        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
     }
 
     @Test

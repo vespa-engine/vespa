@@ -35,7 +35,7 @@ public class AuditLogger {
     }
 
     /** Read the current audit log */
-    public AuditLog get() {
+    public AuditLog readLog() {
         return db.readAuditLog();
     }
 

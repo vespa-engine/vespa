@@ -67,7 +67,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/controller/v1/")) return root(request);
-        if (path.matches("/controller/v1/auditlog/")) return new AuditLogResponse(controller.auditLogger().get());
+        if (path.matches("/controller/v1/auditlog/")) return new AuditLogResponse(controller.auditLogger().readLog());
         if (path.matches("/controller/v1/maintenance/")) return new JobsResponse(maintenance.jobControl());
         if (path.matches("/controller/v1/jobs/upgrader")) return new UpgraderResponse(maintenance.upgrader());
         return notFound(path);

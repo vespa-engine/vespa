@@ -27,7 +27,7 @@ public class AuditLoggerTest {
 
     @Test
     public void test_logging() {
-        Supplier<AuditLog> log = () -> tester.controller().auditLogger().get();
+        Supplier<AuditLog> log = () -> tester.controller().auditLogger().readLog();
 
         { // GET request is ignored
             HttpRequest request = testRequest(Method.GET, URI.create("http://localhost:8080/os/v1/"), "");
