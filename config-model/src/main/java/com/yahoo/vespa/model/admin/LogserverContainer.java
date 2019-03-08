@@ -31,7 +31,7 @@ public class LogserverContainer extends Container {
     }
 
     private void addLogHandler(ContainerCluster cluster) {
-        Handler<?> logHandler = Handler.fromClassName("com.yahoo.container.handler.LogHandler");
+        Handler<?> logHandler = Handler.fromClassName(ContainerCluster.LOG_HANDLER_CLASS);
         logHandler.addServerBindings("http://*/logs", "https://*/logs");
         cluster.addComponent(logHandler);
     }
