@@ -15,6 +15,12 @@ class IIndexschemaInspector;
 
 /**
  * Class responsible for initialize reprocessing of attribute vectors if needed.
+ *
+ * 1) Attribute aspect is added to an existing field:
+ *    The attribute is populated based on the content of the field in the document store.
+ *
+ * 2) Attribute aspect is removed from an existing field:
+ *    The field in the document store is populated based on the content of the attribute.
  */
 class AttributeReprocessingInitializer : public IReprocessingInitializer
 {
