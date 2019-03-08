@@ -1,18 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_writer.h"
-#include "ifieldupdatecallback.h"
 #include "attributemanager.h"
 #include "document_field_extractor.h"
+#include "ifieldupdatecallback.h"
+#include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/searchcore/proton/attribute/attribute_utils.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/document/base/exceptions.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/fieldvalue/document.h>
+#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
@@ -33,7 +34,7 @@ AttributeWriter::WriteField::WriteField(AttributeVector &attribute)
       _structFieldAttribute(false)
 {
     const vespalib::string &name = attribute.getName();
-    _structFieldAttribute = name.find('.') != vespalib::string::npos;
+    _structFieldAttribute = attribute::isStructFieldAttribute(name);
 }
 
 AttributeWriter::WriteField::~WriteField() = default;

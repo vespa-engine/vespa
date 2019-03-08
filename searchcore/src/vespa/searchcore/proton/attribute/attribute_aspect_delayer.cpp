@@ -1,22 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_aspect_delayer.h"
-#include <vespa/searchlib/attribute/configconverter.h>
-#include <vespa/searchcore/proton/common/i_document_type_inspector.h>
-#include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
-#include <vespa/searchcore/proton/common/config_hash.hpp>
-#include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/config-attributes.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
+#include <vespa/searchcore/proton/attribute/attribute_utils.h>
+#include <vespa/searchcore/proton/common/config_hash.hpp>
+#include <vespa/searchcore/proton/common/i_document_type_inspector.h>
+#include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
+#include <vespa/searchlib/attribute/configconverter.h>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 
+using proton::attribute::isUpdateableInMemoryOnly;
+using search::attribute::BasicType;
 using search::attribute::ConfigConverter;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
+using vespa::config::search::SummaryConfig;
 using vespa::config::search::SummarymapConfig;
 using vespa::config::search::SummarymapConfigBuilder;
-using vespa::config::search::SummaryConfig;
-using search::attribute::BasicType;
 
 namespace proton {
 
@@ -24,21 +26,12 @@ namespace {
 
 using AttributesConfigHash = ConfigHash<AttributesConfig::Attribute>;
 
-bool fastPartialUpdateAttribute(const search::attribute::Config &cfg) {
-    auto basicType = cfg.basicType().type();
-    return ((basicType != BasicType::Type::PREDICATE) &&
-            (basicType != BasicType::Type::REFERENCE));
-}
-
-bool isStructFieldAttribute(const vespalib::string &name) {
-    return name.find('.') != vespalib::string::npos;
-}
-
 bool willTriggerReprocessOnAttributeAspectRemoval(const search::attribute::Config &cfg,
                                                   const IIndexschemaInspector &indexschemaInspector,
                                                   const vespalib::string &name)
 {
-    return fastPartialUpdateAttribute(cfg) && !indexschemaInspector.isStringIndex(name) && !isStructFieldAttribute(name);
+    return isUpdateableInMemoryOnly(name, cfg) &&
+            !indexschemaInspector.isStringIndex(name);
 }
 
 class KnownSummaryFields

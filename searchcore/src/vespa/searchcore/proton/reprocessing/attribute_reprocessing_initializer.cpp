@@ -2,6 +2,7 @@
 
 #include "attribute_reprocessing_initializer.h"
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
+#include <vespa/searchcore/proton/attribute/attribute_utils.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
@@ -11,11 +12,12 @@
 LOG_SETUP(".proton.reprocessing.attribute_reprocessing_initializer");
 
 using namespace search::index;
+using proton::attribute::isUpdateableInMemoryOnly;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::SerialNum;
-using search::index::schema::DataType;
 using search::attribute::BasicType;
+using search::index::schema::DataType;
 
 namespace proton {
 
@@ -29,16 +31,6 @@ const char *
 toStr(bool value)
 {
     return (value ? "true" : "false");
-}
-
-bool fastPartialUpdateAttribute(BasicType::Type attrType) {
-    // Partial update to predicate or reference attribute must update document
-    return ((attrType != BasicType::Type::PREDICATE) &&
-            (attrType != BasicType::Type::REFERENCE));
-}
-
-bool isStructFieldAttribute(const vespalib::string &name) {
-    return name.find('.') != vespalib::string::npos;
 }
 
 FilterAttributeManager::AttributeSet
@@ -94,20 +86,19 @@ getFieldsToPopulate(const ARIConfig &newCfg,
     oldCfg.getAttrMgr()->getAttributeList(attrList);
     for (const auto &guard : attrList) {
         const vespalib::string &name = guard->getName();
-        BasicType attrType(guard->getConfig().basicType());
+        const auto &attrCfg = guard->getConfig();
         bool inNewAttrMgr = newCfg.getAttrMgr()->getAttribute(name)->valid();
         bool unchangedField = inspector.hasUnchangedField(name);
         // NOTE: If it is a string and index field we shall
         // keep the original in order to preserve annotations.
         bool wasStringIndexField = oldIndexschemaInspector.isStringIndex(name);
         bool populateField = !inNewAttrMgr && unchangedField && !wasStringIndexField &&
-                             fastPartialUpdateAttribute(attrType.type()) &&
-                             !isStructFieldAttribute(name);
+                             isUpdateableInMemoryOnly(name, attrCfg);
         LOG(debug, "getFieldsToPopulate(): name='%s', inNewAttrMgr=%s, unchangedField=%s, "
                 "wasStringIndexField=%s, dataType=%s, populate=%s",
                 name.c_str(), toStr(inNewAttrMgr), toStr(unchangedField),
             toStr(wasStringIndexField),
-            attrType.asString(),
+            attrCfg.basicType().asString(),
             toStr(populateField));
         if (populateField) {
             fieldsToPopulate.push_back(IReprocessingRewriter::SP
