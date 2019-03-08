@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.auditlog;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.jdisc.handler.ContentChannel;
 
 /**
  * A handler that logs requests to the audit log. Handlers that need audit logging should extend this and implement
@@ -21,8 +22,13 @@ public abstract class AuditLoggingRequestHandler extends LoggingRequestHandler {
     }
 
     @Override
-    public HttpResponse handle(HttpRequest request) {
+    public final HttpResponse handle(HttpRequest request) {
         return auditAndHandle(auditLogger.log(request));
+    }
+
+    @Override
+    public final HttpResponse handle(HttpRequest request, ContentChannel channel) {
+        return super.handle(request, channel);
     }
 
     public abstract HttpResponse auditAndHandle(HttpRequest request);
