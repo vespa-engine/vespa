@@ -500,11 +500,11 @@ public class InternalStepRunner implements StepRunner {
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
-
-        byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
-        byte[] servicesXml = servicesXml(controller.system());
-
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
+
+        byte[] servicesXml = servicesXml(controller.system(), testerFlavorFor(id, spec));
+        byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
+
         ZoneId zone = id.type().zone(controller.system());
         byte[] deploymentXml = deploymentXml(spec.athenzDomain(), spec.athenzService(zone.environment(), zone.region()));
 
@@ -515,6 +515,14 @@ public class InternalStepRunner implements StepRunner {
             zipBuilder.close();
             return new ApplicationPackage(zipBuilder.toByteArray());
         }
+    }
+
+    private static Optional<String> testerFlavorFor(RunId id, DeploymentSpec spec) {
+        for (DeploymentSpec.Step step : spec.steps())
+            if (step.deploysTo(id.type().environment()))
+                return step.zones().get(0).testerFlavor();
+
+        throw new IllegalStateException("No step deploys to the zone this run is for!");
     }
 
     /** Returns a stream containing the zone of the deployment tested in the given run, and all production zones for the application. */
@@ -543,7 +551,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(SystemName systemName) {
+    static byte[] servicesXml(SystemName systemName, Optional<String> testerFlavor) {
         String domain = systemName == SystemName.main ? "vespa.vespa" : "vespa.vespa.cd";
 
         String servicesXml =
@@ -586,7 +594,7 @@ public class InternalStepRunner implements StepRunner {
                 "            </filtering>\n" +
                 "        </http>\n" +
                 "\n" +
-                "        <nodes count=\"1\" flavor=\"d-1-4-50\" />\n" +
+                "        <nodes count=\"1\" flavor=\"" + testerFlavor.orElse("d-1-4-50") + "\" />\n" +
                 "    </container>\n" +
                 "</services>\n";
 
