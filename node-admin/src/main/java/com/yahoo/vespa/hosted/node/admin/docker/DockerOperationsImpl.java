@@ -11,8 +11,8 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 
 import java.io.IOException;
@@ -53,7 +53,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void createContainer(NodeAgentContext context, ContainerData containerData) {
+    public void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources) {
         context.log(logger, "Creating container");
 
         // IPv6 - Assume always valid
@@ -64,8 +64,7 @@ public class DockerOperationsImpl implements DockerOperations {
         Docker.CreateContainerCommand command = docker.createContainerCommand(
                 context.node().getWantedDockerImage().get(), context.containerName())
                 .withHostName(context.node().getHostname())
-                .withResources(ContainerResources.from(
-                        0, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb()))
+                .withResources(containerResources)
                 .withManagedBy(MANAGER_NAME)
                 .withUlimit("nofile", 262_144, 262_144)
                 // The nproc aka RLIMIT_NPROC resource limit works as follows:
@@ -261,11 +260,6 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public Optional<ContainerStats> getContainerStats(NodeAgentContext context) {
         return docker.getContainerStats(context.containerName());
-    }
-
-    @Override
-    public List<Container> getAllManagedContainers() {
-        return docker.getAllContainersManagedBy(MANAGER_NAME);
     }
 
     private static void addMounts(NodeAgentContext context, Docker.CreateContainerCommand command) {
