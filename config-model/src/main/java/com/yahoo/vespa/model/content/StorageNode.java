@@ -2,11 +2,11 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -88,7 +88,7 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
     public void getConfig(StorFilestorConfig.Builder builder) {
         if (getHostResource() != null && getHostResource().getFlavor().isPresent()) {
             Flavor nodeFlavor = getHostResource().getFlavor().get();
-            builder.num_threads(Math.max(4, (int)nodeFlavor.getMinCpuCores()));
+            builder.num_threads(Math.max(4, (int)nodeFlavor.cpu().cores()));
         }
         cluster.getConfig(builder);
     }

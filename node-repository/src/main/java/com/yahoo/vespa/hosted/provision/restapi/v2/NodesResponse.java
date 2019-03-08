@@ -142,18 +142,16 @@ class NodesResponse extends HttpResponse {
             object.setString("parentHostname", node.parentHostname().get());
         }
         object.setString("openStackId", node.id());
-        object.setString("flavor", node.flavor().name());
+        object.setString("flavor", node.flavor().flavorName());
         object.setString("canonicalFlavor", node.flavor().canonicalName());
-        object.setDouble("minDiskAvailableGb", node.flavor().getMinDiskAvailableGb());
-        object.setDouble("minMainMemoryAvailableGb", node.flavor().getMinMainMemoryAvailableGb());
-        if (node.flavor().getDescription() != null && ! node.flavor().getDescription().isEmpty())
-            object.setString("description", node.flavor().getDescription());
-        object.setDouble("minCpuCores", node.flavor().getMinCpuCores());
+        object.setDouble("minDiskAvailableGb", node.flavor().disk().sizeInBase10Gb());
+        object.setDouble("minMainMemoryAvailableGb", node.flavor().memory().sizeInGb());
+        object.setDouble("minCpuCores", node.flavor().cpu().cores());
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
-        object.setBool("fastDisk", node.flavor().hasFastDisk());
-        object.setDouble("bandwidth", node.flavor().getBandwidth());
-        object.setString("environment", node.flavor().getType().name());
+        object.setBool("fastDisk", node.flavor().disk().isFast());
+        object.setDouble("bandwidth", node.flavor().bandwidth().mbits());
+        object.setString("environment", node.flavor().environment().name());
         node.allocation().ifPresent(allocation -> {
             toSlime(allocation.owner(), object.setObject("owner"));
             toSlime(allocation.membership(), object.setObject("membership"));

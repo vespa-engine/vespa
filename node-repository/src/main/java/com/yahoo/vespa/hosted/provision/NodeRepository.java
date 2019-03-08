@@ -17,8 +17,8 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.flag.Flags;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -309,7 +309,7 @@ public class NodeRepository extends AbstractComponent {
     //       the nodes list was computed
     public List<Node> addDockerNodes(List<Node> nodes, Mutex allocationLock) {
         for (Node node : nodes) {
-            if (!node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER)) {
+            if (!node.flavor().environment().equals(Flavor.Environment.DOCKER_CONTAINER)) {
                 throw new IllegalArgumentException("Cannot add " + node.hostname() + ": This is not a docker node");
             }
             if (!node.allocation().isPresent()) {
@@ -538,7 +538,7 @@ public class NodeRepository extends AbstractComponent {
      */
     public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
         Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
-        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && node.type() == NodeType.tenant) {
+        if (node.flavor().environment() == Flavor.Environment.DOCKER_CONTAINER && node.type() == NodeType.tenant) {
             if (node.state() != Node.State.dirty) {
                 throw new IllegalArgumentException(
                         "Cannot make " + hostname + " available for new allocation, must be in state dirty, but was in " + node.state());
@@ -592,13 +592,13 @@ public class NodeRepository extends AbstractComponent {
             throw new IllegalArgumentException("Node is currently allocated and cannot be removed: " +
                                                node.allocation().get());
         }
-        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !deletingAsChild) {
+        if (node.flavor().environment() == Flavor.Environment.DOCKER_CONTAINER && !deletingAsChild) {
             if (node.state() != Node.State.ready) {
                 throw new IllegalArgumentException(
                         String.format("Docker container %s can only be removed when in ready state", node.hostname()));
             }
 
-        } else if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
+        } else if (node.flavor().environment() == Flavor.Environment.DOCKER_CONTAINER) {
             Set<Node.State> legalStates = EnumSet.of(Node.State.provisioned, Node.State.failed, Node.State.parked,
                                                      Node.State.ready);
 
