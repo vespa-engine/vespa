@@ -53,7 +53,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void createContainer(NodeAgentContext context, ContainerData containerData) {
+    public void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources) {
         context.log(logger, "Creating container");
 
         // IPv6 - Assume always valid
@@ -64,8 +64,7 @@ public class DockerOperationsImpl implements DockerOperations {
         Docker.CreateContainerCommand command = docker.createContainerCommand(
                 context.node().getWantedDockerImage().get(), context.containerName())
                 .withHostName(context.node().getHostname())
-                .withResources(ContainerResources.from(
-                        0, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb()))
+                .withResources(containerResources)
                 .withManagedBy(MANAGER_NAME)
                 .withUlimit("nofile", 262_144, 262_144)
                 // The nproc aka RLIMIT_NPROC resource limit works as follows:

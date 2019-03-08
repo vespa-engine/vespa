@@ -202,7 +202,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void startContainer(NodeAgentContext context) {
         ContainerData containerData = createContainerData(context);
-        dockerOperations.createContainer(context, containerData);
+        dockerOperations.createContainer(context, containerData, getContainerResources(context.node()));
         dockerOperations.startContainer(context);
         lastCpuMetric = new CpuUsageReporter();
 

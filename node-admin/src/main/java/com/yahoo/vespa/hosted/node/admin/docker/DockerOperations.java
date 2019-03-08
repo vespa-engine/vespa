@@ -13,7 +13,7 @@ import java.util.Optional;
 
 public interface DockerOperations {
 
-    void createContainer(NodeAgentContext context, ContainerData containerData);
+    void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources);
 
     void startContainer(NodeAgentContext context);
 
