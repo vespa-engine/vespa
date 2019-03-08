@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
 
 import java.io.BufferedReader;
@@ -347,22 +348,21 @@ public class DeploymentSpec {
     public static class DeclaredZone extends Step {
 
         private final Environment environment;
-
-        private Optional<RegionName> region;
-
+        private final Optional<RegionName> region;
         private final boolean active;
-
-        private Optional<AthenzService> athenzService;
+        private final Optional<AthenzService> athenzService;
+        private final Optional<String> testerFlavor;
 
         public DeclaredZone(Environment environment) {
             this(environment, Optional.empty(), false);
         }
 
         public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active) {
-            this(environment, region, active, Optional.empty());
+            this(environment, region, active, Optional.empty(), Optional.empty());
         }
 
-        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active, Optional<AthenzService> athenzService) {
+        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active,
+                            Optional<AthenzService> athenzService, Optional<String> testerFlavor) {
             if (environment != Environment.prod && region.isPresent())
                 throw new IllegalArgumentException("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && ! region.isPresent())
@@ -371,6 +371,7 @@ public class DeploymentSpec {
             this.region = region;
             this.active = active;
             this.athenzService = athenzService;
+            this.testerFlavor = testerFlavor;
         }
 
         public Environment environment() { return environment; }
@@ -380,6 +381,8 @@ public class DeploymentSpec {
 
         /** Returns whether this zone should receive production traffic */
         public boolean active() { return active; }
+
+        public Optional<String> testerFlavor() { return testerFlavor; }
 
         public Optional<AthenzService> athenzService() { return athenzService; }
 

@@ -3,6 +3,7 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
@@ -436,6 +437,19 @@ public class DeploymentSpecTest {
         assertEquals(ImmutableSet.of(author), spec.notifications().emailRolesFor(failingCommit));
         assertEquals(ImmutableSet.of("john@dev", "jane@dev"), spec.notifications().emailAddressesFor(failingCommit));
         assertEquals(ImmutableSet.of("jane@dev"), spec.notifications().emailAddressesFor(failing));
+    }
+
+    @Test
+    public void customTesterFlavor() {
+        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
+                                                     "  <test tester-flavor=\"d-1-4-20\" />\n" +
+                                                     "  <prod tester-flavor=\"d-2-8-50\">\n" +
+                                                     "    <region active=\"false\">us-north-7</region>\n" +
+                                                     "  </prod>\n" +
+                                                     "</deployment>");
+        assertEquals(Optional.of("d-1-4-20"), spec.steps().get(0).zones().get(0).testerFlavor());
+        assertEquals(Optional.empty(), spec.steps().get(1).zones().get(0).testerFlavor());
+        assertEquals(Optional.of("d-2-8-50"), spec.steps().get(2).zones().get(0).testerFlavor());
     }
 
 }

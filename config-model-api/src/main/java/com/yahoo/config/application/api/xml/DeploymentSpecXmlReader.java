@@ -40,17 +40,19 @@ public class DeploymentSpecXmlReader {
     private static final String stagingTag = "staging";
     private static final String blockChangeTag = "block-change";
     private static final String prodTag = "prod";
-    
+
     private final boolean validate;
-    
-    /** Creates a validating reader */
+
+    /**
+     * Creates a validating reader
+     */
     public DeploymentSpecXmlReader() {
         this(true);
     }
 
-    /** 
-     * Creates a reader 
-     * 
+    /**
+     * Creates a reader
+     *
      * @param validate true to validate the input, false to accept any input which can be unabiguously parsed
      */
     public DeploymentSpecXmlReader(boolean validate) {
@@ -66,7 +68,9 @@ public class DeploymentSpecXmlReader {
         }
     }
 
-    /** Reads a deployment spec from XML */
+    /**
+     * Reads a deployment spec from XML
+     */
     public DeploymentSpec read(String xmlForm) {
         List<Step> steps = new ArrayList<>();
         Optional<String> globalServiceId = Optional.empty();
@@ -74,29 +78,33 @@ public class DeploymentSpecXmlReader {
         if (validate)
             validateTagOrder(root);
         for (Element environmentTag : XML.getChildren(root)) {
-            if ( ! isEnvironmentName(environmentTag.getTagName())) continue;
+            if (!isEnvironmentName(environmentTag.getTagName())) continue;
 
             Environment environment = Environment.from(environmentTag.getTagName());
+            Optional<AthenzService> athenzService = stringAttribute("athenz-service", environmentTag).map(AthenzService::from);
+            Optional<String> testerFlavor = stringAttribute("tester-flavor", environmentTag);
 
             if (environment == Environment.prod) {
                 for (Element stepTag : XML.getChildren(environmentTag)) {
-                    Optional<AthenzService> athenzService = stringAttribute("athenz-service", environmentTag).map(AthenzService::from);
                     if (stepTag.getTagName().equals("delay")) {
                         steps.add(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
                                                                longAttribute("minutes", stepTag) * 60 +
                                                                longAttribute("seconds", stepTag))));
-                    } else if (stepTag.getTagName().equals("parallel")) {
+                    }
+                    else if (stepTag.getTagName().equals("parallel")) {
                         List<DeclaredZone> zones = new ArrayList<>();
                         for (Element regionTag : XML.getChildren(stepTag)) {
-                            zones.add(readDeclaredZone(environment, athenzService, regionTag));
+                            zones.add(readDeclaredZone(environment, athenzService, testerFlavor, regionTag));
                         }
                         steps.add(new ParallelZones(zones));
-                    } else { // a region: deploy step
-                        steps.add(readDeclaredZone(environment, athenzService, stepTag));
+                    }
+                    else { // a region: deploy step
+                        steps.add(readDeclaredZone(environment, athenzService, testerFlavor, stepTag));
                     }
                 }
-            } else {
-                steps.add(new DeclaredZone(environment));
+            }
+            else {
+                steps.add(new DeclaredZone(environment, Optional.empty(), false, athenzService, testerFlavor));
             }
 
             if (environment == Environment.prod)
@@ -144,7 +152,9 @@ public class DeploymentSpecXmlReader {
         return Notifications.of(emailAddresses, emailRoles);
     }
 
-    /** Imposes some constraints on tag order which are not expressible in the schema */
+    /**
+     * Imposes some constraints on tag order which are not expressible in the schema
+     */
     private void validateTagOrder(Element root) {
         List<String> tags = XML.getChildren(root).stream().map(Element::getTagName).collect(Collectors.toList());
         for (int i = 0; i < tags.size(); i++) {
@@ -156,16 +166,18 @@ public class DeploymentSpecXmlReader {
             }
         }
     }
-    
+
     private boolean containsAfter(int i, String item, List<String> items) {
-        return items.subList(i+1, items.size()).contains(item);
+        return items.subList(i + 1, items.size()).contains(item);
     }
 
     private boolean containsBefore(int i, String item, List<String> items) {
         return items.subList(0, i).contains(item);
     }
 
-    /** Returns the given attribute as an integer, or 0 if it is not present */
+    /**
+     * Returns the given attribute as an integer, or 0 if it is not present
+     */
     private long longAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
         if (value == null || value.isEmpty()) return 0;
@@ -178,7 +190,9 @@ public class DeploymentSpecXmlReader {
         }
     }
 
-    /** Returns the given attribute as an integer, or 0 if it is not present */
+    /**
+     * Returns the given attribute as an integer, or 0 if it is not present
+     */
     private Optional<Integer> optionalIntegerAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
         if (value == null || value.isEmpty()) return Optional.empty();
@@ -191,19 +205,22 @@ public class DeploymentSpecXmlReader {
         }
     }
 
-    /** Returns the given attribute as a string, or Optional.empty if it is not present or empty */
+    /**
+     * Returns the given attribute as a string, or Optional.empty if it is not present or empty
+     */
     private Optional<String> stringAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
-        return Optional.ofNullable(value).filter(s -> ! s.equals(""));
+        return Optional.ofNullable(value).filter(s -> !s.equals(""));
     }
 
     private boolean isEnvironmentName(String tagName) {
         return tagName.equals(testTag) || tagName.equals(stagingTag) || tagName.equals(prodTag);
     }
 
-    private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService, Element regionTag) {
+    private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService,
+                                          Optional<String> testerFlavor, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
-                                readActive(regionTag), athenzService);
+                                readActive(regionTag), athenzService, testerFlavor);
     }
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {
@@ -219,7 +236,7 @@ public class DeploymentSpecXmlReader {
     private List<DeploymentSpec.ChangeBlocker> readChangeBlockers(Element root) {
         List<DeploymentSpec.ChangeBlocker> changeBlockers = new ArrayList<>();
         for (Element tag : XML.getChildren(root)) {
-            if ( ! blockChangeTag.equals(tag.getTagName())) continue;
+            if (!blockChangeTag.equals(tag.getTagName())) continue;
 
             boolean blockVersions = trueOrMissing(tag.getAttribute("version"));
             boolean blockRevisions = trueOrMissing(tag.getAttribute("revision"));
@@ -236,7 +253,9 @@ public class DeploymentSpecXmlReader {
         return Collections.unmodifiableList(changeBlockers);
     }
 
-    /** Returns true if the given value is "true", or if it is missing */
+    /**
+     * Returns true if the given value is "true", or if it is missing
+     */
     private boolean trueOrMissing(String value) {
         return value == null || value.isEmpty() || value.equals("true");
     }
@@ -247,11 +266,15 @@ public class DeploymentSpecXmlReader {
 
         String policy = upgradeElement.getAttribute("policy");
         switch (policy) {
-            case "canary" : return DeploymentSpec.UpgradePolicy.canary;
-            case "default" : return DeploymentSpec.UpgradePolicy.defaultPolicy;
-            case "conservative" : return DeploymentSpec.UpgradePolicy.conservative;
-            default : throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
-                                                         "Must be one of " + Arrays.toString(DeploymentSpec.UpgradePolicy.values()));
+            case "canary":
+                return DeploymentSpec.UpgradePolicy.canary;
+            case "default":
+                return DeploymentSpec.UpgradePolicy.defaultPolicy;
+            case "conservative":
+                return DeploymentSpec.UpgradePolicy.conservative;
+            default:
+                throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
+                                                   "Must be one of " + Arrays.toString(DeploymentSpec.UpgradePolicy.values()));
         }
     }
 
@@ -261,6 +284,11 @@ public class DeploymentSpecXmlReader {
         if ("false".equals(activeValue)) return false;
         throw new IllegalArgumentException("Region tags must have an 'active' attribute set to 'true' or 'false' " +
                                            "to control whether the region should receive production traffic");
+    }
+
+    private Optional<String> readTesterFlavor(Element environmentTag) {
+        return Optional.ofNullable(environmentTag.getAttribute("tester-flavor"))
+                       .filter(testerFlavor -> !testerFlavor.isEmpty());
     }
 
 }
