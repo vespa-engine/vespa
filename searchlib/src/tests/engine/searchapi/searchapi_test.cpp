@@ -260,7 +260,7 @@ TEST("verify trace") {
            "    traces: ["
            "        {"
            "            tag: 'tag_a',"
-           "            time: 8"
+           "            time: 1"
            "        },"
            "        {"
            "            tag: 'tag_b',"
