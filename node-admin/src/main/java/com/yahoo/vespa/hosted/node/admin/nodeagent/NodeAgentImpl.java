@@ -363,8 +363,8 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
 
-    private void scheduleDownLoadIfNeeded(NodeSpec node) {
-        if (node.getCurrentDockerImage().equals(node.getWantedDockerImage())) return;
+    private void scheduleDownLoadIfNeeded(NodeSpec node, Optional<Container> container) {
+        if (node.getWantedDockerImage().equals(container.map(c -> c.image))) return;
 
         if (dockerOperations.pullImageAsyncIfNeeded(node.getWantedDockerImage().get())) {
             imageBeingDownloaded = node.getWantedDockerImage().get();
@@ -432,7 +432,7 @@ public class NodeAgentImpl implements NodeAgent {
                         .filter(diskUtil -> diskUtil >= 0.8)
                         .ifPresent(diskUtil -> storageMaintainer.removeOldFilesFromNode(context));
 
-                scheduleDownLoadIfNeeded(node);
+                scheduleDownLoadIfNeeded(node, container);
                 if (isDownloadingImage()) {
                     context.log(logger, "Waiting for image to download " + imageBeingDownloaded.asString());
                     return;
