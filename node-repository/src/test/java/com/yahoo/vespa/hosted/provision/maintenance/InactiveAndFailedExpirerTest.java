@@ -163,4 +163,31 @@ public class InactiveAndFailedExpirerTest {
         new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new JobControl(tester.nodeRepository().database())).run();
         assertEquals(1, tester.nodeRepository().getNodes(Node.State.parked).size());
     }
+
+    @Test
+    public void testersExpireImmediately() {
+        ApplicationId testerId = ApplicationId.from(applicationId.tenant().value(),
+                                                    applicationId.application().value(),
+                                                    applicationId.instance().value() + "-t");
+
+        // Allocate then deallocate a node
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        tester.makeReadyNodes(1, "default");
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Collections.emptySet());
+        List<HostSpec> preparedNodes = tester.prepare(testerId, cluster, Capacity.fromNodeCount(2), 1);
+        tester.activate(testerId, new HashSet<>(preparedNodes));
+        assertEquals(1, tester.getNodes(testerId, Node.State.active).size());
+        tester.deactivate(testerId);
+        List<Node> inactiveNodes = tester.getNodes(testerId, Node.State.inactive).asList();
+        assertEquals(1, inactiveNodes.size());
+
+        // See that nodes are moved to dirty immediately.
+        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new JobControl(tester.nodeRepository().database())).run();
+        assertEquals(0, tester.nodeRepository().getNodes(Node.State.inactive).size());
+        List<Node> dirty = tester.nodeRepository().getNodes(Node.State.dirty);
+        assertEquals(1, dirty.size());
+        assertFalse(dirty.get(0).allocation().isPresent());
+
+    }
+
 }
