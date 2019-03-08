@@ -204,7 +204,7 @@ public:
     void assertAttributeConfig(const std::vector<AttributesConfig::Attribute> &exp)
     {
         auto actConfig = _delayer.getAttributesConfig();
-        EXPECT_TRUE(exp == actConfig->attribute);
+        EXPECT_EQ(exp, actConfig->attribute);
     }
     void assertSummarymapConfig(const std::vector<SummarymapConfig::Override> &exp)
     {
@@ -290,12 +290,22 @@ TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_if_als
     assertSummarymapConfig({});
 }
 
-TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_for_tensor)
+TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_for_tensor_field)
 {
     addFields({"a"});
-    setup(attrCfg({make_tensor_cfg("tensor(x[10])")}), smCfg({make_attribute_override("a")}), attrCfg({}), sCfg({make_summary_field("a", "tensor")}), smCfg({}));
+    setup(attrCfg({}), smCfg({}),
+          attrCfg({make_tensor_cfg("tensor(x[10])")}), sCfg({make_summary_field("a", "tensor")}), smCfg({make_attribute_override("a")}));
     assertAttributeConfig({});
     assertSummarymapConfig({});
+}
+
+TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_delayed_for_tensor_field)
+{
+    addFields({"a"});
+    setup(attrCfg({make_tensor_cfg("tensor(x[10])")}), smCfg({make_attribute_override("a")}),
+          attrCfg({}), sCfg({make_summary_field("a", "tensor")}), smCfg({}));
+    assertAttributeConfig({make_tensor_cfg("tensor(x[10])")});
+    assertSummarymapConfig({make_attribute_override("a")});
 }
 
 TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_for_predicate)
@@ -330,19 +340,21 @@ TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_true_false_e
     assertSummarymapConfig({make_attribute_override("a")});
 }
 
-TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_false_true_edge_on_tensor_attr)
+TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_false_true_edge_on_tensor_attribute)
 {
     addFields({"a"});
-    setup(attrCfg({make_tensor_cfg("tensor(x[10])")}), smCfg({make_attribute_override("a")}), attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}), sCfg({make_summary_field("a", "tensor")}), smCfg({make_attribute_override("a")}));
+    setup(attrCfg({make_tensor_cfg("tensor(x[10])")}), smCfg({make_attribute_override("a")}),
+          attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}), sCfg({make_summary_field("a", "tensor")}), smCfg({make_attribute_override("a")}));
     assertAttributeConfig({make_tensor_cfg("tensor(x[10])")});
     assertSummarymapConfig({make_attribute_override("a")});
 }
 
-TEST_F(DelayerTest, require_that_fast_access_flag_change_is_not_delayed_true_false_edge_on_tensor_attr)
+TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_true_false_edge_on_tensor_attribute)
 {
     addFields({"a"});
-    setup(attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}), smCfg({make_attribute_override("a")}), attrCfg({make_tensor_cfg("tensor(x[10])")}), sCfg({make_summary_field("a", "tensor")}), smCfg({make_attribute_override("a")}));
-    assertAttributeConfig({make_tensor_cfg("tensor(x[10])")});
+    setup(attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}), smCfg({make_attribute_override("a")}),
+          attrCfg({make_tensor_cfg("tensor(x[10])")}), sCfg({make_summary_field("a", "tensor")}), smCfg({make_attribute_override("a")}));
+    assertAttributeConfig({make_fa(make_tensor_cfg("tensor(x[10])"))});
     assertSummarymapConfig({make_attribute_override("a")});
 }
 

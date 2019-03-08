@@ -266,11 +266,20 @@ TEST_F(InitializerTest, require_that_initializer_can_setup_both_attribute_and_do
     assertFields({"a"});
 }
 
-TEST_F(InitializerTest, require_that_tensor_fields_are_not_populated_from_attribute)
+TEST_F(InitializerTest, require_that_adding_attribute_aspect_on_tensor_field_require_attribute_populate)
 {
-    addOldConfig({"a", "b", "c", "d", "tensor"}, {"a", "b", "c", "d", "tensor"}).
-            addNewConfig({"a", "b", "c", "d", "tensor"}, {"a", "b"}).init();
-    assertFields({"c", "d"});
+    addOldConfig({"tensor"}, {}).
+            addNewConfig({"tensor"}, {"tensor"}).init();
+    assertAttributes({"tensor"});
+    assertFields({});
+}
+
+TEST_F(InitializerTest, require_that_removing_attribute_aspect_from_tensor_field_require_document_field_populate)
+{
+    addOldConfig({"tensor"}, {"tensor"}).
+            addNewConfig({"tensor"}, {}).init();
+    assertAttributes({});
+    assertFields({"tensor"});
 }
 
 TEST_F(InitializerTest, require_that_predicate_fields_are_not_populated_from_attribute)

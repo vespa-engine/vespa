@@ -32,9 +32,8 @@ toStr(bool value)
 }
 
 bool fastPartialUpdateAttribute(BasicType::Type attrType) {
-    // Partial update to tensor or predicate attribute must update document
+    // Partial update to predicate or reference attribute must update document
     return ((attrType != BasicType::Type::PREDICATE) &&
-            (attrType != BasicType::Type::TENSOR) &&
             (attrType != BasicType::Type::REFERENCE));
 }
 

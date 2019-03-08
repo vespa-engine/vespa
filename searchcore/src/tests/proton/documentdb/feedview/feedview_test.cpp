@@ -1070,11 +1070,22 @@ void putDocumentAndUpdate(Fixture &f, const vespalib::string &fieldName)
 }
 
 template <typename Fixture>
-void requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(Fixture &f)
+void requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(Fixture &f,
+                                                              const vespalib::string &fieldName)
 {
-    putDocumentAndUpdate(f, "a1");
+    putDocumentAndUpdate(f, fieldName);
 
     EXPECT_EQUAL(1u, f.msa._store._lastSyncToken); // document store not updated
+    assertAttributeUpdate(2u, DocumentId("doc:test:1"), 1, f.maw);
+}
+
+template <typename Fixture>
+void requireThatUpdateUpdatesAttributeAndDocumentStore(Fixture &f,
+                                                       const vespalib::string &fieldName)
+{
+    putDocumentAndUpdate(f, fieldName);
+
+    EXPECT_EQUAL(2u, f.msa._store._lastSyncToken); // document store updated
     assertAttributeUpdate(2u, DocumentId("doc:test:1"), 1, f.maw);
 }
 
@@ -1082,34 +1093,20 @@ TEST_F("require that update() to fast-access attribute only updates attribute an
        FastAccessFeedViewFixture)
 {
     f.maw._attrs.insert("a1"); // mark a1 as fast-access attribute field
-    requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(f);
+    requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(f, "a1");
 }
 
 TEST_F("require that update() to attribute only updates attribute and not document store",
        SearchableFeedViewFixture)
 {
     f.maw._attrs.insert("a1"); // mark a1 as attribute field
-    requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(f);
+    requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(f, "a1");
 }
 
 TEST_F("require that update to non fast-access attribute also updates document store",
         FastAccessFeedViewFixture)
 {
-    putDocumentAndUpdate(f, "a1");
-
-    EXPECT_EQUAL(2u, f.msa._store._lastSyncToken); // document store updated
-    assertAttributeUpdate(2u, DocumentId("doc:test:1"), 1, f.maw);
-}
-
-template <typename Fixture>
-void requireThatUpdateUpdatesAttributeAndDocumentStore(Fixture &f,
-                                                       const vespalib::string &
-                                                       fieldName)
-{
-    putDocumentAndUpdate(f, fieldName);
-
-    EXPECT_EQUAL(2u, f.msa._store._lastSyncToken); // document store updated
-    assertAttributeUpdate(2u, DocumentId("doc:test:1"), 1, f.maw);
+    requireThatUpdateUpdatesAttributeAndDocumentStore(f, "a1");
 }
 
 TEST_F("require that update() to fast-access predicate attribute updates attribute and document store",
@@ -1126,18 +1123,18 @@ TEST_F("require that update() to predicate attribute updates attribute and docum
     requireThatUpdateUpdatesAttributeAndDocumentStore(f, "a2");
 }
 
-TEST_F("require that update() to fast-access tensor attribute updates attribute and document store",
+TEST_F("require that update() to fast-access tensor attribute only updates attribute and NOT document store",
        FastAccessFeedViewFixture)
 {
     f.maw._attrs.insert("a3"); // mark a3 as fast-access attribute field
-    requireThatUpdateUpdatesAttributeAndDocumentStore(f, "a3");
+    requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(f, "a3");
 }
 
-TEST_F("require that update() to tensor attribute updates attribute and document store",
+TEST_F("require that update() to tensor attribute only updates attribute and NOT document store",
        SearchableFeedViewFixture)
 {
     f.maw._attrs.insert("a3"); // mark a3 as attribute field
-    requireThatUpdateUpdatesAttributeAndDocumentStore(f, "a3");
+    requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(f, "a3");
 }
 
 TEST_F("require that compactLidSpace() propagates to document meta store and document store and "

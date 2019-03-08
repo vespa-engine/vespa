@@ -27,7 +27,6 @@ using AttributesConfigHash = ConfigHash<AttributesConfig::Attribute>;
 bool fastPartialUpdateAttribute(const search::attribute::Config &cfg) {
     auto basicType = cfg.basicType().type();
     return ((basicType != BasicType::Type::PREDICATE) &&
-            (basicType != BasicType::Type::TENSOR) &&
             (basicType != BasicType::Type::REFERENCE));
 }
 
