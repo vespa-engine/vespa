@@ -3,8 +3,15 @@
 #pragma once
 
 #include "i_document_remove_listener.h"
-#include <vespa/searchlib/index/doctypebuilder.h>
+#include <vespa/searchlib/index/schema_index_fields.h>
 
+namespace document {
+class DataType;
+class Document;
+class DocumentType;
+class Field;
+class FieldValue;
+}
 
 namespace search {
     class ISequencedTaskExecutor;
@@ -25,14 +32,10 @@ private:
 
     const index::Schema &_schema;
 
-    typedef index::DocTypeBuilder DocTypeBuilder;
-    typedef DocTypeBuilder::UriField UriField;
-    typedef DocTypeBuilder::SchemaIndexFields SchemaIndexFields;
-
     void addFieldPath(const document::DocumentType &docType, uint32_t fieldId);
     void buildFieldPath(const document::DocumentType & docType, const document::DataType *dataType);
     void invertNormalDocTextField(size_t fieldId, const document::FieldValue &field);
-    void invertNormalDocUriField(const UriField &handle, const document::FieldValue &field);
+    void invertNormalDocUriField(const index::UriField &handle, const document::FieldValue &field);
 
     //typedef document::FieldPath FieldPath;
     typedef document::Field FieldPath;
@@ -40,7 +43,7 @@ private:
     IndexedFieldPaths                   _indexedFieldPaths;
     const document::DataType *          _dataType;
 
-    DocTypeBuilder::SchemaIndexFields  _schemaIndexFields;
+    index::SchemaIndexFields  _schemaIndexFields;
 
     std::vector<std::unique_ptr<FieldInverter>> _inverters;
     std::vector<std::unique_ptr<UrlFieldInverter>> _urlInverters;

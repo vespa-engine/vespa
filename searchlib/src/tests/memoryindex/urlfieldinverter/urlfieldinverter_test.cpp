@@ -184,7 +184,7 @@ struct Fixture
     std::vector<std::unique_ptr<FieldInverter> > _inverters;
     std::unique_ptr<UrlFieldInverter> _urlInverter;
     test::OrderedDocumentInserter _inserter;
-    DocTypeBuilder::SchemaIndexFields _schemaIndexFields;
+    index::SchemaIndexFields _schemaIndexFields;
 
     static Schema
     makeSchema(Schema::CollectionType collectionType)
@@ -208,7 +208,7 @@ struct Fixture
             _inverters.push_back(std::make_unique<FieldInverter>(_schema,
                                                                  fieldId));
         }
-        DocTypeBuilder::UriField &urlField =
+        index::UriField &urlField =
             _schemaIndexFields._uriFields.front();
         _urlInverter = std::make_unique<UrlFieldInverter>
                        (collectionType,

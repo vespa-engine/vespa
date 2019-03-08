@@ -30,18 +30,13 @@ using document::IntFieldValue;
 using document::StructFieldValue;
 using document::DataType;
 using document::DocumentType;
-using document::Annotation;
-using document::AnnotationType;
 using document::AlternateSpanList;
 using document::Span;
 using document::SpanList;
 using document::SimpleSpanList;
 using document::SpanNode;
-using document::SpanTree;
-using document::SpanTreeVisitor;
 using index::DocIdAndPosOccFeatures;
 using index::Schema;
-using vespalib::make_string;
 using search::util::URL;
 
 

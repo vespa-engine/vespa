@@ -3,10 +3,14 @@
 #include "fieldinverter.h"
 #include "ordereddocumentinserter.h"
 #include <vespa/document/datatype/urldatatype.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/searchlib/util/url.h>
 #include <stdexcept>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>

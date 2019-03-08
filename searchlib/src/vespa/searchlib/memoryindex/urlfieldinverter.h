@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/index/doctypebuilder.h>
+#include <vespa/searchcommon/common/datatype.h>
+#include <vespa/document/fieldvalue/structfieldvalue.h>
 
 namespace search
 {
@@ -24,12 +25,8 @@ class UrlFieldInverter
     FieldInverter *_hostname;
 
     bool _useAnnotations;
-    index::Schema::CollectionType _collectionType;
+    index::schema::CollectionType _collectionType;
 
-public:
-    using UriField = index::DocTypeBuilder::UriField;
-
-private:
     void startDoc(uint32_t docId);
 
     void endDoc();
@@ -56,7 +53,7 @@ private:
 
     void invertUrlField(const document::FieldValue &field);
 public:
-    UrlFieldInverter(index::Schema::CollectionType collectionType,
+    UrlFieldInverter(index::schema::CollectionType collectionType,
                      FieldInverter *all,
                      FieldInverter *scheme,
                      FieldInverter *host,

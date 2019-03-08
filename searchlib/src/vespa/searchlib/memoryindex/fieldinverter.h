@@ -6,7 +6,6 @@
 #include <set>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/datatypes.h>
-#include <vespa/searchlib/index/doctypebuilder.h>
 #include <limits>
 #include "i_document_remove_listener.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
