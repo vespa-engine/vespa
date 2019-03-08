@@ -14,8 +14,8 @@
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_reprocessing_initializer_test");
@@ -126,8 +126,8 @@ struct MyIndexschemaInspector : public IIndexschemaInspector
     }
 };
 
-struct Fixture
-{
+class InitializerTest : public ::testing::Test {
+public:
     DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
@@ -138,7 +138,7 @@ struct Fixture
     MyDocTypeInspector _inspector;
     AttributeReprocessingInitializer::UP _initializer;
     MyReprocessingHandler _handler;
-    Fixture()
+    InitializerTest()
         : _dirHandler(TEST_DIR),
           _fileHeaderContext(),
           _attributeFieldWriter(),
@@ -153,7 +153,7 @@ struct Fixture
           _handler()
     {
     }
-    ~Fixture() { }
+    ~InitializerTest() { }
     void init() {
         MyIndexschemaInspector oldIndexschemaInspector(_oldCfg._schema);
         _initializer.reset(new AttributeReprocessingInitializer
@@ -163,20 +163,20 @@ struct Fixture
                             "test", INIT_SERIAL_NUM));
         _initializer->initialize(_handler);
     }
-    Fixture &addOldConfig(const StringVector &fields, const StringVector &attrs) {
+    InitializerTest &addOldConfig(const StringVector &fields, const StringVector &attrs) {
         return addConfig(fields, attrs, _oldCfg);
     }
-    Fixture &addNewConfig(const StringVector &fields, const StringVector &attrs) {
+    InitializerTest &addNewConfig(const StringVector &fields, const StringVector &attrs) {
         return addConfig(fields, attrs, _newCfg);
     }
-    Fixture &addConfig(const StringVector &fields, const StringVector &attrs, MyConfig &cfg) {
+    InitializerTest &addConfig(const StringVector &fields, const StringVector &attrs, MyConfig &cfg) {
         cfg.addFields(fields);
         cfg.addAttrs(attrs);
         return *this;
     }
-    bool assertAttributes(const StringSet &expAttrs) {
+    void assertAttributes(const StringSet &expAttrs) {
         if (expAttrs.empty()) {
-            if (!EXPECT_TRUE(_handler._reader.get() == nullptr)) return false;
+            EXPECT_TRUE(_handler._reader.get() == nullptr);;
         } else {
             const auto & populator = dynamic_cast<const AttributePopulator &>(*_handler._reader);
             std::vector<search::AttributeVector *> attrList = populator.getWriter().getWritableAttributes();
@@ -184,102 +184,103 @@ struct Fixture
             for (const auto attr : attrList) {
                 actAttrs.insert(attr->getName());
             }
-            if (!EXPECT_EQUAL(expAttrs, actAttrs)) return false;
+            EXPECT_EQ(expAttrs, actAttrs);
         }
-        return true;
     }
-    bool assertFields(const StringSet &expFields) {
+    void assertFields(const StringSet &expFields) {
         if (expFields.empty()) {
-            if (!EXPECT_EQUAL(0u, _handler._rewriters.size())) return false;
+            EXPECT_EQ(0u, _handler._rewriters.size());
         } else {
             StringSet actFields;
             for (auto rewriter : _handler._rewriters) {
                 const auto & populator = dynamic_cast<const DocumentFieldPopulator &>(*rewriter);
                 actFields.insert(populator.getAttribute().getName());
             }
-            if (!EXPECT_EQUAL(expFields, actFields)) return false;
+            EXPECT_EQ(expFields, actFields);
         }
-        return true;
     }
 };
 
-TEST_F("require that new field does NOT require attribute populate", Fixture)
+class Fixture : public InitializerTest {
+    virtual void TestBody() override {}
+};
+
+TEST_F(InitializerTest, require_that_new_field_does_NOT_require_attribute_populate)
 {
-    f.addOldConfig({}, {}).addNewConfig({"a"}, {"a"}).init();
-    EXPECT_TRUE(f.assertAttributes({}));
+    addOldConfig({}, {}).addNewConfig({"a"}, {"a"}).init();
+    assertAttributes({});
 }
 
-TEST_F("require that added attribute aspect does require attribute populate", Fixture)
+TEST_F(InitializerTest, require_that_added_attribute_aspect_does_require_attribute_populate)
 {
-    f.addOldConfig({"a"}, {}).addNewConfig({"a"}, {"a"}).init();
-    EXPECT_TRUE(f.assertAttributes({"a"}));
+    addOldConfig({"a"}, {}).addNewConfig({"a"}, {"a"}).init();
+    assertAttributes({"a"});
 }
 
-TEST_F("require that initializer can setup populate of several attributes", Fixture)
+TEST_F(InitializerTest, require_that_initializer_can_setup_populate_of_several_attributes)
 {
-    f.addOldConfig({"a", "b", "c", "d"}, {"a", "b"}).
+    addOldConfig({"a", "b", "c", "d"}, {"a", "b"}).
             addNewConfig({"a", "b", "c", "d"}, {"a", "b", "c", "d"}).init();
-    EXPECT_TRUE(f.assertAttributes({"c", "d"}));
+    assertAttributes({"c", "d"});
 }
 
-TEST_F("require that new field does NOT require document field populate", Fixture)
+TEST_F(InitializerTest, require_that_new_field_does_NOT_require_document_field_populate)
 {
-    f.addOldConfig({}, {}).addNewConfig({"a"}, {"a"}).init();
-    EXPECT_TRUE(f.assertFields({}));
+    addOldConfig({}, {}).addNewConfig({"a"}, {"a"}).init();
+    assertFields({});
 }
 
-TEST_F("require that removed field does NOT require document field populate", Fixture)
+TEST_F(InitializerTest, require_that_removed_field_does_NOT_require_document_field_populate)
 {
-    f.addOldConfig({"a"}, {"a"}).addNewConfig({}, {}).init();
-    EXPECT_TRUE(f.assertFields({}));
+    addOldConfig({"a"}, {"a"}).addNewConfig({}, {}).init();
+    assertFields({});
 }
 
-TEST_F("require that removed attribute aspect does require document field populate", Fixture)
+TEST_F(InitializerTest, require_that_removed_attribute_aspect_does_require_document_field_populate)
 {
-    f.addOldConfig({"a"}, {"a"}).addNewConfig({"a"}, {}).init();
-    EXPECT_TRUE(f.assertFields({"a"}));
+    addOldConfig({"a"}, {"a"}).addNewConfig({"a"}, {}).init();
+    assertFields({"a"});
 }
 
-TEST_F("require that removed attribute aspect (when also index field) does NOT require document field populate",
-        Fixture)
+TEST_F(InitializerTest, require_that_removed_attribute_aspect_when_also_index_field_does_NOT_require_document_field_populate)
 {
-    f.addOldConfig({"a"}, {"a"}).addNewConfig({"a"}, {});
-    f._oldCfg.addIndexField("a");
-    f._newCfg.addIndexField("a");
-    f.init();
-    EXPECT_TRUE(f.assertFields({}));
+    addOldConfig({"a"}, {"a"}).addNewConfig({"a"}, {});
+    _oldCfg.addIndexField("a");
+    _newCfg.addIndexField("a");
+    init();
+    assertFields({});
 }
 
-TEST_F("require that initializer can setup populate of several document fields", Fixture)
+TEST_F(InitializerTest, require_that_initializer_can_setup_populate_of_several_document_fields)
 {
-    f.addOldConfig({"a", "b", "c", "d"}, {"a", "b", "c", "d"}).
+    addOldConfig({"a", "b", "c", "d"}, {"a", "b", "c", "d"}).
             addNewConfig({"a", "b", "c", "d"}, {"a", "b"}).init();
-    EXPECT_TRUE(f.assertFields({"c", "d"}));
+    assertFields({"c", "d"});
 }
 
-TEST_F("require that initializer can setup both attribute and document field populate", Fixture)
+TEST_F(InitializerTest, require_that_initializer_can_setup_both_attribute_and_document_field_populate)
 {
-    f.addOldConfig({"a", "b"}, {"a"}).
+    addOldConfig({"a", "b"}, {"a"}).
             addNewConfig({"a", "b"}, {"b"}).init();
-    EXPECT_TRUE(f.assertAttributes({"b"}));
-    EXPECT_TRUE(f.assertFields({"a"}));
+    assertAttributes({"b"});
+    assertFields({"a"});
 }
 
-TEST_F("require that tensor fields are not populated from attribute", Fixture)
+TEST_F(InitializerTest, require_that_tensor_fields_are_not_populated_from_attribute)
 {
-    f.addOldConfig({"a", "b", "c", "d", "tensor"}, {"a", "b", "c", "d", "tensor"}).
-        addNewConfig({"a", "b", "c", "d", "tensor"}, {"a", "b"}).init();
-    EXPECT_TRUE(f.assertFields({"c", "d"}));
+    addOldConfig({"a", "b", "c", "d", "tensor"}, {"a", "b", "c", "d", "tensor"}).
+            addNewConfig({"a", "b", "c", "d", "tensor"}, {"a", "b"}).init();
+    assertFields({"c", "d"});
 }
 
-TEST_F("require that predicate fields are not populated from attribute", Fixture)
+TEST_F(InitializerTest, require_that_predicate_fields_are_not_populated_from_attribute)
 {
-    f.addOldConfig({"a", "b", "c", "d", "predicate"}, {"a", "b", "c", "d", "predicate"}).
-        addNewConfig({"a", "b", "c", "d", "predicate"}, {"a", "b"}).init();
-    EXPECT_TRUE(f.assertFields({"c", "d"}));
+    addOldConfig({"a", "b", "c", "d", "predicate"}, {"a", "b", "c", "d", "predicate"}).
+            addNewConfig({"a", "b", "c", "d", "predicate"}, {"a", "b"}).init();
+    assertFields({"c", "d"});
 }
 
-TEST("require that added attribute aspect with flushed attribute after interruptted reprocessing does not require attribute populate")
+TEST(InterruptedTest, require_that_added_attribute_aspect_with_flushed_attribute_after_interruptted_reprocessing_does_not_require_attribute_populate)
 {
     {
         auto diskLayout = AttributeDiskLayout::create(TEST_DIR);
@@ -295,22 +296,19 @@ TEST("require that added attribute aspect with flushed attribute after interrupt
     }
     Fixture f;
     f.addOldConfig({"a"}, {}).addNewConfig({"a"}, {"a"}).init();
-    EXPECT_TRUE(f.assertAttributes({}));
+    f.assertAttributes({});
 }
 
-TEST_F("require that removed attribute aspect from struct field does not require document field populate", Fixture)
+TEST_F(InitializerTest, require_that_removed_attribute_aspect_from_struct_field_does_not_require_document_field_populate)
 {
-    f.addOldConfig({"array.a"}, {"array.a"}).addNewConfig({"array.a"}, {}).init();
-    EXPECT_TRUE(f.assertFields({}));
+    addOldConfig({"array.a"}, {"array.a"}).addNewConfig({"array.a"}, {}).init();
+    assertFields({});
 }
 
-TEST_F("require that added attribute aspect to struct field requires attribute populate", Fixture)
+TEST_F(InitializerTest, require_that_added_attribute_aspect_to_struct_field_requires_attribute_populate)
 {
-    f.addOldConfig({"array.a"}, {}).addNewConfig({"array.a"}, {"array.a"}).init();
-    EXPECT_TRUE(f.assertAttributes({"array.a"}));
+    addOldConfig({"array.a"}, {}).addNewConfig({"array.a"}, {"array.a"}).init();
+    assertAttributes({"array.a"});
 }
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()
