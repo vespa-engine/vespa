@@ -21,7 +21,7 @@ public:
     fastos::TimeStamp getTimeout() const { return _timeOfDoom - getStartTime(); }
     fastos::TimeStamp getTimeUsed() const;
     fastos::TimeStamp getTimeLeft() const;
-    const RelativeTime & getRelativeTime() { return _relativeTime; }
+    const RelativeTime & getRelativeTime() const { return _relativeTime; }
     bool expired() const { return getTimeLeft() <= 0l; }
 
     const vespalib::stringref getStackRef() const {
@@ -30,14 +30,12 @@ public:
 
     bool should_drop_sort_data() const;
 
-    uint32_t getTraceLevel() const { return _traceLevel; }
-    Request & setTraceLevel(uint32_t traceLevel) { _traceLevel = traceLevel; return *this; }
+    Request & setTraceLevel(uint32_t level) { _trace.setLevel(level); return *this; }
 
     Trace & trace() const { return _trace; }
 private:
     RelativeTime            _relativeTime;
     fastos::TimeStamp       _timeOfDoom;
-    uint32_t                _traceLevel;
 public:
     /// Everything here should move up to private section and have accessors
     uint32_t           queryFlags;

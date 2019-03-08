@@ -43,12 +43,13 @@ private:
  * limit the number of matches.
  **/
 struct MaybeMatchPhaseLimiter {
+    using Cursor = vespalib::slime::Cursor;
     typedef search::queryeval::SearchIterator SearchIterator;
     typedef std::unique_ptr<MaybeMatchPhaseLimiter> UP;
     virtual bool is_enabled() const = 0;
     virtual bool was_limited() const = 0;
     virtual size_t sample_hits_per_thread(size_t num_threads) const = 0;
-    virtual SearchIterator::UP maybe_limit(SearchIterator::UP search, double match_freq, size_t num_docs) = 0;
+    virtual SearchIterator::UP maybe_limit(SearchIterator::UP search, double match_freq, size_t num_docs, Cursor * trace) = 0;
     virtual void updateDocIdSpaceEstimate(size_t searchedDocIdSpace, size_t remainingDocIdSpace) = 0;
     virtual size_t getDocIdSpaceEstimate() const = 0;
     virtual ~MaybeMatchPhaseLimiter() {}
@@ -61,7 +62,7 @@ struct NoMatchPhaseLimiter : MaybeMatchPhaseLimiter {
     bool is_enabled() const override { return false; }
     bool was_limited() const override { return false; }
     size_t sample_hits_per_thread(size_t) const override { return 0; }
-    SearchIterator::UP maybe_limit(SearchIterator::UP search, double, size_t) override {
+    SearchIterator::UP maybe_limit(SearchIterator::UP search, double, size_t, Cursor *) override {
         return search;
     }
     void updateDocIdSpaceEstimate(size_t, size_t) override { }
@@ -144,7 +145,7 @@ public:
     size_t sample_hits_per_thread(size_t num_threads) const override {
         return _calculator.sample_hits_per_thread(num_threads);
     }
-    SearchIterator::UP maybe_limit(SearchIterator::UP search, double match_freq, size_t num_docs) override;
+    SearchIterator::UP maybe_limit(SearchIterator::UP search, double match_freq, size_t num_docs, Cursor * trace) override;
     void updateDocIdSpaceEstimate(size_t searchedDocIdSpace, size_t remainingDocIdSpace) override;
     size_t getDocIdSpaceEstimate() const override;
 };

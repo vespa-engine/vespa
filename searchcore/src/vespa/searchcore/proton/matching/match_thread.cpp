@@ -2,6 +2,7 @@
 
 #include "match_thread.h"
 #include "document_scorer.h"
+#include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
@@ -13,6 +14,8 @@
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_thread");
@@ -117,13 +120,18 @@ MatchThread::maybe_limit(MatchTools &tools, uint32_t matches, uint32_t docId, ui
     const size_t searchedSoFar = (scheduler.total_size(thread_id) - local_todo);
     double match_freq = estimate_match_frequency(matches, searchedSoFar);
     const size_t global_todo = scheduler.unassigned_size();
+    vespalib::slime::Cursor * traceCursor = trace->shouldTrace(5) ? & trace->createCursor("maybe_limit") : nullptr;
     {
         auto search = tools.borrow_search();
-        search = tools.match_limiter().maybe_limit(std::move(search), match_freq, matchParams.numDocs);
+        search = tools.match_limiter().maybe_limit(std::move(search), match_freq, matchParams.numDocs, traceCursor);
         tools.give_back_search(std::move(search));
         if (tools.match_limiter().was_limited()) {
             tools.tag_search_as_changed();
         }
+    }
+    if (isFirstThread() && trace->shouldTrace(6)) {
+        vespalib::slime::ObjectInserter inserter(trace->createCursor("limited"), "query");
+        tools.search().asSlime(inserter);
     }
     size_t left = local_todo + (global_todo / num_threads);
     tools.match_limiter().updateDocIdSpaceEstimate(searchedSoFar, left);
@@ -267,17 +275,24 @@ MatchThread::findMatches(MatchTools &tools)
     tools.give_back_search(search::queryeval::MultiBitVectorIteratorBase::optimize(tools.borrow_search()));
     if (isFirstThread()) {
         LOG(debug, "SearchIterator after MultiBitVectorIteratorBase::optimize(): %s", tools.search().asString().c_str());
+        if (trace->shouldTrace(7)) {
+            vespalib::slime::ObjectInserter inserter(trace->createCursor("iterator"), "optimized");
+            tools.search().asSlime(inserter);
+        }
     }
     HitCollector hits(matchParams.numDocs, matchParams.arraySize);
+    trace->addEvent(4, "Start match and first phase rank");
     match_loop_helper(tools, hits);
     if (tools.has_second_phase_rank()) {
         { // 2nd phase ranking
+            trace->addEvent(4, "Start second phase rerank");
             tools.setup_second_phase();
             DocidRange docid_range = scheduler.total_span(thread_id);
             tools.search().initRange(docid_range.begin, docid_range.end);
             auto sorted_hit_seq = matchToolsFactory.should_diversify()
                                   ? hits.getSortedHitSequence(matchParams.arraySize)
                                   : hits.getSortedHitSequence(matchParams.heapSize);
+            trace->addEvent(5, "Synchronize before second phase rerank");
             WaitTimer select_best_timer(wait_time_s);
             auto kept_hits = communicator.selectBest(sorted_hit_seq);
             select_best_timer.done();
@@ -292,6 +307,7 @@ MatchThread::findMatches(MatchTools &tools)
             thread_stats.docsReRanked(reRanked);
         }
         { // rank scaling
+            trace->addEvent(5, "Synchronize before rank scaling");
             auto my_ranges = hits.getRanges();
             WaitTimer range_cover_timer(wait_time_s);
             auto ranges = communicator.rangeCover(my_ranges);
@@ -299,6 +315,7 @@ MatchThread::findMatches(MatchTools &tools)
             hits.setRanges(ranges);
         }
     }
+    trace->addEvent(4, "Create result set");
     return hits.getResultSet(fallback_rank_value());
 }
 
@@ -373,7 +390,9 @@ MatchThread::MatchThread(size_t thread_id_in,
                          DocidRangeScheduler &sched,
                          ResultProcessor &rp,
                          vespalib::DualMergeDirector &md,
-                         uint32_t distributionKey) :
+                         uint32_t distributionKey,
+                         const RelativeTime & relativeTime,
+                         uint32_t traceLevel) :
     thread_id(thread_id_in),
     num_threads(num_threads_in),
     matchParams(mp),
@@ -389,7 +408,8 @@ MatchThread::MatchThread(size_t thread_id_in,
     total_time_s(0.0),
     match_time_s(0.0),
     wait_time_s(0.0),
-    match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores())
+    match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores()),
+    trace(std::make_unique<Trace>(relativeTime, traceLevel))
 {
 }
 
@@ -400,12 +420,14 @@ MatchThread::run()
     fastos::StopWatch match_time;
     total_time.start();
     match_time.start();
+    trace->addEvent(4, "Start MatchThread::run");
     MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
     search::ResultSet::UP result = findMatches(*matchTools);
     match_time.stop();
     match_time_s = match_time.elapsed().sec();
     resultContext = resultProcessor.createThreadContext(matchTools->getHardDoom(), thread_id, _distributionKey);
     {
+        trace->addEvent(5, "Wait for result processing token");
         WaitTimer get_token_timer(wait_time_s);
         QueryLimiter::Token::UP processToken(
                 matchTools->getQueryLimiter().getToken(matchTools->getHardDoom(),
@@ -414,12 +436,15 @@ MatchThread::run()
                         resultContext->sort->hasSortData(),
                         resultContext->grouping.get() != 0));
         get_token_timer.done();
+        trace->addEvent(5, "Start result processing");
         processResult(matchTools->getHardDoom(), std::move(result), *resultContext);
     }
     total_time.stop();
     total_time_s = total_time.elapsed().sec();
     thread_stats.active_time(total_time_s - wait_time_s).wait_time(wait_time_s);
+    trace->addEvent(4, "Start thread merge");
     mergeDirector.dualMerge(thread_id, *resultContext->result, resultContext->groupingSource);
+    trace->addEvent(4, "MatchThread::run Done");
 }
 
 }

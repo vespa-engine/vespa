@@ -205,10 +205,10 @@ Matcher::computeNumThreadsPerSearch(Blueprint::HitEstimate hits, const Propertie
 }
 
 namespace {
-    void traceQuery(const SearchRequest &request, const Query & query) {
-        if (request.getTraceLevel() > 3) {
+    void traceQuery(uint32_t traceLevel, Trace & trace, const Query & query) {
+        if (traceLevel <= trace.getLevel()) {
             if (query.peekRoot()) {
-                vespalib::slime::ObjectInserter inserter(request.trace().createCursor("blueprint"), "optimized");
+                vespalib::slime::ObjectInserter inserter(trace.createCursor("blueprint"), "optimized");
                 query.peekRoot()->asSlime(inserter);
             }
         }
@@ -252,7 +252,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         if (!mtf->valid()) {
             reply->errorCode = ECODE_QUERY_PARSE_ERROR;
             reply->errorMessage = "query execution failed (invalid query)";
-            traceQuery(request, mtf->query());
+            traceQuery(1, request.trace(), mtf->query());
             return reply;
         }
 
@@ -269,10 +269,9 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate(), rankProperties);
         LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
         MatchMaster master;
-        uint32_t numSearchPartitions = NumSearchPartitions::lookup(rankProperties,
-                                                                   _rankSetup->getNumSearchPartitions());
-        ResultProcessor::Result::UP result = master.match(params, limitedThreadBundle, *mtf, rp,
-                                                          _distributionKey, numSearchPartitions);
+        uint32_t numParts = NumSearchPartitions::lookup(rankProperties, _rankSetup->getNumSearchPartitions());
+        ResultProcessor::Result::UP result = master.match(request, params, limitedThreadBundle, *mtf, rp,
+                                                          _distributionKey, numParts);
         my_stats = MatchMaster::getStats(std::move(master));
 
         bool wasLimited = mtf->match_limiter().was_limited();
@@ -281,13 +280,13 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                                : mtf->match_limiter().getDocIdSpaceEstimate();
         uint32_t estHits = mtf->estimate().estHits;
         if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
-            SearchSession::SP session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(),
-                                                                        std::move(mtf), std::move(owned_objects));
+            auto session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(),
+                                                           std::move(mtf), std::move(owned_objects));
             session->releaseEnumGuards();
             sessionMgr.insert(std::move(session));
         }
         reply = std::move(result->_reply);
-        traceQuery(request, mtf->query());
+        traceQuery(6, request.trace(), mtf->query());
 
         uint32_t numActiveLids = metaStore.getNumActiveLids();
         // note: this is actually totalSpace+1, since 0 is reserved

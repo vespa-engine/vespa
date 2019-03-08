@@ -7,6 +7,7 @@
 
 namespace vespalib { struct ThreadBundle; }
 namespace search { class FeatureSet; }
+namespace search::engine { class Request; }
 
 namespace proton::matching {
 
@@ -23,7 +24,8 @@ private:
 
 public:
     const MatchingStats & getStats() const { return _stats; }
-    ResultProcessor::Result::UP match(const MatchParams &params,
+    ResultProcessor::Result::UP match(const search::engine::Request &request,
+                                      const MatchParams &params,
                                       vespalib::ThreadBundle &threadBundle,
                                       const MatchToolsFactory &mtf,
                                       ResultProcessor &resultProcessor,

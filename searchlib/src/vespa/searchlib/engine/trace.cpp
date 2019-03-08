@@ -10,11 +10,12 @@ RelativeTime::RelativeTime(std::unique_ptr<Clock> clock)
       _clock(std::move(clock))
 {}
 
-Trace::Trace(const RelativeTime & relativeTime)
+Trace::Trace(const RelativeTime & relativeTime, uint32_t level)
     : _trace(std::make_unique<vespalib::Slime>()),
       _root(_trace->setObject()),
       _traces(_root.setArray("traces")),
-      _relativeTime(relativeTime)
+      _relativeTime(relativeTime),
+      _level(level)
 {
    _root.setLong("creation_time", _relativeTime.timeOfDawn());
 }
@@ -27,6 +28,15 @@ Trace::createCursor(vespalib::stringref name) {
     trace.setString("tag", name);
     trace.setLong("time", _relativeTime.timeSinceDawn());
     return trace;
+}
+
+void
+Trace::addEvent(uint32_t level, vespalib::stringref event) {
+    if (!shouldTrace(level)) return;
+
+    Cursor & trace = _traces.addObject();
+    trace.setString("event", event);
+    trace.setLong("time", _relativeTime.timeSinceDawn());
 }
 
 vespalib::string

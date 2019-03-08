@@ -197,7 +197,7 @@ TEST("require that no limiter has no behavior") {
     MaybeMatchPhaseLimiter &limiter = no_limiter;
     EXPECT_FALSE(limiter.is_enabled());
     EXPECT_EQUAL(0u, limiter.sample_hits_per_thread(1));
-    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 1.0, 100000000);
+    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 1.0, 100000000, nullptr);
     limiter.updateDocIdSpaceEstimate(1000, 9000);
     EXPECT_EQUAL(std::numeric_limits<size_t>::max(), limiter.getDocIdSpaceEstimate());
     MockSearch *ms = dynamic_cast<MockSearch*>(search.get());
@@ -215,8 +215,7 @@ TEST("require that the match phase limiter may chose not to limit the query") {
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
     EXPECT_EQUAL(20u, limiter.sample_hits_per_thread(10));
-    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")),
-                                                    0.005, 100000);
+    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.005, 100000, nullptr);
     limiter.updateDocIdSpaceEstimate(1000, 9000);
     EXPECT_EQUAL(10000u, limiter.getDocIdSpaceEstimate());
     MockSearch *ms = dynamic_cast<MockSearch*>(search.get());
@@ -244,7 +243,7 @@ struct MaxFilterCoverageLimiterFixture {
 TEST_F("require that the match phase limiter may chose not to limit the query when considering max-filter-coverage", MaxFilterCoverageLimiterFixture) {
     MatchPhaseLimiter::UP limiterUP = f.getMaxFilterCoverageLimiter();
     MaybeMatchPhaseLimiter & limiter = *limiterUP;
-    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.10, 1900000);
+    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.10, 1900000, nullptr);
     limiter.updateDocIdSpaceEstimate(1000, 1899000);
     EXPECT_EQUAL(1900000u, limiter.getDocIdSpaceEstimate());
     MockSearch *ms = dynamic_cast<MockSearch *>(search.get());
@@ -256,7 +255,7 @@ TEST_F("require that the match phase limiter may chose not to limit the query wh
 TEST_F("require that the match phase limiter may chose to limit the query even when considering max-filter-coverage", MaxFilterCoverageLimiterFixture) {
     MatchPhaseLimiter::UP limiterUP = f.getMaxFilterCoverageLimiter();
     MaybeMatchPhaseLimiter & limiter = *limiterUP;
-    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.10, 2100000);
+    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.10, 2100000, nullptr);
     limiter.updateDocIdSpaceEstimate(1000, 2099000);
     EXPECT_EQUAL(159684u, limiter.getDocIdSpaceEstimate());
     LimitedSearch *strict_and = dynamic_cast<LimitedSearch*>(search.get());
@@ -281,8 +280,7 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
     EXPECT_EQUAL(12u, limiter.sample_hits_per_thread(10));
-    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")),
-                                                    0.1, 100000);
+    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000, nullptr);
     limiter.updateDocIdSpaceEstimate(1000, 9000);
     EXPECT_EQUAL(1680u, limiter.getDocIdSpaceEstimate());
     LimitedSearch *strict_and = dynamic_cast<LimitedSearch*>(search.get());
@@ -313,7 +311,7 @@ TEST("require that the match phase limiter is able to post-limit the query") {
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
     EXPECT_EQUAL(30u, limiter.sample_hits_per_thread(10));
-    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000);
+    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000, nullptr);
     limiter.updateDocIdSpaceEstimate(1000, 9000);
     EXPECT_EQUAL(1680u, limiter.getDocIdSpaceEstimate());
     LimitedSearch *strict_and = dynamic_cast<LimitedSearch*>(search.get());
@@ -343,7 +341,7 @@ void verifyDiversity(AttributeLimiter::DiversityCutoffStrategy strategy)
                                   DegradationParams("limiter_attribute", 500, true, 1.0, 0.2, 1.0),
                                   DiversityParams("category", 10, 13.1, strategy));
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
-    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000);
+    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000, nullptr);
     limiter.updateDocIdSpaceEstimate(1000, 9000);
     EXPECT_EQUAL(1680u, limiter.getDocIdSpaceEstimate());
     LimitedSearch *strict_and = dynamic_cast<LimitedSearch*>(search.get());
