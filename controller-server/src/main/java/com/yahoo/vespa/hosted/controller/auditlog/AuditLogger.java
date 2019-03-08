@@ -66,7 +66,7 @@ public class AuditLogger {
         }
 
         Instant now = clock.instant();
-        AuditLog.Entry entry = new AuditLog.Entry(now, principal.getName(), method.get(), request.getUri(),
+        AuditLog.Entry entry = new AuditLog.Entry(now, principal.getName(), method.get(), request.getUri().getPath(),
                                                   Optional.of(new String(data, StandardCharsets.UTF_8)));
         try (Lock lock = db.lockAuditLog()) {
             AuditLog auditLog = db.readAuditLog()

@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import org.junit.Test;
 
-import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -27,13 +26,13 @@ public class AuditLogSerializerTest {
 
         AuditLog log = new AuditLog(List.of(
                 new AuditLog.Entry(i1, "bar", AuditLog.Entry.Method.POST,
-                                   URI.create("http://localhost/bar/baz/"),
+                                   "/bar/baz/",
                                    Optional.of("0".repeat(2048))),
                 new AuditLog.Entry(i2, "foo", AuditLog.Entry.Method.POST,
-                                   URI.create("http://localhost/foo/bar/"),
+                                   "/foo/bar/",
                                    Optional.of("{\"foo\":\"bar\"}")),
                 new AuditLog.Entry(i3, "baz", AuditLog.Entry.Method.POST,
-                                   URI.create("http://localhost/foo/baz/"),
+                                   "/foo/baz/",
                                    Optional.of(""))
         ));
 
@@ -48,7 +47,7 @@ public class AuditLogSerializerTest {
             assertEquals(entry.at().truncatedTo(MILLIS), serializedEntry.at());
             assertEquals(entry.principal(), serializedEntry.principal());
             assertEquals(entry.method(), serializedEntry.method());
-            assertEquals(entry.url(), serializedEntry.url());
+            assertEquals(entry.resource(), serializedEntry.resource());
             assertEquals(entry.data(), serializedEntry.data());
         }
 

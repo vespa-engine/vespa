@@ -7,7 +7,6 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +24,7 @@ public class AuditLogSerializer {
     private static final String atField = "at";
     private static final String principalField = "principal";
     private static final String methodField = "method";
-    private static final String urlField = "url";
+    private static final String resourceField = "resource";
     private static final String dataField = "data";
 
     public Slime toSlime(AuditLog log) {
@@ -37,7 +36,7 @@ public class AuditLogSerializer {
             entryObject.setLong(atField, entry.at().toEpochMilli());
             entryObject.setString(principalField, entry.principal());
             entryObject.setString(methodField, asString(entry.method()));
-            entryObject.setString(urlField, entry.url().toString());
+            entryObject.setString(resourceField, entry.resource());
             entry.data().ifPresent(data -> entryObject.setString(dataField, data));
         });
         return slime;
@@ -51,7 +50,7 @@ public class AuditLogSerializer {
                     Instant.ofEpochMilli(entryObject.field(atField).asLong()),
                     entryObject.field(principalField).asString(),
                     methodFrom(entryObject.field(methodField)),
-                    URI.create(entryObject.field(urlField).asString()),
+                    entryObject.field(resourceField).asString(),
                     optionalField(entryObject.field(dataField), Function.identity())
             ));
         });

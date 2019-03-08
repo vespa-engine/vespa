@@ -44,6 +44,7 @@ public class AuditLoggerTest {
             assertEquals(instant(), log.get().entries().get(0).at());
             assertEquals("user", log.get().entries().get(0).principal());
             assertEquals(Entry.Method.PATCH, log.get().entries().get(0).method());
+            assertEquals("/os/v1/", log.get().entries().get(0).resource());
             assertEquals(data, log.get().entries().get(0).data().get());
         }
 

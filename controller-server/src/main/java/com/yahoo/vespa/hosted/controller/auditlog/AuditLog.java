@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.auditlog;
 import com.google.common.collect.Ordering;
 import org.jetbrains.annotations.NotNull;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -58,14 +57,14 @@ public class AuditLog {
         private final Instant at;
         private final String principal;
         private final Method method;
-        private final URI url;
+        private final String resource;
         private final Optional<String> data;
 
-        public Entry(Instant at, String principal, Method method, URI url, Optional<String> data) {
+        public Entry(Instant at, String principal, Method method, String resource, Optional<String> data) {
             this.at = Objects.requireNonNull(at, "at must be non-null");
             this.principal = Objects.requireNonNull(principal, "principal must be non-null");
             this.method = Objects.requireNonNull(method, "method must be non-null");
-            this.url = Objects.requireNonNull(url, "url must be non-null");
+            this.resource = Objects.requireNonNull(resource, "resource must be non-null");
             this.data = truncateData(data);
         }
 
@@ -84,9 +83,9 @@ public class AuditLog {
             return method;
         }
 
-        /** Request URL */
-        public URI url() {
-            return url;
+        /** API resource (URL path) */
+        public String resource() {
+            return resource;
         }
 
         /** Request data. This may be truncated if request data logged in this entry was too large */
