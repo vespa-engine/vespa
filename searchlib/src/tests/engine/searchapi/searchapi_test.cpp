@@ -254,7 +254,6 @@ TEST("verify trace") {
            "    creation_time: 7"
            "}",
            t.getSlime());
-#if 0
     Trace::Cursor & tagB = t.createCursor("tag_b");
     tagB.setLong("long", 19);
     verify("{"
@@ -272,7 +271,6 @@ TEST("verify trace") {
            "    creation_time: 7"
            "}",
            t.getSlime());
-#endif
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
