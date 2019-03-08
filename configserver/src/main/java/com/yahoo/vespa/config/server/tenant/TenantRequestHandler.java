@@ -121,8 +121,8 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
 
     private void reloadListenersOnRemove(ApplicationId applicationId) {
         for (ReloadListener listener : reloadListeners) {
-            listener.applicationRemoved(applicationId);
             listener.hostsUpdated(tenant, hostRegistry.getAllHosts());
+            listener.applicationRemoved(applicationId);
         }
     }
 
