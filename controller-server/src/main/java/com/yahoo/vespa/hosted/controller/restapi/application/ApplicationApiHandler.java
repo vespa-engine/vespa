@@ -89,14 +89,13 @@ import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -180,7 +179,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.getUri().getQuery());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}")) return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path), request.getProperty("after"));
@@ -377,11 +376,21 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                           .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
     }
 
-    private HttpResponse logs(String tenantName, String applicationName, String instanceName, String environment, String region, String query) {
+    private HttpResponse logs(String tenantName, String applicationName, String instanceName, String environment, String region, Map<String, String> queryParameters) {
         ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
         DeploymentId deployment = new DeploymentId(application, zone);
-        HashMap<String, String> queryParameters = getParameters(query);
+
+        if (queryParameters.containsKey("streaming")) {
+            InputStream logStream = controller.configServer().getLogStream(deployment, queryParameters);
+            return new HttpResponse(200) {
+                @Override
+                public void render(OutputStream outputStream) throws IOException {
+                    logStream.transferTo(outputStream);
+                }
+            };
+        }
+
         Optional<Logs> response = controller.configServer().getLogs(deployment, queryParameters);
         Slime slime = new Slime();
         Cursor object = slime.setObject();
@@ -403,15 +412,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Instant until = controller.clock().instant().plus(DeploymentTrigger.maxPause);
         controller.applications().deploymentTrigger().pauseJob(id, type, until);
         return new MessageResponse(type.jobName() + " for " + id + " paused for " + DeploymentTrigger.maxPause);
-    }
-
-    private HashMap<String, String> getParameters(String query) {
-        HashMap<String, String> keyValPair = new HashMap<>();
-        Arrays.stream(query.split("&")).forEach(pair -> {
-            String[] splitPair = pair.split("=");
-            keyValPair.put(splitPair[0], splitPair[1]);
-        });
-        return keyValPair;
     }
 
     private void toSlime(Cursor object, Application application, HttpRequest request) {

@@ -28,7 +28,10 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.impl.io.EmptyInputStream;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -334,11 +337,16 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public Optional<Logs> getLogs(DeploymentId deployment, HashMap<String, String> queryParameters) {
+    public Optional<Logs> getLogs(DeploymentId deployment, Map<String, String> queryParameters) {
         HashMap<String, String> logs = new HashMap<>();
         logs.put("subfolder-log2.log", "VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl");
         logs.put("log1.log", "VGhpcyBpcyBvbmUgbG9nIGZpbGU=");
         return Optional.of(new Logs(logs));
+    }
+
+    @Override
+    public InputStream getLogStream(DeploymentId deployment, Map<String, String> queryParameters) {
+        return IOUtils.toInputStream("INFO - All good");
     }
 
     @Override
