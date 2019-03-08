@@ -106,6 +106,11 @@ public class Flags {
             "Takes effect on next deployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENABLE_DISK_WRITE_TEST = defineFeatureFlag(
+            "enable-disk-write-test", false,
+            "Regularly issue a small write to disk and fail the host if it is not successful",
+            "Takes effect on next node agent tick (but does not clear existing failure reports)",
+            APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
