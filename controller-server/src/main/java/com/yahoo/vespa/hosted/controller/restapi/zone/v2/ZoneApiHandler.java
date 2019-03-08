@@ -1,19 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.zone.v2;
 
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.proxy.ConfigServerRestExecutor;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyException;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
-import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.yolean.Exceptions;
 
@@ -28,20 +30,20 @@ import java.util.logging.Level;
  * @author mpolden
  */
 @SuppressWarnings("unused")
-public class ZoneApiHandler extends LoggingRequestHandler {
+public class ZoneApiHandler extends AuditLoggingRequestHandler {
 
     private final ZoneRegistry zoneRegistry;
     private final ConfigServerRestExecutor proxy;
 
     public ZoneApiHandler(LoggingRequestHandler.Context parentCtx, ZoneRegistry zoneRegistry,
-                          ConfigServerRestExecutor proxy) {
-        super(parentCtx);
+                          ConfigServerRestExecutor proxy, Controller controller) {
+        super(parentCtx, controller.auditLogger());
         this.zoneRegistry = zoneRegistry;
         this.proxy = proxy;
     }
 
     @Override
-    public HttpResponse handle(HttpRequest request) {
+    public HttpResponse auditAndHandle(HttpRequest request) {
         try {
             switch (request.getMethod()) {
                 case GET:

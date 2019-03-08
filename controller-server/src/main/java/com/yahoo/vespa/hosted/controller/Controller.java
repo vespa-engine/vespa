@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerato
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
+import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
@@ -80,6 +81,7 @@ public class Controller extends AbstractComponent {
     private final Chef chef;
     private final ZmsClientFacade zmsClient;
     private final Mailer mailer;
+    private final AuditLogger auditLogger;
 
     /**
      * Creates a controller 
@@ -134,6 +136,7 @@ public class Controller extends AbstractComponent {
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);
         tenantController = new TenantController(this, curator, athenzClientFactory);
+        auditLogger = new AuditLogger(curator, clock);
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), Vtag.currentVersion);
@@ -296,6 +299,10 @@ public class Controller extends AbstractComponent {
 
     public CuratorDb curator() {
         return curator;
+    }
+
+    public AuditLogger auditLogger() {
+        return auditLogger;
     }
 
     private Set<CloudName> clouds() {

@@ -6,13 +6,15 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
+import com.yahoo.restapi.Path;
 import com.yahoo.slime.Inspector;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
-import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
@@ -31,17 +33,19 @@ import java.util.logging.Level;
  * @author bratseth
  */
 @SuppressWarnings("unused") // Created by injection
-public class ControllerApiHandler extends LoggingRequestHandler {
+public class ControllerApiHandler extends AuditLoggingRequestHandler {
 
     private final ControllerMaintenance maintenance;
+    private final Controller controller;
 
-    public ControllerApiHandler(LoggingRequestHandler.Context parentCtx, ControllerMaintenance maintenance) {
-        super(parentCtx);
+    public ControllerApiHandler(LoggingRequestHandler.Context parentCtx, Controller controller, ControllerMaintenance maintenance) {
+        super(parentCtx, controller.auditLogger());
+        this.controller = controller;
         this.maintenance = maintenance;
     }
 
     @Override
-    public HttpResponse handle(HttpRequest request) {
+    public HttpResponse auditAndHandle(HttpRequest request) {
         try {
             switch (request.getMethod()) {
                 case GET: return get(request);
@@ -63,6 +67,7 @@ public class ControllerApiHandler extends LoggingRequestHandler {
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/controller/v1/")) return root(request);
+        if (path.matches("/controller/v1/auditlog/")) return new AuditLogResponse(controller.auditLogger().readLog());
         if (path.matches("/controller/v1/maintenance/")) return new JobsResponse(maintenance.jobControl());
         if (path.matches("/controller/v1/jobs/upgrader")) return new UpgraderResponse(maintenance.upgrader());
         return notFound(path);
@@ -91,7 +96,7 @@ public class ControllerApiHandler extends LoggingRequestHandler {
     private HttpResponse notFound(Path path) { return ErrorResponse.notFoundError("Nothing at " + path); }
 
     private HttpResponse root(HttpRequest request) {
-        return new ResourceResponse(request, "maintenance");
+        return new ResourceResponse(request, "auditlog", "jobs/upgrader", "maintenance");
     }
 
     private HttpResponse setActive(String jobName, boolean active) {
