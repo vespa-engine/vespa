@@ -14,7 +14,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
@@ -74,11 +73,16 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
      * Version 1 is for the getnodestate2 command ((legacy, not supported).
      * Version 2 is for the getnodestate3 command
      * Version 3 adds support for setdistributionstates
+     * Version 4 adds support for explicit cluster state version bundle activation
      */
     private int version;
 
-    private Map<Integer, ClusterState> systemStateVersionSent = new TreeMap<>();
-    private ClusterState systemStateVersionAcknowledged;
+    // Mapping of cluster state version -> cluster state instance
+    private TreeMap<Integer, ClusterState> clusterStateVersionBundleSent = new TreeMap<>();
+    private ClusterState clusterStateVersionBundleAcknowledged;
+
+    private int clusterStateVersionActivationSent = -1;
+    private int clusterStateVersionActivationAcked = -1;
     /**
      * When a node goes from an up state to a down state, update this flag with the start timestamp the node had before going down.
      * The cluster state broadcaster will use this to identify whether distributors have restarted.
@@ -102,7 +106,9 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     // NOTE: See update(node) below
     NodeInfo(ContentCluster cluster, Node n, boolean configuredRetired, String rpcAddress, Distribution distribution) {
-        if (cluster == null) throw new IllegalArgumentException("Cluster not set");
+        if (cluster == null) {
+            throw new IllegalArgumentException("Cluster not set");
+        }
         reportedState = new NodeState(n.getType(), State.DOWN);
         wantedState = new NodeState(n.getType(), State.UP);
         this.cluster = cluster;
@@ -238,7 +244,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     public ContentCluster getCluster() { return cluster; }
 
-    /** Returns true if the node is currentl registered in slobrok */
+    /** Returns true if the node is currently registered in slobrok */
     // FIXME why is this called "isRpcAddressOutdated" then???
     public boolean isRpcAddressOutdated() { return lastSeenInSlobrok != null; }
 
@@ -353,12 +359,13 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     /** Sets the wanted state. The wanted state is taken as UP if a null argument is given */
     public void setWantedState(NodeState state) {
-        if (state == null)
+        if (state == null) {
             state = new NodeState(node.getType(), State.UP);
+        }
         NodeState newWanted = new NodeState(node.getType(), state.getState());
         newWanted.setDescription(state.getDescription());
         if (!newWanted.equals(state)) {
-            try{
+            try {
                 throw new Exception();
             } catch (Exception e) {
                 StringWriter sw = new StringWriter();
@@ -408,40 +415,40 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     }
 
     public int getVersion() { return version; }
-    public int getConnectionVersion() { return connectionVersion; }
-    public void setConnectionVersion(int version) { connectionVersion = version; }
 
     public ClusterState getNewestSystemStateSent() {
-        ClusterState last = null;
-        for (ClusterState s : systemStateVersionSent.values()) {
-            if (last == null || last.getVersion() < s.getVersion()) {
-                last = s;
-            }
+        if (clusterStateVersionBundleSent.isEmpty()) {
+            return null;
         }
-        return last;
+        return clusterStateVersionBundleSent.lastEntry().getValue();
     }
     public int getNewestSystemStateVersionSent() {
         ClusterState last = getNewestSystemStateSent();
         return last == null ? -1 : last.getVersion();
     }
-    public int getSystemStateVersionAcknowledged() {
-        return (systemStateVersionAcknowledged == null ? -1 : systemStateVersionAcknowledged.getVersion());
+
+    public int getClusterStateVersionBundleAcknowledged() {
+        return (clusterStateVersionBundleAcknowledged == null ? -1 : clusterStateVersionBundleAcknowledged.getVersion());
     }
-    public void setSystemStateVersionSent(ClusterState state) {
-        if (state == null) throw new Error("Should not clear info for last version sent");
-        if (systemStateVersionSent.containsKey(state.getVersion())) {
+    public void setClusterStateVersionBundleSent(ClusterState state) {
+        if (state == null) {
+            throw new Error("Should not clear info for last version sent");
+        }
+        if (clusterStateVersionBundleSent.containsKey(state.getVersion())) {
             throw new IllegalStateException("We have already sent cluster state version " + state.getVersion() + " to " + node);
         }
-        systemStateVersionSent.put(state.getVersion(), state);
+        clusterStateVersionBundleSent.put(state.getVersion(), state);
     }
-    public void setSystemStateVersionAcknowledged(Integer version, boolean success) {
-        if (version == null) throw new Error("Should not clear info for last version acked");
-        if (!systemStateVersionSent.containsKey(version)) {
+    public void setClusterStateBundleVersionAcknowledged(Integer version, boolean success) {
+        if (version == null) {
+            throw new Error("Should not clear info for last version acked");
+        }
+        if (!clusterStateVersionBundleSent.containsKey(version)) {
             throw new IllegalStateException("Got response for cluster state " + version + " which is not tracked as pending for node " + node);
         }
-        ClusterState state = systemStateVersionSent.remove(version);
-        if (success && (systemStateVersionAcknowledged == null || systemStateVersionAcknowledged.getVersion() < state.getVersion())) {
-            systemStateVersionAcknowledged = state;
+        ClusterState state = clusterStateVersionBundleSent.remove(version);
+        if (success && (clusterStateVersionBundleAcknowledged == null || clusterStateVersionBundleAcknowledged.getVersion() < state.getVersion())) {
+            clusterStateVersionBundleAcknowledged = state;
             if (wentDownWithStartTime != 0
                 && (wentDownAtClusterState == null || wentDownAtClusterState.getVersion() < state.getVersion())
                 && !state.getNodeState(node).getState().oneOf("dsm"))
@@ -451,6 +458,25 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
             }
         }
     }
+
+    public void setClusterStateVersionActivationSent(int version) {
+        clusterStateVersionActivationSent = version;
+    }
+    public int getClusterStateVersionActivationSent() {
+        return clusterStateVersionActivationSent;
+    }
+
+    public int getClusterStateVersionActivationAcked() {
+        return clusterStateVersionActivationAcked;
+    }
+    public void setSystemStateVersionActivationAcked(Integer version, boolean success) {
+        if (success && (version > clusterStateVersionActivationAcked)) {
+            clusterStateVersionActivationAcked = version;
+        } else if (!success) {
+            clusterStateVersionActivationSent = -1; // Trigger resend
+        }
+    }
+
 
     public void setHostInfo(HostInfo hostInfo) {
         // Note: This will blank out any hostInfo we already had, if the parsing fails.

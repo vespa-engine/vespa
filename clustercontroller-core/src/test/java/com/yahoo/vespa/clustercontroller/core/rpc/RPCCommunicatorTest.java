@@ -161,7 +161,7 @@ public class RPCCommunicatorTest {
         waiter.handleRequestDone(req);
 
         // This would normally be done in processResponses(), but that code path is not invoked in this test.
-        cf.cluster().getNodeInfo(Node.ofStorage(1)).setSystemStateVersionAcknowledged(123, false);
+        cf.cluster().getNodeInfo(Node.ofStorage(1)).setClusterStateBundleVersionAcknowledged(123, false);
 
         f.receivedRequest.set(null);
         // Now when we try again, we should have been downgraded to the legacy setsystemstate2 RPC

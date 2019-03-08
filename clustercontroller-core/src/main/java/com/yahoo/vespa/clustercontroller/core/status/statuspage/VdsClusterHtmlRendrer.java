@@ -248,10 +248,10 @@ public class VdsClusterHtmlRendrer {
                 }
 
                 // System state version
-                row.addCell(new HtmlTable.Cell("" + nodeInfo.getSystemStateVersionAcknowledged()));
-                if (nodeInfo.getSystemStateVersionAcknowledged() < state.getVersion() - 2) {
+                row.addCell(new HtmlTable.Cell("" + nodeInfo.getClusterStateVersionBundleAcknowledged()));
+                if (nodeInfo.getClusterStateVersionBundleAcknowledged() < state.getVersion() - 2) {
                     row.getLastCell().addProperties(ERROR_PROPERTY);
-                } else if (nodeInfo.getSystemStateVersionAcknowledged() < state.getVersion()) {
+                } else if (nodeInfo.getClusterStateVersionBundleAcknowledged() < state.getVersion()) {
                     row.getLastCell().addProperties(WARNING_PROPERTY);
                 }
 

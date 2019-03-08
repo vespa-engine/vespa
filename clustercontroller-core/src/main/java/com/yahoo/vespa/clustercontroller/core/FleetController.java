@@ -76,6 +76,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private boolean waitingForCycle = false;
     private StatusPageServer.PatternRequestRouter statusRequestRouter = new StatusPageServer.PatternRequestRouter();
     private final List<ClusterStateBundle> newStates = new ArrayList<>();
+    private final List<ClusterStateBundle> convergedStates = new ArrayList<>();
     private long configGeneration = -1;
     private long nextConfigGeneration = -1;
     private Queue<RemoteClusterControllerTask> remoteTasks = new LinkedList<>();
@@ -253,6 +254,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             throw new NullPointerException("Cluster state should never be null at this point");
         }
         listener.handleNewPublishedState(ClusterStateBundle.ofBaselineOnly(AnnotatedClusterState.withoutAnnotations(state)));
+        ClusterStateBundle convergedState = systemStateBroadcaster.getLastClusterStateBundleConverged();
+        if (convergedState != null) {
+            listener.handleStateConvergedInCluster(convergedState);
+        }
     }
 
     public FleetControllerOptions getOptions() {
@@ -438,6 +443,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         ClusterState currentState = stateVersionTracker.getVersionedClusterState();
         log.fine(() -> String.format("All distributors have ACKed cluster state version %d", currentState.getVersion()));
         stateChangeHandler.handleAllDistributorsInSync(currentState, nodes, database, context);
+        convergedStates.add(stateVersionTracker.getVersionedClusterStateBundle()); // FIXME ugh, going via version tracker?
     }
 
     private boolean changesConfiguredNodeSet(Collection<ConfiguredNode> newNodes) {
@@ -666,12 +672,15 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 // Reset timer to only see warning once.
                 firstAllowedStateBroadcast = currentTime;
             }
-            sentAny = systemStateBroadcaster.broadcastNewState(databaseContext, communicator);
+            // FIXME bad interaction with activation..!
+            sentAny = systemStateBroadcaster.broadcastNewStateBundleIfRequired(databaseContext, communicator);
             if (sentAny) {
                 // FIXME won't this inhibit resending to unresponsive nodes?
                 nextStateSendTime = currentTime + options.minTimeBetweenNewSystemStates;
             }
         }
+        // Always allow activations if we've already broadcasted a state
+        sentAny |= systemStateBroadcaster.broadcastStateActivationsIfRequired(databaseContext, communicator);
         return sentAny;
     }
 
@@ -684,6 +693,16 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                     }
                 }
                 newStates.clear();
+            }
+        }
+        if ( ! convergedStates.isEmpty()) {
+            synchronized (systemStateListeners) {
+                for (ClusterStateBundle stateBundle : convergedStates) {
+                    for(SystemStateListener listener : systemStateListeners) {
+                        listener.handleStateConvergedInCluster(stateBundle);
+                    }
+                }
+                convergedStates.clear();
             }
         }
     }
@@ -1047,7 +1066,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             while (true) {
                 int ackedNodes = 0;
                 for (NodeInfo node : cluster.getNodeInfo()) {
-                    if (node.getSystemStateVersionAcknowledged() >= version) {
+                    if (node.getClusterStateVersionBundleAcknowledged() >= version) {
                         ++ackedNodes;
                     }
                 }

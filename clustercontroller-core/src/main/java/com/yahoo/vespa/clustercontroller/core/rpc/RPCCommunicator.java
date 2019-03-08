@@ -36,13 +36,14 @@ public class RPCCommunicator implements Communicator {
 
     public static final Logger log = Logger.getLogger(RPCCommunicator.class.getName());
 
+    public static final int ACTIVATE_CLUSTER_STATE_VERSION_RPC_VERSION = 4;
+    public static final String ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME = "activate_cluster_state_version";
+
     public static final int SET_DISTRIBUTION_STATES_RPC_VERSION = 3;
     public static final String SET_DISTRIBUTION_STATES_RPC_METHOD_NAME = "setdistributionstates";
 
     public static final int LEGACY_SET_SYSTEM_STATE2_RPC_VERSION = 2;
     public static final String LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME = "setsystemstate2";
-
-    public static final String ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME = "activate_cluster_state_version";
 
     private final Timer timer;
     private final Supervisor supervisor;
@@ -161,12 +162,12 @@ public class RPCCommunicator implements Communicator {
         waiter.setRequest(stateRequest);
 
         connection.invokeAsync(req, 60, waiter);
-        node.setSystemStateVersionSent(baselineState);
+        node.setClusterStateVersionBundleSent(baselineState);
     }
 
     @Override
     public void activateClusterStateVersion(int clusterStateVersion, NodeInfo node, Waiter<ActivateClusterStateVersionRequest> externalWaiter) {
-        var waiter = new RPCActivateClusterStateVersionWaiter(externalWaiter, timer);
+        var waiter = new RPCActivateClusterStateVersionWaiter(externalWaiter);
 
         Target connection = getConnection(node);
         if ( ! connection.isValid()) {
@@ -183,6 +184,7 @@ public class RPCCommunicator implements Communicator {
         waiter.setRequest(activationRequest);
 
         connection.invokeAsync(req, 60, waiter);
+        node.setClusterStateVersionActivationSent(clusterStateVersion);
     }
 
     // protected for testing.

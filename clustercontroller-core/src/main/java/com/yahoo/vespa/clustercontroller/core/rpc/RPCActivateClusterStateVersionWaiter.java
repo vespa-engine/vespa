@@ -11,12 +11,10 @@ import com.yahoo.vespa.clustercontroller.core.Timer;
 
 public class RPCActivateClusterStateVersionWaiter implements RequestWaiter {
 
-    ActivateClusterStateVersionRequest request;
-    Timer timer;
-    Communicator.Waiter<ActivateClusterStateVersionRequest> waiter;
+    private final Communicator.Waiter<ActivateClusterStateVersionRequest> waiter;
+    private ActivateClusterStateVersionRequest request;
 
-    public RPCActivateClusterStateVersionWaiter(Communicator.Waiter<ActivateClusterStateVersionRequest> waiter, Timer timer) {
-        this.timer = timer;
+    public RPCActivateClusterStateVersionWaiter(Communicator.Waiter<ActivateClusterStateVersionRequest> waiter) {
         this.waiter = waiter;
     }
 
@@ -28,7 +26,7 @@ public class RPCActivateClusterStateVersionWaiter implements RequestWaiter {
         NodeInfo info = request.getNodeInfo();
         if (req.isError()) {
             return new ActivateClusterStateVersionRequest.Reply(req.errorCode(), req.errorMessage());
-        } else if (!req.checkReturnTypes("")) {
+        } else if (!req.checkReturnTypes("i")) {
             return new ActivateClusterStateVersionRequest.Reply(ErrorCode.BAD_REPLY, "Got RPC response with invalid return types from " + info);
         }
         return new ActivateClusterStateVersionRequest.Reply();

@@ -68,7 +68,7 @@ public class SystemStateBroadcasterTest {
         ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2");
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.broadcaster.handleNewClusterStates(stateBundle);
-        f.broadcaster.broadcastNewState(dbContextFrom(cf.cluster()), f.mockCommunicator);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator);
         cf.cluster().getNodeInfo().forEach(nodeInfo -> verify(f.mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo), any()));
     }
 
@@ -79,7 +79,7 @@ public class SystemStateBroadcasterTest {
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.simulateNodePartitionedAwaySilently(cf);
         f.broadcaster.handleNewClusterStates(stateBundle);
-        f.broadcaster.broadcastNewState(dbContextFrom(cf.cluster()), f.mockCommunicator);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator);
 
         clusterNodeInfos(cf.cluster(), Node.ofDistributor(1), Node.ofStorage(0), Node.ofStorage(1)).forEach(nodeInfo -> {
             // Only distributor 0 should observe startup timestamps
@@ -97,7 +97,7 @@ public class SystemStateBroadcasterTest {
                 StateMapping.of("upsidedown", "distributor:2 .0.s:d storage:2"));
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.broadcaster.handleNewClusterStates(stateBundle);
-        f.broadcaster.broadcastNewState(dbContextFrom(cf.cluster()), f.mockCommunicator);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator);
 
         cf.cluster().getNodeInfo().forEach(nodeInfo -> verify(f.mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo), any()));
     }
@@ -111,7 +111,7 @@ public class SystemStateBroadcasterTest {
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.simulateNodePartitionedAwaySilently(cf);
         f.broadcaster.handleNewClusterStates(stateBundle);
-        f.broadcaster.broadcastNewState(dbContextFrom(cf.cluster()), f.mockCommunicator);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator);
 
         clusterNodeInfos(cf.cluster(), Node.ofDistributor(1), Node.ofStorage(0), Node.ofStorage(1)).forEach(nodeInfo -> {
             // Only distributor 0 should observe startup timestamps
@@ -121,5 +121,16 @@ public class SystemStateBroadcasterTest {
                 StateMapping.of("default", "distributor:2 storage:2 .0.s:d .0.t:600 .1.t:700"),
                 StateMapping.of("upsidedown", "distributor:2 .0.s:d storage:2 .0.t:600 .1.t:700"));
         verify(f.mockCommunicator).setSystemState(eq(expectedDistr0Bundle), eq(cf.cluster().getNodeInfo(Node.ofDistributor(0))), any());
+    }
+
+    @Test
+    public void activation_not_sent_before_all_distributors_have_acked_state_bundle() {
+        Fixture f = new Fixture();
+        ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2");
+        ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
+        f.broadcaster.handleNewClusterStates(stateBundle);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator);
+
+        // TODO
     }
 }

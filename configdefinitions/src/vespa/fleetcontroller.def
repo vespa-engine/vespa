@@ -166,3 +166,15 @@ cluster_has_global_document_types bool default=false
 ## Bucket merges are considered complete when:
 ## ((buckets_total - buckets_pending) / buckets_total)) >= min_merge_completion_ratio
 min_merge_completion_ratio double default=1.0
+
+## If enabled, cluster state transitions are performed as two distinct phases:
+##
+##  1) state bundle propagation and bucket info gathering phase
+##  2) state activation phase, which is not performed until all nodes have completed phase 1
+##
+## This is to enable read-only operations to pass through the system during phase 1
+## while nodes await phase 2. If this feature is disabled, nodes will implicitly do
+## phase 2 as part of phase 1 at their own leisure, which means that actual state
+## activation may happen at wildly different times throughout the cluster. The 2 phase
+## transition logic aims to minimize the window of time where active states diverge.
+enable_two_phase_cluster_state_transitions bool default=false

@@ -97,7 +97,7 @@ public class DummyCommunicator implements Communicator, NodeLookup {
     public void setSystemState(ClusterStateBundle stateBundle, NodeInfo node, Waiter<SetClusterStateRequest> waiter) {
         ClusterState baselineState = stateBundle.getBaselineClusterState();
         DummySetClusterStateRequest req = new DummySetClusterStateRequest(node, baselineState);
-        node.setSystemStateVersionSent(baselineState);
+        node.setClusterStateVersionBundleSent(baselineState);
         req.setReply(new SetClusterStateRequest.Reply());
         if (node.isStorage() || !shouldDeferDistributorClusterStateAcks) {
             waiter.done(req);
