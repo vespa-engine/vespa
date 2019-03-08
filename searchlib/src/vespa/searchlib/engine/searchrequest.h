@@ -22,7 +22,7 @@ public:
         mutable FS4Packet_QUERYX *_fs4Packet;
         void lazyDecode() const;
         const SourceDescription _desc;
-        const RelativeTime _relativeTime;
+        std::unique_ptr<RelativeTime> _relativeTime;
     public:
 
         Source(SearchRequest * request);

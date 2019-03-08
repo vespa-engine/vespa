@@ -26,22 +26,14 @@ public:
         mutable FS4Packet_GETDOCSUMSX *_fs4Packet;
         void lazyDecode() const;
         const SourceDescription _desc;
-        const RelativeTime _relativeTime;
+        std::unique_ptr<RelativeTime> _relativeTime;
     public:
 
-        Source(DocsumRequest * request) : _request(request), _fs4Packet(nullptr), _desc(0), _relativeTime(_request->getRelativeTime()) {}
-        Source(DocsumRequest::UP request) : _request(std::move(request)), _fs4Packet(nullptr), _desc(0), _relativeTime(_request->getRelativeTime()) {}
-        Source(FS4Packet_GETDOCSUMSX *query, SourceDescription desc) : _request(), _fs4Packet(query), _desc(desc), _relativeTime(std::make_unique<FastosClock>()) { }
+        Source(DocsumRequest * request) : _request(request), _fs4Packet(nullptr), _desc(0), _relativeTime() {}
+        Source(DocsumRequest::UP request) : _request(std::move(request)), _fs4Packet(nullptr), _desc(0), _relativeTime() {}
+        Source(FS4Packet_GETDOCSUMSX *query, SourceDescription desc);
 
-        Source(Source && rhs) noexcept
-          : _request(std::move(rhs._request)),
-            _fs4Packet(rhs._fs4Packet),
-            _desc(std::move(rhs._desc)),
-            _relativeTime(std::move(rhs._relativeTime))
-        {
-            rhs._fs4Packet = nullptr;
-        }
-
+        Source(Source && rhs) noexcept;
         ~Source();
 
         const DocsumRequest * operator -> () const { return get(); }

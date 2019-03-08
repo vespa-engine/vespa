@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/memory.h>
 #include <vespa/fastos/timestamp.h>
 
 namespace vespalib { class Slime; }
@@ -40,8 +39,8 @@ public:
     fastos::TimeStamp timeSinceDawn() const { return _clock->now() - _start; }
     fastos::TimeStamp now() const { return _clock->now(); }
 private:
-    fastos::TimeStamp             _start;
-    vespalib::CloneablePtr<Clock> _clock;
+    fastos::TimeStamp      _start;
+    std::unique_ptr<Clock> _clock;
 };
 
 /**

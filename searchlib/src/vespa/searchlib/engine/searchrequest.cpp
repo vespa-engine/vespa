@@ -24,14 +24,14 @@ SearchRequest::Source::Source(SearchRequest * request)
     : _request(request),
       _fs4Packet(nullptr),
       _desc(0),
-      _relativeTime(_request->getRelativeTime())
+      _relativeTime()
 { }
 
 SearchRequest::Source::Source(FS4Packet_QUERYX *query, SourceDescription desc)
     : _request(),
-    _fs4Packet(query),
-    _desc(desc),
-    _relativeTime(std::make_unique<FastosClock>())
+      _fs4Packet(query),
+      _desc(desc),
+      _relativeTime(std::make_unique<RelativeTime>(std::make_unique<FastosClock>()))
 { }
 
 SearchRequest::Source::Source(Source && rhs) noexcept
@@ -46,7 +46,7 @@ SearchRequest::Source::Source(Source && rhs) noexcept
 void SearchRequest::Source::lazyDecode() const
 {
     if ( ! _request && (_fs4Packet != nullptr)) {
-        _request = std::make_unique<SearchRequest>(_relativeTime);
+        _request = std::make_unique<SearchRequest>(std::move(*_relativeTime));
         PacketConverter::toSearchRequest(*_fs4Packet, *_request);
         _fs4Packet->Free();
         _fs4Packet = nullptr;
