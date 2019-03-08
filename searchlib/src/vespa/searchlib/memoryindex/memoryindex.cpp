@@ -3,6 +3,8 @@
 #include "memoryindex.h"
 #include "postingiterator.h"
 #include "documentinverter.h"
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
