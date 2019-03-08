@@ -11,7 +11,7 @@ namespace search::engine {
 class Request
 {
 public:
-    Request(RelativeTime && relativeTime);
+    Request(RelativeTime relativeTime);
     Request(const Request &) = delete;
     Request & operator =(const Request &) = delete;
     virtual ~Request();

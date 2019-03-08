@@ -5,7 +5,7 @@
 
 namespace search::engine {
 
-Request::Request(RelativeTime && relativeTime)
+Request::Request(RelativeTime relativeTime)
     : _relativeTime(std::move(relativeTime)),
       _timeOfDoom(fastos::TimeStamp(fastos::TimeStamp::FUTURE)),
       _traceLevel(0),
