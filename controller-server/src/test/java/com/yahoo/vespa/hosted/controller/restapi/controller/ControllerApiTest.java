@@ -2,49 +2,63 @@
 package com.yahoo.vespa.hosted.controller.restapi.controller;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author bratseth
  */
 public class ControllerApiTest extends ControllerContainerTest {
 
-    private final static String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/controller/responses/";
+    private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/controller/responses/";
     private static final AthenzIdentity HOSTED_VESPA_OPERATOR = AthenzUser.fromUserId("johnoperator");
+
+    private ContainerControllerTester tester;
+
+    @Before
+    public void before() {
+        addUserToHostedOperatorRole(HOSTED_VESPA_OPERATOR);
+        tester = new ContainerControllerTester(container, responseFiles);
+    }
 
     @Test
     public void testControllerApi() {
-        ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/", new byte[0], Request.Method.GET), new File("root.json"));
 
         // POST deactivation of a maintenance job
-        assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
-                                            new byte[0], Request.Method.POST),
-                       200,
-                       "{\"message\":\"Deactivated job 'DeploymentExpirer'\"}");
+        tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
+                                            "", Request.Method.POST),
+                       "{\"message\":\"Deactivated job 'DeploymentExpirer'\"}", 200);
+
         // GET a list of all maintenance jobs
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/maintenance/", new byte[0], Request.Method.GET),
                               new File("maintenance.json"));
         // DELETE deactivation of a maintenance job
-        assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
-                                            new byte[0], Request.Method.DELETE),
-                       200,
-                       "{\"message\":\"Re-activated job 'DeploymentExpirer'\"}");
+        tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
+                                            "", Request.Method.DELETE),
+                       "{\"message\":\"Re-activated job 'DeploymentExpirer'\"}",
+                              200);
+
+        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
     }
 
     @Test
     public void testUpgraderApi() {
-        addUserToHostedOperatorRole(HOSTED_VESPA_OPERATOR);
-
-        ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-
         // Get current configuration
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/jobs/upgrader", new byte[0], Request.Method.GET),
                               "{\"upgradesPerMinute\":0.125,\"confidenceOverrides\":[]}",
@@ -97,6 +111,34 @@ public class ControllerApiTest extends ControllerContainerTest {
                 hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42", "", Request.Method.DELETE),
                 "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.43\":\"broken\"}]}",
                 200);
+
+        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
+    }
+
+    @Test
+    public void testAuditLogApi() {
+        ManualClock clock = new ManualClock(Instant.parse("2019-03-01T12:13:14.00Z"));
+        AuditLogger logger = new AuditLogger(tester.controller().curator(), clock);
+
+        // Log some operator actions
+        HttpRequest req1 = HttpRequest.createTestRequest(
+                "http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST
+        );
+        req1.getJDiscRequest().setUserPrincipal(() -> "operator1");
+        logger.log(req1);
+
+        clock.advance(Duration.ofHours(2));
+        HttpRequest req2 = HttpRequest.createTestRequest(
+                "http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST,
+                new ByteArrayInputStream("broken".getBytes(StandardCharsets.UTF_8))
+        );
+        req2.getJDiscRequest().setUserPrincipal(() -> "operator2");
+        logger.log(req2);
+
+        // Verify log
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/auditlog/"), new File("auditlog.json"));
     }
 
     private static Request hostedOperatorRequest(String uri, String body, Request.Method method) {

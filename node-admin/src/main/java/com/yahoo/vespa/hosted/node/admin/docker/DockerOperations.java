@@ -6,15 +6,14 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface DockerOperations {
 
-    void createContainer(NodeAgentContext context, ContainerData containerData);
+    void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources);
 
     void startContainer(NodeAgentContext context);
 
@@ -49,9 +48,4 @@ public interface DockerOperations {
     void stopServices(NodeAgentContext context);
 
     Optional<ContainerStats> getContainerStats(NodeAgentContext context);
-
-    /**
-     * Returns the list of containers managed by node-admin
-     */
-    List<Container> getAllManagedContainers();
 }
