@@ -11,8 +11,8 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 
 import java.io.IOException;
@@ -261,11 +261,6 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public Optional<ContainerStats> getContainerStats(NodeAgentContext context) {
         return docker.getContainerStats(context.containerName());
-    }
-
-    @Override
-    public List<Container> getAllManagedContainers() {
-        return docker.getAllContainersManagedBy(MANAGER_NAME);
     }
 
     private static void addMounts(NodeAgentContext context, Docker.CreateContainerCommand command) {
