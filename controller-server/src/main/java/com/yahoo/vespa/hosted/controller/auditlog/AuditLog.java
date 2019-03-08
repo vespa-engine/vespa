@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.auditlog;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.Ordering;
 import org.jetbrains.annotations.NotNull;
 
@@ -65,7 +66,7 @@ public class AuditLog {
             this.principal = Objects.requireNonNull(principal, "principal must be non-null");
             this.method = Objects.requireNonNull(method, "method must be non-null");
             this.resource = Objects.requireNonNull(resource, "resource must be non-null");
-            this.data = truncateData(data);
+            this.data = sanitize(data);
         }
 
         /** Time of the request */
@@ -105,9 +106,10 @@ public class AuditLog {
             DELETE
         }
 
-        private static Optional<String> truncateData(Optional<String> data) {
+        private static Optional<String> sanitize(Optional<String> data) {
             Objects.requireNonNull(data, "data must be non-null");
             return data.filter(Predicate.not(String::isBlank))
+                       .filter(CharMatcher.ascii()::matchesAllOf)
                        .map(v -> {
                            if (v.length() > maxDataLength) {
                                return v.substring(0, maxDataLength);

@@ -23,6 +23,7 @@ public class AuditLogSerializerTest {
         Instant i1 = Instant.now();
         Instant i2 = i1.minus(Duration.ofHours(1));
         Instant i3 = i1.minus(Duration.ofHours(2));
+        Instant i4 = i1.minus(Duration.ofHours(3));
 
         AuditLog log = new AuditLog(List.of(
                 new AuditLog.Entry(i1, "bar", AuditLog.Entry.Method.POST,
@@ -33,7 +34,10 @@ public class AuditLogSerializerTest {
                                    Optional.of("{\"foo\":\"bar\"}")),
                 new AuditLog.Entry(i3, "baz", AuditLog.Entry.Method.POST,
                                    "/foo/baz/",
-                                   Optional.of(""))
+                                   Optional.of("")),
+                new AuditLog.Entry(i4, "baz", AuditLog.Entry.Method.POST,
+                                   "/foo/baz/",
+                                   Optional.of("\ufdff\ufeff\uffff")) // non-ascii
         ));
 
         AuditLogSerializer serializer = new AuditLogSerializer();
@@ -53,6 +57,7 @@ public class AuditLogSerializerTest {
 
         assertEquals(1024, log.entries().get(0).data().get().length());
         assertTrue(log.entries().get(2).data().isEmpty());
+        assertTrue(log.entries().get(3).data().isEmpty());
     }
 
 }
