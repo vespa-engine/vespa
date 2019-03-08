@@ -474,7 +474,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     private static Set<ConfigKey<?>> configsProduced(ConfigProducer cp) {
-        Set<ConfigKey<?>> ret = ReflectionUtil.configsProducedByInterface(cp.getClass(), cp.getConfigId());
+        Set<ConfigKey<?>> ret = ReflectionUtil.getAllConfigsProduced(cp.getClass(), cp.getConfigId());
         UserConfigRepo userConfigs = cp.getUserConfigs();
         for (ConfigDefinitionKey userKey : userConfigs.configsProduced()) {
             ret.add(new ConfigKey<>(userKey.getName(), cp.getConfigId(), userKey.getNamespace()));
