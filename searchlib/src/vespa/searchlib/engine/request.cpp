@@ -5,8 +5,8 @@
 
 namespace search::engine {
 
-Request::Request(const fastos::TimeStamp &start_time)
-    : _startTime(start_time),
+Request::Request(RelativeTime relativeTime)
+    : _relativeTime(std::move(relativeTime)),
       _timeOfDoom(fastos::TimeStamp(fastos::TimeStamp::FUTURE)),
       _traceLevel(0),
       queryFlags(0),
@@ -15,7 +15,7 @@ Request::Request(const fastos::TimeStamp &start_time)
       propertiesMap(),
       stackItems(0),
       stackDump(),
-      _trace(start_time)
+      _trace(_relativeTime)
 {
 }
 
@@ -23,17 +23,17 @@ Request::~Request() = default;
 
 void Request::setTimeout(const fastos::TimeStamp & timeout)
 {
-    _timeOfDoom = _startTime + timeout;
+    _timeOfDoom = getStartTime() + timeout;
 }
 
 fastos::TimeStamp Request::getTimeUsed() const
 {
-    return fastos::TimeStamp(fastos::ClockSystem::now()) - _startTime;
+    return _relativeTime.timeSinceDawn();
 }
 
 fastos::TimeStamp Request::getTimeLeft() const
 {
-    return _timeOfDoom - fastos::TimeStamp(fastos::ClockSystem::now());
+    return _timeOfDoom - _relativeTime.now();
 }
 
 bool

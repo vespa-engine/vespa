@@ -192,7 +192,7 @@ TransportServer::HandlePacket(FNET_Packet *packet, FNET_Context context)
                 logPacket("incoming packet", packet, channel, 0);
             }
             SearchRequest::Source req(qx, _sourceDesc);
-            packet = NULL;
+            packet = nullptr;
             _pending.push(new SearchHandler(*this, std::move(req), channel, _clients.size()));
             rc = FNET_CLOSE_CHANNEL;
         } else if (pcode == search::fs4transport::PCODE_GETDOCSUMSX) {
@@ -201,14 +201,14 @@ TransportServer::HandlePacket(FNET_Packet *packet, FNET_Context context)
                 logPacket("incoming packet", packet, channel, 0);
             }
             DocsumRequest::Source req(gdx, _sourceDesc);
-            packet = NULL;
+            packet = nullptr;
             _pending.push(new DocsumHandler(*this, std::move(req), channel));
             rc = FNET_CLOSE_CHANNEL;
         } else if (shouldLog(DEBUG_UNHANDLED)) {
             logPacket("unhandled packet", packet, channel, 0);
         }
     }
-    if (packet != NULL) {
+    if (packet != nullptr) {
         packet->Free();
     }
     return rc;
@@ -217,7 +217,7 @@ TransportServer::HandlePacket(FNET_Packet *packet, FNET_Context context)
 bool
 TransportServer::InitAdminChannel(FNET_Channel *channel)
 {
-    if (_listener == NULL) {
+    if (_listener == nullptr) {
         // handle race where we get an incoming connection and
         // disables listening at the 'same time'. Note that sync close
         // is only allowed in the InitAdminChannel method
@@ -262,19 +262,19 @@ TransportServer::updateListen()
 {
     bool doListen = _doListen;
     if (doListen) {
-        if (_listener == NULL) { // start listening
+        if (_listener == nullptr) { // start listening
             _listener = _transport.Listen(_listenSpec.c_str(), &PacketStreamer::Instance, this);
-            if (_listener == NULL) {
+            if (_listener == nullptr) {
                 LOG(error, "Could not bind fnet transport socket to %s", _listenSpec.c_str());
                 _failed = true;
                 return false;
             }
         }
     } else {
-        if (_listener != NULL) { // stop listening
+        if (_listener != nullptr) { // stop listening
             _transport.Close(_listener); // async close
             _listener->SubRef();
-            _listener = NULL;
+            _listener = nullptr;
             // also close client connections
             std::set<FNET_Channel*>::iterator it = _clients.begin();
             for (; it != _clients.end(); ++it) {
