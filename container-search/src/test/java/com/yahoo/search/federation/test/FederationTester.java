@@ -15,14 +15,14 @@ import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import java.util.Collections;
 
 /**
-* @author Tony Vaagenes
-*/
+ * @author Tony Vaagenes
+ */
 class FederationTester {
 
-    SearchChainResolver.Builder builder = new SearchChainResolver.Builder();
-    SearchChainRegistry registry = new SearchChainRegistry();
+    private final SearchChainResolver.Builder builder = new SearchChainResolver.Builder();
+    private final SearchChainRegistry registry = new SearchChainRegistry();
 
-    Execution execution;
+    private Execution execution;
 
     void addSearchChain(String id, Searcher... searchers) {
         addSearchChain(id, federationOptions(), searchers);
@@ -51,6 +51,8 @@ class FederationTester {
     }
 
     public Result search() {
+        Query query = new Query();
+        query.setTimeout(60 * 1000);
         return search(new Query());
     }
 
@@ -73,4 +75,5 @@ class FederationTester {
     public void fill(Result result) {
         execution.fill(result, "default");
     }
+
 }
