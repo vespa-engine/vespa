@@ -46,6 +46,7 @@ import com.yahoo.vespa.model.builder.xml.dom.chains.search.DomSearchChainsBuilde
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.ContainerImpl;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
@@ -153,7 +154,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return new VespaDomBuilder.DomConfigProducerBuilder<ContainerCluster>() {
             @Override
             protected ContainerCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
-                return new ContainerCluster(ancestor, modelContext.getProducerId(),
+                return new ContainerClusterImpl(ancestor, modelContext.getProducerId(),
                                             modelContext.getProducerId(), deployState);
             }
         }.build(modelContext.getDeployState(), modelContext.getParentProducer(), spec);
@@ -360,7 +361,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.setDocproc(containerDocproc);
 
         ContainerDocproc.Options docprocOptions = containerDocproc.options;
-        cluster.setMbusParams(new ContainerCluster.MbusParams(
+        cluster.setMbusParams(new ContainerClusterImpl.MbusParams(
                 docprocOptions.maxConcurrentFactor, docprocOptions.documentExpansionFactor, docprocOptions.containerCoreMemory));
     }
 

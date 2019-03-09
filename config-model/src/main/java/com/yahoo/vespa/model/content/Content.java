@@ -22,6 +22,7 @@ import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.ContainerImpl;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
@@ -307,7 +308,7 @@ public class Content extends ConfigModel {
             AbstractConfigProducer parent = root.getChildren().get(ContainerModel.DOCPROC_RESERVED_NAME);
             if (parent == null)
                 parent = new SimpleConfigProducer(root, ContainerModel.DOCPROC_RESERVED_NAME);
-            ContainerCluster indexingCluster = new ContainerCluster(parent, "cluster." + indexerName, indexerName, modelContext.getDeployState());
+            ContainerCluster indexingCluster = new ContainerClusterImpl(parent, "cluster." + indexerName, indexerName, modelContext.getDeployState());
             ContainerModel indexingClusterModel = new ContainerModel(modelContext.withParent(parent).withId(indexingCluster.getSubId()));
             indexingClusterModel.setCluster(indexingCluster);
             modelContext.getConfigModelRepoAdder().add(indexingClusterModel);

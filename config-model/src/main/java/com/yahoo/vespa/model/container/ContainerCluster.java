@@ -89,11 +89,13 @@ import java.util.stream.Stream;
 import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX;
 
 /**
+ * Parent class for all container cluster types.
+ *
  * @author gjoranv
  * @author Einar M R Rosenvinge
  * @author Tony Vaagenes
  */
-public final class ContainerCluster
+public abstract class ContainerCluster
         extends AbstractConfigProducer<AbstractConfigProducer<?>>
         implements
         ComponentsConfig.Producer,
@@ -178,7 +180,7 @@ public final class ContainerCluster
 
     /** The zone this is deployed in, or the default zone if not on hosted Vespa */
     private Zone zone;
-    
+
     private String hostClusterId = null;
     private String jvmGCOptions = null;
     private String environmentVars = null;
@@ -412,7 +414,7 @@ public final class ContainerCluster
     public SearchChains getSearchChains() {
         if (containerSearch == null)
             throw new IllegalStateException("Search components not found in container cluster '" + getSubId() +
-                                            "': Add <search/> to the cluster in services.xml");
+                                                    "': Add <search/> to the cluster in services.xml");
         return containerSearch.getChains();
     }
 
@@ -477,7 +479,7 @@ public final class ContainerCluster
     public DocprocChains getDocprocChains() {
         if (containerDocproc == null)
             throw new IllegalStateException("Document processing components not found in container cluster '" + getSubId() +
-                                            "': Add <document-processing/> to the cluster in services.xml");
+                                                    "': Add <document-processing/> to the cluster in services.xml");
         return containerDocproc.getChains();
     }
 
@@ -541,14 +543,14 @@ public final class ContainerCluster
     @Override
     public void getConfig(ServletPathsConfig.Builder builder) {
         allServlets().forEach(servlet ->
-                        builder.servlets(servlet.getComponentId().stringValue(),
-                                         servlet.toConfigBuilder())
+                                      builder.servlets(servlet.getComponentId().stringValue(),
+                                                       servlet.toConfigBuilder())
         );
     }
 
     private Stream<Servlet> allServlets() {
         return Stream.concat(allJersey2Servlets(),
-                servletGroup.getComponents().stream());
+                             servletGroup.getComponents().stream());
     }
 
     private Stream<Jersey2Servlet> allJersey2Servlets() {
@@ -593,7 +595,7 @@ public final class ContainerCluster
 
     /**
      * Adds a bundle present at a known location at the target container nodes.
-     * 
+     *
      * @param bundlePath usually an absolute path, e.g. '$VESPA_HOME/lib/jars/foo.jar'
      */
     public final void addPlatformBundle(Path bundlePath) {
@@ -604,8 +606,8 @@ public final class ContainerCluster
     public void getConfig(BundlesConfig.Builder builder) {
         Stream.concat(applicationBundles.stream().map(FileReference::value),
                       platformBundles.stream()
-                                     .map(ContainerCluster::toFileReferenceString))
-                                     .forEach(builder::bundle);
+                              .map(ContainerCluster::toFileReferenceString))
+                .forEach(builder::bundle);
     }
 
     private static String toFileReferenceString(Path path) {
@@ -614,7 +616,7 @@ public final class ContainerCluster
 
     @Override
     public void getConfig(QrSearchersConfig.Builder builder) {
-    	if (containerSearch!=null) containerSearch.getConfig(builder);
+        if (containerSearch!=null) containerSearch.getConfig(builder);
     }
 
     @Override
@@ -725,9 +727,9 @@ public final class ContainerCluster
 
         for (Service service : getDescendantServices()) {
             builder.services.add(new ClusterInfoConfig.Services.Builder()
-                    .index(Integer.parseInt(service.getServicePropertyString("index", "99999")))
-                    .hostname(service.getHostName())
-                    .ports(getPorts(service)));
+                                         .index(Integer.parseInt(service.getServicePropertyString("index", "99999")))
+                                         .hostname(service.getHostName())
+                                         .ports(getPorts(service)));
         }
     }
 
@@ -748,8 +750,8 @@ public final class ContainerCluster
         PortsMeta portsMeta = service.getPortsMeta();
         for (int i = 0; i < portsMeta.getNumPorts(); i++) {
             builders.add(new ClusterInfoConfig.Services.Ports.Builder()
-                            .number(service.getRelativePort(i))
-                            .tags(ApplicationConfigProducerRoot.getPortTags(portsMeta, i))
+                                 .number(service.getRelativePort(i))
+                                 .tags(ApplicationConfigProducerRoot.getPortTags(portsMeta, i))
             );
         }
         return builders;
@@ -771,10 +773,10 @@ public final class ContainerCluster
 
     /** The configured endpoint aliases (fqdn) for the service in this cluster */
     public List<String> endpointAliases() { return endpointAliases; }
-    
+
     public void setHostClusterId(String clusterId) { hostClusterId = clusterId; }
 
-    /** 
+    /**
      * Returns the id of the content cluster which hosts this container cluster, if any.
      * This is only set with hosted clusters where this container cluster is set up to run on the nodes
      * of a content cluster.
@@ -786,7 +788,7 @@ public final class ContainerCluster
     public void setEnvironmentVars(String environmentVars) { this.environmentVars = environmentVars; }
     public Optional<String> getJvmGCOptions() { return Optional.ofNullable(jvmGCOptions); }
 
-    /** 
+    /**
      * Returns the percentage of host physical memory this application has specified for nodes in this cluster,
      * or empty if this is not specified by the application.
      */

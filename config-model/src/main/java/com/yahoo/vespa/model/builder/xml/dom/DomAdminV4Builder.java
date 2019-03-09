@@ -16,6 +16,7 @@ import com.yahoo.vespa.model.admin.LogserverContainer;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.ContainerModel;
 import org.w3c.dom.Element;
 
@@ -105,7 +106,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     // Creates a container cluster 'logs' with a container on the logserver host
     // that has a handler for getting logs
     private void createContainerOnLogserverHost(DeployState deployState, Admin admin, HostResource hostResource) {
-        ContainerCluster logServerCluster = new ContainerCluster(admin, "logs", "logs", deployState);
+        ContainerCluster logServerCluster = new ContainerClusterImpl(admin, "logs", "logs", deployState);
         ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
         logserverClusterModel.setCluster(logServerCluster);
 
