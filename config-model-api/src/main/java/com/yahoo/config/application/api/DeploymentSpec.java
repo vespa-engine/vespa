@@ -361,6 +361,10 @@ public class DeploymentSpec {
             this(environment, region, active, Optional.empty(), Optional.empty());
         }
 
+        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active, Optional<AthenzService> athenzService) {
+            this(environment, region, active, athenzService, Optional.empty());
+        }
+
         public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active,
                             Optional<AthenzService> athenzService, Optional<String> testerFlavor) {
             if (environment != Environment.prod && region.isPresent())
