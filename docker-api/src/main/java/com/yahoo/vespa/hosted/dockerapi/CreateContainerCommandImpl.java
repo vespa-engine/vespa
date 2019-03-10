@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +40,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final List<Ulimit> ulimits = new ArrayList<>();
     private final Set<Capability> addCapabilities = new HashSet<>();
     private final Set<Capability> dropCapabilities = new HashSet<>();
+    private final Set<String> securityOpts = new HashSet<>();
 
     private Optional<String> hostName = Optional.empty();
     private Optional<ContainerResources> containerResources = Optional.empty();
@@ -87,6 +89,12 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     @Override
     public Docker.CreateContainerCommand withDropCapability(String capabilityName) {
         dropCapabilities.add(Capability.valueOf(capabilityName));
+        return this;
+    }
+
+    @Override
+    public Docker.CreateContainerCommand withSecurityOpts(String securityOpt) {
+        securityOpts.add(securityOpt);
         return this;
     }
 
@@ -157,7 +165,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private CreateContainerCmd createCreateContainerCmd() {
         List<Bind> volumeBinds = volumeBindSpecs.stream().map(Bind::parse).collect(Collectors.toList());
 
-        final HostConfig hostConfig = new HostConfig();
+        final HostConfig hostConfig = new HostConfig()
+                .withSecurityOpts(new ArrayList<>(securityOpts));
 
         containerResources.ifPresent(cr -> hostConfig
                 .withCpuShares(cr.cpuShares())
@@ -193,7 +202,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     /** Maps ("--env", {"A", "B", "C"}) to "--env A --env B --env C" */
-    private static String toRepeatedOption(String option, List<String> optionValues) {
+    private static String toRepeatedOption(String option, Collection<String> optionValues) {
         return optionValues.stream()
                 .map(optionValue -> option + " " + optionValue)
                 .collect(Collectors.joining(" "));
@@ -234,6 +243,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 toRepeatedOption("--volume", volumeBindSpecs),
                 toRepeatedOption("--cap-add", addCapabilitiesList),
                 toRepeatedOption("--cap-drop", dropCapabilitiesList),
+                toRepeatedOption("--security-opt", securityOpts),
                 toOptionalOption("--net", networkMode),
                 toOptionalOption("--ip", ipv4Address),
                 toOptionalOption("--ip6", ipv6Address),

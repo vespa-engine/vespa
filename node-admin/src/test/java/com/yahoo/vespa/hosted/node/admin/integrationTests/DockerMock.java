@@ -180,6 +180,11 @@ public class DockerMock implements Docker {
         }
 
         @Override
+        public CreateContainerCommand withSecurityOpts(String securityOpt) {
+            return this;
+        }
+
+        @Override
         public CreateContainerCommand withPrivileged(boolean privileged) {
             return this;
         }

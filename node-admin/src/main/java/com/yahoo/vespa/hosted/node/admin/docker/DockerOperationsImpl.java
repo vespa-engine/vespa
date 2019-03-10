@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
@@ -87,6 +88,9 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withAddCapability("SYS_ADMIN")  // Needed for perf
                 .withAddCapability("SYS_NICE");  // Needed for set_mempolicy to work
 
+        if (context.node().getMembership().map(NodeMembership::getClusterType).map("content"::equalsIgnoreCase).orElse(false)) {
+            command.withSecurityOpts("seccomp=unconfined");
+        }
 
         DockerNetworking networking = context.dockerNetworking();
         command.withNetworkMode(networking.getDockerNetworkMode());
