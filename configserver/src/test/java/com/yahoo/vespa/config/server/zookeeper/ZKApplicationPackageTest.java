@@ -1,22 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
-import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.internal.ConfigNodeFlavors;
-import com.yahoo.config.provisioning.FlavorsConfig;
-import com.yahoo.io.IOUtils;
-import com.yahoo.path.Path;
-import com.yahoo.text.Utf8;
-import com.yahoo.vespa.curator.mock.MockCurator;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,11 +14,23 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.component.Version;
+import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.path.Path;
+import com.yahoo.text.Utf8;
+import com.yahoo.vespa.curator.mock.MockCurator;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import com.yahoo.io.IOUtils;
 
 public class ZKApplicationPackageTest {
 
@@ -92,7 +93,7 @@ public class ZKApplicationPackageTest {
         zk.putData("/0/" + ZKApplicationPackage.allocatedHostsNode, ALLOCATED_HOSTS.toJson());
     }
 
-    private static class MockNodeFlavors extends ConfigNodeFlavors {
+    private static class MockNodeFlavors extends NodeFlavors{
 
         MockNodeFlavors() { super(flavorsConfig()); }
 

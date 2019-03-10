@@ -28,7 +28,7 @@ public class ResourceCapacity {
 
     static ResourceCapacity of(Flavor flavor) {
         return new ResourceCapacity(
-                flavor.memory().sizeInGb(), flavor.cpu().cores(), flavor.disk().sizeInBase10Gb());
+                flavor.getMinMainMemoryAvailableGb(), flavor.getMinCpuCores(), flavor.getMinDiskAvailableGb());
     }
 
     static ResourceCapacity of(Node node) {
@@ -72,9 +72,9 @@ public class ResourceCapacity {
     int freeCapacityInFlavorEquivalence(Flavor flavor) {
         if (!hasCapacityFor(ResourceCapacity.of(flavor))) return 0;
 
-        double memoryFactor = Math.floor(memory/flavor.memory().sizeInGb());
-        double cpuFactor = Math.floor(cpu/flavor.cpu().cores());
-        double diskFactor =  Math.floor(disk/flavor.disk().sizeInBase10Gb());
+        double memoryFactor = Math.floor(memory/flavor.getMinMainMemoryAvailableGb());
+        double cpuFactor = Math.floor(cpu/flavor.getMinCpuCores());
+        double diskFactor =  Math.floor(disk/flavor.getMinDiskAvailableGb());
 
         return (int) Math.min(Math.min(memoryFactor, cpuFactor), diskFactor);
     }

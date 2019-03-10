@@ -51,7 +51,7 @@ public class RetireIPv4OnlyNodes implements RetirementPolicy {
 
     @Override
     public Optional<String> shouldRetire(Node node) {
-        if (node.flavor().environment() == Flavor.Environment.VIRTUAL_MACHINE) return Optional.empty();
+        if (node.flavor().getType() == Flavor.Type.VIRTUAL_MACHINE) return Optional.empty();
         boolean shouldRetire = node.ipAddresses().stream()
                 .map(InetAddresses::forString)
                 .allMatch(address -> address instanceof Inet4Address);

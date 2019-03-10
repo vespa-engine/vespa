@@ -40,7 +40,7 @@ public class NodeRebooter extends Maintainer {
         EnumSet<Node.State> targetStates = EnumSet.of(Node.State.active, Node.State.ready);
         List<Node> nodesToReboot = nodeRepository().getNodes().stream()
                 .filter(node -> targetStates.contains(node.state()))
-                .filter(node -> node.flavor().environment() != Flavor.Environment.DOCKER_CONTAINER)
+                .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                 .filter(this::shouldReboot)
                 .collect(Collectors.toList());
 

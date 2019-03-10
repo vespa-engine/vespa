@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.internal.ConfigNodeFlavors;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import org.junit.Test;
 
@@ -107,15 +107,15 @@ public class FlavorSpareCountTest {
         FlavorConfigBuilder flavorConfigBuilder = new FlavorConfigBuilder();
         for (int i = 0; i < replaces.length; i++) {
             FlavorsConfig.Flavor.Builder builder = flavorConfigBuilder
-                    .addFlavor("flavor-" + i, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Environment.BARE_METAL);
+                    .addFlavor("flavor-" + i, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Type.BARE_METAL);
 
             for (Integer replacesId : replaces[i]) {
                 flavorConfigBuilder.addReplaces("flavor-" + replacesId, builder);
             }
         }
-        return new ConfigNodeFlavors(flavorConfigBuilder.build())
+        return new NodeFlavors(flavorConfigBuilder.build())
                 .getFlavors().stream()
-                .sorted(Comparator.comparing(Flavor::flavorName))
+                .sorted(Comparator.comparing(Flavor::name))
                 .collect(Collectors.toList());
     }
 }

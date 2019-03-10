@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Objects;
@@ -142,7 +142,7 @@ public interface NodeSpec {
         private boolean requestedFlavorCanBeAchievedByResizing(Flavor flavor) {
             // TODO: Enable this when we can do it safely
             // Then also re-enable ProvisioningTest.application_deployment_with_inplace_downsize()
-            // return flavor.isDockerContainer() && requestedFlavor.isDockerContainer() && flavor.isLargerThan(requestedFlavor);
+            // return flavor.isDocker() && requestedFlavor.isDocker() && flavor.isLargerThan(requestedFlavor);
             return false;
         }
 

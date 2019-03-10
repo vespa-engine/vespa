@@ -9,6 +9,7 @@
   "canonicalFlavor": "large",
   "minDiskAvailableGb": 2000.0,
   "minMainMemoryAvailableGb": 128.0,
+  "description": "Flavor-name-is-large-variant",
   "minCpuCores": 64.0,
   "fastDisk":true,
   "bandwidth":0.0,

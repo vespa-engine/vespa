@@ -9,7 +9,6 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provision.internal.ConfigFlavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
@@ -1741,9 +1740,8 @@ public class ModelProvisioningTest {
     }
 
     private static Flavor createFlavorFromDiskSetting(String name, boolean fastDisk) {
-        return new ConfigFlavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder()
-                .name(name)
-                .disk(new FlavorsConfig.Flavor.Disk.Builder().fast(fastDisk))));
+        return new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().
+                name(name).fastDisk(fastDisk)));
     }
 
     private static ProtonConfig getProtonConfig(ContentSearchCluster cluster, int searchNodeIdx) {
@@ -1798,10 +1796,8 @@ public class ModelProvisioningTest {
     private static long GB = 1024 * 1024 * 1024;
 
     private static Flavor createFlavorFromMemoryAndDisk(String name, int memoryGb, int diskGb) {
-        return new ConfigFlavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder()
-                .name(name)
-                .memory(new FlavorsConfig.Flavor.Memory.Builder().sizeInGb(memoryGb))
-                .disk(new FlavorsConfig.Flavor.Disk.Builder().sizeInGb(diskGb))));
+        return new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().
+                name(name).minMainMemoryAvailableGb(memoryGb).minDiskAvailableGb(diskGb)));
     }
 
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {

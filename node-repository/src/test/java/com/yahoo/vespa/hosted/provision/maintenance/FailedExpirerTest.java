@@ -323,7 +323,7 @@ public class FailedExpirerTest {
                                                           Version.fromString("6.42"),
                                                           false,
                                                           Collections.emptySet());
-            Capacity capacity = Capacity.fromNodeCount(hostname.length, Optional.of(flavor.flavorName()), false, true);
+            Capacity capacity = Capacity.fromNodeCount(hostname.length, Optional.of(flavor.name()), false, true);
             return allocate(applicationId, clusterSpec, capacity);
         }
 

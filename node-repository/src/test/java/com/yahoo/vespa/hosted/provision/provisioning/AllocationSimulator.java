@@ -8,7 +8,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.internal.ConfigNodeFlavors;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -17,7 +16,7 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
-import javax.swing.*;
+import javax.swing.JFrame;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -44,15 +43,15 @@ public class AllocationSimulator {
         // Setup flavors
         //
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("host-large", 8., 8., 8, Flavor.Environment.BARE_METAL);
-        b.addFlavor("host-small", 5., 5., 5, Flavor.Environment.BARE_METAL);
-        b.addFlavor("d-1", 1, 1., 1, Flavor.Environment.DOCKER_CONTAINER);
-        b.addFlavor("d-2", 2, 2., 2, Flavor.Environment.DOCKER_CONTAINER);
-        b.addFlavor("d-3", 3, 3., 3, Flavor.Environment.DOCKER_CONTAINER);
-        b.addFlavor("d-3-disk", 3, 3., 5, Flavor.Environment.DOCKER_CONTAINER);
-        b.addFlavor("d-3-mem", 3, 5., 3, Flavor.Environment.DOCKER_CONTAINER);
-        b.addFlavor("d-3-cpu", 5, 3., 3, Flavor.Environment.DOCKER_CONTAINER);
-        flavors = new ConfigNodeFlavors(b.build());
+        b.addFlavor("host-large", 8., 8., 8, Flavor.Type.BARE_METAL);
+        b.addFlavor("host-small", 5., 5., 5, Flavor.Type.BARE_METAL);
+        b.addFlavor("d-1", 1, 1., 1, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3", 3, 3., 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-disk", 3, 3., 5, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-mem", 3, 5., 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-cpu", 5, 3., 3, Flavor.Type.DOCKER_CONTAINER);
+        flavors = new NodeFlavors(b.build());
 
         //
         // Initiate nodes in system

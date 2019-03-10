@@ -11,7 +11,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provision.internal.ConfigFlavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
@@ -235,7 +234,7 @@ public class NodeIdentifierTest {
                         emptySet(),
                         HOSTNAME,
                         Optional.of("parenthost"),
-                        new ConfigFlavor(createFlavourConfig().flavor(0)),
+                        new Flavor(createFlavourConfig().flavor(0)),
                         NodeType.tenant)
                 .with(
                         new Allocation(
@@ -265,7 +264,7 @@ public class NodeIdentifierTest {
 
     private static FlavorsConfig createFlavourConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("docker", 1., 2., 50, Flavor.Environment.DOCKER_CONTAINER).cost(1);
+        b.addFlavor("docker", 1., 2., 50, Flavor.Type.DOCKER_CONTAINER).cost(1);
         return b.build();
     }
 
