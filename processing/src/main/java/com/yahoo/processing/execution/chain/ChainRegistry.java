@@ -9,7 +9,6 @@ import com.yahoo.component.provider.ComponentRegistry;
  * A registry of chains
  *
  * @author Tony Vaagenes
- * @since 5.1.7
  */
 public class ChainRegistry<T extends ChainedComponent> extends ComponentRegistry<Chain<T>> {
 }
