@@ -26,22 +26,29 @@ flavor[].cost int default=0
 flavor[].stock bool default=true
 
 # The type of node: BARE_METAL, VIRTUAL_MACHINE or DOCKER_CONTAINER
-flavor[].environment string default="BARE_METAL"
+flavor[].environment string default="undefined"
 
 # The minimum number of CPU cores available.
-flavor[].cpu.cores double default=0.0
+flavor[].minCpuCores double default=0.0
 
 # The minimum amount of main memory available.
-flavor[].memory.sizeInGb double default=0.0
+flavor[].minMainMemoryAvailableGb double default=0.0
 
-# The minimum amount of disk available in GB in base 10 (1GB = 10^9 bytes)
-flavor[].disk.sizeInGb double default=0.0
+# The minimum amount of disk available.
+flavor[].minDiskAvailableGb double default=0.0
 
 # Whether the disk is fast (typically SSD) or slow (typically spinning HDD).
-flavor[].disk.fast bool default=true
+flavor[].fastDisk bool default=true
 
 # Expected network interface bandwidth available for this flavor, in Mbit/s.
-flavor[].bandwidth.mbits double default=0.0
+flavor[].bandwidth double default=0.0
+
+# Human readable free text for description of node.
+flavor[].description string default=""
 
 # The flavor is retired and should no longer be used.
 flavor[].retired bool default=false
+
+# The free capacity we would like to preserve for this flavor
+# Note: Not used after Vespa 6.282
+flavor[].idealHeadroom int default=0

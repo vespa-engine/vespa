@@ -154,7 +154,7 @@ public class NodeRetirer extends Maintainer {
                 nodesToRetire.forEach(node ->
                         retirementPolicy.shouldRetire(node).ifPresent(reason -> {
                             log.info("Setting wantToRetire and wantToDeprovision for host " + node.hostname() +
-                                    " with flavor " + node.flavor().flavorName() +
+                                    " with flavor " + node.flavor().name() +
                                     " allocated to " + node.allocation().get().owner() + ". Reason: " + reason);
 
                             Node updatedNode = node.with(node.status()

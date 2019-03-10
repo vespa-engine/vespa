@@ -65,7 +65,7 @@ public class VespaModelTester {
     }
 
     public void addHosts(Flavor flavor, int count) {
-        addHosts(Optional.of(flavor), flavor.flavorName(), count);
+        addHosts(Optional.of(flavor), flavor.name(), count);
     }
 
     private Hosts addHosts(Optional<Flavor> flavor, String flavorName, int count) {

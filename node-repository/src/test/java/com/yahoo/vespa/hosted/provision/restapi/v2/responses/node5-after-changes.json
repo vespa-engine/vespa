@@ -10,6 +10,7 @@
   "canonicalFlavor": "docker",
   "minDiskAvailableGb": 100.0,
   "minMainMemoryAvailableGb": 0.5,
+  "description": "Flavor-name-is-docker",
   "minCpuCores": 0.2,
   "fastDisk": true,
   "bandwidth":0.0,

@@ -9,6 +9,7 @@
   "canonicalFlavor": "default",
   "minDiskAvailableGb": 500.0,
   "minMainMemoryAvailableGb": 12.0,
+  "description": "Flavor-name-is-expensive",
   "minCpuCores": 6.0,
   "cost": 200,
   "fastDisk": true,

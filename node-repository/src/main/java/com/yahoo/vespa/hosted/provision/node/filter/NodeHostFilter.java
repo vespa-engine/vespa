@@ -25,7 +25,7 @@ public class NodeHostFilter extends NodeFilter {
 
     @Override
     public boolean matches(Node node) {
-        if ( ! filter.matches(node.hostname(), node.flavor().flavorName(), membership(node))) return false;
+        if ( ! filter.matches(node.hostname(), node.flavor().name(), membership(node))) return false;
         return nextMatches(node);
     }
 

@@ -6,7 +6,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provision.internal.ConfigNodeFlavors;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -31,7 +30,7 @@ public class NodeRepositoryTester {
     
     
     public NodeRepositoryTester() {
-        nodeFlavors = new ConfigNodeFlavors(createConfig());
+        nodeFlavors = new NodeFlavors(createConfig());
         clock = new ManualClock();
         curator = new MockCurator();
         curator.setZooKeeperEnsembleConnectionSpec("server1:1234,server2:5678");
@@ -72,9 +71,9 @@ public class NodeRepositoryTester {
 
     private FlavorsConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("default", 2., 4., 100, Flavor.Environment.BARE_METAL).cost(3);
-        b.addFlavor("small", 1., 2., 50, Flavor.Environment.BARE_METAL).cost(2);
-        b.addFlavor("docker", 1., 2., 50, Flavor.Environment.DOCKER_CONTAINER).cost(1);
+        b.addFlavor("default", 2., 4., 100, Flavor.Type.BARE_METAL).cost(3);
+        b.addFlavor("small", 1., 2., 50, Flavor.Type.BARE_METAL).cost(2);
+        b.addFlavor("docker", 1., 2., 50, Flavor.Type.DOCKER_CONTAINER).cost(1);
         return b.build();
     }
 

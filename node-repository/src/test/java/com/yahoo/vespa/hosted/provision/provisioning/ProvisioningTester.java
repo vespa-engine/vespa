@@ -16,7 +16,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provision.internal.ConfigNodeFlavors;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
@@ -98,19 +97,19 @@ public class ProvisioningTester {
 
     public static FlavorsConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("default", 2., 4., 100, Flavor.Environment.BARE_METAL).cost(3);
-        b.addFlavor("small", 1., 2., 50, Flavor.Environment.BARE_METAL).cost(2);
-        b.addFlavor("dockerSmall", 1., 1., 10, Flavor.Environment.DOCKER_CONTAINER).cost(1);
-        b.addFlavor("dockerLarge", 2., 1., 20, Flavor.Environment.DOCKER_CONTAINER).cost(3);
-        b.addFlavor("v-4-8-100", 4., 8., 100, Flavor.Environment.VIRTUAL_MACHINE).cost(4);
-        b.addFlavor("old-large1", 2., 4., 100, Flavor.Environment.BARE_METAL).cost(6);
-        b.addFlavor("old-large2", 2., 5., 100, Flavor.Environment.BARE_METAL).cost(14);
-        FlavorsConfig.Flavor.Builder large = b.addFlavor("large", 4., 8., 100, Flavor.Environment.BARE_METAL).cost(10);
+        b.addFlavor("default", 2., 4., 100, Flavor.Type.BARE_METAL).cost(3);
+        b.addFlavor("small", 1., 2., 50, Flavor.Type.BARE_METAL).cost(2);
+        b.addFlavor("dockerSmall", 1., 1., 10, Flavor.Type.DOCKER_CONTAINER).cost(1);
+        b.addFlavor("dockerLarge", 2., 1., 20, Flavor.Type.DOCKER_CONTAINER).cost(3);
+        b.addFlavor("v-4-8-100", 4., 8., 100, Flavor.Type.VIRTUAL_MACHINE).cost(4);
+        b.addFlavor("old-large1", 2., 4., 100, Flavor.Type.BARE_METAL).cost(6);
+        b.addFlavor("old-large2", 2., 5., 100, Flavor.Type.BARE_METAL).cost(14);
+        FlavorsConfig.Flavor.Builder large = b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10);
         b.addReplaces("old-large1", large);
         b.addReplaces("old-large2", large);
-        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Environment.BARE_METAL).cost(9);
+        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Type.BARE_METAL).cost(9);
         b.addReplaces("large", largeVariant);
-        FlavorsConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Environment.BARE_METAL).cost(11);
+        FlavorsConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Type.BARE_METAL).cost(11);
         b.addReplaces("large-variant", largeVariantVariant);
         return b.build();
     }
@@ -376,7 +375,7 @@ public class ProvisioningTester {
         long actualNodesWithFlavor = hostSpecs.stream()
                 .map(HostSpec::hostname)
                 .map(this::getNodeFlavor)
-                .map(Flavor::flavorName)
+                .map(Flavor::name)
                 .filter(name -> name.equals(flavor))
                 .count();
         assertEquals(expectedCount, actualNodesWithFlavor);
@@ -450,7 +449,7 @@ public class ProvisioningTester {
 
             return new ProvisioningTester(
                     Optional.ofNullable(curator).orElseGet(MockCurator::new),
-                    new ConfigNodeFlavors(Optional.ofNullable(flavorsConfig).orElseGet(ProvisioningTester::createConfig)),
+                    new NodeFlavors(Optional.ofNullable(flavorsConfig).orElseGet(ProvisioningTester::createConfig)),
                     Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
                     Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
                     orchestrator,

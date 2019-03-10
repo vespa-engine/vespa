@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.config.provision.internal.ConfigFlavor;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import org.junit.Test;
@@ -10,9 +10,10 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.yahoo.vespa.model.search.NodeFlavorTuning.GB;
-import static com.yahoo.vespa.model.search.NodeFlavorTuning.MB;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static com.yahoo.vespa.model.search.NodeFlavorTuning.MB;
+import static com.yahoo.vespa.model.search.NodeFlavorTuning.GB;
 
 /**
  * @author geirst
@@ -156,45 +157,44 @@ public class NodeFlavorTuningTest {
     }
 
     private static ProtonConfig configFromDiskSetting(boolean fastDisk) {
-        return getConfig(new FlavorsConfig.Flavor.Builder()
-                .disk(new FlavorsConfig.Flavor.Disk.Builder().fast(fastDisk)));
+        return getConfig(new FlavorsConfig.Flavor.Builder().
+                fastDisk(fastDisk));
     }
 
     private static ProtonConfig configFromDiskSetting(int diskGb) {
-        return getConfig(new FlavorsConfig.Flavor.Builder()
-                .disk(new FlavorsConfig.Flavor.Disk.Builder().sizeInGb(diskGb)));
+        return getConfig(new FlavorsConfig.Flavor.Builder().
+                minDiskAvailableGb(diskGb));
     }
 
     private static ProtonConfig configFromMemorySetting(int memoryGb) {
-        return getConfig(new FlavorsConfig.Flavor.Builder()
-                .memory(new FlavorsConfig.Flavor.Memory.Builder().sizeInGb(memoryGb)));
+        return getConfig(new FlavorsConfig.Flavor.Builder().
+                minMainMemoryAvailableGb(memoryGb));
     }
     private static ProtonConfig configFromMemorySetting(int memoryGb, ProtonConfig.Builder builder) {
-        return getConfig(new FlavorsConfig.Flavor.Builder()
-                .memory(new FlavorsConfig.Flavor.Memory.Builder().sizeInGb(memoryGb)), builder);
+        return getConfig(new FlavorsConfig.Flavor.Builder().
+                minMainMemoryAvailableGb(memoryGb), builder);
     }
 
     private static ProtonConfig configFromNumCoresSetting(double numCores) {
-        return getConfig(new FlavorsConfig.Flavor.Builder()
-                .cpu(new FlavorsConfig.Flavor.Cpu.Builder().cores(numCores)));
+        return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores));
     }
 
     private static ProtonConfig configFromEnvironmentType(boolean docker) {
-        String environment = (docker ? "DOCKER_CONTAINER" : "BARE_METAL");
+        String environment = (docker ? "DOCKER_CONTAINER" : "undefined");
         return getConfig(new FlavorsConfig.Flavor.Builder().environment(environment));
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder) {
         getConfig(flavorBuilder, new ProtonConfig.Builder());
         flavorBuilder.name("my_flavor");
-        NodeFlavorTuning tuning = new NodeFlavorTuning(new ConfigFlavor(new FlavorsConfig.Flavor(flavorBuilder)));
+        NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)));
         ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder) {
         flavorBuilder.name("my_flavor");
-        NodeFlavorTuning tuning = new NodeFlavorTuning(new ConfigFlavor(new FlavorsConfig.Flavor(flavorBuilder)));
+        NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)));
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }

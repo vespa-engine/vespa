@@ -4,10 +4,11 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeFlavors;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -44,7 +45,7 @@ public class CapacityPolicies {
         // for now, always use the requested flavor if a docker flavor is requested
         Optional<String> requestedFlavor = requestedCapacity.flavor();
         if (requestedFlavor.isPresent() &&
-            flavors.getFlavorOrThrow(requestedFlavor.get()).environment() == Flavor.Environment.DOCKER_CONTAINER)
+            flavors.getFlavorOrThrow(requestedFlavor.get()).getType() == Flavor.Type.DOCKER_CONTAINER)
             return flavors.getFlavorOrThrow(requestedFlavor.get());
 
         String defaultFlavorName = zone.defaultFlavor(cluster.type());

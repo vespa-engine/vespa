@@ -46,12 +46,12 @@ public class NodeList implements Iterable<Node> {
 
     /** Returns the subset of nodes of the given flavor */
     public NodeList flavor(String flavor) {
-        return filter(node -> node.flavor().flavorName().equals(flavor));
+        return filter(node -> node.flavor().name().equals(flavor));
     }
 
     /** Returns the subset of nodes which does not have the given flavor */
     public NodeList notFlavor(String flavor) {
-        return filter(node ->  ! node.flavor().flavorName().equals(flavor));
+        return filter(node ->  ! node.flavor().name().equals(flavor));
     }
 
     /** Returns the subset of nodes assigned to the given cluster type */
