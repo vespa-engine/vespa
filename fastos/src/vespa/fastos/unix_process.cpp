@@ -684,9 +684,8 @@ ForkAndExec(const char *command,
                     break;
                 case 127:
                     if (error != 0) {
-                        char errorBuf[100];
-                        const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
-                        fprintf(stderr, "ERROR: Could not execve %s: %s\n", command, errorString);
+                        std::error_code ec(error, std::system_category());
+                        fprintf(stderr, "ERROR: Could not execve %s: %s\n", command, ec.message().c_str());
                     } else
                         fprintf(stderr, "ERROR: Could not execve %s\n", command);
                     break;
@@ -1398,16 +1397,12 @@ bool FastOS_UNIX_ProcessStarter::CreateSocketPairs ()
             _mainSocketDescr = fileDescriptors[1];
             rc = true;
         } else {
-            char errorBuf[100];
-            int error = errno;
-            const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
-            fprintf(stderr, "socketpair() failed: %s\n", errorString);
+            std::error_code ec(errno, std::system_category());
+            fprintf(stderr, "socketpair() failed: %s\n", ec.message().c_str());
         }
     } else {
-        char errorBuf[100];
-        int error = errno;
-        const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
-        fprintf(stderr, "socketpair() failed: %s\n", errorString);
+        std::error_code ec(errno, std::system_category());
+        fprintf(stderr, "socketpair() failed: %s\n", ec.message().c_str());
     }
     return rc;
 }
@@ -1457,17 +1452,12 @@ bool FastOS_UNIX_ProcessStarter::Start ()
                 rc = true;
             }
         } else {
-            char errorBuf[100];
-            int error = errno;
-            const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
-            fprintf(stderr, "could not fork(): %s\n", errorString);
+            std::error_code ec(errno, std::system_category());
+            fprintf(stderr, "could not fork(): %s\n", ec.message().c_str());
         }
     } else {
-        char errorBuf[100];
-        int error = errno;
-        const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
-        fprintf(stderr, "could not CreateSocketPairs: %s\n",
-                errorString);
+        std::error_code ec(errno, std::system_category());
+        fprintf(stderr, "could not CreateSocketPairs: %s\n", ec.message().c_str());
     }
     return rc;
 }

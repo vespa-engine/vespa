@@ -328,18 +328,14 @@ FastOS_FileInterface::MakeDirIfNotPresentOrExit(const char *name)
     }
 
     if (statInfo._error != FastOS_StatInfo::FileNotFound) {
-        char errorBuf[100];
-        int error = errno;
-        const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
-        fprintf(stderr, "Could not stat %s: %s\n", name, errorString);
+        std::error_code ec(errno, std::system_category());
+        fprintf(stderr, "Could not stat %s: %s\n", name, ec.message().c_str());
         exit(1);
     }
 
     if (!FastOS_File::MakeDirectory(name)) {
-        char errorBuf[100];
-        int error = errno;
-        const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
-        fprintf(stderr, "Could not mkdir(\"%s\", 0775): %s\n", name, errorString);
+        std::error_code ec(errno, std::system_category());
+        fprintf(stderr, "Could not mkdir(\"%s\", 0775): %s\n", name, ec.message().c_str());
         exit(1);
     }
 }

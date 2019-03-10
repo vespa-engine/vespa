@@ -795,9 +795,8 @@ void addStat(asciistream &os, const string & name)
     }
     os << "[name=" << name;
     if (statres != 0) {
-        char errorBuf[128];
-        const char *errorString = strerror_r(err, errorBuf, sizeof(errorBuf));
-        os << " errno=" << err << "(\"" << errorString << "\")";
+        std::error_code ec(err, std::system_category());
+        os << " errno=" << err << "(\"" << ec.message() << "\")";
     } else {
         os << " mode=" << oct << filestat.st_mode << dec <<
             " uid=" << filestat.st_uid << " gid=" << filestat.st_gid <<
