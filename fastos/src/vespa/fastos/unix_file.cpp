@@ -398,10 +398,8 @@ FastOS_UNIX_File::TranslateError (const int osError)
 std::string
 FastOS_UNIX_File::getErrorString(const int osError)
 {
-    char errorBuf[100];
-    const char *errorString = strerror_r(osError, errorBuf, sizeof(errorBuf));
-
-    return std::string(errorString);
+    std::error_code ec(osError, std::system_category());
+    return ec.message();
 }
 
 
