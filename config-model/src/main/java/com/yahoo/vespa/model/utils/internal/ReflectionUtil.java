@@ -1,43 +1,36 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.utils.internal;
 
+import com.google.common.reflect.TypeToken;
 import com.yahoo.config.ChangesRequiringRestart;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.model.ConfigProducer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * Utility class containing static methods for retrievinig information about the config producer tree.
+ * Utility class containing static methods for retrieving information about the config producer tree.
  *
  * @author Ulf Lilleengen
  * @author bjorncs
- * @since 5.1
+ * @author gjoranv
  */
 public final class ReflectionUtil {
 
     private ReflectionUtil() {
     }
 
-    /**
-     * Returns a set of all the configs produced by a given producer.
-     *
-     * @param iface The config producer or interface to check for producers.
-     * @param configId The config id to use when creating keys.
-     * @return A set of config keys.
-     */
-    public static Set<ConfigKey<?>> configsProducedByInterface(Class<?> iface, String configId) {
-        Set<ConfigKey<?>> ret = new LinkedHashSet<>();
-        if (isConcreteProducer(iface)) {
-            ret.add(createConfigKeyFromInstance(iface.getEnclosingClass(), configId));
-        }
-        for (Class<?> parentIface : iface.getInterfaces()) {
-            ret.addAll(configsProducedByInterface(parentIface, configId));
-        }
-        return ret;
+    public static Set<ConfigKey<?>> getAllConfigsProduced(Class<? extends ConfigProducer> producerClass, String configId) {
+        // TypeToken is @Beta in guava, so consider implementing a simple recursive method instead.
+        TypeToken<? extends ConfigProducer>.TypeSet interfaces = TypeToken.of(producerClass).getTypes().interfaces();
+        return interfaces.rawTypes().stream()
+                .filter(ReflectionUtil::isConcreteProducer)
+                .map(i -> createConfigKeyFromInstance(i.getEnclosingClass(), configId))
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -97,18 +90,26 @@ public final class ReflectionUtil {
         }
     }
 
-    private static boolean classIsConfigInstanceProducer(Class<?> clazz) {
-        return clazz.getName().equals(ConfigInstance.Producer.class.getName());
-    }
-
     private static boolean isConcreteProducer(Class<?> producerInterface) {
+        if (isRootConfigProducerInterface(producerInterface))  return false;
+
         boolean parentIsConfigInstance = false;
         for (Class<?> ifaceParent : producerInterface.getInterfaces()) {
-            if (classIsConfigInstanceProducer(ifaceParent)) {
+            if (isConfigInstanceProducer(ifaceParent)) {
                 parentIsConfigInstance = true;
             }
         }
-        return (ConfigInstance.Producer.class.isAssignableFrom(producerInterface) && parentIsConfigInstance && !classIsConfigInstanceProducer(producerInterface));
+        return (ConfigInstance.Producer.class.isAssignableFrom(producerInterface)
+                && parentIsConfigInstance
+                && !isConfigInstanceProducer(producerInterface));
+    }
+
+    private static boolean isConfigInstanceProducer(Class<?> clazz) {
+        return clazz.getName().equals(ConfigInstance.Producer.class.getName());
+    }
+
+    private static boolean isRootConfigProducerInterface(Class<?> clazz) {
+        return clazz.getCanonicalName().equals(ConfigProducer.class.getCanonicalName());
     }
 
 }
