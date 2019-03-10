@@ -3,7 +3,7 @@
 <component id="com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner" bundle="node-repository" />
 <component id="NodeRepository" class="com.yahoo.vespa.hosted.provision.NodeRepository" bundle="node-repository"/>
 <component id="com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance" bundle="node-repository"/>
-<component id="com.yahoo.config.provision.internal.ConfigNodeFlavors" bundle="config-provisioning" />
+<component id="com.yahoo.config.provision.NodeFlavors" bundle="config-provisioning" />
 <component id="com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider" class="com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider" bundle="node-repository"/>
 
 <handler id="com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler" bundle="node-repository">
