@@ -37,11 +37,13 @@ public class PortFinder {
         byKeys.put(key, allocation);
     }
 
-    public int findPort(Allocation request) {
+    public int findPort(Allocation request, String host) {
         String key = request.key();
         if (byKeys.containsKey(key)) {
             int port = byKeys.get(key).port;
-            log.log(Level.INFO, "Re-using port "+port+" for allocation "+request);
+            if (port != request.port) {
+                log.log(Level.INFO, "Re-using port "+port+" for allocation "+request+" on "+host);
+            }
             return port;
         }
         int port = request.port;
@@ -49,6 +51,10 @@ public class PortFinder {
             ++port;
         }
         return port;
+    }
+
+    public boolean isFree(int port) {
+        return !byPorts.containsKey(port);
     }
 
     public PortFinder(Collection<Allocation> allocations) {

@@ -67,15 +67,16 @@ public class HostPorts {
     /**
      * Returns the baseport of the first available port range of length numPorts,
      * or 0 if there is no range of that length available.
+     * TODO: remove this API
      *
      * @param numPorts  The length of the desired port range.
      * @return  The baseport of the first available range, or 0 if no range is available.
      */
-    public int nextAvailableBaseport(int numPorts) {
+    int nextAvailableBaseport(int numPorts) {
         int range = 0;
         int port = BASE_PORT;
         for (; port < BASE_PORT + MAX_PORTS && (range < numPorts); port++) {
-            if (portDB.containsKey(port)) {
+            if (!isFree(port)) {
                 range = 0;
                 continue;
             }
@@ -87,9 +88,13 @@ public class HostPorts {
     private int nextAvailableNetworkPort() {
         int port = BASE_PORT;
         for (; port < BASE_PORT + MAX_PORTS; port++) {
-            if (!portDB.containsKey(port)) return port;
+            if (isFree(port)) return port;
         }
         return 0;
+    }
+
+    private boolean isFree(int port) {
+        return portFinder.isFree(port) && !portDB.containsKey(port);
     }
 
     /** Allocate a specific port number for a service */
@@ -125,7 +130,7 @@ public class HostPorts {
         String servType = service.getServiceType();
         String configId = service.getConfigId();
         int fallback = nextAvailableNetworkPort();
-        int port = portFinder.findPort(new NetworkPorts.Allocation(fallback, servType, configId, suffix));
+        int port = portFinder.findPort(new NetworkPorts.Allocation(fallback, servType, configId, suffix), hostname);
         reservePort(service, port, suffix);
         portFinder.use(new NetworkPorts.Allocation(port, servType, configId, suffix));
         return port;
