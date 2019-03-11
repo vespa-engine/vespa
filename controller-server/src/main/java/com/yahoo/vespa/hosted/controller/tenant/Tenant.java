@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.tenant;
 
-
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 
@@ -49,7 +48,7 @@ public abstract class Tenant {
     }
 
     static TenantName requireName(TenantName name) {
-        if (!name.value().matches("^(?=.{1,20}$)[a-z](-?[a-z0-9]+)*$")) {
+        if ( ! name.value().matches("^(?=.{1,20}$)[a-z](-?[a-z0-9]+)*$")) {
             throw new IllegalArgumentException("New tenant or application names must start with a letter, may " +
                                                "contain no more than 20 characters, and may only contain lowercase " +
                                                "letters, digits or dashes, but no double-dashes.");

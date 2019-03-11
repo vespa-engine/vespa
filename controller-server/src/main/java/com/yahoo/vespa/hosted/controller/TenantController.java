@@ -96,10 +96,7 @@ public class TenantController {
                            .collect(Collectors.toList());
     }
 
-    /**
-     * Lock a tenant for modification and apply action. Only valid for Athenz tenants as it's the only type that
-     * accepts modification.
-     */
+    /** Locks a tenant for modification and applies the given action. */
     public void lockIfPresent(TenantName name, Consumer<LockedTenant> action) {
         try (Lock lock = lock(name)) {
             tenant(name).map(tenant -> {
