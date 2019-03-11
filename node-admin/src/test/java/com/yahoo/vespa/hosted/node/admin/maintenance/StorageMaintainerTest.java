@@ -119,7 +119,7 @@ public class StorageMaintainerTest {
         public void configserver() {
             Path path = executeAs(NodeType.config);
 
-            assertChecks(path, "athenz-certificate-expiry", "configserver", "host-life",
+            assertChecks(path, "athenz-certificate-expiry", "configserver", "configserver-logd", "host-life",
                          "system-coredumps-processing", "zkbackupage");
 
             assertCheckEnds(path.resolve("configserver.yaml"),
@@ -134,7 +134,7 @@ public class StorageMaintainerTest {
         public void controller() {
             Path path = executeAs(NodeType.controller);
 
-            assertChecks(path, "athenz-certificate-expiry", "controller", "host-life",
+            assertChecks(path, "athenz-certificate-expiry", "controller", "controller-logd", "host-life",
                          "system-coredumps-processing", "vespa", "vespa-health", "zkbackupage");
 
 
