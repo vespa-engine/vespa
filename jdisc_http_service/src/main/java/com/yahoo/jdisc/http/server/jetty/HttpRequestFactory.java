@@ -38,7 +38,7 @@ class HttpRequestFactory {
         }
     }
 
-    // Implementation based on org.eclipse.jetty.server.Request.getRequestURL(), but with getRemotePort() as port
+    // Implementation based on org.eclipse.jetty.server.Request.getRequestURL(), but with getLocalPort() as port
     public static URI getUri(HttpServletRequest servletRequest) {
         try {
             StringBuffer builder = new StringBuffer(128);
