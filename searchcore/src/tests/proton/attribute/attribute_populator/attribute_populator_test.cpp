@@ -3,17 +3,19 @@
 LOG_SETUP("attribute_populator_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
-#include <vespa/searchcommon/common/schema.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
-#include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+using document::config_builder::DocumenttypesConfigBuilderHelper;
+using document::config_builder::Struct;
 using namespace document;
 using namespace proton;
 using namespace search;
@@ -27,29 +29,30 @@ using AVConfig = search::attribute::Config;
 const vespalib::string TEST_DIR = "testdir";
 const uint64_t CREATE_SERIAL_NUM = 8u;
 
-Schema
-createSchema()
+std::unique_ptr<const DocumentTypeRepo>
+makeDocTypeRepo()
 {
-    Schema schema;
-    schema.addAttributeField(Schema::AttributeField("a1", Schema::DataType::INT32));
-    return schema;
+    DocumenttypesConfigBuilderHelper builder;
+    builder.document(-645763131, "searchdocument",
+                     Struct("searchdocument.header"),
+                     Struct("searchdocument.body").
+                     addField("a1", DataType::T_INT));
+    return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
 }
 
 struct DocContext
 {
-    Schema _schema;
-    DocBuilder _builder;
+    std::unique_ptr<const DocumentTypeRepo> _repo;
     DocContext()
-        : _schema(createSchema()),
-          _builder(_schema)
+        : _repo(makeDocTypeRepo())
     {
     }
     std::shared_ptr<Document> create(uint32_t id, int64_t fieldValue) {
         vespalib::string docId =
                 vespalib::make_string("id:searchdocument:searchdocument::%u", id);
-        return _builder.startDocument(docId).
-                startAttributeField("a1").addInt(fieldValue).endField().
-                endDocument();
+        auto doc = std::make_shared<Document>(*_repo->getDocumentType("searchdocument"), DocumentId(docId));
+        doc->setValue("a1", IntFieldValue(fieldValue));
+        return doc;
     }
 };
 
