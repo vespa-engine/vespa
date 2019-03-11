@@ -3,12 +3,13 @@
 #include "searchiterator.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/vespalib/objects/objectdumper.h>
+#include <vespa/vespalib/objects/object2slime.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 SearchIterator::SearchIterator() :
     _docid(0),
@@ -106,6 +107,15 @@ SearchIterator::asString() const
     return dumper.toString();
 }
 
+vespalib::slime::Cursor &
+SearchIterator::asSlime(const vespalib::slime::Inserter & inserter) const
+{
+    vespalib::slime::Cursor & cursor = inserter.insertObject();
+    vespalib::Object2Slime dumper(cursor);
+    visit(dumper, "", this);
+    return cursor;
+}
+
 vespalib::string
 SearchIterator::getClassName() const
 {
@@ -125,8 +135,7 @@ SearchIterator::getAttributeSearchContext() const
     return nullptr;
 }
 
-} // namespace queryeval
-} // namespace search
+}
 
 //-----------------------------------------------------------------------------
 

@@ -10,13 +10,23 @@ RelativeTime::RelativeTime(std::unique_ptr<Clock> clock)
       _clock(std::move(clock))
 {}
 
-Trace::Trace(const RelativeTime & relativeTime)
+namespace {
+
+Trace::Cursor &
+createRoot(vespalib::Slime & slime, const RelativeTime & relativeTime) {
+    Trace::Cursor & root = slime.setObject();
+    root.setString("start_time_utc", relativeTime.timeOfDawn().toString());
+    return root;
+}
+
+}
+Trace::Trace(const RelativeTime & relativeTime, uint32_t level)
     : _trace(std::make_unique<vespalib::Slime>()),
-      _root(_trace->setObject()),
+      _root(createRoot(*_trace, relativeTime)),
       _traces(_root.setArray("traces")),
-      _relativeTime(relativeTime)
+      _relativeTime(relativeTime),
+      _level(level)
 {
-   _root.setLong("creation_time", _relativeTime.timeOfDawn());
 }
 
 Trace::~Trace() = default;
@@ -24,9 +34,32 @@ Trace::~Trace() = default;
 Trace::Cursor &
 Trace::createCursor(vespalib::stringref name) {
     Cursor & trace = _traces.addObject();
+    addTimeStamp(trace);
     trace.setString("tag", name);
-    trace.setLong("time", _relativeTime.timeSinceDawn());
     return trace;
+}
+
+Trace::Cursor *
+Trace::maybeCreateCursor(uint32_t level, vespalib::stringref name) {
+    return shouldTrace(level) ? & createCursor(name) : nullptr;
+}
+
+void
+Trace::addEvent(uint32_t level, vespalib::stringref event) {
+    if (!shouldTrace(level)) { return; }
+
+    Cursor & trace = _traces.addObject();
+    addTimeStamp(trace);
+    trace.setString("event", event);
+}
+
+void
+Trace::addTimeStamp(Cursor & trace) {
+    trace.setDouble("timestamp_ms", _relativeTime.timeSinceDawn()/1000000.0);
+}
+
+void Trace::done() {
+    _root.setDouble("duration_ms", _relativeTime.timeSinceDawn()/1000000.0);
 }
 
 vespalib::string

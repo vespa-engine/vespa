@@ -8,14 +8,13 @@ namespace search::engine {
 Request::Request(RelativeTime relativeTime)
     : _relativeTime(std::move(relativeTime)),
       _timeOfDoom(fastos::TimeStamp(fastos::TimeStamp::FUTURE)),
-      _traceLevel(0),
       queryFlags(0),
       ranking(),
       location(),
       propertiesMap(),
       stackItems(0),
       stackDump(),
-      _trace(_relativeTime)
+      _trace(_relativeTime, 0)
 {
 }
 

@@ -2,6 +2,7 @@
 
 #include "match_phase_limiter.h"
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
+#include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".proton.matching.match_phase_limiter");
@@ -89,7 +90,7 @@ do_limit(AttributeLimiter &limiter_factory, SearchIterator::UP search,
     SearchIterator::UP limiter = limiter_factory.create_search(wanted_num_docs, max_group_size, PRE_FILTER);
     limiter = search->andWith(std::move(limiter), wanted_num_docs);
     if (limiter) {
-        search.reset(new LimitedSearchT<PRE_FILTER>(std::move(limiter), std::move(search)));
+        search = std::make_unique<LimitedSearchT<PRE_FILTER>>(std::move(limiter), std::move(search));
     }
     search->initRange(current_id + 1, end_id);
     return search;
@@ -98,12 +99,21 @@ do_limit(AttributeLimiter &limiter_factory, SearchIterator::UP search,
 } // namespace proton::matching::<unnamed>
 
 SearchIterator::UP
-MatchPhaseLimiter::maybe_limit(SearchIterator::UP search, double match_freq, size_t num_docs)
+MatchPhaseLimiter::maybe_limit(SearchIterator::UP search, double match_freq, size_t num_docs, Cursor * trace)
 {
     size_t wanted_num_docs = _calculator.wanted_num_docs(match_freq);
     size_t max_filter_docs = static_cast<size_t>(num_docs * _maxFilterCoverage);
     size_t upper_limited_corpus_size = std::min(num_docs, max_filter_docs);
+    if (trace) {
+        trace->setDouble("hit_rate", match_freq); 
+        trace->setLong("num_docs", num_docs);
+        trace->setLong("max_filter_docs", max_filter_docs);
+        trace->setLong("wanted_docs", wanted_num_docs);
+    }
     if (upper_limited_corpus_size <= wanted_num_docs) {
+        if (trace) {
+            trace->setString("action", "Will not limit !");
+        }
         LOG(debug, "Will not limit ! maybe_limit(hit_rate=%g, num_docs=%ld, max_filter_docs=%ld) = wanted_num_docs=%ld",
             match_freq, num_docs, max_filter_docs, wanted_num_docs);
         return search;
@@ -113,6 +123,13 @@ MatchPhaseLimiter::maybe_limit(SearchIterator::UP search, double match_freq, siz
     size_t total_query_hits = _calculator.estimated_hits(match_freq, num_docs);
     size_t max_group_size = _calculator.max_group_size(wanted_num_docs);
     bool use_pre_filter = (wanted_num_docs < (total_query_hits * _postFilterMultiplier));
+    if (trace) {
+        trace->setString("action", use_pre_filter ? "Will limit with prefix filter" : "Will limit with postfix filter");
+        trace->setLong("max_group_size", max_group_size);
+        trace->setLong("current_docid", current_id);
+        trace->setLong("end_docid", end_id);
+        trace->setLong("estimated_total_hits", total_query_hits);
+    }
     LOG(debug, "Will do %s filter :  maybe_limit(hit_rate=%g, num_docs=%zu, max_filter_docs=%ld) = wanted_num_docs=%zu,"
         " max_group_size=%zu, current_docid=%u, end_docid=%u, total_query_hits=%ld",
         use_pre_filter ? "pre" : "post", match_freq, num_docs, max_filter_docs, wanted_num_docs,

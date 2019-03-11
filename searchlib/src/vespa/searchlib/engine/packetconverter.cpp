@@ -19,9 +19,7 @@ struct FS4PropertiesBuilder : public search::fef::IPropertiesVisitor {
     uint32_t idx;
     search::fs4transport::FS4Properties &props;
     FS4PropertiesBuilder(search::fs4transport::FS4Properties &p) : idx(0), props(p) {}
-    void visitProperty(const Property::Value &key,
-                       const Property &values) override
-    {
+    void visitProperty(const Property::Value &key, const Property &values) override {
         for (uint32_t i = 0; i < values.size(); ++i) {
             props.setKey(idx, key.data(), key.size());
             props.setValue(idx, values.getAt(i).data(), values.getAt(i).size());

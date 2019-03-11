@@ -235,12 +235,12 @@ void verify(vespalib::stringref expected, const vespalib::Slime & slime) {
 }
 
 TEST("verify trace") {
-    RelativeTime clock(std::make_unique<CountingClock>(7));
+    RelativeTime clock(std::make_unique<CountingClock>(fastos::TimeStamp::fromSec(1500000000), 1700000L));
     Trace t(clock);
     verify("{"
            "    traces: ["
            "    ],"
-           "    creation_time: 7"
+           "    start_time_utc: '2017-07-14 02:40:00.000 UTC'"
            "}",
            t.getSlime());
     t.createCursor("tag_a");
@@ -248,27 +248,29 @@ TEST("verify trace") {
            "    traces: ["
            "        {"
            "            tag: 'tag_a',"
-           "            time: 1"
+           "            timestamp_ms: 1.7"
            "        }"
            "    ],"
-           "    creation_time: 7"
+           "    start_time_utc: '2017-07-14 02:40:00.000 UTC'"
            "}",
            t.getSlime());
     Trace::Cursor & tagB = t.createCursor("tag_b");
     tagB.setLong("long", 19);
+    t.done();
     verify("{"
            "    traces: ["
            "        {"
            "            tag: 'tag_a',"
-           "            time: 1"
+           "            timestamp_ms: 1.7"
            "        },"
            "        {"
            "            tag: 'tag_b',"
-           "            time: 2,"
+           "            timestamp_ms: 3.4,"
            "            long: 19"
            "        }"
            "    ],"
-           "    creation_time: 7"
+           "    start_time_utc: '2017-07-14 02:40:00.000 UTC',"
+           "    duration_ms: 5.1"
            "}",
            t.getSlime());
 }

@@ -5,8 +5,12 @@
 #include "match_loop_communicator.h"
 #include "match_thread.h"
 #include <vespa/searchlib/attribute/attribute_operation.h>
+#include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+#include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/data/slime/inject.h>
+#include <vespa/vespalib/data/slime/cursor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_master");
@@ -54,7 +58,8 @@ createScheduler(uint32_t numThreads, uint32_t numSearchPartitions, uint32_t numD
 } // namespace proton::matching::<unnamed>
 
 ResultProcessor::Result::UP
-MatchMaster::match(const MatchParams &params,
+MatchMaster::match(search::engine::Trace & trace,
+                   const MatchParams &params,
                    vespalib::ThreadBundle &threadBundle,
                    const MatchToolsFactory &mtf,
                    ResultProcessor &resultProcessor,
@@ -75,7 +80,8 @@ MatchMaster::match(const MatchParams &params,
                 ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
                 : static_cast<IMatchLoopCommunicator&>(communicator);
         threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, mtf, com, *scheduler,
-                                                               resultProcessor, mergeDirector, distributionKey));
+                                                               resultProcessor, mergeDirector, distributionKey,
+                                                               trace.getRelativeTime(), trace.getLevel()));
         targets.push_back(threadState.back().get());
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
@@ -85,9 +91,17 @@ MatchMaster::match(const MatchParams &params,
     double query_time_s = query_latency_time.elapsed().sec();
     double rerank_time_s = timedCommunicator.rerank_time.elapsed().sec();
     double match_time_s = 0.0;
+    std::unique_ptr<vespalib::slime::Inserter> inserter;
+    if (trace.shouldTrace(4)) {
+        inserter = std::make_unique<vespalib::slime::ArrayInserter>(trace.createCursor("match_threads").setArray("threads"));
+    }
     for (size_t i = 0; i < threadState.size(); ++i) {
-        match_time_s = std::max(match_time_s, threadState[i]->get_match_time());
-        _stats.merge_partition(threadState[i]->get_thread_stats(), i);
+        const MatchThread & matchThread = *threadState[i];
+        match_time_s = std::max(match_time_s, matchThread.get_match_time());
+        _stats.merge_partition(matchThread.get_thread_stats(), i);
+        if (inserter) {
+            vespalib::slime::inject(matchThread.getTrace().getRoot(), *inserter);
+        }
     }
     _stats.queryLatency(query_time_s);
     _stats.matchTime(match_time_s - rerank_time_s);

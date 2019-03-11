@@ -15,6 +15,11 @@
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>
 
+namespace search::engine {
+    class Trace;
+    class RelativeTime;
+}
+
 namespace proton::matching {
 
 /**
@@ -30,6 +35,8 @@ public:
     using RankProgram = search::fef::RankProgram;
     using LazyValue = search::fef::LazyValue;
     using Doom = vespalib::Doom;
+    using Trace = search::engine::Trace;
+    using RelativeTime = search::engine::RelativeTime;
 
 private:
     size_t                        thread_id;
@@ -48,6 +55,7 @@ private:
     double                        match_time_s;
     double                        wait_time_s;
     bool                          match_with_ranking;
+    std::unique_ptr<Trace>        trace;
 
     class Context {
     public:
@@ -103,11 +111,14 @@ public:
                 DocidRangeScheduler &sched,
                 ResultProcessor &rp,
                 vespalib::DualMergeDirector &md,
-                uint32_t distributionKey);
+                uint32_t distributionKey,
+                const RelativeTime & relativeTime,
+                uint32_t traceLevel);
     void run() override;
     const MatchingStats::Partition &get_thread_stats() const { return thread_stats; }
     double get_match_time() const { return match_time_s; }
     PartialResult::UP extract_result() { return std::move(resultContext->result); }
+    const Trace & getTrace() const { return *trace; }
 };
 
 }

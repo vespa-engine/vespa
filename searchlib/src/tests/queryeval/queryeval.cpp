@@ -20,6 +20,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/fef/fef.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("query_eval_test");
@@ -448,6 +449,131 @@ TEST("testRank") {
     }
 }
 
+vespalib::string
+getExpectedSlime() {
+    return
+"{"
+"    '[type]': 'search::queryeval::AndSearchStrict<search::queryeval::(anonymous namespace)::FullUnpack>',"
+"    children: {"
+"        '[type]': 'std::vector',"
+"        [0]: {"
+"            '[type]': 'search::queryeval::(anonymous namespace)::AndNotSearchStrict',"
+"            children: {"
+"                '[type]': 'std::vector',"
+"                [0]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: '+'"
+"                },"
+"                [1]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: '-'"
+"                }"
+"            }"
+"        },"
+"        [1]: {"
+"            '[type]': 'search::queryeval::AndSearchStrict<search::queryeval::(anonymous namespace)::FullUnpack>',"
+"            children: {"
+"                '[type]': 'std::vector',"
+"                [0]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: 'and_a'"
+"                },"
+"                [1]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: 'and_b'"
+"                }"
+"            }"
+"        },"
+"        [2]: {"
+"            '[type]': 'search::queryeval::BooleanMatchIteratorWrapper',"
+"            'search': {"
+"                '[type]': 'search::queryeval::SimpleSearch',"
+"                tag: 'wrapped'"
+"            }"
+"        },"
+"        [3]: {"
+"            '[type]': 'search::queryeval::NearSearch',"
+"            children: {"
+"                '[type]': 'std::vector',"
+"                [0]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: 'near_a'"
+"                },"
+"                [1]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: 'near_b'"
+"                }"
+"            },"
+"            data_size: 0,"
+"            window: 5,"
+"            strict: true"
+"        },"
+"        [4]: {"
+"            '[type]': 'search::queryeval::ONearSearch',"
+"            children: {"
+"                '[type]': 'std::vector',"
+"                [0]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: 'onear_a'"
+"                },"
+"                [1]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: 'onear_b'"
+"                }"
+"            },"
+"            data_size: 0,"
+"            window: 10,"
+"            strict: true"
+"        },"
+"        [5]: {"
+"            '[type]': 'search::queryeval::OrLikeSearch<false, search::queryeval::(anonymous namespace)::FullUnpack>',"
+"            children: {"
+"                '[type]': 'std::vector',"
+"                [0]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: 'or_a'"
+"                },"
+"                [1]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: 'or_b'"
+"                }"
+"            },"
+"            strict: false"
+"        },"
+"        [6]: {"
+"            '[type]': 'search::queryeval::RankSearch',"
+"            children: {"
+"                '[type]': 'std::vector',"
+"                [0]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: 'rank_a'"
+"                },"
+"                [1]: {"
+"                    '[type]': 'search::queryeval::SimpleSearch',"
+"                    tag: 'rank_b'"
+"                }"
+"            }"
+"        },"
+"        [7]: {"
+"            '[type]': 'search::queryeval::SourceBlenderSearchStrict',"
+"            children: {"
+"                '[type]': 'std::vector',"
+"                [0]: 2,"
+"                [1]: 4"
+"            },"
+"            'Source \u0002': {"
+"                '[type]': 'search::queryeval::SimpleSearch',"
+"                tag: 'blend_a'"
+"            },"
+"            'Source \u0004': {"
+"                '[type]': 'search::queryeval::SimpleSearch',"
+"                tag: 'blend_b'"
+"            }"
+"        }"
+"    }"
+"}";
+}
+
 TEST("testDump") {
     typedef SourceBlenderSearch::Child Source;
     SearchIterator::UP search(
@@ -469,6 +595,12 @@ TEST("testDump") {
                     , true));
     vespalib::string sas = search->asString();
     EXPECT_TRUE(sas.size() > 50);
+    vespalib::Slime slime;
+    search->asSlime(vespalib::slime::SlimeInserter(slime));
+    auto s = slime.toString();
+    vespalib::Slime expectedSlime;
+    vespalib::slime::JsonFormat::decode(getExpectedSlime(), expectedSlime);
+    EXPECT_EQUAL(expectedSlime, slime);
     // fprintf(stderr, "%s", search->asString().c_str());
 }
 

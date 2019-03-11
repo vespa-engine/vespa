@@ -10,6 +10,10 @@
 #include <vector>
 
 namespace vespalib { class ObjectVisitor; }
+namespace vespalib::slime {
+    class Cursor;
+    class Inserter;
+}
 
 namespace search { class BitVector; }
 namespace search::attribute { class ISearchContext; }
@@ -284,6 +288,15 @@ public:
     vespalib::string asString() const;
 
     /**
+    * Create a slime representation of this object. This
+    * method will use object visitation internally to capture the
+    * full structure of this object.
+    *
+    * @return structured slime representation of this object
+    **/
+    vespalib::slime::Cursor & asSlime(const vespalib::slime::Inserter & cursor) const;
+
+    /**
      * Obtain the fully qualified name of the concrete class for this
      * object. The default implementation will perform automatic name
      * resolving. There is only a need to override this function if
@@ -310,7 +323,7 @@ public:
     /**
      * Empty, just defined to make it virtual.
      **/
-    virtual ~SearchIterator() { }
+    virtual ~SearchIterator() = default;
 
     /**
      * @return true if it is a bitvector
