@@ -55,6 +55,7 @@ public class Application {
     private final Optional<User> owner;
     private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
+    private final Optional<String> pemDeployKey;
     private final Optional<RotationId> rotation;
     private final Map<HostName, RotationStatus> rotationStatus;
 
@@ -64,25 +65,25 @@ public class Application {
              new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty(), false),
              Change.empty(), Change.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
              new ApplicationMetrics(0, 0),
-             Optional.empty(), Collections.emptyMap());
+             Optional.empty(), Optional.empty(), Collections.emptyMap());
     }
 
     /** Used from persistence layer: Do not use */
     public Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                        Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                       OptionalInt majorVersion, ApplicationMetrics metrics,
+                       OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
                        Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
         this(id, createdAt, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, Function.identity())),
              deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-             metrics, rotation, rotationStatus);
+             metrics, pemDeployKey, rotation, rotationStatus);
     }
 
     Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                 Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                 Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                OptionalInt majorVersion, ApplicationMetrics metrics,
+                OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
                 Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
@@ -96,6 +97,7 @@ public class Application {
         this.owner = Objects.requireNonNull(owner, "owner cannot be null");
         this.majorVersion = Objects.requireNonNull(majorVersion, "majorVersion cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
+        this.pemDeployKey = pemDeployKey;
         this.rotation = Objects.requireNonNull(rotation, "rotation cannot be null");
         this.rotationStatus = ImmutableMap.copyOf(Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null"));
     }
@@ -201,6 +203,8 @@ public class Application {
     public Optional<GlobalDnsName> globalDnsName(SystemName system) {
         return rotation.map(ignored -> new GlobalDnsName(id, system));
     }
+
+    public Optional<String> pemDeployKey() { return pemDeployKey; }
 
     /** Returns the status of the global rotation assigned to this. Wil be empty if this does not have a global rotation. */
     public Map<HostName, RotationStatus> rotationStatus() {
