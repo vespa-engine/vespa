@@ -41,7 +41,7 @@ Trace::createCursor(vespalib::stringref name) {
 
 void
 Trace::addEvent(uint32_t level, vespalib::stringref event) {
-    if (!shouldTrace(level)) return;
+    if (!shouldTrace(level)) { return; }
 
     Cursor & trace = _traces.addObject();
     addTimeStamp(trace);

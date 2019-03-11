@@ -129,7 +129,7 @@ MatchThread::maybe_limit(MatchTools &tools, uint32_t matches, uint32_t docId, ui
             tools.tag_search_as_changed();
         }
     }
-    if (isFirstThread() && trace->shouldTrace(6)) {
+    if (isFirstThread() && trace->shouldTrace(6) && tools.match_limiter().was_limited()) {
         vespalib::slime::ObjectInserter inserter(trace->createCursor("limited"), "query");
         tools.search().asSlime(inserter);
     }
