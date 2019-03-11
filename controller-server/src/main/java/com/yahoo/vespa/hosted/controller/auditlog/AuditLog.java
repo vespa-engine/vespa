@@ -44,7 +44,13 @@ public class AuditLog {
         return new AuditLog(entries);
     }
 
-    /** Returns all entries in this. Entries are sorted descending by their timestamp */
+    /** Returns the first n entries in this. Since entries are sorted descendingly, this will be the n newest entries */
+    public AuditLog first(int n) {
+        if (entries.size() < n) return this;
+        return new AuditLog(entries.subList(0, n));
+    }
+
+    /** Returns all entries in this. Entries are sorted descendingly by their timestamp */
     public List<Entry> entries() {
         return entries;
     }
