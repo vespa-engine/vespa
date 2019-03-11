@@ -2,7 +2,9 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.google.common.base.Joiner;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.LbServicesConfig;
+import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.InnerCNode;
@@ -55,11 +57,12 @@ public class RpcServerTest {
             testPrintStatistics(tester);
             testGetConfig(tester);
             testEnabled(tester);
-            testEmptyConfigHostedVespa(tester);
+            testApplicationNotLoadedErrorWhenAppDeleted(tester);
+            testEmptySentinelConfigWhenAppDeletedOnHostedVespa();
         }
     }
 
-    private void testEmptyConfigHostedVespa(RpcTester tester) throws InterruptedException, IOException {
+    private void testApplicationNotLoadedErrorWhenAppDeleted(RpcTester tester) throws InterruptedException, IOException {
         tester.rpcServer().onTenantDelete(TenantName.defaultName());
         tester.rpcServer().onTenantsLoaded();
         JRTClientConfigRequest clientReq = createSimpleRequest();
@@ -74,9 +77,38 @@ public class RpcServerTest {
         assertTrue(clientReq.validateResponse());
     }
 
+    @Test
+    public void testEmptySentinelConfigWhenAppDeletedOnHostedVespa() throws IOException, InterruptedException {
+        ConfigserverConfig.Builder configBuilder = new ConfigserverConfig.Builder().canReturnEmptySentinelConfig(true);
+        try (RpcTester tester = new RpcTester(temporaryFolder, configBuilder)) {
+            tester.rpcServer().onTenantDelete(TenantName.defaultName());
+            tester.rpcServer().onTenantsLoaded();
+            JRTClientConfigRequest clientReq = createSentinelRequest();
+
+            // Should get empty sentinel config when on hosted vespa
+            tester.performRequest(clientReq.getRequest());
+            assertTrue(clientReq.validateResponse());
+            assertEquals(0, clientReq.errorCode());
+
+            ConfigPayload payload = ConfigPayload.fromUtf8Array(clientReq.getNewPayload().getData());
+            assertNotNull(payload);
+            SentinelConfig.Builder builder = new SentinelConfig.Builder();
+            new ConfigPayloadApplier<>(builder).applyPayload(payload);
+            SentinelConfig config = new SentinelConfig(builder);
+            assertEquals(0, config.service().size());
+        }
+    }
+
     private JRTClientConfigRequest createSimpleRequest() {
         ConfigKey<?> key = new ConfigKey<>(SimpletypesConfig.class, "");
         JRTClientConfigRequest clientReq = createRequest(new RawConfig(key, SimpletypesConfig.getDefMd5()));
+        assertTrue(clientReq.validateParameters());
+        return clientReq;
+    }
+
+    private JRTClientConfigRequest createSentinelRequest() {
+        ConfigKey<?> key = new ConfigKey<>(SentinelConfig.class, "");
+        JRTClientConfigRequest clientReq = createRequest(new RawConfig(key, SentinelConfig.getDefMd5()));
         assertTrue(clientReq.validateParameters());
         return clientReq;
     }

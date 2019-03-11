@@ -51,19 +51,25 @@ public class RpcTester implements AutoCloseable {
     private Thread t;
     private Supervisor sup;
     private Spec spec;
-    private int port;
 
     private List<Integer> allocatedPorts;
 
     private final TemporaryFolder temporaryFolder;
+    private final ConfigserverConfig configserverConfig;
 
     RpcTester(TemporaryFolder temporaryFolder) throws InterruptedException, IOException {
+        this(temporaryFolder, new ConfigserverConfig.Builder());
+    }
+
+    RpcTester(TemporaryFolder temporaryFolder, ConfigserverConfig.Builder configBuilder) throws InterruptedException, IOException {
         this.temporaryFolder = temporaryFolder;
         allocatedPorts = new ArrayList<>();
-        port = allocatePort();
+        int port = allocatePort();
         spec = createSpec(port);
         tenantProvider = new MockTenantProvider();
         generationCounter = new MemoryGenerationCounter();
+        configBuilder.rpcport(port);
+        configserverConfig = new ConfigserverConfig(configBuilder);
         createAndStartRpcServer();
         assertFalse(hostLivenessTracker.lastRequestFrom(myHostname).isPresent());
     }
@@ -81,11 +87,7 @@ public class RpcTester implements AutoCloseable {
     }
 
     void createAndStartRpcServer() throws IOException {
-        ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
-        rpcServer = new RpcServer(new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                                                 .rpcport(port)
-                                                                 .numRpcThreads(1)
-                                                                 .maxgetconfigclients(1)),
+        rpcServer = new RpcServer(configserverConfig,
                                   new SuperModelRequestHandler(new TestConfigDefinitionRepo(),
                                                                configserverConfig,
                                                                new SuperModelManager(

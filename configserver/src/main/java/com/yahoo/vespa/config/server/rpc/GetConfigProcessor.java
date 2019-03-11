@@ -84,7 +84,7 @@ class GetConfigProcessor implements Runnable {
 
         // If we are certain that this request is from a node that no longer belongs to this application,
         // fabricate an empty request to cause the sentinel to stop all running services
-        if (rpcServer.isHostedVespa() && rpcServer.allTenantsLoaded() && !tenant.isPresent() && isSentinelConfigRequest(request)) {
+        if (rpcServer.canReturnEmptySentinelConfig() && rpcServer.allTenantsLoaded() && tenant.isEmpty() && isSentinelConfigRequest(request)) {
             returnEmpty(request);
             return null;
         }
@@ -164,6 +164,7 @@ class GetConfigProcessor implements Runnable {
     }
 
     private void returnEmpty(JRTServerConfigRequest request) {
+        log.log(LogLevel.INFO, "Returning empty sentinel config for request from " + request.getClientHostName());
         ConfigPayload emptyPayload = ConfigPayload.empty();
         String configMd5 = ConfigUtils.getMd5(emptyPayload);
         ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, null, 0, false, configMd5);

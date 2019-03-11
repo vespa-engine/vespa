@@ -84,6 +84,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private Spec spec;
     private final boolean useRequestVersion;
     private final boolean hostedVespa;
+    private final boolean canReturnEmptySentinelConfig;
 
     private static final Logger log = Logger.getLogger(RpcServer.class.getName());
 
@@ -136,6 +137,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         hostRegistry = hostRegistries.getTenantHostRegistry();
         this.useRequestVersion = config.useVespaVersionInRequest();
         this.hostedVespa = config.hostedVespa();
+        this.canReturnEmptySentinelConfig = config.canReturnEmptySentinelConfig();
         this.fileServer = fileServer;
         downloader = fileServer.downloader();
         setUpHandlers();
@@ -441,6 +443,10 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     /** Returns true if this rpc server is currently running in a hosted Vespa configuration */
     public boolean isHostedVespa() { return hostedVespa; }
+
+    /** Returns true if empty sentinel config can be returned when a request from a host that is
+     * not part of an application asks for sentinel config */
+    public boolean canReturnEmptySentinelConfig() { return canReturnEmptySentinelConfig; }
     
     MetricUpdaterFactory metricUpdaterFactory() {
         return metricUpdaterFactory;
