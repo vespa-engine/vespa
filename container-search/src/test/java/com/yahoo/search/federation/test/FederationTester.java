@@ -53,7 +53,7 @@ class FederationTester {
     public Result search() {
         Query query = new Query();
         query.setTimeout(60 * 1000);
-        return search(new Query());
+        return search(query);
     }
 
     public Result search(Query query) {
