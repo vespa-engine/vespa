@@ -13,10 +13,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -37,30 +33,27 @@ public class AuthorizerTest {
     public void before() {
         NodeFlavors flavors = new MockNodeFlavors();
         nodeRepository = new MockNodeRepository(new MockCurator(), flavors);
-        authorizer = new Authorizer(SystemName.main, nodeRepository, new HashSet<>(Arrays.asList("cfg1", "cfghost1")));
-        { // Populate with nodes used in this test. Note that only nodes requiring node repository lookup are added here
-            Set<String> ipAddresses = new HashSet<>(Arrays.asList("127.0.0.1", "::1"));
-            Flavor flavor = flavors.getFlavorOrThrow("default");
-            List<Node> nodes = new ArrayList<>();
-            nodes.add(nodeRepository.createNode("host1", "host1", ipAddresses,
-                                                Optional.empty(), flavor, NodeType.host));
-            nodes.add(nodeRepository.createNode("child1-1", "child1-1", ipAddresses,
-                                                Optional.of("host1"), flavor, NodeType.tenant));
-            nodes.add(nodeRepository.createNode("child1-2", "child1-2", ipAddresses,
-                                                Optional.of("host1"), flavor, NodeType.tenant));
+        authorizer = new Authorizer(SystemName.main, nodeRepository);
 
-            nodes.add(nodeRepository.createNode("host2", "host2", ipAddresses,
-                                                Optional.empty(), flavor, NodeType.host));
-            nodes.add(nodeRepository.createNode("child2-1", "child2-1", ipAddresses,
-                                                Optional.of("host1.tld"), flavor, NodeType.tenant));
-
-            nodes.add(nodeRepository.createNode("proxy1", "proxy1", ipAddresses, Optional.empty(),
-                                                flavor, NodeType.proxy));
-
-            nodes.add(nodeRepository.createNode("proxy1-host1", "proxy1-host", ipAddresses,
-                                                Optional.empty(), flavor, NodeType.proxyhost));
-            nodeRepository.addNodes(nodes);
-        }
+        Set<String> ipAddresses = Set.of("127.0.0.1", "::1");
+        Flavor flavor = flavors.getFlavorOrThrow("default");
+        List<Node> nodes = List.of(
+                nodeRepository.createNode(
+                        "host1", "host1", ipAddresses, Optional.empty(), flavor, NodeType.host),
+                nodeRepository.createNode(
+                        "child1-1", "child1-1", ipAddresses, Optional.of("host1"), flavor, NodeType.tenant),
+                nodeRepository.createNode(
+                        "child1-2", "child1-2", ipAddresses, Optional.of("host1"), flavor, NodeType.tenant),
+                nodeRepository.createNode(
+                        "host2", "host2", ipAddresses, Optional.empty(), flavor, NodeType.host),
+                nodeRepository.createNode(
+                        "child2-1", "child2-1", ipAddresses, Optional.of("host1.tld"), flavor, NodeType.tenant),
+                nodeRepository.createNode(
+                        "proxy1", "proxy1", ipAddresses, Optional.of("proxyhost1"), flavor, NodeType.proxy),
+                nodeRepository.createNode(
+                        "proxyhost1", "proxyhost1", ipAddresses, Optional.empty(), flavor, NodeType.proxyhost)
+        );
+        nodeRepository.addNodes(nodes);
     }
 
     @Test
@@ -106,7 +99,7 @@ public class AuthorizerTest {
 
         // Trusted services can access everything in their own system
         assertFalse(authorizedController("vespa.vespa.cd.hosting", "/")); // Wrong system
-        assertTrue(new Authorizer(SystemName.cd, nodeRepository, Collections.emptySet()).test(NodePrincipal.withAthenzIdentity("vespa.vespa.cd.hosting", emptyList()), uri("/")));
+        assertTrue(new Authorizer(SystemName.cd, nodeRepository).test(NodePrincipal.withAthenzIdentity("vespa.vespa.cd.hosting", emptyList()), uri("/")));
         assertTrue(authorizedController("vespa.vespa.hosting", "/"));
         assertTrue(authorizedController("vespa.vespa.configserver", "/"));
         assertTrue(authorizedController("vespa.vespa.hosting", "/nodes/v2/node/"));
@@ -167,14 +160,7 @@ public class AuthorizerTest {
         // Node of proxy or proxyhost type can access routing resource
         assertFalse(authorizedTenantNode("node1", "/routing/v1/status"));
         assertTrue(authorizedTenantNode("proxy1", "/routing/v1/status"));
-        assertTrue(authorizedTenantNode("proxy1-host", "/routing/v1/status"));
-    }
-
-    @Test
-    public void host_authorization() {
-        assertTrue(authorizedLegacyNode("cfg1", "/"));
-        assertTrue(authorizedLegacyNode("cfg1", "/application/v2"));
-        assertTrue(authorizedLegacyNode("cfghost1", "/application/v2"));
+        assertTrue(authorizedTenantNode("proxyhost1", "/routing/v1/status"));
     }
 
     @Test

@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
  */
 public class Authorizer implements BiPredicate<NodePrincipal, URI> {
     private final NodeRepository nodeRepository;
-    private final Set<String> whitelistedHostnames;
     private final AthenzIdentity controllerIdentity;
     private final AthenzIdentity configServerIdentity = new AthenzService("vespa.vespa", "configserver");
     private final AthenzIdentity proxyIdentity = new AthenzService("vespa.vespa", "proxy");
@@ -39,10 +38,8 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
     private final Set<AthenzIdentity> trustedIdentities;
     private final Set<AthenzIdentity> hostAdminIdentities;
 
-    // TODO Remove whitelisted hostnames as these nodes should be included through 'trustedIdentities'
-    public Authorizer(SystemName system, NodeRepository nodeRepository, Set<String> whitelistedHostnames) {
+    public Authorizer(SystemName system, NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
-        this.whitelistedHostnames = whitelistedHostnames;
         controllerIdentity = system == SystemName.main
                 ? new AthenzService("vespa.vespa", "hosting")
                 : new AthenzService("vespa.vespa.cd", "hosting");
@@ -83,11 +80,6 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
 
             // Nodes can access this resource if its type matches any of the valid node types
             if (canAccessAny(nodeTypesFor(uri), principal, this::isNodeType)) {
-                return true;
-            }
-
-            // The host itself can access all resources
-            if (whitelistedHostnames.contains(hostname)) {
                 return true;
             }
         }
