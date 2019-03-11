@@ -34,6 +34,8 @@ public abstract class Tenant {
         return contact;
     }
 
+    public abstract Type type();
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -55,4 +57,19 @@ public abstract class Tenant {
         }
         return name;
     }
+
+
+    public enum Type {
+
+        /** Tenant authenticated through Athenz. */
+        athenz,
+
+        /** Tenant authenticated through Okta, as a user. */
+        user,
+
+        /** Tenant authenticated through some cloud identity provider. */
+        cloud;
+
+    }
+
 }

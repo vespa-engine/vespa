@@ -6,8 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -106,7 +104,7 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     private Tenant ownerOf(ApplicationId applicationId) {
-        return controller().tenants().tenant(applicationId.tenant())
+        return controller().tenants().get(applicationId.tenant())
                 .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
     }
 

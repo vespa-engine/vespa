@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.vespa.hosted.controller.LockedTenant;
+import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
@@ -35,14 +37,19 @@ public class ContactInformationMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        for (Tenant tenant : controller().tenants().asList()) {
+        TenantController tenants = controller().tenants();
+        for (Tenant tenant : tenants.asList()) {
             try {
-                Optional<PropertyId> tenantPropertyId = Optional.empty();
-                if (tenant instanceof AthenzTenant) {
-                    tenantPropertyId = ((AthenzTenant) tenant).propertyId();
+                switch (tenant.type()) {
+                    case athenz: tenants.lockIfPresent(tenant.name(), LockedTenant.Athenz.class, lockedTenant ->
+                            tenants.store(lockedTenant.with(contactRetriever.getContact(lockedTenant.get().propertyId()))));
+                        return;
+                    case user: tenants.lockIfPresent(tenant.name(), LockedTenant.User.class, lockedTenant ->
+                            tenants.store(lockedTenant.with(contactRetriever.getContact(Optional.empty()))));
+                        return;
+                    case cloud: return;
+                    default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
                 }
-                Contact contact = contactRetriever.getContact(tenantPropertyId);
-                controller().tenants().lockIfPresent(tenant.name(), lockedTenant -> controller().tenants().store(lockedTenant.with(contact)));
             } catch (Exception e) {
                 log.log(LogLevel.WARNING, "Failed to update contact information for " + tenant + ": " +
                                           Exceptions.toMessageString(e) + ". Retrying in " +
@@ -50,6 +57,5 @@ public class ContactInformationMaintainer extends Maintainer {
             }
         }
     }
-
 
 }

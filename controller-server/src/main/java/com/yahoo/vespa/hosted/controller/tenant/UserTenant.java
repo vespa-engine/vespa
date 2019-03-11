@@ -21,6 +21,11 @@ public class UserTenant extends Tenant {
         super(name, contact);
     }
 
+    @Override
+    public Type type() {
+        return Type.user;
+    }
+
     public UserTenant(TenantName name) {
         super(name, Optional.empty());
     }

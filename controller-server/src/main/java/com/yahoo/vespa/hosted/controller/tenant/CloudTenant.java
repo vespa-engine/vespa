@@ -29,4 +29,9 @@ public class CloudTenant extends Tenant {
     /** Returns the billing info for this tenant. */
     public BillingInfo billingInfo() { return billingInfo; }
 
+    @Override
+    public Type type() {
+        return Type.cloud;
+    }
+
 }

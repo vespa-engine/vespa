@@ -105,7 +105,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     }
 
     private Tenant tenantOf(ApplicationId applicationId) {
-        return controller().tenants().tenant(applicationId.tenant())
+        return controller().tenants().get(applicationId.tenant())
                 .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
     }
 

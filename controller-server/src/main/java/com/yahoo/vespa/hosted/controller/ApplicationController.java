@@ -227,7 +227,7 @@ public class ApplicationController {
             if (asList(id.tenant()).stream().noneMatch(application -> application.id().application().equals(id.application())))
                 com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
 
-            Optional<Tenant> tenant = controller.tenants().tenant(id.tenant());
+            Optional<Tenant> tenant = controller.tenants().get(id.tenant());
             if ( ! tenant.isPresent())
                 throw new IllegalArgumentException("Could not create '" + id + "': This tenant does not exist");
             if (get(id).isPresent())
@@ -555,7 +555,7 @@ public class ApplicationController {
             if ( ! application.get().deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
 
-            Tenant tenant = controller.tenants().tenant(id.tenant()).get();
+            Tenant tenant = controller.tenants().get(id.tenant()).get();
             if (tenant instanceof AthenzTenant && ! token.isPresent())
                 throw new IllegalArgumentException("Could not delete '" + application + "': No Okta Access Token provided");
 
@@ -728,7 +728,7 @@ public class ApplicationController {
     public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage, Optional<AthenzIdentity> deployingIdentity) {
         applicationPackage.deploymentSpec().athenzDomain()
                           .ifPresent(identityDomain -> {
-                              Optional<Tenant> tenant = controller.tenants().tenant(tenantName);
+                              Optional<Tenant> tenant = controller.tenants().get(tenantName);
                               if(!tenant.isPresent()) {
                                   throw new IllegalArgumentException("Tenant does not exist");
                               } else {
