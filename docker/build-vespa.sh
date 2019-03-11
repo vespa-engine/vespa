@@ -20,4 +20,4 @@ docker pull ${DOCKER_IMAGE}
 docker run -w /vespa --rm -v $(pwd)/..:/vespa \
        --entrypoint /vespa/docker/build/build-vespa-internal.sh \
        "$DOCKER_IMAGE" \
-       "$VESPA_VERSION" "$(id -u)" "$(id -g)" /tmp/rpmbuild /vespa/docker
+       "$VESPA_VERSION" "$(id -u)" "$(id -g)"
