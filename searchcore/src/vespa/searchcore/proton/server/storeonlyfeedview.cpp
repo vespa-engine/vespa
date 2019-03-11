@@ -4,21 +4,21 @@
 #include "ireplayconfig.h"
 #include "operationdonecontext.h"
 #include "putdonecontext.h"
+#include "remove_batch_done_context.h"
 #include "removedonecontext.h"
 #include "storeonlyfeedview.h"
 #include "updatedonecontext.h"
-#include "remove_batch_done_context.h"
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/searchcore/proton/attribute/attribute_utils.h>
+#include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
-#include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
-#include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
-
+#include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
@@ -29,13 +29,14 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
-using search::index::Schema;
-using vespalib::makeLambdaTask;
+using proton::attribute::isUpdateableInMemoryOnly;
 using search::IDestructorCallback;
 using search::SerialNum;
+using search::index::Schema;
 using storage::spi::BucketInfoResult;
 using storage::spi::Timestamp;
 using vespalib::IllegalStateException;
+using vespalib::makeLambdaTask;
 using vespalib::make_string;
 
 namespace proton {
@@ -397,21 +398,9 @@ StoreOnlyFeedView::UpdateScope::UpdateScope(const search::index::Schema & schema
       _nonAttributeFields(!upd.getFieldPathUpdates().empty())
 {}
 
-namespace {
-
-bool isAttributeUpdateable(const search::AttributeVector *attribute) {
-    search::attribute::BasicType::Type attrType = attribute->getBasicType();
-    // Partial update to tensor, predicate or reference attribute
-    // must update document
-    return ((attrType != search::attribute::BasicType::Type::PREDICATE) &&
-            (attrType != search::attribute::BasicType::Type::TENSOR) &&
-            (attrType != search::attribute::BasicType::Type::REFERENCE));
-}
-}
-
 void
 StoreOnlyFeedView::UpdateScope::onUpdateField(vespalib::stringref fieldName, const search::AttributeVector * attr) {
-    if (!_nonAttributeFields && (attr == nullptr || !isAttributeUpdateable(attr))) {
+    if (!_nonAttributeFields && (attr == nullptr || !isUpdateableInMemoryOnly(attr->getName(), attr->getConfig()))) {
         _nonAttributeFields = true;
     }
     if (!_indexedFields && _schema->isIndexField(fieldName)) {
