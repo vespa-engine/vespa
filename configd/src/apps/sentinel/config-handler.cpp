@@ -400,6 +400,22 @@ ConfigHandler::handleCmd(const Cmd& cmd)
             cmd.retValue(retbuf);
         }
         break;
+    case Cmd::RESTART:
+        {
+            Service *service = serviceByName(cmd.serviceName());
+            if (service == nullptr) {
+                cmd.retError("Cannot find named service");
+                return;
+            }
+            service->setAutomatic(true);
+            service->resetRestartPenalty();
+            if (service->isRunning()) {
+                service->terminate(true, false);
+            } else {
+                service->start();
+            }
+        }
+        break;
     case Cmd::START:
         {
             Service *service = serviceByName(cmd.serviceName());
@@ -408,6 +424,7 @@ ConfigHandler::handleCmd(const Cmd& cmd)
                 return;
             }
             service->setAutomatic(true);
+            service->resetRestartPenalty();
             if (! service->isRunning()) {
                 service->start();
             }

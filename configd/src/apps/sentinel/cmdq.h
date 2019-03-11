@@ -13,7 +13,7 @@ namespace config::sentinel {
 class Cmd {
 public:
     using UP = std::unique_ptr<Cmd>;
-    enum CmdType { LIST, START, STOP };
+    enum CmdType { LIST, RESTART, START, STOP };
 
     Cmd(FRT_RPCRequest *req, CmdType cmdType, const char *service = "")
       : _req(req), _cmdType(cmdType), _serviceName(service)
