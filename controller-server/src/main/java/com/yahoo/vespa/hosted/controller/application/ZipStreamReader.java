@@ -7,6 +7,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
@@ -26,7 +28,7 @@ public class ZipStreamReader {
             ImmutableList.Builder<ZipEntryWithContent> builder = new ImmutableList.Builder<>();
             ZipEntry zipEntry;
             while (null != (zipEntry = zipInput.getNextEntry())) {
-                if (!entryNameMatcher.test(zipEntry.getName())) continue;
+                if (!entryNameMatcher.test(requireName(zipEntry.getName()))) continue;
                 builder.add(new ZipEntryWithContent(zipEntry, readContent(zipInput)));
             }
             entries = builder.build();
@@ -55,7 +57,14 @@ public class ZipStreamReader {
     }
 
     public List<ZipEntryWithContent> entries() { return entries; }
-    
+
+    private static String requireName(String name) {
+        IllegalArgumentException e = new IllegalArgumentException("Unexpected non-normalized path found in zip content");
+        if (Arrays.asList(name.split("/")).contains("..")) throw e;
+        if (!name.equals(Path.of(name).normalize().toString())) throw e;
+        return name;
+    }
+
     public static class ZipEntryWithContent {
 
         private final ZipEntry zipEntry;

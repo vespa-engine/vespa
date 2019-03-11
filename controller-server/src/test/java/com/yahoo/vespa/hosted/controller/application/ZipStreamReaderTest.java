@@ -13,6 +13,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -34,6 +36,28 @@ public class ZipStreamReaderTest {
         ZipStreamReader reader = new ZipStreamReader(new ByteArrayInputStream(zip(entries)), "foo.xml"::equals,10);
         byte[] extracted = reader.entries().get(0).content();
         assertEquals("foobar", new String(extracted, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void test_paths() {
+        Map<String, Boolean> tests = Map.of(
+                "../../services.xml", true,
+                "/../.././services.xml", true,
+                "./application/././services.xml", true,
+                "application//services.xml", true,
+                "services..xml", false,
+                "application/services.xml", false,
+                "components/foo-bar-deploy.jar", false,
+                "services.xml", false
+        );
+        tests.forEach((name, expectException) -> {
+            try {
+                new ZipStreamReader(new ByteArrayInputStream(zip(Map.of(name, "foo"))), name::equals, 1024);
+                assertFalse("Expected exception for '" + name + "'", expectException);
+            } catch (IllegalArgumentException ignored) {
+                assertTrue("Unexpected exception for '" + name + "'", expectException);
+            }
+        });
     }
 
     private static byte[] zip(Map<String, String> entries) {
