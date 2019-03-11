@@ -439,7 +439,7 @@ public class NodeRepositoryNode {
                ", description='" + description + '\'' +
                ", history=" + Arrays.toString(history) +
                ", allowedToBeDown=" + allowedToBeDown +
-                ", reports=" + reports +
+               ", reports=" + reports +
                ", modelName=" + modelName +
                '}';
     }
