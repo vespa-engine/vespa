@@ -4,8 +4,11 @@
 #include <vespa/searchlib/queryeval/termasstring.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/engine/trace.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 using namespace proton::matching;
+using namespace search::engine;
 using search::queryeval::SearchIterator;
 using search::queryeval::Searchable;
 using search::queryeval::Blueprint;
@@ -271,6 +274,12 @@ TEST_F("require that the match phase limiter may chose to limit the query even w
     EXPECT_TRUE(limiter.was_limited());
 }
 
+void verify(vespalib::stringref expected, const vespalib::Slime & slime) {
+    vespalib::Slime expectedSlime;
+    vespalib::slime::JsonFormat::decode(expected, expectedSlime);
+    EXPECT_EQUAL(expectedSlime, slime);
+}
+
 TEST("require that the match phase limiter is able to pre-limit the query") {
     FakeRequestContext requestContext;
     MockSearchable searchable;
@@ -280,7 +289,9 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
     EXPECT_EQUAL(12u, limiter.sample_hits_per_thread(10));
-    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000, nullptr);
+    RelativeTime clock(std::make_unique<CountingClock>(fastos::TimeStamp::fromSec(1500000000), 1700000L));
+    Trace trace(clock, 7);
+    SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000, trace.maybeCreateCursor(7, "limit"));
     limiter.updateDocIdSpaceEstimate(1000, 9000);
     EXPECT_EQUAL(1680u, limiter.getDocIdSpaceEstimate());
     LimitedSearch *strict_and = dynamic_cast<LimitedSearch*>(search.get());
@@ -300,6 +311,27 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
     EXPECT_EQUAL(0u, ms1->last_unpack); // will not unpack limiting term
     EXPECT_EQUAL(100u, ms2->last_unpack);
     EXPECT_TRUE(limiter.was_limited());
+    trace.done();
+    verify(
+        "{"
+        "    start_time_utc: '2017-07-14 02:40:00.000 UTC',"
+        "    traces: ["
+        "        {"
+        "            timestamp_ms: 1.7,"
+        "            tag: 'limit',"
+        "            hit_rate: 0.1,"
+        "            num_docs: 100000,"
+        "            max_filter_docs: 100000,"
+        "            wanted_docs: 5000,"
+        "            action: 'Will limit with prefix filter',"
+        "            max_group_size: 5000,"
+        "            current_docid: 0,"
+        "            end_docid: 2147483647,"
+        "            estimated_total_hits: 10000"
+        "        }"
+        "    ],"
+        "    duration_ms: 3.4"
+        "}", trace.getSlime());
 }
 
 TEST("require that the match phase limiter is able to post-limit the query") {
