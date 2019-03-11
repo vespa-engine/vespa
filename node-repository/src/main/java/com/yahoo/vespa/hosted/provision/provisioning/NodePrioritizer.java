@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +122,7 @@ class NodePrioritizer {
      *                    already have nodes allocated to this tenant
      */
     void addNewDockerNodes(Mutex allocationLock, boolean exclusively) {
-        NodeList candidates = allNodes;
+        NodeList candidates;
 
         if (exclusively) {
             Set<String> candidateHostnames = allNodes.asList().stream()
@@ -130,7 +131,12 @@ class NodePrioritizer {
                     .flatMap(node -> node.parentHostname().stream())
                     .collect(Collectors.toSet());
 
-            candidates = candidates.filter(node -> candidateHostnames.contains(node.hostname()));
+            candidates = allNodes
+                    .filter(node -> candidateHostnames.contains(node.hostname()))
+                    .filter(node -> EnumSet.of(Node.State.provisioned, Node.State.ready, Node.State.active)
+                            .contains(node.state()));
+        } else {
+            candidates = allNodes.state(Node.State.active);
         }
 
         addNewDockerNodesOn(allocationLock, candidates);
@@ -142,7 +148,6 @@ class NodePrioritizer {
 
         for (Node node : candidates) {
             if (node.type() != NodeType.host) continue;
-            if (node.state() != Node.State.active) continue;
             if (node.status().wantToRetire()) continue;
 
             boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(node, wantedResourceCapacity);
