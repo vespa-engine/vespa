@@ -17,7 +17,4 @@ docker pull ${DOCKER_IMAGE}
 
 # The RPMs will be put in the same directory as this script (/vespa/docker
 # within the container)
-docker run -w /vespa --rm -v $(pwd)/..:/vespa \
-       --entrypoint /vespa/docker/build/build-vespa-internal.sh \
-       "$DOCKER_IMAGE" \
-       "$VESPA_VERSION" "$(id -u)" "$(id -g)"
+docker run -w /vespa --rm -v $(pwd)/..:/vespa --entrypoint /vespa/docker/build/build-vespa-internal.sh "$DOCKER_IMAGE" "$VESPA_VERSION" "$(id -u)" "$(id -g)"

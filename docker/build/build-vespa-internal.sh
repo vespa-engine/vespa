@@ -2,7 +2,7 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 set -e
 
-if [ $# -ne 5 ]; then
+if [ $# -ne 3 ]; then
   echo "Usage: $0 <vespa version> <caller uid> <caller gid>"
   echo "This script should not be called manually."
   exit 1
