@@ -13,6 +13,8 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
+import com.yahoo.vespa.hosted.controller.tenant.BillingInfo;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
@@ -29,6 +31,7 @@ import java.util.Optional;
 public class TenantSerializer {
 
     private static final String nameField = "name";
+    private static final String typeField = "type";
     private static final String athenzDomainField = "athenzDomain";
     private static final String propertyField = "property";
     private static final String propertyIdField = "propertyId";
@@ -40,58 +43,91 @@ public class TenantSerializer {
     private static final String personField = "person";
     private static final String queueField = "queue";
     private static final String componentField = "component";
+    private static final String billingInfoField = "billingInfo";
+    private static final String customerIdField = "customerId";
+    private static final String productCodeField = "productCode";
 
     public Slime toSlime(Tenant tenant) {
-        if (tenant instanceof AthenzTenant) return toSlime((AthenzTenant) tenant);
-        return toSlime((UserTenant) tenant);
-    }
-
-    private Slime toSlime(AthenzTenant tenant) {
         Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        root.setString(nameField, tenant.name().value());
-        root.setString(athenzDomainField, tenant.domain().getName());
-        root.setString(propertyField, tenant.property().id());
-        tenant.propertyId().ifPresent(propertyId -> root.setString(propertyIdField, propertyId.id()));
-        tenant.contact().ifPresent(contact -> {
-            Cursor contactCursor = root.setObject(contactField);
-            writeContact(contact, contactCursor);
-        });
+        Cursor tenantObject = slime.setObject();
+        tenantObject.setString(nameField, tenant.name().value());
+        tenantObject.setString(typeField, valueOf(tenant.type()));
+
+        switch (tenant.type()) {
+            case athenz: toSlime((AthenzTenant) tenant, tenantObject); break;
+            case user:   toSlime((UserTenant) tenant, tenantObject);   break;
+            case cloud:  toSlime((CloudTenant) tenant, tenantObject);  break;
+            default:     throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
+        }
         return slime;
     }
 
-    private Slime toSlime(UserTenant tenant) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        root.setString(nameField, tenant.name().value());
+    private void toSlime(AthenzTenant tenant, Cursor tenantObject) {
+        tenantObject.setString(athenzDomainField, tenant.domain().getName());
+        tenantObject.setString(propertyField, tenant.property().id());
+        tenant.propertyId().ifPresent(propertyId -> tenantObject.setString(propertyIdField, propertyId.id()));
         tenant.contact().ifPresent(contact -> {
-            Cursor contactCursor = root.setObject(contactField);
+            Cursor contactCursor = tenantObject.setObject(contactField);
             writeContact(contact, contactCursor);
         });
-        return slime;
     }
 
-    public AthenzTenant athenzTenantFrom(Slime slime) {
-        Inspector root = slime.get();
-        TenantName name = TenantName.from(root.field(nameField).asString());
-        AthenzDomain domain = new AthenzDomain(root.field(athenzDomainField).asString());
-        Property property = new Property(root.field(propertyField).asString());
-        Optional<PropertyId> propertyId = SlimeUtils.optionalString(root.field(propertyIdField)).map(PropertyId::new);
-        Optional<Contact> contact = contactFrom(root.field(contactField));
+    private void toSlime(UserTenant tenant, Cursor tenantObject) {
+        tenant.contact().ifPresent(contact -> {
+            Cursor contactCursor = tenantObject.setObject(contactField);
+            writeContact(contact, contactCursor);
+        });
+    }
+
+    private void toSlime(CloudTenant tenant, Cursor root) {
+        toSlime(tenant.billingInfo(), root.setObject(billingInfoField));
+    }
+
+    private void toSlime(BillingInfo billingInfo, Cursor billingInfoObject) {
+        billingInfoObject.setString(customerIdField, billingInfo.customerId());
+        billingInfoObject.setString(productCodeField, billingInfo.productCode());
+    }
+
+    public Tenant tenantFrom(Slime slime) {
+        Inspector tenantObject = slime.get();
+        Tenant.Type type;
+        if (tenantObject.field(typeField).valid())
+            type = typeOf(tenantObject.field(typeField).asString());
+        else // TODO jvenstad: Remove once all tenants are stored on updated format.
+            type = tenantObject.field(nameField).asString().startsWith(Tenant.userPrefix) ? Tenant.Type.user : Tenant.Type.athenz;
+
+        switch (type) {
+            case athenz: return athenzTenantFrom(tenantObject);
+            case user:   return userTenantFrom(tenantObject);
+            case cloud:  return cloudTenantFrom(tenantObject);
+            default:     throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
+        }
+    }
+
+    private AthenzTenant athenzTenantFrom(Inspector tenantObject) {
+        TenantName name = TenantName.from(tenantObject.field(nameField).asString());
+        AthenzDomain domain = new AthenzDomain(tenantObject.field(athenzDomainField).asString());
+        Property property = new Property(tenantObject.field(propertyField).asString());
+        Optional<PropertyId> propertyId = SlimeUtils.optionalString(tenantObject.field(propertyIdField)).map(PropertyId::new);
+        Optional<Contact> contact = contactFrom(tenantObject.field(contactField));
         return new AthenzTenant(name, domain, property, propertyId, contact);
     }
 
-    public UserTenant userTenantFrom(Slime slime) {
-        Inspector root = slime.get();
-        TenantName name = TenantName.from(root.field(nameField).asString());
-        Optional<Contact> contact = contactFrom(root.field(contactField));
+    private UserTenant userTenantFrom(Inspector tenantObject) {
+        TenantName name = TenantName.from(tenantObject.field(nameField).asString());
+        Optional<Contact> contact = contactFrom(tenantObject.field(contactField));
         return new UserTenant(name, contact);
     }
 
+    private CloudTenant cloudTenantFrom(Inspector tenantObject) {
+        TenantName name = TenantName.from(tenantObject.field(nameField).asString());
+        BillingInfo billingInfo = billingInfoFrom(tenantObject.field(billingInfoField));
+        return new CloudTenant(name, billingInfo);
+    }
+
     private Optional<Contact> contactFrom(Inspector object) {
-        if (!object.valid()) {
-            return Optional.empty();
-        }
+        if ( ! object.valid()) return Optional.empty();
+
         URI contactUrl = URI.create(object.field(contactUrlField).asString());
         URI propertyUrl = URI.create(object.field(propertyUrlField).asString());
         URI issueTrackerUrl = URI.create(object.field(issueTrackerUrlField).asString());
@@ -130,6 +166,29 @@ public class TenantSerializer {
             personLists.add(persons);
         });
         return personLists;
+    }
+
+    private BillingInfo billingInfoFrom(Inspector billingInfoObject) {
+        return new BillingInfo(billingInfoObject.field(customerIdField).asString(),
+                               billingInfoObject.field(productCodeField).asString());
+    }
+
+    private static Tenant.Type typeOf(String value) {
+        switch (value) {
+            case "athenz": return Tenant.Type.athenz;
+            case "user":   return Tenant.Type.user;
+            case "cloud":  return Tenant.Type.cloud;
+            default: throw new IllegalArgumentException("Unknown tenant type '" + value + "'.");
+        }
+    }
+
+    private static String valueOf(Tenant.Type type) {
+        switch (type) {
+            case athenz: return "athenz";
+            case user:   return "user";
+            case cloud:  return "cloud";
+            default: throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
+        }
     }
 
 }

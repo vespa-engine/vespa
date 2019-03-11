@@ -1,5 +1,10 @@
 package com.yahoo.vespa.hosted.controller.tenant;
 
+import java.util.Objects;
+import java.util.StringJoiner;
+
+import static java.util.Objects.requireNonNull;
+
 /**
  * Information pertinent to billing a tenant for use of hosted Vespa services.
  *
@@ -7,20 +12,43 @@ package com.yahoo.vespa.hosted.controller.tenant;
  */
 public class BillingInfo {
 
-    private final String data;
+    private final String customerId;
+    private final String productCode;
 
-    /** Creates a new BillingInfo with the given data. */
-    public BillingInfo(String data) {
-        this.data = requireValid(data);
+    /** Creates a new BillingInfo with the given data. Assumes data has already been validated. */
+    public BillingInfo(String customerId, String productCode) {
+        this.customerId = requireNonNull(customerId);
+        this.productCode = requireNonNull(productCode);
     }
 
-    /** Returns the data stored in this. */
-    public String data() { return data; }
+    public String customerId() {
+        return customerId;
+    }
 
-    static String requireValid(String data) {
-        if (data.isBlank())
-            throw new IllegalArgumentException("Invalid billing information '" + data + "'.");
-        return data;
+    public String productCode() {
+        return productCode;
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", BillingInfo.class.getSimpleName() + "[", "]")
+                .add("customerId='" + customerId + "'")
+                .add("productCode='" + productCode + "'")
+                .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if ( ! (o instanceof BillingInfo)) return false;
+        BillingInfo that = (BillingInfo) o;
+        return Objects.equals(customerId, that.customerId) &&
+               Objects.equals(productCode, that.productCode);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(customerId, productCode);
     }
 
 }

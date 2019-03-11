@@ -21,9 +21,7 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -312,19 +310,8 @@ public class CuratorDb {
         curator.set(tenantPath(tenant.name()), asJson(tenantSerializer.toSlime(tenant)));
     }
 
-    public Optional<UserTenant> readUserTenant(TenantName name) {
-        return readSlime(tenantPath(name)).map(tenantSerializer::userTenantFrom);
-    }
-
-    public Optional<AthenzTenant> readAthenzTenant(TenantName name) {
-        return readSlime(tenantPath(name)).map(tenantSerializer::athenzTenantFrom);
-    }
-
     public Optional<Tenant> readTenant(TenantName name) {
-        if (name.value().startsWith(Tenant.userPrefix)) {
-            return readUserTenant(name).map(Tenant.class::cast);
-        }
-        return readAthenzTenant(name).map(Tenant.class::cast);
+        return readSlime(tenantPath(name)).map(tenantSerializer::tenantFrom);
     }
 
     public List<Tenant> readTenants() {

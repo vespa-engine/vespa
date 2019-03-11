@@ -112,6 +112,7 @@ public class TenantController {
         }
     }
 
+    /** Returns the tenant with the given name, or throws. */
     public Tenant require(TenantName name) {
         return get(name).orElseThrow(() -> new IllegalArgumentException("No such tenant '" + name + "'."));
     }
@@ -166,7 +167,9 @@ public class TenantController {
 
     /** Find Athenz tenant by name */
     public Optional<AthenzTenant> athenzTenant(TenantName name) {
-        return curator.readAthenzTenant(name);
+        return curator.readTenant(name)
+                      .filter(AthenzTenant.class::isInstance)
+                      .map(AthenzTenant.class::cast);
     }
 
     /** Returns Athenz tenant with name or throws if no such tenant exists */
