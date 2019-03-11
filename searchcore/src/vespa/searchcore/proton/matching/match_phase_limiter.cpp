@@ -112,7 +112,7 @@ MatchPhaseLimiter::maybe_limit(SearchIterator::UP search, double match_freq, siz
     }
     if (upper_limited_corpus_size <= wanted_num_docs) {
         if (trace) {
-            trace->setString("reason", "No need to limit");
+            trace->setString("action", "Will not limit !");
         }
         LOG(debug, "Will not limit ! maybe_limit(hit_rate=%g, num_docs=%ld, max_filter_docs=%ld) = wanted_num_docs=%ld",
             match_freq, num_docs, max_filter_docs, wanted_num_docs);
@@ -124,11 +124,11 @@ MatchPhaseLimiter::maybe_limit(SearchIterator::UP search, double match_freq, siz
     size_t max_group_size = _calculator.max_group_size(wanted_num_docs);
     bool use_pre_filter = (wanted_num_docs < (total_query_hits * _postFilterMultiplier));
     if (trace) {
-        trace->setString("reason", use_pre_filter ? "Will limit with prefix filter" : "Will limit with postfix filter");
+        trace->setString("action", use_pre_filter ? "Will limit with prefix filter" : "Will limit with postfix filter");
         trace->setLong("max_group_size", max_group_size);
         trace->setLong("current_docid", current_id);
         trace->setLong("end_docid", end_id);
-        trace->setLong("total_query_hits", total_query_hits);
+        trace->setLong("estimated_total_hits", total_query_hits);
     }
     LOG(debug, "Will do %s filter :  maybe_limit(hit_rate=%g, num_docs=%zu, max_filter_docs=%ld) = wanted_num_docs=%zu,"
         " max_group_size=%zu, current_docid=%u, end_docid=%u, total_query_hits=%ld",
