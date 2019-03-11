@@ -2,7 +2,7 @@
 
 #include "test_hook.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/regexp.h>
+#include <regex>
 #include <vespa/fastos/thread.h>
 
 namespace vespalib {
@@ -98,13 +98,13 @@ TestHook::runAll()
     FastOSTestThreadFactory threadFactory;
     TestThreadFactory::factory = &threadFactory;
     std::string name = TestMaster::master.getName();
-    Regexp pattern(lookup_subset_pattern(name));
+    std::basic_regex pattern(lookup_subset_pattern(name), std::regex::extended);
     size_t testsPassed = 0;
     size_t testsFailed = 0;
     size_t testsIgnored = 0;
     size_t testsSkipped = 0;
     for (TestHook *test = _head; test != 0; test = test->_next) {
-        if (pattern.match(test->_tag)) {
+        if (std::regex_search(test->_tag, pattern)) {
             bool ignored = test->_ignore;
             bool failed = !test->run();
             if (ignored) {
