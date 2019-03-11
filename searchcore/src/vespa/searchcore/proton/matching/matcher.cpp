@@ -100,10 +100,11 @@ Matcher::getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IA
                        SessionManager & sessionMgr, bool summaryFeatures)
 {
     SessionId sessionId(&req.sessionId[0], req.sessionId.size());
+    bool expectedSessionCached(false);
     if (!sessionId.empty()) {
         const Properties &cache_props = req.propertiesMap.cacheProperties();
-        bool searchSessionCached = cache_props.lookup("query").found();
-        if (searchSessionCached) {
+        expectedSessionCached = cache_props.lookup("query").found();
+        if (expectedSessionCached) {
             SearchSession::SP session(sessionMgr.pickSearch(sessionId));
             if (session) {
                 MatchToolsFactory &mtf = session->getMatchToolsFactory();
@@ -118,8 +119,9 @@ Matcher::getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IA
     MatchToolsFactory::UP mtf = create_match_tools_factory(req, searchCtx, attrCtx, metaStore,
                                                            req.propertiesMap.featureOverrides());
     if (!mtf->valid()) {
-        LOG(warning, "getFeatureSet(%s): query execution failed (invalid query). Returning empty feature set",
-                     (summaryFeatures ? "summary features" : "rank features"));
+        LOG(warning, "getFeatureSet(%s): query execution failed (%s). Returning empty feature set",
+                     (summaryFeatures ? "summary features" : "rank features"),
+                     (expectedSessionCached) ? "session has expired" : "invalid query");
         return std::make_shared<FeatureSet>();
     }
     return findFeatureSet(req, *mtf, summaryFeatures);
