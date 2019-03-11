@@ -25,6 +25,7 @@ public class AuditLogger {
 
     /** The TTL of log entries. Entries older than this will be removed when the log is updated */
     private static final Duration entryTtl = Duration.ofDays(14);
+    private static final int maxEntries = 2000;
 
     private final CuratorDb db;
     private final Clock clock;
@@ -71,7 +72,8 @@ public class AuditLogger {
         try (Lock lock = db.lockAuditLog()) {
             AuditLog auditLog = db.readAuditLog()
                                   .pruneBefore(now.minus(entryTtl))
-                                  .with(entry);
+                                  .with(entry)
+                                  .first(maxEntries);
             db.writeAuditLog(auditLog);
         }
 
