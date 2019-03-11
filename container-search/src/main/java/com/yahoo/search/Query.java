@@ -1,12 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.Search;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.fs4.MapEncoder;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.log.LogLevel;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.query.Highlight;
@@ -14,6 +17,7 @@ import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.federation.FederationSearcher;
+import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.query.Presentation;
@@ -45,8 +49,10 @@ import com.yahoo.search.query.properties.RequestContextProperties;
 import com.yahoo.search.yql.NullItemException;
 import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
+import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.yolean.Exceptions;
-import edu.umd.cs.findbugs.annotations.Nullable;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1064,6 +1070,41 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         if (ranking.getQueryCache())
             return Collections.singletonMap("query", true);
         return Collections.<String,Boolean>emptyMap();
+    }
+
+    public Search.Request toProtobuf(String serverId, boolean includeQueryData) {
+        var builder = Search.Request.newBuilder()
+            .setHits(hits)
+            .setOffset(offset)
+            .setTimeout((int) getTimeLeft());
+
+        ranking.addToProtobuf(builder, includeQueryData);
+        model.addToProtobuf(builder, includeQueryData);
+
+        if(getGroupingSessionCache() || getRanking().getQueryCache()) {
+            // TODO verify that the session key is included whenever rank properties would have been
+            builder.setSessionKey(getSessionId(serverId).toString());
+        }
+        if(properties().getBoolean(Model.ESTIMATE)) {
+            builder.setHits(0);
+        }
+        if(GroupingExecutor.hasGroupingList(this)) {
+            List<Grouping> groupingList = GroupingExecutor.getGroupingList(this);
+            BufferSerializer gbuf = new BufferSerializer(new GrowableByteBuffer());
+            gbuf.putInt(null, groupingList.size());
+            for (Grouping g: groupingList){
+                g.serialize(gbuf);
+            }
+            gbuf.getBuf().flip();
+            builder.setGroupingBlob(ByteString.copyFrom(gbuf.getBuf().getByteBuffer()));
+        }
+
+        presentation.addToProtobuf(builder, includeQueryData);
+        if(getGroupingSessionCache()) {
+            builder.setCacheGrouping(true);
+        }
+
+        return builder.build();
     }
 
     private Map<String, String> createModelMap() {

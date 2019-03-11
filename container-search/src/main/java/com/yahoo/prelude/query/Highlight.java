@@ -1,7 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-import java.util.*;
+import ai.vespa.searchlib.searchprotocol.protobuf.Search;
+import com.yahoo.searchlib.protobuf.MapConverter;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -131,7 +138,11 @@ public class Highlight implements Cloneable {
         }
     }
 
-
+    public void addToProtobuf(Search.Request.Builder builder, boolean encodeQueryData) {
+        if(encodeQueryData) {
+            MapConverter.convertStringMultiMap(highlightTerms, builder::addHighlightTerms);
+        }
+    }
 
 }
 

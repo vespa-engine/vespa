@@ -3,7 +3,6 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FS4InvokerFactory;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
@@ -42,25 +41,38 @@ public class Dispatcher extends AbstractComponent {
     /** If enabled, this internal dispatcher will be preferred over fdispatch whenever possible */
     private static final CompoundName dispatchInternal = new CompoundName("dispatch.internal");
 
+    /** If enabled, search queries will use protobuf rpc */
+    private static final CompoundName dispatchProtobuf = new CompoundName("dispatch.protobuf");
+
     /** A model of the search cluster this dispatches to */
     private final SearchCluster searchCluster;
 
     private final LoadBalancer loadBalancer;
-    private final RpcResourcePool rpcResourcePool;
     private final boolean multilevelDispatch;
     private final boolean internalDispatchByDefault;
 
+    private final FS4InvokerFactory fs4InvokerFactory;
+    private final RpcInvokerFactory rpcInvokerFactory;
+
     public Dispatcher(String clusterId, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
-        this(new SearchCluster(clusterId, dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus), dispatchConfig);
+        this(new SearchCluster(clusterId, dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus), dispatchConfig,
+                fs4ResourcePool, new RpcResourcePool(dispatchConfig));
     }
 
-    public Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig) {
+    public Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, RpcResourcePool rpcResourcePool) {
+        this(searchCluster, dispatchConfig, new FS4InvokerFactory(fs4ResourcePool, searchCluster),
+                new RpcInvokerFactory(rpcResourcePool, searchCluster));
+    }
+
+    public Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4InvokerFactory fs4InvokerFactory, RpcInvokerFactory rpcInvokerFactory) {
         this.searchCluster = searchCluster;
         this.loadBalancer = new LoadBalancer(searchCluster,
                 dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
-        this.rpcResourcePool = new RpcResourcePool(dispatchConfig);
         this.multilevelDispatch = dispatchConfig.useMultilevelDispatch();
         this.internalDispatchByDefault = !dispatchConfig.useFdispatchByDefault();
+
+        this.fs4InvokerFactory = fs4InvokerFactory;
+        this.rpcInvokerFactory = rpcInvokerFactory;
     }
 
     /** Returns the search cluster this dispatches to */
@@ -70,17 +82,16 @@ public class Dispatcher extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        rpcResourcePool.release();
+        rpcInvokerFactory.release();
     }
 
-    public Optional<FillInvoker> getFillInvoker(Result result, VespaBackEndSearcher searcher, DocumentDatabase documentDb,
-            FS4InvokerFactory fs4InvokerFactory) {
-        Optional<FillInvoker> rpcInvoker = rpcResourcePool.getFillInvoker(result.getQuery(), searcher, documentDb);
+    public Optional<FillInvoker> getFillInvoker(Result result, VespaBackEndSearcher searcher) {
+        Optional<FillInvoker> rpcInvoker = rpcInvokerFactory.createFillInvoker(searcher, result);
         if (rpcInvoker.isPresent()) {
             return rpcInvoker;
         }
         if (result.getQuery().properties().getBoolean(dispatchInternal, internalDispatchByDefault)) {
-            Optional<FillInvoker> fs4Invoker = fs4InvokerFactory.getFillInvoker(result);
+            Optional<FillInvoker> fs4Invoker = fs4InvokerFactory.createFillInvoker(searcher, result);
             if (fs4Invoker.isPresent()) {
                 return fs4Invoker;
             }
@@ -88,15 +99,17 @@ public class Dispatcher extends AbstractComponent {
         return Optional.empty();
     }
 
-    public Optional<SearchInvoker> getSearchInvoker(Query query, FS4InvokerFactory fs4InvokerFactory) {
+    public Optional<SearchInvoker> getSearchInvoker(Query query, VespaBackEndSearcher searcher) {
         if (multilevelDispatch || ! query.properties().getBoolean(dispatchInternal, internalDispatchByDefault)) {
             return Optional.empty();
         }
 
-        Optional<SearchInvoker> invoker = getSearchPathInvoker(query, fs4InvokerFactory::getSearchInvoker);
+        InvokerFactory factory = query.properties().getBoolean(dispatchProtobuf, false) ? rpcInvokerFactory : fs4InvokerFactory;
+
+        Optional<SearchInvoker> invoker = getSearchPathInvoker(query, factory, searcher);
 
         if (!invoker.isPresent()) {
-            invoker = getInternalInvoker(query, fs4InvokerFactory::getSearchInvoker);
+            invoker = getInternalInvoker(query, factory, searcher);
         }
         if (invoker.isPresent() && query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) {
             query.setHits(0);
@@ -105,13 +118,12 @@ public class Dispatcher extends AbstractComponent {
         return invoker;
     }
 
-    @FunctionalInterface
-    private interface SearchInvokerSupplier {
-        Optional<SearchInvoker> supply(Query query, OptionalInt groupId, List<Node> nodes, boolean acceptIncompleteCoverage);
+    public FS4InvokerFactory getFS4InvokerFactory() {
+        return fs4InvokerFactory;
     }
 
     // build invoker based on searchpath
-    private Optional<SearchInvoker> getSearchPathInvoker(Query query, SearchInvokerSupplier invokerFactory) {
+    private Optional<SearchInvoker> getSearchPathInvoker(Query query, InvokerFactory invokerFactory, VespaBackEndSearcher searcher) {
         String searchPath = query.getModel().getSearchPath();
         if(searchPath == null) {
             return Optional.empty();
@@ -122,19 +134,19 @@ public class Dispatcher extends AbstractComponent {
                 return Optional.empty();
             } else {
                 query.trace(false, 2, "Dispatching internally with search path ", searchPath);
-                return invokerFactory.supply(query, OptionalInt.empty(), nodes, true);
+                return invokerFactory.createSearchInvoker(searcher, query, OptionalInt.empty(), nodes, true);
             }
         } catch (InvalidSearchPathException e) {
             return Optional.of(new SearchErrorInvoker(ErrorMessage.createIllegalQuery(e.getMessage())));
         }
     }
 
-    private Optional<SearchInvoker> getInternalInvoker(Query query, SearchInvokerSupplier invokerFactory) {
+    private Optional<SearchInvoker> getInternalInvoker(Query query, InvokerFactory invokerFactory, VespaBackEndSearcher searcher) {
         Optional<Node> directNode = searchCluster.directDispatchTarget();
         if (directNode.isPresent()) {
             Node node = directNode.get();
             query.trace(false, 2, "Dispatching directly to ", node);
-            return invokerFactory.supply(query, OptionalInt.empty(), Arrays.asList(node), true);
+            return invokerFactory.createSearchInvoker(searcher, query, OptionalInt.empty(), Arrays.asList(node), true);
         }
 
         int covered = searchCluster.groupsWithSufficientCoverage();
@@ -149,7 +161,7 @@ public class Dispatcher extends AbstractComponent {
             }
             Group group = groupInCluster.get();
             boolean acceptIncompleteCoverage = (i == max - 1);
-            Optional<SearchInvoker> invoker = invokerFactory.supply(query, OptionalInt.of(group.id()), group.nodes(),
+            Optional<SearchInvoker> invoker = invokerFactory.createSearchInvoker(searcher, query, OptionalInt.of(group.id()), group.nodes(),
                     acceptIncompleteCoverage);
             if (invoker.isPresent()) {
                 query.trace(false, 2, "Dispatching internally to search group ", group.id());

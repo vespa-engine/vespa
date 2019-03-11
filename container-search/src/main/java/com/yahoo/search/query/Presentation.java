@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.Search;
 import com.google.common.base.Splitter;
 import com.yahoo.collections.LazySet;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.processing.request.CompoundName;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.Highlight;
+import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
@@ -194,6 +195,12 @@ public class Presentation implements Cloneable {
             summaryFields.add(field);
         }
 
+    }
+
+    public void addToProtobuf(Search.Request.Builder builder, boolean encodeQueryData) {
+        if(highlight != null) {
+            highlight.addToProtobuf(builder, encodeQueryData);
+        }
     }
 
 }
