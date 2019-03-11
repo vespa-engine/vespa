@@ -266,15 +266,11 @@ public class DeploymentSpecXmlReader {
 
         String policy = upgradeElement.getAttribute("policy");
         switch (policy) {
-            case "canary":
-                return DeploymentSpec.UpgradePolicy.canary;
-            case "default":
-                return DeploymentSpec.UpgradePolicy.defaultPolicy;
-            case "conservative":
-                return DeploymentSpec.UpgradePolicy.conservative;
-            default:
-                throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
-                                                   "Must be one of " + Arrays.toString(DeploymentSpec.UpgradePolicy.values()));
+            case "canary": return DeploymentSpec.UpgradePolicy.canary;
+            case "default": return DeploymentSpec.UpgradePolicy.defaultPolicy;
+            case "conservative": return DeploymentSpec.UpgradePolicy.conservative;
+            default: throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
+                                                        "Must be one of " + Arrays.toString(DeploymentSpec.UpgradePolicy.values()));
         }
     }
 
