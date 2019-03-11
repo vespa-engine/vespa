@@ -400,6 +400,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .data("6.1.0"),
                               "{\"message\":\"Triggered pin to 6.1 for tenant1.application1\"}");
+        assertTrue("Action is logged to audit log",
+                   tester.controller().auditLogger().readLog().entries().stream()
+                         .anyMatch(entry -> entry.resource().equals("/application/v4/tenant/tenant1/application/application1/deploying/pin")));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", GET)
                                       .userIdentity(USER_ID), "{\"platform\":\"6.1\",\"pinned\":true}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying/pin", GET)

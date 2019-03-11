@@ -36,10 +36,13 @@ public class ContactInformationMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         for (Tenant tenant : controller().tenants().asList()) {
-            try{
-            Optional<PropertyId> tenantPropertyId = tenant instanceof AthenzTenant ? ((AthenzTenant) tenant).propertyId() : Optional.empty();
-            Contact contact = contactRetriever.getContact(tenantPropertyId);
-            controller().tenants().lockIfPresent(tenant.name(), lockedTenant -> controller().tenants().store(lockedTenant.with(contact)));
+            try {
+                Optional<PropertyId> tenantPropertyId = Optional.empty();
+                if (tenant instanceof AthenzTenant) {
+                    tenantPropertyId = ((AthenzTenant) tenant).propertyId();
+                }
+                Contact contact = contactRetriever.getContact(tenantPropertyId);
+                controller().tenants().lockIfPresent(tenant.name(), lockedTenant -> controller().tenants().store(lockedTenant.with(contact)));
             } catch (Exception e) {
                 log.log(LogLevel.WARNING, "Failed to update contact information for " + tenant + ": " +
                                           Exceptions.toMessageString(e) + ". Retrying in " +

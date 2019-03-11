@@ -206,9 +206,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), readToString(request.getData()), false);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), readToString(request.getData()), true);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), false, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), true, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return trigger(appIdFromPath(path), jobTypeFromPath(path), request);
@@ -803,7 +803,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
-    private HttpResponse deployPlatform(String tenantName, String applicationName, String versionString, boolean pin) {
+    private HttpResponse deployPlatform(String tenantName, String applicationName, boolean pin, HttpRequest request) {
+        request = controller.auditLogger().log(request);
+        String versionString = readToString(request.getData());
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         StringBuilder response = new StringBuilder();
         controller.applications().lockOrThrow(id, application -> {
@@ -829,7 +831,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Trigger deployment to the last known application package for the given application. */
-    private HttpResponse deployApplication(String tenantName, String applicationName) {
+    private HttpResponse deployApplication(String tenantName, String applicationName, HttpRequest request) {
+        controller.auditLogger().log(request);
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         StringBuilder response = new StringBuilder();
         controller.applications().lockOrThrow(id, application -> {
