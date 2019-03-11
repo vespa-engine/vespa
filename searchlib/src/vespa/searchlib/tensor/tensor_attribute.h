@@ -6,7 +6,6 @@
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include "tensor_store.h"
 #include <vespa/searchlib/common/rcuvector.h>
-#include <vespa/eval/tensor/tensor_mapper.h>
 
 namespace search::tensor {
 
@@ -21,11 +20,12 @@ protected:
 
     RefVector _refVector; // docId -> ref in data store for serialized tensor
     TensorStore &_tensorStore; // data store for serialized tensors
-    std::unique_ptr<vespalib::tensor::TensorMapper> _tensorMapper; // mapper to our tensor type
+    std::unique_ptr<Tensor> _emptyTensor;
     uint64_t    _compactGeneration; // Generation when last compact occurred
 
     template <typename RefType>
     void doCompactWorst();
+    void checkTensorType(const Tensor &tensor);
     void setTensorRef(DocId docId, EntryRef ref);
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);

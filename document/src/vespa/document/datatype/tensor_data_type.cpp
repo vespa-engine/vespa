@@ -50,11 +50,17 @@ TensorDataType::fromSpec(const vespalib::string &spec)
 }
 
 bool
-TensorDataType::isAssignableType(const vespalib::eval::ValueType &rhs) const
+TensorDataType::isAssignableType(const ValueType &tensorType) const
 {
-    const auto &dimensions = _tensorType.dimensions();
-    const auto &rhsDimensions = rhs.dimensions();
-    if (!rhs.is_tensor() || dimensions.size() != rhsDimensions.size()) {
+    return isAssignableType(_tensorType, tensorType);
+}
+
+bool
+TensorDataType::isAssignableType(const ValueType &fieldTensorType, const ValueType &tensorType)
+{
+    const auto &dimensions = fieldTensorType.dimensions();
+    const auto &rhsDimensions = tensorType.dimensions();
+    if (!tensorType.is_tensor() || dimensions.size() != rhsDimensions.size()) {
         return false;
     }
     for (size_t i = 0; i < dimensions.size(); ++i) {
@@ -68,7 +74,6 @@ TensorDataType::isAssignableType(const vespalib::eval::ValueType &rhs) const
         }
     }
     return true;
-    
 }
 
 } // document

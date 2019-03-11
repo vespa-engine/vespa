@@ -771,7 +771,7 @@ TEST_F("require that imported attributes are exposed via attribute context toget
 TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
 {
     AVConfig generic_tensor(BasicType::TENSOR);
-    generic_tensor.setTensorType(ValueType::tensor_type({}));
+    generic_tensor.setTensorType(ValueType::from_spec("tensor(x{})"));
     AVConfig dense_tensor(BasicType::TENSOR);
     dense_tensor.setTensorType(ValueType::from_spec("tensor(x[10])"));
     AVConfig predicate(BasicType::PREDICATE);

@@ -11,7 +11,6 @@
 
 using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorMapper;
 
 namespace search::tensor {
 
@@ -49,8 +48,8 @@ GenericTensorAttribute::~GenericTensorAttribute()
 void
 GenericTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 {
-    EntryRef ref = _genericTensorStore.setTensor(
-            (_tensorMapper ? *_tensorMapper->map(tensor) : tensor));
+    checkTensorType(tensor);
+    EntryRef ref = _genericTensorStore.setTensor(tensor);
     setTensorRef(docId, ref);
 }
 

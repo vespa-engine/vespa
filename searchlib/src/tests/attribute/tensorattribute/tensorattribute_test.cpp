@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/document/base/exceptions.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
@@ -13,6 +14,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("tensorattribute_test");
 
+using document::WrongTensorTypeException;
 using search::tensor::TensorAttribute;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::GenericTensorAttribute;
@@ -258,10 +260,14 @@ Fixture::testSetTensorValue()
     EXPECT_EQUAL(5u, _attr->getNumDocs());
     EXPECT_EQUAL(5u, _attr->getCommittedDocIdLimit());
     TEST_DO(assertGetNoTensor(4));
-    setTensor(4, *createTensor({}, {}));
+    EXPECT_EXCEPTION(setTensor(4, *createTensor({}, {})),
+                     WrongTensorTypeException,
+                     "but other tensor type is 'double'");
+    TEST_DO(assertGetNoTensor(4));
+    setTensor(4, *_tensorAttr->getEmptyTensor());
     if (_denseTensors) {
         TEST_DO(assertGetTensor(*expEmptyDenseTensor(), 4));
-        setTensor(3, *createTensor({ {{{"y","1"}}, 11} }, { "x", "y"}));
+        setTensor(3, *expDenseTensor3());
         TEST_DO(assertGetTensor(*expDenseTensor3(), 3));
     } else {
         TEST_DO(assertGetTensor({}, {"x", "y"}, 4));
@@ -277,8 +283,12 @@ void
 Fixture::testSaveLoad()
 {
     ensureSpace(4);
-    setTensor(4, *createTensor({}, {}));
-    setTensor(3, *createTensor({ {{{"y","1"}}, 11} }, { "x", "y"}));
+    setTensor(4, *_tensorAttr->getEmptyTensor());
+    if (_denseTensors) {
+        setTensor(3, *expDenseTensor3());
+    } else {
+        setTensor(3, *createTensor({ {{{"y","1"}}, 11} }, { "x", "y"}));
+    }
     TEST_DO(save());
     TEST_DO(load());
     EXPECT_EQUAL(5u, _attr->getNumDocs());
@@ -298,10 +308,15 @@ void
 Fixture::testCompaction()
 {
     ensureSpace(4);
-    Tensor::UP emptytensor = createTensor({}, {});
+    Tensor::UP emptytensor = _tensorAttr->getEmptyTensor();
     Tensor::UP emptyxytensor = createTensor({}, {"x", "y"});
     Tensor::UP simpletensor = createTensor({ {{{"y","1"}}, 11} }, { "x", "y"});
     Tensor::UP filltensor = createTensor({ {{}, 5} }, { "x", "y"});
+    if (_denseTensors) {
+        emptyxytensor = expEmptyDenseTensor();
+        simpletensor = expDenseTensor3();
+        filltensor = expDenseFillTensor();
+    }
     setTensor(4, *emptytensor);
     setTensor(3, *simpletensor);
     setTensor(2, *filltensor);
@@ -325,11 +340,6 @@ Fixture::testCompaction()
         "iter = %" PRIu64 ", memory usage %" PRIu64 ", -> %" PRIu64,
         iter, oldStatus.getUsed(), newStatus.getUsed());
     TEST_DO(assertGetNoTensor(1));
-    if (_denseTensors) {
-        emptyxytensor = expEmptyDenseTensor();
-        simpletensor = expDenseTensor3();
-        filltensor = expDenseFillTensor();
-    }
     TEST_DO(assertGetTensor(*filltensor, 2));
     TEST_DO(assertGetTensor(*simpletensor, 3));
     TEST_DO(assertGetTensor(*emptyxytensor, 4));
@@ -368,12 +378,6 @@ Fixture::testEmptyTensor()
         EXPECT_EQUAL(emptyTensor->type(), tensorAttr.getConfig().tensorType());
         EXPECT_EQUAL(emptyTensor->type(), ValueType::from_spec(_typeSpec));
     }
-}
-
-
-TEST_F("Test empty sparse tensor attribute", Fixture("tensor()"))
-{
-    f.testEmptyAttribute();
 }
 
 

@@ -1,12 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_attribute.h"
-#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/eval/eval/simple_tensor.h>
+#include <vespa/eval/tensor/dense/dense_tensor.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor.h>
+#include <vespa/eval/tensor/wrapped_simple_tensor.h>
 #include <vespa/searchlib/common/rcuvector.hpp>
 
+using vespalib::eval::SimpleTensor;
 using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorMapper;
+using vespalib::tensor::DenseTensor;
+using vespalib::tensor::SparseTensor;
+using vespalib::tensor::WrappedSimpleTensor;
+using document::TensorDataType;
+using document::WrongTensorTypeException;
 
 namespace search {
 
@@ -20,20 +30,41 @@ constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 constexpr size_t DEAD_SLACK = 0x10000u;
 
 
-Tensor::UP
-createEmptyTensor(const TensorMapper *mapper)
+ValueType
+createEmptyTensorType(const ValueType &type)
 {
-    vespalib::tensor::DefaultTensor::builder builder;
-    if (mapper != nullptr) {
-        return mapper->map(*builder.build());
+    std::vector<ValueType::Dimension> list;
+    for (const auto &dim : type.dimensions()) {
+        if (dim.is_indexed() && !dim.is_bound()) {
+            list.emplace_back(dim.name, 1);
+        } else {
+            list.emplace_back(dim);
+        }
     }
-    return builder.build();
+    return ValueType::tensor_type(std::move(list));
 }
 
-bool
-shouldCreateMapper(const ValueType &tensorType)
+Tensor::UP
+createEmptyTensor(const ValueType &type)
 {
-    return tensorType.is_tensor() && !tensorType.dimensions().empty();
+    if (type.is_sparse()) {
+        return std::make_unique<SparseTensor>(type, SparseTensor::Cells());
+    } else if (type.is_dense()) {
+        size_t size = 1;
+        for (const auto &dimension : type.dimensions()) {
+            size *= dimension.size;
+        }
+        return std::make_unique<DenseTensor>(type, DenseTensor::Cells(size));
+    } else {
+        return std::make_unique<WrappedSimpleTensor>(std::make_unique<SimpleTensor>(type, SimpleTensor::Cells()));
+    }
+}
+
+vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
+{
+    return vespalib::make_string("Field tensor type is '%s' but other tensor type is '%s'",
+                                 fieldTensorType.to_spec().c_str(),
+                                 tensorType.to_spec().c_str());
 }
 
 }
@@ -45,12 +76,9 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
                  cfg.getGrowStrategy().getDocsGrowDelta(),
                  getGenerationHolder()),
       _tensorStore(tensorStore),
-      _tensorMapper(),
+      _emptyTensor(createEmptyTensor(createEmptyTensorType(cfg.tensorType()))),
       _compactGeneration(0)
 {
-    if (shouldCreateMapper(cfg.tensorType())) {
-        _tensorMapper = std::make_unique<TensorMapper>(cfg.tensorType());
-    }
 }
 
 
@@ -140,6 +168,15 @@ TensorAttribute::addDoc(DocId &docId)
     return true;
 }
 
+void
+TensorAttribute::checkTensorType(const Tensor &tensor)
+{
+    const ValueType &fieldTensorType = getConfig().tensorType();
+    const ValueType &tensorType = tensor.type();
+    if (!TensorDataType::isAssignableType(fieldTensorType, tensorType)) {
+        throw WrongTensorTypeException(makeWrongTensorTypeMsg(fieldTensorType, tensorType), VESPA_STRLOC);
+    }
+}
 
 void
 TensorAttribute::setTensorRef(DocId docId, EntryRef ref)
@@ -159,7 +196,7 @@ TensorAttribute::setTensorRef(DocId docId, EntryRef ref)
 Tensor::UP
 TensorAttribute::getEmptyTensor() const
 {
-    return createEmptyTensor(_tensorMapper.get());
+    return _emptyTensor->clone();
 }
 
 vespalib::eval::ValueType
