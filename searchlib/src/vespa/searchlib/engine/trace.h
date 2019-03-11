@@ -80,6 +80,7 @@ public:
     bool shouldTrace(uint32_t level) const { return level <= _level; }
     uint32_t getLevel() const { return _level; }
     Trace & setLevel(uint32_t level) { _level = level; return *this; }
+    const RelativeTime & getRelativeTime() const { return _relativeTime; }
 private:
     void addTimeStamp(Cursor & trace);
     std::unique_ptr<vespalib::Slime> _trace;

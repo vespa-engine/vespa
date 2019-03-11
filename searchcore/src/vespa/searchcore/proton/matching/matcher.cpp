@@ -270,7 +270,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
         MatchMaster master;
         uint32_t numParts = NumSearchPartitions::lookup(rankProperties, _rankSetup->getNumSearchPartitions());
-        ResultProcessor::Result::UP result = master.match(request, params, limitedThreadBundle, *mtf, rp,
+        ResultProcessor::Result::UP result = master.match(request.trace(), params, limitedThreadBundle, *mtf, rp,
                                                           _distributionKey, numParts);
         my_stats = MatchMaster::getStats(std::move(master));
 

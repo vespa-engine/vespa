@@ -5,7 +5,7 @@
 #include "match_loop_communicator.h"
 #include "match_thread.h"
 #include <vespa/searchlib/attribute/attribute_operation.h>
-#include <vespa/searchlib/engine/request.h>
+#include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/vespalib/data/slime/inserter.h>
@@ -58,7 +58,7 @@ createScheduler(uint32_t numThreads, uint32_t numSearchPartitions, uint32_t numD
 } // namespace proton::matching::<unnamed>
 
 ResultProcessor::Result::UP
-MatchMaster::match(const search::engine::Request & request,
+MatchMaster::match(search::engine::Trace & trace,
                    const MatchParams &params,
                    vespalib::ThreadBundle &threadBundle,
                    const MatchToolsFactory &mtf,
@@ -81,7 +81,7 @@ MatchMaster::match(const search::engine::Request & request,
                 : static_cast<IMatchLoopCommunicator&>(communicator);
         threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, mtf, com, *scheduler,
                                                                resultProcessor, mergeDirector, distributionKey,
-                                                               request.getRelativeTime(), request.trace().getLevel()));
+                                                               trace.getRelativeTime(), trace.getLevel()));
         targets.push_back(threadState.back().get());
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
@@ -92,8 +92,8 @@ MatchMaster::match(const search::engine::Request & request,
     double rerank_time_s = timedCommunicator.rerank_time.elapsed().sec();
     double match_time_s = 0.0;
     std::unique_ptr<vespalib::slime::Inserter> inserter;
-    if (request.trace().shouldTrace(4)) {
-        inserter = std::make_unique<vespalib::slime::ArrayInserter>(request.trace().createCursor("match_threads").setArray("threads"));
+    if (trace.shouldTrace(4)) {
+        inserter = std::make_unique<vespalib::slime::ArrayInserter>(trace.createCursor("match_threads").setArray("threads"));
     }
     for (size_t i = 0; i < threadState.size(); ++i) {
         const MatchThread & matchThread = *threadState[i];
