@@ -67,6 +67,7 @@ maxDurationOfBootstrap long default=7200
 # How long to sleep before redeploying again if it fails (in seconds)
 sleepTimeWhenRedeployingFails long default=30
 
-# Feature Flags (poor man's feature flags, to be overridden in configserver-config.xml if needed)
+# Features (to be overridden in configserver-config.xml if needed)
 buildMinimalSetOfConfigModels bool default=true
 throwIfBootstrappingTenantRepoFails bool default=true
+canReturnEmptySentinelConfig bool default=false
