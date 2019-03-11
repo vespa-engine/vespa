@@ -20,11 +20,12 @@ using document::BucketSpace;
 namespace storage::distributor {
 
 BucketDBUpdater::BucketDBUpdater(Distributor& owner,
-                                 DistributorBucketSpaceRepo &bucketSpaceRepo,
+                                 DistributorBucketSpaceRepo& bucketSpaceRepo,
+                                 DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                                  DistributorMessageSender& sender,
                                  DistributorComponentRegister& compReg)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
-      _distributorComponent(owner, bucketSpaceRepo, compReg, "Bucket DB Updater"),
+      _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Bucket DB Updater"),
       _sender(sender),
       _transitionTimer(_distributorComponent.getClock())
 {
@@ -169,6 +170,7 @@ BucketDBUpdater::storageDistributionChanged()
             std::move(clusterInfo),
             _sender,
             _distributorComponent.getBucketSpaceRepo(),
+            _distributorComponent.getReadOnlyBucketSpaceRepo(),
             _distributorComponent.getUniqueTimestamp());
     _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
 }
@@ -200,6 +202,7 @@ BucketDBUpdater::onSetSystemState(
     }
     ensureTransitionTimerStarted();
 
+    // TODO
     removeSuperfluousBuckets(cmd->getClusterStateBundle());
     replyToPreviousPendingClusterStateIfAny();
 
@@ -214,6 +217,7 @@ BucketDBUpdater::onSetSystemState(
             std::move(clusterInfo),
             _sender,
             _distributorComponent.getBucketSpaceRepo(),
+            _distributorComponent.getReadOnlyBucketSpaceRepo(),
             cmd,
             _outdatedNodesMap,
             _distributorComponent.getUniqueTimestamp());

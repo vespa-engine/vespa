@@ -112,7 +112,18 @@ class BucketDBUpdaterTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(adding_diverging_replica_to_existing_trusted_does_not_remove_trusted);
     CPPUNIT_TEST(batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted);
     CPPUNIT_TEST(global_distribution_hash_falls_back_to_legacy_format_upon_request_rejection);
+    CPPUNIT_TEST(non_owned_buckets_moved_to_read_only_db_on_ownership_change);
     CPPUNIT_TEST_SUITE_END();
+
+    /*
+     * TODO tests
+     *  - buckets moved to read only db on ownership change
+     *    - even when self is down in pending state
+     *  - buckets NOT moved to read only db on content node down/maintenance
+     *  - read only db cleared when cluster state activated
+     *  - explicit cluster state activation path
+     *  - legacy implicit cluster state activation support
+     */
 
 public:
     BucketDBUpdaterTest();
@@ -123,10 +134,7 @@ protected:
     void testDistributorChangeWithGrouping();
     void testNormalUsageInitializing();
     void testFailedRequestBucketInfo();
-    void testNoResponses();
     void testBitChange();
-    void testInconsistentChecksum();
-    void testAddEmptyNode();
     void testNodeDown();
     void testStorageNodeInMaintenanceClearsBucketsForNode();
     void testNodeDownCopiesGetInSync();
@@ -177,6 +185,7 @@ protected:
     void adding_diverging_replica_to_existing_trusted_does_not_remove_trusted();
     void batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted();
     void global_distribution_hash_falls_back_to_legacy_format_upon_request_rejection();
+    void non_owned_buckets_moved_to_read_only_db_on_ownership_change();
 
     auto &defaultDistributorBucketSpace() { return getBucketSpaceRepo().get(makeBucketSpace()); }
 
@@ -190,12 +199,18 @@ protected:
                         getBucketDBUpdater().getDistributorComponent().getIndex(),
                         clusterStateBundle,
                         "ui"));
-        auto &repo = getBucketSpaceRepo();
-        for (auto &elem : repo) {
-            elem.second->setClusterState(clusterStateBundle.getDerivedClusterState(elem.first));
+        for (auto* repo : {&mutable_repo(), &read_only_repo()}) {
+            for (auto& space : *repo) {
+                space.second->setClusterState(clusterStateBundle.getDerivedClusterState(space.first));
+            }
         }
         return clusterInfo;
     }
+
+    DistributorBucketSpaceRepo& mutable_repo() noexcept { return getBucketSpaceRepo(); }
+    // Note: not calling this "immutable_repo" since it may actually be modified by the pending
+    // cluster state component (just not by operations), so it would not have the expected semantics.
+    DistributorBucketSpaceRepo& read_only_repo() noexcept { return getReadOnlyBucketSpaceRepo(); }
 
     static std::string getNodeList(std::vector<uint16_t> nodes, size_t count);
 
@@ -586,8 +601,9 @@ public:
 
             OutdatedNodesMap outdatedNodesMap;
             state = PendingClusterState::createForClusterStateChange(
-                    clock, clusterInfo, sender, owner.getBucketSpaceRepo(), cmd, outdatedNodesMap,
-                    api::Timestamp(1));
+                    clock, clusterInfo, sender,
+                    owner.getBucketSpaceRepo(), owner.getReadOnlyBucketSpaceRepo(),
+                    cmd, outdatedNodesMap, api::Timestamp(1));
         }
 
         PendingClusterStateFixture(
@@ -598,7 +614,8 @@ public:
                     owner.createClusterInfo(oldClusterState));
 
             state = PendingClusterState::createForDistributionChange(
-                    clock, clusterInfo, sender, owner.getBucketSpaceRepo(), api::Timestamp(1));
+                    clock, clusterInfo, sender, owner.getBucketSpaceRepo(),
+                    owner.getReadOnlyBucketSpaceRepo(), api::Timestamp(1));
         }
     };
 
@@ -1533,7 +1550,8 @@ BucketDBUpdaterTest::getSentNodesDistributionChanged(
     ClusterInformation::CSP clusterInfo(createClusterInfo(oldClusterState));
     std::unique_ptr<PendingClusterState> state(
             PendingClusterState::createForDistributionChange(
-                    clock, clusterInfo, sender, getBucketSpaceRepo(), api::Timestamp(1)));
+                    clock, clusterInfo, sender, getBucketSpaceRepo(),
+                    getReadOnlyBucketSpaceRepo(), api::Timestamp(1)));
 
     sortSentMessagesByIndex(sender);
 
@@ -1698,8 +1716,8 @@ BucketDBUpdaterTest::testPendingClusterStateReceive()
     OutdatedNodesMap outdatedNodesMap;
     std::unique_ptr<PendingClusterState> state(
             PendingClusterState::createForClusterStateChange(
-                    clock, clusterInfo, sender, getBucketSpaceRepo(), cmd, outdatedNodesMap,
-                    api::Timestamp(1)));
+                    clock, clusterInfo, sender, getBucketSpaceRepo(), getReadOnlyBucketSpaceRepo(),
+                    cmd, outdatedNodesMap, api::Timestamp(1)));
 
     CPPUNIT_ASSERT_EQUAL(messageCount(3), sender.commands.size());
 
@@ -1863,8 +1881,8 @@ BucketDBUpdaterTest::mergeBucketLists(
         ClusterInformation::CSP clusterInfo(createClusterInfo("cluster:d"));
         std::unique_ptr<PendingClusterState> state(
                 PendingClusterState::createForClusterStateChange(
-                        clock, clusterInfo, sender, getBucketSpaceRepo(), cmd, outdatedNodesMap,
-                        beforeTime));
+                        clock, clusterInfo, sender, getBucketSpaceRepo(), getReadOnlyBucketSpaceRepo(),
+                        cmd, outdatedNodesMap, beforeTime));
 
         parseInputData(existingData, beforeTime, *state, includeBucketInfo);
         state->mergeIntoBucketDatabases();
@@ -1882,8 +1900,8 @@ BucketDBUpdaterTest::mergeBucketLists(
         ClusterInformation::CSP clusterInfo(createClusterInfo(oldState.toString()));
         std::unique_ptr<PendingClusterState> state(
                 PendingClusterState::createForClusterStateChange(
-                        clock, clusterInfo, sender, getBucketSpaceRepo(), cmd, outdatedNodesMap,
-                        afterTime));
+                        clock, clusterInfo, sender, getBucketSpaceRepo(), getReadOnlyBucketSpaceRepo(),
+                        cmd, outdatedNodesMap, afterTime));
 
         parseInputData(newData, afterTime, *state, includeBucketInfo);
         state->mergeIntoBucketDatabases();
@@ -2597,6 +2615,10 @@ void BucketDBUpdaterTest::global_distribution_hash_falls_back_to_legacy_format_u
     CPPUNIT_ASSERT_EQUAL(messageCount(6) + 2, _sender.commands.size());
     auto& new_current_req = dynamic_cast<api::RequestBucketInfoCommand&>(*_sender.commands.back());
     CPPUNIT_ASSERT_EQUAL(current_hash, new_current_req.getDistributionHash());
+}
+
+void BucketDBUpdaterTest::non_owned_buckets_moved_to_read_only_db_on_ownership_change() {
+
 }
 
 }

@@ -24,10 +24,12 @@ LOG_SETUP(".distributor.manager");
 
 namespace storage::distributor {
 
-ExternalOperationHandler::ExternalOperationHandler(Distributor& owner, DistributorBucketSpaceRepo& bucketSpaceRepo,
+ExternalOperationHandler::ExternalOperationHandler(Distributor& owner,
+                                                   DistributorBucketSpaceRepo& bucketSpaceRepo,
+                                                   DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                                                    const MaintenanceOperationGenerator& gen,
                                                    DistributorComponentRegister& compReg)
-    : DistributorComponent(owner, bucketSpaceRepo, compReg, "External operation handler"),
+    : DistributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "External operation handler"),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached() // At epoch
 { }

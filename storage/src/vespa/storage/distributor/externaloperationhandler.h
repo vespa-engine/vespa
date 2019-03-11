@@ -37,6 +37,7 @@ public:
 
     ExternalOperationHandler(Distributor& owner,
                              DistributorBucketSpaceRepo& bucketSpaceRepo,
+                             DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                              const MaintenanceOperationGenerator&,
                              DistributorComponentRegister& compReg);
 

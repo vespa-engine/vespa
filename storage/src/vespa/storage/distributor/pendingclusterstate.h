@@ -45,15 +45,16 @@ public:
             const framework::Clock& clock,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo &bucketSpaceRepo,
+            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
             const OutdatedNodesMap &outdatedNodesMap,
             api::Timestamp creationTimestamp)
     {
-        return std::unique_ptr<PendingClusterState>(
-                new PendingClusterState(clock, clusterInfo, sender, bucketSpaceRepo, newStateCmd,
-                                        outdatedNodesMap,
-                                        creationTimestamp));
+        // Naked new due to private constructor
+        return std::unique_ptr<PendingClusterState>(new PendingClusterState(
+                clock, clusterInfo, sender, bucketSpaceRepo, readOnlyBucketSpaceRepo,
+                newStateCmd, outdatedNodesMap, creationTimestamp));
     }
 
     /**
@@ -64,16 +65,19 @@ public:
             const framework::Clock& clock,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo &bucketSpaceRepo,
+            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
             api::Timestamp creationTimestamp)
     {
-        return std::unique_ptr<PendingClusterState>(
-                new PendingClusterState(clock, clusterInfo, sender, bucketSpaceRepo, creationTimestamp));
+        // Naked new due to private constructor
+        return std::unique_ptr<PendingClusterState>(new PendingClusterState(
+                clock, clusterInfo, sender, bucketSpaceRepo,
+                readOnlyBucketSpaceRepo, creationTimestamp));
     }
 
     PendingClusterState(const PendingClusterState &) = delete;
     PendingClusterState & operator = (const PendingClusterState &) = delete;
-    ~PendingClusterState();
+    ~PendingClusterState() override;
 
     /**
      * Adds the info from the reply to our list of information.
@@ -141,7 +145,8 @@ private:
             const framework::Clock&,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo &bucketSpaceRepo,
+            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
             const OutdatedNodesMap &outdatedNodesMap,
             api::Timestamp creationTimestamp);
@@ -154,7 +159,8 @@ private:
             const framework::Clock&,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo &bucketSpaceRepo,
+            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
             api::Timestamp creationTimestamp);
 
     struct BucketSpaceAndNode {
@@ -205,6 +211,7 @@ private:
 
     DistributorMessageSender& _sender;
     DistributorBucketSpaceRepo &_bucketSpaceRepo;
+    DistributorBucketSpaceRepo &_readOnlyBucketSpaceRepo;
 
     bool _bucketOwnershipTransfer;
     std::unordered_map<document::BucketSpace, std::unique_ptr<PendingBucketSpaceDbTransition>, document::BucketSpace::hash> _pendingTransitions;

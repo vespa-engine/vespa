@@ -26,11 +26,12 @@ namespace distributor {
 IdealStateManager::IdealStateManager(
         Distributor& owner,
         DistributorBucketSpaceRepo& bucketSpaceRepo,
+        DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
         DistributorComponentRegister& compReg,
         bool manageActiveBucketCopies)
     : HtmlStatusReporter("idealstateman", "Ideal state manager"),
       _metrics(new IdealStateMetricSet),
-      _distributorComponent(owner, bucketSpaceRepo, compReg, "Ideal state manager"),
+      _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Ideal state manager"),
       _bucketSpaceRepo(bucketSpaceRepo)
 {
     _distributorComponent.registerStatusPage(*this);

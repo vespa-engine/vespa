@@ -158,6 +158,13 @@ public:
     DistributorBucketSpaceRepo &getBucketSpaceRepo() noexcept { return *_bucketSpaceRepo; }
     const DistributorBucketSpaceRepo &getBucketSpaceRepo() const noexcept { return *_bucketSpaceRepo; }
 
+    DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() noexcept {
+        return *_readOnlyBucketSpaceRepo;
+    }
+    const DistributorBucketSpaceRepo& getReadyOnlyBucketSpaceRepo() const noexcept {
+        return *_readOnlyBucketSpaceRepo;
+    }
+
 private:
     friend class Distributor_Test;
     friend class BucketDBUpdaterTest;
@@ -244,6 +251,10 @@ private:
     DistributorComponentRegister& _compReg;
     storage::DistributorComponent _component;
     std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
+    // Read-only bucket space repo with DBs that only contain buckets transiently
+    // during cluster state transitions. Bucket set does not overlap that of _bucketSpaceRepo
+    // and the DBs are empty during non-transition phases.
+    std::unique_ptr<DistributorBucketSpaceRepo> _readOnlyBucketSpaceRepo;
     std::shared_ptr<DistributorMetricSet> _metrics;
 
     OperationOwner _operationOwner;

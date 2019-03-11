@@ -388,6 +388,16 @@ DistributorTestUtil::getBucketSpaceRepo() const {
     return _distributor->getBucketSpaceRepo();
 }
 
+DistributorBucketSpaceRepo &
+DistributorTestUtil::getReadOnlyBucketSpaceRepo() {
+    return _distributor->getReadOnlyBucketSpaceRepo();
+}
+
+const DistributorBucketSpaceRepo &
+DistributorTestUtil::getReadOnlyBucketSpaceRepo() const {
+    return _distributor->getReadOnlyBucketSpaceRepo();
+}
+
 const lib::Distribution&
 DistributorTestUtil::getDistribution() const {
     return getBucketSpaceRepo().get(makeBucketSpace()).getDistribution();
