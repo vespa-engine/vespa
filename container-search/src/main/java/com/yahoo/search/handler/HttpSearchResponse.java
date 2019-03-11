@@ -6,14 +6,12 @@ import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.collections.ListMap;
 import com.yahoo.container.jdisc.ExtendedResponse;
 import com.yahoo.container.handler.Coverage;
 import com.yahoo.container.handler.Timing;
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.HitCounts;
 import com.yahoo.jdisc.HeaderFields;

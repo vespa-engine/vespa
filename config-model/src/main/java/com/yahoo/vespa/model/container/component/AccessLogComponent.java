@@ -3,10 +3,8 @@ package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.container.core.AccessLogConfig;
 import com.yahoo.container.logging.VespaAccessLog;
-import com.yahoo.container.logging.YApacheAccessLog;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import edu.umd.cs.findbugs.annotations.Nullable;
 
 /**
  * @author Tony Vaagenes
@@ -54,8 +52,6 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
 
     private static String accessLogClass(AccessLogType logType) {
         switch (logType) {
-            case yApacheAccessLog:
-                return YApacheAccessLog.class.getName();
             case queryAccessLog:
                 return VespaAccessLog.class.getName();
             case jsonAccessLog:

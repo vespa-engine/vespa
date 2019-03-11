@@ -7,7 +7,6 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import javax.security.auth.x500.X500Principal;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,23 +28,13 @@ import static java.util.stream.Collectors.toMap;
  * but the parameters should be different for each
  * invocation of the same method.</p>
  *
- * This class is thread-safe, but the inner class {@link AdInfo} is not.
+ * This class is thread-safe.
  *
  * @author Tony Vaagenes
  * @author bakksjo
  * @author bjorncs
  */
 public class AccessLogEntry {
-    public enum CookieType {
-        b,
-        l,
-        n,
-        geocookie,
-        I,
-        R,
-        Y,
-        M;
-    }
 
     // Sadly, there's no way to do compile-time validation of these field references.
     private static final String[] FIELDS_EXCLUDED_FROM_TOSTRING = new String[] {
@@ -54,42 +43,25 @@ public class AccessLogEntry {
 
     private final Object monitor = new Object();
 
-    private List<AdInfo> adInfos;
-    private String spaceID;
-
     private String ipV4AddressInDotDecimalNotation;
     private long timeStampMillis;
     private long durationBetweenRequestResponseMillis;
     private long numBytesReturned;
-
 
     private String remoteAddress;
     private int remotePort;
     private String peerAddress;
     private int peerPort;
 
-    private CookieType cookieType;
-    private String cookie;
-    private String weekOfRegistration;
     private String profile;
-    private String internationalInfo;
-    private String contentAttribute;
-    private String webfactsDigitalSignature;
     private String errorMessage;
     private String fileName;
     private String userAgent;
     private String referer;
     private String user;
     private HitCounts hitCounts;
-    private String requestExtra;
-    private String responseExtra;
-    private Boolean resultFromCache;
     private String httpMethod;
     private String httpVersion;
-    private String partner;
-    private String adRationale;
-    private String incrementSlotByOneRequest;
-    private String zDataIncrementSlotByOneRequest;
     private String hostString;
     private int statusCode;
     private String scheme;
@@ -101,40 +73,6 @@ public class AccessLogEntry {
 
     private ListMap<String,String> keyValues=null;
 
-    public void setCookie( CookieType type, String cookie) {
-        synchronized (monitor) {
-            requireNull(this.cookieType);
-            requireNull(this.cookie);
-            this.cookieType = type;
-            this.cookie = cookie;
-        }
-    }
-
-    public CookieType getCookieType() {
-        synchronized (monitor) {
-            return cookieType;
-        }
-    }
-
-    public String getCookie() {
-        synchronized (monitor) {
-            return cookie;
-        }
-    }
-
-    public void setWeekOfRegistration( String weekOfRegistration ) {
-        synchronized (monitor) {
-            requireNull(this.weekOfRegistration);
-            this.weekOfRegistration = weekOfRegistration;
-        }
-    }
-
-    public String getWeekOfRegistration() {
-        synchronized (monitor) {
-            return weekOfRegistration;
-        }
-    }
-
     public void setProfile( String profile ) {
         synchronized (monitor) {
             requireNull(this.profile);
@@ -145,168 +83,6 @@ public class AccessLogEntry {
     public String getProfile() {
         synchronized (monitor) {
             return profile;
-        }
-    }
-
-    public void setInternationalInfo( String intl ) {
-        synchronized (monitor) {
-            requireNull(this.internationalInfo);
-            this.internationalInfo = intl;
-        }
-    }
-
-    public String getInternationalInfo() {
-        synchronized (monitor) {
-            return internationalInfo;
-        }
-    }
-
-    public void setContentAttribute( String contentAttribute ) {
-        synchronized (monitor) {
-            requireNull(this.contentAttribute);
-            this.contentAttribute = contentAttribute;
-        }
-    }
-
-    public String getContentAttribute() {
-        synchronized (monitor) {
-            return contentAttribute;
-        }
-    }
-
-    public void setAdSpaceID(String spaceID) {
-        synchronized (monitor) {
-            requireNull(this.spaceID);
-            this.spaceID = spaceID;
-        }
-    }
-
-    public String getAdSpaceID() {
-        synchronized (monitor) {
-            return spaceID;
-        }
-    }
-
-    public void addAdInfo(AdInfo adInfo) {
-        synchronized (monitor) {
-            if (adInfos == null) {
-                adInfos = new ArrayList<>();
-            }
-            adInfos.add( adInfo );
-        }
-    }
-
-    public List<AdInfo> getAdInfos() {
-        synchronized (monitor) {
-            if (adInfos == null) {
-                return Collections.emptyList();
-            }
-            // TODO: The returned list is unmodifiable, but its elements are not. But we're all friendly here, right?
-            return Collections.unmodifiableList(adInfos);
-        }
-    }
-
-    /**
-     * This class is NOT thread-safe. It is assumed that a single instance is created/written by a single thread,
-     * and all reads happen-after creation/population, i.e. no mutation after the instance is shared between threads.
-     */
-    public static class AdInfo {
-
-        private String adServerString;
-        private String adId;
-        private String matchId;
-        private String position;
-        private String property;
-        private String cpc;
-        private String adClientVersion;
-        private String linkId;
-        private String bidPosition;
-
-        public void setAdID(String id) {
-            this.adId = id;
-        }
-
-        public String getAdID() {
-            return adId;
-        }
-
-        public void setMatchID(String id) {
-            this.matchId = id;
-        }
-
-        public String getMatchID() {
-            return matchId;
-        }
-
-        public void setPosition(String position) {
-            this.position = position;
-        }
-
-        public String getPosition() {
-            return position;
-        }
-
-        public void setProperty(String property) {
-            this.property = property;
-        }
-
-        public String getProperty() {
-            return property;
-        }
-
-        public void setCPC(String cpc) {
-            this.cpc = cpc;
-        }
-
-        public String getCPC() {
-            return cpc;
-        }
-
-        public void setAdClientVersion(String adClientVersion) {
-            this.adClientVersion = adClientVersion;
-        }
-
-        public String getAdClientVersion() {
-            return adClientVersion;
-        }
-
-        public void setLinkID(String id) {
-            this.linkId = id;
-        }
-
-        public String getLinkID() {
-            return linkId;
-        }
-
-        public void setBidPosition(String bidPosition) {
-            this.bidPosition = bidPosition;
-        }
-
-        public String getBidPosition() {
-            return bidPosition;
-        }
-
-        public AdInfo() {}
-
-        AdInfo(String adServerString) {
-            this.adServerString = adServerString;
-        }
-
-        String getAdServerString() {
-            return adServerString;
-        }
-    }
-
-    public void setWebfactsDigitalSignature(String signature) {
-        synchronized (monitor) {
-            requireNull(this.webfactsDigitalSignature);
-            this.webfactsDigitalSignature = signature;
-        }
-    }
-
-    public String getWebfactsDigitalSignature() {
-        synchronized (monitor) {
-            return webfactsDigitalSignature;
         }
     }
 
@@ -388,18 +164,6 @@ public class AccessLogEntry {
         }
     }
 
-    public String getRequestExtra() {
-        synchronized (monitor) {
-            return requestExtra;
-        }
-    }
-
-    public String getResponseExtra() {
-        synchronized (monitor) {
-            return responseExtra;
-        }
-    }
-
     public void addKeyValue(String key,String value) {
         synchronized (monitor) {
             if (keyValues == null) {
@@ -429,19 +193,6 @@ public class AccessLogEntry {
                 .collect(toMap(
                         entry -> entry.getKey(),
                         entry -> valueConverter.apply(entry.getValue())));
-    }
-
-    public void setResultFromCache(boolean fromCache) {
-        synchronized (monitor) {
-            requireNull(this.resultFromCache);
-            this.resultFromCache = fromCache;
-        }
-    }
-
-    public Boolean getResultFromCache() {
-        synchronized (monitor) {
-            return resultFromCache;
-        }
     }
 
     public enum HttpMethod {
@@ -475,58 +226,6 @@ public class AccessLogEntry {
     public String getHttpVersion() {
         synchronized (monitor) {
             return httpVersion;
-        }
-    }
-
-    public void setPartner(String partner) {
-        synchronized (monitor) {
-            requireNull(this.partner);
-            this.partner = partner;
-        }
-    }
-
-    public String getPartner() {
-        synchronized (monitor) {
-            return partner;
-        }
-    }
-
-    public void setAdRationale(String adRationale) {
-        synchronized (monitor) {
-            requireNull(this.adRationale);
-            this.adRationale = adRationale;
-        }
-    }
-
-    public String getAdRationale() {
-        synchronized (monitor) {
-            return adRationale;
-        }
-    }
-
-    public void setIncrementSlotByOneRequest(String slotName) {
-        synchronized (monitor) {
-            requireNull(this.incrementSlotByOneRequest);
-            this.incrementSlotByOneRequest = slotName;
-        }
-    }
-
-    public String getIncrementSlotByOneRequest() {
-        synchronized (monitor) {
-            return incrementSlotByOneRequest;
-        }
-    }
-
-    public void setZDataIncrementSlotByOneRequest(String slotName) {
-        synchronized (monitor) {
-            requireNull(this.zDataIncrementSlotByOneRequest);
-            this.zDataIncrementSlotByOneRequest = slotName;
-        }
-    }
-
-    public String getZDataIncrementSlotByOneRequest() {
-        synchronized (monitor) {
-            return zDataIncrementSlotByOneRequest;
         }
     }
 
