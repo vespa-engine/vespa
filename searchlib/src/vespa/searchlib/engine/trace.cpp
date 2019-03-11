@@ -17,7 +17,7 @@ Trace::Trace(const RelativeTime & relativeTime, uint32_t level)
       _relativeTime(relativeTime),
       _level(level)
 {
-   _root.setLong("creation_time", _relativeTime.timeOfDawn());
+   _root.setString("time_utc", _relativeTime.timeOfDawn().toString());
 }
 
 Trace::~Trace() = default;
