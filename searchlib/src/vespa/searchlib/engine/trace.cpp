@@ -26,7 +26,7 @@ Trace::Cursor &
 Trace::createCursor(vespalib::stringref name) {
     Cursor & trace = _traces.addObject();
     trace.setString("tag", name);
-    trace.setLong("time", _relativeTime.timeSinceDawn());
+    trace.setDouble("time_ms", _relativeTime.timeSinceDawn()/1000000.0);
     return trace;
 }
 
@@ -36,7 +36,7 @@ Trace::addEvent(uint32_t level, vespalib::stringref event) {
 
     Cursor & trace = _traces.addObject();
     trace.setString("event", event);
-    trace.setLong("time", _relativeTime.timeSinceDawn());
+    trace.setDouble("time_ms", _relativeTime.timeSinceDawn()/1000000.0);
 }
 
 vespalib::string

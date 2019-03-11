@@ -14,21 +14,23 @@ class Clock {
 public:
     virtual ~Clock() = default;
     virtual fastos::TimeStamp now() const = 0;
-    virtual Clock * clone() const = 0;
 };
 
 class FastosClock : public Clock {
 public:
     fastos::TimeStamp now() const override { return fastos::ClockSystem::now(); }
-    FastosClock * clone() const override { return new FastosClock(*this); }
 };
 
 class CountingClock : public Clock {
 public:
-    CountingClock(int64_t start) : _nextTime(start) { }
-    fastos::TimeStamp now() const override { return _nextTime++; }
-    CountingClock * clone() const override { return new CountingClock(*this); }
+    CountingClock(int64_t start, int64_t increment) : _increment(increment), _nextTime(start) { }
+    fastos::TimeStamp now() const override {
+        int64_t prev = _nextTime;
+        _nextTime += _increment;
+        return prev;
+    }
 private:
+    const int64_t   _increment;
     mutable int64_t _nextTime;
 };
 

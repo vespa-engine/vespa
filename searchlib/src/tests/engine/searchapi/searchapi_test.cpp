@@ -235,7 +235,7 @@ void verify(vespalib::stringref expected, const vespalib::Slime & slime) {
 }
 
 TEST("verify trace") {
-    RelativeTime clock(std::make_unique<CountingClock>(7));
+    RelativeTime clock(std::make_unique<CountingClock>(7, 1700000));
     Trace t(clock);
     verify("{"
            "    traces: ["
@@ -248,7 +248,7 @@ TEST("verify trace") {
            "    traces: ["
            "        {"
            "            tag: 'tag_a',"
-           "            time: 1"
+           "            time_ms: 1.7"
            "        }"
            "    ],"
            "    creation_time: 7"
@@ -260,11 +260,11 @@ TEST("verify trace") {
            "    traces: ["
            "        {"
            "            tag: 'tag_a',"
-           "            time: 1"
+           "            time_ms: 1.7"
            "        },"
            "        {"
            "            tag: 'tag_b',"
-           "            time: 2,"
+           "            time_ms: 3.4,"
            "            long: 19"
            "        }"
            "    ],"
