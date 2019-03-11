@@ -5,6 +5,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
+import org.eclipse.jetty.util.URIUtil;
 import org.eclipse.jetty.util.Utf8Appendable;
 
 import javax.servlet.http.HttpServletRequest;
@@ -37,10 +38,17 @@ class HttpRequestFactory {
         }
     }
 
+    // Implementation based on org.eclipse.jetty.server.Request.getRequestURL(), but with getLocalPort() as port
     public static URI getUri(HttpServletRequest servletRequest) {
-        String query = servletRequest.getQueryString();
         try {
-            return URI.create(servletRequest.getRequestURL() + (query != null ? '?' + query : ""));
+            StringBuffer builder = new StringBuffer(128);
+            URIUtil.appendSchemeHostPort(builder, servletRequest.getScheme(), servletRequest.getServerName(), servletRequest.getLocalPort());
+            builder.append(servletRequest.getRequestURI());
+            String query = servletRequest.getQueryString();
+            if (query != null) {
+                builder.append('?').append(query);
+            }
+            return URI.create(builder.toString());
         } catch (IllegalArgumentException e) {
             throw createBadQueryException(e);
         }
