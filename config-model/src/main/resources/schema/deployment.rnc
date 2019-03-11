@@ -40,24 +40,27 @@ Email = element email {
 
 Test = element test {
    attribute athenz-service { xsd:string }? &
+   attribute tester-flavor { xsd:string }? &
    text
 }
 
 Staging = element staging {
    attribute athenz-service { xsd:string }? &
+   attribute tester-flavor { xsd:string }? &
    text
 }
 
 Prod = element prod {
    attribute global-service-id { text }? &
    attribute athenz-service { xsd:string }? &
+   attribute tester-flavor { xsd:string }? &
    Region* &
    Delay* &
    Parallel*
 }
 
 Region = element region {
-   attribute active { xsd:boolean },
+   attribute active { xsd:boolean } &
    text
 }
 
