@@ -54,7 +54,7 @@ Trace::addTimeStamp(Cursor & trace) {
 }
 
 void Trace::done() {
-    _root.setDouble("duration", _relativeTime.timeSinceDawn()/1000000.0);
+    _root.setDouble("duration_ms", _relativeTime.timeSinceDawn()/1000000.0);
 }
 
 vespalib::string

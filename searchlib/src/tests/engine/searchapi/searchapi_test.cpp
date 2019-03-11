@@ -256,6 +256,7 @@ TEST("verify trace") {
            t.getSlime());
     Trace::Cursor & tagB = t.createCursor("tag_b");
     tagB.setLong("long", 19);
+    t.done();
     verify("{"
            "    traces: ["
            "        {"
@@ -268,7 +269,8 @@ TEST("verify trace") {
            "            long: 19"
            "        }"
            "    ],"
-           "    start_time_utc: '2017-07-14 02:40:00.000 UTC'"
+           "    start_time_utc: '2017-07-14 02:40:00.000 UTC',"
+           "    duration_ms: 5.1"
            "}",
            t.getSlime());
 }
