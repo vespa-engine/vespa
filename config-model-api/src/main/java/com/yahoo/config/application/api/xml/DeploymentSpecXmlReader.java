@@ -282,9 +282,4 @@ public class DeploymentSpecXmlReader {
                                            "to control whether the region should receive production traffic");
     }
 
-    private Optional<String> readTesterFlavor(Element environmentTag) {
-        return Optional.ofNullable(environmentTag.getAttribute("tester-flavor"))
-                       .filter(testerFlavor -> !testerFlavor.isEmpty());
-    }
-
 }
