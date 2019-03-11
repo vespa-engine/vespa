@@ -37,6 +37,7 @@ void usage()
     fprintf(stderr, "with cmd one of:\n");
     fprintf(stderr, "  list\n");
     fprintf(stderr, "  start {service}\n");
+    fprintf(stderr, "  restart {service}\n");
     fprintf(stderr, "  stop {service}\n");
 }
 
