@@ -112,7 +112,7 @@ public class ApplicationSerializerTest {
                                                Optional.of(User.from("by-username")),
                                                OptionalInt.of(7),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
-                                               Optional.of("---begin---\nKEY\n---end---"),
+                                               Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
                                                Optional.of(new RotationId("my-rotation")),
                                                rotationStatus);
 
