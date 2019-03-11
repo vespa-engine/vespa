@@ -524,6 +524,17 @@ public class ControllerTest {
         tester.controller().applications().deactivate(app.id(), ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
     }
 
+    @Test
+    public void testDeployApplicationPackageWithApplicationDir() {
+        DeploymentTester tester = new DeploymentTester();
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build(true);
+        tester.deployCompletely(application, applicationPackage);
+    }
+
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {
         Version next = Version.fromString("6.2");
         tester.upgradeSystem(next);

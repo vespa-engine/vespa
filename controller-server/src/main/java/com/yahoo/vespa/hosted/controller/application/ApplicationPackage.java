@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -13,9 +14,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * A representation of the content of an application package.
@@ -43,10 +46,11 @@ public class ApplicationPackage {
     public ApplicationPackage(byte[] zippedContent) {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
         this.contentHash = Hashing.sha1().hashBytes(zippedContent).toString();
-        this.deploymentSpec = extractFile("deployment.xml", zippedContent).map(DeploymentSpec::fromXml).orElse(DeploymentSpec.empty);
-        this.validationOverrides = extractFile("validation-overrides.xml", zippedContent).map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
-        Optional<Inspector> buildMetaObject = extractFileBytes("build-meta.json", zippedContent)
-                .map(SlimeUtils::jsonToSlime).map(Slime::get);
+
+        Files files = Files.extract(Set.of("deployment.xml", "validation-overrides.xml", "build-meta.json"), zippedContent);
+        this.deploymentSpec = files.getAsReader("deployment.xml").map(DeploymentSpec::fromXml).orElse(DeploymentSpec.empty);
+        this.validationOverrides = files.getAsReader("validation-overrides.xml").map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
+        Optional<Inspector> buildMetaObject = files.get("build-meta.json").map(SlimeUtils::jsonToSlime).map(Slime::get);
         this.compileVersion = buildMetaObject.map(object -> Version.fromString(object.field("compileVersion").asString()));
         this.buildTime = buildMetaObject.map(object -> Instant.ofEpochMilli(object.field("buildTime").asLong()));
     }
@@ -75,21 +79,51 @@ public class ApplicationPackage {
     /** Returns the time this package was built, if known. */
     public Optional<Instant> buildTime() { return buildTime; }
 
-    private static Optional<byte[]> extractFileBytes(String fileName, byte[] zippedContent) {
-        try (ByteArrayInputStream stream = new ByteArrayInputStream(zippedContent)) {
-            ZipStreamReader reader = new ZipStreamReader(stream);
-            for (ZipStreamReader.ZipEntryWithContent entry : reader.entries())
-                if (entry.zipEntry().getName().equals(fileName) || entry.zipEntry().getName().equals("application/" + fileName)) // TODO: Remove application/ directory support
-                    return Optional.of(entry.content());
-            return Optional.empty();
-        }
-        catch (IOException e) {
-            throw new IllegalArgumentException("Exception reading application package", e);
-        }
-    }
 
-    private static Optional<Reader> extractFile(String fileName, byte[] zippedContent) {
-        return extractFileBytes(fileName, zippedContent).map(ByteArrayInputStream::new).map(InputStreamReader::new);
+    private static class Files {
+
+        /** Max size of each extracted file */
+        private static final int maxSize = 10 * 1024 * 1024; // 10 MiB
+
+        // TODO: Vespa 8: Remove application/ directory support
+        private static final String applicationDir = "application/";
+
+        private final ImmutableMap<String, byte[]> files;
+
+        private Files(ImmutableMap<String, byte[]> files) {
+            this.files = files;
+        }
+
+        public static Files extract(Set<String> filesToExtract, byte[] zippedContent) {
+            ImmutableMap.Builder<String, byte[]> builder = ImmutableMap.builder();
+            try (ByteArrayInputStream stream = new ByteArrayInputStream(zippedContent)) {
+                ZipStreamReader reader = new ZipStreamReader(stream,
+                                                             (name) -> filesToExtract.contains(withoutLegacyDir(name)),
+                                                             maxSize);
+                for (ZipStreamReader.ZipEntryWithContent entry : reader.entries()) {
+                    builder.put(withoutLegacyDir(entry.zipEntry().getName()), entry.content());
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException("Exception reading application package", e);
+            }
+            return new Files(builder.build());
+        }
+
+        /** Get content of given file name */
+        public Optional<byte[]> get(String name) {
+            return Optional.ofNullable(files.get(name));
+        }
+
+        /** Get reader for the content of given file name */
+        public Optional<Reader> getAsReader(String name) {
+            return get(name).map(ByteArrayInputStream::new).map(InputStreamReader::new);
+        }
+
+        private static String withoutLegacyDir(String name) {
+            if (name.startsWith(applicationDir)) return name.substring(applicationDir.length());
+            return name;
+        }
+
     }
 
 }

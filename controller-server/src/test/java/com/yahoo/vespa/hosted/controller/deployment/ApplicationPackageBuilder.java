@@ -172,18 +172,26 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackage build() {
+        return build(false);
+    }
+
+    public ApplicationPackage build(boolean useApplicationDir) {
+        String dir = "";
+        if (useApplicationDir) {
+            dir = "application/";
+        }
         ByteArrayOutputStream zip = new ByteArrayOutputStream();
         try (ZipOutputStream out = new ZipOutputStream(zip)) {
-            out.putNextEntry(new ZipEntry("deployment.xml"));
+            out.putNextEntry(new ZipEntry(dir + "deployment.xml"));
             out.write(deploymentSpec());
             out.closeEntry();
-            out.putNextEntry(new ZipEntry("validation-overrides.xml"));
+            out.putNextEntry(new ZipEntry(dir + "validation-overrides.xml"));
             out.write(validationOverrides());
             out.closeEntry();
-            out.putNextEntry(new ZipEntry("search-definitions/test.sd"));
+            out.putNextEntry(new ZipEntry(dir + "search-definitions/test.sd"));
             out.write(searchDefinition());
             out.closeEntry();
-            out.putNextEntry(new ZipEntry("build-meta.json"));
+            out.putNextEntry(new ZipEntry(dir + "build-meta.json"));
             out.write(buildMeta());
             out.closeEntry();
         } catch (IOException e) {
