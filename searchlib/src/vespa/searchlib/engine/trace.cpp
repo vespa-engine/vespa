@@ -39,6 +39,11 @@ Trace::createCursor(vespalib::stringref name) {
     return trace;
 }
 
+Trace::Cursor *
+Trace::maybeCreateCursor(uint32_t level, vespalib::stringref name) {
+    return shouldTrace(level) ? & createCursor(name) : nullptr;
+}
+
 void
 Trace::addEvent(uint32_t level, vespalib::stringref event) {
     if (!shouldTrace(level)) { return; }

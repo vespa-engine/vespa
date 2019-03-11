@@ -120,7 +120,7 @@ MatchThread::maybe_limit(MatchTools &tools, uint32_t matches, uint32_t docId, ui
     const size_t searchedSoFar = (scheduler.total_size(thread_id) - local_todo);
     double match_freq = estimate_match_frequency(matches, searchedSoFar);
     const size_t global_todo = scheduler.unassigned_size();
-    vespalib::slime::Cursor * traceCursor = trace->shouldTrace(5) ? & trace->createCursor("maybe_limit") : nullptr;
+    vespalib::slime::Cursor * traceCursor = trace->maybeCreateCursor(5, "maybe_limit");
     {
         auto search = tools.borrow_search();
         search = tools.match_limiter().maybe_limit(std::move(search), match_freq, matchParams.numDocs, traceCursor);

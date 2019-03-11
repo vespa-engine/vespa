@@ -62,6 +62,7 @@ public:
      * @return a Cursor to use for further tracing.
      */
     Cursor & createCursor(vespalib::stringref name);
+    Cursor * maybeCreateCursor(uint32_t level, vespalib::stringref name);
     /**
      * Will add a simple 'event' string. It will also add a timestamp relative to the creation of the trace.
      * @param level require for actually add the trace.
