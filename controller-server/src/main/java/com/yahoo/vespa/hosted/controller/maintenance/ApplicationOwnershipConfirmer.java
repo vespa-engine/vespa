@@ -52,11 +52,13 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                        .forEach(application -> {
                            try {
                                Tenant tenant = tenantOf(application.id());
-                               Optional<IssueId> ourIssueId = application.ownershipIssueId();
-                               Contact contact = tenant.contact().orElseThrow(RuntimeException::new);
-                               User assignee = determineAssignee(tenant, application);
-                               ourIssueId = ownershipIssues.confirmOwnership(ourIssueId, application.id(), assignee, contact);
-                               ourIssueId.ifPresent(issueId -> store(issueId, application.id()));
+                               tenant.contact().ifPresent(contact -> { // TODO jvenstad: Makes sense to require, and run this only in main?
+                                   ownershipIssues.confirmOwnership(application.ownershipIssueId(),
+                                                                    application.id(),
+                                                                    determineAssignee(tenant, application),
+                                                                    contact)
+                                                  .ifPresent(newIssueId -> store(newIssueId, application.id()));
+                               });
                            }
                            catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
                                log.log(Level.INFO, "Exception caught when attempting to file an issue for '" + application.id() + "': " + Exceptions.toMessageString(e));
@@ -70,11 +72,8 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
         for (Application application : controller().applications().asList())
             application.ownershipIssueId().ifPresent(issueId -> {
                 try {
-                    Optional<Contact> contact = Optional.of(application.id())
-                            .map(this::tenantOf)
-                            .filter(t -> t instanceof AthenzTenant)
-                            .flatMap(Tenant::contact);
-                     ownershipIssues.ensureResponse(issueId, contact);
+                    Tenant tenant = tenantOf(application.id());
+                    ownershipIssues.ensureResponse(issueId, tenant.type() == Tenant.Type.athenz ? tenant.contact() : Optional.empty());
                 }
                 catch (RuntimeException e) {
                     log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));

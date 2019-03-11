@@ -116,10 +116,12 @@ public class DeploymentIssueReporter extends Maintainer {
     private void fileDeploymentIssueFor(ApplicationId applicationId) {
         try {
             Tenant tenant = ownerOf(applicationId);
-            User asignee = tenant instanceof UserTenant ? userFor(tenant) : null;
-            Optional<IssueId> ourIssueId = controller().applications().require(applicationId).deploymentJobs().issueId();
-            IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, asignee, tenant.contact().get());
-            store(applicationId, issueId);
+            tenant.contact().ifPresent(contact -> {
+                User assignee = tenant.type() == Tenant.Type.user ? userFor(tenant) : null;
+                Optional<IssueId> ourIssueId = controller().applications().require(applicationId).deploymentJobs().issueId();
+                IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, assignee, contact);
+                store(applicationId, issueId);
+            });
         }
         catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
             log.log(Level.INFO, "Exception caught when attempting to file an issue for '" + applicationId + "': " + Exceptions.toMessageString(e));
@@ -130,11 +132,10 @@ public class DeploymentIssueReporter extends Maintainer {
     private void escalateInactiveDeploymentIssues(Collection<Application> applications) {
         applications.forEach(application -> application.deploymentJobs().issueId().ifPresent(issueId -> {
             try {
-                AthenzTenant tenant = Optional.of(application.id())
-                        .map(this::ownerOf)
-                        .filter(t -> t instanceof AthenzTenant)
-                        .map(AthenzTenant.class::cast).orElseThrow(RuntimeException::new);
-                deploymentIssues.escalateIfInactive(issueId, maxInactivity, tenant.contact());
+                Tenant tenant = ownerOf(application.id());
+                deploymentIssues.escalateIfInactive(issueId,
+                                                    maxInactivity,
+                                                    tenant.type() == Tenant.Type.athenz ? tenant.contact() : Optional.empty());
             }
             catch (RuntimeException e) {
                 log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
@@ -146,4 +147,5 @@ public class DeploymentIssueReporter extends Maintainer {
         controller().applications().lockIfPresent(id, application ->
                 controller().applications().store(application.withDeploymentIssueId(issueId)));
     }
+
 }
