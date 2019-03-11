@@ -68,6 +68,7 @@ public class ApplicationSerializer {
     private final String majorVersionField = "majorVersion";
     private final String writeQualityField = "writeQuality";
     private final String queryQualityField = "queryQuality";
+    private final String pemDeployKeyField = "pemDeployKey";
     private final String rotationField = "rotation";
     private final String rotationStatusField = "rotationStatus";
 
@@ -158,6 +159,7 @@ public class ApplicationSerializer {
         application.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
+        application.pemDeployKey().ifPresent(pemDeployKey -> root.setString(pemDeployKeyField, pemDeployKey));
         application.rotation().ifPresent(rotation -> root.setString(rotationField, rotation.asString()));
         toSlime(application.rotationStatus(), root.setArray(rotationStatusField));
         return slime;
@@ -320,11 +322,13 @@ public class ApplicationSerializer {
         OptionalInt majorVersion = optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
+        Optional<String> pemDeployKey = optionalString(root.field(pemDeployKeyField));
         Optional<RotationId> rotation = rotationFromSlime(root.field(rotationField));
         Map<HostName, RotationStatus> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
 
-        return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs, deploying,
-                               outstandingChange, ownershipIssueId, owner, majorVersion, metrics, rotation, rotationStatus);
+        return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
+                               deploying, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
+                               pemDeployKey, rotation, rotationStatus);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {

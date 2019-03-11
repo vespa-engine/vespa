@@ -112,6 +112,7 @@ public class ApplicationSerializerTest {
                                                Optional.of(User.from("by-username")),
                                                OptionalInt.of(7),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
+                                               Optional.of("---begin---\nKEY\n---end---"),
                                                Optional.of(new RotationId("my-rotation")),
                                                rotationStatus);
 
@@ -145,8 +146,9 @@ public class ApplicationSerializerTest {
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
         assertEquals(original.owner(), serialized.owner());
         assertEquals(original.majorVersion(), serialized.majorVersion());
-
         assertEquals(original.change(), serialized.change());
+        assertEquals(original.pemDeployKey(), serialized.pemDeployKey());
+
         assertEquals(original.rotation().get(), serialized.rotation().get());
         assertEquals(original.rotationStatus(), serialized.rotationStatus());
 
