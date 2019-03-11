@@ -11,7 +11,7 @@ import org.w3c.dom.Element;
 /**
  * @author Tony Vaagenes
  */
-public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Container> {
+public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ContainerImpl> {
 
     private final String id;
     private final int index;
@@ -22,7 +22,7 @@ public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBu
     }
 
     @Override
-    protected Container doBuild(DeployState deployState, AbstractConfigProducer parent, Element nodeElem) {
+    protected ContainerImpl doBuild(DeployState deployState, AbstractConfigProducer parent, Element nodeElem) {
         return new ContainerImpl(parent, id, index, deployState.isHosted());
     }
 

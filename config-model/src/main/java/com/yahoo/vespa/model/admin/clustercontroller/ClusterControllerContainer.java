@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Extends the container producer to allow us to override ports.
+ * Container implementation for cluster-controllers
  */
 @RestartConfigs({FleetcontrollerConfig.class, ZookeeperServerConfig.class})
 public class ClusterControllerContainer extends Container implements

@@ -4,7 +4,9 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.component.Component;
 
@@ -29,7 +31,7 @@ public class SecretStoreValidator extends Validator {
         }
     }
 
-    private boolean hasIdentityProvider(ContainerCluster cluster) {
+    private boolean hasIdentityProvider(ContainerCluster<? extends Container> cluster) {
         for (Component<?, ?> component : cluster.getAllComponents()) {
             if (component instanceof IdentityProvider) return true;
         }

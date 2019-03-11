@@ -14,6 +14,8 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.HostPorts;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
+import com.yahoo.vespa.model.container.ContainerImpl;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.container.docproc.DocumentProcessor;
@@ -37,7 +39,7 @@ import static org.junit.Assert.*;
  */
 public class DocprocBuilderTest extends DomBuilderTest {
 
-    private ContainerCluster cluster;
+    private ContainerClusterImpl cluster;
     private DocumentmanagerConfig documentmanagerConfig;
     private ContainerMbusConfig containerMbusConfig;
     private ComponentsConfig componentsConfig;
@@ -50,7 +52,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
     @Before
     public void setupCluster() {
         ContainerModel model = new ContainerModelBuilder(false, Networking.disable).build(DeployState.createTestState(), null, null, root, servicesXml());
-        cluster = model.getCluster();
+        cluster = (ContainerClusterImpl) model.getCluster();
         cluster.getDocproc().getChains().addServersAndClientsForChains();
         root.freezeModelTopology();
 
@@ -88,9 +90,9 @@ public class DocprocBuilderTest extends DomBuilderTest {
         assertThat(cluster.getDocproc().isCompressDocuments(), is(true));
         //assertThat(cluster.getContainerDocproc().isPreferLocalNode(), is(true));
         //assertThat(cluster.getContainerDocproc().getNumNodesPerClient(), is(2));
-        List<Container> services = cluster.getContainers();
+        List<ContainerImpl> services = cluster.getContainers();
         assertThat(services.size(), is(1));
-        Container service = services.get(0);
+        ContainerImpl service = services.get(0);
         assertThat(service, notNullValue());
 
         Map<String, DocprocChain> chains = new HashMap<>();

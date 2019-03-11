@@ -5,7 +5,9 @@ import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validator;
+import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.component.Handler;
 
 import java.util.ArrayList;
@@ -29,7 +31,9 @@ public class AccessControlValidator extends Validator {
         if (model.getAdmin().getApplicationType() != ApplicationType.DEFAULT) return;
 
         List<String> offendingClusters = new ArrayList<>();
-        for (ContainerCluster cluster : model.getContainerClusters().values()) {
+        for (ContainerCluster<? extends Container> c : model.getContainerClusters().values()) {
+            if (! (c instanceof ContainerClusterImpl)) continue;
+            ContainerClusterImpl cluster = (ContainerClusterImpl)c;
             if (cluster.getHttp() == null
                     || ! cluster.getHttp().getAccessControl().isPresent()
                     || ! cluster.getHttp().getAccessControl().get().writeEnabled)
@@ -43,7 +47,7 @@ public class AccessControlValidator extends Validator {
                             mkString(offendingClusters, "[", ", ", "]."));
     }
 
-    private boolean hasHandlerThatNeedsProtection(ContainerCluster cluster) {
+    private boolean hasHandlerThatNeedsProtection(ContainerClusterImpl cluster) {
         return cluster.getHandlers().stream().anyMatch(this::handlerNeedsProtection);
     }
 

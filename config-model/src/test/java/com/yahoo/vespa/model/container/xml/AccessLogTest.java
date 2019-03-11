@@ -7,6 +7,7 @@ import com.yahoo.container.core.AccessLogConfig;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.container.logging.VespaAccessLog;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.component.Component;
 import org.junit.Test;
 import org.w3c.dom.Element;
@@ -60,11 +61,11 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
     }
 
     private Component<?, ?> getVespaAccessLog(String clusterName) {
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get(clusterName);
+        ContainerClusterImpl cluster = (ContainerClusterImpl) root.getChildren().get(clusterName);
         return cluster.getComponentsMap().get(ComponentId.fromString((VespaAccessLog.class.getName())));
     }
     private Component<?, ?> getJsonAccessLog(String clusterName) {
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get(clusterName);
+        ContainerClusterImpl cluster = (ContainerClusterImpl) root.getChildren().get(clusterName);
         return cluster.getComponentsMap().get(ComponentId.fromString((JSONAccessLog.class.getName())));
     }
 

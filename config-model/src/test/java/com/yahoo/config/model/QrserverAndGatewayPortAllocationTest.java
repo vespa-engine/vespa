@@ -4,6 +4,7 @@ package com.yahoo.config.model;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerImpl;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -28,7 +29,7 @@ public class QrserverAndGatewayPortAllocationTest {
         String appDir = "src/test/cfg/application/app_qrserverandgw/";
         VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg(appDir);
         VespaModel vespaModel = creator.create();
-        List<Container> qrservers = vespaModel.getContainerClusters().get("container").getContainers();
+        List<ContainerImpl> qrservers = vespaModel.getContainerClusters().get("container").getContainers();
         assertThat(qrservers.size(), is(1));
         assertThat(qrservers.get(0).getSearchPort(), is(Container.BASEPORT));
     }

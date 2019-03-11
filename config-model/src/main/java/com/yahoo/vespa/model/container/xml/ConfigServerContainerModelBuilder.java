@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
@@ -33,7 +34,7 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
     // Need to override this method since we need to use the values in CloudConfigOptions (the ones
     // in ConfigModelContext.DeployState.properties are not set)
     @Override
-    protected void addStatusHandlers(ContainerCluster cluster, boolean isHostedVespa) {
+    protected void addStatusHandlers(ContainerClusterImpl cluster, boolean isHostedVespa) {
         super.addStatusHandlers(cluster, options.hostedVespa().orElse(Boolean.FALSE));
     }
 

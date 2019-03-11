@@ -20,6 +20,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.core.StateserverConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.StatisticsComponent;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
@@ -217,7 +218,7 @@ public class AdminTestCase {
     public void testContainerMetricsSnapshotInterval() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "metricconfig");
 
-        ContainerCluster qrCluster = vespaModel.getContainerClusters().get("container");
+        ContainerClusterImpl qrCluster = vespaModel.getContainerClusters().get("container");
         HealthMonitorConfig.Builder builder = new HealthMonitorConfig.Builder();
         qrCluster.getConfig(builder);
         HealthMonitorConfig qrClusterConfig = new HealthMonitorConfig(builder);

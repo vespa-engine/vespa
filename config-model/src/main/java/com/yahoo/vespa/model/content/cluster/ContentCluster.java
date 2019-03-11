@@ -22,6 +22,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
@@ -35,6 +36,7 @@ import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerClusterImpl;
+import com.yahoo.vespa.model.container.ContainerImpl;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.content.ClusterControllerConfig;
@@ -104,7 +106,7 @@ public class ContentCluster extends AbstractConfigProducer implements
      *
      * Otherwise: null - the cluster controller is shared by all content clusters and part of Admin.
      */
-    private ContainerCluster clusterControllers;
+    private ClusterControllerContainerCluster clusterControllers;
 
     public enum DistributionMode { LEGACY, STRICT, LOOSE }
     private DistributionMode distributionMode;
@@ -298,7 +300,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             if (admin == null) return; // only in tests
             if (contentCluster.getPersistence() == null) return;
 
-            ContainerCluster clusterControllers;
+            ClusterControllerContainerCluster clusterControllers;
 
             ContentCluster overlappingCluster = findOverlappingCluster(context.getParentProducer().getRoot(), contentCluster);
             if (overlappingCluster != null && overlappingCluster.getClusterControllers() != null) {
@@ -374,7 +376,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             if (containerClusters.isEmpty()) return Collections.emptyList();
 
             List<HostResource> allHosts = new ArrayList<>();
-            for (ContainerCluster cluster : clustersSortedByName(containerClusters))
+            for (ContainerClusterImpl cluster : clustersSortedByName(containerClusters))
                 allHosts.addAll(hostResourcesSortedByIndex(cluster));
             
             // Don't use hosts already selected to be assigned a cluster controllers as part of building this,
@@ -389,14 +391,16 @@ public class ContentCluster extends AbstractConfigProducer implements
             return uniqueHostsWithoutClusterController.subList(0, Math.min(uniqueHostsWithoutClusterController.size(), count));
         }
         
-        private List<ContainerCluster> clustersSortedByName(Collection<ContainerModel> containerModels) {
+        private List<ContainerClusterImpl> clustersSortedByName(Collection<ContainerModel> containerModels) {
             return containerModels.stream()
                     .map(ContainerModel::getCluster)
+                    .filter(cluster -> cluster instanceof ContainerClusterImpl)
+                    .map(cluster -> (ContainerClusterImpl) cluster)
                     .sorted(Comparator.comparing(ContainerCluster::getName))
                     .collect(Collectors.toList());
         }
 
-        private List<HostResource> hostResourcesSortedByIndex(ContainerCluster cluster) {
+        private List<HostResource> hostResourcesSortedByIndex(ContainerClusterImpl cluster) {
             return cluster.getContainers().stream()
                     .sorted(Comparator.comparing(Container::index))
                     .map(Container::getHostResource)
@@ -447,19 +451,19 @@ public class ContentCluster extends AbstractConfigProducer implements
             return sortedHosts;
         }
 
-        private ContainerCluster createClusterControllers(AbstractConfigProducer parent,
-                                                          Collection<HostResource> hosts,
-                                                          String name, boolean multitenant,
-                                                          DeployState deployState) {
-            ContainerCluster clusterControllers = new ContainerClusterImpl(parent, name, name,
+        private ClusterControllerContainerCluster createClusterControllers(AbstractConfigProducer parent,
+                                                                           Collection<HostResource> hosts,
+                                                                           String name, boolean multitenant,
+                                                                           DeployState deployState) {
+            var clusterControllers = new ClusterControllerContainerCluster(parent, name, name,
                                                                            new ClusterControllerClusterVerifier(),
                                                                            deployState);
-            List<Container> containers = new ArrayList<>();
+            List<ClusterControllerContainer> containers = new ArrayList<>();
             // Add a cluster controller on each config server (there is always at least one).
             if (clusterControllers.getContainers().isEmpty()) {
                 int index = 0;
                 for (HostResource host : hosts) {
-                    ClusterControllerContainer clusterControllerContainer = new ClusterControllerContainer(clusterControllers, index, multitenant, deployState.isHosted());
+                    var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, index, multitenant, deployState.isHosted());
                     clusterControllerContainer.setHostResource(host);
                     clusterControllerContainer.initService(deployState.getDeployLogger());
                     clusterControllerContainer.setProp("clustertype", "admin")
@@ -474,9 +478,10 @@ public class ContentCluster extends AbstractConfigProducer implements
             return clusterControllers;
         }
 
-        private void addClusterControllerComponentsForThisCluster(ContainerCluster clusterControllers, ContentCluster contentCluster) {
+        private void addClusterControllerComponentsForThisCluster(ClusterControllerContainerCluster clusterControllers,
+                                                                  ContentCluster contentCluster) {
             int index = 0;
-            for (Container container : clusterControllers.getContainers()) {
+            for (var container : clusterControllers.getContainers()) {
                 if ( ! hasClusterControllerComponent(container))
                     container.addComponent(new ClusterControllerComponent());
                 container.addComponent(new ClusterControllerConfigurer(contentCluster, index++, clusterControllers.getContainers().size()));
@@ -515,7 +520,7 @@ public class ContentCluster extends AbstractConfigProducer implements
     }
 
     /** Returns cluster controllers if this is multitenant, null otherwise */
-    public ContainerCluster getClusterControllers() { return clusterControllers; }
+    public ClusterControllerContainerCluster getClusterControllers() { return clusterControllers; }
 
     public DistributionMode getDistributionMode() {
         if (distributionMode != null) return distributionMode;

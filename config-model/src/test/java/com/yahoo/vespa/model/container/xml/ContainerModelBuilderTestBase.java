@@ -7,6 +7,7 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
@@ -69,8 +70,8 @@ public abstract class ContainerModelBuilderTestBase {
         return null;
     }
 
-    public ContainerCluster getContainerCluster(String clusterId) {
-        return (ContainerCluster) root.getChildren().get(clusterId);
+    public ContainerClusterImpl getContainerCluster(String clusterId) {
+        return (ContainerClusterImpl) root.getChildren().get(clusterId);
     }
 
     public Component<?, ?> getContainerComponent(String clusterId, String componentId) {

@@ -22,8 +22,11 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
+import com.yahoo.vespa.model.container.ContainerImpl;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -109,8 +112,8 @@ public class ModelProvisioningTest {
                 + "</hosts>";
         VespaModelCreatorWithMockPkg creator = new VespaModelCreatorWithMockPkg(null, services);
         VespaModel model = creator.create(new DeployState.Builder().modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(new StringReader(hosts)), true)));
-        ContainerCluster mydisc = model.getContainerClusters().get("mydisc");
-        ContainerCluster mydisc2 = model.getContainerClusters().get("mydisc2");
+        ContainerClusterImpl mydisc = model.getContainerClusters().get("mydisc");
+        ContainerClusterImpl mydisc2 = model.getContainerClusters().get("mydisc2");
         assertThat(mydisc.getContainers().size(), is(3));
         assertThat(mydisc.getContainers().get(0).getConfigId(), is("mydisc/container.0"));
         assertTrue(mydisc.getContainers().get(0).isInitialized());
@@ -411,7 +414,7 @@ public class ModelProvisioningTest {
 
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
-        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        ClusterControllerContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("default54", clusterControllers.getContainers().get(0).getHostName());
@@ -503,7 +506,7 @@ public class ModelProvisioningTest {
 
         // Check content cluster
         ContentCluster cluster = model.getContentClusters().get("bar");
-        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        ClusterControllerContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("default08", clusterControllers.getContainers().get(0).getHostName());
@@ -559,7 +562,7 @@ public class ModelProvisioningTest {
 
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
-        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        ClusterControllerContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals( 8, cluster.distributionBits());
         assertEquals("We get the closest odd number", 5, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
@@ -600,7 +603,7 @@ public class ModelProvisioningTest {
 
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
-        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        ClusterControllerContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals("We get the closest odd number", 3, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("default08", clusterControllers.getContainers().get(0).getHostName());
@@ -667,7 +670,7 @@ public class ModelProvisioningTest {
 
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
-        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        ClusterControllerContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("Skipping retired default09", "default08", clusterControllers.getContainers().get(0).getHostName());
@@ -888,14 +891,14 @@ public class ModelProvisioningTest {
         VespaModel model = tester.createModel(services, true);
 
         ContentCluster cluster1 = model.getContentClusters().get("content1");
-        ContainerCluster clusterControllers1 = cluster1.getClusterControllers();
+        ClusterControllerContainerCluster clusterControllers1 = cluster1.getClusterControllers();
         assertEquals(1, clusterControllers1.getContainers().size());
         assertEquals("content1-node0",  clusterControllers1.getContainers().get(0).getHostName());
         assertEquals("content1-node1",  clusterControllers1.getContainers().get(1).getHostName());
         assertEquals("container-node0", clusterControllers1.getContainers().get(2).getHostName());
 
         ContentCluster cluster2 = model.getContentClusters().get("content2");
-        ContainerCluster clusterControllers2 = cluster2.getClusterControllers();
+        ClusterControllerContainerCluster clusterControllers2 = cluster2.getClusterControllers();
         assertEquals(3, clusterControllers2.getContainers().size());
         assertEquals("content2-node0",  clusterControllers2.getContainers().get(0).getHostName());
         assertEquals("content2-node1",  clusterControllers2.getContainers().get(1).getHostName());
@@ -929,7 +932,7 @@ public class ModelProvisioningTest {
 
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
-        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        ClusterControllerContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(4, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("default04", clusterControllers.getContainers().get(0).getHostName());
@@ -1110,7 +1113,7 @@ public class ModelProvisioningTest {
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
-        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        ClusterControllerContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(1, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("default01", clusterControllers.getContainers().get(0).getHostName());
@@ -1709,17 +1712,17 @@ public class ModelProvisioningTest {
         }
     }
 
-    private void checkThatTldAndContainerRunningOnSameHostHaveSameId(Collection<ContainerCluster> containerClusters,
+    private void checkThatTldAndContainerRunningOnSameHostHaveSameId(Collection<ContainerClusterImpl> containerClusters,
                                                                      Collection<ContentCluster> contentClusters,
                                                                      int startIndexForContainerIds) {
         for (ContentCluster contentCluster : contentClusters) {
             String contentClusterName = contentCluster.getName();
             int i = 0;
-            for (ContainerCluster containerCluster : containerClusters) {
+            for (ContainerClusterImpl containerCluster : containerClusters) {
                 String containerClusterName = containerCluster.getName();
                 for (int j = 0; j < 2; j++) {
                     Dispatch tld = contentCluster.getSearch().getIndexed().getTLDs().get(2 * i + j);
-                    Container container = containerCluster.getContainers().get(j);
+                    ContainerImpl container = containerCluster.getContainers().get(j);
                     int containerConfigIdIndex = j + startIndexForContainerIds;
 
                     assertEquals(container.getHostName(), tld.getHostname());

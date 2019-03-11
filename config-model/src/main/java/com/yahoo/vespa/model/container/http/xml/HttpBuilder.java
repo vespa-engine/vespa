@@ -13,6 +13,7 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.FilterChains;
@@ -96,14 +97,14 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
                 .orElse(ApplicationId.defaultId().application());
     }
 
-    private static Optional<ContainerCluster> getContainerCluster(AbstractConfigProducer configProducer) {
+    private static Optional<ContainerClusterImpl> getContainerCluster(AbstractConfigProducer configProducer) {
         AbstractConfigProducer currentProducer = configProducer;
-        while (! ContainerCluster.class.isAssignableFrom(currentProducer.getClass())) {
+        while (! ContainerClusterImpl.class.isAssignableFrom(currentProducer.getClass())) {
             currentProducer = currentProducer.getParent();
             if (currentProducer == null)
                 return Optional.empty();
         }
-        return Optional.of((ContainerCluster) currentProducer);
+        return Optional.of((ContainerClusterImpl) currentProducer);
     }
 
     private List<Binding> readFilterBindings(Element filteringSpec) {

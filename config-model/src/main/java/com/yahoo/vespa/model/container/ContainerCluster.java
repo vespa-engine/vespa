@@ -31,7 +31,6 @@ import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.metrics.simple.runtime.MetricProperties;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
@@ -95,7 +94,7 @@ import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX
  * @author Einar M R Rosenvinge
  * @author Tony Vaagenes
  */
-public abstract class ContainerCluster
+public abstract class ContainerCluster<CONTAINER extends Container>
         extends AbstractConfigProducer<AbstractConfigProducer<?>>
         implements
         ComponentsConfig.Producer,
@@ -117,12 +116,9 @@ public abstract class ContainerCluster
         SemanticRulesConfig.Producer,
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
-        ServletPathsConfig.Producer,
         RoutingProviderConfig.Producer,
         ConfigserverConfig.Producer,
-        ThreadpoolConfig.Producer,
-        RankProfilesConfig.Producer,
-        RankingConstantsConfig.Producer
+        ThreadpoolConfig.Producer
 
 {
 
@@ -149,7 +145,7 @@ public abstract class ContainerCluster
 
     private final String name;
 
-    private List<Container> containers = new ArrayList<>();
+    protected List<CONTAINER> containers = new ArrayList<>();
 
     private Http http;
     private ProcessingChains processingChains;
@@ -157,20 +153,16 @@ public abstract class ContainerCluster
     private ContainerDocproc containerDocproc;
     private ContainerDocumentApi containerDocumentApi;
     private SecretStore secretStore;
-    private ContainerModelEvaluation modelEvaluation;
 
     private MbusParams mbusParams;
     private boolean rpcServerEnabled = true;
     private boolean httpServerEnabled = true;
 
-    private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
     private final Set<Path> platformBundles = new LinkedHashSet<>();
 
     private final List<String> serviceAliases = new ArrayList<>();
     private final List<String> endpointAliases = new ArrayList<>();
     private final ComponentGroup<Component<?, ?>> componentGroup;
-    private final ConfigProducerGroup<RestApi> restApiGroup;
-    private final ConfigProducerGroup<Servlet> servletGroup;
     private final ContainerClusterVerifier clusterVerifier;
     private final boolean isHostedVespa;
 
@@ -186,6 +178,7 @@ public abstract class ContainerCluster
     private String environmentVars = null;
     private Integer memoryPercentage = null;
 
+    // TODO: REMOVE
     private static class AcceptAllVerifier implements ContainerClusterVerifier {
         @Override
         public boolean acceptComponent(Component component) { return true; }
@@ -211,8 +204,6 @@ public abstract class ContainerCluster
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         componentGroup = new ComponentGroup<>(this, "component");
-        restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
-        servletGroup = new ConfigProducerGroup<>(this, "servlet");
 
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
@@ -328,18 +319,11 @@ public abstract class ContainerCluster
     }
 
     public void prepare(DeployState deployState) {
-        addAndSendApplicationBundles(deployState);
-        if (modelEvaluation != null)
-            modelEvaluation.prepare(containers);
-        sendUserConfiguredFiles(deployState);
-        setApplicationMetaData(deployState);
-        for (RestApi restApi : restApiGroup.getComponents())
-            restApi.prepare();
+        applicationMetaData = deployState.getApplicationPackage().getMetaData();
+        myPrepare(deployState);
     }
 
-    private void setApplicationMetaData(DeployState deployState) {
-        applicationMetaData = deployState.getApplicationPackage().getMetaData();
-    }
+    protected abstract void myPrepare(DeployState deployState);
 
     public void addMbusServer(ComponentId chainId) {
         ComponentId serviceId = chainId.nestInNamespace(ComponentId.fromString("MbusServer"));
@@ -351,40 +335,23 @@ public abstract class ContainerCluster
                         null))));
     }
 
-    private void addAndSendApplicationBundles(DeployState deployState) {
-        for (ComponentInfo component : deployState.getApplicationPackage().getComponentsInfo(deployState.getVespaVersion())) {
-            FileReference reference = FileSender.sendFileToServices(component.getPathRelativeToAppDir(), containers);
-            applicationBundles.add(reference);
-        }
-    }
-
-    private void sendUserConfiguredFiles(DeployState deployState) {
-        // Files referenced from user configs to all components.
-        for (Component<?, ?> component : getAllComponents()) {
-            FileSender.sendUserConfiguredFiles(component, containers, deployState.getDeployLogger());
-        }
-    }
-
     public String getName() {
         return name;
     }
 
-    public List<Container> getContainers() {
+    public List<CONTAINER> getContainers() {
         return Collections.unmodifiableList(containers);
     }
 
-    public void addContainer(Container container) {
-        if ( ! clusterVerifier.acceptContainer(container)) {
-            throw new IllegalArgumentException("Cluster " + name + " does not accept container " + container);
-        }
+    public void addContainer(CONTAINER container) {
         container.setClusterName(name);
         container.setProp("clustername", name)
                 .setProp("index", this.containers.size());
         containers.add(container);
     }
 
-    public void addContainers(Collection<Container> containers) {
-        for (Container container : containers) {
+    public void addContainers(Collection<CONTAINER> containers) {
+        for (var container : containers) {
             addContainer(container);
         }
     }
@@ -427,10 +394,6 @@ public abstract class ContainerCluster
         this.containerSearch = containerSearch;
     }
 
-    public void setModelEvaluation(ContainerModelEvaluation modelEvaluation) {
-        this.modelEvaluation = modelEvaluation;
-    }
-
     public void setHttp(Http http) {
         this.http = http;
         addChild(http);
@@ -439,22 +402,6 @@ public abstract class ContainerCluster
     @Nullable
     public Http getHttp() {
         return http;
-    }
-
-    public final void addRestApi(@NonNull RestApi restApi) {
-        restApiGroup.addComponent(ComponentId.fromString(restApi.getBindingPath()), restApi);
-    }
-
-    public Map<ComponentId, RestApi> getRestApiMap() {
-        return restApiGroup.getComponentMap();
-    }
-
-    public Map<ComponentId, Servlet> getServletMap() {
-        return servletGroup.getComponentMap();
-    }
-
-    public final void addServlet(@NonNull Servlet servlet) {
-        servletGroup.addComponent(servlet.getGlobalComponentId(), servlet);
     }
 
     @Nullable
@@ -486,11 +433,6 @@ public abstract class ContainerCluster
     @SuppressWarnings("unchecked")
     public Collection<Handler<?>> getHandlers() {
         return (Collection<Handler<?>>)(Collection)componentGroup.getComponents(Handler.class);
-    }
-
-    // Returns all servlets, including rest-api/jersey servlets.
-    public Collection<Servlet> getAllServlets() {
-        return allServlets().collect(Collectors.toCollection(ArrayList::new));
     }
 
     public void setSecretStore(SecretStore secretStore) {
@@ -541,23 +483,6 @@ public abstract class ContainerCluster
     }
 
     @Override
-    public void getConfig(ServletPathsConfig.Builder builder) {
-        allServlets().forEach(servlet ->
-                                      builder.servlets(servlet.getComponentId().stringValue(),
-                                                       servlet.toConfigBuilder())
-        );
-    }
-
-    private Stream<Servlet> allServlets() {
-        return Stream.concat(allJersey2Servlets(),
-                             servletGroup.getComponents().stream());
-    }
-
-    private Stream<Jersey2Servlet> allJersey2Servlets() {
-        return restApiGroup.getComponents().stream().map(RestApi::getJersey2Servlet);
-    }
-
-    @Override
     public void getConfig(DocumentmanagerConfig.Builder builder) {
         if (containerDocproc != null && containerDocproc.isCompressDocuments())
             builder.enablecompression(true);
@@ -604,9 +529,7 @@ public abstract class ContainerCluster
 
     @Override
     public void getConfig(BundlesConfig.Builder builder) {
-        Stream.concat(applicationBundles.stream().map(FileReference::value),
-                      platformBundles.stream()
-                              .map(ContainerCluster::toFileReferenceString))
+        platformBundles.stream() .map(ContainerCluster::toFileReferenceString)
                 .forEach(builder::bundle);
     }
 
@@ -687,16 +610,6 @@ public abstract class ContainerCluster
         }
         if (containerDocproc != null)
             containerDocproc.getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        if (modelEvaluation != null) modelEvaluation.getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(RankingConstantsConfig.Builder builder) {
-        if (modelEvaluation != null) modelEvaluation.getConfig(builder);
     }
 
     public void setMbusParams(MbusParams mbusParams) {

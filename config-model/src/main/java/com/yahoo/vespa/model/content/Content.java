@@ -90,7 +90,7 @@ public class Content extends ConfigModel {
         for (ConfigModel model : modelRepo.asMap().values()) {
             if ( ! (model instanceof ContainerModel)) continue;
 
-            ContainerCluster containerCluster = ((ContainerModel) model).getCluster();
+            ContainerCluster<? extends Container> containerCluster = ((ContainerModel) model).getCluster();
             if (containerCluster.getSearch() == null) continue; // this is not a qrs cluster
 
             log.log(LogLevel.DEBUG, "Adding tlds for indexed cluster " + indexedCluster.getClusterName() + ", container cluster " + containerCluster.getName());

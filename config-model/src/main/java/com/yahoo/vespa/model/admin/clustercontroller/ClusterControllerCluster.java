@@ -20,10 +20,12 @@ import java.util.Collection;
  * @author Ulf Lilleengen
  * @since 5.6
  */
-public class ClusterControllerCluster extends AbstractConfigProducer<ContainerCluster> implements ZookeeperServerConfig.Producer, ZookeepersConfig.Producer {
+public class ClusterControllerCluster extends AbstractConfigProducer<ClusterControllerContainerCluster> implements
+        ZookeeperServerConfig.Producer,
+        ZookeepersConfig.Producer {
 
     private static final int ZK_CLIENT_PORT = 2181;
-    private ContainerCluster containerCluster = null;
+    private ClusterControllerContainerCluster containerCluster = null;
 
     public ClusterControllerCluster(AbstractConfigProducer parent, String subId) {
         super(parent, subId);
@@ -32,8 +34,7 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ContainerCl
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
         builder.clientPort(ZK_CLIENT_PORT);
-        for (Container c : containerCluster.getContainers()) {
-            ClusterControllerContainer container = (ClusterControllerContainer) c;
+        for (ClusterControllerContainer container : containerCluster.getContainers()) {
             ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
             serverBuilder.hostname(container.getHostName());
             serverBuilder.id(container.getIndex());
@@ -51,7 +52,7 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ContainerCl
     }
 
     @Override
-    protected void addChild(ContainerCluster cluster) {
+    protected void addChild(ClusterControllerContainerCluster cluster) {
         super.addChild(cluster);
         this.containerCluster = cluster;
     }
