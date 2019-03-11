@@ -17,7 +17,7 @@ Trace::Trace(const RelativeTime & relativeTime, uint32_t level)
       _relativeTime(relativeTime),
       _level(level)
 {
-   _root.setString("time_utc", _relativeTime.timeOfDawn().toString());
+   _root.setString("start_time_utc", _relativeTime.timeOfDawn().toString());
 }
 
 Trace::~Trace() = default;
@@ -25,8 +25,8 @@ Trace::~Trace() = default;
 Trace::Cursor &
 Trace::createCursor(vespalib::stringref name) {
     Cursor & trace = _traces.addObject();
+    addTimeStamp(trace);
     trace.setString("tag", name);
-    trace.setDouble("time_ms", _relativeTime.timeSinceDawn()/1000000.0);
     return trace;
 }
 
@@ -35,8 +35,13 @@ Trace::addEvent(uint32_t level, vespalib::stringref event) {
     if (!shouldTrace(level)) return;
 
     Cursor & trace = _traces.addObject();
+    addTimeStamp(trace);
     trace.setString("event", event);
-    trace.setDouble("time_ms", _relativeTime.timeSinceDawn()/1000000.0);
+}
+
+void
+Trace::addTimeStamp(Cursor & trace) {
+    trace.setDouble("timestamp_ms", _relativeTime.timeSinceDawn()/1000000.0);
 }
 
 vespalib::string

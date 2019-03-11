@@ -249,10 +249,10 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         }
         MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext,
                                                                metaStore, *feature_overrides);
+        traceQuery(6, request.trace(), mtf->query());
         if (!mtf->valid()) {
             reply->errorCode = ECODE_QUERY_PARSE_ERROR;
             reply->errorMessage = "query execution failed (invalid query)";
-            traceQuery(1, request.trace(), mtf->query());
             return reply;
         }
 
@@ -286,7 +286,6 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             sessionMgr.insert(std::move(session));
         }
         reply = std::move(result->_reply);
-        traceQuery(6, request.trace(), mtf->query());
 
         uint32_t numActiveLids = metaStore.getNumActiveLids();
         // note: this is actually totalSpace+1, since 0 is reserved

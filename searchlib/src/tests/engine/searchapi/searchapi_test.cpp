@@ -240,7 +240,7 @@ TEST("verify trace") {
     verify("{"
            "    traces: ["
            "    ],"
-           "    time_utc: '2017-07-14 02:40:00.000 UTC'"
+           "    start_time_utc: '2017-07-14 02:40:00.000 UTC'"
            "}",
            t.getSlime());
     t.createCursor("tag_a");
@@ -248,10 +248,10 @@ TEST("verify trace") {
            "    traces: ["
            "        {"
            "            tag: 'tag_a',"
-           "            time_ms: 1.7"
+           "            timestamp_ms: 1.7"
            "        }"
            "    ],"
-           "    time_utc: '2017-07-14 02:40:00.000 UTC'"
+           "    start_time_utc: '2017-07-14 02:40:00.000 UTC'"
            "}",
            t.getSlime());
     Trace::Cursor & tagB = t.createCursor("tag_b");
@@ -260,15 +260,15 @@ TEST("verify trace") {
            "    traces: ["
            "        {"
            "            tag: 'tag_a',"
-           "            time_ms: 1.7"
+           "            timestamp_ms: 1.7"
            "        },"
            "        {"
            "            tag: 'tag_b',"
-           "            time_ms: 3.4,"
+           "            timestamp_ms: 3.4,"
            "            long: 19"
            "        }"
            "    ],"
-           "    time_utc: '2017-07-14 02:40:00.000 UTC'"
+           "    start_time_utc: '2017-07-14 02:40:00.000 UTC'"
            "}",
            t.getSlime());
 }

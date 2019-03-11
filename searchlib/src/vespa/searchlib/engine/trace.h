@@ -76,6 +76,7 @@ public:
     uint32_t getLevel() const { return _level; }
     Trace & setLevel(uint32_t level) { _level = level; return *this; }
 private:
+    void addTimeStamp(Cursor & trace);
     std::unique_ptr<vespalib::Slime> _trace;
     Cursor              & _root;
     Cursor              & _traces;
