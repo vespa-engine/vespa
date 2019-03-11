@@ -445,6 +445,7 @@ MatchThread::run()
     trace->addEvent(4, "Start thread merge");
     mergeDirector.dualMerge(thread_id, *resultContext->result, resultContext->groupingSource);
     trace->addEvent(4, "MatchThread::run Done");
+    trace->done();
 }
 
 }

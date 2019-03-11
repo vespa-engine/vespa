@@ -69,6 +69,11 @@ public:
      */
     void addEvent(uint32_t level, vespalib::stringref event);
 
+    /**
+     * Will compute and and a final duration timing.
+     */
+    void done();
+
     vespalib::string toString() const;
     Cursor & getRoot() const { return _root; }
     vespalib::Slime & getSlime() const { return *_trace; }

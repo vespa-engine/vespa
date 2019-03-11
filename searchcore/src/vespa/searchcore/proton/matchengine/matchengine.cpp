@@ -142,7 +142,7 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
     ret->setDistributionKey(_distributionKey);
     if (ret->request->trace().getLevel() > 0) {
         ret->request->trace().getRoot().setLong("distribution-key", _distributionKey);
-        ret->request->trace().addEvent(4, "Search completed !");
+        ret->request->trace().done();
         search::fef::Properties & trace = ret->propertiesMap.lookupCreate("trace");
         vespalib::SmartBuffer output(4096);
         vespalib::slime::BinaryFormat::encode(ret->request->trace().getSlime(), output);
