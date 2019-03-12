@@ -548,7 +548,7 @@ StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime,
             if (node != 0xffff && node != it->second->getSourceIndex()) {
                 ++it;
             } else if (!olderThanTime.isSet() || it->first < olderThanTime) {
-                LOG(debug, "Sending reply to msg with id %lu",
+                LOG(debug, "Sending reply to msg with id %" PRIu64,
                     it->second->getMsgId());
 
                 replies.emplace_back(std::make_shared<api::GetNodeStateReply>(*it->second, *_nodeState));

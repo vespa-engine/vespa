@@ -151,7 +151,7 @@ UpdateOperation::onReceive(DistributorMessageSender& sender,
                     if (_results[i].oldTs < oldTs) {
                         LOG(warning, "Update operation for '%s' in bucket %s updated documents with different timestamps. "
                                      "This should not happen and may indicate undetected replica divergence. "
-                                     "Found ts=%zu on node %u, ts=%zu on node %u",
+                                     "Found ts=%" PRIu64 " on node %u, ts=%" PRIu64 " on node %u",
                                      reply.getDocumentId().toString().c_str(),
                                      reply.getBucket().toString().c_str(),
                                      _results[i].oldTs, _results[i].nodeId,

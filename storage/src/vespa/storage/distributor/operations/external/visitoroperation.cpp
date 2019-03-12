@@ -130,7 +130,7 @@ VisitorOperation::timeLeft() const noexcept
             std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
 
     LOG(spam,
-        "Checking if visitor has timed out: elapsed=%zu ms, timeout=%u ms",
+        "Checking if visitor has timed out: elapsed=%" PRIu64 " ms, timeout=%u ms",
         timeSpent.getTime(),
         _msg->getTimeout());
 
@@ -958,7 +958,7 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
     cmd->setTimeout(timeLeft());
 
     LOG(spam, "Priority is %d", cmd->getPriority());
-    LOG(debug, "Sending CreateVisitor command %zu for storage visitor '%s' to %s",
+    LOG(debug, "Sending CreateVisitor command %" PRIu64 " for storage visitor '%s' to %s",
         cmd->getMsgId(),
         storageInstanceId.c_str(),
         cmd->getAddress()->toString().c_str());
@@ -979,8 +979,8 @@ VisitorOperation::sendReply(const api::ReturnCode& code, DistributorMessageSende
 
         reply->setVisitorStatistics(_visitorStatistics);
         LOG(debug,
-            "Sending CreateVisitor reply %zu with return code '%s' for visitor "
-            "'%s', msg id '%zu' back to client",
+            "Sending CreateVisitor reply %" PRIu64 " with return code '%s' for visitor "
+            "'%s', msg id '%" PRIu64 "' back to client",
             reply->getMsgId(),
             code.toString().c_str(),
             _msg->getInstanceId().c_str(), _msg->getMsgId());

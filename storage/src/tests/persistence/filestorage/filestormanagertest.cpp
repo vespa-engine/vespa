@@ -1171,7 +1171,7 @@ FileStorManagerTest::testSplit1()
 
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
-            LOG(debug, "Got %" PRIu64 " replies", top.getNumReplies());
+            LOG(debug, "Got %zu replies", top.getNumReplies());
             CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
             std::shared_ptr<api::PutReply> reply(
                     std::dynamic_pointer_cast<api::PutReply>(
@@ -1403,7 +1403,7 @@ FileStorManagerTest::putDoc(DummyStorageLink& top,
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     document::BucketIdFactory factory;
-    document::DocumentId docId(vespalib::make_string("userdoc:ns:%zu:%d", target.getId(), docNum));
+    document::DocumentId docId(vespalib::make_string("userdoc:ns:%" PRIu64 ":%d", target.getId(), docNum));
     document::BucketId bucket(16, factory.getBucketId(docId).getRawId());
     //std::cerr << "doc bucket is " << bucket << " vs source " << source << "\n";
     _node->getPersistenceProvider().createBucket(

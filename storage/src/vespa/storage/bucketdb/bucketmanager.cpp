@@ -552,7 +552,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
 
     const auto our_hash = distribution->getNodeGraph().getDistributionConfigHash();
 
-    LOG(debug, "Processing %" PRIu64 " queued request bucket info commands. "
+    LOG(debug, "Processing %zu queued request bucket info commands. "
         "Using cluster state '%s' and distribution hash '%s'",
         reqs.size(),
         clusterState->toString().c_str(),
@@ -633,7 +633,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     }
 
     _metrics->fullBucketInfoRequestSize.addValue(requests.size());
-    LOG(debug, "Processing %" PRIu64 " bucket info requests for "
+    LOG(debug, "Processing %zu bucket info requests for "
                "distributors %s, using system state %s",
         requests.size(), distrList.str().c_str(),
         clusterState->toString().c_str());
@@ -688,7 +688,7 @@ BucketManager::verifyAndUpdateLastModified(api::StorageCommand& cmd,
                                            const document::Bucket &bucket,
                                            uint64_t lastModified)
 {
-    LOG(spam, "Received operation %s with modification timestamp %zu",
+    LOG(spam, "Received operation %s with modification timestamp %" PRIu64,
         cmd.toString().c_str(),
         lastModified);
 
@@ -716,8 +716,8 @@ BucketManager::verifyAndUpdateLastModified(api::StorageCommand& cmd,
                              api::ReturnCode::STALE_TIMESTAMP,
                              vespalib::make_string(
                                      "Received command %s with a lower/equal timestamp "
-                                     " (%zu) than the last operation received for "
-                                     "bucket %s, with timestamp %zu",
+                                     " (%" PRIu64 ") than the last operation received for "
+                                     "bucket %s, with timestamp %" PRIu64,
                                      cmd.toString().c_str(),
                                      lastModified,
                                      bucket.toString().c_str(),

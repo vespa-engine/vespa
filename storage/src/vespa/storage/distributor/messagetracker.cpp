@@ -33,7 +33,7 @@ MessageTracker::handleReply(api::BucketReply& reply)
 {
     std::map<uint64_t, uint16_t>::iterator found = _sentMessages.find(reply.getMsgId());
     if (found == _sentMessages.end()) {
-        LOG(warning, "Received reply %zu for callback which we have no recollection of", reply.getMsgId());
+        LOG(warning, "Received reply %" PRIu64 " for callback which we have no recollection of", reply.getMsgId());
         return (uint16_t)-1;
     } else {
         uint16_t node = found->second;

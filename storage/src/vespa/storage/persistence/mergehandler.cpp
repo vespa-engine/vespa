@@ -546,7 +546,7 @@ MergeHandler::fetchLocalData(
         }
      }
 
-    LOG(spam, "Fetched %" PRIu64 " entries locally to fill out diff for %s. "
+    LOG(spam, "Fetched %zu entries locally to fill out diff for %s. "
         "Still %d unfilled entries",
         entries.size(), bucket.toString().c_str(), countUnfilledEntries(diff));
 }
@@ -1227,7 +1227,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd,
         }
         // Send reply
         LOG(spam, "Replying to GetBucketDiff %" PRIu64 " for %s to node %d"
-                  ". Diff has %" PRIu64 " entries. (%" PRIu64 " before compaction)",
+                  ". Diff has %zu entries. (%zu before compaction)",
             cmd.getMsgId(), bucket.toString().c_str(),
             cmd.getNodes()[index - 1].index, final.size(), local.size());
 
@@ -1248,7 +1248,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd,
         s->pendingGetDiff->setPriority(cmd.getPriority());
 
         LOG(spam, "Sending GetBucketDiff for %s on to node %d, "
-                  "added %" PRIu64 " new entries to diff.",
+                  "added %zu new entries to diff.",
             bucket.toString().c_str(), cmd.getNodes()[index + 1].index,
             local.size() - remote.size());
         std::shared_ptr<api::GetBucketDiffCommand> cmd2(
@@ -1354,7 +1354,7 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
             // Exists in send on list, send on!
             replyToSend = s.pendingGetDiff;
             LOG(spam, "Received GetBucketDiffReply for %s with diff of "
-                "size %" PRIu64 ". Sending it on.",
+                "size %zu. Sending it on.",
                 bucket.toString().c_str(), reply.getDiff().size());
             s.pendingGetDiff->getDiff().swap(reply.getDiff());
         }
@@ -1400,7 +1400,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
         _env._metrics.mergeDataReadLatency.addValue(
                 startTime.getElapsedTimeAsDouble());
     } else {
-        LOG(spam, "Merge(%s): Moving %" PRIu64 " entries, didn't need "
+        LOG(spam, "Merge(%s): Moving %zu entries, didn't need "
                   "local data on node %u (%u).",
             bucket.toString().c_str(),
             cmd.getDiff().size(),
