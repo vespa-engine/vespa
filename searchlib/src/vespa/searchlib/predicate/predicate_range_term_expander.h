@@ -63,7 +63,7 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
     }
 
     int64_t edge_interval = (value / _arity) * _arity;
-    size = sprintf(buffer + prefix_size, "%lu", edge_interval);
+    size = sprintf(buffer + prefix_size, "%" PRIu64, edge_interval);
     handler.handleEdge(vespalib::stringref(buffer, prefix_size + size),
                        value - edge_interval);
 
@@ -74,13 +74,13 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
             if (start + level_size - 1 > uint64_t(-LLONG_MIN)) {
                 break;
             }
-            size = sprintf(buffer + prefix_size, "%lu-%lu",
+            size = sprintf(buffer + prefix_size, "%" PRIu64 "-%" PRIu64,
                            start + level_size - 1, start);
         } else {
             if (start + level_size - 1 > LLONG_MAX) {
                 break;
             }
-            size = sprintf(buffer + prefix_size, "%lu-%lu",
+            size = sprintf(buffer + prefix_size, "%" PRIu64 "-%" PRIu64,
                            start, start + level_size - 1);
         }
         handler.handleRange(vespalib::stringref(buffer, prefix_size + size));

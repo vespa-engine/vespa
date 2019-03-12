@@ -348,7 +348,7 @@ addBoundary(uint64_t boundary, uint64_t maxVal, std::vector<uint64_t> &v)
     uint64_t low = boundary > 2u ? boundary - 2 : 0;
     uint64_t high = maxVal - 2u < boundary ? maxVal : boundary + 2;
     assert(low <= high);
-    LOG(info, "low=0x%lx, high=0x%lx", low, high);
+    LOG(info, "low=0x%" PRIx64 ", high=0x%" PRIx64, low, high);
     uint64_t i = low;
     for (;;) {
         v.push_back(i);
@@ -370,14 +370,14 @@ TestFixtureBase::calcBoundaries(int kValue, bool small,
     if (small) {
         maxVal = EC::maxExpGolombVal(kValue, 64);
     }
-    LOG(debug, "kValue=%u, %s, maxVal is 0x%lx", kValue, smallStr, maxVal);
+    LOG(debug, "kValue=%u, %s, maxVal is 0x%" PRIx64, kValue, smallStr, maxVal);
     for (int bits = kValue + 1;
          bits + kValue <= 128 && (bits <= 64 || !small);
          ++bits) {
         uint64_t boundary = EC::maxExpGolombVal(kValue, bits);
         if (bits + kValue == 128) {
             LOG(debug,
-                "boundary for kValue=%d, %s, bits=%d: 0x%lx",
+                "boundary for kValue=%d, %s, bits=%d: 0x%" PRIx64,
                 kValue, smallStr, bits, boundary);
         }
         addBoundary(boundary, maxVal, v);
@@ -388,7 +388,7 @@ TestFixtureBase::calcBoundaries(int kValue, bool small,
     v.resize(ve - v.begin());
     uint32_t newSize = v.size();
     LOG(debug,
-        "kValues=%u, %s, boundaries %u -> %u, maxVal=0x%lx, highest=0x%lx",
+        "kValues=%u, %s, boundaries %u -> %u, maxVal=0x%" PRIx64 ", highest=0x%" PRIx64,
         kValue, smallStr, oldSize, newSize, maxVal, v.back());
 }
 

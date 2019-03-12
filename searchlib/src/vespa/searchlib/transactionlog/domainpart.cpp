@@ -96,7 +96,7 @@ handleWriteError(const char *text,
 string
 getError(FastOS_FileInterface & f)
 {
-    return make_string("File '%s' of size %ld has last error of '%s'.",
+    return make_string("File '%s' of size %" PRId64 " has last error of '%s'.",
                        f.GetFileName(), f.GetSize(), FastOS_File::getLastErrorString().c_str());
 }
 
@@ -418,7 +418,7 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
             _sz++;
             _range.to(entry.serial());
         } else {
-            throw runtime_error(make_string("Incomming serial number(%ld) must be bigger than the last one (%ld).",
+            throw runtime_error(make_string("Incomming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
                                             entry.serial(), _range.to()));
         }
     }
@@ -615,7 +615,7 @@ DomainPart::read(FastOS_FileInterface &file,
     if ((retval = (rlen == sizeof(tmp)))) {
         if ( ! (retval = (version == ccitt_crc32) || version == xxh64)) {
             string msg(make_string("Version mismatch. Expected 'ccitt_crc32=1' or 'xxh64=2',"
-                                             " got %d from '%s' at position %ld",
+                                             " got %d from '%s' at position %" PRId64,
                                              version, file.GetFileName(), lastKnownGoodPos));
             if ((version == 0) && (len == 0) && tailOfFileIsZero(file, lastKnownGoodPos)) {
                 LOG(warning, "%s", msg.c_str());

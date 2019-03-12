@@ -15,7 +15,7 @@ RandomNormalStableExecutor::RandomNormalStableExecutor(uint64_t seed, double mea
     _rnd(mean, stddev, false),  // don't use spares, as we reset seed on every generation
     _seed(seed)
 {
-    LOG(debug, "RandomNormalStableExecutor: seed=%zu, mean=%f, stddev=%f", seed, mean, stddev);
+    LOG(debug, "RandomNormalStableExecutor: seed=%" PRIu64 ", mean=%f, stddev=%f", seed, mean, stddev);
 }
 
 void

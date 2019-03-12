@@ -157,13 +157,13 @@ SimpleQueryStack::StackbufToString(vespalib::stringref theBuf)
             int64_t tmpLong(0);
             p += vespalib::compress::Integer::decompress(tmpLong, p);
             metaStr.append("(w:");
-            metaStr.append(make_string("%ld", tmpLong));
+            metaStr.append(make_string("%" PRId64, tmpLong));
             metaStr.append(")");
         }
         if (ParseItem::getFeature_UniqueId(rawtype)) {
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             metaStr.append("(u:");
-            metaStr.append(make_string("%ld", tmp));
+            metaStr.append(make_string("%" PRIu64, tmp));
             metaStr.append(")");
         }
         if (ParseItem::getFeature_Flags(rawtype)) {
@@ -290,7 +290,7 @@ SimpleQueryStack::StackbufToString(vespalib::stringref theBuf)
                     vespalib::string key = ReadString(p);
                     vespalib::string value = ReadString(p);
                     uint64_t sub_queries = ReadUint64(p);
-                    result.append(make_string("%s:%s:%lx", key.c_str(), value.c_str(), sub_queries));
+                    result.append(make_string("%s:%s:%" PRIx64, key.c_str(), value.c_str(), sub_queries));
                     if (i < feature_count - 1) {
                         result.append(',');
                     }
@@ -302,7 +302,7 @@ SimpleQueryStack::StackbufToString(vespalib::stringref theBuf)
                     vespalib::string key = ReadString(p);
                     uint64_t value = ReadUint64(p);
                     uint64_t sub_queries = ReadUint64(p);
-                    result.append(make_string("%s:%zu:%lx", key.c_str(), value, sub_queries));
+                    result.append(make_string("%s:%" PRIu64 ":%" PRIx64, key.c_str(), value, sub_queries));
                     if (i < range_feature_count - 1) {
                         result.append(',');
                     }

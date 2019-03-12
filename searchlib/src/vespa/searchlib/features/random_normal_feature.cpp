@@ -14,7 +14,7 @@ RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, double mean, double st
     search::fef::FeatureExecutor(),
     _rnd(mean, stddev, true)
 {
-    LOG(debug, "RandomNormalExecutor: seed=%zu, mean=%f, stddev=%f", seed, mean, stddev);
+    LOG(debug, "RandomNormalExecutor: seed=%" PRIu64 ", mean=%f, stddev=%f", seed, mean, stddev);
     _rnd.seed(seed);
 }
 

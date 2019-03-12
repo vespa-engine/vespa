@@ -186,14 +186,14 @@ FileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t serialNum,
                     chunkMeta.fill(is);
                 } catch (const vespalib::IllegalStateException & e) {
                     LOG(warning, "Exception deserializing idx file : %s", e.what());
-                    LOG(warning, "File '%s' seems to be partially truncated. Will truncate from size=%ld to %ld",
+                    LOG(warning, "File '%s' seems to be partially truncated. Will truncate from size=%" PRId64 " to %" PRId64,
                                  _idxFileName.c_str(), fileSize, lastKnownGoodPos);
                     FastOS_File toTruncate(_idxFileName.c_str());
                     if ( toTruncate.OpenReadWrite()) {
                         if (toTruncate.SetSize(lastKnownGoodPos)) {
                             tempVector.resize(tempVector.size() - 1);
                         } else {
-                            throw SummaryException("SetSize(%ld) failed.", toTruncate, VESPA_STRLOC);
+                            throw SummaryException("SetSize() failed.", toTruncate, VESPA_STRLOC);
                         }
                     } else {
                         throw SummaryException("Open for truncation failed.", toTruncate, VESPA_STRLOC);
@@ -205,8 +205,8 @@ FileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t serialNum,
                 verifyOrAssert(tempVector);
                 if (tempVector[0].getLastSerial() < serialNum) {
                     LOG(warning,
-                        "last serial num(%ld) from previous file is "
-                        "bigger than my first(%ld). That is odd."
+                        "last serial num(%" PRIu64 ") from previous file is "
+                        "bigger than my first(%" PRIu64 "). That is odd."
                         "Current filename is '%s'",
                         serialNum, tempVector[0].getLastSerial(),
                         _idxFileName.c_str());
@@ -478,7 +478,7 @@ FileChunk::verify(bool reportOnly) const
     LOG(info,
         "Verifying file '%s' with fileid '%u'. erased-count='%zu' and erased-bytes='%zu'. diskFootprint='%zu'",
         _name.c_str(), _fileId.getId(), _erasedCount, _erasedBytes, _diskFootprint);
-    size_t lastSerial(0);
+    uint64_t lastSerial(0);
     size_t chunkId(0);
     bool errorInPrev(false);
     for (const ChunkInfo & ci : _chunkInfo) {
@@ -489,13 +489,13 @@ FileChunk::verify(bool reportOnly) const
             assert(chunk.getLastSerial() >= lastSerial);
             lastSerial = chunk.getLastSerial();
             if (errorInPrev) {
-                LOG(error, "Last serial number in first good chunk is %ld", chunk.getLastSerial());
+                LOG(error, "Last serial number in first good chunk is %" PRIu64, chunk.getLastSerial());
                 errorInPrev = false;
             }
         } catch (const std::exception & e) {
             LOG(error,
-                "Errors in chunk number %ld/%ld at file offset %lu and size %u."
-                " Last known good serial number = %ld\n.Got Exception : %s",
+                "Errors in chunk number %zu/%zu at file offset %" PRIu64 " and size %u."
+                " Last known good serial number = %" PRIu64 "\n.Got Exception : %s",
                 chunkId, _chunkInfo.size(), ci.getOffset(), ci.getSize(), lastSerial, e.what());
             errorInPrev = true;
         }

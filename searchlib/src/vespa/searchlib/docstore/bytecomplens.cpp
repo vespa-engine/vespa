@@ -177,8 +177,8 @@ ByteCompressedLengths::addOffsetTable(uint64_t entries, uint64_t *offsets)
     _ptrcache.l2table = (uint8_t *)_l2space.getData();
 
     // some statistics available when debug logging:
-    LOG(debug, "compressed %ld offsets", (_entries+1));
-    LOG(debug, "(%ld bytes)", (_entries+1)*sizeof(uint64_t));
+    LOG(debug, "compressed %" PRIu64 " offsets", (_entries+1));
+    LOG(debug, "(%" PRIu64 " bytes)", (_entries+1)*sizeof(uint64_t));
     LOG(debug, "to (%ld + %ld + %ld) bytes + %ld l3entries",
         _l0space.getDataLen(),
         _l1space.getDataLen(),

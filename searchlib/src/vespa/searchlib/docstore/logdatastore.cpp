@@ -639,7 +639,7 @@ LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum, NameId name
 {
     for (const auto & fc : _fileChunks) {
         if (fc && (fc->getNameId() == nameId)) {
-            LOG(error, "We already have a file registered with internal fileId=%u, and external nameId=%ld",
+            LOG(error, "We already have a file registered with internal fileId=%u, and external nameId=%" PRIu64,
                        fileId.getId(), nameId.getId());
             return FileChunk::UP();
         }
@@ -667,7 +667,7 @@ lsSingleFile(const vespalib::string & fileName)
     vespalib::string s;
     FastOS_StatInfo stat;
     if ( FastOS_File::Stat(fileName.c_str(), &stat)) {
-        s += make_string("%s  %20ld  %12ld", fileName.c_str(), stat._modifiedTimeNS, stat._size);
+        s += make_string("%s  %20" PRIu64 "  %12" PRId64, fileName.c_str(), stat._modifiedTimeNS, stat._size);
     } else {
         s = make_string("%s 'stat' FAILED !!", fileName.c_str());
     }
@@ -747,13 +747,13 @@ LogDataStore::verifyModificationTime(const NameIdSet & partList)
         }
         ns_log::Logger::LogLevel logLevel = ns_log::Logger::debug;
         if ((datStat._modifiedTimeNS < prevDatStat._modifiedTimeNS) && hasNonHeaderData(datName)) {
-            VLOG(logLevel, "Older file '%s' is newer (%ld) than file '%s' (%ld)\nDirectory =\n%s",
+            VLOG(logLevel, "Older file '%s' is newer (%" PRIu64 ") than file '%s' (%" PRIu64 ")\nDirectory =\n%s",
                          prevDatNam.c_str(), prevDatStat._modifiedTimeNS,
                          datName.c_str(), datStat._modifiedTimeNS,
                          ls(partList).c_str());
         }
         if ((idxStat._modifiedTimeNS < prevIdxStat._modifiedTimeNS) && hasNonHeaderData(idxName)) {
-            VLOG(logLevel, "Older file '%s' is newer (%ld) than file '%s' (%ld)\nDirectory =\n%s",
+            VLOG(logLevel, "Older file '%s' is newer (%" PRIu64 ") than file '%s' (%" PRIu64 ")\nDirectory =\n%s",
                          prevIdxNam.c_str(), prevIdxStat._modifiedTimeNS,
                          idxName.c_str(), idxStat._modifiedTimeNS,
                          ls(partList).c_str());
@@ -828,7 +828,7 @@ LogDataStore::findIncompleteCompactedFiles(const NameIdSet & partList) {
         for (FileChunk::NameId prev = *it++; it != partList.end(); it++) {
             if (prev.next() == *it) {
                 if (!incomplete.empty() && (*incomplete.rbegin() == prev)) {
-                    throw IllegalStateException(make_string("3 consecutive files {%ld, %ld, %ld}. Impossible",
+                    throw IllegalStateException(make_string("3 consecutive files {%" PRIu64 ", %" PRIu64 ", %" PRIu64 "}. Impossible",
                                                             prev.getId()-1, prev.getId(), it->getId()));
                 }
                 incomplete.insert(*it);
