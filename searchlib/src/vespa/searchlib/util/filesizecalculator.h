@@ -20,7 +20,7 @@ class FileSizeCalculator
 public:
     static bool
     extractFileSize(const vespalib::GenericHeader &header, size_t headerLen,
-                    vespalib::string fileName, size_t &fileSize);
+                    vespalib::string fileName, uint64_t &fileSize);
 };
 
 }

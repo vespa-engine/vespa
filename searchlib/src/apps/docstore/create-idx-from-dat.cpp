@@ -51,10 +51,10 @@ bool validHead(const char * n, size_t offset) {
     return (n[0] == 0) && (validUncompressed(n, offset));
 }
 
-size_t
-generate(size_t serialNum, size_t chunks, FastOS_FileInterface & idxFile, size_t sz, const char * current, const char * start, const char * nextStart) __attribute__((noinline));
-size_t
-generate(size_t serialNum, size_t chunks, FastOS_FileInterface & idxFile, size_t sz, const char * current, const char * start, const char * nextStart)
+uint64_t
+generate(uint64_t serialNum, size_t chunks, FastOS_FileInterface & idxFile, size_t sz, const char * current, const char * start, const char * nextStart) __attribute__((noinline));
+uint64_t
+generate(uint64_t serialNum, size_t chunks, FastOS_FileInterface & idxFile, size_t sz, const char * current, const char * start, const char * nextStart)
 {
     vespalib::nbostream os;
     for (size_t lengthError(0); int64_t(sz+lengthError) <= nextStart-start; lengthError++) {

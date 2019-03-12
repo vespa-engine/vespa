@@ -220,15 +220,15 @@ protected:
     {
     public:
         ChunkInfo() : _lastSerial(0), _offset(0), _size(0) { }
-        ChunkInfo(size_t offset, uint32_t size, uint64_t lastSerial);
-        size_t       getOffset() const { return _offset; }
+        ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial);
+        uint64_t       getOffset() const { return _offset; }
         uint32_t       getSize() const { return _size; }
         uint64_t getLastSerial() const { return _lastSerial; }
 
         bool valid() const { return (_offset != 0) || (_size != 0) || (_lastSerial != 0); }
     private:
         uint64_t _lastSerial;
-        size_t   _offset;
+        uint64_t _offset;
         uint32_t _size;
     };
 
