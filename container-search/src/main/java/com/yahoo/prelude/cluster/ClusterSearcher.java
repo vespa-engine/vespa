@@ -320,7 +320,7 @@ public class ClusterSearcher extends Searcher {
                 doFill(searcher, result, summaryClass, execution);
             } else {
                 if (result.hits().getErrorHit() == null) {
-                    result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries"));
+                    result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries, query timeout was " + query.getTimeout() + " ms"));
                 }
             }
         } else {
