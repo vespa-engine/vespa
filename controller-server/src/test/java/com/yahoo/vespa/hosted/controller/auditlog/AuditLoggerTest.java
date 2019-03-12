@@ -36,7 +36,7 @@ public class AuditLoggerTest {
         }
 
         { // PATCH request is logged in audit log
-            URI url = URI.create("http://localhost:8080/os/v1/");
+            URI url = URI.create("http://localhost:8080/os/v1/?foo=bar");
             String data = "{\"cloud\":\"cloud9\",\"version\":\"42.0\"}";
             HttpRequest request = testRequest(Method.PATCH, url, data);
             tester.controller().auditLogger().log(request);
@@ -44,7 +44,7 @@ public class AuditLoggerTest {
             assertEquals(instant(), log.get().entries().get(0).at());
             assertEquals("user", log.get().entries().get(0).principal());
             assertEquals(Entry.Method.PATCH, log.get().entries().get(0).method());
-            assertEquals("/os/v1/", log.get().entries().get(0).resource());
+            assertEquals("/os/v1/?foo=bar", log.get().entries().get(0).resource());
             assertEquals(data, log.get().entries().get(0).data().get());
         }
 
@@ -55,6 +55,7 @@ public class AuditLoggerTest {
             tester.controller().auditLogger().log(request);
             assertEquals(2, log.get().entries().size());
             assertEquals(instant(), log.get().entries().get(0).at());
+            assertEquals("/os/v1/", log.get().entries().get(0).resource());
         }
 
         { // 14 days pass and another PATCH request is logged. Older entries are removed due to expiry

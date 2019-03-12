@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.time.Clock;
@@ -67,7 +68,7 @@ public class AuditLogger {
         }
 
         Instant now = clock.instant();
-        AuditLog.Entry entry = new AuditLog.Entry(now, principal.getName(), method.get(), request.getUri().getPath(),
+        AuditLog.Entry entry = new AuditLog.Entry(now, principal.getName(), method.get(), pathAndQueryOf(request.getUri()),
                                                   Optional.of(new String(data, StandardCharsets.UTF_8)));
         try (Lock lock = db.lockAuditLog()) {
             AuditLog auditLog = db.readAuditLog()
@@ -88,6 +89,15 @@ public class AuditLogger {
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }
+    }
+
+    private static String pathAndQueryOf(URI url) {
+        String pathAndQuery = url.getPath();
+        String query = url.getQuery();
+        if (query != null) {
+            pathAndQuery += "?" + query;
+        }
+        return pathAndQuery;
     }
 
 }
