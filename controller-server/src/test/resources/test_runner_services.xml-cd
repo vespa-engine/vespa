@@ -5,6 +5,7 @@
         <component id="com.yahoo.vespa.hosted.testrunner.TestRunner" bundle="vespa-testrunner-components">
             <config name="com.yahoo.vespa.hosted.testrunner.test-runner">
                 <artifactsPath>artifacts</artifactsPath>
+                <surefireMemoryMb>7680</surefireMemoryMb>
             </config>
         </component>
 
@@ -37,6 +38,6 @@
             </filtering>
         </http>
 
-        <nodes count="1" flavor="flavor" />
+        <nodes count="1" flavor="d-2-12-75" allocated-memory="17%" />
     </container>
 </services>

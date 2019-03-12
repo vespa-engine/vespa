@@ -292,7 +292,7 @@ public class InternalStepRunnerTest {
 
     @Test
     public void generates_correct_services_xml_test() {
-        assertFile("test_runner_services.xml-cd", new String(InternalStepRunner.servicesXml(SystemName.cd, Optional.of("flavor"))));
+        assertFile("test_runner_services.xml-cd", new String(InternalStepRunner.servicesXml(SystemName.cd, Optional.of("d-2-12-75"))));
     }
 
     private void assertFile(String resourceName, String actualContent) {
