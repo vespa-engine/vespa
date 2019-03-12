@@ -46,7 +46,7 @@ class RpcClient implements Client {
     @Override
     public void search(NodeConnection node, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
             RpcSearchInvoker responseReceiver, double timeoutSeconds) {
-        Request request = new Request("proton.search");
+        Request request = new Request("vespa.searchprotocol.search");
         request.parameters().add(new Int8Value(compression.getCode()));
         request.parameters().add(new Int32Value(uncompressedLength));
         request.parameters().add(new DataValue(compressedPayload));
