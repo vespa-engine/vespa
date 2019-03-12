@@ -271,8 +271,8 @@ Watcher::watchfile()
             if (rotTime > 59 || (sb.st_size == offset && rotTime > 4)) {
                 removeOldLogs(filename);
                 if (sb.st_size != offset) {
-                    LOG(warning, "logfile rotation incomplete after %d s (dropping %lu bytes)",
-                        rotTime, sb.st_size - offset);
+                    LOG(warning, "logfile rotation incomplete after %d s (dropping %" PRIu64 " bytes)",
+                        rotTime, static_cast<uint64_t>(sb.st_size - offset));
                 } else {
                     LOG(debug, "logfile rotation complete after %d s", rotTime);
                 }
@@ -399,7 +399,7 @@ Watcher::removeOldLogs(const char *prefix)
                 totalsize += sb.st_size;
                 if (totalsize > (_confsubscriber.getRemoveMegabytes() * 1048576LL))
                 {
-                    LOG(info, "removing %s, total size (%ld) too big", fname, static_cast<int64_t>(totalsize));
+                    LOG(info, "removing %s, total size (%" PRId64 ") too big", fname, static_cast<int64_t>(totalsize));
                     if (unlink(fname) != 0) {
                         LOG(warning, "cannot remove %s: %s", fname, strerror(errno));
                     }
