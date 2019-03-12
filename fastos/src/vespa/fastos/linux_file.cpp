@@ -7,6 +7,7 @@
 * Implementation of FastOS_Linux_File methods.
 *****************************************************************************/
 
+#ifdef __linux__
 #include "file.h"
 #include <sstream>
 #include <unistd.h>
@@ -434,3 +435,4 @@ void forceStaticLinkOf_backtrace()
     void * dummy[2];
     FastOS_backtrace(dummy, 2);
 }
+#endif

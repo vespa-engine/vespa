@@ -813,7 +813,9 @@ public:
         ScanDirectoryTest();
         ReadBufTest();
         MemoryMapTest(0);
+#ifdef __linux__
         MemoryMapTest(MAP_HUGETLB);
+#endif
 
         PrintSeparator();
         printf("END OF TEST (%s)\n", _argv[0]);

@@ -260,8 +260,8 @@ public:
        using fastos::TimeStamp;
        Progress(TimeStamp(97).ns() == 97l, "TimeStamp(int)");
        Progress(TimeStamp(97u).ns() == 97l, "TimeStamp(unsigned int)");
-       Progress(TimeStamp(97l).ns() == 97l, "TimeStamp(long)");
-       Progress(TimeStamp(97ul).ns() == 97l, "TimeStamp(unsigned long)");
+       Progress(TimeStamp(INT64_C(97)).ns() == 97l, "TimeStamp(int64_t)");
+       Progress(TimeStamp(UINT64_C(97)).ns() == 97l, "TimeStamp(uint64_t)");
        Progress(TimeStamp(TimeStamp::Seconds(97.3)).ns() == 97300000000l, "TimeStamp(double)");
        PrintSeparator();
    }

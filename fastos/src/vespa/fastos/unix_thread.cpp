@@ -40,6 +40,7 @@ bool FastOS_UNIX_Thread::Initialize (int stackSize, int stackGuardSize)
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
 
     pthread_attr_setstacksize(&attr, stackSize);
+#ifdef __linux__
     if (_G_maxNumCpus > 0) {
         int cpuid = _G_nextCpuId.fetch_add(1)%_G_maxNumCpus;
         cpu_set_t cpuset;
@@ -50,6 +51,7 @@ bool FastOS_UNIX_Thread::Initialize (int stackSize, int stackGuardSize)
             fprintf(stderr, "Pinning FAILURE retval = %d, errno=%d sizeof(cpuset_t)=%ld cpuid(%d)\n", retval, errno, sizeof(cpuset), cpuid);
         }
     }
+#endif
 
     if (stackGuardSize != 0) {
         pthread_attr_setguardsize(&attr, stackGuardSize);

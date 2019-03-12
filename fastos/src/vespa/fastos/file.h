@@ -804,6 +804,11 @@ public:
     virtual bool IsValidScan() const = 0;
 };
 
+#ifdef __linux__
 #include <vespa/fastos/linux_file.h>
 typedef FastOS_Linux_File FASTOS_PREFIX(File);
+#else
+#include <vespa/fastos/unix_file.h>
+typedef FastOS_UNIX_File FASTOS_PREFIX(File);
+#endif
 typedef FastOS_UNIX_DirectoryScan FASTOS_PREFIX(DirectoryScan);
