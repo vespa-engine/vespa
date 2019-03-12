@@ -57,6 +57,12 @@ public:
     ~Trace();
 
     /**
+     * Will add start timestamp if level is high enough
+     * @param level
+     */
+    void start(int level);
+
+    /**
      * Will give you a trace entry. It will also add a timestamp relative to the creation of the trace.
      * @param name
      * @return a Cursor to use for further tracing.
@@ -76,17 +82,20 @@ public:
     void done();
 
     vespalib::string toString() const;
-    Cursor & getRoot() const { return _root; }
-    vespalib::Slime & getSlime() const { return *_trace; }
+    Cursor * getRoot() const { return _root; }
+    vespalib::Slime * getSlime() const { return _trace.get(); }
     bool shouldTrace(uint32_t level) const { return level <= _level; }
     uint32_t getLevel() const { return _level; }
     Trace & setLevel(uint32_t level) { _level = level; return *this; }
     const RelativeTime & getRelativeTime() const { return _relativeTime; }
 private:
+    void constructObject();
+    void constructTraces();
+    void lazyConstruct(uint32_t level);
     void addTimeStamp(Cursor & trace);
     std::unique_ptr<vespalib::Slime> _trace;
-    Cursor              & _root;
-    Cursor              & _traces;
+    Cursor              * _root;
+    Cursor              * _traces;
     const RelativeTime  & _relativeTime;
     uint32_t              _level;
 };

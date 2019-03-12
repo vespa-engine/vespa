@@ -228,36 +228,37 @@ TEST("convertFromReply") {
     }
 }
 
-void verify(vespalib::stringref expected, const vespalib::Slime & slime) {
+void verify(vespalib::stringref expected, const vespalib::Slime * slime) {
     vespalib::Slime expectedSlime;
     vespalib::slime::JsonFormat::decode(expected, expectedSlime);
-    EXPECT_EQUAL(expectedSlime, slime);
+    if (slime) {
+        EXPECT_EQUAL(expectedSlime, *slime);
+    } else {
+        EXPECT_TRUE(expected.empty());
+    }
 }
 
 TEST("verify trace") {
     RelativeTime clock(std::make_unique<CountingClock>(fastos::TimeStamp::fromSec(1500000000), 1700000L));
     Trace t(clock);
-    verify("{"
-           "    traces: ["
-           "    ],"
-           "    start_time_utc: '2017-07-14 02:40:00.000 UTC'"
-           "}",
-           t.getSlime());
+    verify("", t.getSlime());
+    t.start(0);
     t.createCursor("tag_a");
     verify("{"
+           "    start_time_utc: '2017-07-14 02:40:00.000 UTC',"
            "    traces: ["
            "        {"
            "            tag: 'tag_a',"
            "            timestamp_ms: 1.7"
            "        }"
-           "    ],"
-           "    start_time_utc: '2017-07-14 02:40:00.000 UTC'"
+           "    ]"
            "}",
            t.getSlime());
     Trace::Cursor & tagB = t.createCursor("tag_b");
     tagB.setLong("long", 19);
     t.done();
     verify("{"
+           "    start_time_utc: '2017-07-14 02:40:00.000 UTC',"
            "    traces: ["
            "        {"
            "            tag: 'tag_a',"
@@ -269,7 +270,6 @@ TEST("verify trace") {
            "            long: 19"
            "        }"
            "    ],"
-           "    start_time_utc: '2017-07-14 02:40:00.000 UTC',"
            "    duration_ms: 5.1"
            "}",
            t.getSlime());

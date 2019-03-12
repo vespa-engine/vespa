@@ -30,7 +30,11 @@ public:
 
     bool should_drop_sort_data() const;
 
-    Request & setTraceLevel(uint32_t level) { _trace.setLevel(level); return *this; }
+    Request & setTraceLevel(uint32_t level, uint32_t minLevel) {
+        _trace.setLevel(level);
+        _trace.start(minLevel);
+        return *this;
+    }
 
     Trace & trace() const { return _trace; }
 private:

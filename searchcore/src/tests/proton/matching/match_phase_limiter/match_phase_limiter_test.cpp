@@ -291,6 +291,7 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
     EXPECT_EQUAL(12u, limiter.sample_hits_per_thread(10));
     RelativeTime clock(std::make_unique<CountingClock>(fastos::TimeStamp::fromSec(1500000000), 1700000L));
     Trace trace(clock, 7);
+    trace.start(4);
     SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000, trace.maybeCreateCursor(7, "limit"));
     limiter.updateDocIdSpaceEstimate(1000, 9000);
     EXPECT_EQUAL(1680u, limiter.getDocIdSpaceEstimate());
@@ -331,7 +332,7 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
         "        }"
         "    ],"
         "    duration_ms: 3.4"
-        "}", trace.getSlime());
+        "}", *trace.getSlime());
 }
 
 TEST("require that the match phase limiter is able to post-limit the query") {

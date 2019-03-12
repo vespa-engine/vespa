@@ -74,7 +74,8 @@ PacketConverter::toSearchRequest(const QUERYX &packet, SearchRequest &request)
     request.location        = packet._location;
     request.stackItems      = packet._numStackItems;
     request.stackDump.assign( packet._stackDump.begin(), packet._stackDump.end());
-    request.setTraceLevel(search::fef::indexproperties::trace::Level::lookup(request.propertiesMap.modelOverrides()));
+    // 3 is the minimum level required for backend tracing.
+    request.setTraceLevel(search::fef::indexproperties::trace::Level::lookup(request.propertiesMap.modelOverrides()), 3);
 }
 
 void
