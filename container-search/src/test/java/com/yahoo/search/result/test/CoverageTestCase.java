@@ -67,4 +67,20 @@ public class CoverageTestCase {
         assertEquals(1, federationSearcherResult.getCoverage(create).getResultSets());
     }
 
+    @Test
+    public void testCoverageConversion() {
+        Coverage c = new Coverage(6, 10);
+        c.setDegradedReason(7);
+        com.yahoo.container.logging.Coverage lc = c.toLoggingCoverage();
+        assertEquals(lc.getDocs(), c.getDocs());
+        assertEquals(lc.getActive(), c.getActive());
+        assertEquals(lc.getSoonActive(), c.getSoonActive());
+        assertEquals(lc.getResultPercentage(), c.getResultPercentage());
+        assertEquals(lc.isDegraded(), c.isDegraded());
+        assertEquals(lc.isDegradedByNonIdealState(), c.isDegradedByNonIdealState());
+        assertEquals(lc.isDegradedByAdapativeTimeout(), c.isDegradedByAdapativeTimeout());
+        assertEquals(lc.isDegradedByMatchPhase(), c.isDegradedByMatchPhase());
+        assertEquals(lc.isDegradedByTimeout(), c.isDegradedByTimeout());
+    }
+
 }

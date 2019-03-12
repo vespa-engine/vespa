@@ -23,6 +23,14 @@ import java.util.logging.Logger;
  * @author frodelu
  */
 public class JSONFormatter {
+    private static final String COVERAGE = "coverage";
+    private static final String COVERAGE_COVERAGE = "coverage";
+    private static final String COVERAGE_DOCUMENTS = "documents";
+    private static final String COVERAGE_DEGRADE = "degraded";
+    private static final String COVERAGE_DEGRADE_MATCHPHASE = "match-phase";
+    private static final String COVERAGE_DEGRADE_TIMEOUT = "timeout";
+    private static final String COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT = "adaptive-timeout";
+    private static final String COVERAGE_DEGRADED_NON_IDEAL_STATE = "non-ideal-state";
 
     private AccessLogEntry accessLogEntry;
     private final JsonFactory generatorFactory;
@@ -92,6 +100,25 @@ public class JSONFormatter {
                 generator.writeObjectFieldStart("search");
                 generator.writeNumberField("totalhits", getTotalHitCount(accessLogEntry.getHitCounts()));
                 generator.writeNumberField("hits", getRetrievedHitCount(accessLogEntry.getHitCounts()));
+                Coverage c = accessLogEntry.getHitCounts().getCoverage();
+                if (c != null) {
+                    generator.writeObjectFieldStart(COVERAGE);
+                    generator.writeNumberField(COVERAGE_COVERAGE, c.getResultPercentage());
+                    generator.writeNumberField(COVERAGE_DOCUMENTS, c.getDocs());
+                    if (c.isDegraded()) {
+                        generator.writeObjectFieldStart(COVERAGE_DEGRADE);
+                        if (c.isDegradedByMatchPhase())
+                            generator.writeBooleanField(COVERAGE_DEGRADE_MATCHPHASE, c.isDegradedByMatchPhase());
+                        if (c.isDegradedByTimeout())
+                            generator.writeBooleanField(COVERAGE_DEGRADE_TIMEOUT, c.isDegradedByTimeout());
+                        if (c.isDegradedByAdapativeTimeout())
+                            generator.writeBooleanField(COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT, c.isDegradedByAdapativeTimeout());
+                        if (c.isDegradedByNonIdealState())
+                            generator.writeBooleanField(COVERAGE_DEGRADED_NON_IDEAL_STATE, c.isDegradedByNonIdealState());
+                        generator.writeEndObject();
+                    }
+                    generator.writeEndObject();
+                }
                 generator.writeEndObject();
             }
 

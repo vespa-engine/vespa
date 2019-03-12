@@ -18,6 +18,9 @@ public class JSONLogTestCase {
     private static final String EMPTY_USERAGENT = "";
 
     private AccessLogEntry newAccessLogEntry(final String query) {
+        return newAccessLogEntry(query, new Coverage(100,100,100,0));
+    }
+    private AccessLogEntry newAccessLogEntry(final String query, Coverage coverage) {
         final AccessLogEntry entry = new AccessLogEntry();
         entry.setRawQuery("query="+query);
         entry.setRawPath("");
@@ -25,7 +28,7 @@ public class JSONLogTestCase {
         entry.setHttpMethod("GET");
         entry.setHttpVersion("HTTP/1.1");
         entry.setUserAgent("Mozilla/4.05 [en] (Win95; I)");
-        entry.setHitCounts(new HitCounts(0, 10, 1234, 0, 10));
+        entry.setHitCounts(new HitCounts(0, 10, 1234, 0, 10, coverage));
         entry.setHostString("localhost");
         entry.setStatusCode(200);
         entry.setTimeStamp(920880005023L);
@@ -58,7 +61,8 @@ public class JSONLogTestCase {
             "\"localport\":0," +
             "\"search\":{" +
             "\"totalhits\":1234," +
-            "\"hits\":0" +
+            "\"hits\":0," +
+            "\"coverage\":{\"coverage\":100,\"documents\":100}" +
             "}" +
             "}";
 
@@ -87,7 +91,8 @@ public class JSONLogTestCase {
             "\"localport\":0," +
             "\"search\":{" +
             "\"totalhits\":1234," +
-            "\"hits\":0" +
+            "\"hits\":0," +
+            "\"coverage\":{\"coverage\":100,\"documents\":100}" +
             "}," +
             "\"attributes\":{" +
             "\"singlevalue\":\"value1\"," +
@@ -121,7 +126,8 @@ public class JSONLogTestCase {
             "\"remoteaddr\":\"FE80:0000:0000:0000:0202:B3FF:FE1E:8329\"," +
             "\"search\":{" +
             "\"totalhits\":1234," +
-            "\"hits\":0" +
+            "\"hits\":0," +
+            "\"coverage\":{\"coverage\":100,\"documents\":100}" +
             "}" +
             "}";
 
@@ -147,7 +153,8 @@ public class JSONLogTestCase {
             "\"remoteport\":1234," +
             "\"search\":{" +
             "\"totalhits\":1234," +
-            "\"hits\":0" +
+            "\"hits\":0," +
+            "\"coverage\":{\"coverage\":100,\"documents\":100}" +
             "}" +
             "}";
 
@@ -172,7 +179,7 @@ public class JSONLogTestCase {
         entry.setHttpMethod("GET");
         entry.setHttpVersion("HTTP/1.1");
         entry.setUserAgent("Mozilla/4.05 [en] (Win95; I; \"Best Browser Ever\")");
-        entry.setHitCounts(new HitCounts(0, 10, 1234, 0, 10));
+        entry.setHitCounts(new HitCounts(0, 10, 1234, 0, 10, new Coverage(100,200,200,0)));
         entry.setHostString("localhost");
         entry.setStatusCode(200);
         entry.setTimeStamp(920880005023L);
@@ -194,11 +201,44 @@ public class JSONLogTestCase {
             "\"localport\":0," +
             "\"search\":{" +
             "\"totalhits\":1234," +
-            "\"hits\":0" +
+            "\"hits\":0," +
+            "\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"non-ideal-state\":true}}" +
             "}" +
             "}";
 
         assertEquals(expectedOutput, new JSONFormatter(entry).format());
     }
 
+    private void verifyCoverage(String coverage, AccessLogEntry entry) {
+        assertEquals("{\"ip\":\"152.200.54.243\"," +
+                "\"time\":920880005.023," +
+                "\"duration\":0.122," +
+                "\"responsesize\":9875," +
+                "\"code\":200," +
+                "\"method\":\"GET\"," +
+                "\"uri\":\"?query=test\"," +
+                "\"version\":\"HTTP/1.1\"," +
+                "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
+                "\"host\":\"localhost\"," +
+                "\"scheme\":null," +
+                "\"localport\":0," +
+                "\"search\":{" +
+                "\"totalhits\":1234," +
+                "\"hits\":0," +
+                coverage +
+                "}" +
+                "}", new JSONFormatter(entry).format());
+    }
+
+    @Test
+    public void test_with_coverage_degradation() {
+        verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"non-ideal-state\":true}}",
+                       newAccessLogEntry("test",  new Coverage(100,200,200,0)));
+        verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"match-phase\":true}}",
+                       newAccessLogEntry("test",  new Coverage(100,200,200,1)));
+        verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"timeout\":true}}",
+                       newAccessLogEntry("test",  new Coverage(100,200,200,2)));
+        verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"adaptive-timeout\":true}}",
+                       newAccessLogEntry("test",  new Coverage(100,200,200,4)));
+    }
 }

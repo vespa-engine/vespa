@@ -58,7 +58,8 @@ public class LoggingRequestHandlerTestCase {
 
         @Override
         public HitCounts getHitCounts() {
-            return new HitCounts(1, 1, 1, 1, 1);
+            return new HitCounts(1, 1, 1, 1, 1,
+                    getCoverage().toLoggingCoverage());
         }
 
         @Override

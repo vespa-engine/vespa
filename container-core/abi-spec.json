@@ -71,7 +71,8 @@
       "public com.yahoo.container.handler.Coverage setNodesTried(int)",
       "public int getFullResultSets()",
       "public int getResultSets()",
-      "public int getResultPercentage()"
+      "public int getResultPercentage()",
+      "public com.yahoo.container.logging.Coverage toLoggingCoverage()"
     ],
     "fields": [
       "protected long docs",

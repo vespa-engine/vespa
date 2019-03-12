@@ -16,19 +16,23 @@ public class HitCounts {
     private final long totalHitCount;
     private final int requestedHits;
     private final int requestedOffset;
+    private final Coverage coverage;
 
-    public HitCounts(
-            int retrievedHits,
-            int summaryCount,
-            long totalHitCount,
-            int requestedHits,
-            int requestedOffset) {
+    HitCounts(int retrievedHits, int summaryCount, long totalHitCount, int requestedHits, int requestedOffset) {
+        this(retrievedHits, summaryCount, totalHitCount, requestedHits, requestedOffset,
+             new Coverage(1,1,1,0));
+    }
+
+    public HitCounts(int retrievedHits, int summaryCount, long totalHitCount,
+                     int requestedHits, int requestedOffset, Coverage coverage)
+    {
 
         this.retrievedHits = retrievedHits;
         this.summaryCount = summaryCount;
         this.totalHitCount = totalHitCount;
         this.requestedHits = requestedHits;
         this.requestedOffset = requestedOffset;
+        this.coverage = coverage;
     }
 
     /**
@@ -68,5 +72,7 @@ public class HitCounts {
     public int getRequestedOffset() {
         return requestedOffset;
     }
+
+    public Coverage getCoverage() { return coverage; }
 
 }
