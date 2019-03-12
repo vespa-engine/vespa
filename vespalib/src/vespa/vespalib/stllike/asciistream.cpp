@@ -144,8 +144,8 @@ namespace {
 
 int getValue(double & val, const char *buf) __attribute__((noinline));
 int getValue(float & val, const char *buf) __attribute__((noinline));
-int getValue(uint64_t & val, const char *buf) __attribute__((noinline));
-int getValue(int64_t & val, const char *buf) __attribute__((noinline));
+int getValue(unsigned long long & val, const char *buf) __attribute__((noinline));
+int getValue(long long & val, const char *buf) __attribute__((noinline));
 void throwInputError(int e, const char * t, const char * buf) __attribute__((noinline));
 void throwUnderflow(size_t pos) __attribute__((noinline));
 
@@ -189,24 +189,24 @@ int getValue(float & val, const char *buf)
     return ebuf - buf;
 }
 
-int getValue(uint64_t & val, const char *buf)
+int getValue(unsigned long long & val, const char *buf)
 {
     char *ebuf;
     errno = 0;
-    val = strtoul(buf, &ebuf, 0);
+    val = strtoull(buf, &ebuf, 0);
     if ((errno != 0) || (buf == ebuf)) {
-        throwInputError(errno, "uint64_t", buf);
+        throwInputError(errno, "unsigned long long", buf);
     }
     return ebuf - buf;
 }
 
-int getValue(int64_t & val, const char *buf)
+int getValue(long long & val, const char *buf)
 {
     char *ebuf;
     errno = 0;
-    val = strtol(buf, &ebuf, 0);
+    val = strtoll(buf, &ebuf, 0);
     if ((errno != 0) || (buf == ebuf)) {
-        throwInputError(errno, "int64_t", buf);
+        throwInputError(errno, "long long", buf);
     }
     return ebuf - buf;
 }
@@ -246,65 +246,81 @@ asciistream & asciistream::operator >> (unsigned char & v)
     return *this;
 }
 
-asciistream & asciistream::operator >> (uint16_t & v)
+asciistream & asciistream::operator >> (unsigned short & v)
 {
-    uint64_t l(0);
+    unsigned long long l(0);
     size_t r = getValue(l, &_rbuf[_rPos]);
-    if (l > std::numeric_limits<uint16_t>::max()) {
-        throw IllegalArgumentException(make_string("An uint16_t can not represent '%ld'.", l), VESPA_STRLOC);
+    if (l > std::numeric_limits<unsigned short>::max()) {
+        throw IllegalArgumentException(make_string("An unsigned short can not represent '%lld'.", l), VESPA_STRLOC);
     }
     _rPos += r;
     v = l;
     return *this;
 }
 
-asciistream & asciistream::operator >> (uint32_t & v)
+asciistream & asciistream::operator >> (unsigned int & v)
 {
-    uint64_t l(0);
+    unsigned long long l(0);
     size_t r = getValue(l, &_rbuf[_rPos]);
-    if (l > std::numeric_limits<uint32_t>::max()) {
-        throw IllegalArgumentException(make_string("An uint32_t can not represent '%ld'.", l), VESPA_STRLOC);
+    if (l > std::numeric_limits<unsigned int>::max()) {
+        throw IllegalArgumentException(make_string("An unsigned int can not represent '%lld'.", l), VESPA_STRLOC);
     }
     _rPos += r;
     v = l;
     return *this;
 }
 
-asciistream & asciistream::operator >> (uint64_t & v)
+asciistream & asciistream::operator >> (unsigned long & v)
 {
-    uint64_t l(0);
+    unsigned long long l(0);
     _rPos += getValue(l, &_rbuf[_rPos]);
     v = l;
     return *this;
 }
 
-asciistream & asciistream::operator >> (int16_t & v)
+asciistream & asciistream::operator >> (unsigned long long & v)
 {
-    int64_t l(0);
+    unsigned long long l(0);
+    _rPos += getValue(l, &_rbuf[_rPos]);
+    v = l;
+    return *this;
+}
+
+asciistream & asciistream::operator >> (short & v)
+{
+    long long l(0);
     size_t r = getValue(l, &_rbuf[_rPos]);
-    if ((l < std::numeric_limits<int16_t>::min()) || (l > std::numeric_limits<int16_t>::max())) {
-        throw IllegalArgumentException(make_string("An int16_t can not represent '%ld'.", l), VESPA_STRLOC);
+    if ((l < std::numeric_limits<short>::min()) || (l > std::numeric_limits<short>::max())) {
+        throw IllegalArgumentException(make_string("A short can not represent '%lld'.", l), VESPA_STRLOC);
     }
     _rPos += r;
     v = l;
     return *this;
 }
 
-asciistream & asciistream::operator >> (int32_t & v)
+asciistream & asciistream::operator >> (int & v)
 {
-    int64_t l(0);
+    long long l(0);
     size_t r = getValue(l, &_rbuf[_rPos]);
-    if ((l < std::numeric_limits<int32_t>::min()) || (l > std::numeric_limits<int32_t>::max())) {
-        throw IllegalArgumentException(make_string("An int32_t can not represent '%ld'.", l), VESPA_STRLOC);
+    if ((l < std::numeric_limits<int>::min()) || (l > std::numeric_limits<int>::max())) {
+        throw IllegalArgumentException(make_string("An int can not represent '%lld'.", l), VESPA_STRLOC);
     }
     _rPos += r;
     v = l;
     return *this;
 }
 
-asciistream & asciistream::operator >> (int64_t & v)
+asciistream & asciistream::operator >> (long & v)
 {
-    int64_t l(0);
+    long long l(0);
+    _rPos += getValue(l, &_rbuf[_rPos]);
+    v = l;
+    return *this;
+}
+
+asciistream & asciistream::operator >> (long long & v)
+{
+    long long l(0);
     _rPos += getValue(l, &_rbuf[_rPos]);
     v = l;
     return *this;
@@ -378,10 +394,10 @@ char * prependSign(bool sign, char * tmp)
 }
 
 template <uint8_t base>
-uint8_t printInt(uint64_t r, char * tmp, uint8_t i) __attribute__((noinline));
+uint8_t printInt(unsigned long long r, char * tmp, uint8_t i) __attribute__((noinline));
 
 template <uint8_t base>
-uint8_t printInt(uint64_t r, char * tmp, uint8_t i)
+uint8_t printInt(unsigned long long r, char * tmp, uint8_t i)
 {
     for(; r; i--, r/=base) {
         uint8_t d = r%base;
@@ -393,7 +409,7 @@ uint8_t printInt(uint64_t r, char * tmp, uint8_t i)
 }
 
 
-asciistream & asciistream::operator << (int64_t v)
+asciistream & asciistream::operator << (long long v)
 {
     char tmp[72];
     uint8_t i(sizeof(tmp));
@@ -431,7 +447,7 @@ void asciistream::doReallyFill(size_t currWidth)
     }
 }
 
-asciistream & asciistream::operator << (uint64_t v)
+asciistream & asciistream::operator << (unsigned long long v)
 {
     char tmp[72];
     uint8_t i(sizeof(tmp));
