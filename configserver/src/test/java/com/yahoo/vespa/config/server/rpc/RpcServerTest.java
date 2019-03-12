@@ -96,8 +96,6 @@ public class RpcServerTest {
             new ConfigPayloadApplier<>(builder).applyPayload(payload);
             SentinelConfig config = new SentinelConfig(builder);
             assertEquals(0, config.service().size());
-            // Test generation explicitly since it is not set set the usual way
-            assertTrue(clientReq.getNewGeneration() > clientReq.getRequestGeneration());
         }
     }
 
