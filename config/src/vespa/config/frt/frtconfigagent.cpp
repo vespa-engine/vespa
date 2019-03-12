@@ -27,7 +27,7 @@ FRTConfigAgent::handleResponse(const ConfigRequest & request, ConfigResponse::UP
 {
     if (LOG_WOULD_LOG(spam)) {
         const ConfigKey & key(request.getKey());
-        LOG(spam, "current state for %s: generation %ld md5 %s", key.toString().c_str(), _configState.generation, _configState.md5.c_str());
+        LOG(spam, "current state for %s: generation %" PRId64 " md5 %s", key.toString().c_str(), _configState.generation, _configState.md5.c_str());
     }
     if (response->validateResponse() && !response->isError()) {
         handleOKResponse(request, std::move(response));
@@ -57,7 +57,7 @@ void
 FRTConfigAgent::handleUpdatedGeneration(const ConfigKey & key, const ConfigState & newState, const ConfigValue & configValue)
 {
     if (LOG_WOULD_LOG(spam)) {
-        LOG(spam, "new generation %ld md5:%s for key %s", newState.generation, newState.md5.c_str(), key.toString().c_str());
+        LOG(spam, "new generation %" PRId64 " md5:%s for key %s", newState.generation, newState.md5.c_str(), key.toString().c_str());
         LOG(spam, "Old config: md5:%s \n%s", _latest.getMd5().c_str(), _latest.asJson().c_str());
         LOG(spam, "New config: md5:%s \n%s", configValue.getMd5().c_str(), configValue.asJson().c_str());
     }
@@ -83,7 +83,7 @@ FRTConfigAgent::handleErrorResponse(const ConfigRequest & request, ConfigRespons
     setWaitTime(_numConfigured > 0 ? _timingValues.configuredErrorDelay : _timingValues.unconfiguredDelay, multiplier);
     _nextTimeout = _timingValues.errorTimeout;
     const ConfigKey & key(request.getKey());
-    LOG(info, "Error response or no response from config server (key: %s) (errcode=%d, validresponse:%d), trying again in %ld milliseconds", key.toString().c_str(), response->errorCode(), response->hasValidResponse() ? 1 : 0, _waitTime);
+    LOG(info, "Error response or no response from config server (key: %s) (errcode=%d, validresponse:%d), trying again in %" PRIu64 " milliseconds", key.toString().c_str(), response->errorCode(), response->hasValidResponse() ? 1 : 0, _waitTime);
 }
 
 void
@@ -91,7 +91,7 @@ FRTConfigAgent::setWaitTime(uint64_t delay, int multiplier)
 {
     uint64_t prevWait = _waitTime;
     _waitTime = _timingValues.fixedDelay + (multiplier * delay);
-    LOG(spam, "Adjusting waittime from %ld to %ld", prevWait, _waitTime);
+    LOG(spam, "Adjusting waittime from %" PRIu64 " to %" PRIu64, prevWait, _waitTime);
 }
 
 uint64_t FRTConfigAgent::getTimeout() const { return _nextTimeout; }
