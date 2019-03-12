@@ -40,7 +40,7 @@ public class InfrastructureVersions {
                 throw new IllegalArgumentException("Cannot set version for type " + nodeType);
         }
         if (newTargetVersion.isEmpty()) {
-            throw  new IllegalArgumentException("Invalid target version: " + newTargetVersion.toFullString());
+            throw new IllegalArgumentException("Invalid target version: " + newTargetVersion.toFullString());
         }
 
         try (Lock lock = db.lockInfrastructureVersions()) {

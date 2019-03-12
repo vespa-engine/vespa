@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -22,15 +21,10 @@ import static org.junit.Assert.fail;
  */
 public class OsVersionsTest {
 
-    private OsVersions versions;
-
-    @Before
-    public void before() {
-        versions = new OsVersions(
+    private final OsVersions versions = new OsVersions(
                 new NodeRepositoryTester().nodeRepository().database(),
                 Duration.ofDays(1) // Long TTL to avoid timed expiry during test
         );
-    }
 
     @Test
     public void test_versions() {
