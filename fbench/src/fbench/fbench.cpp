@@ -13,6 +13,7 @@
 #include <cstring>
 #include <cmath>
 #include <csignal>
+#include <cinttypes>
 
 namespace {
 
@@ -224,7 +225,7 @@ FBench::PrintSummary()
 
     if (_keepAlive) {
         printf("*** HTTP keep-alive statistics ***\n");
-        printf("connection reuse count -- %zu\n", status._reuseCnt);
+        printf("connection reuse count -- %" PRIu64 "\n", status._reuseCnt);
     }
     printf("***************** Benchmark Summary *****************\n");
     printf("clients:                %8ld\n", _clients.size());

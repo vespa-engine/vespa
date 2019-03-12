@@ -4,6 +4,7 @@
 #include <httpclient/httpclient.h>
 #include <iostream>
 #include <thread>
+#include <cinttypes>
 
 int
 main(int argc, char **argv)
@@ -52,6 +53,6 @@ main(int argc, char **argv)
   } else {
       printf("ERROR: could not fetch URL content.\n");
   }
-  printf("REUSE COUNT: %zu\n", client->GetReuseCount());
+  printf("REUSE COUNT: %" PRIu64 "\n", client->GetReuseCount());
   return 0;
 }
