@@ -69,33 +69,33 @@ AsciistreamTest::testIllegalNumbers()
     {
         asciistream is("777777777777");
         uint16_t s(0);
-        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "An uint16_t can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "An unsigned short can not represent '777777777777'");
         EXPECT_EQUAL(12u, is.size());
         uint32_t i(0);
-        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "An uint32_t can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "An unsigned int can not represent '777777777777'");
         EXPECT_EQUAL(12u, is.size());
         int16_t si(0);
-        EXPECT_EXCEPTION(is >> si, IllegalArgumentException, "An int16_t can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> si, IllegalArgumentException, "A short can not represent '777777777777'");
         EXPECT_EQUAL(12u, is.size());
         int32_t ii(0);
-        EXPECT_EXCEPTION(is >> ii, IllegalArgumentException, "An int32_t can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> ii, IllegalArgumentException, "An int can not represent '777777777777'");
         EXPECT_EQUAL(12u, is.size());
         is << "777777777777";
         EXPECT_EQUAL(24u, is.size());
         uint64_t l(0);
-        EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "uint64_t value is outside of range '777777777777777777777777'");
+        EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "value is outside of range '777777777777777777777777'");
         EXPECT_EQUAL(24u, is.size());
         int64_t li(0);
-        EXPECT_EXCEPTION(is >> li, IllegalArgumentException, "int64_t value is outside of range '777777777777777777777777'");
+        EXPECT_EXCEPTION(is >> li, IllegalArgumentException, "value is outside of range '777777777777777777777777'");
         EXPECT_EQUAL(24u, is.size());
     }
     {
         asciistream is("-77");
         uint16_t s(0);
-        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "An uint16_t can not represent '-77'");
+        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "An unsigned short can not represent '-77'");
         EXPECT_EQUAL(3u, is.size());
         uint32_t i(0);
-        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "An uint32_t can not represent '-77'");
+        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "An unsigned int can not represent '-77'");
         EXPECT_EQUAL(3u, is.size());
     }
     {
@@ -128,12 +128,12 @@ AsciistreamTest::testIllegalNumbers()
         EXPECT_TRUE(is.empty());
         {
             uint32_t l(0);
-            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "Failed decoding a uint64_t from ''.");
+            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "Failed decoding a unsigned long long from ''.");
             EXPECT_TRUE(is.empty());
         }
         {
             int32_t l(0);
-            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "Failed decoding a int64_t from ''.");
+            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "Failed decoding a long long from ''.");
             EXPECT_TRUE(is.empty());
         }
         {

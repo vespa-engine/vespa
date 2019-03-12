@@ -45,13 +45,15 @@ public:
     asciistream & operator << (const string & v)      { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (stringref v)           { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (const std::string & v) { doFill(v.size()); write(v.data(), v.size()); return *this; }
-    asciistream & operator << (int16_t v)    { return *this << static_cast<int64_t>(v); }
-    asciistream & operator << (uint16_t v)   { return *this << static_cast<uint64_t>(v); }
-    asciistream & operator << (int32_t v)    { return *this << static_cast<int64_t>(v); }
-    asciistream & operator << (uint32_t v)   { return *this << static_cast<uint64_t>(v); }
+    asciistream & operator << (short v)    { return *this << static_cast<long long>(v); }
+    asciistream & operator << (unsigned short v)   { return *this << static_cast<unsigned long long>(v); }
+    asciistream & operator << (int v)    { return *this << static_cast<long long>(v); }
+    asciistream & operator << (unsigned int v)   { return *this << static_cast<unsigned long long>(v); }
     asciistream & operator << (const void* p);
-    asciistream & operator << (int64_t v);
-    asciistream & operator << (uint64_t v);
+    asciistream & operator << (long v)      { return *this << static_cast<long long>(v); }
+    asciistream & operator << (unsigned long v) { return *this << static_cast<unsigned long long>(v); }
+    asciistream & operator << (long long v);
+    asciistream & operator << (unsigned long long v);
     asciistream & operator << (float v);
     asciistream & operator << (double v);
     asciistream & operator << (Base v)                { _base = v; return *this; }
@@ -65,12 +67,14 @@ public:
     asciistream & operator >> (unsigned char & v);
     asciistream & operator >> (std::string & v);
     asciistream & operator >> (string & v);
-    asciistream & operator >> (uint16_t & v);
-    asciistream & operator >> (int16_t & v);
-    asciistream & operator >> (int32_t & v);
-    asciistream & operator >> (uint32_t & v);
-    asciistream & operator >> (int64_t & v);
-    asciistream & operator >> (uint64_t & v);
+    asciistream & operator >> (short & v);
+    asciistream & operator >> (unsigned short & v);
+    asciistream & operator >> (int & v);
+    asciistream & operator >> (unsigned int & v);
+    asciistream & operator >> (long & v);
+    asciistream & operator >> (unsigned long & v);
+    asciistream & operator >> (long long & v);
+    asciistream & operator >> (unsigned long long & v);
     asciistream & operator >> (float & v);
     asciistream & operator >> (double & v);
     stringref str() const { return stringref(c_str(), size()); }
