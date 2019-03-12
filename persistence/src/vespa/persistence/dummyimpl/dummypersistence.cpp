@@ -284,7 +284,7 @@ BucketContent::eraseEntry(Timestamp t)
         assert(gidIt != _gidMap.end());
         _entries.erase(iter);
         if (gidIt->second->getTimestamp() == t) {
-            LOG(debug, "erasing timestamp %zu from GID map", t.getValue());
+            LOG(debug, "erasing timestamp %" PRIu64 " from GID map", t.getValue());
             // TODO(vekterli): O(1) bucket info update for this case
             // FIXME: is this correct? seems like it could cause wrong behavior!
             _gidMap.erase(gidIt);
@@ -439,7 +439,7 @@ DummyPersistence::put(const Bucket& b, Timestamp t, const Document::SP& doc,
                       Context&)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
-    LOG(debug, "put(%s, %zu, %s)",
+    LOG(debug, "put(%s, %" PRIu64 ", %s)",
         b.toString().c_str(),
         uint64_t(t),
         doc->getId().toString().c_str());
@@ -495,7 +495,7 @@ DummyPersistence::remove(const Bucket& b,
                          Context&)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
-    LOG(debug, "remove(%s, %zu, %s)",
+    LOG(debug, "remove(%s, %" PRIu64 ", %s)",
         b.toString().c_str(),
         uint64_t(t),
         did.toString().c_str());
@@ -643,7 +643,7 @@ IterateResult
 DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
-    LOG(debug, "iterate(%zu, %zu)", uint64_t(id), maxByteSize);
+    LOG(debug, "iterate(%" PRIu64 ", %" PRIu64 ")", uint64_t(id), maxByteSize);
     ctx.trace(9, "started iterate()");
     Iterator* it;
     {
@@ -661,7 +661,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
         ctx.trace(9, "finished iterate(); bucket not found");
         return IterateResult(Result::TRANSIENT_ERROR, "Bucket not found");
     }
-    LOG(debug, "Iterator %zu acquired bucket lock", uint64_t(id));
+    LOG(debug, "Iterator %" PRIu64 " acquired bucket lock", uint64_t(id));
 
     std::vector<DocEntry::UP> entries;
     uint32_t currentSize = 0;
@@ -699,7 +699,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
         ctx.trace(9, make_string("finished iterate(), returning %zu documents with %u bytes of data",
                                  entries.size(), currentSize));
     }
-    LOG(debug, "finished iterate(%zu, %zu), returning %zu documents "
+    LOG(debug, "finished iterate(%" PRIu64 ", %" PRIu64 "), returning %zu documents "
         "with %u bytes of data. %u docs cloned in fast path",
         uint64_t(id),
         maxByteSize,
@@ -717,7 +717,7 @@ Result
 DummyPersistence::destroyIterator(IteratorId id, Context&)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
-    LOG(debug, "destroyIterator(%zu)", uint64_t(id));
+    LOG(debug, "destroyIterator(%" PRIu64 ")", uint64_t(id));
     vespalib::MonitorGuard lock(_monitor);
     if (_iterators.find(id) != _iterators.end()) {
         _iterators.erase(id);
@@ -856,7 +856,7 @@ Result
 DummyPersistence::revert(const Bucket& b, Timestamp t, Context&)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
-    LOG(debug, "revert(%s, %zu)",
+    LOG(debug, "revert(%s, %" PRIu64 ")",
         b.toString().c_str(),
         uint64_t(t));
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
