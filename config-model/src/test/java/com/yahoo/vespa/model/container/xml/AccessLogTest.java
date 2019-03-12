@@ -81,9 +81,9 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
 
         createModel(root, clusterElem);
         assertNotNull(getJsonAccessLog("default"));
-        assertNull(getVespaAccessLog("default"));
+        assertNotNull(getVespaAccessLog("default"));
 
-        { // yapache
+        { // vespa
             Component<?, ?> accessLogComponent = getContainerComponent("default", VespaAccessLog.class.getName());
             assertNotNull(accessLogComponent);
             assertEquals(VespaAccessLog.class.getName(), accessLogComponent.getClassId().getName(), VespaAccessLog.class.getName());
