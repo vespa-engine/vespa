@@ -207,14 +207,17 @@ Matcher::computeNumThreadsPerSearch(Blueprint::HitEstimate hits, const Propertie
 }
 
 namespace {
-    void traceQuery(uint32_t traceLevel, Trace & trace, const Query & query) {
-        if (traceLevel <= trace.getLevel()) {
-            if (query.peekRoot()) {
-                vespalib::slime::ObjectInserter inserter(trace.createCursor("blueprint"), "optimized");
-                query.peekRoot()->asSlime(inserter);
-            }
+
+void
+traceQuery(uint32_t traceLevel, Trace & trace, const Query & query) {
+    if (traceLevel <= trace.getLevel()) {
+        if (query.peekRoot()) {
+            vespalib::slime::ObjectInserter inserter(trace.createCursor("blueprint"), "optimized");
+            query.peekRoot()->asSlime(inserter);
         }
     }
+}
+
 }
 
 SearchReply::UP

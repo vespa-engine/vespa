@@ -102,6 +102,8 @@ private:
 
     search::HitRank fallback_rank_value() const { return match_with_ranking ? search::default_rank_value : search::zero_rank_value; }
 
+    void traceEvent(uint32_t level, vespalib::stringref event);
+
 public:
     MatchThread(size_t thread_id_in,
                 size_t num_threads_in,
@@ -118,7 +120,7 @@ public:
     const MatchingStats::Partition &get_thread_stats() const { return thread_stats; }
     double get_match_time() const { return match_time_s; }
     PartialResult::UP extract_result() { return std::move(resultContext->result); }
-    const Trace & getTrace() const { return *trace; }
+    const Trace * getTrace() const { return trace.get(); }
 };
 
 }
