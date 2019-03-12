@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.container.core.AccessLogConfig;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
@@ -27,7 +26,6 @@ public class AccessLogBuilder {
      */
     private enum AccessLogTypeLiteral {
         VESPA("vespa"),
-        YAPACHE("yapache"),
         JSON("json"),
         DISABLED("disabled");
 
@@ -88,8 +86,6 @@ public class AccessLogBuilder {
                 return null;
             case VESPA:
                 return AccessLogType.queryAccessLog;
-            case YAPACHE:
-                return AccessLogType.yApacheAccessLog;
             case JSON:
                 return AccessLogType.jsonAccessLog;
             default:

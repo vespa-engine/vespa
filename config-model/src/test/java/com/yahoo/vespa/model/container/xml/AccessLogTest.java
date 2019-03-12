@@ -6,7 +6,6 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.core.AccessLogConfig;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.container.logging.VespaAccessLog;
-import com.yahoo.container.logging.YApacheAccessLog;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import org.junit.Test;
@@ -73,7 +72,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
     public void access_log_can_be_configured() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
-                "  <accesslog type='yapache' ",
+                "  <accesslog type='vespa' ",
                 "             fileNamePattern='pattern' rotationInterval='interval' />",
                 "  <accesslog type='json' ",
                 "             fileNamePattern='pattern' rotationInterval='interval' />",
@@ -82,13 +81,13 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
 
         createModel(root, clusterElem);
         assertNotNull(getJsonAccessLog("default"));
-        assertNull(getVespaAccessLog("default"));
+        assertNotNull(getVespaAccessLog("default"));
 
-        { // yapache
-            Component<?, ?> accessLogComponent = getContainerComponent("default", YApacheAccessLog.class.getName());
+        { // vespa
+            Component<?, ?> accessLogComponent = getContainerComponent("default", VespaAccessLog.class.getName());
             assertNotNull(accessLogComponent);
-            assertEquals(YApacheAccessLog.class.getName(), accessLogComponent.getClassId().getName(), YApacheAccessLog.class.getName());
-            AccessLogConfig config = root.getConfig(AccessLogConfig.class, "default/component/com.yahoo.container.logging.YApacheAccessLog");
+            assertEquals(VespaAccessLog.class.getName(), accessLogComponent.getClassId().getName(), VespaAccessLog.class.getName());
+            AccessLogConfig config = root.getConfig(AccessLogConfig.class, "default/component/com.yahoo.container.logging.VespaAccessLog");
             AccessLogConfig.FileHandler fileHandlerConfig = config.fileHandler();
             assertEquals("pattern", fileHandlerConfig.pattern());
             assertEquals("interval", fileHandlerConfig.rotation());
