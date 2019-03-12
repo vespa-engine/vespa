@@ -49,7 +49,7 @@ struct ConfigEncoder : public ArrayTraverser,
         }
     }
     void encodeLONG(int64_t value) {
-        out.printf("%ld", value);
+        out.printf("%" PRId64, value);
     }
     void encodeDOUBLE(double value) {
         out.printf("%g", value);

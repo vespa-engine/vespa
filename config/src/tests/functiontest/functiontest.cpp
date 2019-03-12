@@ -37,8 +37,8 @@ checkVariableAccess(const FunctionTestConfig & config)
     EXPECT_EQUAL(1u, config.boolarr.size());
     EXPECT_EQUAL(0u, config.intarr.size());
     EXPECT_EQUAL(2u, config.longarr.size());
-    LOG(error, "0: %ld", config.longarr[0]);
-    LOG(error, "1: %ld", config.longarr[1]);
+    LOG(error, "0: %" PRId64, config.longarr[0]);
+    LOG(error, "1: %" PRId64, config.longarr[1]);
     EXPECT_EQUAL(std::numeric_limits<int64_t>::max(), config.longarr[0]);
     EXPECT_EQUAL(std::numeric_limits<int64_t>::min(), config.longarr[1]);
     EXPECT_EQUAL(2u, config.doublearr.size());

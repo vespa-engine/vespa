@@ -47,7 +47,7 @@ ConfigSetSource::getConfig()
 void
 ConfigSetSource::reload(int64_t generation)
 {
-    LOG(debug, "Running update with generation(%zd)", generation);
+    LOG(debug, "Running update with generation(%" PRId64 ")", generation);
     _generation = generation;
 }
 
