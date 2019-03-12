@@ -384,6 +384,7 @@ ConfigHandler::handleCmd(const Cmd& cmd)
             char retbuf[65536];
             size_t left = 65536;
             size_t pos = 0;
+            retbuf[pos] = 0;
             for (ServiceMap::iterator it(_services.begin()), mt(_services.end()); it != mt; it++) {
                 Service *service = it->second.get();
                 const SentinelConfig::Service& config = service->serviceConfig();
@@ -397,6 +398,7 @@ ConfigHandler::handleCmd(const Cmd& cmd)
                 left -= sz;
                 if (left <= 0) break;
             }
+            retbuf[65535] = 0;
             cmd.retValue(retbuf);
         }
         break;
