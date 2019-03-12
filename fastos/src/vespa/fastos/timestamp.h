@@ -29,10 +29,12 @@ public:
     TimeStamp() : _time(0)            { }
     TimeStamp(const timeval & tv) : _time(tv.tv_sec*SEC + tv.tv_usec*MILLI) { }
     TimeStamp(Special s) : _time(std::numeric_limits<TimeT>::max()) { (void) s; }
-    TimeStamp(TimeT v) : _time(v)     { }
-    TimeStamp(int32_t v) : _time(v)   { }
-    TimeStamp(uint32_t v) : _time(v)  { }
-    TimeStamp(uint64_t v) : _time(v)  { }
+    TimeStamp(int v) : _time(v)   { }
+    TimeStamp(unsigned int v) : _time(v)  { }
+    TimeStamp(long v) : _time(v)   { }
+    TimeStamp(unsigned long v) : _time(v)  { }
+    TimeStamp(long long v) : _time(v)     { }
+    TimeStamp(unsigned long long v) : _time(v)  { }
     TimeStamp(Seconds v) : _time(v.val())    { }
     TimeT val()                              const { return _time; }
     operator TimeT ()                        const { return val(); }
