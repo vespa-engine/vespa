@@ -10,14 +10,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author hmusum
  */
 public class ClientUpdaterTest {
+
     private MockRpcServer rpcServer;
     private ConfigProxyStatistics statistics;
     private DelayedResponses delayedResponses;
@@ -37,53 +36,83 @@ public class ClientUpdaterTest {
 
     @Test
     public void basic() {
-        assertThat(rpcServer.responses, is(0L));
-
         final RawConfig fooConfig = ProxyServerTest.fooConfig;
-        clientUpdater.updateSubscribers(fooConfig);
+        configUpdatedSendResponse(fooConfig);
+        // Nobody asked for the config, so no response sent
+        assertSentResponses(0);
 
-        // No delayed response, so not returned
-        assertEquals(0, rpcServer.responses);
+        simulateClientRequestingConfig(fooConfig);
+        configUpdatedSendResponse(fooConfig);
+        assertSentResponses(1);
 
-        delayedResponses.add(new DelayedResponse(JRTServerConfigRequestV3.createFromRequest(JRTConfigRequestFactory.createFromRaw(fooConfig, -10L).getRequest())));
-        clientUpdater.updateSubscribers(fooConfig);
-        assertEquals(1, rpcServer.responses);
-
-        // Will not find bar config in delayed responses
+        // Nobody asked for 'bar' config
         RawConfig barConfig = new RawConfig(new ConfigKey<>("bar", "id", "namespace"), fooConfig.getDefMd5());
-        clientUpdater.updateSubscribers(barConfig);
-        assertEquals(1, rpcServer.responses);
+        configUpdatedSendResponse(barConfig);
+        assertSentResponses(1);
     }
 
     @Test
     public void errorResponse() {
-        assertThat(rpcServer.responses, is(0L));
-
-        clientUpdater.updateSubscribers(ProxyServerTest.errorConfig);
-        assertThat(rpcServer.responses, is(0L));
-        assertThat(statistics.errors(), is(1L));
+        configUpdatedSendResponse(ProxyServerTest.errorConfig);
+        assertSentResponses(0);
+        assertEquals(1, statistics.errors());
     }
 
     @Test
     public void it_does_not_send_old_config_in_response() {
-        assertThat(rpcServer.responses, is(0L));
-
         RawConfig fooConfigOldGeneration = ProxyServerTest.fooConfig;
 
-        final RawConfig fooConfig = ProxyServerTest.createConfigWithNextConfigGeneration(fooConfigOldGeneration, 0);
-        clientUpdater.updateSubscribers(fooConfig);
+        RawConfig fooConfig = createConfigWithNextConfigGeneration(fooConfigOldGeneration);
+        configUpdatedSendResponse(fooConfig);
 
-        // No delayed response, so not returned
-        assertEquals(0, rpcServer.responses);
+        // Nobody asked for the config
+        assertSentResponses(0);
 
-        delayedResponses.add(new DelayedResponse(JRTServerConfigRequestV3.createFromRequest(JRTConfigRequestFactory.createFromRaw(fooConfig, -10L).getRequest())));
-        clientUpdater.updateSubscribers(fooConfig);
-        assertEquals(1, rpcServer.responses);
+        simulateClientRequestingConfig(fooConfig);
+        configUpdatedSendResponse(fooConfig);
+        assertSentResponses(1);
 
-        delayedResponses.add(new DelayedResponse(JRTServerConfigRequestV3.createFromRequest(JRTConfigRequestFactory.createFromRaw(fooConfig, -10L).getRequest())));
-        clientUpdater.updateSubscribers(fooConfigOldGeneration);
-        // Old config generation, so not returned
-        assertEquals(1, rpcServer.responses);
+        simulateClientRequestingConfig(fooConfig);
+        configUpdatedSendResponse(fooConfigOldGeneration);
+        // Old config generation, so no response returned
+        assertSentResponses(1);
+    }
+
+    @Test
+    public void it_does_send_config_with_generation_0_in_response() {
+        RawConfig fooConfigOldGeneration = ProxyServerTest.fooConfig;
+
+        RawConfig fooConfig = createConfigWithNextConfigGeneration(fooConfigOldGeneration, 1);
+
+        simulateClientRequestingConfig(fooConfig);
+        configUpdatedSendResponse(fooConfig);
+        assertSentResponses(1);
+
+        RawConfig fooConfig2 = createConfigWithNextConfigGeneration(fooConfigOldGeneration, 0);
+        simulateClientRequestingConfig(fooConfig2);
+        configUpdatedSendResponse(fooConfig2);
+        assertSentResponses(2);
+    }
+
+    private void assertSentResponses(int expected) {
+        assertEquals(expected, rpcServer.responses);
+    }
+
+    private void simulateClientRequestingConfig(RawConfig config) {
+        delayedResponses.add(new DelayedResponse(JRTServerConfigRequestV3.createFromRequest(JRTConfigRequestFactory.createFromRaw(config, -10L).getRequest())));
+    }
+
+    private void configUpdatedSendResponse(RawConfig config) {
+        clientUpdater.updateSubscribers(config);
+    }
+
+    private RawConfig createConfigWithNextConfigGeneration(RawConfig config) {
+        return createConfigWithNextConfigGeneration(config, config.getGeneration() + 1);
+    }
+
+    private RawConfig createConfigWithNextConfigGeneration(RawConfig config, long newConfigGeneration) {
+        final int errorCode = 0;
+        return ProxyServerTest.createConfigWithNextConfigGeneration(config, errorCode, ProxyServerTest.fooConfig.getPayload(), newConfigGeneration);
     }
 
 }
