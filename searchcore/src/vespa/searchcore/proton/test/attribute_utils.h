@@ -46,7 +46,7 @@ struct AttributeUtils
         return search::attribute::Config(search::attribute::BasicType::PREDICATE);
     }
     static search::attribute::Config getTensorConfig() {
-        return search::attribute::Config(search::attribute::BasicType::TENSOR);
+        return search::attribute::Config(search::attribute::BasicType::TENSOR).setTensorType(vespalib::eval::ValueType::from_spec("tensor(x{},y{})"));
     }
 };
 

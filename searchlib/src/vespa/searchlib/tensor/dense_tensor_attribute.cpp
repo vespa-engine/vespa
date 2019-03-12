@@ -14,7 +14,6 @@ LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
 using vespalib::eval::ValueType;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorMapper;
 
 namespace search::tensor {
 
@@ -100,8 +99,8 @@ DenseTensorAttribute::~DenseTensorAttribute()
 void
 DenseTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 {
-    EntryRef ref = _denseTensorStore.setTensor(
-            (_tensorMapper ? *_tensorMapper->map(tensor) : tensor));
+    checkTensorType(tensor);
+    EntryRef ref = _denseTensorStore.setTensor(tensor);
     setTensorRef(docId, ref);
 }
 

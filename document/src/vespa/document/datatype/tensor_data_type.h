@@ -25,6 +25,7 @@ public:
 
     const vespalib::eval::ValueType &getTensorType() const { return _tensorType; }
     bool isAssignableType(const vespalib::eval::ValueType &tensorType) const;
+    static bool isAssignableType(const vespalib::eval::ValueType &fieldTensorType, const vespalib::eval::ValueType &tensorType);
 };
 
 }
