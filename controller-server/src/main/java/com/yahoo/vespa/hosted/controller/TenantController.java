@@ -58,20 +58,7 @@ public class TenantController {
             Instant start = controller.clock().instant();
             int count = 0;
             for (TenantName name : curator.readTenantNames()) {
-                try (Lock lock = lock(name)) {
-                    // Get while holding lock so that we know we're operating on a current version
-                    Optional<Tenant> optionalTenant = get(name);
-                    if (!optionalTenant.isPresent()) continue; // Deleted while updating, skip
-
-                    Tenant tenant = optionalTenant.get();
-                    if (tenant instanceof AthenzTenant) {
-                        curator.writeTenant((AthenzTenant) tenant);
-                    } else if (tenant instanceof UserTenant) {
-                        curator.writeTenant((UserTenant) tenant);
-                    } else {
-                        throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
-                    }
-                }
+                lockIfPresent(name, LockedTenant.class, this::store);
                 count++;
             }
             log.log(Level.INFO, String.format("Wrote %d tenants in %s", count,
