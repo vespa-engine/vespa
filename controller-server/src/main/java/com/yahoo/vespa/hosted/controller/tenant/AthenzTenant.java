@@ -75,4 +75,10 @@ public class AthenzTenant extends Tenant {
         }
         return name;
     }
+
+    @Override
+    public Type type() {
+        return Type.athenz;
+    }
+
 }

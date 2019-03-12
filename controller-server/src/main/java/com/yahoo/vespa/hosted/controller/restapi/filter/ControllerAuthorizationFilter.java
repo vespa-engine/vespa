@@ -158,7 +158,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     }
 
     private void verifyIsTenantAdmin(AthenzPrincipal principal, TenantName name) {
-        tenantController.tenant(name)
+        tenantController.get(name)
                 .ifPresent(tenant -> {
                     if (!isTenantAdmin(principal.getIdentity(), tenant)) {
                         throw new ForbiddenException("Tenant admin or Vespa operator role required");
@@ -182,7 +182,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     private void verifyIsTenantPipelineOperator(AthenzPrincipal principal,
                                                 TenantName name,
                                                 ApplicationName application) {
-        tenantController.tenant(name)
+        tenantController.get(name)
                 .ifPresent(tenant -> verifyIsTenantPipelineOperator(principal.getIdentity(), tenant, application));
     }
 

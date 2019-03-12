@@ -114,7 +114,7 @@ public class ControllerTest {
 
         applications = tester.controller().applications();
 
-        assertNotNull(tester.controller().tenants().tenant(TenantName.from("tenant1")));
+        assertNotNull(tester.controller().tenants().get(TenantName.from("tenant1")));
         assertNotNull(applications.get(ApplicationId.from(TenantName.from("tenant1"),
                                                           ApplicationName.from("application1"),
                                                           InstanceName.from("default"))));

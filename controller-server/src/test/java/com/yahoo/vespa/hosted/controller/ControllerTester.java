@@ -249,14 +249,14 @@ public final class ControllerTester {
 
     public TenantName createTenant(String tenantName, String domainName, Long propertyId, Optional<Contact> contact) {
         TenantName name = TenantName.from(tenantName);
-        Optional<Tenant> existing = controller().tenants().tenant(name);
+        Optional<Tenant> existing = controller().tenants().get(name);
         if (existing.isPresent()) return name;
         AthenzTenant tenant = AthenzTenant.create(name, createDomain(domainName), new Property("Property"+propertyId),
                                                   Optional.ofNullable(propertyId)
                                                           .map(Object::toString)
                                                           .map(PropertyId::new), contact);
         controller().tenants().create(tenant, new OktaAccessToken("okta-token"));
-        assertNotNull(controller().tenants().tenant(name));
+        assertNotNull(controller().tenants().get(name));
         return name;
     }
 

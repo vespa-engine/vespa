@@ -3,10 +3,14 @@ package com.yahoo.vespa.hosted.controller.persistence;// Copyright 2018 Yahoo Ho
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.BillingInfo;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import org.junit.Test;
 
@@ -32,7 +36,7 @@ public class TenantSerializerTest {
                                                   new AthenzDomain("domain1"),
                                                   new Property("property1"),
                                                   Optional.of(new PropertyId("1")));
-        AthenzTenant serialized = serializer.athenzTenantFrom(serializer.toSlime(tenant));
+        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.domain(), serialized.domain());
         assertEquals(tenant.property(), serialized.property());
@@ -46,7 +50,7 @@ public class TenantSerializerTest {
                                                              new AthenzDomain("domain1"),
                                                              new Property("property1"),
                                                              Optional.empty());
-        AthenzTenant serialized = serializer.athenzTenantFrom(serializer.toSlime(tenant));
+        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertFalse(serialized.propertyId().isPresent());
         assertEquals(tenant.propertyId(), serialized.propertyId());
     }
@@ -58,16 +62,31 @@ public class TenantSerializerTest {
                                                new Property("property1"),
                                                Optional.of(new PropertyId("1")),
                                                Optional.of(contact()));
-        AthenzTenant serialized = serializer.athenzTenantFrom(serializer.toSlime(tenant));
+        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.contact(), serialized.contact());
     }
 
     @Test
     public void user_tenant() {
         UserTenant tenant = UserTenant.create("by-foo", Optional.of(contact()));
-        UserTenant serialized = serializer.userTenantFrom(serializer.toSlime(tenant));
+        UserTenant serialized = (UserTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(contact(), serialized.contact().get());
+    }
+
+    @Test
+    public void cloud_tenant() {
+        CloudTenant tenant = CloudTenant.create(TenantName.from("elderly-lady"),
+                                                new BillingInfo("old cat lady", "vespa"));
+        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        assertEquals(tenant.name(), serialized.name());
+        assertEquals(tenant.billingInfo(), serialized.billingInfo());
+    }
+
+    @Test
+    public void legacy_deserialization() {
+        UserTenant legayUserTenant = (UserTenant) serializer.tenantFrom(SlimeUtils.jsonToSlime("{\"name\":\"by-someone\"}"));
+        assertTrue(legayUserTenant.is("someone"));
     }
 
     private Contact contact() {
@@ -83,4 +102,5 @@ public class TenantSerializerTest {
                 Optional.empty()
         );
     }
+
 }

@@ -22,6 +22,7 @@ import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -1541,7 +1542,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void updateContactInformation() {
         Contact contact = new Contact(URI.create("www.contacts.tld/1234"), URI.create("www.properties.tld/1234"), URI.create("www.issues.tld/1234"), List.of(List.of("alice"), List.of("bob")), "queue", Optional.empty());
-        tester.controller().tenants().lockIfPresent(TenantName.from("tenant2"), lockedTenant -> tester.controller().tenants().store(lockedTenant.with(contact)));
+        tester.controller().tenants().lockIfPresent(TenantName.from("tenant2"),
+                                                    LockedTenant.Athenz.class,
+                                                    lockedTenant -> tester.controller().tenants().store(lockedTenant.with(contact)));
     }
 
     private void registerContact(long propertyId) {

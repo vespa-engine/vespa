@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.ApplicationResource;
@@ -333,7 +334,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse tenant(String tenantName, HttpRequest request) {
-        return controller.tenants().tenant(TenantName.from(tenantName))
+        return controller.tenants().get(TenantName.from(tenantName))
                          .map(tenant -> tenant(tenant, request, true))
                          .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
     }
@@ -756,7 +757,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Inspector requestData = toSlime(request.getData()).get();
         OktaAccessToken token = requireOktaAccessToken(request, "Could not update " + tenantName);
 
-        controller.tenants().lockOrThrow(tenant.get().name(), lockedTenant -> {
+        controller.tenants().lockOrThrow(tenant.get().name(), LockedTenant.Athenz.class, lockedTenant -> {
             lockedTenant = lockedTenant.with(new Property(mandatory("property", requestData).asString()));
             lockedTenant = controller.tenants().withDomain(
                     lockedTenant,
@@ -983,7 +984,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {
-        Optional<Tenant> tenant = controller.tenants().tenant(tenantName);
+        Optional<Tenant> tenant = controller.tenants().get(tenantName);
         if ( ! tenant.isPresent()) return ErrorResponse.notFoundError("Could not delete tenant '" + tenantName + "': Tenant not found"); // NOTE: The Jersey implementation would silently ignore this
 
 
@@ -1099,7 +1100,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private Tenant getTenantOrThrow(String tenantName) {
-        return controller.tenants().tenant(tenantName)
+        return controller.tenants().get(tenantName)
                          .orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
     }
 

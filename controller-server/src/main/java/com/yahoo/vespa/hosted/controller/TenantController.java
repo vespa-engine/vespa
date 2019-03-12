@@ -60,7 +60,7 @@ public class TenantController {
             for (TenantName name : curator.readTenantNames()) {
                 try (Lock lock = lock(name)) {
                     // Get while holding lock so that we know we're operating on a current version
-                    Optional<Tenant> optionalTenant = tenant(name);
+                    Optional<Tenant> optionalTenant = get(name);
                     if (!optionalTenant.isPresent()) continue; // Deleted while updating, skip
 
                     Tenant tenant = optionalTenant.get();
@@ -96,25 +96,25 @@ public class TenantController {
                            .collect(Collectors.toList());
     }
 
-    /**
-     * Lock a tenant for modification and apply action. Only valid for Athenz tenants as it's the only type that
-     * accepts modification.
-     */
-    public void lockIfPresent(TenantName name, Consumer<LockedTenant> action) {
+    /** Locks a tenant for modification and applies the given action. */
+    public <T extends LockedTenant> void lockIfPresent(TenantName name, Class<T> token, Consumer<T> action) {
         try (Lock lock = lock(name)) {
-            tenant(name).map(tenant -> {
-                tenant = tenant instanceof AthenzTenant ? (AthenzTenant) tenant  : (UserTenant) tenant;
-                if (tenant instanceof AthenzTenant) return new LockedTenant((AthenzTenant) tenant, lock);
-                else return new LockedTenant((UserTenant) tenant, lock);
-            }).ifPresent(action);
+            get(name).map(tenant -> LockedTenant.of(tenant, lock))
+                     .map(token::cast)
+                     .ifPresent(action);
         }
     }
 
     /** Lock a tenant for modification and apply action. Throws if the tenant does not exist */
-    public void lockOrThrow(TenantName name, Consumer<LockedTenant> action) {
+    public <T extends LockedTenant> void lockOrThrow(TenantName name, Class<T> token, Consumer<T> action) {
         try (Lock lock = lock(name)) {
-            action.accept(new LockedTenant(requireAthenzTenant(name), lock));
+            action.accept(token.cast(LockedTenant.of(require(name), lock)));
         }
+    }
+
+    /** Returns the tenant with the given name, or throws. */
+    public Tenant require(TenantName name) {
+        return get(name).orElseThrow(() -> new IllegalArgumentException("No such tenant '" + name + "'."));
     }
 
     /** Replace and store any previous version of given tenant */
@@ -156,18 +156,20 @@ public class TenantController {
     }
 
     /** Find tenant by name */
-    public Optional<Tenant> tenant(TenantName name) {
+    public Optional<Tenant> get(TenantName name) {
         return curator.readTenant(name);
     }
 
     /** Find tenant by name */
-    public Optional<Tenant> tenant(String name) {
-        return tenant(TenantName.from(name));
+    public Optional<Tenant> get(String name) {
+        return get(TenantName.from(name));
     }
 
     /** Find Athenz tenant by name */
     public Optional<AthenzTenant> athenzTenant(TenantName name) {
-        return curator.readAthenzTenant(name);
+        return curator.readTenant(name)
+                      .filter(AthenzTenant.class::isInstance)
+                      .map(AthenzTenant.class::cast);
     }
 
     /** Returns Athenz tenant with name or throws if no such tenant exists */
@@ -176,8 +178,8 @@ public class TenantController {
     }
 
     /** Update Athenz domain for tenant. Returns the updated tenant which must be explicitly stored */
-    public LockedTenant withDomain(LockedTenant tenant, AthenzDomain newDomain, OktaAccessToken token) {
-        AthenzTenant athenzTenant = (AthenzTenant) tenant.get();
+    public LockedTenant.Athenz withDomain(LockedTenant.Athenz tenant, AthenzDomain newDomain, OktaAccessToken token) {
+        AthenzTenant athenzTenant = tenant.get();
         AthenzDomain existingDomain = athenzTenant.domain();
         if (existingDomain.equals(newDomain)) return tenant;
         Optional<Tenant> existingTenantWithNewDomain = tenantIn(newDomain);
@@ -219,10 +221,10 @@ public class TenantController {
     }
 
     private void requireNonExistent(TenantName name) {
-        if (tenant(name).isPresent() ||
+        if (get(name).isPresent() ||
             // Underscores are allowed in existing Athenz tenant names, but tenants with - and _ cannot co-exist. E.g.
             // my-tenant cannot be created if my_tenant exists.
-            tenant(dashToUnderscore(name.value())).isPresent()) {
+            get(dashToUnderscore(name.value())).isPresent()) {
             throw new IllegalArgumentException("Tenant '" + name + "' already exists");
         }
     }
