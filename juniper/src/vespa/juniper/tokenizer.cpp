@@ -56,8 +56,8 @@ void JuniperTokenizer::scan()
         token.wordpos = _wordpos++;
         token.bytepos = startpos - _text;
         token.bytelen = src - startpos;
-        LOG(debug, "curlen %d, bytepos %ld, bytelen %d",
-            token.curlen, token.bytepos, token.bytelen);
+        LOG(debug, "curlen %d, bytepos %" PRId64 ", bytelen %d",
+            token.curlen, static_cast<int64_t>(token.bytepos), token.bytelen);
         // NB! not setting charlen/charpos/_utf8pos/_utf8len yet...!
         _successor->handle_token(token);
     }
