@@ -122,6 +122,12 @@ public class StorageMaintainer {
                     "-m", "150",
                     "-a", "config-zkbackupage")
                     .withTags(tags));
+
+	    String appName = nodeTypeToRole(context.nodeType()) + "-logd";
+            Path logdCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/convert-state-metrics-2-yamas.py");
+            configs.add(new SecretAgentCheckConfig(appName, 60, logdCheckPath,
+                    appName, "http://localhost:19089/state/v1/metrics")
+                    .withTags(tags));
         }
 
         if (context.nodeType() == NodeType.proxy) {
