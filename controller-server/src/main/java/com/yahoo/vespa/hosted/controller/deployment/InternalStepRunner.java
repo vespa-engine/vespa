@@ -554,6 +554,11 @@ public class InternalStepRunner implements StepRunner {
     static byte[] servicesXml(SystemName systemName, Optional<String> testerFlavor) {
         String domain = systemName == SystemName.main ? "vespa.vespa" : "vespa.vespa.cd";
 
+        String flavor = testerFlavor.orElse("d-1-4-50");
+        int memoryGb = Integer.parseInt(flavor.split("-")[2]); // Memory available in tester container.
+        int jdiscMemoryPercentage = (int) Math.ceil(200.0 / memoryGb); // 2Gb memory for tester application (excessive?).
+        int testMemoryMb = 768 * (memoryGb - 2); // Memory allocated to Surefire running tests. ≥25% left for other stuff.
+
         String servicesXml =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
                 "<services xmlns:deploy='vespa' version='1.0'>\n" +
@@ -562,6 +567,7 @@ public class InternalStepRunner implements StepRunner {
                 "        <component id=\"com.yahoo.vespa.hosted.testrunner.TestRunner\" bundle=\"vespa-testrunner-components\">\n" +
                 "            <config name=\"com.yahoo.vespa.hosted.testrunner.test-runner\">\n" +
                 "                <artifactsPath>artifacts</artifactsPath>\n" +
+                "                <surefireMemoryMb>" + testMemoryMb + "</surefireMemoryMb>\n" +
                 "            </config>\n" +
                 "        </component>\n" +
                 "\n" +
@@ -594,7 +600,7 @@ public class InternalStepRunner implements StepRunner {
                 "            </filtering>\n" +
                 "        </http>\n" +
                 "\n" +
-                "        <nodes count=\"1\" flavor=\"" + testerFlavor.orElse("d-1-4-50") + "\" />\n" +
+                "        <nodes count=\"1\" flavor=\"" + flavor + "\" allocated-memory=\"" + jdiscMemoryPercentage + "%\" />\n" +
                 "    </container>\n" +
                 "</services>\n";
 
