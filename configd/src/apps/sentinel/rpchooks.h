@@ -32,6 +32,7 @@ public:
     void initRPC(FRT_Supervisor *supervisor);
 private:
     void rpc_listServices(FRT_RPCRequest *req);
+    void rpc_restartService(FRT_RPCRequest *req);
     void rpc_stopService(FRT_RPCRequest *req);
     void rpc_startService(FRT_RPCRequest *req);
 };

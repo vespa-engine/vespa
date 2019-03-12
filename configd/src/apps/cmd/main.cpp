@@ -36,6 +36,7 @@ void usage()
     fprintf(stderr, "usage: vespa-sentinel-cmd <cmd> [arg]\n");
     fprintf(stderr, "with cmd one of:\n");
     fprintf(stderr, "  list\n");
+    fprintf(stderr, "  restart {service}\n");
     fprintf(stderr, "  start {service}\n");
     fprintf(stderr, "  stop {service}\n");
 }
@@ -109,6 +110,8 @@ parseCmd(const char *arg)
 {
     if (strcmp(arg, "list") == 0) {
         return "sentinel.ls";
+    } else if (strcmp(arg, "restart") == 0) {
+        return "sentinel.service.restart";
     } else if (strcmp(arg, "start") == 0) {
         return "sentinel.service.start";
     } else if (strcmp(arg, "stop") == 0) {
