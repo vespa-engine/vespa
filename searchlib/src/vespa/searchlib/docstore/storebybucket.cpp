@@ -46,7 +46,7 @@ StoreByBucket::createChunk()
     return std::make_unique<Chunk>(_chunkSerial++, Chunk::Config(0x10000));
 }
 
-uint64_t
+size_t
 StoreByBucket::getChunkCount() const {
     vespalib::LockGuard guard(_lock);
     return _chunks.size();

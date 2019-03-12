@@ -22,7 +22,7 @@ bool byteAligned(uint64_t bitSize)
 bool
 FileSizeCalculator::extractFileSize(const vespalib::GenericHeader &header,
                                     size_t headerLen,
-                                    vespalib::string fileName, size_t &fileSize)
+                                    vespalib::string fileName, uint64_t &fileSize)
 {
     if (!header.hasTag(fileBitSizeTag)) {
         return true;

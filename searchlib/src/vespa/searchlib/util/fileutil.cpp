@@ -31,7 +31,8 @@ LoadedMmap::LoadedMmap(const vespalib::string &fileName)
         struct stat stbuf;
         int res = fstat(fd.fd(), &stbuf);
         if (res == 0) {
-            size_t sz = stbuf.st_size;
+            uint64_t fileSize = stbuf.st_size;
+            size_t sz = fileSize;
             if (sz) {
                 void *tmpBuffer = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd.fd(), 0);
                 if (tmpBuffer != MAP_FAILED) {
@@ -44,7 +45,8 @@ LoadedMmap::LoadedMmap(const vespalib::string &fileName)
                         _header = std::make_unique<GenericHeader>();
                         size_t headerLen = _header->read(rd);
                         if ((headerLen <= _mapSize) &&
-                            FileSizeCalculator::extractFileSize(*_header, headerLen, fileName, sz)) {
+                            FileSizeCalculator::extractFileSize(*_header, headerLen, fileName, fileSize)) {
+                            sz = fileSize;
                             _size = sz - headerLen;
                             _buffer = static_cast<char *>(_mapBuffer) + headerLen;
                             badHeader = false;
