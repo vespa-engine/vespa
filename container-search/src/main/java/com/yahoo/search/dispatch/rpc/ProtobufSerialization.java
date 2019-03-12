@@ -38,12 +38,23 @@ public class ProtobufSerialization {
         return convertFromQuery(query, serverId, includeQueryData).toByteArray();
     }
 
+    public static byte[] serializeResult(Result searchResult) {
+        return convertFromResult(searchResult).toByteArray();
+    }
+
+    public static Result deserializeToResult(byte[] payload, Query query, VespaBackEndSearcher searcher)
+            throws InvalidProtocolBufferException {
+        var protobuf = Search.Reply.parseFrom(payload);
+        var result = convertToResult(query, protobuf, searcher.getDocumentDatabase(query));
+        return result;
+    }
+
     private static Search.Request convertFromQuery(Query query, String serverId, boolean includeQueryData) {
         var builder = Search.Request.newBuilder().setHits(query.getHits()).setOffset(query.getOffset())
                 .setTimeout((int) query.getTimeLeft());
 
         mergeToRequestFromRanking(query.getRanking(), builder, includeQueryData);
-        mergeToRequestFromModel(query.getModel(), builder, includeQueryData);
+        mergeToRequestFromModel(query.getModel(), builder);
 
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
             // TODO verify that the session key is included whenever rank properties would have been
@@ -71,7 +82,7 @@ public class ProtobufSerialization {
         return builder.build();
     }
 
-    private static void mergeToRequestFromModel(Model model, Search.Request.Builder builder, boolean encodeQueryData) {
+    private static void mergeToRequestFromModel(Model model, Search.Request.Builder builder) {
         if (model.getDocumentDb() != null) {
             builder.setDocumentType(model.getDocumentDb());
         }
@@ -90,8 +101,9 @@ public class ProtobufSerialization {
         }
     }
 
-    private static void mergeToRequestFromPresentation(Presentation presentation, Search.Request.Builder builder, boolean encodeQueryData) {
-        if (encodeQueryData && presentation.getHighlight() != null) {
+    private static void mergeToRequestFromPresentation(Presentation presentation, Search.Request.Builder builder,
+            boolean includeQueryData) {
+        if (includeQueryData && presentation.getHighlight() != null) {
             MapConverter.convertStringMultiMap(presentation.getHighlight().getHighlightTerms(), builder::addHighlightTerms);
         }
     }
@@ -134,13 +146,6 @@ public class ProtobufSerialization {
                 }
             }, builder::addTensorRankProperties);
         }
-    }
-
-    public static Result deserializeToResult(byte[] payload, Query query, VespaBackEndSearcher searcher)
-            throws InvalidProtocolBufferException {
-        var protobuf = Search.Reply.parseFrom(payload);
-        var result = convertToResult(query, protobuf, searcher.getDocumentDatabase(query));
-        return result;
     }
 
     private static Result convertToResult(Query query, Search.Reply protobuf, DocumentDatabase documentDatabase) {
@@ -214,10 +219,6 @@ public class ProtobufSerialization {
             builder.addHits(hitBuilder);
         });
         return builder.build();
-    }
-
-    public static byte[] serializeResult(Result searchResult) {
-        return convertFromResult(searchResult).toByteArray();
     }
 
 }
