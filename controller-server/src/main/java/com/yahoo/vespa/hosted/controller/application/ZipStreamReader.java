@@ -41,7 +41,7 @@ public class ZipStreamReader {
         try (ByteArrayOutputStream bis = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[2048];
             int read;
-            int size = 0;
+            long size = 0;
             while ( -1 != (read = zipInput.read(buffer))) {
                 size += read;
                 if (size > maxEntrySizeInBytes) {
