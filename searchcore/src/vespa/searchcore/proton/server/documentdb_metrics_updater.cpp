@@ -214,14 +214,14 @@ updateDocumentStoreCacheHitRate(const CacheStats &current, const CacheStats &las
 {
     if (current.lookups() < last.lookups() || current.hits < last.hits) {
         LOG(warning, "Not adding document store cache hit rate metrics as values calculated "
-                     "are corrupt. current.lookups=%" PRIu64 ", last.lookups=%" PRIu64 ", current.hits=%" PRIu64 ", last.hits=%" PRIu64 ".",
+                     "are corrupt. current.lookups=%zu, last.lookups=%zu, current.hits=%zu, last.hits=%zu.",
             current.lookups(), last.lookups(), current.hits, last.hits);
     } else {
         if ((current.lookups() - last.lookups()) > 0xffffffffull
             || (current.hits - last.hits) > 0xffffffffull)
         {
             LOG(warning, "Document store cache hit rate metrics to add are suspiciously high."
-                         " lookups diff=%" PRIu64 ", hits diff=%" PRIu64 ".",
+                         " lookups diff=%zu, hits diff=%zu.",
                 current.lookups() - last.lookups(), current.hits - last.hits);
         }
         cacheHitRate.addTotalValueWithCount(current.hits - last.hits, current.lookups() - last.lookups());

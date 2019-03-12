@@ -171,7 +171,7 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
             "getFlushTargets(): target(%s), totalMemoryGain(%" PRIu64 "), memoryGain(%" PRIu64 "), "
             "totalDiskGain(%" PRId64 "), diskGain(%" PRId64 "), "
             "tlsSize(%" PRIu64 "), tlsSizeNeeded(%" PRIu64 "), "
-            "flushedSerial(%" PRIu64 "), localLastSerial(%" PRIu64 "), serialDiff(%ld), "
+            "flushedSerial(%" PRIu64 "), localLastSerial(%" PRIu64 "), serialDiff(%" PRId64 "), "
             "lastFlushTime(%fs), nowTime(%fs), timeDiff(%fs), order(%s)",
             targetList[i]->getName().c_str(),
             totalMemory,

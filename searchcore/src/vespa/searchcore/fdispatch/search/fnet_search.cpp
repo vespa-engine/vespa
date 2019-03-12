@@ -282,7 +282,7 @@ FastS_FNET_Search::getNextFixedRow()
     if (numTries == maxTries) {
         fixedRow = getFixedRowCandidate(); // Will roundrobin/random if all rows are incomplete.
     }
-    LOG(debug, "FixedRow: selected=%d, numRows=%d, numTries=%ld, _G_prevFixedRow=%ld", fixedRow, _dataset->getNumRows(), numTries, _G_prevFixedRow.load());
+    LOG(debug, "FixedRow: selected=%d, numRows=%d, numTries=%ld, _G_prevFixedRow=%" PRIu64, fixedRow, _dataset->getNumRows(), numTries, _G_prevFixedRow.load());
     return fixedRow;
 }
 

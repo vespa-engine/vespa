@@ -1054,7 +1054,7 @@ DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics)
 void
 DocumentDB::sync(SerialNum syncTo)
 {
-    LOG(spam, "DocumentDB(%s): sync(): serialNum=%zu", _docTypeName.toString().c_str(), syncTo);
+    LOG(spam, "DocumentDB(%s): sync(): serialNum=%" PRIu64, _docTypeName.toString().c_str(), syncTo);
     _feedHandler.syncTls(syncTo);
 }
 

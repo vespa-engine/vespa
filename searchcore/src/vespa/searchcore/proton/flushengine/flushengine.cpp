@@ -234,15 +234,15 @@ FlushEngine::getTargetList(bool includeFlushingTargets) const
         for (const auto & it : _handlers) {
             IFlushHandler & handler(*it.second);
             search::SerialNum serial(handler.getCurrentSerialNumber());
-            LOG(spam, "Checking FlushHandler '%s' current serial = %ld", handler.getName().c_str(), serial);
+            LOG(spam, "Checking FlushHandler '%s' current serial = %" PRIu64, handler.getName().c_str(), serial);
             IFlushTarget::List lst = handler.getFlushTargets();
             for (const IFlushTarget::SP & target : lst) {
-                LOG(spam, "Checking target '%s' with flushedSerialNum = %ld",
+                LOG(spam, "Checking target '%s' with flushedSerialNum = %" PRIu64,
                     target->getName().c_str(), target->getFlushedSerialNum());
                 if (!isFlushing(guard, FlushContext::createName(handler, *target)) || includeFlushingTargets) {
                     ret.push_back(std::make_shared<FlushContext>(it.second, std::make_shared<CachedFlushTarget>(target), serial));
                 } else {
-                    LOG(debug, "Target '%s' with flushedSerialNum = %ld already has a flush going. Local last serial = %ld.",
+                    LOG(debug, "Target '%s' with flushedSerialNum = %" PRIu64 " already has a flush going. Local last serial = %" PRIu64 ".",
                         target->getName().c_str(), target->getFlushedSerialNum(), serial);
                 }
             }

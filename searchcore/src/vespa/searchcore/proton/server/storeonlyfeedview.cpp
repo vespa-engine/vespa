@@ -421,7 +421,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
     const DocumentId &docId = upd.getId();
     const Lid lid = updOp.getLid();
     VLOG(getDebugLevel(lid, upd.getId()),
-         "database(%s): internalUpdate: serialNum(%lu), docId(%s), lid(%d)",
+         "database(%s): internalUpdate: serialNum(%" PRIu64 "), docId(%s), lid(%d)",
          _params._docTypeName.toString().c_str(), serialNum,
          upd.getId().toString().c_str(), lid);
 
