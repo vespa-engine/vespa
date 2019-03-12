@@ -131,6 +131,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useDedicatedNodeForLogserver;
         private final boolean useFdispatchByDefault;
         private final boolean useAdaptiveDispatch;
+        private final boolean useSeparateServiceTypeForLogserverContainer;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -160,6 +161,8 @@ public class ModelContextImpl implements ModelContext {
             this.useFdispatchByDefault = Flags.USE_FDISPATCH_BY_DEFAULT.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useAdaptiveDispatch = Flags.USE_ADAPTIVE_DISPATCH.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.useSeparateServiceTypeForLogserverContainer = Flags.USE_SEPARATE_SERVICE_TYPE_FOR_LOGSERVER_CONTAINER.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
@@ -205,8 +208,12 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
+
         @Override
         public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
+
+        @Override
+        public boolean useSeparateServiceTypeForLogserverContainer() { return useSeparateServiceTypeForLogserverContainer; }
     }
 
 }

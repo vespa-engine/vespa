@@ -4,6 +4,7 @@ package com.yahoo.config.model.provision;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ClusterMembership;
@@ -952,7 +953,27 @@ public class ModelProvisioningTest {
                         "  </container>" +
                         "</services>";
         boolean useDedicatedNodeForLogserver = false;
-        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver);
+        boolean useSeparateServiceTypeForLogserverContainer = false;
+        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver, useSeparateServiceTypeForLogserverContainer);
+    }
+
+    @Test
+    public void testLogserverContainerWhenDedicatedLogserverSeparateServiceType() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                        "<services>" +
+                        "  <admin version='4.0'>" +
+                        "    <logservers>" +
+                        "      <nodes count='1' dedicated='true'/>" +
+                        "    </logservers>" +
+                        "  </admin>" +
+                        "  <container version='1.0' id='foo'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "</services>";
+        boolean useDedicatedNodeForLogserver = false;
+        boolean useSeparateServiceTypeForLogserverContainer = true;
+        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver, useSeparateServiceTypeForLogserverContainer);
     }
 
     @Test
@@ -965,7 +986,8 @@ public class ModelProvisioningTest {
                         "  </container>" +
                         "</services>";
         boolean useDedicatedNodeForLogserver = true;
-        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver);
+        boolean useSeparateServiceTypeForLogserverContainer = false;
+        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver, useSeparateServiceTypeForLogserverContainer);
     }
 
     @Test
@@ -1808,10 +1830,11 @@ public class ModelProvisioningTest {
 
     // Tests that a container is allocated on logserver host and that
     // it is able to get config
-    private void testContainerOnLogserverHost(String services, boolean useDedicatedNodeForLogserver) {
+    private void testContainerOnLogserverHost(String services, boolean useDedicatedNodeForLogserver, boolean useSeparateServiceTypeForLogserverContainer) {
         int numberOfHosts = 2;
         VespaModelTester tester = new VespaModelTester();
         tester.useDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
+        tester.useSeparateServiceTypeForLogserverContainer(useSeparateServiceTypeForLogserverContainer);
         tester.addHosts(numberOfHosts);
 
         VespaModel model = tester.createModel(Zone.defaultZone(), services, true);
@@ -1821,10 +1844,13 @@ public class ModelProvisioningTest {
         Logserver logserver = admin.getLogserver();
         HostResource hostResource = logserver.getHostResource();
         assertNotNull(hostResource.getService("logserver"));
-        assertNotNull(hostResource.getService("container"));
+        String containerServiceType = useSeparateServiceTypeForLogserverContainer
+                ? ContainerServiceType.LOGSERVER_CONTAINER.serviceName
+                : ContainerServiceType.CONTAINER.serviceName;
+        assertNotNull(hostResource.getService(containerServiceType));
 
         // Test that the container gets config
-        String configId = admin.getLogserver().getHostResource().getService("container").getConfigId();
+        String configId = admin.getLogserver().getHostResource().getService(containerServiceType).getConfigId();
         ApplicationMetadataConfig.Builder builder = new ApplicationMetadataConfig.Builder();
         model.getConfig(builder, configId);
         ApplicationMetadataConfig cfg = new ApplicationMetadataConfig(builder);
