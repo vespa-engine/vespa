@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch;
+package com.yahoo.search.dispatch.rpc;
 
-import ai.vespa.searchlib.searchprotocol.protobuf.Search;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.fs4.QueryPacket;
@@ -9,7 +8,8 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.Client.SearchResponse;
+import com.yahoo.search.dispatch.SearchInvoker;
+import com.yahoo.search.dispatch.rpc.Client.SearchResponse;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
@@ -55,7 +55,7 @@ public class RpcSearchInvoker extends SearchInvoker {
             return;
         }
 
-        var payload = query.toProtobuf(searcher.getServerId(), true).toByteArray();
+        var payload = ProtobufSerialization.serializeQuery(query, searcher.getServerId(), true);
         double timeoutSeconds = ((double) query.getTimeLeft() - 3.0) / 1000.0;
         Compressor.Compression compressionResult = resourcePool.compressor().compress(compression, payload);
         resourcePool.client().search(nodeConnection, compressionResult.type(), payload.length, compressionResult.data(), this,
@@ -88,8 +88,7 @@ public class RpcSearchInvoker extends SearchInvoker {
         CompressionType compression = CompressionType.valueOf(searchResponse.compression());
         byte[] payload = resourcePool.compressor().decompress(searchResponse.compressedPayload(), compression,
                 searchResponse.uncompressedSize());
-        var protobuf = Search.Reply.parseFrom(payload);
-        Result result = Result.fromProtobuf(query, protobuf, searcher.getDocumentDatabase(query));
+        var result = ProtobufSerialization.deserializeToResult(payload, query, searcher);
         result.hits().unorderedIterator().forEachRemaining(hit -> {
             if(hit instanceof FastHit) {
                 FastHit fhit = (FastHit) hit;

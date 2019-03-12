@@ -555,8 +555,7 @@
       "public com.yahoo.prelude.query.Highlight clone()",
       "public java.util.Map getHighlightTerms()",
       "public void prepare()",
-      "public bridge synthetic java.lang.Object clone()",
-      "public void addToProtobuf(ai.vespa.searchlib.searchprotocol.protobuf.Search$Request$Builder, boolean)"
+      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": [
       "public static final java.lang.String HIGHLIGHTTERMS"
@@ -1777,7 +1776,6 @@
       "public bridge synthetic com.yahoo.processing.Request clone()",
       "public bridge synthetic com.yahoo.processing.request.Properties properties()",
       "public bridge synthetic com.yahoo.component.provider.FreezableClass clone()",
-      "public ai.vespa.searchlib.searchprotocol.protobuf.Search$Request toProtobuf(java.lang.String, boolean)",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": [
@@ -1836,8 +1834,6 @@
       "public com.yahoo.collections.ListMap getHeaders(boolean)",
       "public bridge synthetic com.yahoo.component.provider.ListenableFreezableClass clone()",
       "public bridge synthetic com.yahoo.component.provider.FreezableClass clone()",
-      "public ai.vespa.searchlib.searchprotocol.protobuf.Search$Reply toProtobuf()",
-      "public static com.yahoo.search.Result fromProtobuf(com.yahoo.search.Query, ai.vespa.searchlib.searchprotocol.protobuf.Search$Reply, com.yahoo.prelude.fastsearch.DocumentDatabase)",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
@@ -4959,7 +4955,6 @@
       "public com.yahoo.search.searchchain.Execution getExecution()",
       "public static com.yahoo.search.query.Model getFrom(com.yahoo.search.Query)",
       "public java.lang.String toString()",
-      "public void addToProtobuf(ai.vespa.searchlib.searchprotocol.protobuf.Search$Request$Builder, boolean)",
       "public void prepare(com.yahoo.search.query.Ranking)"
     ],
     "fields": [
@@ -5018,7 +5013,6 @@
       "public void setTiming(boolean)",
       "public java.util.Set getSummaryFields()",
       "public void prepare()",
-      "public void addToProtobuf(ai.vespa.searchlib.searchprotocol.protobuf.Search$Request$Builder, boolean)",
       "public void setSummaryFields(java.lang.String)"
     ],
     "fields": [
@@ -5112,7 +5106,6 @@
       "public void setSorting(com.yahoo.search.query.Sorting)",
       "public void setSorting(java.lang.String)",
       "public static com.yahoo.search.query.Ranking getFrom(com.yahoo.search.Query)",
-      "public void addToProtobuf(ai.vespa.searchlib.searchprotocol.protobuf.Search$Request$Builder, boolean)",
       "public void prepare()"
     ],
     "fields": [
@@ -5342,7 +5335,6 @@
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public int encode(java.nio.ByteBuffer)",
-      "public void addToProtobuf(ai.vespa.searchlib.searchprotocol.protobuf.Search$Request$Builder, boolean)",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": [
@@ -6442,7 +6434,6 @@
       "public int hashCode()",
       "public com.yahoo.search.query.ranking.RankFeatures clone()",
       "public java.lang.String toString()",
-      "public void addToProtobuf(ai.vespa.searchlib.searchprotocol.protobuf.Search$Request$Builder, boolean)",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
@@ -6468,7 +6459,6 @@
       "public int hashCode()",
       "public com.yahoo.search.query.ranking.RankProperties clone()",
       "public java.lang.String toString()",
-      "public void addToProtobuf(ai.vespa.searchlib.searchprotocol.protobuf.Search$Request$Builder, boolean)",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
@@ -6991,8 +6981,7 @@
       "public com.yahoo.search.result.Coverage setSoonActive(long)",
       "public com.yahoo.search.result.Coverage setDegradedReason(int)",
       "public com.yahoo.search.result.Coverage setNodesTried(int)",
-      "public bridge synthetic com.yahoo.container.handler.Coverage setNodesTried(int)",
-      "public static com.yahoo.search.result.Coverage fromProtobuf(ai.vespa.searchlib.searchprotocol.protobuf.Search$Reply)"
+      "public bridge synthetic com.yahoo.container.handler.Coverage setNodesTried(int)"
     ],
     "fields": []
   },

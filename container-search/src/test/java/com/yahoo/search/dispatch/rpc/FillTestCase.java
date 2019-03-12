@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch;
+package com.yahoo.search.dispatch.rpc;
 
 import com.yahoo.prelude.fastsearch.DocsumDefinition;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
@@ -8,6 +8,9 @@ import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.rpc.Client;
+import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
+import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import org.junit.Test;
 
 import java.util.ArrayList;

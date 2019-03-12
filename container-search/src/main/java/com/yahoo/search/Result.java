@@ -1,15 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search;
 
-import ai.vespa.searchlib.searchprotocol.protobuf.Search;
-import com.google.protobuf.ByteString;
 import com.yahoo.collections.ListMap;
-import com.yahoo.document.GlobalId;
-import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.net.URI;
-import com.yahoo.prelude.fastsearch.DocumentDatabase;
-import com.yahoo.prelude.fastsearch.FastHit;
-import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.protect.Validator;
 import com.yahoo.search.query.context.QueryContext;
 import com.yahoo.search.result.Coverage;
@@ -18,12 +11,8 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.HitOrderer;
 import com.yahoo.search.result.HitSortOrderer;
-import com.yahoo.search.result.Relevance;
 import com.yahoo.search.statistics.ElapsedTime;
-import com.yahoo.searchlib.aggregation.Grouping;
-import com.yahoo.vespa.objects.BufferSerializer;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
@@ -340,67 +329,5 @@ public final class Result extends com.yahoo.processing.Response implements Clone
         if (headers == null && create)
             headers = new ListMap<>();
         return headers;
-    }
-
-    public static Result fromProtobuf(Query query, Search.Reply protobuf, DocumentDatabase documentDatabase) {
-        var result = new Result(query);
-
-        result.setTotalHitCount(protobuf.getTotalHitCount());
-        result.setCoverage(Coverage.fromProtobuf(protobuf));
-
-        if(protobuf.getGroupingBlob() != null && !protobuf.getGroupingBlob().isEmpty()) {
-            ArrayList<Grouping> list = new ArrayList<>();
-            BufferSerializer buf = new BufferSerializer(new GrowableByteBuffer(protobuf.getGroupingBlob().asReadOnlyByteBuffer()));
-            int cnt = buf.getInt(null);
-            for (int i = 0; i < cnt; i++) {
-                Grouping g = new Grouping();
-                g.deserialize(buf);
-                list.add(g);
-            }
-            GroupingListHit hit = new GroupingListHit(list, documentDatabase.getDocsumDefinitionSet());
-            hit.setQuery(query);
-            result.hits().add(hit);
-        }
-
-        for (var replyHit : protobuf.getHitsList()) {
-            FastHit hit = new FastHit();
-            hit.setQuery(query);
-
-            hit.setRelevance(new Relevance(replyHit.getRelevance()));
-            hit.setGlobalId(new GlobalId(replyHit.getGlobalId().toByteArray()));
-
-            hit.setFillable();
-            hit.setCached(false);
-
-            result.hits().add(hit);
-        }
-
-        return result;
-    }
-
-    public Search.Reply toProtobuf() {
-        var builder = Search.Reply.newBuilder();
-
-        var coverage = getCoverage(false);
-        if(coverage != null) {
-            builder.setCoverageDocs(coverage.getDocs())
-                .setActiveDocs(coverage.getActive())
-                .setSoonActiveDocs(coverage.getSoonActive())
-                .setDegradedBySoftTimeout(coverage.isDegradedByTimeout())
-                .setDegradedByMatchPhase(coverage.isDegradedByMatchPhase());
-        }
-
-        hits.iterator().forEachRemaining(hit -> {
-            var hitBuilder = Search.Hit.newBuilder();
-            if (hit.getRelevance() != null) {
-                hitBuilder.setRelevance(hit.getRelevance().getScore());
-            }
-            if (hit instanceof FastHit) {
-                FastHit fhit = (FastHit) hit;
-                hitBuilder.setGlobalId(ByteString.copyFrom(fhit.getGlobalId().getRawId()));
-            }
-            builder.addHits(hitBuilder);
-        });
-        return builder.build();
     }
 }

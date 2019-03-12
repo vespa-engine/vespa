@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
-import ai.vespa.searchlib.searchprotocol.protobuf.Search;
 import com.google.common.annotations.Beta;
 
 /**
@@ -42,19 +41,4 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
     public Coverage setDegradedReason(int degradedReason) { this.degradedReason = degradedReason; return this; }
 
     public Coverage setNodesTried(int nodesTried) { super.setNodesTried(nodesTried); return this; }
-
-    public static Coverage fromProtobuf(Search.Reply protobuf) {
-        var coverage = new Coverage(protobuf.getCoverageDocs(), protobuf.getActiveDocs(), 1);
-        coverage.setNodesTried(1)
-            .setSoonActive(protobuf.getSoonActiveDocs());
-
-        int degradedReason = 0;
-        if (protobuf.getDegradedByMatchPhase())
-            degradedReason |= Coverage.DEGRADED_BY_MATCH_PHASE;
-        if (protobuf.getDegradedBySoftTimeout())
-            degradedReason |= Coverage.DEGRADED_BY_TIMEOUT;
-        coverage.setDegradedReason(degradedReason);
-
-        return coverage;
-    }
 }

@@ -1,6 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-package com.yahoo.search.dispatch;
+package com.yahoo.search.dispatch.rpc;
 
 import ai.vespa.searchlib.searchprotocol.protobuf.Search;
 import com.google.common.collect.ImmutableMap;
@@ -10,7 +10,10 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.RpcFillInvoker.GetDocsumsResponseReceiver;
+import com.yahoo.search.dispatch.rpc.Client;
+import com.yahoo.search.dispatch.rpc.RpcResourcePool;
+import com.yahoo.search.dispatch.rpc.RpcSearchInvoker;
+import com.yahoo.search.dispatch.rpc.RpcFillInvoker.GetDocsumsResponseReceiver;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;

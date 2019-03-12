@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
-import ai.vespa.searchlib.searchprotocol.protobuf.Search;
 import com.yahoo.prelude.Freshness;
 import com.yahoo.prelude.Location;
 import com.yahoo.processing.request.CompoundName;
@@ -267,21 +266,6 @@ public class Ranking implements Cloneable {
         if (rankProperties.get("vespa.now") == null || rankProperties.get("vespa.now").isEmpty()) {
             rankProperties.put("vespa.now", "" + freshness.getRefTime());
         }
-    }
-
-    public void addToProtobuf(Search.Request.Builder builder, boolean includeQueryData) {
-        builder.setRankProfile(getProfile());
-        if (queryCache) {
-            builder.setCacheQuery(true);
-        }
-        if(sorting != null) {
-            sorting.addToProtobuf(builder, includeQueryData);
-        }
-        if(location != null) {
-            builder.setGeoLocation(location.toString());
-        }
-        rankFeatures.addToProtobuf(builder, includeQueryData);
-        rankProperties.addToProtobuf(builder, includeQueryData);
     }
 
 }

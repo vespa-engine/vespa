@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch;
+package com.yahoo.search.dispatch.rpc;
 
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
@@ -7,6 +7,9 @@ import com.yahoo.document.GlobalId;
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.rpc.Client;
+import com.yahoo.search.dispatch.rpc.RpcFillInvoker;
+import com.yahoo.search.dispatch.rpc.RpcSearchInvoker;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
@@ -86,7 +89,7 @@ public class MockClient implements Client {
             responseReceiver.receive(SearchResponseOrError.fromError("No result defined"));
             return;
         }
-        var payload = searchResult.toProtobuf().toByteArray();
+        var payload = ProtobufSerialization.serializeResult(searchResult);
         var compressionResult = compressor.compress(compression, payload);
         var response = new SearchResponse(compressionResult.type().getCode(), payload.length, compressionResult.data());
         responseReceiver.receive(SearchResponseOrError.fromResponse(response));

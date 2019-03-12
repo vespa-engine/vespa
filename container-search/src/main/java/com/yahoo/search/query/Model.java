@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
-import ai.vespa.searchlib.searchprotocol.protobuf.Search;
-import com.google.protobuf.ByteString;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.LocaleFactory;
@@ -19,7 +17,6 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.searchchain.Execution;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -37,8 +34,6 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * @author bratseth
  */
 public class Model implements Cloneable {
-    private static final int INITIAL_SERIALIZATION_BUFFER_SIZE = 10 * 1024;
-
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
     private static final CompoundName argumentTypeName;
@@ -511,25 +506,6 @@ public class Model implements Cloneable {
         for (Object pin : haystack)
             if (pin == needle) return true;
         return false;
-    }
-
-    public void addToProtobuf(Search.Request.Builder builder, boolean encodeQueryData) {
-        if (documentDbName != null) {
-            builder.setDocumentType(documentDbName);
-        }
-        int bufferSize = INITIAL_SERIALIZATION_BUFFER_SIZE;
-        boolean success = false;
-        while(!success) {
-            try {
-                ByteBuffer treeBuffer = ByteBuffer.allocate(bufferSize);
-                getQueryTree().encode(treeBuffer);
-                treeBuffer.flip();
-                builder.setQueryTreeBlob(ByteString.copyFrom(treeBuffer));
-                success = true;
-            } catch(java.nio.BufferOverflowException e) {
-                bufferSize *= 2;
-            }
-        }
     }
 
 }

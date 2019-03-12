@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.ranking;
 
-import ai.vespa.searchlib.searchprotocol.protobuf.Search;
 import com.yahoo.fs4.MapEncoder;
-import com.yahoo.searchlib.protobuf.MapConverter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.text.JSON;
 
@@ -127,13 +125,6 @@ public class RankFeatures implements Cloneable {
     @Override
     public String toString() {
         return JSON.encode(features);
-    }
-
-    public void addToProtobuf(Search.Request.Builder builder, boolean includeQueryData) {
-        if (includeQueryData) {
-            MapConverter.convertMapStrings(features, builder::addFeatureOverrides);
-            MapConverter.convertMapTensors(features, builder::addTensorFeatureOverrides);
-        }
     }
 
 }

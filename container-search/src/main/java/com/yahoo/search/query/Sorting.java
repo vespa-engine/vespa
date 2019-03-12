@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
-import ai.vespa.searchlib.searchprotocol.protobuf.Search;
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
 import com.yahoo.text.Utf8;
@@ -403,16 +402,6 @@ public class Sorting implements Cloneable {
             space = ' ';
         }
         return usedBytes;
-    }
-
-    public void addToProtobuf(Search.Request.Builder builder, boolean includeQueryData) {
-        for (var field : fieldOrders) {
-            var sorting = Search.SortField.newBuilder()
-                    .setField(field.getSorter().getName())
-                    .setAscending(field.getSortOrder() == Order.ASCENDING)
-                    .build();
-            builder.addSorting(sorting);
-        }
     }
 
 }
