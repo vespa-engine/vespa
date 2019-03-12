@@ -159,7 +159,7 @@ bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len)
 {
     QueryTerm* mexp = _match_iter.current();
 
-    LOG(spam, "Match: %s(%ld)", mexp->term(), tpos);
+    LOG(spam, "Match: %s(%" PRId64 ")", mexp->term(), static_cast<int64_t>(tpos));
 
     // Add new occurrence to sequence of all occurrences
     key_occ_ptr k = new key_occ(mexp->term(), pos, tpos, len);

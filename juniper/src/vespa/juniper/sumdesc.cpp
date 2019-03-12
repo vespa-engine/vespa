@@ -54,8 +54,8 @@ int complete_word(unsigned char* start, ssize_t length,
     bool whitespace_elim = false;
     const unsigned char* orig_ptr = ptr;
 
-    LOG(spam, "complete_word start 0x%p, length %ld, ptr 0x%p, increment %ld",
-        start, length, ptr, increment);
+    LOG(spam, "complete_word start 0x%p, length %zd, ptr 0x%p, increment %" PRId64,
+        start, length, ptr, static_cast<int64_t>(increment));
     // Make sure we are at the start of a character before doing any
     // comparisons
     int start_off = Fast_UnicodeUtil::UTF8move(start, length, ptr, 0);
@@ -156,8 +156,8 @@ SummaryDesc::highlight_desc::highlight_desc(off_t pos,
         ssize_t len, bool highlight)
     : _pos(pos), _len(len), _highlight(highlight)
 {
-    LOG(spam, "-- new desc: pos %ld len %ld %s",
-        _pos, _len, (highlight ? "(highlight)" : ""));
+    LOG(spam, "-- new desc: pos %" PRId64 " len %ld %s",
+        static_cast<int64_t>(_pos), _len, (highlight ? "(highlight)" : ""));
     assert(pos >= 0);
 }
 
@@ -259,7 +259,7 @@ void SummaryDesc::locate_accidential_matches()
         /* Turn "token cut at start" into "token contained in" case */
         if ((*kit)->startpos() < d->_pos) {
             off_t offset = d->_pos - (*kit)->startpos();
-               LOG(spam, "Convert start cut: offset %ld", offset);
+            LOG(spam, "Convert start cut: offset %" PRId64, static_cast<int64_t>(offset));
             d->_pos -= offset;
             d->_len += offset;
         }
@@ -280,10 +280,10 @@ void SummaryDesc::locate_accidential_matches()
             off_t start_len = kpos - d->_pos;
             off_t end_len = (d->_pos + d->_len) - (kpos + klen);
 
-            LOG(spam, "Split: (%ld,%ld) (%ld, %ld) (%ld, %ld)",
-                d->_pos, start_len,
-                kpos, klen,
-                (kpos + klen), end_len);
+            LOG(spam, "Split: (%" PRId64 ",%" PRId64 ") (%" PRId64 ", %" PRId64 " ) (%" PRId64 ", %" PRId64 ")",
+                static_cast<int64_t>(d->_pos), static_cast<int64_t>(start_len),
+                static_cast<int64_t>(kpos), static_cast<int64_t>(klen),
+                static_cast<int64_t>(kpos + klen), static_cast<int64_t>(end_len));
 
             if (start_len > 0)
                 _plist.insert(pit, highlight_desc(d->_pos, start_len, false));
@@ -293,13 +293,13 @@ void SummaryDesc::locate_accidential_matches()
                 _plist.insert(pit, highlight_desc(kpos, klen, true));
 
             if (end_len) {
-                LOG(spam, "-- Was: (%ld, %lu)", d->_pos, d->_len);
+                LOG(spam, "-- Was: (%" PRId64 ", %" PRId64 ")", static_cast<int64_t>(d->_pos), static_cast<int64_t>(d->_len));
                 d->_pos = kpos + klen;
                 d->_len  = end_len;
-                LOG(spam, "Modifying current to end (%ld, %lu)",
-                    d->_pos, d->_len);
+                LOG(spam, "Modifying current to end (%" PRId64 ", %" PRId64 ")",
+                    static_cast<int64_t>(d->_pos), static_cast<int64_t>(d->_len));
             } else {
-                LOG(spam, "Erasing (%ld, %lu)", d->_pos, d->_len);
+                LOG(spam, "Erasing (%" PRId64 ", %" PRId64 ")", static_cast<int64_t>(d->_pos), static_cast<int64_t>(d->_len));
                 pit = _plist.erase(pit);
                 // Must ensure that d is valid (as the last descriptor seen)
                 // at top of loop and after end!!
@@ -323,15 +323,15 @@ void SummaryDesc::locate_accidential_matches()
             if (more) {
                 highlight_desc& nd = *nit;
                 if (nd._pos < kpos) {
-                       LOG(spam, "(endsplit) Adjusting next desc %ld bytes", offset);
+                    LOG(spam, "(endsplit) Adjusting next desc %" PRId64 " bytes", static_cast<int64_t>(offset));
                     nd._pos += offset;
                     nd._len -= offset;
                 }
             }
             d->_len -= (klen - offset);
 
-            LOG(spam, "[%ld] Endsplit: (%ld, %lu) (%ld, %ld)",
-                offset, d->_pos, d->_len, kpos, klen);
+            LOG(spam, "[%" PRId64 "] Endsplit: (%" PRId64 ", %" PRId64 ") (%" PRId64 ", %" PRId64 ")",
+                static_cast<int64_t>(offset), static_cast<int64_t>(d->_pos), static_cast<int64_t>(d->_len), static_cast<int64_t>(kpos), static_cast<int64_t>(klen));
 
             /* Insert new desc after the just processed one */
             pit = _plist.insert(++pit, highlight_desc(kpos, klen, true));
@@ -554,8 +554,8 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes,
             // we got ourselves an overlap after all. Just skip
             // whatever needed..
             LOG(spam, "Overlap elim during string buildup: "
-                "previous end %ld, current pos %ld",
-                prev_end, pos);
+                "previous end %" PRId64 ", current pos %" PRId64,
+                static_cast<uint64_t>(prev_end), static_cast<uint64_t>(pos));
             if (pos + len <= prev_end) {
                 continue;
             } else {
@@ -589,8 +589,8 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes,
             len += moved;
         } else if (!d._highlight) {
             LOG(spam, "Not completing word at "
-                "char %c/0x%x, prev_end %ld, pos %ld",
-                *ptr, *ptr, prev_end, pos);
+                "char %c/0x%x, prev_end %" PRId64 ", pos %" PRId64,
+                *ptr, *ptr, static_cast<int64_t>(prev_end), static_cast<int64_t>(pos));
         }
 
         /* Point to "current" endpos to check for split word/ending
@@ -611,12 +611,12 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes,
             len += moved;
             if ((pos + len) >= next_pos) {
                 LOG(spam, "Word completion: no space char found - "
-                    "joining at pos %ld", next_pos);
+                    "joining at pos %" PRId64, static_cast<int64_t>(next_pos));
             }
         } else if (!d._highlight) {
             LOG(spam, "Not completing word at "
-                "char %c/0x%x, next_pos %ld",
-                *ptr, *ptr, next_pos);
+                "char %c/0x%x, next_pos %" PRId64,
+                *ptr, *ptr, static_cast<int64_t>(next_pos));
         }
 
         JD_INVAR(JD_DESC, len >= 0, len = 0,
@@ -625,8 +625,8 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes,
                      static_cast<long>(len)));
         int add_len = ((int)bytes > len ? len : bytes);
 
-        LOG(spam, "bytes %ld pos %ld len %ld %s",
-            bytes, pos, len, (d._highlight ? "(highlight)" : ""));
+        LOG(spam, "bytes %zd pos %" PRId64 " len %" PRId64 " %s",
+            bytes, static_cast<int64_t>(pos), static_cast<int64_t>(len), (d._highlight ? "(highlight)" : ""));
 
         a.append(s, &buffer[pos], add_len);
         len -= add_len;
@@ -664,9 +664,9 @@ bool SummaryDesc::overlap(MatchCandidate* m)
             m1 = m;
         }
         if (m1->endpos() > m2->starttoken()) {
-            LOG(spam, "overlap: [%ld, %ld] <-> [%ld, %ld]",
-                m->starttoken(), m->endpos(),
-                (*it)->starttoken(), (*it)->endpos());
+            LOG(spam, "overlap: [%" PRId64 ", %" PRId64 "] <-> [%" PRId64 ", %" PRId64 "]",
+                static_cast<int64_t>(m->starttoken()), static_cast<int64_t>(m->endpos()),
+                static_cast<int64_t>((*it)->starttoken()), static_cast<int64_t>((*it)->endpos()));
             return true;
         }
     }
@@ -699,8 +699,8 @@ int SummaryDesc::recompute_estimate(int len_per_elem)
             int seglen = (*kit)->startpos() - prev_pos;
             if (seglen <= 0) {
                 LOG(spam, "recompute_estimate: Skipped additional match "
-                    "at pos %lu",
-                    (*kit)->startpos());
+                    "at pos %" PRId64,
+                    static_cast<int64_t>((*kit)->startpos()));
                 continue; // skip multiple matches of same occurrence
             }
             _hit_len += (*kit)->tokenlen;
@@ -864,7 +864,7 @@ void SummaryDesc::build_highlight_descs()
                                static_cast<int>(_matcher->DocumentSize() - pos));
         add_desc(pos, max_len, false);
     }
-    LOG(debug, "Summary: start %ld end: %ld", startpos, pos);
+    LOG(debug, "Summary: start %" PRId64 " end: %" PRId64, static_cast<int64_t>(startpos), static_cast<int64_t>(pos));
 }
 
 
