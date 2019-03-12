@@ -3,11 +3,9 @@ package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
 import com.yahoo.yolean.chain.After;
@@ -17,8 +15,6 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Authorization filter for all paths in config server. It assumes that {@link NodeIdentifierFilter} is part of filter chain.
@@ -35,23 +31,9 @@ public class AuthorizationFilter implements SecurityRequestFilter {
     private final BiConsumer<ErrorResponse, ResponseHandler> rejectAction;
 
     @Inject
-    public AuthorizationFilter(Zone zone, NodeRepository nodeRepository, NodeRepositoryConfig nodeRepositoryConfig) {
-        this(
-                new Authorizer(
-                        zone.system(),
-                        nodeRepository,
-                        Stream.concat(
-                                Stream.of(HostName.getLocalhost()),
-                                Stream.of(nodeRepositoryConfig.hostnameWhitelist().split(","))
-                        ).filter(hostname -> !hostname.isEmpty()).collect(Collectors.toSet())),
-                AuthorizationFilter::logAndReject
-        );
-    }
-
-    AuthorizationFilter(BiPredicate<NodePrincipal, URI> authorizer,
-                        BiConsumer<ErrorResponse, ResponseHandler> rejectAction) {
-        this.authorizer = authorizer;
-        this.rejectAction = rejectAction;
+    public AuthorizationFilter(Zone zone, NodeRepository nodeRepository) {
+        this.authorizer = new Authorizer(zone.system(), nodeRepository);
+        this.rejectAction = AuthorizationFilter::logAndReject;
     }
 
     @Override

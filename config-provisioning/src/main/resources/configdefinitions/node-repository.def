@@ -6,6 +6,3 @@ namespace=config.provisioning
 dockerImage string default="dummyImage"
 
 useCuratorClientCache bool default=false
-
-# Comma separated list of hostnames that are authorized for all config server REST APIs
-hostnameWhitelist string default=""
