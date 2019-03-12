@@ -2,6 +2,7 @@
 package com.yahoo.search.handler;
 
 import com.yahoo.container.handler.Timing;
+import com.yahoo.container.logging.Coverage;
 import com.yahoo.container.logging.HitCounts;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -57,11 +58,13 @@ public class SearchResponse {
     }
 
     public static HitCounts createHitCounts(Query query, Result result) {
-        return new HitCounts(result.getHitCount(),
-                             result.getConcreteHitCount(),
-                             result.getTotalHitCount(),
-                             query.getHits(),
-                             query.getOffset());
+        com.yahoo.container.handler.Coverage coverage = result.getCoverage(false);
+
+        return (coverage != null)
+                ? new HitCounts(result.getHitCount(), result.getConcreteHitCount(), result.getTotalHitCount(),
+                                query.getHits(), query.getOffset(), coverage.toLoggingCoverage())
+                : new HitCounts(result.getHitCount(), result.getConcreteHitCount(), result.getTotalHitCount(),
+                                 query.getHits(), query.getOffset(), null);
     }
 
 }
