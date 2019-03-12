@@ -6,6 +6,7 @@
 #include <vespa/fastos/app.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <cinttypes>
 
 using namespace search;
 
@@ -43,7 +44,7 @@ int DocumentStoreInspectApp::dumpIdxFile(const vespalib::string & file)
             for (; ! is.empty(); chunk++) {
                 ChunkMeta cm;
                 cm.deserialize(is);
-                fprintf(stdout, "Chunk(%ld) : LastSerial(%ld), Entries(%d), Offset(%ld), Size(%d)\n",
+                fprintf(stdout, "Chunk(%zd) : LastSerial(%" PRIu64 "), Entries(%d), Offset(%" PRIu64 "), Size(%d)\n",
                                 chunk, cm.getLastSerial(), cm.getNumEntries(), cm.getOffset(), cm.getSize());
                 for (size_t i(0), m(cm.getNumEntries()); i < m; i++, entries++) {
                     LidMeta lm;

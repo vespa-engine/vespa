@@ -6,6 +6,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/app.h>
 #include <vespa/vespalib/util/exception.h>
+#include <cinttypes>
 
 using namespace search;
 
@@ -60,10 +61,10 @@ generate(uint64_t serialNum, size_t chunks, FastOS_FileInterface & idxFile, size
     for (size_t lengthError(0); int64_t(sz+lengthError) <= nextStart-start; lengthError++) {
         try {
             Chunk chunk(chunks, current, sz + lengthError, false);
-            fprintf(stdout, "id=%d lastSerial=%ld count=%ld\n", chunk.getId(), chunk.getLastSerial(), chunk.count());
+            fprintf(stdout, "id=%d lastSerial=%" PRIu64 " count=%ld\n", chunk.getId(), chunk.getLastSerial(), chunk.count());
             const Chunk::LidList & lidlist = chunk.getLids();
             if (chunk.getLastSerial() < serialNum) {
-                fprintf(stdout, "Serial num grows down prev=%ld, current=%ld\n", serialNum, chunk.getLastSerial());
+                fprintf(stdout, "Serial num grows down prev=%" PRIu64 ", current=%" PRIu64 "\n", serialNum, chunk.getLastSerial());
             }
             serialNum = std::max(serialNum, chunk.getLastSerial());
             ChunkMeta cmeta(current-start, sz + lengthError, serialNum, chunk.count());
@@ -96,7 +97,7 @@ int CreateIdxFileFromDatApp::createIdxFile(const vespalib::string & datFileName,
     assert(idxFile.OpenWriteOnly());
     index::DummyFileHeaderContext fileHeaderContext;
     idxFile.SetPosition(WriteableFileChunk::writeIdxHeader(fileHeaderContext, std::numeric_limits<uint32_t>::max(), idxFile));
-    fprintf(stdout, "datHeaderLen=%ld\n", datHeaderLen);
+    fprintf(stdout, "datHeaderLen=%" PRIu64 "\n", datHeaderLen);
     uint64_t serialNum(0);
     for (const char * current(start + datHeaderLen); current < end; ) {
         if (validHead(current, current-start)) {
@@ -111,7 +112,7 @@ int CreateIdxFileFromDatApp::createIdxFile(const vespalib::string & datFileName,
                     if (tryDecode(chunks, current-start, current, tail - current, nextStart-current)) {
                         break;
                     } else {
-                        fprintf(stdout, "chunk %ld possibly starting at %ld ending at %ld false sync at pos=%ld\n",
+                        fprintf(stdout, "chunk %" PRIu64 " possibly starting at %ld ending at %ld false sync at pos=%ld\n",
                                 chunks, current-start, tail-start, nextStart-start);
                     }
                 }
@@ -124,7 +125,7 @@ int CreateIdxFileFromDatApp::createIdxFile(const vespalib::string & datFileName,
                 }
             }
             uint64_t sz = tail - current;
-            fprintf(stdout, "Most likely found chunk at offset %ld with length %ld\n", current - start, sz);
+            fprintf(stdout, "Most likely found chunk at offset %ld with length %" PRIu64 "\n", current - start, sz);
             serialNum = generate(serialNum, chunks,idxFile, sz, current, start, nextStart);
             chunks++;
             for(current += alignment; current < tail; current += alignment);
@@ -144,7 +145,7 @@ int CreateIdxFileFromDatApp::createIdxFile(const vespalib::string & datFileName,
         }
 #endif
     }
-    fprintf(stdout, "Processed %ld chunks with total entries = %ld\n", chunks, entries);
+    fprintf(stdout, "Processed %" PRIu64 " chunks with total entries = %" PRIu64 "\n", chunks, entries);
     return 0;
 }
 

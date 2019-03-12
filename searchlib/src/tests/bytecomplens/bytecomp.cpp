@@ -92,7 +92,7 @@ Test::testRandomLengths()
         offlen = foo.getOffLen(i);
 
         if ((i % 1000000) == 0) {
-            LOG(info, "data blob [%d] length %ld offset %ld", i, offlen.length, offlen.offset);
+            LOG(info, "data blob [%d] length %" PRIu64 " offset %" PRIu64, i, offlen.length, offlen.offset);
         }
         EXPECT_EQUAL(lentable[i], offlen.length);
         EXPECT_EQUAL(offtable[i], offlen.offset);

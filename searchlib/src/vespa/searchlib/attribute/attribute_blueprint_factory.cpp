@@ -163,7 +163,7 @@ public:
             _rangeSearches.push_back(attr.createSearchContext(QueryTermDecoder::decodeTerm(stack),
                                                               attribute::SearchContextParams()));
             estHits += _rangeSearches.back()->approximateHits();
-            LOG(debug, "Range '%s' estHits %ld", qr.getRangeString().c_str(), estHits);
+            LOG(debug, "Range '%s' estHits %" PRId64, qr.getRangeString().c_str(), estHits);
         }
         if (estHits > attr.getNumDocs()) {
             estHits = attr.getNumDocs();

@@ -44,8 +44,8 @@ void
 showStats(const DataStoreStorageStats &stats)
 {
     fprintf(stdout,
-            "Storage stats usage=%9lu bloat=%9lu"
-            " lastSerial=%9lu lastFlushedSerial=%9lu"
+            "Storage stats usage=%9" PRIu64 " bloat=%9" PRIu64
+            " lastSerial=%9" PRIu64 " lastFlushedSerial=%9" PRIu64
             " maxBucketSpread=%6.2f\n",
             stats.diskUsage(), stats.diskBloat(),
             stats.lastSerialNum(), stats.lastFlushedSerialNum(),
@@ -59,8 +59,8 @@ showChunks(const std::vector<DataStoreFileChunkStats> &chunkStats)
     fprintf(stdout, "Number of chunks is %zu\n", chunkStats.size());
     for (const auto &chunk : chunkStats) {
         fprintf(stdout,
-                "Chunk %019lu usage=%9lu bloat=%9lu"
-                " lastSerial=%9lu lastFlushedSerial=%9lu"
+                "Chunk %019" PRIu64 " usage=%9" PRIu64 " bloat=%9" PRIu64
+                " lastSerial=%9" PRIu64 " lastFlushedSerial=%9" PRIu64
                 " bucketSpread=%6.2f\n",
                 chunk.nameId(), chunk.diskUsage(), chunk.diskBloat(),
                 chunk.lastSerialNum(), chunk.lastFlushedSerialNum(),

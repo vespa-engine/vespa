@@ -438,7 +438,7 @@ RawResultNode::onGetString(size_t, BufferRef ) const {
 
 ResultNode::ConstBufferRef
 EnumResultNode::onGetString(size_t, BufferRef buf) const {
-    int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%ld", getValue()))));
+    int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%" PRId64, getValue()))));
     return ConstBufferRef(buf.str(), numWritten);
 }
 
@@ -467,7 +467,7 @@ Int32ResultNode::onGetString(size_t, BufferRef buf) const {
 
 ResultNode::ConstBufferRef
 Int64ResultNode::onGetString(size_t, BufferRef buf) const {
-    int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%ld", getValue()))));
+    int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%" PRId64, getValue()))));
     return ConstBufferRef(buf.str(), numWritten);
 }
 

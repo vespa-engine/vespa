@@ -141,7 +141,7 @@ public:
     AttributeStatus getStatus() { _v->commit(true); return _v->getStatus(); }
     AttributeStatus getStatus(const vespalib::string &prefix) {
         AttributeStatus status(getStatus());
-        LOG(info, "status %s: used=%zu, dead=%zu, onHold=%zu",
+        LOG(info, "status %s: used=%" PRIu64 ", dead=%" PRIu64 ", onHold=%" PRIu64,
             prefix.c_str(), status.getUsed(), status.getDead(), status.getOnHold());
         return status;
     }
