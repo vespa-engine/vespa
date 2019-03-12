@@ -336,7 +336,7 @@ void mainDocumentError(int64_t len) {
 }
 
 void notEnoughDocumentError(int32_t len, int64_t remaining) {
-    throw DeserializeException(make_string( "Buffer said document length is %i bytes, but only %li bytes remain in buffer", len, remaining));
+    throw DeserializeException(make_string( "Buffer said document length is %d bytes, but only %" PRId64 " bytes remain in buffer", len, remaining));
 }
 
 }

@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/document/base/documentid.h>
+#include <cinttypes>
 
 using namespace document;
 
@@ -10,7 +11,7 @@ int main(int argc, char *argv[])
     }
     vespalib::string s(argv[1]);
     uint64_t n = strtoul(argv[2], NULL, 0);
-    printf("Creating documentid '%s' %ld times\n", s.c_str(), n);
+    printf("Creating documentid '%s' %" PRIu64 " times\n", s.c_str(), n);
     printf("sizeof(IdString)=%ld,  sizeof(IdIdString)=%ld\n", sizeof(IdString), sizeof(IdIdString));
     for (uint64_t i=0; i < n; i++) {
         IdString::UP id = IdString::createIdString(s);

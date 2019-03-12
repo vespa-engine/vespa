@@ -96,7 +96,7 @@ using namespace document::select;
                 const IntegerValueNode* val(
                         dynamic_cast<const IntegerValueNode*>(&valnode));
                 if (!val) return;
-                UserDocIdString id(vespalib::make_string("userdoc::%lu:", val->getValue()));
+                UserDocIdString id(vespalib::make_string("userdoc::%" PRIu64 ":", val->getValue()));
                 _buckets.push_back(BucketId(32, id.getLocation()));
                 _unknown = false;
             } else if (node.getType() == IdValueNode::GROUP) {
