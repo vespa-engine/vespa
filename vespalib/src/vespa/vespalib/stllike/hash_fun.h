@@ -16,30 +16,36 @@ template<typename K> struct hash {
 template<> struct hash<char> {
     size_t operator() (char arg) const { return arg; }
 };
-template<> struct hash<int8_t> {
-    size_t operator() (int8_t arg) const { return arg; }
+template<> struct hash<signed char> {
+    size_t operator() (signed char arg) const { return arg; }
 };
-template<> struct hash<int16_t> {
-    size_t operator() (int16_t arg) const { return arg; }
+template<> struct hash<short> {
+    size_t operator() (short arg) const { return arg; }
 };
-template<> struct hash<int32_t> {
-    size_t operator() (int32_t arg) const { return arg; }
+template<> struct hash<int> {
+    size_t operator() (int arg) const { return arg; }
 };
-template<> struct hash<int64_t> {
-    size_t operator() (int64_t arg) const { return arg; }
+template<> struct hash<long> {
+    size_t operator() (long arg) const { return arg; }
+};
+template<> struct hash<long long> {
+    size_t operator() (long long arg) const { return arg; }
 };
 
-template<> struct hash<uint8_t> {
-    size_t operator() (uint8_t arg) const { return arg; }
+template<> struct hash<unsigned char> {
+    size_t operator() (unsigned char arg) const { return arg; }
 };
-template<> struct hash<uint16_t> {
-    size_t operator() (uint16_t arg) const { return arg; }
+template<> struct hash<unsigned short> {
+    size_t operator() (unsigned short arg) const { return arg; }
 };
-template<> struct hash<uint32_t> {
-    size_t operator() (uint32_t arg) const { return arg; }
+template<> struct hash<unsigned int> {
+    size_t operator() (unsigned int arg) const { return arg; }
 };
-template<> struct hash<uint64_t> {
-    size_t operator() (uint64_t arg) const { return arg; }
+template<> struct hash<unsigned long> {
+    size_t operator() (unsigned long arg) const { return arg; }
+};
+template<> struct hash<unsigned long long> {
+    size_t operator() (unsigned long long arg) const { return arg; }
 };
 
 template<> struct hash<float> {
