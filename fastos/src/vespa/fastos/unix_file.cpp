@@ -16,7 +16,26 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#ifdef __linux__
 #include <sys/vfs.h>
+#else
+#include <sys/mount.h>
+#endif
+
+ssize_t
+FastOS_UNIX_File::Read(void *buffer, size_t len)
+{
+    ssize_t nRead = read(_filedes, buffer, len);
+    return nRead;
+}
+
+
+ssize_t
+FastOS_UNIX_File::Write2(const void *buffer, size_t len)
+{
+    ssize_t writeRes = write(_filedes, buffer, len);
+    return writeRes;
+}
 
 bool
 FastOS_UNIX_File::SetPosition(int64_t desiredPosition)
@@ -33,6 +52,22 @@ FastOS_UNIX_File::GetPosition(void)
     return lseek(_filedes, 0, SEEK_CUR);
 }
 
+void FastOS_UNIX_File::ReadBuf(void *buffer, size_t length,
+                               int64_t readOffset)
+{
+    ssize_t readResult;
+
+    readResult = pread(_filedes, buffer, length, readOffset);
+    if (static_cast<size_t>(readResult) != length) {
+        std::string errorString = readResult != -1 ?
+                                  std::string("short read") :
+                                  FastOS_FileInterface::getLastErrorString();
+        std::ostringstream os;
+        os << "Fatal: Reading " << length << " bytes, got " << readResult << " from '"
+           << GetFileName() << "' failed: " << errorString;
+        throw std::runtime_error(os.str());
+    }
+}
 
 bool
 FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
@@ -51,9 +86,18 @@ FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
         statInfo->_isDirectory = S_ISDIR(stbuf.st_mode);
         statInfo->_size = static_cast<int64_t>(stbuf.st_size);
         statInfo->_modifiedTime = stbuf.st_mtime;
+#ifdef __linux__
         statInfo->_modifiedTimeNS = stbuf.st_mtim.tv_sec;
         statInfo->_modifiedTimeNS *= 1000000000;
         statInfo->_modifiedTimeNS += stbuf.st_mtim.tv_nsec;
+#elif defined(__APPLE__)
+        statInfo->_modifiedTimeNS = stbuf.st_mtimespec.tv_sec;
+        statInfo->_modifiedTimeNS *= 1000000000;
+        statInfo->_modifiedTimeNS += stbuf.st_mtimespec.tv_nsec;
+#else
+        statInfo->_modifiedTimeNS = stbuf.st_mtime;
+        statInfo->_modifiedTimeNS *= 1000000000;
+#endif
         rc = true;
     } else {
         if (errno == ENOENT) {
@@ -150,9 +194,11 @@ FastOS_UNIX_File::CalcAccessFlags(unsigned int openFlags)
         accessFlags |= O_FSYNC;
 #endif
 
+#ifdef __linux__
     if ((openFlags & FASTOS_FILE_OPEN_DIRECTIO) != 0) {
         accessFlags |= O_DIRECT;
     }
+#endif
 
     if ((openFlags & FASTOS_FILE_OPEN_TRUNCATE) != 0) {
         // Truncate file on open
@@ -161,7 +207,11 @@ FastOS_UNIX_File::CalcAccessFlags(unsigned int openFlags)
     return accessFlags;
 }
 
+#ifdef __linux__
 constexpr int ALWAYS_SUPPORTED_MMAP_FLAGS = ~MAP_HUGETLB;
+#else
+constexpr int ALWAYS_SUPPORTED_MMAP_FLAGS = ~0;
+#endif
 
 bool
 FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
@@ -190,7 +240,11 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
             abort();
         }
 
+#ifdef __linux__
         _filedes = file->_fileno;
+#else
+        _filedes = fileno(file);
+#endif
         _openFlags = openFlags;
         rc = true;
     } else {
@@ -214,6 +268,7 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
                         mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | (_mmapFlags & ALWAYS_SUPPORTED_MMAP_FLAGS), _filedes, 0);
                     }
                     if (mbase != MAP_FAILED) {
+#ifdef __linux__
                         int fadviseOptions = getFAdviseOptions();
                         int eCode(0);
                         if (POSIX_FADV_RANDOM == fadviseOptions) {
@@ -224,6 +279,7 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
                         if (eCode != 0) {
                             fprintf(stderr, "Failed: posix_madvise(%p, %ld, %d) = %d\n", mbase, mlen, fadviseOptions, eCode);
                         }
+#endif
                         _mmapbase = mbase;
                         _mmaplen = mlen;
                     } else {
@@ -245,7 +301,9 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
 
 void FastOS_UNIX_File::dropFromCache() const
 {
+#ifdef __linux__
     posix_fadvise(_filedes, 0, 0, POSIX_FADV_DONTNEED);
+#endif
 }
 
 

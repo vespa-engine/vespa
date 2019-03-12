@@ -34,6 +34,7 @@ FastOS_ApplicationInterface::FastOS_ApplicationInterface() :
     _argv(nullptr)
 {
     FastOS_ProcessInterface::_app = this;
+#ifdef __linux__
     char * fadvise = getenv("VESPA_FADVISE_OPTIONS");
     if (fadvise != nullptr) {
         int fadviseOptions(0);
@@ -44,6 +45,7 @@ FastOS_ApplicationInterface::FastOS_ApplicationInterface() :
         if (strstr(fadvise, "NOREUSE"))    { fadviseOptions |= POSIX_FADV_NOREUSE; }
         FastOS_FileInterface::setDefaultFAdviseOptions(fadviseOptions);
     }
+#endif
 }
 
 FastOS_ApplicationInterface::~FastOS_ApplicationInterface ()

@@ -28,7 +28,11 @@ DirectIOException::DirectIOException(const char * fileName, const void * buffer,
 DirectIOException::~DirectIOException() {}
 
 FastOS_FileInterface::FailedHandler FastOS_FileInterface::_failedHandler = nullptr;
+#ifdef __linux__
 int FastOS_FileInterface::_defaultFAdviseOptions = POSIX_FADV_NORMAL;
+#else
+int FastOS_FileInterface::_defaultFAdviseOptions = 0;
+#endif
 
 static const size_t MAX_WRITE_CHUNK_SIZE = 0x4000000; // 64 MB
 

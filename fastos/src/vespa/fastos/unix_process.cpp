@@ -9,6 +9,9 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#ifndef __linux__
+#include <signal.h>
+#endif
 
 #ifndef AF_LOCAL
 #define AF_LOCAL        AF_UNIX
