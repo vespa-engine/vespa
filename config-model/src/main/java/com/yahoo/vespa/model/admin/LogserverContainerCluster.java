@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.admin;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.Handler;
 
 /**
  * @author gjoranv
@@ -12,9 +13,18 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
 
     public LogserverContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
+
+        addDefaultHandlersWithVip();
+        addLogHandler();
     }
 
     @Override
     protected void myPrepare(DeployState deployState) { }
+
+    private void addLogHandler() {
+        Handler<?> logHandler = Handler.fromClassName(ContainerCluster.LOG_HANDLER_CLASS);
+        logHandler.addServerBindings("http://*/logs", "https://*/logs");
+        addComponent(logHandler);
+    }
 
 }

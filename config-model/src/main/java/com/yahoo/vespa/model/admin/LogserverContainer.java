@@ -17,13 +17,6 @@ public class LogserverContainer extends Container {
 
     public LogserverContainer(AbstractConfigProducer parent, boolean useSeparateServiceTypeForLogserverContainer) {
         super(parent, "" + 0, 0, true);
-        // Add base handlers and the log handler
-        ContainerCluster logServerCluster = (ContainerCluster) parent;
-        logServerCluster.addMetricStateHandler();
-        logServerCluster.addApplicationStatusHandler();
-        logServerCluster.addDefaultRootHandler();
-        logServerCluster.addVipHandler();
-        addLogHandler(logServerCluster);
         this.useSeparateServiceTypeForLogserverContainer = useSeparateServiceTypeForLogserverContainer;
     }
 
@@ -32,10 +25,5 @@ public class LogserverContainer extends Container {
         return useSeparateServiceTypeForLogserverContainer ? ContainerServiceType.LOGSERVER_CONTAINER : ContainerServiceType.CONTAINER;
     }
 
-    private void addLogHandler(ContainerCluster cluster) {
-        Handler<?> logHandler = Handler.fromClassName(ContainerCluster.LOG_HANDLER_CLASS);
-        logHandler.addServerBindings("http://*/logs", "https://*/logs");
-        cluster.addComponent(logHandler);
-    }
 
 }

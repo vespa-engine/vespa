@@ -96,7 +96,6 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
                                                             "cluster-controllers",
                                                             "cluster-controllers",
                                                             deployState);
-        ContainerModelBuilder.addDefaultHandler_legacyBuilder(cluster);
 
         List<ClusterControllerContainer> containers = new ArrayList<>();
 

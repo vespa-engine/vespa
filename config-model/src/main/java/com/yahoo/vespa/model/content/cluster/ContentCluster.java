@@ -468,7 +468,6 @@ public class ContentCluster extends AbstractConfigProducer implements
                 }
             }
             clusterControllers.addContainers(containers);
-            ContainerModelBuilder.addDefaultHandler_legacyBuilder(clusterControllers);
             return clusterControllers;
         }
 

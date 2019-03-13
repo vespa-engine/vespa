@@ -176,7 +176,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addDocproc(deployState, spec, cluster);
         addDocumentApi(spec, cluster);  // NOTE: Must be done after addSearch
 
-        addDefaultHandlers(cluster);
+        cluster.addDefaultHandlersExceptStatus();
         addStatusHandlers(cluster, context.getDeployState().isHosted());
 
         addHttp(deployState, spec, cluster);
@@ -265,10 +265,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(deployState, cluster, spec, "component");
     }
 
-    private void addDefaultHandlers(ContainerClusterImpl cluster) {
-        addDefaultHandlersExceptStatus(cluster);
-    }
-
     protected void addStatusHandlers(ContainerClusterImpl cluster, boolean isHostedVespa) {
         if (isHostedVespa) {
             String name = "status.html";
@@ -279,21 +275,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         } else {
             cluster.addVipHandler();
         }
-    }
-
-    /**
-     * Intended for use by legacy builders only.
-     * Will be called during building when using ContainerModelBuilder.
-     */
-    public static void addDefaultHandler_legacyBuilder(ContainerCluster<? extends Container> cluster) {
-        addDefaultHandlersExceptStatus(cluster);
-        cluster.addVipHandler();
-    }
-
-    private static void addDefaultHandlersExceptStatus(ContainerCluster<? extends Container> cluster) {
-        cluster.addDefaultRootHandler();
-        cluster.addMetricStateHandler();
-        cluster.addApplicationStatusHandler();
     }
 
     private void addClientProviders(DeployState deployState, Element spec, ContainerClusterImpl cluster) {

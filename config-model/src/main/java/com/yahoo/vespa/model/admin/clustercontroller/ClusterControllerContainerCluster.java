@@ -16,6 +16,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
 {
     public ClusterControllerContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
+        addDefaultHandlersWithVip();
     }
 
     @Override

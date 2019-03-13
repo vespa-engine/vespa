@@ -197,6 +197,17 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return zone;
     }
 
+    public void addDefaultHandlersWithVip() {
+        addDefaultHandlersExceptStatus();
+        addVipHandler();
+    }
+
+    public void addDefaultHandlersExceptStatus() {
+        addDefaultRootHandler();
+        addMetricStateHandler();
+        addApplicationStatusHandler();
+    }
+
     public void addMetricStateHandler() {
         Handler<AbstractConfigProducer<?>> stateHandler = new Handler<>(
                 new ComponentModel(STATE_HANDLER_CLASS, null, null, null));

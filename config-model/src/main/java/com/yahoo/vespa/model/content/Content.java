@@ -314,8 +314,7 @@ public class Content extends ConfigModel {
             modelContext.getConfigModelRepoAdder().add(indexingClusterModel);
             content.ownedIndexingCluster = Optional.of(indexingCluster);
 
-            ContainerModelBuilder.addDefaultHandler_legacyBuilder(indexingCluster);
-
+            indexingCluster.addDefaultHandlersWithVip();
             addDocproc(indexingCluster);
 
             List<ContainerImpl> nodes = new ArrayList<>();
