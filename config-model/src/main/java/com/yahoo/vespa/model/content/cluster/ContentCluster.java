@@ -23,20 +23,16 @@ import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
-import com.yahoo.vespa.model.admin.monitoring.Metric;
-import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerComponent;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerConfigurer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
-import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerClusterVerifier;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerClusterImpl;
-import com.yahoo.vespa.model.container.ContainerImpl;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.content.ClusterControllerConfig;
@@ -455,9 +451,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                                            Collection<HostResource> hosts,
                                                                            String name, boolean multitenant,
                                                                            DeployState deployState) {
-            var clusterControllers = new ClusterControllerContainerCluster(parent, name, name,
-                                                                           new ClusterControllerClusterVerifier(),
-                                                                           deployState);
+            var clusterControllers = new ClusterControllerContainerCluster(parent, name, name, deployState);
             List<ClusterControllerContainer> containers = new ArrayList<>();
             // Add a cluster controller on each config server (there is always at least one).
             if (clusterControllers.getContainers().isEmpty()) {

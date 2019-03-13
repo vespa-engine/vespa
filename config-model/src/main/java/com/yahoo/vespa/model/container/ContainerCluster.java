@@ -6,9 +6,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationMetaData;
-import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
@@ -22,7 +20,6 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.container.handler.ThreadPoolProvider;
-import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
@@ -38,8 +35,6 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
-import com.yahoo.vespa.config.search.RankProfilesConfig;
-import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
@@ -49,25 +44,20 @@ import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ComponentGroup;
 import com.yahoo.vespa.model.container.component.ComponentsConfigGenerator;
-import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 import com.yahoo.vespa.model.container.component.DiscBindingsConfigGenerator;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.StatisticsComponent;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.Http;
-import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
-import com.yahoo.vespa.model.container.jersey.RestApi;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
-import com.yahoo.vespa.model.utils.FileSender;
 import com.yahoo.vespaclient.config.FeederConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -82,8 +72,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX;
 
@@ -117,8 +105,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
         RoutingProviderConfig.Producer,
-        ConfigserverConfig.Producer,
-        ThreadpoolConfig.Producer
+        ConfigserverConfig.Producer
 
 {
 
@@ -163,7 +150,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private final List<String> serviceAliases = new ArrayList<>();
     private final List<String> endpointAliases = new ArrayList<>();
     private final ComponentGroup<Component<?, ?>> componentGroup;
-    private final ContainerClusterVerifier clusterVerifier;
     private final boolean isHostedVespa;
 
     private Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
@@ -178,28 +164,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String environmentVars = null;
     private Integer memoryPercentage = null;
 
-    // TODO: REMOVE
-    private static class AcceptAllVerifier implements ContainerClusterVerifier {
-        @Override
-        public boolean acceptComponent(Component component) { return true; }
-
-        @Override
-        public boolean acceptContainer(Container container) { return true; }
-
-        @Override
-        public void getConfig(ThreadpoolConfig.Builder builder) {
-
-        }
-    }
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
-        this(parent, subId, name, new AcceptAllVerifier(), deployState);
-    }
-
-    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name,
-                            ContainerClusterVerifier verifier, DeployState deployState) {
         super(parent, subId);
-        this.clusterVerifier = verifier;
         this.name = name;
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
@@ -210,10 +177,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         // TODO: Better modelling
         addSimpleComponent(ThreadPoolProvider.class);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
-        addSimpleComponent("com.yahoo.jdisc.http.filter.SecurityFilterInvoker");
-        addSimpleComponent(DEFAULT_LINGUISTICS_PROVIDER);
-        addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
-        addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricUpdater");
@@ -292,9 +255,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public final void addComponent(Component<?, ?> component) {
-        if (clusterVerifier.acceptComponent(component)) {
-            componentGroup.addComponent(component);
-        }
+        componentGroup.addComponent(component);
     }
 
     public final void addSimpleComponent(String idSpec, String classSpec, String bundleSpec) {
@@ -314,7 +275,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent(clazz.getName());
     }
 
-    private void addSimpleComponent(String className) {
+    protected void addSimpleComponent(String className) {
         addComponent(new SimpleComponent(className));
     }
 
@@ -475,11 +436,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     @Override
     public void getConfig(JdiscBindingsConfig.Builder builder) {
         builder.handlers.putAll(DiscBindingsConfigGenerator.generate(getHandlers()));
-    }
-
-    @Override
-    public void getConfig(ThreadpoolConfig.Builder builder) {
-        clusterVerifier.getConfig(builder);
     }
 
     @Override

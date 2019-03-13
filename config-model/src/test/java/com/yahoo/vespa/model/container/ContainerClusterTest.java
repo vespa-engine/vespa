@@ -16,7 +16,6 @@ import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
-import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerClusterVerifier;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
@@ -27,11 +26,9 @@ import org.junit.Test;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -85,27 +82,14 @@ public class ContainerClusterTest {
         return cluster;
     }
     private ClusterControllerContainerCluster createClusterControllerCluster(MockRoot root) {
-        return new ClusterControllerContainerCluster(root, "container0", "container1",
-                                                     new ClusterControllerClusterVerifier(), root.getDeployState());
+        return new ClusterControllerContainerCluster(root, "container0", "container1", root.getDeployState());
     }
     private MockRoot createRoot(boolean isHosted) {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(isHosted)).build();
         return new MockRoot("foo", state);
     }
 
-     private ContainerClusterImpl createContainerCluster(MockRoot root, boolean isCombinedCluster,
-                                                         Integer memoryPercentage, Optional<ContainerClusterVerifier> extraComponents) {
-
-        ContainerClusterImpl cluster = extraComponents.isPresent()
-                ? new ContainerClusterImpl(root, "container0", "container1", extraComponents.get(), root.getDeployState())
-                : new ContainerClusterImpl(root, "container0", "container1", root.getDeployState());
-        if (isCombinedCluster)
-            cluster.setHostClusterId("test-content-cluster");
-        cluster.setMemoryPercentage(memoryPercentage);
-        cluster.setSearch(new ContainerSearch(cluster, new SearchChains(cluster, "search-chain"), new ContainerSearch.Options()));
-        return cluster;
-    }
-    private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted, boolean isCombinedCluster, 
+    private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted, boolean isCombinedCluster,
                                                             Integer explicitMemoryPercentage,
                                                             int expectedMemoryPercentage) {
         ContainerCluster cluster = createContainerCluster(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
@@ -159,18 +143,6 @@ public class ContainerClusterTest {
         verifyJvmArgs(isHosted, hasDocProc, "ignored initial override", container.getJvmOptions());
         container.setJvmOptions(null);
         verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmOptions());
-    }
-
-    @Test
-    public void testContainerClusterMaxThreads() {
-        MockRoot root = createRoot(false);
-        ContainerClusterImpl cluster = createContainerCluster(root, false);
-        addContainer(root.deployLogger(), cluster, "c1","host-c1");
-
-        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
-        cluster.getConfig(tpBuilder);
-        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
-        assertEquals(500, threadpoolConfig.maxthreads());
     }
 
     @Test

@@ -1,9 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.FileReference;
-import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -50,14 +49,12 @@ public final class ContainerClusterImpl extends ContainerCluster<ContainerImpl> 
         super(parent, subId, name, deployState);
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
-    }
 
-    public ContainerClusterImpl(AbstractConfigProducer<?> parent, String subId, String name, ContainerClusterVerifier verifier, DeployState deployState) {
-        super(parent, subId, name, verifier, deployState);
-        restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
-        servletGroup = new ConfigProducerGroup<>(this, "servlet");
+        addSimpleComponent(DEFAULT_LINGUISTICS_PROVIDER);
+        addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
+        addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
+        addSimpleComponent("com.yahoo.jdisc.http.filter.SecurityFilterInvoker");
     }
-
 
     protected void myPrepare(DeployState deployState) {
         addAndSendApplicationBundles(deployState);

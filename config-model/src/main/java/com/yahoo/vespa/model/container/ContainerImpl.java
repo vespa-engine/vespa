@@ -1,13 +1,8 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
-import com.yahoo.config.FileReference;
-import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.model.api.container.ContainerServiceType;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.jersey.RestApi;
-import com.yahoo.vespa.model.utils.FileSender;
 
 /**
  * @author gjoranv

@@ -167,12 +167,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addSecretStore(cluster, spec);
         addHandlers(deployState, cluster, spec);
 
-        if (cluster instanceof ContainerClusterImpl) {
-            var cluterImpl = (ContainerClusterImpl) cluster;
-            addRestApis(deployState, spec, cluterImpl);
-            addServlets(deployState, spec, cluterImpl);
-            addModelEvaluation(spec, cluterImpl, context);
-        }
+        addRestApis(deployState, spec, cluster);
+        addServlets(deployState, spec, cluster);
+        addModelEvaluation(spec, cluster, context);
 
         addProcessing(deployState, spec, cluster);
         addSearch(deployState, spec, cluster);

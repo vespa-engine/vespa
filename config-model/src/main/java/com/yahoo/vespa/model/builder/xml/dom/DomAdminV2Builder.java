@@ -15,12 +15,8 @@ import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
-import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerClusterVerifier;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilder;
-import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import org.w3c.dom.Element;
 
@@ -99,7 +95,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         var cluster = new ClusterControllerContainerCluster(parent,
                                                             "cluster-controllers",
                                                             "cluster-controllers",
-                                                            new ClusterControllerClusterVerifier(), deployState);
+                                                            deployState);
         ContainerModelBuilder.addDefaultHandler_legacyBuilder(cluster);
 
         List<ClusterControllerContainer> containers = new ArrayList<>();
