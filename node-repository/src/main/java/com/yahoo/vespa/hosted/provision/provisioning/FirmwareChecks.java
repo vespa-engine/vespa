@@ -28,7 +28,7 @@ public class FirmwareChecks {
     private final CuratorDatabaseClient database;
     private final Clock clock;
 
-    private Supplier<Optional<Instant>> checkAfter;
+    private volatile Supplier<Optional<Instant>> checkAfter;
 
     public FirmwareChecks(CuratorDatabaseClient database, Clock clock) {
         this.database = database;
