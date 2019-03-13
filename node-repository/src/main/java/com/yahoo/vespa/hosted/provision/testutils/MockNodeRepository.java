@@ -73,11 +73,15 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(createNode("node3", "host3.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("expensive"), NodeType.tenant));
 
         Node node4 = createNode("node4", "host4.yahoo.com", ipAddresses, Optional.of("dockerhost1.yahoo.com"), flavors.getFlavorOrThrow("docker"), NodeType.tenant);
-        node4 = node4.with(node4.status().withVespaVersion(new Version("6.41.0")));
+        node4 = node4.with(node4.status()
+                .withVespaVersion(new Version("6.41.0"))
+                .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.41.0")));
         nodes.add(node4);
 
         Node node5 = createNode("node5", "host5.yahoo.com", ipAddresses, Optional.of("dockerhost2.yahoo.com"), flavors.getFlavorOrThrow("docker"), NodeType.tenant);
-        nodes.add(node5.with(node5.status().withVespaVersion(new Version("1.2.3"))));
+        nodes.add(node5.with(node5.status()
+                .withVespaVersion(new Version("1.2.3"))
+                .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:1.2.3"))));
 
 
         nodes.add(createNode("node6", "host6.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
@@ -86,7 +90,8 @@ public class MockNodeRepository extends NodeRepository {
         Node node10 = createNode("node10", "host10.yahoo.com", ipAddresses, Optional.of("parent1.yahoo.com"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
         Status node10newStatus = node10.status();
         node10newStatus = node10newStatus
-                .withVespaVersion(Version.fromString("5.104.142"));
+                .withVespaVersion(Version.fromString("5.104.142"))
+                .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:5.104.142"));
         node10 = node10.with(node10newStatus);
         nodes.add(node10);
 

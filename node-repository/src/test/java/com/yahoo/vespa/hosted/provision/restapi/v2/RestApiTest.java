@@ -214,7 +214,7 @@ public class RestApiTest {
                         Utf8.toBytes("{\"wantToDeprovision\": true}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                        Utf8.toBytes("{\"currentVespaVersion\": \"6.43.0\",\"currentDockerImage\": \"docker-registry.domain.tld:8080/dist/vespa:6.43.0\"}"), Request.Method.PATCH),
+                        Utf8.toBytes("{\"currentVespaVersion\": \"6.43.0\",\"currentDockerImage\": \"docker-registry.domain.tld:8080/dist/vespa:6.45.0\"}"), Request.Method.PATCH),
                         "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"openStackId\": \"patched-openstackid\"}"), Request.Method.PATCH),

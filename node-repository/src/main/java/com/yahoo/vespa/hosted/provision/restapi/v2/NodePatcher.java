@@ -113,13 +113,7 @@ public class NodePatcher {
             case "currentDockerImage" :
                 if (node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                     throw new IllegalArgumentException("Docker image can only be set for docker containers");
-                Version versionFromImage = Optional.of(asString(value))
-                        .filter(s -> !s.isEmpty())
-                        .map(DockerImage::fromString)
-                        .map(image -> image.tag().map(Version::fromString).orElseThrow(() ->
-                                new IllegalArgumentException("tag components of docker image must be set")))
-                        .orElse(Version.emptyVersion);
-                return node.with(node.status().withVespaVersion(versionFromImage));
+                return node.with(node.status().withDockerImage(DockerImage.fromString(asString(value))));
             case "vespaVersion" :
             case "currentVespaVersion" :
                 return node.with(node.status().withVespaVersion(Version.fromString(asString(value))));

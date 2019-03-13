@@ -6,12 +6,12 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.NetworkPorts;
-import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -57,6 +57,7 @@ public class NodeSerializer {
     private static final String rebootGenerationKey = "rebootGeneration";
     private static final String currentRebootGenerationKey = "currentRebootGeneration";
     private static final String vespaVersionKey = "vespaVersion";
+    private static final String currentDockerImageKey = "currentDockerImage";
     private static final String failCountKey = "failCount";
     private static final String hardwareFailureKey = "hardwareFailure";
     private static final String nodeTypeKey = "type";
@@ -117,6 +118,7 @@ public class NodeSerializer {
         object.setLong(rebootGenerationKey, node.status().reboot().wanted());
         object.setLong(currentRebootGenerationKey, node.status().reboot().current());
         node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));
+        node.status().dockerImage().ifPresent(image -> object.setString(currentDockerImageKey, image.asString()));
         object.setLong(failCountKey, node.status().failCount());
         node.status().hardwareFailureDescription().ifPresent(failure -> object.setString(hardwareFailureKey, failure));
         object.setBool(wantToRetireKey, node.status().wantToRetire());
@@ -185,6 +187,7 @@ public class NodeSerializer {
     private Status statusFromSlime(Inspector object) {
         return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
                           versionFromSlime(object.field(vespaVersionKey)),
+                          dockerImageFromSlime(object.field(currentDockerImageKey)),
                           (int)object.field(failCountKey).asLong(),
                           hardwareFailureDescriptionFromSlime(object),
                           object.field(wantToRetireKey).asBool(),
@@ -244,6 +247,11 @@ public class NodeSerializer {
     private Optional<Version> versionFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(Version.fromString(object.asString()));
+    }
+
+    private Optional<DockerImage> dockerImageFromSlime(Inspector object) {
+        if ( ! object.valid()) return Optional.empty();
+        return Optional.of(DockerImage.fromString(object.asString()));
     }
 
     private Optional<Instant> instantFromSlime(Inspector object) {

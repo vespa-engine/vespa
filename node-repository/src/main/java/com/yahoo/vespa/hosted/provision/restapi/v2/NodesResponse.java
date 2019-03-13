@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -173,11 +174,8 @@ class NodesResponse extends HttpResponse {
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong("currentFirmwareCheck", instant.toEpochMilli()));
         if (node.type().isDockerHost())
             nodeRepository.firmwareChecks().requiredAfter().ifPresent(after -> object.setLong("wantedFirmwareCheck", after.toEpochMilli()));
-        node.status().vespaVersion()
-                .ifPresent(version -> {
-                    object.setString("vespaVersion", version.toFullString());
-                    object.setString("currentDockerImage", nodeRepository.dockerImage().withTag(version).asString());
-                });
+        node.status().vespaVersion().ifPresent(version -> object.setString("vespaVersion", version.toFullString()));
+        currentDockerImage(node).ifPresent(dockerImage -> object.setString("currentDockerImage", dockerImage.asString()));
         object.setLong("failCount", node.status().failCount());
         object.setBool("hardwareFailure", node.status().hardwareFailureDescription().isPresent());
         node.status().hardwareFailureDescription().ifPresent(failure -> object.setString("hardwareFailureDescription", failure));
@@ -213,6 +211,17 @@ class NodesResponse extends HttpResponse {
             object.setString("agent", normalizedAgentUntilV6IsGone(event.agent()).name());
         }
     }
+
+    // Hack: For docker hosts, return current docker image as default prefix + current Vespa version
+    // TODO: Remove current + wanted docker image from response for non-docker types
+    private Optional<DockerImage> currentDockerImage(Node node) {
+        return node.status().dockerImage()
+                .or(() -> Optional.of(node)
+                        .filter(n -> n.type().isDockerHost())
+                        .flatMap(n -> n.status().vespaVersion()
+                                .map(version -> nodeRepository.dockerImages().dockerImage().withTag(version))));
+    }
+
 
     /** maven-vespa-plugin @ v6 needs to deserialize nodes w/history. */
     private Agent normalizedAgentUntilV6IsGone(Agent agent) {
