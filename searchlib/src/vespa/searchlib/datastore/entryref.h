@@ -36,6 +36,7 @@ public:
     static uint32_t numBuffers() { return 1 << BufferBits; } 
     static uint64_t align(uint64_t val) { return val; }
     static uint64_t pad(uint64_t val) { (void) val; return 0ul; }
+    static constexpr bool isAlignedEntryRefType = false;
 };
 
 /**
@@ -56,6 +57,7 @@ public:
     static uint64_t offsetSize() { return ParentType::offsetSize() << OffsetAlign; }
     static uint64_t align(uint64_t val) { return val + pad(val); }
     static uint64_t pad(uint64_t val) { return (-val & PadConstant); }
+    static constexpr bool isAlignedEntryRefType = true;
 };
 
 }

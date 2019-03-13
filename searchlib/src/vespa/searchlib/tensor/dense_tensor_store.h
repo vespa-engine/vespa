@@ -26,8 +26,7 @@ namespace search::tensor {
 class DenseTensorStore : public TensorStore
 {
 public:
-    // 32 entry alignment, entry type is char => 32 bytes alignment
-    using RefType = datastore::AlignedEntryRefT<22, 5>;
+    using RefType = datastore::EntryRefT<22>;
     using DataStoreType = datastore::DataStoreT<RefType>;
     using ValueType = vespalib::eval::ValueType;
 
@@ -44,6 +43,11 @@ public:
             _unboundDimSizesSize = unboundDimSizesSize_in;
         }
         size_t getReservedElements(uint32_t bufferId) const override;
+        static size_t align(size_t size, size_t alignment) {
+            size += alignment - 1;
+            return (size - (size % alignment));
+        }
+        size_t align(size_t size) const { return align(size, _clusterSize); }
     };
 private:
     DataStoreType _concreteStore;
@@ -61,7 +65,7 @@ private:
     setDenseTensor(const TensorType &tensor);
     datastore::Handle<char> allocRawBuffer(size_t numCells);
     size_t alignedSize(size_t numCells) const {
-        return RefType::align(numCells * _cellSize + unboundDimSizesSize());
+        return _bufferType.align(numCells * _cellSize + unboundDimSizesSize());
     }
 
 public:

@@ -18,11 +18,10 @@ using vespalib::eval::ValueType;
 namespace search::tensor {
 
 constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
+constexpr size_t DENSE_TENSOR_ALIGNMENT = 32;
 
 DenseTensorStore::BufferType::BufferType()
-    : datastore::BufferType<char>(RefType::align(1),
-                              MIN_BUFFER_CLUSTERS,
-                              RefType::offsetSize() / RefType::align(1)),
+    : datastore::BufferType<char>(DENSE_TENSOR_ALIGNMENT, MIN_BUFFER_CLUSTERS, RefType::offsetSize()),
       _unboundDimSizesSize(0u)
 {}
 
@@ -40,7 +39,7 @@ size_t
 DenseTensorStore::BufferType::getReservedElements(uint32_t bufferId) const
 {
     return datastore::BufferType<char>::getReservedElements(bufferId) +
-        RefType::align(_unboundDimSizesSize);
+        align(_unboundDimSizesSize);
 }
 
 DenseTensorStore::DenseTensorStore(const ValueType &type)
@@ -75,7 +74,7 @@ const void *
 DenseTensorStore::getRawBuffer(RefType ref) const
 {
     return _store.getBufferEntry<char>(ref.bufferId(),
-                                         ref.offset());
+                                       ref.offset() * _bufferType.getClusterSize());
 }
 
 
