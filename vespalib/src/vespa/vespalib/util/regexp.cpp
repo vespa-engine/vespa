@@ -64,25 +64,6 @@ Regexp::match(vespalib::stringref s) const
     return pos >= 0;
 }
 
-vespalib::string Regexp::replace(vespalib::stringref s, vespalib::stringref replacement) const
-{
-    if ( ! valid() ) { return s; }
-    regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));
-    vespalib::string modified;
-    int prev(0);
-    for(int pos(re_search(preg, s.data(), s.size(), 0, s.size(), NULL));
-        pos >=0;
-        pos = re_search(preg, s.data()+prev, s.size()-prev, 0, s.size()-prev, NULL))
-    {
-        modified += s.substr(prev, pos);
-        modified += replacement;
-        int count = re_match(preg, s.data()+prev, s.size()-prev, pos, NULL);
-        prev += pos + count;
-    }
-    modified += s.substr(prev);
-    return modified;
-}
-
 Regexp::~Regexp()
 {
     regex_t *preg = static_cast<regex_t *>(_data);
