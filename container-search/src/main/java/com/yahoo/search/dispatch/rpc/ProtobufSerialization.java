@@ -24,7 +24,6 @@ import com.yahoo.search.query.ranking.RankProperties;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.searchlib.aggregation.Grouping;
-import com.yahoo.searchlib.protobuf.MapConverter;
 import com.yahoo.vespa.objects.BufferSerializer;
 
 import java.nio.ByteBuffer;
