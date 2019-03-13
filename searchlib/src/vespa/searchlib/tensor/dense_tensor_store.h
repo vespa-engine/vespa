@@ -30,18 +30,25 @@ public:
     using DataStoreType = datastore::DataStoreT<RefType>;
     using ValueType = vespalib::eval::ValueType;
 
+    struct TensorSizeCalc
+    {
+        size_t   _numBoundCells; // product of bound dimension sizes
+        uint32_t _numUnboundDims;
+        uint32_t _cellSize; // size of a cell (e.g. double => 8)
+        
+        TensorSizeCalc(const ValueType &type);
+        size_t clusterSize() const;
+    };
+
     class BufferType : public datastore::BufferType<char>
     {
         using CleanContext = datastore::BufferType<char>::CleanContext;
         uint32_t _unboundDimSizesSize;
     public:
-        BufferType();
+        BufferType(const TensorSizeCalc &tensorSizeCalc);
         ~BufferType() override;
         void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) override;
         uint32_t unboundDimSizesSize() const { return _unboundDimSizesSize; }
-        void setUnboundDimSizesSize(uint32_t unboundDimSizesSize_in) {
-            _unboundDimSizesSize = unboundDimSizesSize_in;
-        }
         size_t getReservedElements(uint32_t bufferId) const override;
         static size_t align(size_t size, size_t alignment) {
             size += alignment - 1;
@@ -51,11 +58,9 @@ public:
     };
 private:
     DataStoreType _concreteStore;
+    TensorSizeCalc _tensorSizeCalc;
     BufferType _bufferType;
     ValueType _type; // type of dense tensor
-    size_t _numBoundCells; // product of bound dimension sizes
-    uint32_t _numUnboundDims;
-    uint32_t _cellSize; // size of a cell (e.g. double => 8)
     std::vector<double> _emptyCells;
 
     size_t unboundCells(const void *buffer) const;
@@ -65,7 +70,7 @@ private:
     setDenseTensor(const TensorType &tensor);
     datastore::Handle<char> allocRawBuffer(size_t numCells);
     size_t alignedSize(size_t numCells) const {
-        return _bufferType.align(numCells * _cellSize + unboundDimSizesSize());
+        return _bufferType.align(numCells * _tensorSizeCalc._cellSize + unboundDimSizesSize());
     }
 
 public:
@@ -75,7 +80,7 @@ public:
     const ValueType &type() const { return _type; }
     uint32_t unboundDimSizesSize() const { return _bufferType.unboundDimSizesSize(); }
     size_t getNumCells(const void *buffer) const;
-    uint32_t getCellSize() const { return _cellSize; }
+    uint32_t getCellSize() const { return _tensorSizeCalc._cellSize; }
     const void *getRawBuffer(RefType ref) const;
     datastore::Handle<char> allocRawBuffer(size_t numCells, const std::vector<uint32_t> &unboundDimSizes);
     void holdTensor(EntryRef ref) override;
@@ -83,6 +88,8 @@ public:
     std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
     void getTensor(EntryRef ref, vespalib::tensor::MutableDenseTensorView &tensor) const;
     EntryRef setTensor(const Tensor &tensor);
+    // The following method is meant to be used only for unit tests.
+    uint32_t getClusterSize() const { return _bufferType.getClusterSize(); }
 };
 
 }
