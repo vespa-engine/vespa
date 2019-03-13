@@ -84,7 +84,7 @@ decompress(ICompressor & decompressor, size_t uncompressedLen, const ConstBuffer
                 dest.writeBytes(org.c_str(), org.size());
             }
         } else {
-            throw std::runtime_error(make_string("unprocess failed had %" PRIu64 ", wanted %" PRId64 ", got %" PRIu64,
+            throw std::runtime_error(make_string("unprocess failed had %zu, wanted %zu, got %zu",
                                                  org.size(), uncompressedLen, realUncompressedLen));
         }
     } else {
