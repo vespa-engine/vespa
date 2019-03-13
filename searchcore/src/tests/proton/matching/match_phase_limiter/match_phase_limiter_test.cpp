@@ -332,7 +332,7 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
         "        }"
         "    ],"
         "    duration_ms: 3.4"
-        "}", *trace.getSlime());
+        "}", trace.getSlime());
 }
 
 TEST("require that the match phase limiter is able to post-limit the query") {

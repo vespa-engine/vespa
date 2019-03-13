@@ -82,20 +82,38 @@ public:
     void done();
 
     vespalib::string toString() const;
-    Cursor * getRoot() const { return _root; }
-    vespalib::Slime * getSlime() const { return _trace.get(); }
+    bool hasTrace() const { return static_cast<bool>(_trace); }
+    Cursor & getRoot() const { return root(); }
+    vespalib::Slime & getSlime() const { return slime(); }
     bool shouldTrace(uint32_t level) const { return level <= _level; }
     uint32_t getLevel() const { return _level; }
     Trace & setLevel(uint32_t level) { _level = level; return *this; }
     const RelativeTime & getRelativeTime() const { return _relativeTime; }
 private:
-    void constructObject();
-    void constructTraces();
-    void lazyConstruct(uint32_t level);
+    vespalib::Slime & slime() const {
+        if (!hasTrace()) {
+            constructObject();
+        }
+        return *_trace;
+    }
+    Cursor & root() const {
+        if (!hasTrace()) {
+            constructObject();
+        }
+        return *_root;
+    }
+    Cursor & traces() const {
+        if (!_traces) {
+            constructTraces();
+        }
+        return *_traces;
+    }
+    void constructObject() const;
+    void constructTraces() const;
     void addTimeStamp(Cursor & trace);
-    std::unique_ptr<vespalib::Slime> _trace;
-    Cursor              * _root;
-    Cursor              * _traces;
+    mutable std::unique_ptr<vespalib::Slime> _trace;
+    mutable Cursor              * _root;
+    mutable Cursor              * _traces;
     const RelativeTime  & _relativeTime;
     uint32_t              _level;
 };

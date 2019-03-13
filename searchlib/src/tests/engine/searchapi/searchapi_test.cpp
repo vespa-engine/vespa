@@ -228,21 +228,18 @@ TEST("convertFromReply") {
     }
 }
 
-void verify(vespalib::stringref expected, const vespalib::Slime * slime) {
+void verify(vespalib::stringref expected, const vespalib::Slime & slime) {
     vespalib::Slime expectedSlime;
     vespalib::slime::JsonFormat::decode(expected, expectedSlime);
-    if (slime) {
-        EXPECT_EQUAL(expectedSlime, *slime);
-    } else {
-        EXPECT_TRUE(expected.empty());
-    }
+    EXPECT_EQUAL(expectedSlime, slime);
 }
 
 TEST("verify trace") {
     RelativeTime clock(std::make_unique<CountingClock>(fastos::TimeStamp::fromSec(1500000000), 1700000L));
     Trace t(clock);
-    verify("", t.getSlime());
+    EXPECT_FALSE(t.hasTrace());
     t.start(0);
+    EXPECT_TRUE(t.hasTrace());
     t.createCursor("tag_a");
     verify("{"
            "    start_time_utc: '2017-07-14 02:40:00.000 UTC',"
