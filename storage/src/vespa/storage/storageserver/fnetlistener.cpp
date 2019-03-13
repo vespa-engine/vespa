@@ -92,6 +92,11 @@ FNetListener::initRPC()
     rb.ParamDesc("uncompressedSize", "Uncompressed size for payload");
     rb.ParamDesc("payload", "Binary Slime format payload");
     //-------------------------------------------------------------------------
+    rb.DefineMethod("activate_cluster_state_version", "i", "i", FRT_METHOD(FNetListener::RPC_activateClusterStateVersion), this);
+    rb.MethodDesc("Explicitly activates an already prepared cluster state version");
+    rb.ParamDesc("activate_version", "Expected cluster state version to activate");
+    rb.ReturnDesc("actual_version", "Cluster state version that was prepared on the node prior to receiving RPC");
+    //-------------------------------------------------------------------------
     rb.DefineMethod("getcurrenttime", "", "lis", FRT_METHOD(FNetListener::RPC_getCurrentTime), this);
     rb.MethodDesc("Get current time on this node");
     rb.ReturnDesc("seconds", "Current time in seconds since epoch");
@@ -206,6 +211,20 @@ void FNetListener::RPC_setDistributionStates(FRT_RPCRequest* req) {
 
     // TODO add constructor taking in shared_ptr directly instead?
     auto cmd = std::make_shared<api::SetSystemStateCommand>(*state_bundle);
+    cmd->setPriority(api::StorageMessage::VERYHIGH);
+
+    detach_and_forward_to_enqueuer(std::move(cmd), req);
+}
+
+void FNetListener::RPC_activateClusterStateVersion(FRT_RPCRequest* req) {
+    if (_closed) {
+        LOG(debug, "Not handling RPC call activate_cluster_state_version() as we have closed");
+        req->SetError(RPCRequestWrapper::ERR_NODE_SHUTTING_DOWN, "Node shutting down");
+        return;
+    }
+
+    const int32_t activate_version = req->GetParams()->GetValue(0)._intval32;
+    auto cmd = std::make_shared<api::ActivateClusterStateVersionCommand>(activate_version);
     cmd->setPriority(api::StorageMessage::VERYHIGH);
 
     detach_and_forward_to_enqueuer(std::move(cmd), req);

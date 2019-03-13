@@ -622,20 +622,25 @@ CommunicationManager::sendDirectRPCReply(
 {
     std::string requestName(request.getMethodName());
     if (requestName == "getnodestate3") {
-        api::GetNodeStateReply& gns(static_cast<api::GetNodeStateReply&>(*reply));
+        auto& gns(dynamic_cast<api::GetNodeStateReply&>(*reply));
         std::ostringstream ns;
         serializeNodeState(gns, ns, true, true, false);
         request.addReturnString(ns.str().c_str());
         request.addReturnString(gns.getNodeInfo().c_str());
         LOGBP(debug, "Sending getnodestate3 reply with host info '%s'.", gns.getNodeInfo().c_str());
     } else if (requestName == "getnodestate2") {
-        api::GetNodeStateReply& gns(static_cast<api::GetNodeStateReply&>(*reply));
+        auto& gns(dynamic_cast<api::GetNodeStateReply&>(*reply));
         std::ostringstream ns;
         serializeNodeState(gns, ns, true, true, false);
         request.addReturnString(ns.str().c_str());
         LOGBP(debug, "Sending getnodestate2 reply with no host info.");
     } else if (requestName == "setsystemstate2" || requestName == "setdistributionstates") {
         // No data to return
+    } else if (requestName == "activate_cluster_state_version") {
+        auto& activate_reply(dynamic_cast<api::ActivateClusterStateVersionReply&>(*reply));
+        request.addReturnInt(activate_reply.actualVersion());
+        LOGBP(debug, "sending activate_cluster_state_version reply for version %u with actual version %u ",
+                     activate_reply.activateVersion(), activate_reply.actualVersion());
     } else {
         request.addReturnInt(reply->getResult().getResult());
         request.addReturnString(reply->getResult().getMessage().c_str());

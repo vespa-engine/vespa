@@ -514,6 +514,15 @@ StateManager::onSetSystemState(
     return true;
 }
 
+bool
+StateManager::onActivateClusterStateVersion(
+        const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
+{
+    // TODO invoke listeners and set actual version
+    sendUp(std::make_shared<api::ActivateClusterStateVersionReply>(*cmd));
+    return true;
+}
+
 void
 StateManager::run(framework::ThreadHandle& thread)
 {

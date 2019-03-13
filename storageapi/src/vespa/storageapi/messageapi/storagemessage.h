@@ -149,6 +149,8 @@ public:
         QUERYRESULT_REPLY_ID = 89,
         SETBUCKETSTATE_ID = 94,
         SETBUCKETSTATE_REPLY_ID = 95,
+        ACTIVATE_CLUSTER_STATE_VERSION_ID = 96,
+        ACTIVATE_CLUSTER_STATE_VERSION_REPLY_ID = 97,
         MESSAGETYPE_MAX_ID
     };
 
@@ -195,6 +197,8 @@ public:
     static const MessageType SETSYSTEMSTATE_REPLY;
     static const MessageType GETSYSTEMSTATE;
     static const MessageType GETSYSTEMSTATE_REPLY;
+    static const MessageType ACTIVATE_CLUSTER_STATE_VERSION;
+    static const MessageType ACTIVATE_CLUSTER_STATE_VERSION_REPLY;
     static const MessageType BUCKETSADDED;
     static const MessageType BUCKETSADDED_REPLY;
     static const MessageType BUCKETSREMOVED;
