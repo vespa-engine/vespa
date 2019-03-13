@@ -112,6 +112,12 @@ public class Flags {
             "Takes effect on next node agent tick (but does not clear existing failure reports)",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag USE_SEPARATE_SERVICE_TYPE_FOR_LOGSERVER_CONTAINER = defineFeatureFlag(
+            "use-separate-service-type-for-logserver-container", true,
+            "Use separate service type for Logserver container, resulting in logserver container not being an application endpoint",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

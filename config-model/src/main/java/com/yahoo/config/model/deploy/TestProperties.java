@@ -8,7 +8,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.model.admin.Configserver;
 
 import java.net.URI;
 import java.util.Collections;
@@ -37,6 +36,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useFdispatchByDefault = true;
     private boolean useAdaptiveDispatch = false;
+    private boolean useSeparateServiceTypeForLogserverContainer = false;
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -52,6 +52,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
+    @Override public boolean useSeparateServiceTypeForLogserverContainer() { return useSeparateServiceTypeForLogserverContainer; }
 
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
@@ -80,6 +81,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setUseDedicatedNodeForLogserver(boolean useDedicatedNodeForLogserver) {
         this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
+        return this;
+    }
+
+    public TestProperties setUseSeparateServiceTypeForLogserverContainer(boolean useSeparateServiceTypeForLogserverContainer) {
+        this.useSeparateServiceTypeForLogserverContainer = useSeparateServiceTypeForLogserverContainer;
         return this;
     }
 

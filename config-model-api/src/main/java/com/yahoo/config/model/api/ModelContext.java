@@ -55,6 +55,7 @@ public interface ModelContext {
         boolean useDedicatedNodeForLogserver();
         boolean useFdispatchByDefault();
         boolean useAdaptiveDispatch();
+        boolean useSeparateServiceTypeForLogserverContainer();
     }
 
 }

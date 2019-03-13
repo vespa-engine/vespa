@@ -13,7 +13,9 @@ import com.yahoo.vespa.model.container.component.Handler;
  */
 public class LogserverContainer extends Container {
 
-    public LogserverContainer(AbstractConfigProducer parent) {
+    private final boolean useSeparateServiceTypeForLogserverContainer;
+
+    public LogserverContainer(AbstractConfigProducer parent, boolean useSeparateServiceTypeForLogserverContainer) {
         super(parent, "" + 0, 0, true);
         // Add base handlers and the log handler
         ContainerCluster logServerCluster = (ContainerCluster) parent;
@@ -22,12 +24,12 @@ public class LogserverContainer extends Container {
         logServerCluster.addDefaultRootHandler();
         logServerCluster.addVipHandler();
         addLogHandler(logServerCluster);
+        this.useSeparateServiceTypeForLogserverContainer = useSeparateServiceTypeForLogserverContainer;
     }
 
-    // TODO: Change service type to 'logserver-container'
     @Override
     public ContainerServiceType myServiceType() {
-        return ContainerServiceType.CONTAINER;
+        return useSeparateServiceTypeForLogserverContainer ? ContainerServiceType.LOGSERVER_CONTAINER : ContainerServiceType.CONTAINER;
     }
 
     private void addLogHandler(ContainerCluster cluster) {
