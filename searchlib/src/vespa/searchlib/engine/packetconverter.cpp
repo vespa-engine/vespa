@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "packetconverter.h"
-#include <vespa/searchlib/fef/indexproperties.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".engine.packetconverter");
@@ -74,8 +73,6 @@ PacketConverter::toSearchRequest(const QUERYX &packet, SearchRequest &request)
     request.location        = packet._location;
     request.stackItems      = packet._numStackItems;
     request.stackDump.assign( packet._stackDump.begin(), packet._stackDump.end());
-    // 3 is the minimum level required for backend tracing.
-    request.setTraceLevel(search::fef::indexproperties::trace::Level::lookup(request.propertiesMap.modelOverrides()), 3);
 }
 
 void
