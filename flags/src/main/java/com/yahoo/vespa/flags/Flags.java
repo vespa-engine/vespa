@@ -113,7 +113,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundBooleanFlag USE_SEPARATE_SERVICE_TYPE_FOR_LOGSERVER_CONTAINER = defineFeatureFlag(
-            "use-separate-service-type-for-logserver-container", true,
+            "use-separate-service-type-for-logserver-container", false,
             "Use separate service type for Logserver container, resulting in logserver container not being an application endpoint",
             "Takes effect at redeployment",
             APPLICATION_ID);
