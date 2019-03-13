@@ -17,6 +17,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/printable.h>
+#include <cinttypes>
 #include <Judy.h>
 #include <cassert>
 
