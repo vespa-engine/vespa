@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -93,6 +94,7 @@ public class CuratorDatabaseClient {
         curatorDatabase.create(inactiveJobsPath());
         curatorDatabase.create(infrastructureVersionsPath());
         curatorDatabase.create(osVersionsPath());
+        curatorDatabase.create(dockerImagesPath());
         curatorDatabase.create(firmwareCheckPath());
         curatorDatabase.create(loadBalancersRoot);
         curatorDatabase.create(flagsRoot);
@@ -364,6 +366,8 @@ public class CuratorDatabaseClient {
         return curatorDatabase.getData(path).filter(data -> data.length > 0).map(mapper);
     }
 
+
+    // Maintenance jobs
     public Set<String> readInactiveJobs() {
         try {
             return read(inactiveJobsPath(), stringSetSerializer::fromJson).orElseGet(HashSet::new);
@@ -391,6 +395,8 @@ public class CuratorDatabaseClient {
         return root.append("inactiveJobs");
     }
 
+
+    // Infrastructure versions
     public Map<NodeType, Version> readInfrastructureVersions() {
         return read(infrastructureVersionsPath(), NodeTypeVersionsSerializer::fromJson).orElseGet(TreeMap::new);
     }
@@ -411,6 +417,8 @@ public class CuratorDatabaseClient {
         return root.append("infrastructureVersions");
     }
 
+
+    // OS versions
     public Map<NodeType, Version> readOsVersions() {
         return read(osVersionsPath(), NodeTypeVersionsSerializer::fromJson).orElseGet(TreeMap::new);
     }
@@ -431,6 +439,30 @@ public class CuratorDatabaseClient {
         return root.append("osVersions");
     }
 
+
+    // Docker images
+    public Map<NodeType, DockerImage> readDockerImages() {
+        return read(dockerImagesPath(), NodeTypeDockerImagesSerializer::fromJson).orElseGet(TreeMap::new);
+    }
+
+    public void writeDockerImages(Map<NodeType, DockerImage> dockerImages) {
+        NestedTransaction transaction = new NestedTransaction();
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        curatorTransaction.add(CuratorOperations.setData(dockerImagesPath().getAbsolute(),
+                NodeTypeDockerImagesSerializer.toJson(dockerImages)));
+        transaction.commit();
+    }
+
+    public Lock lockDockerImages() {
+        return lock(lockRoot.append("dockerImagesLock"), defaultLockTimeout);
+    }
+
+    private Path dockerImagesPath() {
+        return root.append("dockerImages");
+    }
+
+
+    // Firmware checks
     /** Stores the instant after which a firmware check is required, or clears any outstanding ones if empty is given. */
     public void writeFirmwareCheck(Optional<Instant> after) {
         byte[] data = after.map(instant -> Long.toString(instant.toEpochMilli()).getBytes())
@@ -450,6 +482,8 @@ public class CuratorDatabaseClient {
         return root.append("firmwareCheck");
     }
 
+
+    // Load balancers
     public Map<LoadBalancerId, LoadBalancer> readLoadBalancers() {
         return curatorDatabase.getChildren(loadBalancersRoot).stream()
                               .map(LoadBalancerId::fromSerializedForm)
@@ -460,7 +494,7 @@ public class CuratorDatabaseClient {
                                                          Collections::unmodifiableMap));
     }
 
-    public Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
+    private Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
         return read(loadBalancerPath(id), LoadBalancerSerializer::fromJson);
     }
 
@@ -501,6 +535,8 @@ public class CuratorDatabaseClient {
         transaction.commit();
     }
 
+
+    // Flags
     public Optional<Flag> readFlag(FlagId id) {
         return read(flagPath(id), FlagSerializer::fromJson);
     }
