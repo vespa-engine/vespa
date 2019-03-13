@@ -307,13 +307,19 @@ public class JettyHttpServer extends AbstractServerProvider {
     @Override
     public void close() {
         try {
+            log.log(Level.INFO, String.format("Shutting down server (graceful=%b)", isGracefulShutdownEnabled()));
             server.stop();
+            log.log(Level.INFO, "Server shutdown completed");
         } catch (final Exception e) {
             log.log(Level.SEVERE, "Server shutdown threw an unexpected exception.", e);
         }
 
         metricReporterExecutor.shutdown();
         janitor.shutdown();
+    }
+
+    private boolean isGracefulShutdownEnabled() {
+        return server.getChildHandlersByClass(StatisticsHandler.class).length > 0 && server.getStopTimeout() > 0;
     }
 
     public int getListenPort() {
