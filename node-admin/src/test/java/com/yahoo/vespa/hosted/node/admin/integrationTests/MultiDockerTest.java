@@ -62,7 +62,8 @@ public class MultiDockerTest {
         tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(containerName));
         tester.inOrder(tester.docker).executeInContainerAsUser(
                 eq(containerName), eq("root"), any(), eq(DockerTester.NODE_PROGRAM), eq("resume"));
-        tester.inOrder(tester.nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withDockerImage(dockerImage)));
+        tester.inOrder(tester.nodeRepository).updateNodeAttributes(eq(hostName),
+                eq(new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion())));
 
         return nodeSpec;
     }

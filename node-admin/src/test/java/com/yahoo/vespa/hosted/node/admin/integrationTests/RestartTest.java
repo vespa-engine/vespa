@@ -38,7 +38,7 @@ public class RestartTest {
 
             tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(new ContainerName("host1")));
             tester.inOrder(tester.nodeRepository).updateNodeAttributes(
-                    eq(hostname), eq(new NodeAttributes().withDockerImage(dockerImage)));
+                    eq(hostname), eq(new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion())));
 
             // Increment wantedRestartGeneration to 2 in node-repo
             tester.addChildNodeRepositoryNode(new NodeSpec.Builder(tester.nodeRepository.getNode(hostname))

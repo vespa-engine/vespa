@@ -185,8 +185,13 @@ public class NodeAgentImpl implements NodeAgent {
 
         Optional<DockerImage> actualDockerImage = context.node().getWantedDockerImage().filter(n -> containerState == UNKNOWN);
         if (!Objects.equals(context.node().getCurrentDockerImage(), actualDockerImage)) {
-            currentNodeAttributes.withDockerImage(context.node().getCurrentDockerImage().orElse(new DockerImage("")));
-            newNodeAttributes.withDockerImage(actualDockerImage.orElse(new DockerImage("")));
+            DockerImage currentImage = context.node().getCurrentDockerImage().orElse(DockerImage.EMPTY);
+            DockerImage newImage = actualDockerImage.orElse(DockerImage.EMPTY);
+
+            currentNodeAttributes.withDockerImage(currentImage);
+            currentNodeAttributes.withVespaVersion(currentImage.tagAsVersion());
+            newNodeAttributes.withDockerImage(newImage);
+            newNodeAttributes.withVespaVersion(newImage.tagAsVersion());
         }
 
         publishStateToNodeRepoIfChanged(context, currentNodeAttributes, newNodeAttributes);

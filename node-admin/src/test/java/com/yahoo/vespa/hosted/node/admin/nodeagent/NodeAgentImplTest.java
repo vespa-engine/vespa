@@ -207,7 +207,7 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(healthChecker, times(1)).verifyHealth(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes().withDockerImage(dockerImage));
+                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion()));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -519,7 +519,7 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(String.class));
         // current Docker image and vespa version should be cleared
         verify(nodeRepository, times(1)).updateNodeAttributes(
-                eq(hostName), eq(new NodeAttributes().withDockerImage(new DockerImage(""))));
+                eq(hostName), eq(new NodeAttributes().withDockerImage(DockerImage.EMPTY).withVespaVersion(Version.emptyVersion)));
     }
 
     @Test
@@ -752,7 +752,7 @@ public class NodeAgentImplTest {
         inOrder.verify(aclMaintainer, times(1)).converge(eq(context));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes().withDockerImage(dockerImage));
+                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion()));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
