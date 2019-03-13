@@ -14,5 +14,5 @@ VESPA_VERSION=$1
 DOCKER_IMAGE="centos:latest"
 
 docker pull ${DOCKER_IMAGE}
-docker run --rm -v $(pwd)/..:/vespa --entrypoint /vespa/docker/build/build-vespa-internal.sh "$DOCKER_IMAGE" "$VESPA_VERSION" "$(id -u)" "$(id -g)"
 
+docker run --rm -v $(pwd)/..:/vespa -w /vespa --entrypoint /vespa/docker/build/build-vespa-internal.sh "$DOCKER_IMAGE" "$VESPA_VERSION" "$(id -u)" "$(id -g)"

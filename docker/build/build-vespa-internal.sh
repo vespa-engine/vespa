@@ -11,7 +11,11 @@ VESPA_VERSION=$1
 CALLER_UID=$2
 CALLER_GID=$3
 
-cd /vespa
+if ! [ -x ./dist.sh ]; then
+    echo ". is not a vespa-engine/vespa root directory"
+    exit 1
+fi
+
 ./dist.sh ${VESPA_VERSION}
 
 yum -y install epel-release
@@ -22,5 +26,4 @@ yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/ve
 yum-builddep -y --setopt="centos-sclo-rh-source.skip_if_unavailable=true" ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
 rpmbuild -bb ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
 chown ${CALLER_UID}:${CALLER_GID} ~/rpmbuild/RPMS/x86_64/*.rpm
-mv ~/rpmbuild/RPMS/x86_64/*.rpm /vespa/docker 
-
+mv ~/rpmbuild/RPMS/x86_64/*.rpm docker
