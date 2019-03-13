@@ -70,7 +70,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     /**
      * Cluster for container that might be running on logserver hosts
      */
-    private Optional<ContainerCluster> logServerContainerCluster = Optional.empty();
+    private Optional<LogserverContainerCluster> logServerContainerCluster = Optional.empty();
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
     private FileDistributionConfigProducer fileDistribution;
@@ -133,9 +133,9 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         this.clusterControllers = clusterControllers;
     }
 
-    public Optional<ContainerCluster> getLogServerContainerCluster() { return logServerContainerCluster; }
+    public Optional<LogserverContainerCluster> getLogServerContainerCluster() { return logServerContainerCluster; }
 
-    public void setLogserverContainerCluster(ContainerCluster logServerContainerCluster) {
+    public void setLogserverContainerCluster(LogserverContainerCluster logServerContainerCluster) {
         this.logServerContainerCluster = Optional.of(logServerContainerCluster);
     }
 
