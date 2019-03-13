@@ -14,8 +14,8 @@ public:
     static uint16_t n2h(uint16_t v) { return ntohs(v); }
     static int32_t  n2h(int32_t v)  { return ntohl(v); }
     static uint32_t n2h(uint32_t v) { return ntohl(v); }
-    static int64_t  n2h(int64_t v)  { return ntohll(v); }
-    static uint64_t n2h(uint64_t v) { return ntohll(v); }
+    static int64_t  n2h(int64_t v)  { return nbo_ntohll(v); }
+    static uint64_t n2h(uint64_t v) { return nbo_ntohll(v); }
     static float    n2h(float v)    {
         union { uint32_t _u; float _f; } uf;
         uf._f = v;
@@ -25,11 +25,11 @@ public:
     static double   n2h(double v)   {
         union { uint64_t _u; double _f; } uf;
         uf._f = v;
-        uf._u = ntohll(uf._u);
+        uf._u = nbo_ntohll(uf._u);
         return uf._f;
     }
 private:
-    static uint64_t ntohll(uint64_t v) {
+    static uint64_t nbo_ntohll(uint64_t v) {
         union { uint64_t _ll; uint32_t _l[2]; } w, r;
         r._ll = v;
         w._l[0] = n2h(r._l[1]);
