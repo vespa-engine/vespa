@@ -99,7 +99,7 @@ MatchMaster::match(search::engine::Trace & trace,
         const MatchThread & matchThread = *threadState[i];
         match_time_s = std::max(match_time_s, matchThread.get_match_time());
         _stats.merge_partition(matchThread.get_thread_stats(), i);
-        if (inserter) {
+        if (inserter && matchThread.getTrace().hasTrace()) {
             vespalib::slime::inject(matchThread.getTrace().getRoot(), *inserter);
         }
     }

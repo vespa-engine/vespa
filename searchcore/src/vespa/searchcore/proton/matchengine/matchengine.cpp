@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "matchengine.h"
 #include <vespa/searchcore/proton/common/state_reporter_utils.h>
+#include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
@@ -97,8 +98,7 @@ MatchEngine::search(search::engine::SearchRequest::Source request,
                     search::engine::SearchClient &client)
 {
     if (_closed || !_nodeUp) {
-        search::engine::SearchReply::UP ret;
-        ret.reset(new search::engine::SearchReply);
+        auto ret = std::make_unique<search::engine::SearchReply>();
         ret->setDistributionKey(_distributionKey);
 
         // TODO: Notify closed.
@@ -113,18 +113,21 @@ void
 MatchEngine::performSearch(search::engine::SearchRequest::Source req,
                            search::engine::SearchClient &client)
 {
-   auto ret = std::make_unique<search::engine::SearchReply>();
+    auto ret = std::make_unique<search::engine::SearchReply>();
 
-    if (req.get()) {
+    const search::engine::SearchRequest * searchRequest = req.get();
+    if (searchRequest) {
+        // 3 is the minimum level required for backend tracing.
+        searchRequest->setTraceLevel(search::fef::indexproperties::trace::Level::lookup(searchRequest->propertiesMap.modelOverrides()), 3);
         ISearchHandler::SP searchHandler;
         vespalib::SimpleThreadBundle::UP threadBundle = _threadBundlePool.obtain();
         { // try to find the match handler corresponding to the specified search doc type
             std::lock_guard<std::mutex> guard(_lock);
-            DocTypeName docTypeName(*req.get());
+            DocTypeName docTypeName(*searchRequest);
             searchHandler = _handlers.getHandler(docTypeName);
         }
         if (searchHandler) {
-            ret = searchHandler->match(searchHandler, *req.get(), *threadBundle);
+            ret = searchHandler->match(searchHandler, *searchRequest, *threadBundle);
         } else {
             HandlerMap<ISearchHandler>::Snapshot::UP snapshot;
             {
@@ -133,14 +136,14 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
             }
             if (snapshot->valid()) {
                 ISearchHandler::SP handler = snapshot->getSP();
-                ret = handler->match(handler, *req.get(), *threadBundle); // use the first handler
+                ret = handler->match(handler, *searchRequest, *threadBundle); // use the first handler
             }
         }
         _threadBundlePool.release(std::move(threadBundle));
     }
     ret->request = req.release();
     ret->setDistributionKey(_distributionKey);
-    if (ret->request->trace().getLevel() > 0) {
+    if ((ret->request->trace().getLevel() > 0) && ret->request->trace().hasTrace()) {
         ret->request->trace().getRoot().setLong("distribution-key", _distributionKey);
         ret->request->trace().done();
         search::fef::Properties & trace = ret->propertiesMap.lookupCreate("trace");
