@@ -9,10 +9,8 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerClusterImpl;
-import com.yahoo.vespa.model.container.ContainerImpl;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.ApplicationContainer;
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -48,24 +46,24 @@ public class RoutingBuilderTest extends ContainerModelBuilderTestBase {
                 .build();
         //root = new MockRoot("root", applicationPackage);
         for (String region : Arrays.asList("us-north-1", "us-north-3")) {
-            ContainerImpl container = getContainer(applicationPackage, region, clusterElem);
+            ApplicationContainer container = getContainer(applicationPackage, region, clusterElem);
 
             assertEquals("Region " + region + " is active", "true",
                          container.getServicePropertyString("activeRotation"));
         }
         for (String region : Arrays.asList("us-north-2", "us-north-4")) {
-            ContainerImpl container = getContainer(applicationPackage, region, clusterElem);
+            ApplicationContainer container = getContainer(applicationPackage, region, clusterElem);
 
             assertEquals("Region " + region + " is inactive", "false",
                          container.getServicePropertyString("activeRotation"));
         }
-        ContainerImpl container = getContainer(applicationPackage, "unknown", clusterElem);
+        ApplicationContainer container = getContainer(applicationPackage, "unknown", clusterElem);
         assertEquals("Unknown region is inactive", "false",
                      container.getServicePropertyString("activeRotation"));
     }
 
 
-    private ContainerImpl getContainer(ApplicationPackage applicationPackage, String region, Element clusterElem) throws IOException, SAXException {
+    private ApplicationContainer getContainer(ApplicationPackage applicationPackage, String region, Element clusterElem) throws IOException, SAXException {
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .zone(new Zone(Environment.prod, RegionName.from(region)))
@@ -73,7 +71,7 @@ public class RoutingBuilderTest extends ContainerModelBuilderTestBase {
 
         root = new MockRoot("root", deployState);
         createModel(root, deployState, null, clusterElem);
-        ContainerClusterImpl cluster = getContainerCluster("default");
+        ApplicationContainerCluster cluster = getContainerCluster("default");
         return cluster.getContainers().get(0);
 
     }

@@ -25,8 +25,8 @@ import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerClusterImpl;
-import com.yahoo.vespa.model.container.ContainerImpl;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -112,8 +112,8 @@ public class ModelProvisioningTest {
                 + "</hosts>";
         VespaModelCreatorWithMockPkg creator = new VespaModelCreatorWithMockPkg(null, services);
         VespaModel model = creator.create(new DeployState.Builder().modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(new StringReader(hosts)), true)));
-        ContainerClusterImpl mydisc = model.getContainerClusters().get("mydisc");
-        ContainerClusterImpl mydisc2 = model.getContainerClusters().get("mydisc2");
+        ApplicationContainerCluster mydisc = model.getContainerClusters().get("mydisc");
+        ApplicationContainerCluster mydisc2 = model.getContainerClusters().get("mydisc2");
         assertThat(mydisc.getContainers().size(), is(3));
         assertThat(mydisc.getContainers().get(0).getConfigId(), is("mydisc/container.0"));
         assertTrue(mydisc.getContainers().get(0).isInitialized());
@@ -1712,17 +1712,17 @@ public class ModelProvisioningTest {
         }
     }
 
-    private void checkThatTldAndContainerRunningOnSameHostHaveSameId(Collection<ContainerClusterImpl> containerClusters,
+    private void checkThatTldAndContainerRunningOnSameHostHaveSameId(Collection<ApplicationContainerCluster> containerClusters,
                                                                      Collection<ContentCluster> contentClusters,
                                                                      int startIndexForContainerIds) {
         for (ContentCluster contentCluster : contentClusters) {
             String contentClusterName = contentCluster.getName();
             int i = 0;
-            for (ContainerClusterImpl containerCluster : containerClusters) {
+            for (ApplicationContainerCluster containerCluster : containerClusters) {
                 String containerClusterName = containerCluster.getName();
                 for (int j = 0; j < 2; j++) {
                     Dispatch tld = contentCluster.getSearch().getIndexed().getTLDs().get(2 * i + j);
-                    ContainerImpl container = containerCluster.getContainers().get(j);
+                    ApplicationContainer container = containerCluster.getContainers().get(j);
                     int containerConfigIdIndex = j + startIndexForContainerIds;
 
                     assertEquals(container.getHostName(), tld.getHostname());

@@ -27,11 +27,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * The default container cluster implementation.
+ * A container cluster that is typically set up from the user application.
  *
  * @author gjoranv
  */
-public final class ContainerClusterImpl extends ContainerCluster<ContainerImpl> implements
+public final class ApplicationContainerCluster extends ContainerCluster<ApplicationContainer> implements
         BundlesConfig.Producer,
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
@@ -45,7 +45,7 @@ public final class ContainerClusterImpl extends ContainerCluster<ContainerImpl> 
 
     private ContainerModelEvaluation modelEvaluation;
 
-    public ContainerClusterImpl(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
+    public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");

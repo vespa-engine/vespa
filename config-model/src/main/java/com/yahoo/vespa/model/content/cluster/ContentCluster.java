@@ -32,9 +32,8 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerClusterImpl;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
-import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.content.ClusterControllerConfig;
 import com.yahoo.vespa.model.content.ContentSearch;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
@@ -372,7 +371,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             if (containerClusters.isEmpty()) return Collections.emptyList();
 
             List<HostResource> allHosts = new ArrayList<>();
-            for (ContainerClusterImpl cluster : clustersSortedByName(containerClusters))
+            for (ApplicationContainerCluster cluster : clustersSortedByName(containerClusters))
                 allHosts.addAll(hostResourcesSortedByIndex(cluster));
             
             // Don't use hosts already selected to be assigned a cluster controllers as part of building this,
@@ -387,16 +386,16 @@ public class ContentCluster extends AbstractConfigProducer implements
             return uniqueHostsWithoutClusterController.subList(0, Math.min(uniqueHostsWithoutClusterController.size(), count));
         }
         
-        private List<ContainerClusterImpl> clustersSortedByName(Collection<ContainerModel> containerModels) {
+        private List<ApplicationContainerCluster> clustersSortedByName(Collection<ContainerModel> containerModels) {
             return containerModels.stream()
                     .map(ContainerModel::getCluster)
-                    .filter(cluster -> cluster instanceof ContainerClusterImpl)
-                    .map(cluster -> (ContainerClusterImpl) cluster)
+                    .filter(cluster -> cluster instanceof ApplicationContainerCluster)
+                    .map(cluster -> (ApplicationContainerCluster) cluster)
                     .sorted(Comparator.comparing(ContainerCluster::getName))
                     .collect(Collectors.toList());
         }
 
-        private List<HostResource> hostResourcesSortedByIndex(ContainerClusterImpl cluster) {
+        private List<HostResource> hostResourcesSortedByIndex(ApplicationContainerCluster cluster) {
             return cluster.getContainers().stream()
                     .sorted(Comparator.comparing(Container::index))
                     .map(Container::getHostResource)

@@ -5,15 +5,17 @@ import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
 /**
+ * A container that is typically used by container clusters set up from the user application.
+ *
  * @author gjoranv
  */
-public final class ContainerImpl extends Container {
+public final class ApplicationContainer extends Container {
 
-    public ContainerImpl(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa) {
+    public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa) {
         super(parent, name, index, isHostedVespa);
     }
 
-    public ContainerImpl(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa) {
+    public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa) {
         super(parent, name, retired, index, isHostedVespa);
     }
 

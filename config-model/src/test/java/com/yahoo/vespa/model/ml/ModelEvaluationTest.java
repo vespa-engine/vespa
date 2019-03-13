@@ -17,8 +17,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerClusterImpl;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -44,7 +43,7 @@ public class ModelEvaluationTest {
         try {
             ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
             VespaModel model = tester.createVespaModel();
-            ContainerClusterImpl cluster = model.getContainerClusters().get("container");
+            ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
             assertNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
 
             RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
@@ -81,7 +80,7 @@ public class ModelEvaluationTest {
     }
 
     private void assertHasMlModels(VespaModel model) {
-        ContainerClusterImpl cluster = model.getContainerClusters().get("container");
+        ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
         assertNotNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
 
         assertNotNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluationHandler.class.getName())));

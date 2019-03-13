@@ -4,20 +4,15 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
-import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerClusterImpl;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static com.yahoo.test.Matchers.hasItemWithMethod;
@@ -48,7 +43,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
         assertThat(discBindingsConfig, containsString(GUIHandler.BINDING));
 
-        ContainerClusterImpl cluster = (ContainerClusterImpl)root.getChildren().get("default");
+        ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
 
         GUIHandler guiHandler = null;
         for (Handler<?> handler : cluster.getHandlers()) {
@@ -100,7 +95,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void cluster_with_only_search_gets_qrserver_as_service_name() throws Exception {
         createClusterWithOnlyDefaultChains();
-        ContainerClusterImpl cluster = (ContainerClusterImpl)root.getChildren().get("default");
+        ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
         assertThat(cluster.getContainers().get(0).getServiceName(), is(QRSERVER.serviceName));
     }
 

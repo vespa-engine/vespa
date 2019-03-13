@@ -7,16 +7,14 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerClusterImpl;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import org.junit.Before;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.util.Collections;
 
 /**
@@ -70,8 +68,8 @@ public abstract class ContainerModelBuilderTestBase {
         return null;
     }
 
-    public ContainerClusterImpl getContainerCluster(String clusterId) {
-        return (ContainerClusterImpl) root.getChildren().get(clusterId);
+    public ApplicationContainerCluster getContainerCluster(String clusterId) {
+        return (ApplicationContainerCluster) root.getChildren().get(clusterId);
     }
 
     public Component<?, ?> getContainerComponent(String clusterId, String componentId) {

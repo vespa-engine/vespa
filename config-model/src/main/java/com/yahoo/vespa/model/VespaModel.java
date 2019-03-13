@@ -33,7 +33,7 @@ import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.searchdefinition.processing.Processing;
-import com.yahoo.vespa.model.container.ContainerClusterImpl;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -554,11 +554,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     /** Returns a map of container clusters by ID */
-    public Map<String, ContainerClusterImpl> getContainerClusters() {
-        Map<String, ContainerClusterImpl> clusters = new LinkedHashMap<>();
+    public Map<String, ApplicationContainerCluster> getContainerClusters() {
+        Map<String, ApplicationContainerCluster> clusters = new LinkedHashMap<>();
         for (ContainerModel model : configModelRepo.getModels(ContainerModel.class)) {
-            if (model.getCluster() instanceof ContainerClusterImpl) {
-                clusters.put(model.getId(), (ContainerClusterImpl) model.getCluster());
+            if (model.getCluster() instanceof ApplicationContainerCluster) {
+                clusters.put(model.getId(), (ApplicationContainerCluster) model.getCluster());
             }
         }
         return Collections.unmodifiableMap(clusters);

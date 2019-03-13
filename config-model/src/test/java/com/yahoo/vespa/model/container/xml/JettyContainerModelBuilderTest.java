@@ -6,7 +6,7 @@ import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.jdisc.FilterBindingsProvider;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerClusterImpl;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
@@ -270,7 +270,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     private ComponentsConfig containerComponentsConfig() {
-        final ContainerClusterImpl cluster = (ContainerClusterImpl) root.getChildren().get("default");
+        final ApplicationContainerCluster cluster = (ApplicationContainerCluster) root.getChildren().get("default");
         return root.getConfig(
                 ComponentsConfig.class,
                 cluster.getContainers().get(0).getConfigId());

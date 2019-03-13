@@ -16,8 +16,6 @@ import com.yahoo.vespa.model.admin.LogserverContainer;
 import com.yahoo.vespa.model.admin.LogserverContainerCluster;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerClusterImpl;
 import com.yahoo.vespa.model.container.ContainerModel;
 import org.w3c.dom.Element;
 

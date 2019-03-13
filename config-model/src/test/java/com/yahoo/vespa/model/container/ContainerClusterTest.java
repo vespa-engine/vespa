@@ -37,7 +37,7 @@ public class ContainerClusterTest {
 
     @Test
     public void requireThatClusterInfoIsPopulated() {
-        ContainerClusterImpl cluster = newContainerCluster();
+        ApplicationContainerCluster cluster = newContainerCluster();
         ClusterInfoConfig config = getClusterInfoConfig(cluster);
         assertEquals("name", config.clusterId());
         assertEquals(2, config.nodeCount());
@@ -61,7 +61,7 @@ public class ContainerClusterTest {
                                                      .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
                                                      .build();
         MockRoot root = new MockRoot("foo", state);
-        ContainerCluster cluster = new ContainerClusterImpl(root, "container0", "container1", state);
+        ContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
         cluster.getConfig(builder);
         ConfigserverConfig config = new ConfigserverConfig(builder);
@@ -70,11 +70,11 @@ public class ContainerClusterTest {
         assertEquals("cd", config.system());
     }
 
-    private ContainerClusterImpl createContainerCluster(MockRoot root, boolean isCombinedCluster) {
+    private ApplicationContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster) {
         return createContainerCluster(root, isCombinedCluster, null);
     }
-    private ContainerClusterImpl createContainerCluster(MockRoot root, boolean isCombinedCluster, Integer memoryPercentage) {
-        ContainerClusterImpl cluster = new ContainerClusterImpl(root, "container0", "container1", root.getDeployState());
+    private ApplicationContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster, Integer memoryPercentage) {
+        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", root.getDeployState());
         if (isCombinedCluster)
             cluster.setHostClusterId("test-content-cluster");
         cluster.setMemoryPercentage(memoryPercentage);
@@ -127,13 +127,13 @@ public class ContainerClusterTest {
 
     private void verifyJvmArgs(boolean isHosted, boolean hasDocProc) {
         MockRoot root = createRoot(isHosted);
-        ContainerClusterImpl cluster = createContainerCluster(root, false);
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
         if (hasDocProc) {
             cluster.setDocproc(new ContainerDocproc(cluster, null));
         }
         addContainer(root.deployLogger(), cluster, "c1", "host-c1");
         assertEquals(1, cluster.getContainers().size());
-        ContainerImpl container = cluster.getContainers().get(0);
+        ApplicationContainer container = cluster.getContainers().get(0);
         verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmOptions());
         container.setJvmOptions("initial");
         verifyJvmArgs(isHosted, hasDocProc, "initial", container.getJvmOptions());
@@ -189,7 +189,7 @@ public class ContainerClusterTest {
     @Test
     public void requireThatWeCanhandleNull() {
         MockRoot root = createRoot(false);
-        ContainerClusterImpl cluster = createContainerCluster(root, false);
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
         addContainer(root.deployLogger(), cluster, "c1", "host-c1");
         Container container = cluster.getContainers().get(0);
         container.setJvmOptions("");
@@ -202,7 +202,7 @@ public class ContainerClusterTest {
     public void requireThatRoutingProviderIsDisabledForNonHosted() {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(false)).build();
         MockRoot root = new MockRoot("foo", state);
-        ContainerClusterImpl cluster = new ContainerClusterImpl(root, "container0", "container1", state);
+        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
         RoutingProviderConfig.Builder builder = new RoutingProviderConfig.Builder();
         cluster.getConfig(builder);
         RoutingProviderConfig config = new RoutingProviderConfig(builder);
@@ -211,8 +211,8 @@ public class ContainerClusterTest {
     }
 
 
-    private static void addContainer(DeployLogger deployLogger, ContainerClusterImpl cluster, String name, String hostName) {
-        ContainerImpl container = new ContainerImpl(cluster, name, 0, cluster.isHostedVespa());
+    private static void addContainer(DeployLogger deployLogger, ApplicationContainerCluster cluster, String name, String hostName) {
+        ApplicationContainer container = new ApplicationContainer(cluster, name, 0, cluster.isHostedVespa());
         container.setHostResource(new HostResource(new Host(null, hostName)));
         container.initService(deployLogger);
         cluster.addContainer(container);
@@ -225,10 +225,10 @@ public class ContainerClusterTest {
         cluster.addContainer(container);
     }
 
-    private static ContainerClusterImpl newContainerCluster() {
+    private static ApplicationContainerCluster newContainerCluster() {
         DeployState deployState = DeployState.createTestState();
         MockRoot root = new MockRoot("foo", deployState);
-        ContainerClusterImpl cluster = new ContainerClusterImpl(root, "subId", "name", deployState);
+        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "subId", "name", deployState);
         addContainer(deployState.getDeployLogger(), cluster, "c1", "host-c1");
         addContainer(deployState.getDeployLogger(), cluster, "c2", "host-c2");
         return cluster;
