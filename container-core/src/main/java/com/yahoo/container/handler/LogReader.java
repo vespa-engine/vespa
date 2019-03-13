@@ -57,7 +57,7 @@ class LogReader {
     void writeLogs(OutputStream outputStream, Instant earliestLogThreshold, Instant latestLogThreshold) {
         try {
             for (Path file : getMatchingFiles(earliestLogThreshold, latestLogThreshold)) {
-                if (!file.toString().endsWith(".gz")) {
+                if (!file.toString().endsWith(".gz") && !(outputStream instanceof GZIPOutputStream)) {
                     outputStream = new GZIPOutputStream(outputStream);
                 }
                 Files.copy(file, outputStream);
