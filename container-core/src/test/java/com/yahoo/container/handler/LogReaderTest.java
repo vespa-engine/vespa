@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,6 +18,7 @@ import java.time.Instant;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -29,8 +31,13 @@ public class LogReaderTest {
     public void setup() throws IOException {
         Files.createDirectories(logDirectory.resolve("subfolder"));
 
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        OutputStream zipped = new GZIPOutputStream(baos);
+        zipped.write("This is one log file\n".getBytes());
+        zipped.close();
+
         Files.setLastModifiedTime(
-                Files.write(logDirectory.resolve("log1.log"), "This is one log file\n".getBytes()),
+                Files.write(logDirectory.resolve("log1.log.gz"), baos.toByteArray()),
                 FileTime.from(Instant.ofEpochMilli(123)));
         Files.setLastModifiedTime(
                 Files.write(logDirectory.resolve("subfolder/log2.log"), "This is another log file\n".getBytes()),
@@ -41,7 +48,7 @@ public class LogReaderTest {
     public void testThatFilesAreWrittenCorrectlyToOutputStream() throws Exception{
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
         JSONObject json = logReader.readLogs(Instant.ofEpochMilli(21), Instant.now());
-        String expected = "{\"subfolder-log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxlCg==\",\"log1.log\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGUK\"}";
+        String expected = "{\"subfolder-log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxlCg==\",\"log1.log.gz\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGUK\"}";
         String actual = json.toString();
         assertEquals(expected, actual);
     }
