@@ -56,7 +56,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("com.yahoo.jdisc.http.filter.SecurityFilterInvoker");
     }
 
-    protected void myPrepare(DeployState deployState) {
+    @Override
+    protected void doPrepare(DeployState deployState) {
         addAndSendApplicationBundles(deployState);
         if (modelEvaluation != null)
             modelEvaluation.prepare(containers);

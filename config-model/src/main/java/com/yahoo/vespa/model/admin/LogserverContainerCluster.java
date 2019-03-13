@@ -19,7 +19,7 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
     }
 
     @Override
-    protected void myPrepare(DeployState deployState) { }
+    protected void doPrepare(DeployState deployState) { }
 
     private void addLogHandler() {
         Handler<?> logHandler = Handler.fromClassName(ContainerCluster.LOG_HANDLER_CLASS);

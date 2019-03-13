@@ -25,6 +25,6 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     }
 
     @Override
-    protected void myPrepare(DeployState deployState) { }
+    protected void doPrepare(DeployState deployState) { }
 
 }

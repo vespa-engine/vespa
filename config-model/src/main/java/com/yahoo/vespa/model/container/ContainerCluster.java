@@ -292,10 +292,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public void prepare(DeployState deployState) {
         applicationMetaData = deployState.getApplicationPackage().getMetaData();
-        myPrepare(deployState);
+        doPrepare(deployState);
     }
 
-    protected abstract void myPrepare(DeployState deployState);
+    protected abstract void doPrepare(DeployState deployState);
 
     public void addMbusServer(ComponentId chainId) {
         ComponentId serviceId = chainId.nestInNamespace(ComponentId.fromString("MbusServer"));
