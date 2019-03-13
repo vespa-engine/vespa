@@ -257,23 +257,23 @@ File::verifyDirectIO(uint64_t buf, size_t bufsize, off_t offset) const
 {
     if (offset % 512 != 0) {
         LOG(error,
-            "Access to file %s failed because offset %zd wasn't 512-byte "
-            "aligned. Buffer memory address was %zx, length %zu",
-            _filename.c_str(), offset, buf, bufsize);
+            "Access to file %s failed because offset %" PRIu64 " wasn't 512-byte "
+            "aligned. Buffer memory address was %" PRIx64 ", length %zu",
+            _filename.c_str(), static_cast<uint64_t>(offset), buf, bufsize);
         assert(false);
     }
     if (buf % 512 != 0) {
         LOG(error,
-            "Access to file %s failed because buffer memory address %zx "
-            "wasn't 512-byte aligned. Offset was %zd, length %zu",
-            _filename.c_str(), buf, offset, bufsize);
+            "Access to file %s failed because buffer memory address %" PRIx64 " "
+            "wasn't 512-byte aligned. Offset was %" PRIu64 ", length %zu",
+            _filename.c_str(), buf, static_cast<uint64_t>(offset), bufsize);
         assert(false);
     }
     if (bufsize % 512 != 0) {
         LOG(error,
             "Access to file %s failed because buffer size %zu wasn't 512-byte "
-            "aligned. Buffer memory address was %zx, offset %zd",
-            _filename.c_str(), bufsize, buf, offset);
+            "aligned. Buffer memory address was %" PRIx64 ", offset %" PRIu64,
+            _filename.c_str(), bufsize, buf, static_cast<uint64_t>(offset));
         assert(false);
     }
 }
@@ -283,7 +283,7 @@ File::write(const void *buf, size_t bufsize, off_t offset)
 {
     ++_fileWrites;
     size_t left = bufsize;
-    LOG(debug, "write(%s): Writing %" PRIu64 " bytes at offset %" PRIu64 ".",
+    LOG(debug, "write(%s): Writing %zu bytes at offset %" PRIu64 ".",
         _filename.c_str(), bufsize, offset);
 
     if (_flags & DIRECTIO) {
@@ -293,13 +293,13 @@ File::write(const void *buf, size_t bufsize, off_t offset)
     while (left > 0) {
         ssize_t written = ::pwrite(_fd, buf, left, offset);
         if (written > 0) {
-            LOG(spam, "write(%s): Wrote %" PRIu64 " bytes at offset %" PRIu64 ".",
+            LOG(spam, "write(%s): Wrote %zd bytes at offset %" PRIu64 ".",
                 _filename.c_str(), written, offset);
             left -= written;
             buf = ((const char*) buf) + written;
             offset += written;
         } else if (written == 0) {
-            LOG(spam, "write(%s): Wrote %" PRIu64 " bytes at offset %" PRIu64 ".",
+            LOG(spam, "write(%s): Wrote %zd bytes at offset %" PRIu64 ".",
                 _filename.c_str(), written, offset);
             assert(false); // Can this happen?
         } else if (errno != EINTR && errno != EAGAIN) {
@@ -319,7 +319,7 @@ File::read(void *buf, size_t bufsize, off_t offset) const
 {
     ++_fileReads;
     size_t remaining = bufsize;
-    LOG(debug, "read(%s): Reading %" PRIu64 " bytes from offset %" PRIu64 ".",
+    LOG(debug, "read(%s): Reading %zu bytes from offset %" PRIu64 ".",
         _filename.c_str(), bufsize, offset);
 
     if (_flags & DIRECTIO) {
@@ -329,7 +329,7 @@ File::read(void *buf, size_t bufsize, off_t offset) const
     while (remaining > 0) {
         ssize_t bytesread = ::pread(_fd, buf, remaining, offset);
         if (bytesread > 0) {
-            LOG(spam, "read(%s): Read %" PRIu64 " bytes from offset %" PRIu64 ".",
+            LOG(spam, "read(%s): Read %zd bytes from offset %" PRIu64 ".",
                 _filename.c_str(), bytesread, offset);
             remaining -= bytesread;
             buf = ((char*) buf) + bytesread;
@@ -720,7 +720,7 @@ copy(const string & frompath, const string & topath,
     size_t sourceSize = source.getFileSize();
     if (useDirectIO && sourceSize % diskAlignmentSize != 0) {
         LOG(warning, "copy(%s, %s): Cannot use direct IO to write new file, "
-                     "as source file has size %" PRIu64 ", which is not "
+                     "as source file has size %zu, which is not "
                      "dividable by the disk alignment size of %u.",
             frompath.c_str(), topath.c_str(), sourceSize, diskAlignmentSize);
         useDirectIO = false;

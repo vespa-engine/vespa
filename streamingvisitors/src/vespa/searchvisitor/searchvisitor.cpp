@@ -418,7 +418,7 @@ SearchVisitor::PositionInserter::onStructStart(const Content & c)
     value.getValue(_fieldX, _valueX);
     value.getValue(_fieldY, _valueY);
     int64_t zcurve = vespalib::geo::ZCurve::encode(_valueX.getValue(), _valueY.getValue());
-    LOG(debug, "X=%d, Y=%d, zcurve=%ld", _valueX.getValue(), _valueY.getValue(), zcurve);
+    LOG(debug, "X=%d, Y=%d, zcurve=%" PRId64, _valueX.getValue(), _valueY.getValue(), zcurve);
     search::IExtendAttribute & attr = *_attribute.getExtendInterface();
     attr.add(zcurve, c.getWeight());
 }

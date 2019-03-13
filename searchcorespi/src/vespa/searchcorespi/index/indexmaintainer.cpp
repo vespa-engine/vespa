@@ -1180,7 +1180,7 @@ void
 IndexMaintainer::compactLidSpace(uint32_t lidLimit, SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().index().isCurrentThread());
-    LOG(info, "compactLidSpace(%u, %lu)", lidLimit, serialNum);
+    LOG(info, "compactLidSpace(%u, %" PRIu64 ")", lidLimit, serialNum);
     LockGuard lock(_index_update_lock);
     _current_serial_num = serialNum;
     _selector->compactLidSpace(lidLimit);

@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vector>
+#include <cinttypes>
 
 typedef vespalib::geo::ZCurve Z;
 
@@ -12,9 +13,9 @@ bool inside(int x, int y, const Z::RangeVector &ranges) {
             return true;
         }
     }
-    fprintf(stderr, "FAILED: (%d, %d) -> (%ld) not in:\n", x, y, z);
+    fprintf(stderr, "FAILED: (%d, %d) -> (%" PRId64 ") not in:\n", x, y, z);
     for (auto range: ranges) {
-        fprintf(stderr, "  [%ld, %ld]\n", range.min(), range.max());
+        fprintf(stderr, "  [%" PRId64 ", %" PRId64 "]\n", range.min(), range.max());
     }
     return false;
 }

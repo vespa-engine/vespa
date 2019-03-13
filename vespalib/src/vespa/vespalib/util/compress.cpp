@@ -15,7 +15,7 @@ size_t Integer::compressedPositiveLength(uint64_t n)
     } else if ( n < (0x1 << 30)) {
         return 4;
     } else {
-        throw IllegalArgumentException(make_string("Number '%lu' too big, must extend encoding", n));
+        throw IllegalArgumentException(make_string("Number '%" PRIu64 "' too big, must extend encoding", n));
     }
 }
 
@@ -37,7 +37,7 @@ size_t Integer::compressPositive(uint64_t n, void *destination)
         d[3] = n & 0xff;
         return 4;
     } else {
-        throw IllegalArgumentException(make_string("Number '%lu' too big, must extend encoding", n));
+        throw IllegalArgumentException(make_string("Number '%" PRIu64 "' too big, must extend encoding", n));
     }
 }
 
@@ -53,7 +53,7 @@ size_t Integer::compressedLength(int64_t n)
     } else if ( n < (0x1 << 29)) {
         return 4;
     } else {
-        throw IllegalArgumentException(make_string("Number '%ld' too big, must extend encoding", n));
+        throw IllegalArgumentException(make_string("Number '%" PRId64 "' too big, must extend encoding", n));
     }
 }
 
@@ -78,7 +78,7 @@ size_t Integer::compress(int64_t n, void *destination)
         d[3] = n & 0xff;
         return 4;
     } else {
-        throw IllegalArgumentException(make_string("Number '%ld' too big, must extend encoding", negative ? -n : n));
+        throw IllegalArgumentException(make_string("Number '%" PRId64 "' too big, must extend encoding", negative ? -n : n));
     }
 }
 
