@@ -6,6 +6,7 @@ import com.yahoo.vespa.defaults.Defaults;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -23,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 class LogReader {
@@ -46,16 +48,24 @@ class LogReader {
         for (Path file : getMatchingFiles(earliestLogThreshold, latestLogThreshold)) {
             StringBuilder filenameBuilder = new StringBuilder();
             logDirectory.relativize(file).iterator().forEachRemaining(p -> filenameBuilder.append("-").append(p.getFileName().toString()));
-            json.put(filenameBuilder.substring(1), Base64.getEncoder().encodeToString(Files.readAllBytes(file)));
+            byte[] fileData = file.toString().endsWith(".gz") ? new GZIPInputStream(new ByteArrayInputStream(Files.readAllBytes(file))).readAllBytes() : Files.readAllBytes(file);
+            json.put(filenameBuilder.substring(1), Base64.getEncoder().encodeToString(fileData));
         }
         return json;
     }
 
     void writeLogs(OutputStream outputStream, Instant earliestLogThreshold, Instant latestLogThreshold) {
-        try (OutputStream bos = new GZIPOutputStream(outputStream)) {
+        try {
             for (Path file : getMatchingFiles(earliestLogThreshold, latestLogThreshold)) {
-                Files.copy(file, bos);
+                if (file.toString().endsWith(".gz")) {
+                    Files.copy(file, outputStream);
+                } else {
+                    OutputStream zip = new GZIPOutputStream(outputStream);
+                    Files.copy(file, zip);
+                    zip.close();
+                }
             }
+            outputStream.close();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
