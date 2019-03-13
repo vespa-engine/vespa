@@ -38,7 +38,7 @@ public class Status {
         Objects.requireNonNull(hardwareDivergence, "Hardware divergence must be non-null");
         hardwareDivergence.ifPresent(s -> requireNonEmptyString(s, "Hardware divergence must be non-empty"));
         this.reboot = Objects.requireNonNull(generation, "Generation must be non-null");
-        this.vespaVersion = Objects.requireNonNull(vespaVersion, "Vespa version must be non-null");
+        this.vespaVersion = Objects.requireNonNull(vespaVersion, "Vespa version must be non-null").filter(v -> !Version.emptyVersion.equals(v));
         this.failCount = failCount;
         this.hardwareFailureDescription = Objects.requireNonNull(hardwareFailureDescription, "Hardware failure description must be non-null");
         this.wantToRetire = wantToRetire;

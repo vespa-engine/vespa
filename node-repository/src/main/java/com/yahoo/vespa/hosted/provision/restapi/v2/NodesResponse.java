@@ -174,7 +174,6 @@ class NodesResponse extends HttpResponse {
         if (node.type().isDockerHost())
             nodeRepository.firmwareChecks().requiredAfter().ifPresent(after -> object.setLong("wantedFirmwareCheck", after.toEpochMilli()));
         node.status().vespaVersion()
-                .filter(version -> !version.isEmpty())
                 .ifPresent(version -> {
                     object.setString("vespaVersion", version.toFullString());
                     object.setString("currentDockerImage", nodeRepository.dockerImage().withTag(version).asString());

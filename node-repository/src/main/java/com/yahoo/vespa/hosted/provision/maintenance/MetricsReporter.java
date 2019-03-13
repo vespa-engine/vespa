@@ -107,8 +107,7 @@ public class MetricsReporter extends Maintainer {
         }
 
         Optional<Version> currentVersion = node.status().vespaVersion();
-        // Node repo checks for !isEmpty(), so let's do that here too.
-        if (currentVersion.isPresent() && !currentVersion.get().isEmpty()) {
+        if (currentVersion.isPresent()) {
             double currentVersionNumber = getVersionAsNumber(currentVersion.get());
             metric.set("currentVespaVersion", currentVersionNumber, context);
         }
