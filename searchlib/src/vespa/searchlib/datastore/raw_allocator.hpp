@@ -25,7 +25,7 @@ RawAllocator<EntryT, RefT>::alloc(size_t numElems, size_t extraElems)
     size_t oldBufferSize = state.size();
     EntryT *buffer = _store.getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
     state.pushed_back(numElems);
-    if (RefT::isAlignedEntryRefType) {
+    if (RefT::isAlignedType) {
         // AlignedEntryRef constructor scales down offset by alignment
         return HandleType(RefT(oldBufferSize, activeBufferId), buffer);
     } else {
