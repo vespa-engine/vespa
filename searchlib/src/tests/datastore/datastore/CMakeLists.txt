@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_datastore_test_app TEST
     datastore_test.cpp
     DEPENDS
     searchlib
+    gtest
 )
 vespa_add_test(NAME searchlib_datastore_test_app COMMAND searchlib_datastore_test_app)
