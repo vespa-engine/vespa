@@ -34,7 +34,6 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder acceptQueueSize(int)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder reuseAddress(boolean)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder idleTimeout(double)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Builder stopTimeout(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder tcpKeepAliveEnabled(boolean)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder tcpNoDelay(boolean)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder throttling(com.yahoo.jdisc.http.ConnectorConfig$Throttling$Builder)",
@@ -196,7 +195,6 @@
       "public int acceptQueueSize()",
       "public boolean reuseAddress()",
       "public double idleTimeout()",
-      "public double stopTimeout()",
       "public boolean tcpKeepAliveEnabled()",
       "public boolean tcpNoDelay()",
       "public com.yahoo.jdisc.http.ConnectorConfig$Throttling throttling()",
@@ -538,6 +536,7 @@
       "public com.yahoo.jdisc.http.ServerConfig$Builder filter(com.yahoo.jdisc.http.ServerConfig$Filter$Builder)",
       "public com.yahoo.jdisc.http.ServerConfig$Builder filter(java.util.List)",
       "public com.yahoo.jdisc.http.ServerConfig$Builder maxWorkerThreads(int)",
+      "public com.yahoo.jdisc.http.ServerConfig$Builder stopTimeout(double)",
       "public com.yahoo.jdisc.http.ServerConfig$Builder jmx(com.yahoo.jdisc.http.ServerConfig$Jmx$Builder)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
@@ -648,6 +647,7 @@
       "public java.util.List filter()",
       "public com.yahoo.jdisc.http.ServerConfig$Filter filter(int)",
       "public int maxWorkerThreads()",
+      "public double stopTimeout()",
       "public com.yahoo.jdisc.http.ServerConfig$Jmx jmx()"
     ],
     "fields": [

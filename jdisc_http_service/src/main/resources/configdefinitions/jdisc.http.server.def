@@ -27,6 +27,9 @@ filter[].binding string
 # Max number of threads in pool
 maxWorkerThreads                      int    default = 200
 
+# Stop timeout in seconds. The maximum allowed time to process in-flight requests during server shutdown. Setting it to 0 disable graceful shutdown.
+stopTimeout                           double default = 30.0
+
 # Enable embedded JMX server. Note: only accessible through the loopback interface.
 jmx.enabled                           bool   default = false
 

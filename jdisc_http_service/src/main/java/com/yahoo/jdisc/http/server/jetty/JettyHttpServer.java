@@ -40,7 +40,6 @@ import org.osgi.framework.ServiceReference;
 
 import javax.management.remote.JMXServiceURL;
 import javax.servlet.DispatcherType;
-
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.BindException;
@@ -141,6 +140,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         initializeJettyLogging();
 
         server = new Server();
+        server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
         server.setRequestLog(new AccessLogRequestLog(accessLog));
         setupJmx(server, serverConfig);
         ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
@@ -307,13 +307,19 @@ public class JettyHttpServer extends AbstractServerProvider {
     @Override
     public void close() {
         try {
+            log.log(Level.INFO, String.format("Shutting down server (graceful=%b, timeout=%.1fs)", isGracefulShutdownEnabled(), server.getStopTimeout()/1000d));
             server.stop();
+            log.log(Level.INFO, "Server shutdown completed");
         } catch (final Exception e) {
             log.log(Level.SEVERE, "Server shutdown threw an unexpected exception.", e);
         }
 
         metricReporterExecutor.shutdown();
         janitor.shutdown();
+    }
+
+    private boolean isGracefulShutdownEnabled() {
+        return server.getChildHandlersByClass(StatisticsHandler.class).length > 0 && server.getStopTimeout() > 0;
     }
 
     public int getListenPort() {

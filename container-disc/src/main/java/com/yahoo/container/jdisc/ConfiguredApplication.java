@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
-import com.google.common.collect.MapMaker;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -48,6 +47,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -70,7 +70,7 @@ public final class ConfiguredApplication implements Application {
     }
 
     private static final Logger log = Logger.getLogger(ConfiguredApplication.class.getName());
-    private static final Set<ClientProvider> startedClients = newWeakIdentitySet();
+    private static final Set<ClientProvider> startedClients = Collections.newSetFromMap(new WeakHashMap<>());
 
     private static final Set<ServerProvider> startedServers = Collections.newSetFromMap(new IdentityHashMap<>());
     private final SubscriberFactory subscriberFactory;
@@ -409,11 +409,6 @@ public final class ConfiguredApplication implements Application {
         for (String uri : uriPatterns) {
             bindings.bind(uri, target);
         }
-    }
-
-    private static <T> Set<T> newWeakIdentitySet() {
-        Map<T, Boolean> weakIdentityHashMap = new MapMaker().weakKeys().makeMap();
-        return Collections.newSetFromMap(weakIdentityHashMap);
     }
 
 }
