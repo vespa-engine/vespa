@@ -309,12 +309,19 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.String)",
+      "public java.lang.String repository()",
+      "public java.util.Optional tag()",
       "public com.yahoo.component.Version tagAsVersion()",
       "public com.yahoo.config.provision.DockerImage withTag(com.yahoo.component.Version)",
-      "public java.lang.String asString()"
+      "public java.lang.String asString()",
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public static com.yahoo.config.provision.DockerImage fromString(java.lang.String)"
     ],
-    "fields": []
+    "fields": [
+      "public static final com.yahoo.config.provision.DockerImage EMPTY"
+    ]
   },
   "com.yahoo.config.provision.Environment": {
     "superClass": "java.lang.Enum",
