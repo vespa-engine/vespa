@@ -25,7 +25,15 @@ RawAllocator<EntryT, RefT>::alloc(size_t numElems, size_t extraElems)
     size_t oldBufferSize = state.size();
     EntryT *buffer = _store.getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
     state.pushed_back(numElems);
-    return HandleType(RefT(oldBufferSize, activeBufferId), buffer);
+    if (RefT::isAlignedType) {
+        // AlignedEntryRef constructor scales down offset by alignment
+        return HandleType(RefT(oldBufferSize, activeBufferId), buffer);
+    } else {
+        // Must perform scaling ourselves, according to cluster size
+        size_t clusterSize = state.getClusterSize();
+        assert((numElems % clusterSize) == 0u);
+        return HandleType(RefT(oldBufferSize / clusterSize, activeBufferId), buffer);
+    }
 }
 
 }
