@@ -42,7 +42,7 @@ IndexFlushTarget::needUrgentFlush(void) const
 {
     bool urgent = _numFrozenMemoryIndexes > _maxFrozenMemoryIndexes;
     SerialNum flushedSerial = _indexMaintainer.getFlushedSerialNum();
-    LOG(debug, "Num frozen: %u Urgent: %d, flushedSerial=%lu",
+    LOG(debug, "Num frozen: %u Urgent: %d, flushedSerial=%" PRIu64,
         _numFrozenMemoryIndexes, static_cast<int>(urgent), flushedSerial);
     return urgent;
 }
