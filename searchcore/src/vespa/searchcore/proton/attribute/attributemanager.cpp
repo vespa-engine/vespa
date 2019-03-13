@@ -182,7 +182,7 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
     for (const auto &aspec : newSpec.getAttributes()) {
         AttributeVector::SP av = currMgr.findAttribute(aspec.getName());
         if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
-            LOG(debug, "Transferring attribute vector '%s' with %u docs and serial number %lu from current manager",
+            LOG(debug, "Transferring attribute vector '%s' with %u docs and serial number %" PRIu64 " from current manager",
                        av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
             auto wrap = currMgr.findFlushable(aspec.getName());
             assert(wrap != nullptr);
@@ -201,7 +201,7 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
                                    IAttributeInitializerRegistry &initializerRegistry)
 {
     for (const auto &aspec : toBeAdded) {
-        LOG(debug, "Creating initializer for attribute vector '%s': docIdLimit=%u, serialNumber=%lu",
+        LOG(debug, "Creating initializer for attribute vector '%s': docIdLimit=%u, serialNumber=%" PRIu64,
                    aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum());
 
         AttributeInitializer::UP initializer =

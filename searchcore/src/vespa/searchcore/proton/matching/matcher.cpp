@@ -174,7 +174,7 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
     int64_t safeLeft = request.getTimeLeft() * factor;
     fastos::TimeStamp safeDoom(fastos::ClockSystem::now() + safeLeft);
     if (softTimeoutEnabled) {
-        LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, softTimeout=%lu softDoom=%ld hardDoom=%ld",
+        LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, softTimeout=%" PRId64 " softDoom=%" PRId64 " hardDoom=%" PRId64,
                    _stats.softDoomFactor(), factor, safeLeft, safeDoom.ns(), request.getTimeOfDoom().ns());
     }
     return std::make_unique<MatchToolsFactory>(_queryLimiter, vespalib::Doom(_clock, safeDoom),
@@ -316,9 +316,9 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         }
         if (my_stats.softDoomed()) {
             coverage.degradeTimeout();
-            LOG(debug, "soft doomed, degraded from timeout covered = %lu", coverage.getCovered());
+            LOG(debug, "soft doomed, degraded from timeout covered = %" PRIu64, coverage.getCovered());
         }
-        LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%ld , rankprofile=%s",
+        LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%" PRIu64 ", rankprofile=%s",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount,
             request.ranking.c_str());
     }

@@ -103,14 +103,14 @@ TransactionLogManager::prepareReplay(TransLogClient &client,
         from = std::max(from, prunedToken);
         if (serialEnd < flushedSummaryMgrSerial) {
             throw IllegalStateException(
-                    make_string("SummaryStore '%ld' is more recent than "
-                                "transactionlog '%ld'. Immpossible !!",
+                    make_string("SummaryStore '%" PRIu64 "' is more recent than "
+                                "transactionlog '%" PRIu64 "'. Immpossible !!",
                                 flushedSummaryMgrSerial, serialEnd));
         }
         if (serialEnd < flushedIndexMgrSerial) {
             throw IllegalStateException(
-                    make_string("IndexStore '%ld' is more recent than "
-                                "transactionlog '%ld'. Immpossible !!",
+                    make_string("IndexStore '%" PRIu64 "' is more recent than "
+                                "transactionlog '%" PRIu64 "'. Immpossible !!",
                                 flushedIndexMgrSerial, serialEnd));
         }
     }
@@ -141,7 +141,7 @@ TransactionLogManager::startReplay(SerialNum first,
         throw IllegalStateException(
                 make_string(
                     "Could not start visitor for "
-                    "replaying domain '%s<%ld, %ld]' on TLS '%s'",
+                    "replaying domain '%s<%" PRIu64 ", %" PRIu64 "]' on TLS '%s'",
                     getDomainName().c_str(),
                     first, syncToken, getRpcTarget().c_str()));
     }

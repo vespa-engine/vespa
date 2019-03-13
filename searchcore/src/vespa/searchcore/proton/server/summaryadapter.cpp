@@ -41,7 +41,7 @@ void
 SummaryAdapter::put(SerialNum serialNum, const DocumentIdT lid, const vespalib::nbostream &os)
 {
     if ( ! ignore(serialNum) ) {
-        LOG(spam, "SummaryAdapter::put(serialnum = '%zd', lid = %u, stream size = '%zd')",
+        LOG(spam, "SummaryAdapter::put(serialnum = '%" PRIu64 "', lid = %u, stream size = '%zd')",
             serialNum, lid, os.size());
         _mgr->putDocument(serialNum, lid, os);
         _lastSerial = serialNum;

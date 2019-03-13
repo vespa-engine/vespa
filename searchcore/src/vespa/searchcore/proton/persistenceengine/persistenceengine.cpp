@@ -650,7 +650,7 @@ PersistenceEngine::destroyIterators()
         }
         Result res(destroyIterator(id, context));
         if (res.hasError()) {
-            LOG(debug, "%ld iterator left. Can not destroy iterator '%ld'. Reason='%s'", _iterators.size(), id.getValue(), res.toString().c_str());
+            LOG(debug, "%zu iterator left. Can not destroy iterator '%" PRIu64 "'. Reason='%s'", _iterators.size(), id.getValue(), res.toString().c_str());
             std::this_thread::sleep_for(100ms);
         }
     }

@@ -99,7 +99,7 @@ RPCHooksBase::reportState(Session & session, FRT_RPCRequest * req)
         ret.SetString(&k[i], res[i].key.c_str());
         ret.SetString(&v[i], res[i].value.c_str());
     }
-    LOG(debug, "gen=%ld", session.getGen());
+    LOG(debug, "gen=%" PRId64, session.getGen());
     for (uint32_t i = 0; i < res.size(); ++i) {
         LOG(debug,
             "key=%s, value=%s",
@@ -267,7 +267,7 @@ RPCHooksBase::rpc_GetState(FRT_RPCRequest *req)
     uint32_t gen = arg[0]._intval32;
     uint32_t timeoutMS = arg[1]._intval32;
     const Session::SP & sharedSession = getSession(req);
-    LOG(debug, "RPCHooksBase::rpc_GetState(gen=%d, timeoutMS=%d) , but using gen=%ld instead", gen, timeoutMS, sharedSession->getGen());
+    LOG(debug, "RPCHooksBase::rpc_GetState(gen=%d, timeoutMS=%d) , but using gen=%" PRId64 " instead", gen, timeoutMS, sharedSession->getGen());
 
     int64_t numDocs(_proton.getNumDocs());
     if (sharedSession->getGen() < 0 || sharedSession->getNumDocs() != numDocs) {  // NB Should use something else to define generation.

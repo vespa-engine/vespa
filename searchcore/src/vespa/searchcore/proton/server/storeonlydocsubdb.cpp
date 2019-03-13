@@ -282,7 +282,7 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
     }
     _bucketDBHandlerInitializer.addDocumentMetaStore(dms.get(), _flushedDocumentMetaStoreSerialNum);
     _metaStoreCtx = std::make_shared<DocumentMetaStoreContext>(dms);
-    LOG(debug, "Added document meta store '%s' with flushed serial num %lu",
+    LOG(debug, "Added document meta store '%s' with flushed serial num %" PRIu64,
                name.c_str(), _flushedDocumentMetaStoreSerialNum);
     _dms = dms;
     _dmsFlushTarget = std::make_shared<DocumentMetaStoreFlushTarget>(dms, _tlsSyncer, baseDir, dmsResult->tuneFile(),
