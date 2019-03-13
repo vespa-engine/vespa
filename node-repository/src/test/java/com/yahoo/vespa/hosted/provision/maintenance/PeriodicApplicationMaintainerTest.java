@@ -65,7 +65,7 @@ public class PeriodicApplicationMaintainerTest {
         this.clock = new ManualClock();
         this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                  new MockNameResolver().mockAnyLookup(),
-                                                 new DockerImage("docker-registry.domain.tld:8080/dist/vespa"),
+                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                  true);
         this.fixture = new Fixture(zone, nodeRepository, nodeFlavors, curator);
 

@@ -249,7 +249,7 @@ public class FailedExpirerTest {
             Zone zone = new Zone(system, environment, RegionName.defaultName());
             this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                      new MockNameResolver().mockAnyLookup(),
-                                                     new DockerImage("docker-image"),
+                                                     DockerImage.fromString("docker-image"),
                                                      true);
             this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
             this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30),

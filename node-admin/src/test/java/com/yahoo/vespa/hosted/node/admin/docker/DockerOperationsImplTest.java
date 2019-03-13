@@ -3,11 +3,11 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.net.InetAddresses;
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -85,7 +85,7 @@ public class DockerOperationsImplTest {
     }
 
     private Container makeContainer(String name, Container.State state, int pid) {
-        final Container container = new Container(name + ".fqdn", new DockerImage("mock"), null,
+        final Container container = new Container(name + ".fqdn", DockerImage.fromString("mock"), null,
                 new ContainerName(name), state, pid);
         when(docker.getContainer(eq(container.name))).thenReturn(Optional.of(container));
         return container;

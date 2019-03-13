@@ -3,8 +3,9 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
@@ -172,8 +173,8 @@ public class RealNodeRepository implements NodeRepository {
 
         return new NodeSpec(
                 hostName,
-                Optional.ofNullable(node.wantedDockerImage).map(DockerImage::new),
-                Optional.ofNullable(node.currentDockerImage).map(DockerImage::new),
+                Optional.ofNullable(node.wantedDockerImage).map(DockerImage::fromString),
+                Optional.ofNullable(node.currentDockerImage).map(DockerImage::fromString),
                 nodeState,
                 nodeType,
                 node.flavor,

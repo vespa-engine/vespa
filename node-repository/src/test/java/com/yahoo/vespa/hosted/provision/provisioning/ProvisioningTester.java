@@ -86,7 +86,7 @@ public class ProvisioningTester {
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();
         this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver,
-                new DockerImage("docker-registry.domain.tld:8080/dist/vespa"), true);
+                DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
         this.orchestrator = orchestrator;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, provisionServiceProvider, flagSource);

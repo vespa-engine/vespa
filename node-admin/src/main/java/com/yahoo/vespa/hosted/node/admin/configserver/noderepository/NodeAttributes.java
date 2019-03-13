@@ -2,7 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.DockerImage;
 
 import java.time.Instant;
 import java.util.Map;

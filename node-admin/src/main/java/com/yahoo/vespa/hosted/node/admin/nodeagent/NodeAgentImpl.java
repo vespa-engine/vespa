@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FetchVector;
@@ -10,7 +11,6 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;

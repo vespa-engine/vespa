@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
@@ -25,7 +26,7 @@ import static org.mockito.ArgumentMatchers.eq;
 public class RebootTest {
 
     private final String hostname = "host1.test.yahoo.com";
-    private final DockerImage dockerImage = new DockerImage("dockerImage");
+    private final DockerImage dockerImage = DockerImage.fromString("dockerImage");
 
     @Test
     public void test() {
@@ -53,7 +54,7 @@ public class RebootTest {
                 .state(NodeState.active)
                 .nodeType(NodeType.tenant)
                 .flavor("docker")
-                .vespaVersion("6.50.0")
+                .vespaVersion(Version.fromString("6.50.0"))
                 .wantedRestartGeneration(1L)
                 .currentRestartGeneration(1L)
                 .build();

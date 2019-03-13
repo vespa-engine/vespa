@@ -35,7 +35,7 @@ public class MaintenanceTester {
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
     public final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                                     new MockNameResolver().mockAnyLookup(),
-                                                                    new DockerImage("docker-registry.domain.tld:8080/dist/vespa"),
+                                                                    DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                                     true);
 
     public NodeRepository nodeRepository() { return nodeRepository; }
