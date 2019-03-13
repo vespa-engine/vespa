@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -72,6 +73,15 @@ public class ZipStreamReaderTest {
             throw new UncheckedIOException(e);
         }
         return zip.toByteArray();
+    }
+
+    @Test
+    public void lul() {
+        String name = "./artif/../yolo/../../hi/";
+        Path path = Path.of(name);
+        System.err.println(name);
+        System.err.println(path);
+        System.err.println(path.normalize());
     }
 
 }
