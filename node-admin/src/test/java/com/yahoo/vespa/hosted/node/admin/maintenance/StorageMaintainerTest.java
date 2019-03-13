@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
@@ -161,7 +162,7 @@ public class StorageMaintainerTest {
                     .parentHostname("host123.test.domain.tld")
                     .owner(new NodeOwner("tenant", "application", "instance"))
                     .membership(new NodeMembership("clusterType", "clusterId", null, 0, false))
-                    .vespaVersion("6.305.12")
+                    .vespaVersion(Version.fromString("6.305.12"))
                     .flavor("d-2-8-50")
                     .canonicalFlavor("d-2-8-50")
                     .build();

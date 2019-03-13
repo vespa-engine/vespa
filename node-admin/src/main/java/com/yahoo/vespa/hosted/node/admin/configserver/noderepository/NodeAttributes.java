@@ -25,8 +25,8 @@ public class NodeAttributes {
     private Optional<Long> restartGeneration = Optional.empty();
     private Optional<Long> rebootGeneration = Optional.empty();
     private Optional<DockerImage> dockerImage = Optional.empty();
-    private Optional<String> vespaVersion = Optional.empty();
-    private Optional<String> currentOsVersion = Optional.empty();
+    private Optional<Version> vespaVersion = Optional.empty();
+    private Optional<Version> currentOsVersion = Optional.empty();
     private Optional<Instant> currentFirmwareCheck = Optional.empty();
     private Optional<String> hardwareDivergence = Optional.empty();
     private Optional<String> hardwareFailureDescription = Optional.empty();
@@ -55,12 +55,12 @@ public class NodeAttributes {
         return this;
     }
 
-    public NodeAttributes withVespaVersion(String vespaVersion) {
+    public NodeAttributes withVespaVersion(Version vespaVersion) {
         this.vespaVersion = Optional.of(vespaVersion);
         return this;
     }
 
-    public NodeAttributes withCurrentOsVersion(String currentOsVersion) {
+    public NodeAttributes withCurrentOsVersion(Version currentOsVersion) {
         this.currentOsVersion = Optional.of(currentOsVersion);
         return this;
     }
@@ -107,11 +107,11 @@ public class NodeAttributes {
         return dockerImage;
     }
 
-    public Optional<String> getVespaVersion() {
+    public Optional<Version> getVespaVersion() {
         return vespaVersion;
     }
 
-    public Optional<String> getCurrentOsVersion() {
+    public Optional<Version> getCurrentOsVersion() {
         return currentOsVersion;
     }
 
@@ -170,8 +170,8 @@ public class NodeAttributes {
                         restartGeneration.map(gen -> "restartGeneration=" + gen),
                         rebootGeneration.map(gen -> "rebootGeneration=" + gen),
                         dockerImage.map(img -> "dockerImage=" + img.asString()),
-                        vespaVersion.map(ver -> "vespaVersion=" + ver),
-                        currentOsVersion.map(ver -> "currentOsVersion=" + ver),
+                        vespaVersion.map(ver -> "vespaVersion=" + ver.toFullString()),
+                        currentOsVersion.map(ver -> "currentOsVersion=" + ver.toFullString()),
                         currentFirmwareCheck.map(at -> "currentFirmwareCheck=" + at),
                         hardwareDivergence.map(hwDivg -> "hardwareDivergence=" + hwDivg),
                         hardwareFailureDescription.map(hwDesc -> "hardwareFailureDescription=" + hwDesc),

@@ -35,8 +35,8 @@ import java.util.regex.Pattern;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.olderThan;
-import static com.yahoo.yolean.Exceptions.uncheck;
 import static com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig.nodeTypeToRole;
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author freva
@@ -160,7 +160,7 @@ public class StorageMaintainer {
         tags.put("namespace", "Vespa");
         tags.put("role", nodeTypeToRole(context.node().getNodeType()));
         tags.put("zone", String.format("%s.%s", context.zoneId().environment().value(), context.zoneId().regionName().value()));
-        context.node().getVespaVersion().ifPresent(version -> tags.put("vespaVersion", version));
+        context.node().getVespaVersion().ifPresent(version -> tags.put("vespaVersion", version.toFullString()));
 
         if (! isConfigserverLike(context.nodeType())) {
             tags.put("flavor", context.node().getFlavor());
@@ -273,7 +273,7 @@ public class StorageMaintainer {
 
         container.map(c -> c.image).ifPresent(image -> attributes.put("docker_image", image.asString()));
         context.node().getParentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
-        context.node().getVespaVersion().ifPresent(version -> attributes.put("vespa_version", version));
+        context.node().getVespaVersion().ifPresent(version -> attributes.put("vespa_version", version.toFullString()));
         context.node().getOwner().ifPresent(owner -> {
             attributes.put("tenant", owner.getTenant());
             attributes.put("application", owner.getApplication());

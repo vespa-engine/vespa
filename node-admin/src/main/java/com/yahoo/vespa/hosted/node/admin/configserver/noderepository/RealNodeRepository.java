@@ -179,10 +179,10 @@ public class RealNodeRepository implements NodeRepository {
                 nodeType,
                 node.flavor,
                 node.canonicalFlavor,
-                Optional.ofNullable(node.wantedVespaVersion),
-                Optional.ofNullable(node.vespaVersion),
-                Optional.ofNullable(node.wantedOsVersion),
-                Optional.ofNullable(node.currentOsVersion),
+                Optional.ofNullable(node.wantedVespaVersion).map(Version::fromString),
+                Optional.ofNullable(node.vespaVersion).map(Version::fromString),
+                Optional.ofNullable(node.wantedOsVersion).map(Version::fromString),
+                Optional.ofNullable(node.currentOsVersion).map(Version::fromString),
                 Optional.ofNullable(node.allowedToBeDown),
                 Optional.ofNullable(node.wantToDeprovision),
                 Optional.ofNullable(owner),
@@ -222,8 +222,8 @@ public class RealNodeRepository implements NodeRepository {
         node.currentDockerImage = nodeAttributes.getDockerImage().map(DockerImage::asString).orElse(null);
         node.currentRestartGeneration = nodeAttributes.getRestartGeneration().orElse(null);
         node.currentRebootGeneration = nodeAttributes.getRebootGeneration().orElse(null);
-        node.vespaVersion = nodeAttributes.getVespaVersion().orElse(null);
-        node.currentOsVersion = nodeAttributes.getCurrentOsVersion().orElse(null);
+        node.vespaVersion = nodeAttributes.getVespaVersion().map(Version::toFullString).orElse(null);
+        node.currentOsVersion = nodeAttributes.getCurrentOsVersion().map(Version::toFullString).orElse(null);
         node.currentFirmwareCheck = nodeAttributes.getCurrentFirmwareCheck().map(Instant::toEpochMilli).orElse(null);
         node.hardwareFailureDescription = nodeAttributes.getHardwareFailureDescription().orElse(null);
         node.wantToDeprovision = nodeAttributes.getWantToDeprovision().orElse(null);

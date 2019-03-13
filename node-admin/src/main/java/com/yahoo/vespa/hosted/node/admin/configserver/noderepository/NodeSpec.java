@@ -25,11 +25,11 @@ public class NodeSpec {
     private final Optional<DockerImage> wantedDockerImage;
     private final Optional<DockerImage> currentDockerImage;
 
-    private final Optional<String> wantedVespaVersion;
-    private final Optional<String> vespaVersion;
+    private final Optional<Version> wantedVespaVersion;
+    private final Optional<Version> vespaVersion;
 
-    private final Optional<String> wantedOsVersion;
-    private final Optional<String> currentOsVersion;
+    private final Optional<Version> wantedOsVersion;
+    private final Optional<Version> currentOsVersion;
 
     private final Optional<Long> wantedRestartGeneration;
     private final Optional<Long> currentRestartGeneration;
@@ -68,10 +68,10 @@ public class NodeSpec {
             NodeType nodeType,
             String flavor,
             String canonicalFlavor,
-            Optional<String> wantedVespaVersion,
-            Optional<String> vespaVersion,
-            Optional<String> wantedOsVersion,
-            Optional<String> currentOsVersion,
+            Optional<Version> wantedVespaVersion,
+            Optional<Version> vespaVersion,
+            Optional<Version> wantedOsVersion,
+            Optional<Version> currentOsVersion,
             Optional<Boolean> allowedToBeDown,
             Optional<Boolean> wantToDeprovision,
             Optional<NodeOwner> owner,
@@ -153,19 +153,19 @@ public class NodeSpec {
         return currentDockerImage;
     }
 
-    public Optional<String> getWantedVespaVersion() {
+    public Optional<Version> getWantedVespaVersion() {
         return wantedVespaVersion;
     }
 
-    public Optional<String> getVespaVersion() {
+    public Optional<Version> getVespaVersion() {
         return vespaVersion;
     }
 
-    public Optional<String> getCurrentOsVersion() {
+    public Optional<Version> getCurrentOsVersion() {
         return currentOsVersion;
     }
 
-    public Optional<String> getWantedOsVersion() {
+    public Optional<Version> getWantedOsVersion() {
         return wantedOsVersion;
     }
 
@@ -365,10 +365,10 @@ public class NodeSpec {
         private NodeType nodeType;
         private String flavor;
         private String canonicalFlavor;
-        private Optional<String> wantedVespaVersion = Optional.empty();
-        private Optional<String> vespaVersion = Optional.empty();
-        private Optional<String> wantedOsVersion = Optional.empty();
-        private Optional<String> currentOsVersion = Optional.empty();
+        private Optional<Version> wantedVespaVersion = Optional.empty();
+        private Optional<Version> vespaVersion = Optional.empty();
+        private Optional<Version> wantedOsVersion = Optional.empty();
+        private Optional<Version> currentOsVersion = Optional.empty();
         private Optional<Boolean> allowedToBeDown = Optional.empty();
         private Optional<Boolean> wantToDeprovision = Optional.empty();
         private Optional<NodeOwner> owner = Optional.empty();
@@ -462,22 +462,22 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder wantedVespaVersion(String wantedVespaVersion) {
+        public Builder wantedVespaVersion(Version wantedVespaVersion) {
             this.wantedVespaVersion = Optional.of(wantedVespaVersion);
             return this;
         }
 
-        public Builder vespaVersion(String vespaVersion) {
+        public Builder vespaVersion(Version vespaVersion) {
             this.vespaVersion = Optional.of(vespaVersion);
             return this;
         }
 
-        public Builder wantedOsVersion(String wantedOsVersion) {
+        public Builder wantedOsVersion(Version wantedOsVersion) {
             this.wantedOsVersion = Optional.of(wantedOsVersion);
             return this;
         }
 
-        public Builder currentOsVersion(String currentOsVersion) {
+        public Builder currentOsVersion(Version currentOsVersion) {
             this.currentOsVersion = Optional.of(currentOsVersion);
             return this;
         }
@@ -633,19 +633,19 @@ public class NodeSpec {
             return canonicalFlavor;
         }
 
-        public Optional<String> getWantedVespaVersion() {
+        public Optional<Version> getWantedVespaVersion() {
             return wantedVespaVersion;
         }
 
-        public Optional<String> getVespaVersion() {
+        public Optional<Version> getVespaVersion() {
             return vespaVersion;
         }
 
-        public Optional<String> getWantedOsVersion() {
+        public Optional<Version> getWantedOsVersion() {
             return wantedOsVersion;
         }
 
-        public Optional<String> getCurrentOsVersion() {
+        public Optional<Version> getCurrentOsVersion() {
             return currentOsVersion;
         }
 
