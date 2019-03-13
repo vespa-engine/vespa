@@ -28,7 +28,8 @@ reuseAddress                        bool     default=true
 # The maximum idle time for a connection, which roughly translates to the Socket.setSoTimeout(int).
 idleTimeout                         double   default=180.0
 
-# The stop timeout.
+# The stop timeout in seconds (timeout for processing in-flight requests during server shutdown).
+# Should usually match the stopTimeout in the server config.
 stopTimeout                         double   default=30.0
 
 # Whether or not to have socket keep alive turned on.

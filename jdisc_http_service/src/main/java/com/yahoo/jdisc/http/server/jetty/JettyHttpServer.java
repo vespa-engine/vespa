@@ -40,7 +40,6 @@ import org.osgi.framework.ServiceReference;
 
 import javax.management.remote.JMXServiceURL;
 import javax.servlet.DispatcherType;
-
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.BindException;
@@ -141,6 +140,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         initializeJettyLogging();
 
         server = new Server();
+        server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
         server.setRequestLog(new AccessLogRequestLog(accessLog));
         setupJmx(server, serverConfig);
         ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
