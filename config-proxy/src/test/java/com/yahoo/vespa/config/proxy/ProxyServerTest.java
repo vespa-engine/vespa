@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
-import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.Payload;
@@ -220,9 +219,13 @@ public class ProxyServerTest {
     }
 
     private static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode, Payload payload) {
+        return createConfigWithNextConfigGeneration(config, errorCode, payload, config.getGeneration() + 1);
+    }
+
+    static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode, Payload payload, long configGeneration) {
         return new RawConfig(config.getKey(), config.getDefMd5(),
                              payload, config.getConfigMd5(),
-                             config.getGeneration() + 1, false,
+                             configGeneration, false,
                              errorCode, config.getDefContent(), Optional.empty());
     }
 
