@@ -114,24 +114,33 @@ void
 BucketDBUpdater::removeSuperfluousBuckets(
         const lib::ClusterStateBundle& newState)
 {
+    // TODO too many indirections to get at config.
+    const bool move_to_read_only_db = _distributorComponent.getDistributor().getConfig()
+            .allowStaleReadsDuringClusterStateTransitions();
     for (auto &elem : _distributorComponent.getBucketSpaceRepo()) {
         const auto &newDistribution(elem.second->getDistribution());
         const auto &oldClusterState(elem.second->getClusterState());
         auto &bucketDb(elem.second->getBucketDatabase());
+        auto& readOnlyDb(_distributorComponent.getReadOnlyBucketSpaceRepo().get(elem.first).getBucketDatabase());
 
         // Remove all buckets not belonging to this distributor, or
         // being on storage nodes that are no longer up.
         NodeRemover proc(
                 oldClusterState,
                 *newState.getDerivedClusterState(elem.first),
-                _distributorComponent.getBucketIdFactory(),
                 _distributorComponent.getIndex(),
                 newDistribution,
                 _distributorComponent.getDistributor().getStorageNodeUpStates());
         bucketDb.forEach(proc);
 
-        for (const auto & entry :proc.getBucketsToRemove()) {
-            bucketDb.remove(entry);
+        // TODO vec of Entry instead to avoid lookup and remove? Uses more transient memory...
+        for (const auto & bucket : proc.getBucketsToRemove()) {
+            if (move_to_read_only_db) {
+                // TODO explicit transfer function?
+                auto db_entry = bucketDb.get(bucket);
+                readOnlyDb.update(db_entry); // TODO Entry move support
+            }
+            bucketDb.remove(bucket);
         }
     }
 }
@@ -202,7 +211,6 @@ BucketDBUpdater::onSetSystemState(
     }
     ensureTransitionTimerStarted();
 
-    // TODO
     removeSuperfluousBuckets(cmd->getClusterStateBundle());
     replyToPreviousPendingClusterStateIfAny();
 

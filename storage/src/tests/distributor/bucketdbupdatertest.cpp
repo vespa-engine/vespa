@@ -26,6 +26,7 @@ using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
 using document::BucketSpace;
 using document::FixedBucketSpaces;
+using document::BucketId;
 
 namespace storage::distributor {
 
@@ -113,6 +114,7 @@ class BucketDBUpdaterTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted);
     CPPUNIT_TEST(global_distribution_hash_falls_back_to_legacy_format_upon_request_rejection);
     CPPUNIT_TEST(non_owned_buckets_moved_to_read_only_db_on_ownership_change);
+    CPPUNIT_TEST(non_owned_buckets_purged_when_read_only_support_is_config_disabled);
     CPPUNIT_TEST_SUITE_END();
 
     /*
@@ -186,6 +188,7 @@ protected:
     void batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted();
     void global_distribution_hash_falls_back_to_legacy_format_upon_request_rejection();
     void non_owned_buckets_moved_to_read_only_db_on_ownership_change();
+    void non_owned_buckets_purged_when_read_only_support_is_config_disabled();
 
     auto &defaultDistributorBucketSpace() { return getBucketSpaceRepo().get(makeBucketSpace()); }
 
@@ -243,7 +246,7 @@ public:
             uint32_t bucketCount,
             uint32_t invalidBucketCount = 0)
     {
-        RequestBucketInfoReply* sreply = new RequestBucketInfoReply(cmd);
+        auto sreply = std::make_shared<RequestBucketInfoReply>(cmd);
         sreply->setAddress(storageAddress(storageIndex));
 
         api::RequestBucketInfoReply::EntryVector &vec = sreply->getBucketInfo();
@@ -276,7 +279,7 @@ public:
             }
         }
 
-        return std::shared_ptr<api::RequestBucketInfoReply>(sreply);
+        return sreply;
     }
 
     void fakeBucketReply(const lib::ClusterState &state,
@@ -619,19 +622,17 @@ public:
         }
     };
 
-    auto createPendingStateFixtureForStateChange(
+    std::unique_ptr<PendingClusterStateFixture> createPendingStateFixtureForStateChange(
             const std::string& oldClusterState,
             const std::string& newClusterState)
     {
-        return std::make_unique<PendingClusterStateFixture>(
-                *this, oldClusterState, newClusterState);
+        return std::make_unique<PendingClusterStateFixture>(*this, oldClusterState, newClusterState);
     }
 
-    auto createPendingStateFixtureForDistributionChange(
+    std::unique_ptr<PendingClusterStateFixture> createPendingStateFixtureForDistributionChange(
             const std::string& oldClusterState)
     {
-        return std::make_unique<PendingClusterStateFixture>(
-                *this, oldClusterState);
+        return std::make_unique<PendingClusterStateFixture>(*this, oldClusterState);
     }
 };
 
@@ -639,8 +640,8 @@ CPPUNIT_TEST_SUITE_REGISTRATION(BucketDBUpdaterTest);
 
 BucketDBUpdaterTest::BucketDBUpdaterTest()
     : CppUnit::TestFixture(),
-    DistributorTestUtil(),
-    _bucketSpaces()
+      DistributorTestUtil(),
+      _bucketSpaces()
 {
 }
 
@@ -2617,8 +2618,83 @@ void BucketDBUpdaterTest::global_distribution_hash_falls_back_to_legacy_format_u
     CPPUNIT_ASSERT_EQUAL(current_hash, new_current_req.getDistributionHash());
 }
 
-void BucketDBUpdaterTest::non_owned_buckets_moved_to_read_only_db_on_ownership_change() {
+namespace {
 
+template <typename Func>
+void for_each_bucket(const BucketDatabase& db, Func f) {
+    BucketId last(0);
+    auto e = db.getNext(last);
+    while (e.valid()) {
+        f(e);
+        e = db.getNext(e.getBucketId());
+    }
+}
+
+}
+
+using ConfigBuilder = vespa::config::content::core::StorDistributormanagerConfigBuilder;
+
+void BucketDBUpdaterTest::non_owned_buckets_moved_to_read_only_db_on_ownership_change() {
+    getConfig().setAllowStaleReadsDuringClusterStateTransitions(true);
+
+    lib::ClusterState initial_state("distributor:1 storage:4"); // All buckets owned by us by definition
+    setSystemState(initial_state);
+
+    CPPUNIT_ASSERT_EQUAL(messageCount(4), _sender.commands.size());
+    constexpr uint32_t n_buckets = 10;
+    completeBucketInfoGathering(initial_state, messageCount(4), n_buckets);
+    _sender.clear();
+
+    auto& default_db   = mutable_repo().get(makeBucketSpace()).getBucketDatabase();
+    auto& read_only_db = read_only_repo().get(makeBucketSpace()).getBucketDatabase();
+
+    CPPUNIT_ASSERT_EQUAL(size_t(n_buckets), default_db.size());
+    CPPUNIT_ASSERT_EQUAL(size_t(0), read_only_db.size());
+
+    lib::ClusterState pending_state("distributor:2 storage:4");
+
+    // TODO iterate over buckets with spaces instead
+    std::unordered_set<BucketId, BucketId::hash> buckets_not_owned_in_pending_state;
+    for_each_bucket(default_db, [&](const auto& entry) {
+        if (!getBucketDBUpdater().getDistributorComponent()
+                .ownsBucketInState(pending_state, makeDocumentBucket(entry.getBucketId()))) {
+            buckets_not_owned_in_pending_state.insert(entry.getBucketId());
+        }
+    });
+    CPPUNIT_ASSERT(!buckets_not_owned_in_pending_state.empty());
+
+    setSystemState(pending_state);
+
+    CPPUNIT_ASSERT_EQUAL(size_t(n_buckets - buckets_not_owned_in_pending_state.size()), default_db.size());
+    CPPUNIT_ASSERT_EQUAL(buckets_not_owned_in_pending_state.size(), read_only_db.size());
+
+    // TODO replace with gmock unordered set equality matcher
+    for_each_bucket(read_only_db, [&](const auto& entry) {
+        CPPUNIT_ASSERT(buckets_not_owned_in_pending_state.find(entry.getBucketId())
+                       != buckets_not_owned_in_pending_state.end());
+    });
+
+    // TODO check global space too!
+}
+
+void BucketDBUpdaterTest::non_owned_buckets_purged_when_read_only_support_is_config_disabled() {
+    getConfig().setAllowStaleReadsDuringClusterStateTransitions(false);
+
+    lib::ClusterState initial_state("distributor:1 storage:4"); // All buckets owned by us by definition
+    setSystemState(initial_state);
+
+    CPPUNIT_ASSERT_EQUAL(messageCount(4), _sender.commands.size());
+    constexpr uint32_t n_buckets = 10;
+    completeBucketInfoGathering(initial_state, messageCount(4), n_buckets);
+    _sender.clear();
+
+    auto& read_only_db = read_only_repo().get(makeBucketSpace()).getBucketDatabase();
+    CPPUNIT_ASSERT_EQUAL(size_t(0), read_only_db.size());
+
+    lib::ClusterState pending_state("distributor:2 storage:4");
+    setSystemState(pending_state);
+    // No buckets should be moved into read only db
+    CPPUNIT_ASSERT_EQUAL(size_t(0), read_only_db.size());
 }
 
 }

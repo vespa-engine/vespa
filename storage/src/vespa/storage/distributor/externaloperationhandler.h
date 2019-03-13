@@ -41,7 +41,7 @@ public:
                              const MaintenanceOperationGenerator&,
                              DistributorComponentRegister& compReg);
 
-    ~ExternalOperationHandler();
+    ~ExternalOperationHandler() override;
 
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg,
                        Operation::SP& operation);
@@ -55,6 +55,17 @@ private:
     OperationSequencer _mutationSequencer;
     Operation::SP _op;
     TimePoint _rejectFeedBeforeTimeReached;
+
+    template <typename Func>
+    void bounce_or_invoke_read_only_op(api::StorageCommand& cmd,
+                                       const document::Bucket& bucket,
+                                       PersistenceOperationMetricSet& metrics,
+                                       Func f);
+
+    void bounce_with_wrong_distribution(api::StorageCommand& cmd);
+    void bounce_with_busy_during_state_transition(api::StorageCommand& cmd,
+                                                  const lib::ClusterState& current_state,
+                                                  const lib::ClusterState& pending_state);
 
     bool checkSafeTimeReached(api::StorageCommand& cmd);
     api::ReturnCode makeSafeTimeRejectionResult(TimePoint unsafeTime);

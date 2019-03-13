@@ -20,6 +20,8 @@
 #include "distributor_bucket_space.h"
 
 #include <vespa/log/log.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+
 LOG_SETUP(".distributor.manager");
 
 namespace storage::distributor {
@@ -70,19 +72,60 @@ ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
     return true;
 }
 
+void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd) {
+    // Distributor ownership is equal across cluster states, so always send back default state.
+    // This also helps client avoid getting confused by possibly observing different actual
+    // states for global/non-global document types for the same state version.
+    auto cluster_state_str = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space())
+            .getClusterState().toString();
+    LOG(debug, "Got message with wrong distribution, sending back state '%s'",
+        cluster_state_str.c_str());
+
+    api::StorageReply::UP reply(cmd.makeReply());
+    api::ReturnCode ret(api::ReturnCode::WRONG_DISTRIBUTION, cluster_state_str);
+    reply->setResult(ret);
+    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+}
+
+void ExternalOperationHandler::bounce_with_busy_during_state_transition(
+        api::StorageCommand& cmd,
+        const lib::ClusterState& current_state,
+        const lib::ClusterState& pending_state)
+{
+    auto status_str = vespalib::make_string("Currently pending cluster state transition"
+                                            " from version %u to %u",
+                                            current_state.getVersion(), pending_state.getVersion());
+
+    api::StorageReply::UP reply(cmd.makeReply());
+    api::ReturnCode ret(api::ReturnCode::BUSY, status_str);
+    reply->setResult(ret);
+    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+}
+
 bool
 ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageCommand& cmd,
                                                               const document::BucketId &bucketId,
                                                               PersistenceOperationMetricSet& persistenceMetrics)
 {
     document::Bucket bucket(cmd.getBucket().getBucketSpace(), bucketId);
-    if (!checkDistribution(cmd, bucket)) {
+    if (!ownsBucketInCurrentState(bucket)) {
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
             cmd.toString().c_str(), bucket.toString().c_str());
-
+        bounce_with_wrong_distribution(cmd);
         persistenceMetrics.failures.wrongdistributor.inc();
         return false;
     }
+
+    auto pending = getDistributor().checkOwnershipInPendingState(bucket);
+    if (!pending.isOwned()) {
+        // We return BUSY here instead of WrongDistributionReply to avoid clients potentially
+        // ping-ponging between cluster state versions during a state transition.
+        auto& current_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
+        auto& pending_state = pending.getNonOwnedState();
+        bounce_with_busy_during_state_transition(cmd, current_state, pending_state);
+        return false;
+    }
+
     if (!checkSafeTimeReached(cmd)) {
         persistenceMetrics.failures.safe_time_not_reached.inc();
         return false;
@@ -111,6 +154,35 @@ bool ExternalOperationHandler::allowMutation(const SequencingHandle& handle) con
         return true;
     }
     return handle.valid();
+}
+
+template <typename Func>
+void ExternalOperationHandler::bounce_or_invoke_read_only_op(
+        api::StorageCommand& cmd,
+        const document::Bucket& bucket,
+        PersistenceOperationMetricSet& metrics,
+        Func func)
+{
+    if (!ownsBucketInCurrentState(bucket)) {
+        LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
+            cmd.toString().c_str(), bucket.toString().c_str());
+        bounce_with_wrong_distribution(cmd);
+        metrics.failures.wrongdistributor.inc();
+        return;
+    }
+
+    auto pending = getDistributor().checkOwnershipInPendingState(bucket);
+    if (pending.isOwned()) {
+        func(_bucketSpaceRepo);
+    } else {
+        if (getDistributor().getConfig().allowStaleReadsDuringClusterStateTransitions()) {
+            func(_readOnlyBucketSpaceRepo);
+        } else {
+            auto& current_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
+            auto& pending_state = pending.getNonOwnedState();
+            bounce_with_busy_during_state_transition(cmd, current_state, pending_state);
+        }
+    }
 }
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
@@ -188,10 +260,8 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
     RemoveLocationOperation::getBucketId(*this, *cmd, bid);
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), bid);
 
-    if (!checkDistribution(*cmd, bucket)) {
-        LOG(debug, "Distributor manager received %s with wrong distribution", cmd->toString().c_str());
-
-        getMetrics().removelocations[cmd->getLoadType()].failures.wrongdistributor.inc();
+    auto& metrics = getMetrics().removelocations[cmd->getLoadType()];
+    if (!checkTimestampMutationPreconditions(*cmd, bucket.getBucketId(), metrics)) {
         return true;
     }
 
@@ -203,43 +273,38 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
 {
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), getBucketId(cmd->getDocumentId()));
-    if (!checkDistribution(*cmd, bucket)) {
-        LOG(debug, "Distributor manager received get for %s, bucket %s with wrong distribution",
-            cmd->getDocumentId().toString().c_str(), bucket.toString().c_str());
-
-        getMetrics().gets[cmd->getLoadType()].failures.wrongdistributor.inc();
-        return true;
-    }
-
-    _op = std::make_shared<GetOperation>(*this, _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
-                                        cmd, getMetrics().gets[cmd->getLoadType()]);
+    auto& metrics = getMetrics().gets[cmd->getLoadType()];
+    bounce_or_invoke_read_only_op(*cmd, bucket, metrics, [&](auto& bucket_space_repo) {
+        _op = std::make_shared<GetOperation>(*this, bucket_space_repo.get(cmd->getBucket().getBucketSpace()),
+                                             cmd, metrics);
+    });
     return true;
 }
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, StatBucket)
 {
-    if (!checkDistribution(*cmd, cmd->getBucket())) {
-        return true;
-    }
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
-    _op = std::make_shared<StatBucketOperation>(*this, distributorBucketSpace, cmd);
+    auto& metrics = getMetrics().stats[cmd->getLoadType()];
+    bounce_or_invoke_read_only_op(*cmd, cmd->getBucket(), metrics, [&](auto& bucket_space_repo) {
+        auto& bucket_space = bucket_space_repo.get(cmd->getBucket().getBucketSpace());
+        _op = std::make_shared<StatBucketOperation>(*this, bucket_space, cmd);
+    });
     return true;
 }
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, GetBucketList)
 {
-    if (!checkDistribution(*cmd, cmd->getBucket())) {
-        return true;
-    }
-    auto bucketSpace(cmd->getBucket().getBucketSpace());
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucketSpace));
-    auto &bucketDatabase(distributorBucketSpace.getBucketDatabase());
-    _op = std::make_shared<StatBucketListOperation>(bucketDatabase, _operationGenerator, getIndex(), cmd);
+    auto& metrics = getMetrics().getbucketlists[cmd->getLoadType()];
+    bounce_or_invoke_read_only_op(*cmd, cmd->getBucket(), metrics, [&](auto& bucket_space_repo) {
+        auto& bucket_space = bucket_space_repo.get(cmd->getBucket().getBucketSpace());
+        auto& bucket_database = bucket_space.getBucketDatabase();
+        _op = std::make_shared<StatBucketListOperation>(bucket_database, _operationGenerator, getIndex(), cmd);
+    });
     return true;
 }
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, CreateVisitor)
 {
+    // TODO same handling as Gets (VisitorOperation needs to change)
     const DistributorConfiguration& config(getDistributor().getConfig());
     VisitorOperation::Config visitorConfig(config.getMinBucketsPerVisitor(), config.getMaxVisitorsPerNodePerClientVisitor());
     auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));

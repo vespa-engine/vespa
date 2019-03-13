@@ -192,7 +192,6 @@ private:
     public:
         NodeRemover(const lib::ClusterState& oldState,
                     const lib::ClusterState& s,
-                    [[maybe_unused]] const document::BucketIdFactory& factory,
                     uint16_t localIndex,
                     const lib::Distribution& distribution,
                     const char* upStates)
@@ -202,7 +201,7 @@ private:
               _distribution(distribution),
               _upStates(upStates) {}
 
-        ~NodeRemover();
+        ~NodeRemover() override;
         bool process(BucketDatabase::Entry& e) override;
         void logRemove(const document::BucketId& bucketId, const char* msg) const;
         bool distributorOwnsBucket(const document::BucketId&) const;
