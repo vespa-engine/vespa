@@ -82,8 +82,8 @@ ThreadImpl::registerTick(CycleType cycleType, MilliSecTime time)
     if (data._lastTickMs == 0) { return; }
 
     if (previousTickMs > nowMs) {
-        LOGBP(warning, "Thread is registering tick at time %lu, but "
-                       "last time it registered a tick, the time was %lu"
+        LOGBP(warning, "Thread is registering tick at time %" PRIu64 ", but "
+                       "last time it registered a tick, the time was %" PRIu64
                        ". Assuming clock has been adjusted backwards",
 	      nowMs, previousTickMs);
         return;
