@@ -7,6 +7,7 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Capability;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Ulimit;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 
 import java.net.Inet6Address;

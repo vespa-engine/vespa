@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.dockerapi;
 
 
+import com.yahoo.config.provision.DockerImage;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -16,7 +17,7 @@ public class CreateContainerCommandImplTest {
 
     @Test
     public void testToString() throws UnknownHostException {
-        DockerImage dockerImage = new DockerImage("docker.registry.domain.tld/my/image:1.2.3");
+        DockerImage dockerImage = DockerImage.fromString("docker.registry.domain.tld/my/image:1.2.3");
         ContainerResources containerResources = new ContainerResources(2.5, 100, 1024);
         String hostname = "docker-1.region.domain.tld";
         ContainerName containerName = ContainerName.fromHostname(hostname);
