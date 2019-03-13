@@ -3,7 +3,12 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <cstdarg>
-#include <cinttypes>
+
+#ifndef PRId64
+  #define PRId64 "ld"
+  #define PRIu64 "lu"
+  #define PRIx64 "lx"
+#endif
 
 namespace vespalib {
 
