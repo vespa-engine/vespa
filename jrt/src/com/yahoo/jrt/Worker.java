@@ -37,11 +37,16 @@ class Worker {
         }
     }
 
+    private static void preloadClassRequiredAtShutDown() {
+        new CloseSocket(null);
+    }
+
     private Thread      thread = new Thread(new Run(), "<jrt-worker>");
     private Transport   parent;
     private ThreadQueue workQueue = new ThreadQueue();
 
     public Worker(Transport parent) {
+        preloadClassRequiredAtShutDown();
         this.parent = parent;
         thread.setDaemon(true);
         thread.start();
