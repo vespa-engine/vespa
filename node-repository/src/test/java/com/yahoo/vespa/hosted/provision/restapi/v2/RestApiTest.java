@@ -219,6 +219,7 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"openStackId\": \"patched-openstackid\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
+        container.handleRequest((new Request("http://localhost:8080/nodes/v2/upgrade/tenant", Utf8.toBytes("{\"dockerImage\": \"docker.domain.tld/my/image\"}"), Request.Method.PATCH)));
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
     }
@@ -592,7 +593,7 @@ public class RestApiTest {
     @Test
     public void test_upgrade() throws IOException {
         // Initially, no versions are set
-        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"), "{\"versions\":{},\"osVersions\":{}}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"), "{\"versions\":{},\"osVersions\":{},\"dockerImages\":{}}");
 
         // Set version for config, confighost and controller
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/config",
@@ -611,7 +612,7 @@ public class RestApiTest {
 
         // Verify versions are set
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\",\"controller\":\"6.123.456\"},\"osVersions\":{}}");
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\",\"controller\":\"6.123.456\"},\"osVersions\":{},\"dockerImages\":{}}");
 
         // Setting empty version fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -632,7 +633,7 @@ public class RestApiTest {
                                    Utf8.toBytes("{}"),
                                    Request.Method.PATCH),
                        400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"At least one of 'version' and 'osVersion' must be set\"}");
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"At least one of 'version', 'osVersion' or 'dockerImage' must be set\"}");
 
         // Downgrade without force fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -650,7 +651,7 @@ public class RestApiTest {
 
         // Verify version has been updated
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{}}");
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{},\"dockerImages\":{}}");
 
         // Upgrade OS for confighost and host
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -664,7 +665,7 @@ public class RestApiTest {
 
         // OS versions are set
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                       "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{\"host\":\"7.5.2\",\"confighost\":\"7.5.2\"}}");
+                       "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{\"host\":\"7.5.2\",\"confighost\":\"7.5.2\"},\"dockerImages\":{}}");
 
         // Upgrade OS and Vespa together
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -698,6 +699,26 @@ public class RestApiTest {
                                    Request.Method.PATCH),
                        200,
                        "{\"message\":\"Set osVersion to null for nodes of type confighost\"}");
+
+        // Set docker image for config and tenant
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/tenant",
+                        Utf8.toBytes("{\"dockerImage\": \"my-repo.my-domain.example:1234/repo/tenant\"}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Set docker image to my-repo.my-domain.example:1234/repo/tenant for nodes of type tenant\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/config",
+                        Utf8.toBytes("{\"dockerImage\": \"my-repo.my-domain.example:1234/repo/image\"}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Set docker image to my-repo.my-domain.example:1234/repo/image for nodes of type config\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.124.42\",\"controller\":\"6.123.456\"},\"osVersions\":{\"host\":\"7.5.2\"},\"dockerImages\":{\"tenant\":\"my-repo.my-domain.example:1234/repo/tenant\",\"config\":\"my-repo.my-domain.example:1234/repo/image\"}}");
+
+        // Cannot set docker image for non docker node type
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                        Utf8.toBytes("{\"dockerImage\": \"my-repo.my-domain.example:1234/repo/image\"}"),
+                        Request.Method.PATCH),
+                400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Setting docker image for confighost nodes is unsupported\"}");
     }
 
     @Test

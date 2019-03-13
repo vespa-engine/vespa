@@ -6,6 +6,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
+import com.yahoo.vespa.hosted.provision.provisioning.DockerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.OsVersions;
 
 import java.io.IOException;
@@ -20,11 +21,13 @@ public class UpgradeResponse extends HttpResponse {
 
     private final InfrastructureVersions infrastructureVersions;
     private final OsVersions osVersions;
+    private final DockerImages dockerImages;
 
-    public UpgradeResponse(InfrastructureVersions infrastructureVersions, OsVersions osVersions) {
+    public UpgradeResponse(InfrastructureVersions infrastructureVersions, OsVersions osVersions, DockerImages dockerImages) {
         super(200);
         this.infrastructureVersions = infrastructureVersions;
         this.osVersions = osVersions;
+        this.dockerImages = dockerImages;
     }
 
     @Override
@@ -37,6 +40,10 @@ public class UpgradeResponse extends HttpResponse {
 
         Cursor osVersionsObject = root.setObject("osVersions");
         osVersions.targets().forEach((nodeType, version) -> osVersionsObject.setString(nodeType.name(), version.toFullString()));
+
+
+        Cursor dockerImagesObject = root.setObject("dockerImages");
+        dockerImages.getDockerImages().forEach((nodeType, image) -> dockerImagesObject.setString(nodeType.name(), image.asString()));
 
         new JsonFormat(true).encode(stream, slime);
     }

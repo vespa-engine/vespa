@@ -160,7 +160,7 @@ class NodesResponse extends HttpResponse {
             toSlime(allocation.membership(), object.setObject("membership"));
             object.setLong("restartGeneration", allocation.restartGeneration().wanted());
             object.setLong("currentRestartGeneration", allocation.restartGeneration().current());
-            object.setString("wantedDockerImage", nodeRepository.dockerImage().withTag(allocation.membership().cluster().vespaVersion()).asString());
+            object.setString("wantedDockerImage", nodeRepository.dockerImage(node.type()).withTag(allocation.membership().cluster().vespaVersion()).asString());
             object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
             orchestrator.apply(new HostName(node.hostname()))
@@ -219,7 +219,7 @@ class NodesResponse extends HttpResponse {
                 .or(() -> Optional.of(node)
                         .filter(n -> n.type().isDockerHost())
                         .flatMap(n -> n.status().vespaVersion()
-                                .map(version -> nodeRepository.dockerImages().dockerImage().withTag(version))));
+                                .map(version -> nodeRepository.dockerImages().dockerImageFor(n.type()).withTag(version))));
     }
 
 

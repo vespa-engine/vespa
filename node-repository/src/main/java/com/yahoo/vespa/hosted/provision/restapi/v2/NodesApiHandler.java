@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -106,7 +107,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
         if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(maintenance.jobControl());
-        if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(maintenance.infrastructureVersions(), nodeRepository.osVersions());
+        if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(maintenance.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.dockerImages());
         if (path.equals(    "/nodes/v2/flags/")) return new FlagsResponse(nodeRepository.flags().list());
         throw new NotFoundException("Nothing at path '" + path + "'");
     }
@@ -308,6 +309,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         boolean force = inspector.field("force").asBool();
         Inspector versionField = inspector.field("version");
         Inspector osVersionField = inspector.field("osVersion");
+        Inspector dockerImageField = inspector.field("dockerImage");
 
         if (versionField.valid()) {
             Version version = Version.fromString(versionField.asString());
@@ -327,8 +329,16 @@ public class NodesApiHandler extends LoggingRequestHandler {
             }
         }
 
+        if (dockerImageField.valid()) {
+            Optional<DockerImage> dockerImage = Optional.of(dockerImageField.asString())
+                    .filter(s -> !s.isEmpty())
+                    .map(DockerImage::fromString);
+            nodeRepository.dockerImages().setDockerImage(nodeType, dockerImage);
+            messageParts.add("docker image to " + dockerImage.map(DockerImage::asString).orElse(null));
+        }
+
         if (messageParts.isEmpty()) {
-            throw new IllegalArgumentException("At least one of 'version' and 'osVersion' must be set");
+            throw new IllegalArgumentException("At least one of 'version', 'osVersion' or 'dockerImage' must be set");
         }
 
         return new MessageResponse("Set " + String.join(", ", messageParts) +
