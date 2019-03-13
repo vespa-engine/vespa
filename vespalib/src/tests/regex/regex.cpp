@@ -39,23 +39,11 @@ TEST("require that invalid expression fails compilation") {
     Regexp bad("[unbalanced");
     EXPECT_FALSE(bad.valid());
     EXPECT_FALSE(bad.match("nothing"));
-    EXPECT_EQUAL(vespalib::string("nothing"), bad.replace("nothing", "anything"));
 }
 
 TEST("require that * is not valid") {
     Regexp bad("*");
     EXPECT_FALSE(bad.valid());
-}
-
-TEST("require that replace works") {
-    Regexp rep("foo");
-    EXPECT_EQUAL(vespalib::string(""), rep.replace("", "bc"));
-    EXPECT_EQUAL(vespalib::string("a"), rep.replace("a", "bc"));
-    EXPECT_EQUAL(vespalib::string("bc"), rep.replace("foo", "bc"));
-    EXPECT_EQUAL(vespalib::string("abc"), rep.replace("afoo", "bc"));
-    EXPECT_EQUAL(vespalib::string("abcd"), rep.replace("afood", "bc"));
-    EXPECT_EQUAL(vespalib::string("abcdbc"), rep.replace("afoodfoo", "bc"));
-    EXPECT_EQUAL(vespalib::string("abcdbcbc"), rep.replace("afoodfoofoo", "bc"));
 }
 
 TEST("require that prefix detection works") {

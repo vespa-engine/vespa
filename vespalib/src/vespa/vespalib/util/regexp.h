@@ -57,15 +57,6 @@ public:
     bool match(vespalib::stringref s) const;
 
     /**
-     * Will replace all occurrences of this pattern is string 's' with 'replacement'.
-     * If called on invalid regexp it will return an unmodified copy of the input string.
-     * @param s text to search for mathes.
-     * @param replacement text to replace the pattern.
-     * @return modified string.
-     **/
-    vespalib::string replace(vespalib::stringref s, vespalib::stringref replacement) const;
-
-    /**
      * Look at the given regular expression and identify the prefix
      * that must be present for a string to match it. Note that an
      * un-anchored expression will have an empty prefix. Also note
