@@ -10,7 +10,7 @@
 #include <vespa/vsm/searcher/intfieldsearcher.h>
 #include <vespa/vsm/searcher/boolfieldsearcher.h>
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
-#include <vespa/vespalib/util/regexp.h>
+#include <regex>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.fieldsearchspec");
@@ -154,19 +154,19 @@ FieldSearchSpecMap::FieldSearchSpecMap() :
 FieldSearchSpecMap::~FieldSearchSpecMap() {}
 
 namespace {
-    const vespalib::string _G_empty("");
-    const vespalib::string _G_value(".value");
-    const vespalib::Regexp _G_map1("\\{[a-zA-Z0-9]+\\}");
-    const vespalib::Regexp _G_map2("\\{\".*\"\\}");
-    const vespalib::Regexp _G_array("\\[[0-9]+\\]");
+    const std::string _G_empty("");
+    const std::string _G_value(".value");
+    const std::basic_regex _G_map1("\\{[a-zA-Z0-9]+\\}");
+    const std::basic_regex _G_map2("\\{\".*\"\\}");
+    const std::basic_regex _G_array("\\[[0-9]+\\]");
 }
 
 vespalib::string FieldSearchSpecMap::stripNonFields(const vespalib::string & rawIndex)
 {
     if ((rawIndex.find('[') != vespalib::string::npos) || (rawIndex.find('{') != vespalib::string::npos)) {
-        std::string index = _G_map1.replace(rawIndex, _G_value);
-        index = _G_map2.replace(index, _G_value);
-        index = _G_array.replace(index, _G_empty);
+        std::string index = std::regex_replace(std::string(rawIndex), _G_map1, _G_value);
+        index = std::regex_replace(index, _G_map2, _G_value);
+        index = std::regex_replace(index, _G_array, _G_empty);
         return index;
     }
     return rawIndex;
