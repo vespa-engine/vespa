@@ -193,7 +193,7 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"currentRebootGeneration\": 1}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                                   Utf8.toBytes("{\"flavor\": \"medium-disk\"}"), Request.Method.PATCH),
+                                   Utf8.toBytes("{\"flavor\": \"d-2-8-100\"}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    Utf8.toBytes("{\"currentVespaVersion\": \"5.104.142\"}"), Request.Method.PATCH),
@@ -214,8 +214,8 @@ public class RestApiTest {
                         Utf8.toBytes("{\"wantToDeprovision\": true}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                                   Utf8.toBytes("{\"currentDockerImage\": \"ignored-image-name:4443/vespa/ci:6.43.0\"}"), Request.Method.PATCH),
-                       "{\"message\":\"Updated host4.yahoo.com\"}");
+                        Utf8.toBytes("{\"currentVespaVersion\": \"6.43.0\",\"currentDockerImage\": \"docker-registry.domain.tld:8080/dist/vespa:6.43.0\"}"), Request.Method.PATCH),
+                        "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"openStackId\": \"patched-openstackid\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
@@ -473,6 +473,13 @@ public class RestApiTest {
 
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), false);
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), false);
+    }
+
+    @Test
+    public void test_disallow_setting_currentDockerImage_for_non_docker_node() throws IOException {
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com",
+                        Utf8.toBytes("{\"currentDockerImage\": \"ignored-image-name:4443/vespa/ci:6.45.0\"}"), Request.Method.PATCH),
+                400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'currentDockerImage': Docker image can only be set for docker containers\"}");
     }
 
     @Test
