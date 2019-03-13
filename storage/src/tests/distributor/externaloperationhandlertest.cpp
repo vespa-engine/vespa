@@ -200,7 +200,7 @@ ExternalOperationHandlerTest::makeGetCommand(const vespalib::string& id) const {
 
 std::shared_ptr<api::GetCommand>
 ExternalOperationHandlerTest::makeGetCommandForUser(uint64_t id) const {
-    DocumentId docId(document::UserDocIdString(vespalib::make_string("userdoc:foo:%lu:bar", id)));
+    DocumentId docId(document::UserDocIdString(vespalib::make_string("userdoc:foo:%" PRIu64 ":bar", id)));
     return std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)), docId, "[all]");
 }
 

@@ -89,7 +89,7 @@ void PersistenceQueueTest::setUp() {
 
 std::shared_ptr<api::StorageMessage> PersistenceQueueTest::createPut(uint64_t bucket, uint64_t docIdx) {
     std::shared_ptr<document::Document> doc = _node->getTestDocMan().createDocument(
-            "foobar", vespalib::make_string("id:foo:testdoctype1:n=%zu:%zu", bucket, docIdx));
+            "foobar", vespalib::make_string("id:foo:testdoctype1:n=%" PRIu64 ":%" PRIu64, bucket, docIdx));
     auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(16, bucket)), doc, 1234);
     cmd->setAddress(makeSelfAddress());
     return cmd;
@@ -98,7 +98,7 @@ std::shared_ptr<api::StorageMessage> PersistenceQueueTest::createPut(uint64_t bu
 std::shared_ptr<api::StorageMessage> PersistenceQueueTest::createGet(uint64_t bucket) const {
     auto cmd = std::make_shared<api::GetCommand>(
             makeDocumentBucket(document::BucketId(16, bucket)),
-            document::DocumentId(vespalib::make_string("id:foo:testdoctype1:n=%zu:0", bucket)), "[all]");
+            document::DocumentId(vespalib::make_string("id:foo:testdoctype1:n=%" PRIu64 ":0", bucket)), "[all]");
     cmd->setAddress(makeSelfAddress());
     return cmd;
 }

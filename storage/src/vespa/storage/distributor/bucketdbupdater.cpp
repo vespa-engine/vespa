@@ -87,7 +87,7 @@ BucketDBUpdater::sendRequestBucketInfo(
             new api::RequestBucketInfoCommand(bucket.getBucketSpace(), buckets));
 
     LOG(debug,
-        "Sending request bucket info command %lu for "
+        "Sending request bucket info command %" PRIu64 " for "
         "bucket %s to node %u",
         msg->getMsgId(),
         bucket.toString().c_str(),

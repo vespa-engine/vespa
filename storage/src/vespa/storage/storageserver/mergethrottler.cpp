@@ -136,7 +136,7 @@ MergeThrottler::MergeNodeSequence::getNextNodeInChain() const
     // assert(_sortedNodes[_cmd.getChain().size()].index == _thisIndex);
     if (_sortedNodes[_cmd.getChain().size()].index != _thisIndex) {
         // Some added paranoia output
-        LOG(error, "For %s;_sortedNodes[%" PRIu64 "].index (%u) != %u",
+        LOG(error, "For %s;_sortedNodes[%zu].index (%u) != %u",
             _cmd.toString().c_str(), _cmd.getChain().size(),
             _sortedNodes[_cmd.getChain().size()].index, _thisIndex);
         assert(!"_sortedNodes[_cmd.getChain().size()].index != _thisIndex) failed");
@@ -278,7 +278,7 @@ MergeThrottler::onClose()
     }
     if (LOG_WOULD_LOG(debug)) {
         vespalib::LockGuard lock(_stateLock);
-        LOG(debug, "onClose; active: %" PRIu64 ", queued: %" PRIu64,
+        LOG(debug, "onClose; active: %zu, queued: %zu",
             _merges.size(), _queue.size());
     }
     if (_thread) {
@@ -348,7 +348,7 @@ MergeThrottler::onFlush(bool /*downwards*/)
         }
     }
 
-    LOG(debug, "Flushed %" PRIu64 " unfinished or pending merge operations",
+    LOG(debug, "Flushed %zu unfinished or pending merge operations",
         flushable.size());
 
     _merges.clear();
@@ -635,7 +635,7 @@ MergeThrottler::run(framework::ThreadHandle& thread)
             up.swap(_messagesUp);
         }
 
-        LOG(spam, "messages up: %" PRIu64 ", down: %" PRIu64,
+        LOG(spam, "messages up: %zu, down: %zu",
             up.size(), down.size());
 
         // Message lock has been relinquished. Now actually do something

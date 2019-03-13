@@ -193,7 +193,7 @@ Visitor::VisitorTarget::discardQueuedMessages()
              it(_queuedMessages.begin()), e(_queuedMessages.end());
          it != e; ++it)
     {
-        LOG(spam, "Erasing queued message with id %zu", it->second);
+        LOG(spam, "Erasing queued message with id %" PRIu64, it->second);
         releaseMetaForMessageId(it->second);
     }
     _queuedMessages.clear();
@@ -210,7 +210,7 @@ Visitor::BucketIterationState::~BucketIterationState()
         cmd->setPriority(0);
 
         LOG(debug, "Visitor '%s' sending DestroyIteratorCommand for %s, "
-            "iterator id %zu.",
+            "iterator id %" PRIu64 ".",
             _visitor._id.c_str(),
             _bucket.getBucketId().toString().c_str(),
             uint64_t(_iteratorId));
@@ -313,14 +313,14 @@ Visitor::sendDocumentApiMessage(VisitorTarget::MessageMeta& msgMeta) {
                            _visitorOptions._maxPending));
 
         LOG(spam,
-            "Visitor '%s' enqueueing message with id %zu",
+            "Visitor '%s' enqueueing message with id %" PRIu64,
             _id.c_str(),
             msgMeta.messageId);
         _visitorTarget._queuedMessages.insert(std::make_pair(
                     framework::MicroSecTime(0), msgMeta.messageId));
     } else {
         LOG(spam,
-            "Visitor '%s' immediately sending message '%s' with id %zu",
+            "Visitor '%s' immediately sending message '%s' with id %" PRIu64,
             _id.c_str(),
             cmd.toString().c_str(),
             msgMeta.messageId);
@@ -602,7 +602,7 @@ Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId,
 
     _state = STATE_RUNNING;
 
-    LOG(debug, "Starting visitor '%s' for %" PRIu64 " buckets from %" PRIu64 " to "
+    LOG(debug, "Starting visitor '%s' for %zu buckets from %" PRIu64 " to "
                "%" PRIu64 ". First is %s. Max pending replies: %u, include "
                "removes: %s, field set: %s.",
         _id.c_str(),

@@ -95,7 +95,7 @@ PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg)
 
         _nodeInfo.incPending(msg->getAddress()->getIndex());
 
-        LOG(debug, "Sending message %s with id %zu to %s",
+        LOG(debug, "Sending message %s with id %" PRIu64 " to %s",
             msg->toString().c_str(), msg->getMsgId(), msg->getAddress()->toString().c_str());
     }
 }
@@ -119,7 +119,7 @@ PendingMessageTracker::reply(const api::StorageReply& r)
         if (code == api::ReturnCode::BUSY || code == api::ReturnCode::TIMEOUT) {
             _nodeInfo.setBusy(r.getAddress()->getIndex(), _nodeBusyDuration);
         }
-        LOG(debug, "Erased message with id %zu", msgId);
+        LOG(debug, "Erased message with id %" PRIu64, msgId);
         msgs.erase(msgId);
     }
 

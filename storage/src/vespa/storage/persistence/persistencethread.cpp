@@ -935,7 +935,7 @@ PersistenceThread::flushAllReplies(
     }
 
     for (uint32_t i = 0; i < replies.size(); ++i) {
-        LOG(spam, "Sending reply up (batched): %s %zu",
+        LOG(spam, "Sending reply up (batched): %s %" PRIu64,
             replies[i]->getReply()->toString().c_str(), replies[i]->getReply()->getMsgId());
         _env._fileStorHandler.sendReply(replies[i]->getReply());
     }
@@ -982,7 +982,7 @@ void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
                 break;
             }
         } else {
-            LOG(spam, "Sending reply up: %s %zu",
+            LOG(spam, "Sending reply up: %s %" PRIu64,
                 tracker->getReply()->toString().c_str(), tracker->getReply()->getMsgId());
             _env._fileStorHandler.sendReply(tracker->getReply());
             break;

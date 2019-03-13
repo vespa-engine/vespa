@@ -142,7 +142,7 @@ ServiceLayerNode::initializeNodeSpecific()
     ns.setReliability(_serverConfig->nodeReliability);
     for (uint16_t i=0; i<_serverConfig->diskCapacity.size(); ++i) {
         if (i >= ns.getDiskCount()) {
-            LOG(warning, "Capacity configured for partition %" PRIu64 " but only %u partitions found.",
+            LOG(warning, "Capacity configured for partition %zu but only %u partitions found.",
                 _serverConfig->diskCapacity.size(), ns.getDiskCount());
             continue;
         }
