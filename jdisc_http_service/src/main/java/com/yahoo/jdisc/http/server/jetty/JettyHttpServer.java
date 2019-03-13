@@ -307,7 +307,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     @Override
     public void close() {
         try {
-            log.log(Level.INFO, String.format("Shutting down server (graceful=%b)", isGracefulShutdownEnabled()));
+            log.log(Level.INFO, String.format("Shutting down server (graceful=%b, timeout=%.1fs)", isGracefulShutdownEnabled(), server.getStopTimeout()/1000d));
             server.stop();
             log.log(Level.INFO, "Server shutdown completed");
         } catch (final Exception e) {
