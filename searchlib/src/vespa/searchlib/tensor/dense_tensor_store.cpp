@@ -79,6 +79,10 @@ DenseTensorStore::DenseTensorStore(const ValueType &type)
     _emptyCells.resize(_tensorSizeCalc._numBoundCells, 0.0);
     _store.addType(&_bufferType);
     _store.initActiveBuffers();
+    if (_tensorSizeCalc._numUnboundDims == 0) {
+        // In this case each tensor use the same amount of memory and we can re-use previously allocated raw buffers by using free lists.
+        _store.enableFreeLists();
+    }
 }
 
 DenseTensorStore::~DenseTensorStore()
@@ -120,7 +124,7 @@ DenseTensorStore::allocRawBuffer(size_t numCells)
 {
     size_t bufSize = numCells * _tensorSizeCalc._cellSize;
     size_t alignedBufSize = alignedSize(numCells);
-    auto result = _concreteStore.rawAllocator<char>(_typeId).alloc(alignedBufSize);
+    auto result = _concreteStore.freeListRawAllocator<char>(_typeId).alloc(alignedBufSize);
     clearPadAreaAfterBuffer(result.data, bufSize, alignedBufSize, unboundDimSizesSize());
     return result;
 }
