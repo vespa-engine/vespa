@@ -32,7 +32,11 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} ${CXX_SPECIFIC_WARN_OPTS} -std=c++1z -fvisibility-inlines-hidden -fdiagnostics-color=auto ${EXTRA_CXX_FLAGS}")
 
 # Linker flags
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--build-id -latomic -ldl -Wl,-E")
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -latomic -ldl")
+else()
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--build-id -latomic -ldl -Wl,-E")
+endif()
 SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -rdynamic" )
 
 # Use C++ 17
@@ -81,6 +85,14 @@ else()
 set (VESPA_LLVM_VERSION "6.0")
 endif()
 
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+  set(VESPA_LLVM_LIB "LLVM")
+  set(VESPA_GLIBC_RT_LIB "")
+else()
+  set(VESPA_LLVM_LIB "LLVM-${VESPA_LLVM_VERSION}")
+  set(VESPA_GLIBC_RT_LIB "rt")
+endif()
+
 if(VESPA_USER)
 else()
   set(VESPA_USER "vespa")
@@ -102,9 +114,12 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath,${CMAKE_B
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,${CMAKE_BUILD_RPATH}")
 endif()
 
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+else()
 # Don't allow unresolved symbols in executables or shared libraries
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-undefined")
 
 # Enable cppunit tests in shared libraries
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed")
+endif()

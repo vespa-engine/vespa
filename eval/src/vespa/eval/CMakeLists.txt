@@ -12,5 +12,5 @@ vespa_add_library(vespaeval
     $<TARGET_OBJECTS:eval_tensor_sparse>
     INSTALL lib64
     DEPENDS
-    LLVM-${VESPA_LLVM_VERSION}
+    ${VESPA_LLVM_LIB}
 )
