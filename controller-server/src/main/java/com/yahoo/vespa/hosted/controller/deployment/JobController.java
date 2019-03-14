@@ -350,7 +350,9 @@ public class JobController {
     Optional<URI> testerEndpoint(RunId id) {
         ApplicationId tester = id.tester().id();
         return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, id.type().zone(controller.system())))
-                         .flatMap(uris -> uris.stream().findAny());
+                         .flatMap(uris -> uris.stream()
+                                              .filter(uri -> uri.getScheme().equals("https"))
+                                              .findAny());
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this, at least when this is the only build service.
