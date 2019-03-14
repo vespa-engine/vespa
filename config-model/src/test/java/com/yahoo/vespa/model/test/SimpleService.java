@@ -46,9 +46,6 @@ public class SimpleService extends AbstractService implements com.yahoo.test.Sta
     // Make sure this service is listed in the sentinel config
     public String getStartupCommand()   { return "sleep 0"; }
 
-    public boolean getAutostartFlag()   { return false; }
-    public boolean getAutorestartFlag() { return false; }
-
     @Override
        public HashMap<String,String> getDefaultMetricDimensions(){
         HashMap<String, String> dimensions = new HashMap<>();

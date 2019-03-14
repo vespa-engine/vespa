@@ -49,14 +49,10 @@ Service::Service(const SentinelConfig::Service& service, const SentinelConfig::A
       _metrics(metrics)
 {
     LOG(debug, "%s: created", name().c_str());
-    LOG(debug, "autostart: %s", _config->autostart ? "YES" : "NO");
-    LOG(debug, "  restart: %s", _config->autorestart ? "YES" : "NO");
     LOG(debug, "  command: %s", _config->command.c_str());
     LOG(debug, " configid: %s", _config->id.c_str());
 
-    if (_config->autostart) {
-        start();
-    }
+    start();
 }
 
 void
@@ -66,14 +62,6 @@ Service::reconfigure(const SentinelConfig::Service& config)
         LOG(debug, "%s: reconfigured command '%s' -> '%s' - this will "
             "take effect at next restart", name().c_str(),
             _config->command.c_str(), config.command.c_str());
-    }
-    if (config.autostart != _config->autostart) {
-        LOG(debug, "%s: reconfigured autostart %s", name().c_str(),
-            config.autostart ? "OFF -> ON" : "ON -> OFF");
-    }
-    if (config.autorestart != _config->autorestart) {
-        LOG(debug, "%s: reconfigured autorestart %s", name().c_str(),
-            config.autorestart ? "OFF -> ON" : "ON -> OFF");
     }
     if (config.id != _config->id) {
         LOG(warning, "%s: reconfigured config id '%s' -> '%s' - signaling service restart",
@@ -85,8 +73,7 @@ Service::reconfigure(const SentinelConfig::Service& config)
     _config = new SentinelConfig::Service(config);
 
     if (_isAutomatic
-        && ((_config->autostart && _state == READY)
-            || (_config->autorestart && _state == FINISHED)))
+        && ((_state == READY) || (_state == FINISHED)))
     {
         LOG(debug, "%s: Restarting due to new config", name().c_str());
         start();
@@ -334,9 +321,9 @@ Service::youExited(int status)
     } else if (_state == KILLING) {
         setState(KILLED);
     }
-    if (_isAutomatic && _config->autorestart && !stop()) {
+    if (_isAutomatic && !stop()) {
         // ### Implement some rate limiting here maybe?
-        LOG(debug, "%s: Has autorestart flag, restarting.", name().c_str());
+        LOG(debug, "%s: Restarting.", name().c_str());
         setState(READY);
         _metrics.totalRestartsCounter++;
         _metrics.sentinel_restarts.add();

@@ -87,8 +87,6 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
         SentinelConfig.Service.Builder serviceBuilder = new SentinelConfig.Service.Builder();
         serviceBuilder.command(s.getStartupCommand());
         serviceBuilder.name(s.getServiceName());
-        serviceBuilder.autostart(s.getAutostartFlag());
-        serviceBuilder.autorestart(s.getAutorestartFlag());
         serviceBuilder.id(s.getConfigId());
         serviceBuilder.affinity(getServiceAffinity(s));
         setPreShutdownCommand(serviceBuilder, s);

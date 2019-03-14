@@ -52,14 +52,4 @@ public class ConfigProxy extends AbstractService {
         return new String[]{"rpc"};
     }
 
-    /**
-     * The config proxy is not started by the config system!
-     */
-    public boolean getAutostartFlag()   { return false; }
-
-    /**
-     * The config proxy is not started by the config system!
-     */
-    public boolean getAutorestartFlag() { return false; }
-
 }

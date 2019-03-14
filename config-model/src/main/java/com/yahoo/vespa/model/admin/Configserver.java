@@ -55,16 +55,6 @@ public class Configserver extends AbstractService {
         return new String[]{ "rpc", "http" };
     }
 
-    /**
-     * The configserver is not started by the config system!
-     */
-    public boolean getAutostartFlag()   { return false; }
-
-    /**
-     * The configserver is not started by the config system!
-     */
-    public boolean getAutorestartFlag() { return false; }
-
     private int getConfigServerRpcPort() {
         return getRelativePort(0);
     }

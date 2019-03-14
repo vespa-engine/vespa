@@ -50,21 +50,20 @@ public class GenericServicesTest {
         SentinelConfig sentinel3 = model.getConfig(SentinelConfig.class, sentinelConfigId3);
         SentinelConfig sentinel4 = model.getConfig(SentinelConfig.class, sentinelConfigId4);
 
-        assertServiceExists(sentinel1, "myservice", "mycmd1.sh", "myservice/0", true, true);
-        assertServiceExists(sentinel2, "myservice", "mycmd1.sh", "myservice/1", true, true);
-        assertServiceExists(sentinel3, "myservice", "mycmd1.sh", "myservice/2", true, true);
-        assertServiceExists(sentinel3, "myservice2", "mycmd1.sh", "myservice/3", true, true);
-        assertServiceExists(sentinel3, "myotherservice", "/home/vespa/bin/mycmd2.sh --ytest $FOO_BAR", "myotherservice/0", true, true);
-        assertServiceExists(sentinel4, "myotherservice", "/home/vespa/bin/mycmd2.sh --ytest $FOO_BAR", "myotherservice/1", true, true);
+        assertServiceExists(sentinel1, "myservice", "mycmd1.sh", "myservice/0");
+        assertServiceExists(sentinel2, "myservice", "mycmd1.sh", "myservice/1");
+        assertServiceExists(sentinel3, "myservice", "mycmd1.sh", "myservice/2");
+        assertServiceExists(sentinel3, "myservice2", "mycmd1.sh", "myservice/3");
+        assertServiceExists(sentinel3, "myotherservice", "/home/vespa/bin/mycmd2.sh --ytest $FOO_BAR", "myotherservice/0");
+        assertServiceExists(sentinel4, "myotherservice", "/home/vespa/bin/mycmd2.sh --ytest $FOO_BAR", "myotherservice/1");
     }
 
-    private void assertServiceExists(SentinelConfig sentinel, String serviceName, String cmd, String configId, boolean autostart, boolean autorestart) {
+    private void assertServiceExists(SentinelConfig sentinel, String serviceName, String cmd, String configId) {
         boolean matches = false;
         Iterator<SentinelConfig.Service> it = sentinel.service().iterator();
         while (!matches && it.hasNext()) {
             SentinelConfig.Service service = it.next();
-            matches = service.autorestart() == autorestart &&
-                service.autostart() == autostart &&
+            matches =
                 service.name().equals(serviceName) &&
                 service.id().equals(configId) &&
                 service.command().equals(cmd);
