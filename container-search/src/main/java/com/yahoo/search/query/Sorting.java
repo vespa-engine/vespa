@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-
 /**
  * Specifies how a query is sorted by a list of fields with a sort order
  *
@@ -46,26 +45,23 @@ public class Sorting implements Cloneable {
      * any sorting criteria (e.g it is null or the empty string)
      */
     public static Sorting fromString(String sortSpec) {
-        if (sortSpec==null) return null;
+        if (sortSpec == null) return null;
         if ("".equals(sortSpec)) return null;
         return new Sorting(sortSpec);
     }
 
     private void setSpec(String rawSortSpec) {
-        String[] vectors = rawSortSpec.split(" ");
-
-        for (String sortString:vectors) {
+        for (String sortString : rawSortSpec.split(" ")) {
             // A sortspec element must be at least two characters long,
             // a sorting order and an attribute vector name
-            if (sortString.length() < 1) {
-                continue;
-            }
+            if (sortString.length() < 1) continue;
+
             char orderMarker = sortString.charAt(0);
             int funcAttrStart = 0;
             if ((orderMarker == '+') || (orderMarker == '-')) {
                 funcAttrStart = 1;
             }
-            AttributeSorter sorter = null;
+            AttributeSorter sorter;
             int startPar = sortString.indexOf('(',funcAttrStart);
             int endPar = sortString.lastIndexOf(')');
             if ((startPar > 0) && (endPar > startPar)) {
@@ -138,8 +134,7 @@ public class Sorting implements Cloneable {
         return sb.toString();
     }
 
-
-    public enum Order {ASCENDING,DESCENDING,UNDEFINED}
+    public enum Order { ASCENDING, DESCENDING, UNDEFINED}
 
     /**
      * Returns the field orders of this sort specification as list. This is never null but can be empty.
@@ -151,10 +146,52 @@ public class Sorting implements Cloneable {
         return new Sorting(this.fieldOrders);
     }
 
+    @Override
+    public int hashCode() {
+        return fieldOrders.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if( ! (o instanceof Sorting)) return false;
+
+        Sorting ss = (Sorting) o;
+        return fieldOrders.equals(ss.fieldOrders);
+    }
+
+    public int encode(ByteBuffer buffer) {
+        int usedBytes = 0;
+        byte[] nameBuffer;
+        buffer.position();
+        byte space = '.';
+        for (FieldOrder fieldOrder : fieldOrders) {
+            if (space == ' ')   {
+                buffer.put(space);
+                usedBytes++;
+            }
+            if (fieldOrder.getSortOrder() == Order.ASCENDING) {
+                buffer.put((byte) '+');
+            } else {
+                buffer.put((byte) '-');
+            }
+            usedBytes++;
+            nameBuffer = Utf8.toBytes(fieldOrder.getSorter().toString());
+            buffer.put(nameBuffer);
+            usedBytes += nameBuffer.length;
+            // If this isn't the last element, append a separating space
+            //if (i + 1 < sortSpec.size()) {
+            space = ' ';
+        }
+        return usedBytes;
+    }
+
     public static class AttributeSorter implements Cloneable {
+
         private static final Pattern legalAttributeName = Pattern.compile("[\\[]*[a-zA-Z_][\\.a-zA-Z0-9_-]*[\\]]*");
 
         private String fieldName;
+
         public AttributeSorter(String fieldName) {
             if (legalAttributeName.matcher(fieldName).matches()) {
                 this.fieldName = fieldName;
@@ -162,12 +199,16 @@ public class Sorting implements Cloneable {
                 throw new IllegalArgumentException("Illegal attribute name '" + fieldName + "' for sorting. Requires '" + legalAttributeName.pattern() + "'");
             }
         }
+
         public String getName() { return fieldName; }
         public void setName(String fieldName) { this.fieldName = fieldName; }
+
         @Override
         public String toString() { return fieldName; }
+
         @Override
         public int hashCode() { return fieldName.hashCode(); }
+
         @Override
         public boolean equals(Object other) {
             if (!(other instanceof AttributeSorter)) {
@@ -175,6 +216,7 @@ public class Sorting implements Cloneable {
             }
             return ((AttributeSorter) other).fieldName.equals(fieldName);
         }
+
         @Override
         public AttributeSorter clone() {
             try {
@@ -185,15 +227,18 @@ public class Sorting implements Cloneable {
             }
 
         }
+
         @SuppressWarnings({ "rawtypes", "unchecked" })
         public int compare(Comparable a, Comparable b) {
             return a.compareTo(b);
         }
 
     }
-    public static class RawSorter extends AttributeSorter
-    {
+
+    public static class RawSorter extends AttributeSorter {
+
         public RawSorter(String fieldName) { super(fieldName); }
+
         @Override
         public boolean equals(Object other) {
             if (!(other instanceof RawSorter)) {
@@ -202,13 +247,17 @@ public class Sorting implements Cloneable {
             return super.equals(other);
         }
     }
-    public static class LowerCaseSorter extends AttributeSorter
-    {
+
+    public static class LowerCaseSorter extends AttributeSorter {
+
         public LowerCaseSorter(String fieldName) { super(fieldName); }
+
         @Override
         public String toString() { return "lowercase(" + getName() + ')'; }
+
         @Override
         public int hashCode() { return 1 + 3*super.hashCode(); }
+
         @Override
         public boolean equals(Object other) {
             if (!(other instanceof LowerCaseSorter)) {
@@ -216,6 +265,7 @@ public class Sorting implements Cloneable {
             }
             return super.equals(other);
         }
+
         @SuppressWarnings({ "rawtypes", "unchecked" })
         public int compare(Comparable a, Comparable b) {
             if ((a instanceof String) && (b instanceof String)) {
@@ -224,25 +274,28 @@ public class Sorting implements Cloneable {
             return a.compareTo(b);
         }
     }
-    public static class UcaSorter extends AttributeSorter
-    {
+
+    public static class UcaSorter extends AttributeSorter {
+
         public enum Strength { PRIMARY, SECONDARY, TERTIARY, QUATERNARY, IDENTICAL, UNDEFINED };
         private String locale = null;
         private Strength strength = Strength.UNDEFINED;
         private Collator collator;
         public UcaSorter(String fieldName, String locale, Strength strength) { super(fieldName); setLocale(locale, strength); }
         public UcaSorter(String fieldName) { super(fieldName); }
+
         static private int strength2Collator(Strength strength) {
-             switch (strength) {
-                 case PRIMARY: return Collator.PRIMARY;
-                 case SECONDARY: return Collator.SECONDARY;
-                 case TERTIARY: return Collator.TERTIARY;
-                 case QUATERNARY: return Collator.QUATERNARY;
-                 case IDENTICAL: return Collator.IDENTICAL;
-                 case UNDEFINED: return Collator.PRIMARY;
-             }
-             return Collator.PRIMARY;
+            switch (strength) {
+                case PRIMARY: return Collator.PRIMARY;
+                case SECONDARY: return Collator.SECONDARY;
+                case TERTIARY: return Collator.TERTIARY;
+                case QUATERNARY: return Collator.QUATERNARY;
+                case IDENTICAL: return Collator.IDENTICAL;
+                case UNDEFINED: return Collator.PRIMARY;
+            }
+            return Collator.PRIMARY;
         }
+
         public void setLocale(String locale, Strength strength) {
             this.locale = locale;
             this.strength = strength;
@@ -263,14 +316,18 @@ public class Sorting implements Cloneable {
             collator.setStrength(strength2Collator(strength));
             // collator.setDecomposition(Collator.CANONICAL_DECOMPOSITION);
         }
+
         public String getLocale() { return locale; }
         public Strength getStrength() { return strength; }
         public Collator getCollator() { return collator; }
         public String getDecomposition() { return (collator.getDecomposition() == Collator.CANONICAL_DECOMPOSITION) ? "CANONICAL_DECOMPOSITION" : "NO_DECOMPOSITION"; }
+
         @Override
         public String toString() { return "uca(" + getName() + ',' + locale + ',' + ((strength != Strength.UNDEFINED) ? strength.toString() : "PRIMARY") + ')'; }
+
         @Override
         public int hashCode() { return 1 + 3*locale.hashCode() + 5*strength.hashCode() + 7*super.hashCode(); }
+
         @Override
         public boolean equals(Object other) {
             if (!(other instanceof UcaSorter)) {
@@ -278,6 +335,7 @@ public class Sorting implements Cloneable {
             }
             return super.equals(other) && locale.equals(((UcaSorter)other).locale) && (strength == ((UcaSorter)other).strength);
         }
+
         public UcaSorter clone() {
             UcaSorter clone = (UcaSorter)super.clone();
             if (locale != null) {
@@ -285,6 +343,7 @@ public class Sorting implements Cloneable {
             }
             return clone;
         }
+
         @SuppressWarnings({ "rawtypes", "unchecked" })
         public int compare(Comparable a, Comparable b) {
             if ((a instanceof String) && (b instanceof String)) {
@@ -293,6 +352,7 @@ public class Sorting implements Cloneable {
             return a.compareTo(b);
         }
     }
+
     /**
      * An attribute (field) and how it should be sorted
      */
@@ -348,6 +408,7 @@ public class Sorting implements Cloneable {
         public int hashCode() {
             return sortOrder.hashCode() + 17 * fieldSorter.hashCode();
         }
+
         @Override
         public boolean equals(Object other) {
             if (!(other instanceof FieldOrder)) {
@@ -356,52 +417,14 @@ public class Sorting implements Cloneable {
             FieldOrder otherAttr = (FieldOrder) other;
 
             return otherAttr.sortOrder.equals(sortOrder)
-                    && otherAttr.fieldSorter.equals(fieldSorter);
+                   && otherAttr.fieldSorter.equals(fieldSorter);
         }
+
         @Override
         public FieldOrder clone() {
             return new FieldOrder(fieldSorter.clone(), sortOrder);
         }
-    }
 
-    @Override
-    public int hashCode() {
-        return fieldOrders.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == this) return true;
-        if( ! (o instanceof Sorting)) return false;
-
-        Sorting ss = (Sorting) o;
-        return fieldOrders.equals(ss.fieldOrders);
-    }
-
-    public int encode(ByteBuffer buffer) {
-        int usedBytes = 0;
-        byte[] nameBuffer;
-        buffer.position();
-        byte space = '.';
-        for (FieldOrder fieldOrder : fieldOrders) {
-            if (space == ' ')   {
-                buffer.put(space);
-                usedBytes++;
-            }
-            if (fieldOrder.getSortOrder() == Order.ASCENDING) {
-                buffer.put((byte) '+');
-            } else {
-                buffer.put((byte) '-');
-            }
-            usedBytes++;
-            nameBuffer = Utf8.toBytes(fieldOrder.getSorter().toString());
-            buffer.put(nameBuffer);
-            usedBytes += nameBuffer.length;
-            // If this isn't the last element, append a separating space
-            //if (i + 1 < sortSpec.size()) {
-            space = ' ';
-        }
-        return usedBytes;
     }
 
 }
