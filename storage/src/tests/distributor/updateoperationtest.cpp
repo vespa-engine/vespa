@@ -125,7 +125,7 @@ UpdateOperation_Test::testSimple()
             sender.getLastReply(true));
 
     auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
-    CPPUNIT_ASSERT_EQUAL(0UL, metrics.diverging_timestamp_updates.getValue());
+    CPPUNIT_ASSERT_EQUAL(UINT64_C(0), metrics.diverging_timestamp_updates.getValue());
 }
 
 void
@@ -173,7 +173,7 @@ UpdateOperation_Test::testMultiNode()
             dumpBucket(_bId));
 
     auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
-    CPPUNIT_ASSERT_EQUAL(0UL, metrics.diverging_timestamp_updates.getValue());
+    CPPUNIT_ASSERT_EQUAL(UINT64_C(0), metrics.diverging_timestamp_updates.getValue());
 }
 
 void
@@ -196,6 +196,6 @@ UpdateOperation_Test::testMultiNodeInconsistentTimestamp()
             sender.getLastReply(true));
 
     auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
-    CPPUNIT_ASSERT_EQUAL(1UL, metrics.diverging_timestamp_updates.getValue());
+    CPPUNIT_ASSERT_EQUAL(UINT64_C(1), metrics.diverging_timestamp_updates.getValue());
 }
 

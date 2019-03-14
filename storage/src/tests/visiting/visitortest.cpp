@@ -540,7 +540,7 @@ VisitorTest::testNormalUsage()
 
     verifyCreateVisitorReply(api::ReturnCode::OK);
     CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
-    CPPUNIT_ASSERT_EQUAL(0L, getFailedVisitorDestinationReplyCount());
+    CPPUNIT_ASSERT_EQUAL(INT64_C(0), getFailedVisitorDestinationReplyCount());
 }
 
 void
@@ -668,7 +668,7 @@ VisitorTest::testNoDocumentAPIResendingForFailedVisitor()
 
     verifyCreateVisitorReply(api::ReturnCode::NOT_CONNECTED);
     CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
-    CPPUNIT_ASSERT_EQUAL(3L, getFailedVisitorDestinationReplyCount());
+    CPPUNIT_ASSERT_EQUAL(INT64_C(3), getFailedVisitorDestinationReplyCount());
 }
 
 void
@@ -742,7 +742,7 @@ VisitorTest::testFailedDocumentAPISend()
     CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
     // We currently don't count failures to send in this metric; send failures
     // indicate a message bus problem and already log a warning when they happen
-    CPPUNIT_ASSERT_EQUAL(0L, getFailedVisitorDestinationReplyCount());
+    CPPUNIT_ASSERT_EQUAL(INT64_C(0), getFailedVisitorDestinationReplyCount());
 }
 
 void

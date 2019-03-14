@@ -38,8 +38,8 @@ writeBucketSpacesStats(vespalib::JsonStream& stream,
         stream << Object() << "name" << elem.first;
         if (elem.second.valid()) {
             stream << "buckets" << Object()
-                    << "total" << elem.second.bucketsTotal()
-                    << "pending" << elem.second.bucketsPending()
+                   << "total" << static_cast<uint64_t>(elem.second.bucketsTotal())
+                   << "pending" << static_cast<uint64_t>(elem.second.bucketsPending())
                     << End();
         }
         stream << End();
