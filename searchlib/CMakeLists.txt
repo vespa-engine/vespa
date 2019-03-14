@@ -16,7 +16,7 @@ vespa_define_module(
     searchcommon
 
     EXTERNAL_DEPENDS
-    rt
+    ${VESPA_GLIBC_RT_LIB}
 
     LIBS
     src/vespa/searchlib
