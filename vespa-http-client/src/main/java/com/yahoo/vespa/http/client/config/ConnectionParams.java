@@ -2,7 +2,6 @@
 package com.yahoo.vespa.http.client.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.annotations.Beta;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import net.jcip.annotations.Immutable;
@@ -343,7 +342,7 @@ public final class ConnectionParams {
     public Collection<Map.Entry<String, String>> getHeaders() {
         return Collections.unmodifiableCollection(headers.entries());
     }
-
+    @JsonIgnore
     public Map<String, HeaderProvider> getDynamicHeaders() {
         return Collections.unmodifiableMap(headerProviders);
     }

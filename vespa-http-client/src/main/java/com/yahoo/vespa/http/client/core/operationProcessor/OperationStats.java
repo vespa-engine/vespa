@@ -32,7 +32,7 @@ public class OperationStats {
         StringWriter stringWriter = new StringWriter();
         try {
             JsonGenerator jsonGenerator = jsonFactory.createGenerator(stringWriter);
-            objectMapper.writeValue(jsonGenerator, sessionParams);
+            objectMapper.writeValue(jsonGenerator, sessionParams); // TODO SessionParams should not be blindly serialized. This may serialize objects that are not really serializable.
             return stringWriter.toString();
         } catch (IOException e) {
             return e.getMessage();
