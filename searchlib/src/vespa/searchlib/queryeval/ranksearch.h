@@ -4,8 +4,7 @@
 
 #include "multisearch.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * A simple implementation of the Rank search operation.
@@ -28,6 +27,4 @@ public:
     static SearchIterator *create(const Children &children, bool strict);
 };
 
-} // namespace queryeval
-} // namespace search
-
+}
