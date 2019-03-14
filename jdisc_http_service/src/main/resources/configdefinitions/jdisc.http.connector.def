@@ -28,6 +28,10 @@ reuseAddress                        bool     default=true
 # The maximum idle time for a connection, which roughly translates to the Socket.setSoTimeout(int).
 idleTimeout                         double   default=180.0
 
+# DEPRECATED - Ignored, no longer in use
+stopTimeout                           double default = 30.0
+# TODO Vespa 8 Remove stop timeout
+
 # Whether or not to have socket keep alive turned on.
 tcpKeepAliveEnabled                 bool     default=false
 
