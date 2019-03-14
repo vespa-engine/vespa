@@ -340,9 +340,9 @@ PrimitiveFieldValueTest::testBool()
     v = 1;
     CPPUNIT_ASSERT(v.getValue());
 
-    v = 0L;
+    v = INT64_C(0);
     CPPUNIT_ASSERT( ! v.getValue());
-    v = 1L;
+    v = INT64_C(1);
     CPPUNIT_ASSERT(v.getValue());
 
     v = 0.0f;

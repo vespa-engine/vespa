@@ -38,7 +38,7 @@ RPCHooksBase::checkState(StateArg::UP arg)
     fastos::TimeStamp now(fastos::ClockSystem::now());
     if (now < arg->_dueTime) {
         std::unique_lock<std::mutex> guard(_stateLock);
-        if (_stateCond.wait_for(guard, std::chrono::milliseconds(std::min(1000L, (arg->_dueTime - now)/fastos::TimeStamp::MS))) == std::cv_status::no_timeout) {
+        if (_stateCond.wait_for(guard, std::chrono::milliseconds(std::min(INT64_C(1000), (arg->_dueTime - now)/fastos::TimeStamp::MS))) == std::cv_status::no_timeout) {
             LOG(debug, "state has changed");
             reportState(*arg->_session, arg->_req);
             arg->_req->Return();
@@ -79,12 +79,12 @@ RPCHooksBase::reportState(Session & session, FRT_RPCRequest * req)
     if (session.getGen() < 0) {
         if (delayedConfigsChanged)
             res.push_back(Pair("delayedConfigs", delayedConfigs));
-        res.push_back(Pair("onlineDocs", make_string("%lu", numDocs)));
+        res.push_back(Pair("onlineDocs", make_string("%" PRId64, numDocs)));
         session.setGen(0);
     } else if (changed) {
         if (delayedConfigsChanged)
             res.push_back(Pair("delayedConfigs", delayedConfigs));
-        res.push_back(Pair("onlineDocs", make_string("%lu", numDocs)));
+        res.push_back(Pair("onlineDocs", make_string("%" PRId64, numDocs)));
         session.setGen(session.getGen() + 1);
     }
     if (numDocsChanged)

@@ -45,7 +45,7 @@ LidVectorContext::serialize(vespalib::nbostream &os) const
 {
     LOG(debug, "serialize: _result.size() = %ld, _docIdLimit = %ld",
         _result.size(), _docIdLimit);
-    os << _docIdLimit;
+    os << static_cast<uint64_t>(_docIdLimit);
     // Use of bitvector when > 1/32 of docs
     if (_result.size() > (_docIdLimit / 32)) {
         os << static_cast<int32_t>(BITVECTOR);
@@ -65,7 +65,9 @@ void
 LidVectorContext::deserialize(vespalib::nbostream &is)
 {
     int32_t format;
-    is >> _docIdLimit;
+    uint64_t docIdLimit;
+    is >> docIdLimit;
+    _docIdLimit = docIdLimit;
     is >> format;
     LOG(debug, "deserialize: format = %d", format);
     // Use of bitvector when > 1/32 of docs
