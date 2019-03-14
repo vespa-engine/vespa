@@ -17,7 +17,6 @@ import com.yahoo.documentapi.messagebus.protocol.GetBucketListReply;
 import com.yahoo.documentapi.messagebus.protocol.StatBucketMessage;
 import com.yahoo.documentapi.messagebus.protocol.StatBucketReply;
 import com.yahoo.messagebus.Reply;
-import com.yahoo.messagebus.routing.Route;
 
 import java.util.List;
 
@@ -149,7 +148,7 @@ public class BucketStatsRetriever {
         return new GlobalId(convertHexStringToByteArray(hexWithoutPrefix)).toBucketId();
     }
 
-    private static byte[] convertHexStringToByteArray(String s) throws BucketStatsException {
+    private static byte[] convertHexStringToByteArray(String s) {
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {

@@ -104,6 +104,7 @@ public class FederationSearcherTest {
         tester.addSearchChain("chain2", new TimeoutInFillSearcher());
 
         Query query = new Query();
+        query.setTimeout(20000);
         Result result = tester.search(query);
         tester.fill(result);
         assertEquals(1, result.hits().getConcreteSize());
@@ -151,7 +152,9 @@ public class FederationSearcherTest {
                 new StrictContractsConfig(new StrictContractsConfig.Builder()),
                 targetSelectors);
 
-        Result result = new Execution(searcher, Context.createContextStub()).search(new Query());
+        Query query = new Query();
+        query.setTimeout(20000);
+        Result result = new Execution(searcher, Context.createContextStub()).search(query);
         HitGroup myChainGroup = (HitGroup) result.hits().get(0);
         assertThat(myChainGroup.getId(), is(new URI("source:myChain")));
         assertThat(myChainGroup.get(0).getId(), is(new URI("myHit")));
@@ -168,7 +171,9 @@ public class FederationSearcherTest {
                 new StrictContractsConfig(new StrictContractsConfig.Builder()),
                 targetSelectors);
 
-        Result result = new Execution(searcher, Context.createContextStub()).search(new Query());
+        Query query = new Query();
+        query.setTimeout(20000);
+        Result result = new Execution(searcher, Context.createContextStub()).search(query);
 
         Iterator<Hit> hitsIterator = result.hits().deepIterator();
         Hit hit1 = hitsIterator.next();
