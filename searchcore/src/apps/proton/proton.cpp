@@ -74,7 +74,7 @@ App::parseParams()
     parser.addOption("identity", params.identity, "Node identity and config id");
     std::string empty("");
     parser.addOption("serviceidentity", params.serviceidentity, empty, "Service node identity and config id");
-    parser.addOption("subscribeTimeout", params.subscribeTimeout, 600000UL, "Initial config subscribe timeout");
+    parser.addOption("subscribeTimeout", params.subscribeTimeout, UINT64_C(600000), "Initial config subscribe timeout");
     try {
         parser.parse();
     } catch (vespalib::InvalidCommandLineArgumentsException &e) {

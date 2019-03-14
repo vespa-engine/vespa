@@ -76,7 +76,9 @@ ConfigFile::deserialize(vespalib::nbostream &stream)
 {
     stream >> _name;
     assert(strchr(_name.c_str(), '/') == NULL);
-    stream >> _modTime;
+    int64_t modTime;
+    stream >> modTime;
+    _modTime = modTime;
     uint32_t sz;
     stream >> sz;
     _content.resize(sz);

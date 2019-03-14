@@ -118,7 +118,7 @@ getOrderName(MemoryFlush::OrderType &orderType)
 
 size_t
 computeGain(const IFlushTarget::DiskGain & gain) {
-    return std::max(100000000l, std::max(gain.getBefore(), gain.getAfter()));
+    return std::max(INT64_C(100000000), std::max(gain.getBefore(), gain.getAfter()));
 }
 
 }
@@ -144,7 +144,7 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
     for (size_t i(0), m(targetList.size()); i < m; i++) {
         const IFlushTarget & target(*targetList[i]->getTarget());
         const IFlushHandler & handler(*targetList[i]->getHandler());
-        int64_t mgain(std::max(0l, target.getApproxMemoryGain().gain()));
+        int64_t mgain(std::max(INT64_C(0), target.getApproxMemoryGain().gain()));
         const IFlushTarget::DiskGain dgain(target.getApproxDiskGain());
         totalDisk += dgain;
         SerialNum localLastSerial = targetList[i]->getLastSerial();

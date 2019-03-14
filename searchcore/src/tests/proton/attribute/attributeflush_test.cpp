@@ -293,8 +293,10 @@ struct Fixture : public BaseFixture, public AttributeManagerFixture
           AttributeManagerFixture(*static_cast<BaseFixture *>(this))
     {
     }
+    ~Fixture();
 };
 
+Fixture::~Fixture() = default;
 
 
 void

@@ -149,7 +149,7 @@ ConfigFile::serialize(nbostream &stream) const
 {
     assert(strchr(_name.c_str(), '/') == NULL);
     stream << _name;
-    stream << _modTime;
+    stream << static_cast<int64_t>(_modTime);;
     uint32_t sz = _content.size();
     stream << sz;
     stream.write(&_content[0], sz);
@@ -162,7 +162,9 @@ ConfigFile::deserialize(nbostream &stream)
 {
     stream >> _name;
     assert(strchr(_name.c_str(), '/') == NULL);
-    stream >> _modTime;
+    int64_t modTime;
+    stream >> modTime;
+    _modTime = modTime;
     uint32_t sz;
     stream >> sz;
     _content.resize(sz);
