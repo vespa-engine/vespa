@@ -30,20 +30,6 @@ public interface Service extends ConfigProducer, NetworkPortRequestor {
     Optional<String> getPreShutdownCommand();
 
     /**
-     * Tells if this service should be autostarted by
-     * config-sentinel. Returned value will be used to configure the
-     * config-sentinel.
-     */
-    boolean getAutostartFlag();
-
-    /**
-     * Tells if this service should be autorestarted by
-     * config-sentinel. Returned value will be used to configure the
-     * config-sentinel.
-     */
-    boolean getAutorestartFlag();
-
-    /**
      * Returns a PortsMeta object, giving access to more information
      * about the different ports of this service.
      */

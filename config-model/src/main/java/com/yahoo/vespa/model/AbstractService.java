@@ -251,28 +251,6 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     }
 
     /**
-     * Tells if this service should be autostarted by
-     * config-sentinel. Returned value will be used to configure the
-     * config-sentinel.
-     *
-     * @return true by default.
-     */
-    public boolean getAutostartFlag() {
-        return true;
-    }
-
-    /**
-     * Tells if this service should be autorestarted by
-     * config-sentinel. Returned value will be used to configure the
-     * config-sentinel.
-     *
-     * @return true by default.
-     */
-    public boolean getAutorestartFlag() {
-        return true;
-    }
-
-    /**
      * Returns the name that identifies this service for the config-sentinel.
      *
      * @return the name that identifies this service for the config-sentinel.
