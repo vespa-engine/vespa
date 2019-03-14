@@ -36,6 +36,8 @@ RemoteSlobrok::~RemoteSlobrok()
 {
     _reconnecter.disable();
 
+    _pending.clear();
+
     if (_remote != nullptr) {
         _remote->SubRef();
         _remote = nullptr;
@@ -62,6 +64,8 @@ RemoteSlobrok::doPending()
 {
     LOG_ASSERT(_remAddReq == nullptr);
     LOG_ASSERT(_remRemReq == nullptr);
+
+    if (_remote == nullptr) return;
 
     if ( ! _pending.empty() ) {
         std::unique_ptr<NamedService> todo = std::move(_pending.front());
@@ -158,7 +162,7 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
         _remListReq = nullptr;
 
         // next step is to push the ones I own:
-        pushMine();
+        if (_remote != nullptr) pushMine();
     } else if (req == _remAddReq) {
         // handle response after pushing some name that we managed:
         if (req->IsError() && (req->GetErrorCode() == FRTE_RPC_CONNECTION ||
