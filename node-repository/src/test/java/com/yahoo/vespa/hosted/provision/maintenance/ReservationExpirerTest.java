@@ -45,7 +45,7 @@ public class ReservationExpirerTest {
         NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(flavors, curator, clock, Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
-                                                           new DockerImage("docker-registry.domain.tld:8080/dist/vespa"),
+                                                           DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            true);
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
 

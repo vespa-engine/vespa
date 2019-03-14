@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FetchVector;
@@ -10,7 +11,6 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
@@ -185,8 +185,13 @@ public class NodeAgentImpl implements NodeAgent {
 
         Optional<DockerImage> actualDockerImage = context.node().getWantedDockerImage().filter(n -> containerState == UNKNOWN);
         if (!Objects.equals(context.node().getCurrentDockerImage(), actualDockerImage)) {
-            currentNodeAttributes.withDockerImage(context.node().getCurrentDockerImage().orElse(new DockerImage("")));
-            newNodeAttributes.withDockerImage(actualDockerImage.orElse(new DockerImage("")));
+            DockerImage currentImage = context.node().getCurrentDockerImage().orElse(DockerImage.EMPTY);
+            DockerImage newImage = actualDockerImage.orElse(DockerImage.EMPTY);
+
+            currentNodeAttributes.withDockerImage(currentImage);
+            currentNodeAttributes.withVespaVersion(currentImage.tagAsVersion());
+            newNodeAttributes.withDockerImage(newImage);
+            newNodeAttributes.withVespaVersion(newImage.tagAsVersion());
         }
 
         publishStateToNodeRepoIfChanged(context, currentNodeAttributes, newNodeAttributes);

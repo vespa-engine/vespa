@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
@@ -105,7 +105,7 @@ public class RealNodeRepositoryTest {
         assertThat(containersToRun.size(), is(1));
         final NodeSpec node = containersToRun.get(0);
         assertThat(node.getHostname(), is("host4.yahoo.com"));
-        assertThat(node.getWantedDockerImage().get(), is(new DockerImage("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
+        assertThat(node.getWantedDockerImage().get(), is(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
         assertThat(node.getState(), is(NodeState.active));
         assertThat(node.getWantedRestartGeneration().get(), is(0L));
         assertThat(node.getCurrentRestartGeneration().get(), is(0L));
@@ -136,7 +136,7 @@ public class RealNodeRepositoryTest {
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1)
-                        .withDockerImage(new DockerImage("image-1:6.2.3")));
+                        .withDockerImage(DockerImage.fromString("image-1:6.2.3")));
     }
 
     @Test(expected = RuntimeException.class)
@@ -146,7 +146,7 @@ public class RealNodeRepositoryTest {
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1)
-                        .withDockerImage(new DockerImage("image-1")));
+                        .withDockerImage(DockerImage.fromString("image-1")));
     }
 
     @Test

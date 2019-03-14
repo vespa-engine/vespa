@@ -17,8 +17,8 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.flag.Flags;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -94,7 +94,7 @@ public class NodeRepository extends AbstractComponent {
      */
     @Inject
     public NodeRepository(NodeRepositoryConfig config, NodeFlavors flavors, Curator curator, Zone zone) {
-        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), new DockerImage(config.dockerImage()), config.useCuratorClientCache());
+        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache());
     }
 
     /**

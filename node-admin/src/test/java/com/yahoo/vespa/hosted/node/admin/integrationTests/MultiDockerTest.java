@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
@@ -21,9 +21,9 @@ public class MultiDockerTest {
     @Test
     public void test() {
         try (DockerTester tester = new DockerTester()) {
-            addAndWaitForNode(tester, "host1.test.yahoo.com", new DockerImage("image1"));
+            addAndWaitForNode(tester, "host1.test.yahoo.com", DockerImage.fromString("image1"));
             NodeSpec nodeSpec2 = addAndWaitForNode(
-                    tester, "host2.test.yahoo.com", new DockerImage("image2"));
+                    tester, "host2.test.yahoo.com", DockerImage.fromString("image2"));
 
             tester.addChildNodeRepositoryNode(
                     new NodeSpec.Builder(nodeSpec2)
@@ -38,7 +38,7 @@ public class MultiDockerTest {
                     argThat(context -> context.containerName().equals(new ContainerName("host2"))));
             tester.inOrder(tester.nodeRepository).setNodeState(eq(nodeSpec2.getHostname()), eq(NodeState.ready));
 
-            addAndWaitForNode(tester, "host3.test.yahoo.com", new DockerImage("image1"));
+            addAndWaitForNode(tester, "host3.test.yahoo.com", DockerImage.fromString("image1"));
         }
     }
 
@@ -62,7 +62,8 @@ public class MultiDockerTest {
         tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(containerName));
         tester.inOrder(tester.docker).executeInContainerAsUser(
                 eq(containerName), eq("root"), any(), eq(DockerTester.NODE_PROGRAM), eq("resume"));
-        tester.inOrder(tester.nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withDockerImage(dockerImage)));
+        tester.inOrder(tester.nodeRepository).updateNodeAttributes(eq(hostName),
+                eq(new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion())));
 
         return nodeSpec;
     }

@@ -112,8 +112,9 @@ public class NodePatcher {
             case "currentDockerImage" :
                 Version versionFromImage = Optional.of(asString(value))
                         .filter(s -> !s.isEmpty())
-                        .map(DockerImage::new)
-                        .map(DockerImage::tagAsVersion)
+                        .map(DockerImage::fromString)
+                        .map(image -> image.tag().map(Version::fromString).orElseThrow(() ->
+                                new IllegalArgumentException("tag components of docker image must be set")))
                         .orElse(Version.emptyVersion);
                 return node.with(node.status().withVespaVersion(versionFromImage));
             case "vespaVersion" :

@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
-import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.Image;
 import com.google.common.base.Strings;
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.DockerImage;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -129,7 +130,7 @@ class DockerImageGarbageCollector {
                             .orElse(Stream.of(image.getId()))
                             .forEach(imageReference -> {
                                 logger.info("Deleting unused docker image " + imageReference);
-                                docker.deleteImage(new DockerImage(imageReference));
+                                docker.deleteImage(DockerImage.fromString(imageReference));
                             });
 
                     lastTimeUsedByImageId.remove(image.getId());

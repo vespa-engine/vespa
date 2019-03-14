@@ -51,7 +51,7 @@ public class MockNodeRepository extends NodeRepository {
               new MockNameResolver()
                       .addRecord("test-container-1", "::2")
                       .mockAnyLookup(),
-              new DockerImage("docker-registry.domain.tld:8080/dist/vespa"),
+              DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
               true);
         this.flavors = flavors;
 

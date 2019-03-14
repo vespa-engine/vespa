@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.flags.Flags;
@@ -10,7 +12,6 @@ import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
@@ -61,7 +62,7 @@ public class NodeAgentImplTest {
     private static final double MIN_CPU_CORES = 2;
     private static final double MIN_MAIN_MEMORY_AVAILABLE_GB = 16;
     private static final double MIN_DISK_AVAILABLE_GB = 250;
-    private static final String vespaVersion = "1.2.3";
+    private static final Version vespaVersion = Version.fromString("1.2.3");
 
     private final String hostName = "host1.test.yahoo.com";
     private final NodeSpec.Builder nodeBuilder = new NodeSpec.Builder()
@@ -73,7 +74,7 @@ public class NodeAgentImplTest {
             .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB);
 
     private final NodeAgentContextSupplier contextSupplier = mock(NodeAgentContextSupplier.class);
-    private final DockerImage dockerImage = new DockerImage("dockerImage");
+    private final DockerImage dockerImage = DockerImage.fromString("dockerImage");
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
@@ -206,13 +207,13 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(healthChecker, times(1)).verifyHealth(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes().withDockerImage(dockerImage));
+                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion()));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
     @Test
     public void containerIsNotStoppedIfNewImageMustBePulled() {
-        final DockerImage newDockerImage = new DockerImage("new-image");
+        final DockerImage newDockerImage = DockerImage.fromString("new-image");
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(newDockerImage)
                 .currentDockerImage(dockerImage)
@@ -518,7 +519,7 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(String.class));
         // current Docker image and vespa version should be cleared
         verify(nodeRepository, times(1)).updateNodeAttributes(
-                eq(hostName), eq(new NodeAttributes().withDockerImage(new DockerImage(""))));
+                eq(hostName), eq(new NodeAttributes().withDockerImage(DockerImage.EMPTY).withVespaVersion(Version.emptyVersion)));
     }
 
     @Test
@@ -751,7 +752,7 @@ public class NodeAgentImplTest {
         inOrder.verify(aclMaintainer, times(1)).converge(eq(context));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes().withDockerImage(dockerImage));
+                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion()));
         inOrder.verify(orchestrator).resume(hostName);
     }
 

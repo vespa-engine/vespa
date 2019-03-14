@@ -3,13 +3,13 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.net.InetAddresses;
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;

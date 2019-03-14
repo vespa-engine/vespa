@@ -21,6 +21,7 @@ import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
@@ -278,7 +279,7 @@ public class DockerImpl implements Docker {
                 .map(response ->
                         new Container(
                                 response.getConfig().getHostName(),
-                                new DockerImage(response.getConfig().getImage()),
+                                DockerImage.fromString(response.getConfig().getImage()),
                                 containerResourcesFromHostConfig(response.getHostConfig()),
                                 new ContainerName(decode(response.getName())),
                                 Container.State.valueOf(response.getState().getStatus().toUpperCase()),
