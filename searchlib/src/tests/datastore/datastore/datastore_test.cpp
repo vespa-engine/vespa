@@ -90,6 +90,9 @@ public:
     }
     ~GrowStore() { _store.dropBuffers(); }
 
+    Store &store() { return _store; }
+    uint32_t typeId() const { return _typeId; }
+
     GrowthStats getGrowthStats(size_t bufs) {
         GrowthStats sizes;
         int prevBufferId = -1;
@@ -317,10 +320,26 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_elements)
     EXPECT_EQ(0, s.getEntry(r3));
 }
 
+using IntHandle = Handle<int>;
+
 MyRef
-toRef(Handle<int> handle)
+to_ref(IntHandle handle)
 {
     return MyRef(handle.ref);
+}
+
+std::ostream&
+operator<<(std::ostream &os, const IntHandle &rhs)
+{
+    MyRef ref(rhs.ref);
+    os << "{ref.bufferId=" << ref.bufferId() << ", ref.offset=" << ref.offset() << ", data=" << rhs.data << "}";
+    return os;
+}
+
+void
+expect_successive_handles(const IntHandle &first, const IntHandle &second)
+{
+    EXPECT_EQ(to_ref(first).offset() + 1, to_ref(second).offset());
 }
 
 TEST(DataStoreTest, require_that_we_can_use_free_lists)
@@ -332,26 +351,51 @@ TEST(DataStoreTest, require_that_we_can_use_free_lists)
     s.holdElem(h1.ref, 1);
     s.transferHoldLists(10);
     auto h2 = allocator.alloc(2);
+    expect_successive_handles(h1, h2);
     s.holdElem(h2.ref, 1);
     s.transferHoldLists(20);
     s.trimElemHoldList(11);
     auto h3 = allocator.alloc(3); // reuse h1.ref
-    EXPECT_EQ(toRef(h1).offset(), toRef(h3).offset());
-    EXPECT_EQ(toRef(h1).bufferId(), toRef(h3).bufferId());
+    EXPECT_EQ(h1, h3);
     auto h4 = allocator.alloc(4);
-    EXPECT_EQ(toRef(h2).offset() + 1, toRef(h4).offset());
+    expect_successive_handles(h2, h4);
     s.trimElemHoldList(21);
     auto h5 = allocator.alloc(5); // reuse h2.ref
-    EXPECT_EQ(toRef(h2).offset(), toRef(h5).offset());
-    EXPECT_EQ(toRef(h2).bufferId(), toRef(h5).bufferId());
+    EXPECT_EQ(h2, h5);
     auto h6 = allocator.alloc(6);
-    EXPECT_EQ(toRef(h4).offset() + 1, toRef(h6).offset());
+    expect_successive_handles(h4, h6);
     EXPECT_EQ(3, s.getEntry(h1.ref));
     EXPECT_EQ(5, s.getEntry(h2.ref));
     EXPECT_EQ(3, s.getEntry(h3.ref));
     EXPECT_EQ(4, s.getEntry(h4.ref));
     EXPECT_EQ(5, s.getEntry(h5.ref));
     EXPECT_EQ(6, s.getEntry(h6.ref));
+}
+
+TEST(DataStoreTest, require_that_we_can_use_free_lists_with_raw_allocator)
+{
+    GrowStore<int, MyRef> grow_store(3, 64, 64, 64);
+    auto &s = grow_store.store();
+    s.enableFreeLists();
+    auto allocator = s.freeListRawAllocator<int>(grow_store.typeId());
+
+    auto h1 = allocator.alloc(3);
+    auto h2 = allocator.alloc(3);
+    expect_successive_handles(h1, h2);
+    s.holdElem(h1.ref, 3);
+    s.holdElem(h2.ref, 3);
+    s.transferHoldLists(10);
+    s.trimElemHoldList(11);
+
+    auto h3 = allocator.alloc(3); // reuse h2.ref from free list
+    EXPECT_EQ(h2, h3);
+
+    auto h4 = allocator.alloc(3); // reuse h1.ref from free list
+    EXPECT_EQ(h1, h4);
+
+    auto h5 = allocator.alloc(3);
+    expect_successive_handles(h2, h5);
+    expect_successive_handles(h3, h5);
 }
 
 TEST(DataStoreTest, require_that_memory_stats_are_calculated)

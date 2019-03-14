@@ -16,6 +16,10 @@ struct Handle
     EntryT *data;
     Handle(EntryRef ref_, EntryT *data_) : ref(ref_), data(data_) {}
     Handle() : ref(), data() {}
+    bool operator==(const Handle<EntryT> &rhs) const {
+        return ref == rhs.ref &&
+                data == rhs.data;
+    }
 };
 
 }
