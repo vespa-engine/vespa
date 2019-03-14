@@ -307,6 +307,10 @@ Fixture::testSaveLoad()
 void
 Fixture::testCompaction()
 {
+    if (_useDenseTensorAttribute && _denseTensors && !_cfg.tensorType().is_abstract()) {
+        LOG(info, "Skipping compaction test for tensor '%s' which is using free-lists", _cfg.tensorType().to_spec().c_str());
+        return;
+    }
     ensureSpace(4);
     Tensor::UP emptytensor = _tensorAttr->getEmptyTensor();
     Tensor::UP emptyxytensor = createTensor({}, {"x", "y"});

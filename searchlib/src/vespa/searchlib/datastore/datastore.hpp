@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include "datastore.h"
 #include "allocator.hpp"
+#include "datastore.h"
 #include "free_list_allocator.hpp"
+#include "free_list_raw_allocator.hpp"
 #include "raw_allocator.hpp"
 #include <vespa/vespalib/util/array.hpp>
 
@@ -130,7 +131,13 @@ DataStoreT<RefT>::rawAllocator(uint32_t typeId)
     return RawAllocator<EntryT, RefT>(*this, typeId);
 }
 
-
+template <typename RefT>
+template <typename EntryT>
+FreeListRawAllocator<EntryT, RefT>
+DataStoreT<RefT>::freeListRawAllocator(uint32_t typeId)
+{
+    return FreeListRawAllocator<EntryT, RefT>(*this, typeId);
+}
 
 template <typename EntryType, typename RefT>
 DataStore<EntryType, RefT>::DataStore()

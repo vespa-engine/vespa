@@ -18,7 +18,7 @@ class RawAllocator
 public:
     using HandleType = Handle<EntryT>;
 
-private:
+protected:
     DataStoreBase &_store;
     uint32_t _typeId;
 
