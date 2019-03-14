@@ -8,7 +8,6 @@
 #include "rpcserver.h"
 #include <vespa/config-sentinel.h>
 #include <vespa/config/config.h>
-#include <vespa/vespalib/net/state_server.h>
 #include <sys/types.h>
 #include <sys/select.h>
 
@@ -20,6 +19,7 @@ using config::ConfigHandle;
 
 namespace config::sentinel {
 
+class CommandConnection;
 class OutputConnection;
 
 class ConfigHandler {
@@ -29,13 +29,14 @@ private:
     ConfigSubscriber _subscriber;
     ConfigHandle<SentinelConfig>::UP _sentinelHandle;
     ServiceMap _services;
+    std::list<CommandConnection *> _connections;
     std::list<OutputConnection *> _outputConnections;
     CommandQueue _cmdQ;
     std::unique_ptr<RpcServer> _rpcServer;
     int _boundPort;
+    int _commandSocket;
     StartMetrics _startMetrics;
     StateApi _stateApi;
-    std::unique_ptr<vespalib::StateServer> _stateServer;
 
     ConfigHandler(const ConfigHandler&);
     ConfigHandler& operator =(const ConfigHandler&);
@@ -43,6 +44,7 @@ private:
     Service *serviceByPid(pid_t pid);
     Service *serviceByName(const vespalib::string & name);
     void handleCommands();
+    void handleCommand(CommandConnection *c);
     void handleCmd(const Cmd& cmd);
     void handleOutputs();
     void handleChildDeaths();
@@ -51,6 +53,17 @@ private:
     void configure_port(int port);
 
     void updateMetrics();
+
+    void doGet(CommandConnection *c, char *args);
+    void doLs(CommandConnection *c, char *args);
+    void doRestart(CommandConnection *c, char *args);
+    void doRestart(CommandConnection *c, char *args, bool force);
+    void doStart(CommandConnection *c, char *args);
+    void doStop(CommandConnection *c, char *args);
+    void doStop(CommandConnection *c, char *args, bool force);
+    void doAuto(CommandConnection *c, char *args);
+    void doManual(CommandConnection *c, char *args);
+    void doQuit(CommandConnection *c, char *args);
 
     void terminateServices(bool catchable, bool printDebug = false);
 

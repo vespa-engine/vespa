@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/net/state_api.h>
 #include <vespa/vespalib/net/simple_health_producer.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <vespa/vespalib/metrics/simple_metrics.h>
@@ -10,8 +11,17 @@ namespace config {
 namespace sentinel {
 
 struct StateApi {
+    vespalib::string host_and_port;
     vespalib::SimpleHealthProducer myHealth;
     vespalib::SimpleComponentConfigProducer myComponents;
+    vespalib::StateApi myStateApi;
+
+    StateApi(vespalib::metrics::Producer &myMetrics)
+        : myStateApi(myHealth, myMetrics, myComponents)
+    {}
+
+    vespalib::string get(const char *path) const;
+    void bound(int port);
 };
 
 } // namespace config::sentinel

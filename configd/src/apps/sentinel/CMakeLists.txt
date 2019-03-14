@@ -5,6 +5,7 @@ vespa_add_executable(configd_config-sentinel_app
     service.cpp
     config-handler.cpp
     line-splitter.cpp
+    command-connection.cpp
     output-connection.cpp
     metrics.cpp
     state-api.cpp
