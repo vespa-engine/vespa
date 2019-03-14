@@ -105,7 +105,7 @@ BucketGcTimeCalculatorTest::identityHasherReturnsBucketId()
     BucketGcTimeCalculator::BucketIdIdentityHasher hasher2;
     document::BucketId bucket(36, 1234);
 
-    CPPUNIT_ASSERT_EQUAL(bucket.getId(), hasher2.hash(bucket));
+    CPPUNIT_ASSERT_EQUAL(bucket.getId(), static_cast<uint64_t>(hasher2.hash(bucket)));
 }
 
 } // distributor

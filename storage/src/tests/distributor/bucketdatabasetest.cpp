@@ -31,7 +31,7 @@ BucketDatabaseTest::testClear() {
     db().update(BucketDatabase::Entry(document::BucketId(16, 16), BI(1)));
     db().update(BucketDatabase::Entry(document::BucketId(16, 11), BI(2)));
     db().clear();
-    CPPUNIT_ASSERT_EQUAL(size_t(0), db().size());
+    CPPUNIT_ASSERT_EQUAL(uint64_t(0), db().size());
 }
 
 void

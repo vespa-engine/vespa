@@ -272,14 +272,14 @@ MergeHandlerTest::testMergeBucketCommand()
     MessageTracker::UP tracker = handler.handleMergeBucket(cmd, *_context);
 
     LOG(info, "Check state");
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), messageKeeper()._msgs.size());
+    CPPUNIT_ASSERT_EQUAL(size_t(1), messageKeeper()._msgs.size());
     CPPUNIT_ASSERT_EQUAL(api::MessageType::GETBUCKETDIFF,
                          messageKeeper()._msgs[0]->getType());
     api::GetBucketDiffCommand& cmd2(dynamic_cast<api::GetBucketDiffCommand&>(
                 *messageKeeper()._msgs[0]));
     CPPUNIT_ASSERT_EQUAL(_nodes, cmd2.getNodes());
     std::vector<api::GetBucketDiffCommand::Entry> diff(cmd2.getDiff());
-    CPPUNIT_ASSERT_EQUAL(uint64_t(17), diff.size());
+    CPPUNIT_ASSERT_EQUAL(size_t(17), diff.size());
     CPPUNIT_ASSERT_EQUAL(uint16_t(1), cmd2.getAddress()->getIndex());
     CPPUNIT_ASSERT_EQUAL(uint16_t(1234), cmd2.getSourceIndex());
 
@@ -300,7 +300,7 @@ MergeHandlerTest::testGetBucketDiffChain(bool midChain)
 
     if (midChain) {
         LOG(info, "Check state");
-        CPPUNIT_ASSERT_EQUAL(uint64_t(1), messageKeeper()._msgs.size());
+        CPPUNIT_ASSERT_EQUAL(size_t(1), messageKeeper()._msgs.size());
         CPPUNIT_ASSERT_EQUAL(api::MessageType::GETBUCKETDIFF,
                              messageKeeper()._msgs[0]->getType());
         api::GetBucketDiffCommand& cmd2(
@@ -308,7 +308,7 @@ MergeHandlerTest::testGetBucketDiffChain(bool midChain)
                     *messageKeeper()._msgs[0]));
         CPPUNIT_ASSERT_EQUAL(_nodes, cmd2.getNodes());
         std::vector<api::GetBucketDiffCommand::Entry> diff(cmd2.getDiff());
-        CPPUNIT_ASSERT_EQUAL(uint64_t(17), diff.size());
+        CPPUNIT_ASSERT_EQUAL(size_t(17), diff.size());
         CPPUNIT_ASSERT_EQUAL(uint16_t(1), cmd2.getAddress()->getIndex());
 
         LOG(info, "Verifying that replying the diff sends on back");
@@ -328,7 +328,7 @@ MergeHandlerTest::testGetBucketDiffChain(bool midChain)
 
     CPPUNIT_ASSERT_EQUAL(_nodes, reply2->getNodes());
     std::vector<api::GetBucketDiffCommand::Entry> diff(reply2->getDiff());
-    CPPUNIT_ASSERT_EQUAL(uint64_t(17), diff.size());
+    CPPUNIT_ASSERT_EQUAL(size_t(17), diff.size());
 }
 
 void
@@ -344,7 +344,7 @@ MergeHandlerTest::testApplyBucketDiffChain(bool midChain)
 
     if (midChain) {
         LOG(info, "Check state");
-        CPPUNIT_ASSERT_EQUAL(uint64_t(1), messageKeeper()._msgs.size());
+        CPPUNIT_ASSERT_EQUAL(size_t(1), messageKeeper()._msgs.size());
         CPPUNIT_ASSERT_EQUAL(api::MessageType::APPLYBUCKETDIFF,
                              messageKeeper()._msgs[0]->getType());
         api::ApplyBucketDiffCommand& cmd2(
@@ -352,7 +352,7 @@ MergeHandlerTest::testApplyBucketDiffChain(bool midChain)
                     *messageKeeper()._msgs[0]));
         CPPUNIT_ASSERT_EQUAL(_nodes, cmd2.getNodes());
         std::vector<api::ApplyBucketDiffCommand::Entry> diff(cmd2.getDiff());
-        CPPUNIT_ASSERT_EQUAL(uint64_t(0), diff.size());
+        CPPUNIT_ASSERT_EQUAL(size_t(0), diff.size());
         CPPUNIT_ASSERT_EQUAL(uint16_t(1), cmd2.getAddress()->getIndex());
 
         CPPUNIT_ASSERT(!replySent.get());
@@ -373,7 +373,7 @@ MergeHandlerTest::testApplyBucketDiffChain(bool midChain)
 
     CPPUNIT_ASSERT_EQUAL(_nodes, reply2->getNodes());
     std::vector<api::ApplyBucketDiffCommand::Entry> diff(reply2->getDiff());
-    CPPUNIT_ASSERT_EQUAL(uint64_t(0), diff.size());
+    CPPUNIT_ASSERT_EQUAL(size_t(0), diff.size());
 }
 
 void
@@ -386,7 +386,7 @@ MergeHandlerTest::testMasterMessageFlow()
 
     handler.handleMergeBucket(cmd, *_context);
     LOG(info, "Check state");
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), messageKeeper()._msgs.size());
+    CPPUNIT_ASSERT_EQUAL(size_t(1), messageKeeper()._msgs.size());
     CPPUNIT_ASSERT_EQUAL(api::MessageType::GETBUCKETDIFF,
                          messageKeeper()._msgs[0]->getType());
     api::GetBucketDiffCommand& cmd2(dynamic_cast<api::GetBucketDiffCommand&>(
@@ -400,7 +400,7 @@ MergeHandlerTest::testMasterMessageFlow()
     handler.handleGetBucketDiffReply(*reply, messageKeeper());
 
     LOG(info, "Check state");
-    CPPUNIT_ASSERT_EQUAL(uint64_t(2), messageKeeper()._msgs.size());
+    CPPUNIT_ASSERT_EQUAL(size_t(2), messageKeeper()._msgs.size());
     CPPUNIT_ASSERT_EQUAL(api::MessageType::APPLYBUCKETDIFF,
                          messageKeeper()._msgs[1]->getType());
     api::ApplyBucketDiffCommand& cmd3(
