@@ -108,8 +108,29 @@ public:
         return _bucketOwnershipTransfer;
     }
 
+    bool hasCommand() const noexcept {
+        return (_cmd.get() != nullptr);
+    }
+
     std::shared_ptr<api::SetSystemStateCommand> getCommand() {
         return _cmd;
+    }
+
+    bool isVersionedTransition() const noexcept {
+        return _isVersionedTransition;
+    }
+
+    uint32_t clusterStateVersion() const noexcept {
+        return _clusterStateVersion;
+    }
+
+    bool isDeferred() const noexcept {
+        return (isVersionedTransition()
+                && _newClusterStateBundle.deferredActivation());
+    }
+
+    void clearCommand() {
+        _cmd.reset();
     }
 
     const lib::ClusterStateBundle& getNewClusterStateBundle() const {
@@ -210,9 +231,10 @@ private:
     api::Timestamp _creationTimestamp;
 
     DistributorMessageSender& _sender;
-    DistributorBucketSpaceRepo &_bucketSpaceRepo;
-    DistributorBucketSpaceRepo &_readOnlyBucketSpaceRepo;
-
+    DistributorBucketSpaceRepo& _bucketSpaceRepo;
+    DistributorBucketSpaceRepo& _readOnlyBucketSpaceRepo;
+    uint32_t _clusterStateVersion;
+    bool _isVersionedTransition;
     bool _bucketOwnershipTransfer;
     std::unordered_map<document::BucketSpace, std::unique_ptr<PendingBucketSpaceDbTransition>, document::BucketSpace::hash> _pendingTransitions;
 };

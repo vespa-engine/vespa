@@ -42,6 +42,8 @@ PendingClusterState::PendingClusterState(
       _sender(sender),
       _bucketSpaceRepo(bucketSpaceRepo),
       _readOnlyBucketSpaceRepo(readOnlyBucketSpaceRepo),
+      _clusterStateVersion(_cmd->getClusterStateBundle().getVersion()),
+      _isVersionedTransition(true),
       _bucketOwnershipTransfer(false),
       _pendingTransitions()
 {
@@ -65,6 +67,8 @@ PendingClusterState::PendingClusterState(
       _sender(sender),
       _bucketSpaceRepo(bucketSpaceRepo),
       _readOnlyBucketSpaceRepo(readOnlyBucketSpaceRepo),
+      _clusterStateVersion(0),
+      _isVersionedTransition(false),
       _bucketOwnershipTransfer(true),
       _pendingTransitions()
 {

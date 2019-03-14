@@ -518,7 +518,10 @@ bool
 StateManager::onActivateClusterStateVersion(
         const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
 {
-    // TODO invoke listeners and set actual version
+    // TODO we probably don't want to invoke listeners here? but just bounce with
+    // currently activated bundle version?
+    // Must ensure that layer above (i.e. distributor) maintains strict operation
+    // ordering.
     sendUp(std::make_shared<api::ActivateClusterStateVersionReply>(*cmd));
     return true;
 }

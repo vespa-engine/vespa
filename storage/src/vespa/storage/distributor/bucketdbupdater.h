@@ -44,6 +44,7 @@ public:
     void recheckBucketInfo(uint32_t nodeIdx, const document::Bucket& bucket);
 
     bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& cmd) override;
+    bool onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd) override;
     bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply> & repl) override;
     bool onMergeBucketReply(const std::shared_ptr<api::MergeBucketReply>& reply) override;
     bool onNotifyBucketChange(const std::shared_ptr<api::NotifyBucketChangeCommand>&) override;
@@ -125,6 +126,7 @@ private:
         }
     };
 
+    bool shouldDeferStateEnabling() const noexcept;
     bool hasPendingClusterState() const;
     bool pendingClusterStateAccepted(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
     bool processSingleBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
@@ -132,6 +134,7 @@ private:
                                        const BucketRequest& req);
     bool isPendingClusterStateCompleted() const;
     void processCompletedPendingClusterState();
+    void activatePendingClusterState();
     void mergeBucketInfoWithDatabase(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
                                      const BucketRequest& req);
     void convertBucketInfoToBucketList(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
@@ -162,6 +165,9 @@ private:
     void removeSuperfluousBuckets(const lib::ClusterStateBundle& newState);
 
     void replyToPreviousPendingClusterStateIfAny();
+    void replyToActivationWithActualVersion(
+            const api::ActivateClusterStateVersionCommand& cmd,
+            uint32_t actualVersion);
 
     void enableCurrentClusterStateBundleInDistributor();
     void addCurrentStateToClusterStateHistory();

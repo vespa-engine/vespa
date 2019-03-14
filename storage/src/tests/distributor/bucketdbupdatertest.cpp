@@ -233,6 +233,8 @@ public:
     void setUp() override {
         createLinks();
         _bucketSpaces = getBucketSpaces();
+        // Disable deferred activation by default (at least for now) to avoid breaking the entire world.
+        getConfig().setAllowStaleReadsDuringClusterStateTransitions(false);
     };
 
     void tearDown() override {

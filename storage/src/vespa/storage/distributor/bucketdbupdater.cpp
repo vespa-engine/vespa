@@ -54,6 +54,13 @@ BucketDBUpdater::print(std::ostream& out, bool verbose, const std::string& inden
 }
 
 bool
+BucketDBUpdater::shouldDeferStateEnabling() const noexcept
+{
+    return _distributorComponent.getDistributor().getConfig()
+            .allowStaleReadsDuringClusterStateTransitions();
+}
+
+bool
 BucketDBUpdater::hasPendingClusterState() const
 {
     return static_cast<bool>(_pendingClusterState);
@@ -195,6 +202,16 @@ BucketDBUpdater::replyToPreviousPendingClusterStateIfAny()
     }
 }
 
+void
+BucketDBUpdater::replyToActivationWithActualVersion(
+        const api::ActivateClusterStateVersionCommand& cmd,
+        uint32_t actualVersion)
+{
+    auto reply = std::make_shared<api::ActivateClusterStateVersionReply>(cmd);
+    reply->setActualVersion(actualVersion);
+    _distributorComponent.sendUp(reply); // TODO let API accept rvalues
+}
+
 bool
 BucketDBUpdater::onSetSystemState(
         const std::shared_ptr<api::SetSystemStateCommand>& cmd)
@@ -235,6 +252,37 @@ BucketDBUpdater::onSetSystemState(
         processCompletedPendingClusterState();
     }
     return true;
+}
+
+bool
+BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
+{
+    // TODO test edges!
+    if (hasPendingClusterState() && _pendingClusterState->isVersionedTransition()) {
+        const auto pending_version = _pendingClusterState->clusterStateVersion();
+        if (pending_version == cmd->version()) {
+            if (isPendingClusterStateCompleted()) {
+                assert(_pendingClusterState->isDeferred());
+                activatePendingClusterState();
+            } else {
+                LOG(error, "Received cluster state activation for pending version %u "
+                           "without pending state being complete yet. This is not expected, "
+                           "as no activation should be sent before all distributors have "
+                           "reported that state processing is complete.", pending_version);
+                replyToActivationWithActualVersion(*cmd, 0);  // Invalid version, will cause re-send (hopefully when completed).
+                return true;
+            }
+        } else {
+            replyToActivationWithActualVersion(*cmd, pending_version);
+            return true;
+        }
+    } else {
+        // Likely just a resend, but log warn for now to get a feel of how common it is.
+        LOG(warning, "Received cluster state activation command for version %u, which "
+                     "has no corresponding pending state. Resent operation?", cmd->version());
+    }
+    // Fall through to next link in call chain that cares about this message.
+    return false;
 }
 
 BucketDBUpdater::MergeReplyGuard::~MergeReplyGuard()
@@ -497,14 +545,37 @@ BucketDBUpdater::isPendingClusterStateCompleted() const
 void
 BucketDBUpdater::processCompletedPendingClusterState()
 {
-    _pendingClusterState->mergeIntoBucketDatabases();
-
-    if (_pendingClusterState->getCommand().get()) {
-        enableCurrentClusterStateBundleInDistributor();
+    if (_pendingClusterState->isDeferred()) {
+        assert(_pendingClusterState->hasCommand()); // Deferred transitions should only ever be created by state commands.
+        // Sending down SetSystemState command will reach the state manager and a reply
+        // will be auto-sent back to the cluster controller in charge. Once this happens,
+        // it will send an explicit activation command once all distributors have reported
+        // that their pending cluster states have completed.
         _distributorComponent.getDistributor().getMessageSender().sendDown(
                 _pendingClusterState->getCommand());
+        _pendingClusterState->clearCommand();
+        return;
+    }
+    // Distribution config change or non-deferred cluster state. Immediately activate
+    // the pending state without being told to do so explicitly.
+    activatePendingClusterState();
+}
+
+void
+BucketDBUpdater::activatePendingClusterState()
+{
+    _pendingClusterState->mergeIntoBucketDatabases();
+
+    if (_pendingClusterState->isVersionedTransition()) {
+        enableCurrentClusterStateBundleInDistributor();
+        if (_pendingClusterState->hasCommand()) {
+            _distributorComponent.getDistributor().getMessageSender().sendDown(
+                    _pendingClusterState->getCommand());
+        }
         addCurrentStateToClusterStateHistory();
     } else {
+        // TODO distribution changes cannot currently be deferred as they are not
+        // initiated by the cluster controller!
         _distributorComponent.getDistributor().notifyDistributionChangeEnabled();
     }
 
