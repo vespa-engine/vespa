@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -212,12 +213,12 @@ class NodesResponse extends HttpResponse {
         }
     }
 
-    // Hack: For docker hosts, return current docker image as default prefix + current Vespa version
+    // Hack: For non-docker noder, return current docker image as default prefix + current Vespa version
     // TODO: Remove current + wanted docker image from response for non-docker types
     private Optional<DockerImage> currentDockerImage(Node node) {
         return node.status().dockerImage()
                 .or(() -> Optional.of(node)
-                        .filter(n -> n.type().isDockerHost())
+                        .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                         .flatMap(n -> n.status().vespaVersion()
                                 .map(version -> nodeRepository.dockerImages().dockerImageFor(n.type()).withTag(version))));
     }
