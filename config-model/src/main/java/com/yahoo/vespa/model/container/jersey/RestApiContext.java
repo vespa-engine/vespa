@@ -7,7 +7,7 @@ import com.yahoo.container.di.config.JerseyBundlesConfig;
 import com.yahoo.container.di.config.JerseyInjectionConfig;
 import com.yahoo.container.di.config.JerseyInjectionConfig.Inject;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -38,14 +38,14 @@ public class RestApiContext extends SimpleComponent implements
     private final String bindingPath;
 
     @Nullable
-    private ContainerCluster containerCluster;
+    private ApplicationContainerCluster containerCluster;
 
     public RestApiContext(AbstractConfigProducer<?> ancestor, String bindingPath) {
         super(componentModel(bindingPath));
         this.bindingPath = bindingPath;
 
-        if (ancestor instanceof ContainerCluster)
-            containerCluster = (ContainerCluster)ancestor;
+        if (ancestor instanceof ApplicationContainerCluster)
+            containerCluster = (ApplicationContainerCluster)ancestor;
 
     }
 

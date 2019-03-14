@@ -26,13 +26,13 @@ public class ContainerModelEvaluation implements RankProfilesConfig.Producer, Ra
     /** Global rank profiles, aka models */
     private final RankProfileList rankProfileList;
 
-    public ContainerModelEvaluation(ContainerCluster cluster, RankProfileList rankProfileList) {
+    public ContainerModelEvaluation(ApplicationContainerCluster cluster, RankProfileList rankProfileList) {
         this.rankProfileList = Objects.requireNonNull(rankProfileList, "rankProfileList cannot be null");
         cluster.addSimpleComponent(EVALUATOR_NAME, null, BUNDLE_NAME);
         cluster.addComponent(ContainerModelEvaluation.getHandler());
     }
 
-    public void prepare(List<Container> containers) {
+    public void prepare(List<ApplicationContainer> containers) {
         rankProfileList.sendConstantsTo(containers);
     }
 

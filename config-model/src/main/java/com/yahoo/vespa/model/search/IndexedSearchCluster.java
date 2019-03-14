@@ -202,7 +202,7 @@ public class IndexedSearchCluster extends SearchCluster
      * @param tldParent the indexed search cluster the tlds to add should be connected to
      * @param containerCluster the container cluster that should use the tlds created for searching the indexed search cluster above
      */
-    public void addTldsWithSameIdsAsContainers(DeployLogger deployLogger, AbstractConfigProducer tldParent, ContainerCluster containerCluster) {
+    public void addTldsWithSameIdsAsContainers(DeployLogger deployLogger, AbstractConfigProducer tldParent, ContainerCluster<? extends Container> containerCluster) {
         for (Container container : containerCluster.getContainers()) {
             String containerSubId = container.getSubId();
             if ( ! containerSubId.contains(".")) {

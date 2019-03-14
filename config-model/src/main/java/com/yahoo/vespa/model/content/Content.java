@@ -22,12 +22,12 @@ import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerImpl;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
-import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
@@ -55,7 +55,7 @@ public class Content extends ConfigModel {
     private static final Logger log = Logger.getLogger(Content.class.getName());
 
     private ContentCluster cluster;
-    private Optional<ContainerCluster> ownedIndexingCluster = Optional.empty();
+    private Optional<ApplicationContainerCluster> ownedIndexingCluster = Optional.empty();
     private final boolean isHosted;
 
     // Dependencies to other models
@@ -79,7 +79,7 @@ public class Content extends ConfigModel {
      * Returns indexing cluster implicitly created by this,
      * or empty if an explicit cluster is used (or if called before the build phase)
      */
-    public Optional<ContainerCluster> ownedIndexingCluster() { return ownedIndexingCluster; }
+    public Optional<ApplicationContainerCluster> ownedIndexingCluster() { return ownedIndexingCluster; }
 
     public void createTlds(DeployLogger deployLogger, ConfigModelRepo modelRepo) {
         IndexedSearchCluster indexedCluster = cluster.getSearch().getIndexed();
@@ -89,7 +89,7 @@ public class Content extends ConfigModel {
         for (ConfigModel model : modelRepo.asMap().values()) {
             if ( ! (model instanceof ContainerModel)) continue;
 
-            ContainerCluster containerCluster = ((ContainerModel) model).getCluster();
+            ContainerCluster<? extends Container> containerCluster = ((ContainerModel) model).getCluster();
             if (containerCluster.getSearch() == null) continue; // this is not a qrs cluster
 
             log.log(LogLevel.DEBUG, "Adding tlds for indexed cluster " + indexedCluster.getClusterName() + ", container cluster " + containerCluster.getName());
@@ -307,25 +307,24 @@ public class Content extends ConfigModel {
             AbstractConfigProducer parent = root.getChildren().get(ContainerModel.DOCPROC_RESERVED_NAME);
             if (parent == null)
                 parent = new SimpleConfigProducer(root, ContainerModel.DOCPROC_RESERVED_NAME);
-            ContainerCluster indexingCluster = new ContainerCluster(parent, "cluster." + indexerName, indexerName, modelContext.getDeployState());
+            ApplicationContainerCluster indexingCluster = new ApplicationContainerCluster(parent, "cluster." + indexerName, indexerName, modelContext.getDeployState());
             ContainerModel indexingClusterModel = new ContainerModel(modelContext.withParent(parent).withId(indexingCluster.getSubId()));
             indexingClusterModel.setCluster(indexingCluster);
             modelContext.getConfigModelRepoAdder().add(indexingClusterModel);
             content.ownedIndexingCluster = Optional.of(indexingCluster);
 
-            ContainerModelBuilder.addDefaultHandler_legacyBuilder(indexingCluster);
-
+            indexingCluster.addDefaultHandlersWithVip();
             addDocproc(indexingCluster);
 
-            List<Container> nodes = new ArrayList<>();
+            List<ApplicationContainer> nodes = new ArrayList<>();
             int index = 0;
             Set<HostResource> processedHosts = new LinkedHashSet<>();
             for (SearchNode searchNode : cluster.getSearchNodes()) {
                 HostResource host = searchNode.getHostResource();
                 if (!processedHosts.contains(host)) {
                     String containerName = String.valueOf(searchNode.getDistributionKey());
-                    Container docprocService = new ContainerImpl(indexingCluster, containerName, index,
-                                                                 modelContext.getDeployState().isHosted());
+                    ApplicationContainer docprocService = new ApplicationContainer(indexingCluster, containerName, index,
+                                                                                   modelContext.getDeployState().isHosted());
                     index++;
                     docprocService.useDynamicPorts();
                     docprocService.setHostResource(host);

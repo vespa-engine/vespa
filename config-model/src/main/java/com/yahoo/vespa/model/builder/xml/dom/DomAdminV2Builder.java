@@ -15,10 +15,8 @@ import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
-import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerClusterVerifier;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilder;
-import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import org.w3c.dom.Element;
 
@@ -83,7 +81,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         return new LogserverBuilder().build(deployState, admin, logserverE);
     }
 
-    private ContainerCluster addConfiguredClusterControllers(DeployState deployState, AbstractConfigProducer parent, Element admin) {
+    private ClusterControllerContainerCluster addConfiguredClusterControllers(DeployState deployState, AbstractConfigProducer parent, Element admin) {
         Element controllersElements = XML.getChild(admin, "cluster-controllers");
         if (controllersElements == null) return null;
 
@@ -94,13 +92,12 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         if (standaloneZooKeeper) {
             parent = new ClusterControllerCluster(parent, "standalone");
         }
-        ContainerCluster cluster = new ContainerCluster(parent,
-                                                        "cluster-controllers",
-                                                        "cluster-controllers",
-                                                        new ClusterControllerClusterVerifier(), deployState);
-        ContainerModelBuilder.addDefaultHandler_legacyBuilder(cluster);
+        var cluster = new ClusterControllerContainerCluster(parent,
+                                                            "cluster-controllers",
+                                                            "cluster-controllers",
+                                                            deployState);
 
-        List<Container> containers = new ArrayList<>();
+        List<ClusterControllerContainer> containers = new ArrayList<>();
 
         for (Element controller : controllers) {
             ClusterControllerContainer clusterController = new ClusterControllerBuilder(containers.size(), standaloneZooKeeper).build(deployState, cluster, controller);

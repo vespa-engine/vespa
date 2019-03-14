@@ -18,6 +18,8 @@ import java.util.TreeMap;
 /**
  * A model of a container cluster.
  *
+ * TODO: Add type parameter for CLUSTER instead of using wildcard '? extends Container'
+ *
  * @author Tony Vaagenes
  */
 public class ContainerModel extends ConfigModel {
@@ -25,15 +27,15 @@ public class ContainerModel extends ConfigModel {
     // TODO: Move to referer
     public static final String DOCPROC_RESERVED_NAME = "docproc";
 
-    private ContainerCluster containerCluster;
+    private ContainerCluster<? extends Container> containerCluster;
 
     public ContainerModel(ConfigModelContext context) {
         super(context);
     }
 
-    public void setCluster(ContainerCluster containerCluster) { this.containerCluster = containerCluster; }
+    public void setCluster(ContainerCluster<? extends Container> containerCluster) { this.containerCluster = containerCluster; }
 
-    public ContainerCluster getCluster() { return containerCluster; }
+    public ContainerCluster<? extends Container> getCluster() { return containerCluster; }
 
     @Override
     public void prepare(ConfigModelRepo plugins, DeployState deployState) {

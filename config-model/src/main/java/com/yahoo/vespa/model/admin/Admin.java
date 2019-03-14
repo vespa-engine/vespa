@@ -16,6 +16,7 @@ import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.ConfigSentinel;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Logd;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
@@ -64,12 +65,12 @@ public class Admin extends AbstractConfigProducer implements Serializable {
      * The single cluster controller cluster shared by all content clusters by default when not multitenant.
      * If multitenant, this is null.
      */
-    private ContainerCluster clusterControllers;
+    private ClusterControllerContainerCluster clusterControllers;
 
     /**
      * Cluster for container that might be running on logserver hosts
      */
-    private Optional<ContainerCluster> logServerContainerCluster = Optional.empty();
+    private Optional<LogserverContainerCluster> logServerContainerCluster = Optional.empty();
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
     private FileDistributionConfigProducer fileDistribution;
@@ -125,16 +126,16 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         this.slobroks.addAll(slobroks);
     }
 
-    public ContainerCluster getClusterControllers() { return clusterControllers; }
+    public ClusterControllerContainerCluster getClusterControllers() { return clusterControllers; }
 
-    public void setClusterControllers(ContainerCluster clusterControllers) {
+    public void setClusterControllers(ClusterControllerContainerCluster clusterControllers) {
         if (multitenant) throw new RuntimeException("Should not use admin cluster controller in a multitenant environment");
         this.clusterControllers = clusterControllers;
     }
 
-    public Optional<ContainerCluster> getLogServerContainerCluster() { return logServerContainerCluster; }
+    public Optional<LogserverContainerCluster> getLogServerContainerCluster() { return logServerContainerCluster; }
 
-    public void setLogserverContainerCluster(ContainerCluster logServerContainerCluster) {
+    public void setLogserverContainerCluster(LogserverContainerCluster logServerContainerCluster) {
         this.logServerContainerCluster = Optional.of(logServerContainerCluster);
     }
 

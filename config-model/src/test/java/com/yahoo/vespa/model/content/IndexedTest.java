@@ -9,7 +9,7 @@ import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.routing.Routing;
@@ -277,7 +277,7 @@ public class IndexedTest extends ContentBaseTest {
     @Test
     public void requireThatIndexingDocprocGetsConfigIdBasedOnDistributionKey() {
         VespaModel model = getIndexedVespaModel();
-        ContainerCluster cluster = model.getContainerClusters().get("jdisc");
+        ApplicationContainerCluster cluster = model.getContainerClusters().get("jdisc");
         assertEquals("jdisc/container.0", cluster.getContainers().get(0).getConfigId());
     }
 }
