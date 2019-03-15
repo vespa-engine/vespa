@@ -133,4 +133,11 @@ public class SystemStateBroadcasterTest {
 
         // TODO
     }
+
+    /*
+    TODO test
+      - activation not sent before distributors have acked
+      - activation not sent if two phase activation is disabled
+     */
+
 }

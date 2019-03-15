@@ -75,7 +75,7 @@ public class ClusterStateBundle {
 
         public ClusterStateBundle deriveAndBuild() {
             if ((stateDeriver == null || bucketSpaces == null || bucketSpaces.isEmpty()) && explicitDerivedStates == null) {
-                return ClusterStateBundle.ofBaselineOnly(baselineState);
+                return ClusterStateBundle.ofBaselineOnly(baselineState, deferredActivation);
             }
             Map<String, AnnotatedClusterState> derived;
             if (explicitDerivedStates != null) {
@@ -148,7 +148,7 @@ public class ClusterStateBundle {
         Map<String, AnnotatedClusterState> clonedDerived = derivedBucketSpaceStates.entrySet().stream()
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().cloneWithClusterState(
                         mapper.apply(e.getValue().getClusterState().clone()))));
-        return new ClusterStateBundle(clonedBaseline, clonedDerived);
+        return new ClusterStateBundle(clonedBaseline, clonedDerived, deferredActivation);
     }
 
     public ClusterStateBundle clonedWithVersionSet(int version) {

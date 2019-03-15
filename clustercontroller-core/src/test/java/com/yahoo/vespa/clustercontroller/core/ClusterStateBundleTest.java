@@ -4,8 +4,11 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.state.*;
 import org.junit.Test;
 
+import java.util.function.Function;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -115,6 +118,29 @@ public class ClusterStateBundleTest {
     public void can_build_bundle_with_deferred_activation_disabled() {
         var bundle = createTestBundleBuilder(false).deferredActivation(false).deriveAndBuild();
         assertFalse(bundle.deferredActivation());
+    }
+
+    @Test
+    public void simple_bundle_without_derived_states_propagates_deferred_activation_flag() {
+        var bundle = ClusterStateBundle
+                .builder(annotatedStateOf("distributor:2 storage:2"))
+                .deferredActivation(false) // defaults to true
+                .deriveAndBuild();
+        assertFalse(bundle.deferredActivation());
+    }
+
+    @Test
+    public void cloning_preserves_false_deferred_activation_flag() {
+        var bundle = createTestBundleBuilder(true).deferredActivation(false).deriveAndBuild();
+        var derived = bundle.cloneWithMapper(Function.identity());
+        assertEquals(bundle, derived);
+    }
+
+    @Test
+    public void cloning_preserves_true_deferred_activation_flag() {
+        var bundle = createTestBundleBuilder(true).deferredActivation(true).deriveAndBuild();
+        var derived = bundle.cloneWithMapper(Function.identity());
+        assertEquals(bundle, derived);
     }
 
 }

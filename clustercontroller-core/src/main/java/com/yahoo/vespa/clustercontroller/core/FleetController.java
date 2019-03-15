@@ -841,7 +841,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             final ClusterStateBundle candidateBundle = ClusterStateBundle.builder(candidate)
                     .bucketSpaces(configuredBucketSpaces)
                     .stateDeriver(createBucketSpaceStateDeriver())
-                    .deferredActivation(true)
+                    .deferredActivation(options.enableTwoPhaseClusterStateActivation)
                     .deriveAndBuild();
             stateVersionTracker.updateLatestCandidateStateBundle(candidateBundle);
             invokeCandidateStateListeners(candidateBundle);

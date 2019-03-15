@@ -180,10 +180,6 @@ public class SystemStateBroadcaster {
         return (node.getClusterStateVersionActivationSent() == clusterStateBundle.getVersion());
     }
 
-    private static boolean twoPhaseTransitionEnabled(FleetController controller) {
-        return controller.getOptions().enableTwoPhaseClusterStateActivation;
-    }
-
     /**
      * Checks if all distributor nodes have ACKed (and activated) the most recent cluster state.
      * Iff this is the case, triggers handleAllDistributorsInSync() on the provided FleetController
@@ -202,7 +198,7 @@ public class SystemStateBroadcaster {
 
         if (!anyDistributorsNeedStateBundle && (currentStateVersion > lastStateVersionBundleAcked)) {
             markCurrentClusterStateBundleAsReceivedByAllDistributors();
-            if (twoPhaseTransitionEnabled(fleetController)) {
+            if (clusterStateBundle.deferredActivation()) {
                 log.log(LogLevel.INFO, () -> String.format("All distributors have ACKed cluster state " + // TODO log level
                         "version %d, sending activation", currentStateVersion));
             } else {
@@ -211,7 +207,7 @@ public class SystemStateBroadcaster {
             return; // Either converged (no two-phase) or activations must be sent before we can continue.
         }
 
-        if (anyDistributorsNeedStateBundle || !twoPhaseTransitionEnabled(fleetController)) {
+        if (anyDistributorsNeedStateBundle || !clusterStateBundle.deferredActivation()) {
             return;
         }
 
