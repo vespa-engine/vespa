@@ -99,7 +99,7 @@ public class Path {
      */
     public boolean matches(String pathSpec) {
         if (matches_inner(pathSpec)) return true;
-        if (optionalPrefix.isEmpty() || optionalPrefix.length() > pathSpec.length()) return false;
+        if (optionalPrefix.isEmpty()) return false;
         return  matches_inner(optionalPrefix + pathSpec);
     }
 
