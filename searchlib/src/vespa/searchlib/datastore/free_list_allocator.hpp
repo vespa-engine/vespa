@@ -75,7 +75,7 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(ConstArrayRef array)
     }
     BufferState &state = *freeListList._head;
     assert(state.isActive());
-    assert(state.getClusterSize() == array.size());
+    assert(state.getArraySize() == array.size());
     RefT ref(state.popFreeList());
     EntryT *buf = _store.template getBufferEntry<EntryT>(ref.bufferId(), ref.offset() * array.size());
     for (size_t i = 0; i < array.size(); ++i) {
@@ -94,7 +94,7 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(size_t size)
     }
     BufferState &state = *freeListList._head;
     assert(state.isActive());
-    assert(state.getClusterSize() == size);
+    assert(state.getArraySize() == size);
     RefT ref(state.popFreeList());
     EntryT *buf = _store.template getBufferEntry<EntryT>(ref.bufferId(), ref.offset() * size);
     return HandleType(ref, buf);

@@ -19,7 +19,7 @@ namespace search::tensor {
 
 namespace {
 
-constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
+constexpr size_t MIN_BUFFER_ARRAYS = 1024;
 constexpr size_t DENSE_TENSOR_ALIGNMENT = 32;
 
 }
@@ -39,7 +39,7 @@ DenseTensorStore::TensorSizeCalc::TensorSizeCalc(const ValueType &type)
 }
 
 size_t
-DenseTensorStore::TensorSizeCalc::clusterSize() const
+DenseTensorStore::TensorSizeCalc::arraySize() const
 {
     size_t tensorSize = _numBoundCells * _cellSize + 
                         _numUnboundDims * sizeof(uint32_t);
@@ -47,7 +47,7 @@ DenseTensorStore::TensorSizeCalc::clusterSize() const
 }
 
 DenseTensorStore::BufferType::BufferType(const TensorSizeCalc &tensorSizeCalc)
-    : datastore::BufferType<char>(tensorSizeCalc.clusterSize(), MIN_BUFFER_CLUSTERS, RefType::offsetSize()),
+    : datastore::BufferType<char>(tensorSizeCalc.arraySize(), MIN_BUFFER_ARRAYS, RefType::offsetSize()),
       _unboundDimSizesSize(tensorSizeCalc._numUnboundDims * sizeof(uint32_t))
 {}
 
@@ -94,7 +94,7 @@ const void *
 DenseTensorStore::getRawBuffer(RefType ref) const
 {
     return _store.getBufferEntry<char>(ref.bufferId(),
-                                       ref.offset() * _bufferType.getClusterSize());
+                                       ref.offset() * _bufferType.getArraySize());
 }
 
 

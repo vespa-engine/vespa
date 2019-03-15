@@ -14,7 +14,7 @@ typedef CompactDocumentWordsStore::Builder Builder;
 
 namespace {
 
-constexpr size_t MIN_CLUSTERS = 1024u;
+constexpr size_t MIN_BUFFER_ARRAYS = 1024u;
 
 size_t
 getSerializedSize(const Builder &builder)
@@ -94,7 +94,7 @@ CompactDocumentWordsStore::Iterator::operator++()
 CompactDocumentWordsStore::Store::Store()
     : _store(),
       _type(1,
-            MIN_CLUSTERS,
+            MIN_BUFFER_ARRAYS,
             RefType::offsetSize()),
       _typeId(0)
 {

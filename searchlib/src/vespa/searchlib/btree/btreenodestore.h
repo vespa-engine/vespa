@@ -22,11 +22,11 @@ class BTreeNodeBufferType : public datastore::BufferType<EntryType>
 {
     typedef datastore::BufferType<EntryType> ParentType;
     using ParentType::_emptyEntry;
-    using ParentType::_clusterSize;
+    using ParentType::_arraySize;
     using CleanContext = typename ParentType::CleanContext;
 public:
-    BTreeNodeBufferType(uint32_t minClusters, uint32_t maxClusters)
-        : ParentType(1, minClusters, maxClusters)
+    BTreeNodeBufferType(uint32_t minArrays, uint32_t maxArrays)
+        : ParentType(1, minArrays, maxArrays)
     {
         _emptyEntry.freeze();
     }
@@ -62,7 +62,7 @@ public:
 
 
 private:
-    static constexpr size_t MIN_CLUSTERS = 128u;
+    static constexpr size_t MIN_BUFFER_ARRAYS = 128u;
     DataStoreType _store;
     BTreeNodeBufferType<InternalNodeType> _internalNodeType;
     BTreeNodeBufferType<LeafNodeType> _leafNodeType;

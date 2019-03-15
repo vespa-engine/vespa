@@ -9,8 +9,6 @@
 
 namespace search::datastore {
 
-constexpr size_t MIN_BUFFER_CLUSTERS = 8192;
-
 template <typename EntryT, typename RefT>
 ArrayStore<EntryT, RefT>::LargeArrayType::LargeArrayType(const AllocSpec &spec)
     : BufferType<LargeArray>(1, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer, spec.allocGrowFactor)

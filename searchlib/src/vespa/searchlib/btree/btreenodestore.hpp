@@ -39,8 +39,8 @@ template <typename KeyT, typename DataT, typename AggrT,
 BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
 BTreeNodeStore()
     : _store(),
-      _internalNodeType(MIN_CLUSTERS, RefType::offsetSize()),
-      _leafNodeType(MIN_CLUSTERS, RefType::offsetSize())
+      _internalNodeType(MIN_BUFFER_ARRAYS, RefType::offsetSize()),
+      _leafNodeType(MIN_BUFFER_ARRAYS, RefType::offsetSize())
 {
     _store.addType(&_internalNodeType);
     _store.addType(&_leafNodeType);

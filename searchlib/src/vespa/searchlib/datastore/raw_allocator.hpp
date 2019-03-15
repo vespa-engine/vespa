@@ -29,10 +29,10 @@ RawAllocator<EntryT, RefT>::alloc(size_t numElems, size_t extraElems)
         // AlignedEntryRef constructor scales down offset by alignment
         return HandleType(RefT(oldBufferSize, activeBufferId), buffer);
     } else {
-        // Must perform scaling ourselves, according to cluster size
-        size_t clusterSize = state.getClusterSize();
-        assert((numElems % clusterSize) == 0u);
-        return HandleType(RefT(oldBufferSize / clusterSize, activeBufferId), buffer);
+        // Must perform scaling ourselves, according to array size
+        size_t arraySize = state.getArraySize();
+        assert((numElems % arraySize) == 0u);
+        return HandleType(RefT(oldBufferSize / arraySize, activeBufferId), buffer);
     }
 }
 

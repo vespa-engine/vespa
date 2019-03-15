@@ -67,7 +67,7 @@ public:
 using GrowthStats = std::vector<int>;
 
 constexpr float ALLOC_GROW_FACTOR = 0.4;
-constexpr size_t HUGE_PAGE_CLUSTER_SIZE = (MemoryAllocator::HUGEPAGE_SIZE / sizeof(int));
+constexpr size_t HUGE_PAGE_ARRAY_SIZE = (MemoryAllocator::HUGEPAGE_SIZE / sizeof(int));
 
 template <typename DataType, typename RefType>
 class GrowStore
@@ -78,10 +78,10 @@ class GrowStore
     BufferType<DataType> _type;
     uint32_t _typeId;
 public:
-    GrowStore(size_t clusterSize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
+    GrowStore(size_t arraySize, size_t minArrays, size_t maxArrays, size_t numArraysForNewBuffer)
         : _store(),
-          _firstType(1, 1, maxClusters, 0, ALLOC_GROW_FACTOR),
-          _type(clusterSize, minClusters, maxClusters, numClustersForNewBuffer, ALLOC_GROW_FACTOR),
+          _firstType(1, 1, maxArrays, 0, ALLOC_GROW_FACTOR),
+          _type(arraySize, minArrays, maxArrays, numArraysForNewBuffer, ALLOC_GROW_FACTOR),
           _typeId(0)
     {
         (void) _store.addType(&_firstType);
@@ -97,9 +97,9 @@ public:
         GrowthStats sizes;
         int prevBufferId = -1;
         while (sizes.size() < bufs) {
-            RefType iRef = (_type.getClusterSize() == 1) ?
+            RefType iRef = (_type.getArraySize() == 1) ?
                            (_store.template allocator<DataType>(_typeId).alloc().ref) :
-                           (_store.template allocator<DataType>(_typeId).allocArray(_type.getClusterSize()).ref);
+                           (_store.template allocator<DataType>(_typeId).allocArray(_type.getArraySize()).ref);
             int bufferId = iRef.bufferId();
             if (bufferId != prevBufferId) {
                 if (prevBufferId >= 0) {
@@ -505,11 +505,11 @@ namespace {
 void assertGrowStats(GrowthStats expSizes,
                      GrowthStats expFirstBufSizes,
                      size_t expInitMemUsage,
-                     size_t minClusters, size_t numClustersForNewBuffer, size_t maxClusters = 128)
+                     size_t minArrays, size_t numArraysForNewBuffer, size_t maxArrays = 128)
 {
-    EXPECT_EQ(expSizes, IntGrowStore(1, minClusters, maxClusters, numClustersForNewBuffer).getGrowthStats(expSizes.size()));
-    EXPECT_EQ(expFirstBufSizes, IntGrowStore(1, minClusters, maxClusters, numClustersForNewBuffer).getFirstBufGrowStats());
-    EXPECT_EQ(expInitMemUsage, IntGrowStore(1, minClusters, maxClusters, numClustersForNewBuffer).getMemoryUsage().allocatedBytes());
+    EXPECT_EQ(expSizes, IntGrowStore(1, minArrays, maxArrays, numArraysForNewBuffer).getGrowthStats(expSizes.size()));
+    EXPECT_EQ(expFirstBufSizes, IntGrowStore(1, minArrays, maxArrays, numArraysForNewBuffer).getFirstBufGrowStats());
+    EXPECT_EQ(expInitMemUsage, IntGrowStore(1, minArrays, maxArrays, numArraysForNewBuffer).getMemoryUsage().allocatedBytes());
 }
 
 }
@@ -536,10 +536,10 @@ TEST(DataStoreTest, require_that_buffer_growth_works)
                     { 0, 1 }, 4, 0, 0);
 
     // Buffers with sizes larger than the huge page size of the mmap allocator.
-    ASSERT_EQ(524288u, HUGE_PAGE_CLUSTER_SIZE);
+    ASSERT_EQ(524288u, HUGE_PAGE_ARRAY_SIZE);
     assertGrowStats({ 262144, 262144, 262144, 524288, 524288, 524288 * 2, 524288 * 3, 524288 * 4, 524288 * 5, 524288 * 5 },
                     { 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 },
-                    4, 0, HUGE_PAGE_CLUSTER_SIZE / 2, HUGE_PAGE_CLUSTER_SIZE * 5);
+                    4, 0, HUGE_PAGE_ARRAY_SIZE / 2, HUGE_PAGE_ARRAY_SIZE * 5);
 }
 
 using RefType15 = EntryRefT<15>; // offsetSize=32768
@@ -547,12 +547,12 @@ using RefType15 = EntryRefT<15>; // offsetSize=32768
 namespace {
 
 template <typename DataType>
-void assertGrowStats(GrowthStats expSizes, uint32_t clusterSize)
+void assertGrowStats(GrowthStats expSizes, uint32_t arraySize)
 {
-    uint32_t minClusters = 2048;
-    uint32_t maxClusters = RefType15::offsetSize();
-    uint32_t numClustersForNewBuffer = 2048;
-    GrowStore<DataType, RefType15> store(clusterSize, minClusters, maxClusters, numClustersForNewBuffer);
+    uint32_t minArrays = 2048;
+    uint32_t maxArrays = RefType15::offsetSize();
+    uint32_t numArraysForNewBuffer = 2048;
+    GrowStore<DataType, RefType15> store(arraySize, minArrays, maxArrays, numArraysForNewBuffer);
     EXPECT_EQ(expSizes, store.getGrowthStats(expSizes.size()));
 }
 
@@ -562,14 +562,14 @@ TEST(DataStoreTest, require_that_offset_in_EntryRefT_is_within_bounds_when_alloc
 {
     /*
      * When allocating new memory buffers for the data store the following happens (ref. calcAllocation() in bufferstate.cpp):
-     *   1) Calculate how many clusters to alloc.
+     *   1) Calculate how many arrays to alloc.
      *      In this case we alloc a minimum of 2048 and a maximum of 32768.
-     *   2) Calculate how many bytes to alloc: clustersToAlloc * clusterSize * elementSize.
-     *      In this case elementSize is (1 or 4) and clusterSize varies (3, 5, 7).
+     *   2) Calculate how many bytes to alloc: arraysToAlloc * arraySize * elementSize.
+     *      In this case elementSize is (1 or 4) and arraySize varies (3, 5, 7).
      *   3) Round up bytes to alloc to match the underlying allocator (power of 2 if less than huge page size):
      *      After this we might end up with more bytes than the offset in EntryRef can handle. In this case this is 32768.
      *   4) Cap bytes to alloc to the max offset EntryRef can handle.
-     *      The max bytes to alloc is: maxClusters * clusterSize * elementSize.
+     *      The max bytes to alloc is: maxArrays * arraySize * elementSize.
      */
     assertGrowStats<uint8_t>({8192,8192,8192,16384,16384,32768,65536,65536,98304,98304,98304,98304}, 3);
     assertGrowStats<uint8_t>({16384,16384,16384,32768,32768,65536,131072,131072,163840,163840,163840,163840}, 5);

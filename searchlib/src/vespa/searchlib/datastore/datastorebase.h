@@ -142,11 +142,11 @@ protected:
     ElemHold2List _elemHold2List;
 
     const uint32_t _numBuffers;
-    const size_t   _maxClusters;
+    const size_t   _maxArrays;
 
     vespalib::GenerationHolder _genHolder;
 
-    DataStoreBase(uint32_t numBuffers, size_t maxClusters);
+    DataStoreBase(uint32_t numBuffers, size_t maxArrays);
     DataStoreBase(const DataStoreBase &) = delete;
     DataStoreBase &operator=(const DataStoreBase &) = delete;
 

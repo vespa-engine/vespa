@@ -32,7 +32,7 @@ DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t len)
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
     if (state.isActive()) {
-        if (state.freeListList() != NULL && len == state.getClusterSize()) {
+        if (state.freeListList() != NULL && len == state.getArraySize()) {
             if (state.freeList().empty()) {
                 state.addToFreeListList();
             }
@@ -44,7 +44,7 @@ DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t len)
     state.incDeadElems(len);
     state.cleanHold(getBuffer(intRef.bufferId()),
                     (intRef.offset() / RefType::align(1)) *
-                    state.getClusterSize(), len);
+                    state.getArraySize(), len);
 }
 
 

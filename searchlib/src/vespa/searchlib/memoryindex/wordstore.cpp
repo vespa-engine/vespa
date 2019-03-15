@@ -5,13 +5,13 @@
 
 namespace search::memoryindex {
 
-constexpr size_t MIN_CLUSTERS = 1024;
+constexpr size_t MIN_BUFFER_ARRAYS = 1024;
 
 WordStore::WordStore()
     : _store(),
       _numWords(0),
       _type(RefType::align(1),
-            MIN_CLUSTERS,
+            MIN_BUFFER_ARRAYS,
             RefType::offsetSize() / RefType::align(1)),
       _typeId(0)
 {

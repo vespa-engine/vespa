@@ -37,7 +37,7 @@ public:
         uint32_t _cellSize; // size of a cell (e.g. double => 8)
         
         TensorSizeCalc(const ValueType &type);
-        size_t clusterSize() const;
+        size_t arraySize() const;
     };
 
     class BufferType : public datastore::BufferType<char>
@@ -54,7 +54,7 @@ public:
             size += alignment - 1;
             return (size - (size % alignment));
         }
-        size_t align(size_t size) const { return align(size, _clusterSize); }
+        size_t align(size_t size) const { return align(size, _arraySize); }
     };
 private:
     DataStoreType _concreteStore;
@@ -89,7 +89,7 @@ public:
     void getTensor(EntryRef ref, vespalib::tensor::MutableDenseTensorView &tensor) const;
     EntryRef setTensor(const Tensor &tensor);
     // The following method is meant to be used only for unit tests.
-    uint32_t getClusterSize() const { return _bufferType.getClusterSize(); }
+    uint32_t getArraySize() const { return _bufferType.getArraySize(); }
 };
 
 }
