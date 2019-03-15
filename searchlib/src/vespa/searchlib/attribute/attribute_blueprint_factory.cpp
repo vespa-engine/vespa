@@ -172,7 +172,8 @@ public:
             _should_use = true;
         }
         HitEstimate estimate(estHits, estHits == 0);
-        setEstimate(estimate);        
+        setEstimate(estimate);
+        set_allow_termwise_eval(true);
     }
 
     bool should_use() const { return _should_use; }

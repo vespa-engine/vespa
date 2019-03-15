@@ -2,8 +2,7 @@
 
 #include "ranksearch.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 void
 RankSearch::doSeek(uint32_t docid)
@@ -59,5 +58,4 @@ RankSearch::create(const RankSearch::Children &children, bool strict) {
     }
 }
 
-}  // namespace queryeval
-}  // namespace search
+}
