@@ -25,7 +25,6 @@ public class CommandLineOptions {
 
     public static final String HELP_OPTION = "help";
     public static final String PRINTIDS_OPTION = "printids";
-    public static final String HEADERSONLY_OPTION = "headersonly";
     public static final String FIELDSET_OPTION = "fieldset";
     public static final String CLUSTER_OPTION = "cluster";
     public static final String ROUTE_OPTION = "route";
@@ -65,11 +64,6 @@ public class CommandLineOptions {
                 .desc("Show only identifiers of retrieved documents.")
                 .longOpt(PRINTIDS_OPTION)
                 .build());
-
-        options.addOption(Option.builder("e")
-                .hasArg(false)
-                .desc("Retrieve header fields only. [Removed in Vespa 7].")
-                .longOpt(HEADERSONLY_OPTION).build());
 
         options.addOption(Option.builder("f")
                 .hasArg(true)
@@ -160,7 +154,6 @@ public class CommandLineOptions {
             CommandLine cl = clp.parse(options, args);
 
             boolean printIdsOnly = cl.hasOption(PRINTIDS_OPTION);
-            boolean headersOnly = cl.hasOption(HEADERSONLY_OPTION);
             String fieldSet = cl.getOptionValue(FIELDSET_OPTION, "");
             String cluster = cl.getOptionValue(CLUSTER_OPTION, "");
             String route = cl.getOptionValue(ROUTE_OPTION, "");
@@ -180,9 +173,6 @@ public class CommandLineOptions {
                 throw new IllegalArgumentException("Cannot combine both xml and json output");
             }
 
-            if (headersOnly) {
-                throw new IllegalArgumentException("Headers only option has been removed.");
-            }
             if (printIdsOnly && !fieldSet.isEmpty()) {
                 throw new IllegalArgumentException("Field set option can not be used in combination with print ids option.");
             }

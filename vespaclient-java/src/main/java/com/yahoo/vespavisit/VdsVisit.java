@@ -189,8 +189,6 @@ public class VdsVisit {
                 .desc("Only visit up to the given timestamp (microseconds).")
                 .type(Number.class).build());
 
-        options.addOption("e", "headersonly", false, "Only visit headers of documents.[Removed in Vespa 7]");
-
         options.addOption(Option.builder("l")
                 .longOpt("fieldset")
                 .hasArg(true)
