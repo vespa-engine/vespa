@@ -3,19 +3,20 @@ package com.yahoo.vespa.hosted.controller.permits;
 import com.yahoo.config.provision.ApplicationId;
 
 import java.security.Principal;
-import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Wraps the permit data of an Okta application modification.
  */
-public class OktaApplicationPermit {
+public class CloudApplicationPermit {
 
     private final ApplicationId application;
     private final Principal user;
 
-    public OktaApplicationPermit(ApplicationId application, Principal user) {
-        this.application = Objects.requireNonNull(application);
-        this.user = Objects.requireNonNull(user);
+    public CloudApplicationPermit(ApplicationId application, Principal user) {
+        this.application = requireNonNull(application);
+        this.user = requireNonNull(user);
     }
 
     public ApplicationId application() { return application; }

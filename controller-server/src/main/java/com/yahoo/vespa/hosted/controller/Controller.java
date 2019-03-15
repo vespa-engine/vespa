@@ -28,7 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
+import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -79,7 +79,7 @@ public class Controller extends AbstractComponent {
     private final ConfigServer configServer;
     private final MetricsService metricsService;
     private final Chef chef;
-    private final ZmsClientFacade zmsClient;
+    private final AthenzFacade zmsClient;
     private final Mailer mailer;
     private final AuditLogger auditLogger;
 
@@ -89,11 +89,10 @@ public class Controller extends AbstractComponent {
      * @param curator the curator instance storing the persistent state of the controller.
      */
     @Inject
-    public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
-                      GitHub gitHub, EntityService entityService,
-                      ZoneRegistry zoneRegistry, ConfigServer configServer,
-                      MetricsService metricsService, NameService nameService,
-                      RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
+    public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub, EntityService entityService,
+                      ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
+                      NameService nameService, RoutingGenerator routingGenerator, Chef chef,
+                      AthenzClientFactory athenzClientFactory,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer) {
         this(curator, rotationsConfig,
@@ -122,11 +121,11 @@ public class Controller extends AbstractComponent {
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
         this.chef = Objects.requireNonNull(chef, "Chef cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
-        this.zmsClient = new ZmsClientFacade(athenzClientFactory.createZmsClient(), athenzClientFactory.getControllerIdentity());
+        this.zmsClient = new AthenzFacade(athenzClientFactory);
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
-        applicationController = new ApplicationController(this, curator, athenzClientFactory,
+        applicationController = new ApplicationController(this, curator, zmsClient,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
                                                           Objects.requireNonNull(nameService, "NameService cannot be null"),
                                                           configServer,
@@ -135,7 +134,7 @@ public class Controller extends AbstractComponent {
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);
-        tenantController = new TenantController(this, curator, athenzClientFactory);
+        tenantController = new TenantController(this, curator, zmsClient);
         auditLogger = new AuditLogger(curator, clock);
 
         // Record the version of this controller

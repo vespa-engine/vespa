@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.controller.permits;
 
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 
 /**
@@ -10,9 +12,9 @@ import com.yahoo.container.jdisc.HttpRequest;
 public interface PermitExtractor {
 
     /** Extracts permit data for a tenant, from the given request. */
-    TenantPermit getTenantPermit(HttpRequest request);
+    TenantPermit getTenantPermit(TenantName tenant, HttpRequest request);
 
     /** Extracts permit data for an application, from the given request. */
-    ApplicationPermit getApplication(HttpRequest request);
+    ApplicationPermit getApplicationPermit(ApplicationId application, HttpRequest request);
 
 }

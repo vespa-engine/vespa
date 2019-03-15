@@ -46,7 +46,7 @@ public class ApplicationOwnershipConfirmerTest {
         Supplier<Application> propertyApp = () -> tester.controller().applications().require(ApplicationId.from("property", "application", "default"));
 
         UserTenant user = UserTenant.create("by-user", contact);
-        tester.controller().tenants().create(user);
+        tester.controller().tenants().createUser(user);
         tester.createAndDeploy(user.name(), "application", 2, "default");
         Supplier<Application> userApp = () -> tester.controller().applications().require(ApplicationId.from("by-user", "application", "default"));
 

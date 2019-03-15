@@ -19,7 +19,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
+import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -55,7 +55,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 
-    private final ZmsClientFacade zmsClient;
+    private final AthenzFacade athenz;
     private final TenantController tenantController;
 
     @Inject
@@ -63,7 +63,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
                                          Controller controller,
                                          CorsFilterConfig corsConfig) {
         super(corsConfig);
-        this.zmsClient = new ZmsClientFacade(clientFactory.createZmsClient(), clientFactory.getControllerIdentity());
+        this.athenz = new AthenzFacade(clientFactory);
         this.tenantController = controller.tenants();
     }
 
@@ -71,7 +71,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
                                   TenantController tenantController,
                                   Set<String> allowedUrls) {
         super(allowedUrls);
-        this.zmsClient = new ZmsClientFacade(clientFactory.createZmsClient(), clientFactory.getControllerIdentity());;
+        this.athenz = new AthenzFacade(clientFactory);;
         this.tenantController = tenantController;
     }
 
@@ -154,7 +154,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     }
 
     private boolean isHostedOperator(AthenzIdentity identity) {
-        return zmsClient.hasHostedOperatorAccess(identity);
+        return athenz.hasHostedOperatorAccess(identity);
     }
 
     private void verifyIsTenantAdmin(AthenzPrincipal principal, TenantName name) {
@@ -168,7 +168,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {
         if (tenant instanceof AthenzTenant) {
-            return zmsClient.hasTenantAdminAccess(identity, ((AthenzTenant) tenant).domain());
+            return athenz.hasTenantAdminAccess(identity, ((AthenzTenant) tenant).domain());
         } else if (tenant instanceof UserTenant) {
             if (!(identity instanceof AthenzUser)) {
                 return false;
@@ -211,12 +211,12 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private boolean hasDeployerAccess(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application) {
         try {
-            return zmsClient
+            return athenz
                     .hasApplicationAccess(
                             identity,
                             ApplicationAction.deploy,
                             tenantDomain,
-                            new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(application.value()));
+                            application);
         } catch (ZmsClientException e) {
             throw new InternalServerErrorException("Failed to authorize operation:  (" + e.getMessage() + ")", e);
         }

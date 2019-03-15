@@ -100,7 +100,7 @@ public class DnsMaintainerTest {
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
         tester.applications().deactivate(application.id(), ZoneId.from(Environment.test, RegionName.from("us-east-1")));
         tester.applications().deactivate(application.id(), ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
-        tester.applications().deleteApplication(application.id(), Optional.of(new OktaAccessToken("okta-token")));
+        tester.controllerTester().deleteApplication(application.id());
 
         // DnsMaintainer removes records
         for (int i = 0; i < ControllerTester.availableRotations; i++) {

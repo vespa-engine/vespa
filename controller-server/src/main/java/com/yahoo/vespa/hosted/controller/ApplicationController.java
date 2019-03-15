@@ -12,7 +12,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -22,7 +21,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
@@ -48,10 +46,12 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
-import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
+import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
+import com.yahoo.vespa.hosted.controller.permits.ApplicationPermit;
+import com.yahoo.vespa.hosted.controller.permits.PermitStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -104,7 +104,7 @@ public class ApplicationController {
     private final ArtifactRepository artifactRepository;
     private final ApplicationStore applicationStore;
     private final RotationRepository rotationRepository;
-    private final ZmsClientFacade zmsClient;
+    private final PermitStore permits;
     private final NameService nameService;
     private final ConfigServer configServer;
     private final RoutingGenerator routingGenerator;
@@ -113,13 +113,13 @@ public class ApplicationController {
     private final DeploymentTrigger deploymentTrigger;
 
     ApplicationController(Controller controller, CuratorDb curator,
-                          AthenzClientFactory zmsClientFactory, RotationsConfig rotationsConfig,
+                          PermitStore permits, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServer configServer,
                           ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
-        this.zmsClient = new ZmsClientFacade(zmsClientFactory.createZmsClient(), zmsClientFactory.getControllerIdentity());
+        this.permits = permits;
         this.nameService = nameService;
         this.configServer = configServer;
         this.routingGenerator = routingGenerator;
@@ -217,7 +217,7 @@ public class ApplicationController {
      *
      * @throws IllegalArgumentException if the application already exists
      */
-    public Application createApplication(ApplicationId id, Optional<OktaAccessToken> token) {
+    public Application createApplication(ApplicationId id, Optional<ApplicationPermit> permit) {
         if ( ! (id.instance().isDefault())) // TODO: Support instances properly
             throw new IllegalArgumentException("Only the instance name 'default' is supported at the moment");
         if (id.instance().isTester())
@@ -234,12 +234,12 @@ public class ApplicationController {
                 throw new IllegalArgumentException("Could not create '" + id + "': Application already exists");
             if (get(dashToUnderscore(id)).isPresent()) // VESPA-1945
                 throw new IllegalArgumentException("Could not create '" + id + "': Application " + dashToUnderscore(id) + " already exists");
-            if (id.instance().isDefault() && tenant.get() instanceof AthenzTenant) { // Only create the athenz application for "default" instances.
-                if ( ! token.isPresent())
-                    throw new IllegalArgumentException("Could not create '" + id + "': No Okta Access Token provided");
+            if (tenant.get().type() != Tenant.Type.user) {
+                if ( ! permit.isPresent())
+                    throw new IllegalArgumentException("Could not create '" + id + "': No permit provided");
 
-                zmsClient.addApplication(((AthenzTenant) tenant.get()).domain(),
-                                         new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()), token.get());
+                if (id.instance().isDefault()) // Only store the application permits for non-user applications.
+                    permits.createApplication(permit.get());
             }
             LockedApplication application = new LockedApplication(new Application(id, clock.instant()), lock);
             store(application);
@@ -265,6 +265,10 @@ public class ApplicationController {
         if (applicationId.instance().isTester())
             throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
 
+        Tenant tenant = controller.tenants().require(applicationId.tenant());
+        if (tenant.type() == Tenant.Type.user && ! get(applicationId).isPresent())
+            createApplication(applicationId, Optional.empty());
+
         try (Lock deploymentLock = lockForDeployment(applicationId, zone)) {
             Version platformVersion;
             ApplicationVersion applicationVersion;
@@ -273,9 +277,7 @@ public class ApplicationController {
             Set<String> cnames = new HashSet<>();
 
             try (Lock lock = lock(applicationId)) {
-                LockedApplication application = get(applicationId)
-                        .map(app -> new LockedApplication(app, lock))
-                        .orElseGet(() -> new LockedApplication(createApplication(applicationId, Optional.empty()), lock));
+                LockedApplication application = new LockedApplication(require(applicationId), lock);
 
                 boolean manuallyDeployed = options.deployDirectly || zone.environment().isManuallyDeployed();
                 boolean preferOldestVersion = options.deployCurrentVersion;
@@ -540,7 +542,11 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
      * @throws NotExistsException if no instances of the application exist
      */
-    public void deleteApplication(ApplicationId applicationId, Optional<OktaAccessToken> token) {
+    public void deleteApplication(ApplicationId applicationId, Optional<ApplicationPermit> permit) {
+        Tenant tenant = controller.tenants().require(applicationId.tenant());
+        if (tenant.type() != Tenant.Type.user && ! permit.isPresent())
+                throw new IllegalArgumentException("Could not delete application '" + applicationId + "': No permit provided");
+
         // Find all instances of the application
         List<ApplicationId> instances = asList(applicationId.tenant()).stream()
                                                                       .map(Application::id)
@@ -555,21 +561,16 @@ public class ApplicationController {
             if ( ! application.get().deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
 
-            Tenant tenant = controller.tenants().get(id.tenant()).get();
-            if (tenant instanceof AthenzTenant && ! token.isPresent())
-                throw new IllegalArgumentException("Could not delete '" + application + "': No Okta Access Token provided");
-
-            // Only delete in Athenz once
-            if (id.instance().isDefault() && tenant instanceof AthenzTenant) {
-                zmsClient.deleteApplication(((AthenzTenant) tenant).domain(),
-                                                   new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()), token.get());
-            }
             curator.removeApplication(id);
             applicationStore.removeAll(id);
             applicationStore.removeAll(TesterId.of(id));
 
             log.info("Deleted " + application);
         }));
+
+        // Only delete permits once.
+        if (tenant.type() != Tenant.Type.user)
+            permits.deleteApplication(permit.get());
     }
 
     /**
@@ -723,36 +724,29 @@ public class ApplicationController {
      *
      * @param tenantName Tenant where application should be deployed
      * @param applicationPackage Application package
-     * @param deployingIdentity Principal initiating the deployment, possibly empty
+     * @param deployer Principal initiating the deployment, possibly empty
      */
-    public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage, Optional<AthenzIdentity> deployingIdentity) {
-        applicationPackage.deploymentSpec().athenzDomain()
-                          .ifPresent(identityDomain -> {
-                              Optional<Tenant> tenant = controller.tenants().get(tenantName);
-                              if(!tenant.isPresent()) {
-                                  throw new IllegalArgumentException("Tenant does not exist");
-                              } else {
-                                  if (isUserDeployment(deployingIdentity)) {
-                                      deployingIdentity
-                                              .filter(user -> zmsClient.hasTenantAdminAccess(user, new AthenzDomain(identityDomain.value())))
-                                              .orElseThrow(() -> new IllegalArgumentException(
-                                                      String.format("User %s is not allowed to launch services in Athenz domain %s. Please reach out to the domain admin.", deployingIdentity.get().getFullName(), identityDomain.value())
-                                              ));
-                                  } else {
-                                      AthenzDomain tenantDomain = tenant.filter(t -> t instanceof AthenzTenant)
-                                              .map(t -> (AthenzTenant) t)
-                                              .orElseThrow(() -> new IllegalArgumentException(
-                                                      String.format("Athenz domain defined in deployment.xml, but no Athenz domain for tenant (%s). " +
-                                                                    tenantName.value())))
-                                              .domain();
+    public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage, Optional<AthenzIdentity> deployer) {
+        applicationPackage.deploymentSpec().athenzDomain().ifPresent(identityDomain -> {
+            Tenant tenant = controller.tenants().require(tenantName);
+            deployer.filter(AthenzUser.class::isInstance)
+                    .ifPresentOrElse(user -> {
+                                         if ( ! ((AthenzFacade) permits).hasTenantAdminAccess(user, new AthenzDomain(identityDomain.value())))
+                                             throw new IllegalArgumentException("User " + user.getFullName() + " is not allowed to launch " +
+                                                                                "services in Athenz domain " + identityDomain.value() + ". " +
+                                                                                "Please reach out to the domain admin.");
+                                     },
+                                     () -> {
+                                         if (tenant.type() != Tenant.Type.athenz)
+                                             throw new IllegalArgumentException("Athenz domain defined in deployment.xml, but no " +
+                                                                                "Athenz domain for tenant " + tenantName.value());
 
-                                      if (!Objects.equals(tenantDomain.getName(), identityDomain.value()))
-                                          throw new IllegalArgumentException(String.format("Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
-                                                                                           identityDomain.value(),
-                                                                                           tenantDomain.getName()));
-                                  }
-                              }
-                          });
+                                         AthenzDomain tenantDomain = ((AthenzTenant) tenant).domain();
+                                         if ( ! Objects.equals(tenantDomain.getName(), identityDomain.value()))
+                                             throw new IllegalArgumentException("Athenz domain in deployment.xml: [" + identityDomain.value() + "] " +
+                                                                                "must match tenant domain: [" + tenantDomain.getName() + "]");
+                                     });
+        });
     }
 
     /** Returns the latest known version within the given major. */
