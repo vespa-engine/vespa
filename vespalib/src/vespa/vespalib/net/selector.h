@@ -2,51 +2,15 @@
 
 #pragma once
 
+#include "wakeup_pipe.h"
+#ifdef __APPLE__
+#include "emulated_epoll.h"
+#else
+#include "native_epoll.h"
+#endif
 #include <vector>
-#include <sys/epoll.h>
 
 namespace vespalib {
-
-//-----------------------------------------------------------------------------
-
-/**
- * A wakeup pipe is a non-blocking pipe that is used to wake up a
- * blocking call to epoll_wait. The pipe readability is part of the
- * selection set and a wakeup is triggered by writing to the
- * pipe. When a wakeup is detected, pending tokens will be read and
- * discarded to avoid spurious wakeups in the future.
- **/
-class WakeupPipe {
-private:
-    int _pipe[2];
-public:
-    WakeupPipe();
-    ~WakeupPipe();
-    int get_read_fd() const { return _pipe[0]; }
-    void write_token();
-    void read_tokens();
-};
-
-//-----------------------------------------------------------------------------
-
-/**
- * The Epoll class is a thin wrapper around the epoll related system
- * calls.
- **/
-class Epoll
-{
-private:
-    int _epoll_fd;
-public:
-    Epoll();
-    ~Epoll();
-    void add(int fd, void *ctx, bool read, bool write);
-    void update(int fd, void *ctx, bool read, bool write);
-    void remove(int fd);
-    size_t wait(epoll_event *events, size_t max_events, int timeout_ms);
-};
-
-//-----------------------------------------------------------------------------
 
 /**
  * Simple class used to hold events extracted from a call to epoll_wait. 

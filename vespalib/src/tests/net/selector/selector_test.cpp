@@ -2,7 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/net/selector.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/net/socket_utils.h>
 #include <thread>
 #include <functional>
 #include <chrono>
@@ -18,7 +18,7 @@ struct SocketPair {
     SocketPair &operator=(SocketPair &&) = default;
     static SocketPair create() {
         int sockets[2];
-        ASSERT_EQUAL(0, socketpair(AF_UNIX, SOCK_STREAM | O_NONBLOCK, 0, sockets));
+        socketutils::nonblocking_socketpair(AF_UNIX, SOCK_STREAM, 0, sockets);
         return SocketPair(sockets[0], sockets[1]);
     }
     ~SocketPair() {}
