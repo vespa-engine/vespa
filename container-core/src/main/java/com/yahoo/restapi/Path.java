@@ -21,37 +21,36 @@ import java.util.stream.Collectors;
  * 
  * Note that for convenience in common use this has state which changes as a side effect of each matches
  * invocation. It is therefore for single thread use.
- * 
+ *
+ * A optional prefix can be used to match the path spec against an alternative path. This
+ * is used when you have alternative paths mapped to the same resource.
+ *
  * @author bratseth
  */
 public class Path {
 
     // This path
     private final String pathString;
+    private final String optionalPrefix;
     private final String[] elements;
 
     // Info about the last match
     private final Map<String, String> values = new HashMap<>();
     private String rest = "";
-    
+
     public Path(String path) {
+        this.optionalPrefix = "";
         this.pathString = path;
         this.elements = path.split("/");
     }
 
-    /**
-     * Parses the path according to pathSpec - must be called prior to {@link #get}
-     *
-     * Returns whether this path matches the given template string.
-     * If the given template has placeholders, their values (accessible by get) are reset by calling this,
-     * whether or not the path matches the given template.
-     *
-     * This will NOT match empty path elements.
-     *
-     * @param pathSpec the path string to match to this
-     * @return true if the string matches, false otherwise
-     */
-    public boolean matches(String pathSpec) {
+    public Path(String path, String optionalPrefix) {
+        this.optionalPrefix = optionalPrefix;
+        this.pathString = path;
+        this.elements = path.split("/");
+    }
+
+    private boolean matches_inner(String pathSpec) {
         values.clear();
         String[] specElements = pathSpec.split("/");
         boolean matchPrefix = false;
@@ -84,6 +83,24 @@ public class Path {
         }
         
         return true;
+    }
+
+    /**
+     * Parses the path according to pathSpec - must be called prior to {@link #get}
+     *
+     * Returns whether this path matches the given template string.
+     * If the given template has placeholders, their values (accessible by get) are reset by calling this,
+     * whether or not the path matches the given template.
+     *
+     * This will NOT match empty path elements.
+     *
+     * @param pathSpec the path string to match to this
+     * @return true if the string matches, false otherwise
+     */
+    public boolean matches(String pathSpec) {
+        if (matches_inner(pathSpec)) return true;
+        if (optionalPrefix.isEmpty() || optionalPrefix.length() > pathSpec.length()) return false;
+        return  matches_inner(optionalPrefix + pathSpec);
     }
 
     /**
