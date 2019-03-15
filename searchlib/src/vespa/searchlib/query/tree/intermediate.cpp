@@ -26,6 +26,9 @@ Intermediate::prepend(Node::UP child)
 Node::UP
 Intermediate::stealFirst()
 {
+    if ( _children.empty()) {
+        return Node::UP();
+    }
     Node::UP first(_children.front());
     _children.erase(_children.begin());
     return first;
