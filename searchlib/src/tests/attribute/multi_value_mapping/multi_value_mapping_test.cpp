@@ -80,9 +80,9 @@ public:
           _attr(_mvMapping)
     {
     }
-    Fixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
+    Fixture(uint32_t maxSmallArraySize, size_t minArrays, size_t maxArrays, size_t numArraysForNewBuffer)
         : _mvMapping(ArrayStoreConfig(maxSmallArraySize,
-                                      ArrayStoreConfig::AllocSpec(minClusters, maxClusters, numClustersForNewBuffer,
+                                      ArrayStoreConfig::AllocSpec(minArrays, maxArrays, numArraysForNewBuffer,
                                       ALLOC_GROW_FACTOR))),
           _attr(_mvMapping)
     {
@@ -154,8 +154,8 @@ public:
         _rnd.srand48(32);
     }
 
-    IntFixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
-        : Fixture<int>(maxSmallArraySize, minClusters, maxClusters, numClustersForNewBuffer),
+    IntFixture(uint32_t maxSmallArraySize, size_t minArrays, size_t maxArrays, size_t numArraysForNewBuffer)
+        : Fixture<int>(maxSmallArraySize, minArrays, maxArrays, numArraysForNewBuffer),
           _rnd(),
           _refMapping(),
           _maxSmallArraySize(maxSmallArraySize)

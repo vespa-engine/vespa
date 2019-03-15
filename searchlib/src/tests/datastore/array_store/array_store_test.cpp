@@ -321,21 +321,21 @@ TEST_F("require that used, onHold and dead memory usage is tracked for large arr
                                     dead(f.largeArraySize())));
 }
 
-TEST_F("require that address space usage is ratio between used clusters and number of possible clusters", NumberFixture(3))
+TEST_F("require that address space usage is ratio between used arrays and number of possible arrays", NumberFixture(3))
 {
     f.add({2,2});
     f.add({3,3,3});
-    // 1 cluster is reserved (buffer 0, offset 0).
+    // 1 array is reserved (buffer 0, offset 0).
     EXPECT_EQUAL(3u, f.store.addressSpaceUsage().used());
     EXPECT_EQUAL(1u, f.store.addressSpaceUsage().dead());
     size_t fourgig = (1ull << 32);
     /*
-     * Expected limit is sum of allocated clusters for active buffers and
-     * potentially allocated clusters for free buffers. If all buffers were
+     * Expected limit is sum of allocated arrays for active buffers and
+     * potentially allocated arrays for free buffers. If all buffers were
      * free then the limit would be 4 Gi.
-     * Then we subtract clusters for 4 buffers that are not free (arraySize=1,2,3 + largeArray),
-     * and add their actual number of allocated clusters (16 clusters per buffer).
-     * Note: arraySize=3 has 21 clusters as allocated buffer is rounded up to power of 2:
+     * Then we subtract arrays for 4 buffers that are not free (arraySize=1,2,3 + largeArray),
+     * and add their actual number of allocated arrays (16 arrays per buffer).
+     * Note: arraySize=3 has 21 arrays as allocated buffer is rounded up to power of 2:
      *   16 * 3 * sizeof(int) = 192 -> 256.
      *   allocated elements = 256 / sizeof(int) = 64.
      *   limit = 64 / 3 = 21.

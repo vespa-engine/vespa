@@ -9,7 +9,7 @@ namespace {
 
 // minimum dead bytes in multi value mapping before consider compaction
 constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
-constexpr size_t DEAD_CLUSTERS_SLACK = 0x10000u;
+constexpr size_t DEAD_ARRAYS_SLACK = 0x10000u;
 
 }
 
@@ -86,12 +86,12 @@ MultiValueMappingBase::considerCompact(const CompactionStrategy &compactionStrat
 {
     size_t usedBytes = _cachedArrayStoreMemoryUsage.usedBytes();
     size_t deadBytes = _cachedArrayStoreMemoryUsage.deadBytes();
-    size_t usedClusters = _cachedArrayStoreAddressSpaceUsage.used();
-    size_t deadClusters = _cachedArrayStoreAddressSpaceUsage.dead();
+    size_t usedArrays = _cachedArrayStoreAddressSpaceUsage.used();
+    size_t deadArrays = _cachedArrayStoreAddressSpaceUsage.dead();
     bool compactMemory = ((deadBytes >= DEAD_BYTES_SLACK) &&
                           (usedBytes * compactionStrategy.getMaxDeadBytesRatio() < deadBytes));
-    bool compactAddressSpace = ((deadClusters >= DEAD_CLUSTERS_SLACK) &&
-                                (usedClusters * compactionStrategy.getMaxDeadAddressSpaceRatio() < deadClusters));
+    bool compactAddressSpace = ((deadArrays >= DEAD_ARRAYS_SLACK) &&
+                                (usedArrays * compactionStrategy.getMaxDeadAddressSpaceRatio() < deadArrays));
     if (compactMemory || compactAddressSpace) {
         compactWorst(compactMemory, compactAddressSpace);
         return true;

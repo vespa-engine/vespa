@@ -19,13 +19,13 @@ namespace search {
 
 namespace tensor {
 
-constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
+constexpr size_t MIN_BUFFER_ARRAYS = 1024;
 
 GenericTensorStore::GenericTensorStore()
     : TensorStore(_concreteStore),
       _concreteStore(),
       _bufferType(RefType::align(1),
-                  MIN_BUFFER_CLUSTERS,
+                  MIN_BUFFER_ARRAYS,
                   RefType::offsetSize() / RefType::align(1))
 {
     _store.addType(&_bufferType);

@@ -38,7 +38,7 @@ Allocator<EntryT, RefT>::allocArray(ConstArrayRef array)
     uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
     BufferState &state = _store.getBufferState(activeBufferId);
     assert(state.isActive());
-    assert(state.getClusterSize() == array.size());
+    assert(state.getArraySize() == array.size());
     size_t oldBufferSize = state.size();
     EntryT *buf = _store.template getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
     for (size_t i = 0; i < array.size(); ++i) {
@@ -57,7 +57,7 @@ Allocator<EntryT, RefT>::allocArray(size_t size)
     uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
     BufferState &state = _store.getBufferState(activeBufferId);
     assert(state.isActive());
-    assert(state.getClusterSize() == size);
+    assert(state.getArraySize() == size);
     size_t oldBufferSize = state.size();
     EntryT *buf = _store.template getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
     for (size_t i = 0; i < size; ++i) {

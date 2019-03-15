@@ -22,10 +22,10 @@ FreeListRawAllocator<EntryT, RefT>::alloc(size_t numElems)
     }
     BufferState &state = *freeListList._head;
     assert(state.isActive());
-    assert(state.getClusterSize() == numElems);
+    assert(state.getArraySize() == numElems);
     RefT ref = state.popFreeList();
-    // If entry ref is not aligned we must scale the offset according to cluster size as it was divided when the entry ref was created.
-    uint64_t offset = !RefT::isAlignedType ? ref.offset() * state.getClusterSize() : ref.offset();
+    // If entry ref is not aligned we must scale the offset according to array size as it was divided when the entry ref was created.
+    uint64_t offset = !RefT::isAlignedType ? ref.offset() * state.getArraySize() : ref.offset();
     EntryT *entry = _store.template getBufferEntry<EntryT>(ref.bufferId(), offset);
     return HandleType(ref, entry);
 }

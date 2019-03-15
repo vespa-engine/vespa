@@ -31,7 +31,7 @@ EnumStoreBase::EnumBufferType::EnumBufferType()
 }
 
 size_t
-EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const
+EnumStoreBase::EnumBufferType::calcArraysToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const
 {
     (void) resizing;
     size_t reservedElements = getReservedElements(bufferId);
@@ -40,24 +40,24 @@ EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t siz
     if (_lastUsedElems != nullptr) {
         usedElems += *_lastUsedElems;
     }
-    assert((usedElems % _clusterSize) == 0);
+    assert((usedElems % _arraySize) == 0);
     double growRatio = 1.5f;
-    uint64_t maxSize = static_cast<uint64_t>(_maxClusters) * _clusterSize;
+    uint64_t maxSize = static_cast<uint64_t>(_maxArrays) * _arraySize;
     uint64_t newSize = usedElems - _deadElems + sizeNeeded;
     if (usedElems != 0) {
         newSize *= growRatio;
     }
     newSize += reservedElements;
     newSize = alignBufferSize(newSize);
-    assert((newSize % _clusterSize) == 0);
+    assert((newSize % _arraySize) == 0);
     if (newSize <= maxSize) {
-        return newSize / _clusterSize;
+        return newSize / _arraySize;
     }
     newSize = usedElems - _deadElems + sizeNeeded + reservedElements + 1000000;
     newSize = alignBufferSize(newSize);
-    assert((newSize % _clusterSize) == 0);
+    assert((newSize % _arraySize) == 0);
     if (newSize <= maxSize) {
-        return _maxClusters;
+        return _maxArrays;
     }
     failNewSize(newSize, maxSize);
     return 0;

@@ -26,21 +26,22 @@ constexpr size_t TOODEAD_SLACK = 0x4000u;
  * up completely will be wasted work, as data will have to be moved again
  * rather soon.
  */
-bool activeWriteBufferTooDead(const BufferState &state)
+bool
+activeWriteBufferTooDead(const BufferState &state)
 {
     size_t deadElems = state.getDeadElems();
-    size_t deadBytes = deadElems * state.getClusterSize();
+    size_t deadBytes = deadElems * state.getArraySize();
     return ((deadBytes >= TOODEAD_SLACK) && (deadElems * 2 >= state.size()));
 }
 
 }
 
-DataStoreBase::FallbackHold::FallbackHold(size_t size,
-        BufferState::Alloc &&buffer,
-        size_t usedElems,
-        BufferTypeBase *typeHandler,
-        uint32_t typeId)
-    : GenerationHeldBase(size),
+DataStoreBase::FallbackHold::FallbackHold(size_t bytesSize,
+                                          BufferState::Alloc &&buffer,
+                                          size_t usedElems,
+                                          BufferTypeBase *typeHandler,
+                                          uint32_t typeId)
+    : GenerationHeldBase(bytesSize),
       _buffer(std::move(buffer)),
       _usedElems(usedElems),
       _typeHandler(typeHandler),
@@ -48,21 +49,18 @@ DataStoreBase::FallbackHold::FallbackHold(size_t size,
 {
 }
 
-
 DataStoreBase::FallbackHold::~FallbackHold()
 {
     _typeHandler->destroyElements(_buffer.get(), _usedElems);
 }
 
-
-class DataStoreBase::BufferHold : public GenerationHeldBase
-{
+class DataStoreBase::BufferHold : public GenerationHeldBase {
     DataStoreBase &_dsb;
     uint32_t _bufferId;
 
 public:
-    BufferHold(size_t size, DataStoreBase &dsb, uint32_t bufferId)
-        : GenerationHeldBase(size),
+    BufferHold(size_t bytesSize, DataStoreBase &dsb, uint32_t bufferId)
+        : GenerationHeldBase(bytesSize),
           _dsb(dsb),
           _bufferId(bufferId)
     {
@@ -74,8 +72,7 @@ public:
     }
 };
 
-
-DataStoreBase::DataStoreBase(uint32_t numBuffers, size_t maxClusters)
+DataStoreBase::DataStoreBase(uint32_t numBuffers, size_t maxArrays)
     : _buffers(numBuffers),
       _activeBufferIds(),
       _states(numBuffers),
@@ -86,11 +83,10 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, size_t maxClusters)
       _elemHold1List(),
       _elemHold2List(),
       _numBuffers(numBuffers),
-      _maxClusters(maxClusters),
+      _maxArrays(maxArrays),
       _genHolder()
 {
 }
-
 
 DataStoreBase::~DataStoreBase()
 {
@@ -100,36 +96,33 @@ DataStoreBase::~DataStoreBase()
     assert(_elemHold2List.empty());
 }
 
-
 void
-DataStoreBase::switchActiveBuffer(uint32_t typeId, size_t sizeNeeded)
+DataStoreBase::switchActiveBuffer(uint32_t typeId, size_t elemsNeeded)
 {
     size_t activeBufferId = _activeBufferIds[typeId];
     do {
         // start using next buffer
         activeBufferId = nextBufferId(activeBufferId);
     } while (!_states[activeBufferId].isFree());
-    onActive(activeBufferId, typeId, sizeNeeded);
+    onActive(activeBufferId, typeId, elemsNeeded);
     _activeBufferIds[typeId] = activeBufferId;
 }
 
-
 void
-DataStoreBase::switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded)
+DataStoreBase::switchOrGrowActiveBuffer(uint32_t typeId, size_t elemsNeeded)
 {
     auto typeHandler = _typeHandlers[typeId];
-    uint32_t clusterSize = typeHandler->getClusterSize();
-    size_t numClustersForNewBuffer = typeHandler->getNumClustersForNewBuffer();
-    size_t numEntriesForNewBuffer = numClustersForNewBuffer * clusterSize;
+    uint32_t arraySize = typeHandler->getArraySize();
+    size_t numArraysForNewBuffer = typeHandler->getNumArraysForNewBuffer();
+    size_t numEntriesForNewBuffer = numArraysForNewBuffer * arraySize;
     uint32_t bufferId = _activeBufferIds[typeId];
-    if (sizeNeeded + _states[bufferId].size() >= numEntriesForNewBuffer) {
+    if (elemsNeeded + _states[bufferId].size() >= numEntriesForNewBuffer) {
         // Don't try to resize existing buffer, new buffer will be large enough
-        switchActiveBuffer(typeId, sizeNeeded);
+        switchActiveBuffer(typeId, elemsNeeded);
     } else {
-        fallbackResize(bufferId, sizeNeeded);
+        fallbackResize(bufferId, elemsNeeded);
     }
 }
-
 
 void
 DataStoreBase::initActiveBuffers()
@@ -146,13 +139,12 @@ DataStoreBase::initActiveBuffers()
     }
 }
 
-
 uint32_t
 DataStoreBase::addType(BufferTypeBase *typeHandler)
 {
     uint32_t typeId = _activeBufferIds.size();
     assert(typeId == _typeHandlers.size());
-    typeHandler->clampMaxClusters(_maxClusters);
+    typeHandler->clampMaxArrays(_maxArrays);
     _activeBufferIds.push_back(0);
     _typeHandlers.push_back(typeHandler);
     _freeListLists.push_back(BufferState::FreeListList());
@@ -169,15 +161,14 @@ DataStoreBase::transferElemHoldList(generation_t generation)
     _elemHold1List.clear();
 }
 
-
 void
 DataStoreBase::transferHoldLists(generation_t generation)
 {
     _genHolder.transferHoldLists(generation);
-    if (hasElemHold1())
+    if (hasElemHold1()) {
         transferElemHoldList(generation);
+    }
 }
-
 
 void
 DataStoreBase::doneHoldBuffer(uint32_t bufferId)
@@ -185,15 +176,12 @@ DataStoreBase::doneHoldBuffer(uint32_t bufferId)
     _states[bufferId].onFree(_buffers[bufferId].getBuffer());
 }
 
-
 void
 DataStoreBase::trimHoldLists(generation_t usedGen)
 {
     trimElemHoldList(usedGen);  // Trim entries before trimming buffers
-
     _genHolder.trimHoldLists(usedGen);
 }
-
 
 void
 DataStoreBase::clearHoldLists()
@@ -202,7 +190,6 @@ DataStoreBase::clearHoldLists()
     clearElemHoldList();
     _genHolder.clearHoldLists();
 }
-
 
 void
 DataStoreBase::dropBuffers()
@@ -213,7 +200,6 @@ DataStoreBase::dropBuffers()
     }
     _genHolder.clearHoldLists();
 }
-
 
 MemoryUsage
 DataStoreBase::getMemoryUsage() const
@@ -227,7 +213,6 @@ DataStoreBase::getMemoryUsage() const
     return usage;
 }
 
-
 void
 DataStoreBase::holdBuffer(uint32_t bufferId)
 {
@@ -236,7 +221,6 @@ DataStoreBase::holdBuffer(uint32_t bufferId)
     GenerationHeldBase::UP hold(new BufferHold(holdBytes, *this, bufferId));
     _genHolder.hold(std::move(hold));
 }
-
 
 void
 DataStoreBase::enableFreeLists()
@@ -250,7 +234,6 @@ DataStoreBase::enableFreeLists()
     _freeListsEnabled = true;
 }
 
-
 void
 DataStoreBase::disableFreeLists()
 {
@@ -259,7 +242,6 @@ DataStoreBase::disableFreeLists()
     }
     _freeListsEnabled = false;
 }
-
 
 void
 DataStoreBase::enableFreeList(uint32_t bufferId)
@@ -272,13 +254,11 @@ DataStoreBase::enableFreeList(uint32_t bufferId)
     }
 }
 
-
 void
 DataStoreBase::disableFreeList(uint32_t bufferId)
 {
-    _states[bufferId].setFreeListList(NULL);
+    _states[bufferId].setFreeListList(nullptr);
 }
-
 
 void
 DataStoreBase::disableElemHoldList()
@@ -337,30 +317,30 @@ DataStoreBase::getMemStats() const
 AddressSpace
 DataStoreBase::getAddressSpaceUsage() const
 {
-    size_t usedClusters = 0;
-    size_t deadClusters = 0;
-    size_t limitClusters = 0;
+    size_t usedArrays = 0;
+    size_t deadArrays = 0;
+    size_t limitArrays = 0;
     for (const BufferState & bState: _states) {
         if (bState.isActive()) {
-            uint32_t clusterSize = bState.getClusterSize();
-            usedClusters += bState.size() / clusterSize;
-            deadClusters += bState.getDeadElems() / clusterSize;
-            limitClusters += bState.capacity() / clusterSize;
+            uint32_t arraySize = bState.getArraySize();
+            usedArrays += bState.size() / arraySize;
+            deadArrays += bState.getDeadElems() / arraySize;
+            limitArrays += bState.capacity() / arraySize;
         } else if (bState.isOnHold()) {
-            uint32_t clusterSize = bState.getClusterSize();
-            usedClusters += bState.size() / clusterSize;
-            limitClusters += bState.capacity() / clusterSize;
+            uint32_t arraySize = bState.getArraySize();
+            usedArrays += bState.size() / arraySize;
+            limitArrays += bState.capacity() / arraySize;
         } else if (bState.isFree()) {
-            limitClusters += _maxClusters;
+            limitArrays += _maxArrays;
         } else {
             LOG_ABORT("should not be reached");
         }
     }
-    return AddressSpace(usedClusters, deadClusters, limitClusters);
+    return AddressSpace(usedArrays, deadArrays, limitArrays);
 }
 
 void
-DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t sizeNeeded)
+DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
 {
     assert(typeId < _typeHandlers.size());
     assert(bufferId < _numBuffers);
@@ -368,7 +348,7 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t sizeNeeded)
     BufferState &state = _states[bufferId];
     state.onActive(bufferId, typeId,
                    _typeHandlers[typeId],
-                   sizeNeeded,
+                   elemsNeeded,
                    _buffers[bufferId].getBuffer());
     enableFreeList(bufferId);
 }
@@ -400,16 +380,15 @@ DataStoreBase::finishCompact(const std::vector<uint32_t> &toHold)
     }
 }
 
-
 void
-DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t sizeNeeded)
+DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t elemsNeeded)
 {
     BufferState &state = getBufferState(bufferId);
     BufferState::Alloc toHoldBuffer;
     size_t oldUsedElems = state.size();
     size_t oldAllocElems = state.capacity();
     size_t elementSize = state.getTypeHandler()->elementSize();
-    state.fallbackResize(bufferId, sizeNeeded,
+    state.fallbackResize(bufferId, elemsNeeded,
                          _buffers[bufferId].getBuffer(),
                          toHoldBuffer);
     GenerationHeldBase::UP
@@ -423,9 +402,9 @@ DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t sizeNeeded)
     }
 }
 
-
 uint32_t
-DataStoreBase::startCompactWorstBuffer(uint32_t typeId) {
+DataStoreBase::startCompactWorstBuffer(uint32_t typeId)
+{
     uint32_t activeBufferId = getActiveBufferId(typeId);
     const BufferTypeBase *typeHandler = _typeHandlers[typeId];
     assert(typeHandler->getActiveBuffers() >= 1u);
@@ -483,12 +462,12 @@ DataStoreBase::startCompactWorstBuffers(bool compactMemory, bool compactAddressS
     uint32_t worstMemoryBufferId = noBufferId;
     uint32_t worstAddressSpaceBufferId = noBufferId;
     size_t worstDeadElems = 0;
-    size_t worstDeadClusters = 0;
+    size_t worstDeadArrays = 0;
     for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
         const auto &state = getBufferState(bufferId);
         if (state.isActive()) {
             auto typeHandler = state.getTypeHandler();
-            uint32_t clusterSize = typeHandler->getClusterSize();
+            uint32_t arraySize = typeHandler->getArraySize();
             uint32_t reservedElements = typeHandler->getReservedElements(bufferId);
             size_t deadElems = state.getDeadElems() - reservedElements;
             if (compactMemory && deadElems > worstDeadElems) {
@@ -496,10 +475,10 @@ DataStoreBase::startCompactWorstBuffers(bool compactMemory, bool compactAddressS
                 worstDeadElems = deadElems;
             }
             if (compactAddressSpace) {
-                size_t deadClusters = deadElems / clusterSize;
-                if (deadClusters > worstDeadClusters) {
+                size_t deadArrays = deadElems / arraySize;
+                if (deadArrays > worstDeadArrays) {
                     worstAddressSpaceBufferId = bufferId;
-                    worstDeadClusters = deadClusters;
+                    worstDeadArrays = deadArrays;
                 }
             }
         }

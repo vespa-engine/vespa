@@ -8,17 +8,20 @@
 namespace search::datastore {
 
 /**
- * Class used manage allocation and de-allocation of a specific data type in
- * the underlying buffers in a data store.
+ * Abstract class used to manage allocation and de-allocation of a specific data type in underlying memory buffers in a data store.
+ * Each buffer is owned by an instance of BufferState.
+ *
+ * This class handles allocation of both single elements (_arraySize = 1) and array of elements (_arraySize > 1).
+ * The strategy for how to grow buffers is specified as well.
  */
 class BufferTypeBase
 {
 protected:
-    uint32_t _clusterSize;  // Number of elements in an allocation unit
-    uint32_t _minClusters;  // Minimum number of clusters to allocate
-    uint32_t _maxClusters;  // Maximum number of clusters to allocate
-    // Number of clusters needed before allocating a new buffer instead of just resizing the first one
-    uint32_t _numClustersForNewBuffer;
+    uint32_t _arraySize;  // Number of elements in an allocation unit
+    uint32_t _minArrays;  // Minimum number of arrays to allocate in a buffer
+    uint32_t _maxArrays;  // Maximum number of arrays to allocate in a buffer
+    // Number of arrays needed before allocating a new buffer instead of just resizing the first one
+    uint32_t _numArraysForNewBuffer;
     float _allocGrowFactor;
     uint32_t _activeBuffers;
     uint32_t _holdBuffers;
@@ -37,12 +40,12 @@ public:
     
     BufferTypeBase(const BufferTypeBase &rhs) = delete;
     BufferTypeBase & operator=(const BufferTypeBase &rhs) = delete;
-    BufferTypeBase(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters);
-    BufferTypeBase(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters,
-                   uint32_t numClustersForNewBuffer, float allocGrowFactor);
+    BufferTypeBase(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays);
+    BufferTypeBase(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays,
+                   uint32_t numArraysForNewBuffer, float allocGrowFactor);
     virtual ~BufferTypeBase();
-    virtual void destroyElements(void *buffer, size_t numElements) = 0;
-    virtual void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) = 0;
+    virtual void destroyElements(void *buffer, size_t numElems) = 0;
+    virtual void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElems) = 0;
     // Return number of reserved elements at start of buffer, to avoid
     // invalid reference and handle data at negative offset (alignment
     // hacks) as used by dense tensor store.
@@ -50,60 +53,58 @@ public:
     // Initialize reserved elements at start of buffer.
     virtual void initializeReservedElements(void *buffer, size_t reservedElements) = 0;
     virtual size_t elementSize() const = 0;
-    virtual void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) = 0;
-    size_t getClusterSize() const { return _clusterSize; }
+    virtual void cleanHold(void *buffer, uint64_t offset, uint64_t numElems, CleanContext cleanCtx) = 0;
+    size_t getArraySize() const { return _arraySize; }
     void flushLastUsed();
     virtual void onActive(uint32_t bufferId, size_t *usedElems, size_t &deadElems, void *buffer);
     void onHold(const size_t *usedElems);
     virtual void onFree(size_t usedElems);
 
     /**
-     * Calculate number of clusters to allocate for new buffer.
-     *
-     * @param elementsNeeded number of elements needed now
-     * @param clusterRefSize number of clusters expressable via reference type
-     *
-     * @return number of clusters to allocate for new buffer
+     * Calculate number of arrays to allocate for new buffer given how many elements are needed.
      */
-    virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t elementsNeeded, bool resizing) const;
+    virtual size_t calcArraysToAlloc(uint32_t bufferId, size_t elementsNeeded, bool resizing) const;
 
-    void clampMaxClusters(uint32_t maxClusters);
+    void clampMaxArrays(uint32_t maxArrays);
 
     uint32_t getActiveBuffers() const { return _activeBuffers; }
-    size_t getMaxClusters() const { return _maxClusters; }
-    uint32_t getNumClustersForNewBuffer() const { return _numClustersForNewBuffer; }
+    size_t getMaxArrays() const { return _maxArrays; }
+    uint32_t getNumArraysForNewBuffer() const { return _numArraysForNewBuffer; }
 };
 
-
+/**
+ * Concrete class used to manage allocation and de-allocation of elements of type EntryType in data store buffers.
+ */
 template <typename EntryType>
 class BufferType : public BufferTypeBase
 {
-public:
+protected:
     EntryType _emptyEntry;
 
+public:
     BufferType(const BufferType &rhs) = delete;
     BufferType & operator=(const BufferType &rhs) = delete;
-    BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters);
-    BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters,
-               uint32_t numClustersForNewBuffer, float allocGrowFactor);
+    BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays);
+    BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays,
+               uint32_t numArraysForNewBuffer, float allocGrowFactor);
     ~BufferType();
-    void destroyElements(void *buffer, size_t numElements) override;
-    void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) override;
+    void destroyElements(void *buffer, size_t numElems) override;
+    void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElems) override;
     void initializeReservedElements(void *buffer, size_t reservedElements) override;
-    void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCxt) override;
+    void cleanHold(void *buffer, uint64_t offset, uint64_t numElems, CleanContext cleanCxt) override;
     size_t elementSize() const override { return sizeof(EntryType); }
 };
 
 template <typename EntryType>
-BufferType<EntryType>::BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters)
-    : BufferTypeBase(clusterSize, minClusters, maxClusters),
+BufferType<EntryType>::BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays)
+    : BufferTypeBase(arraySize, minArrays, maxArrays),
       _emptyEntry()
 { }
 
 template <typename EntryType>
-BufferType<EntryType>::BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters,
-                                  uint32_t numClustersForNewBuffer, float allocGrowFactor)
-    : BufferTypeBase(clusterSize, minClusters, maxClusters, numClustersForNewBuffer, allocGrowFactor),
+BufferType<EntryType>::BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays,
+                                  uint32_t numArraysForNewBuffer, float allocGrowFactor)
+    : BufferTypeBase(arraySize, minArrays, maxArrays, numArraysForNewBuffer, allocGrowFactor),
       _emptyEntry()
 { }
 
@@ -112,10 +113,10 @@ BufferType<EntryType>::~BufferType() { }
 
 template <typename EntryType>
 void
-BufferType<EntryType>::destroyElements(void *buffer, size_t numElements)
+BufferType<EntryType>::destroyElements(void *buffer, size_t numElems)
 {
     EntryType *e = static_cast<EntryType *>(buffer);
-    for (size_t j = numElements; j != 0; --j) {
+    for (size_t j = numElems; j != 0; --j) {
         e->~EntryType();
         ++e;
     }
@@ -125,11 +126,11 @@ template <typename EntryType>
 void
 BufferType<EntryType>::fallbackCopy(void *newBuffer,
                                     const void *oldBuffer,
-                                    size_t numElements)
+                                    size_t numElems)
 {
     EntryType *d = static_cast<EntryType *>(newBuffer);
     const EntryType *s = static_cast<const EntryType *>(oldBuffer);
-    for (size_t j = numElements; j != 0; --j) {
+    for (size_t j = numElems; j != 0; --j) {
         new (static_cast<void *>(d)) EntryType(*s);
         ++s;
         ++d;
@@ -149,10 +150,10 @@ BufferType<EntryType>::initializeReservedElements(void *buffer, size_t reservedE
 
 template <typename EntryType>
 void
-BufferType<EntryType>::cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext)
+BufferType<EntryType>::cleanHold(void *buffer, uint64_t offset, uint64_t numElems, CleanContext)
 {
     EntryType *e = static_cast<EntryType *>(buffer) + offset;
-    for (size_t j = len; j != 0; --j) {
+    for (size_t j = numElems; j != 0; --j) {
         *e = _emptyEntry;
         ++e;
     }

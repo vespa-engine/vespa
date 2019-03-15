@@ -112,23 +112,23 @@ TEST_F("require that empty 3d tensor has size 1 in un-bound dimensions", Fixture
 }
 
 void
-assertClusterSize(const vespalib::string &tensorType, uint32_t expClusterSize) {
+assertArraySize(const vespalib::string &tensorType, uint32_t expArraySize) {
     Fixture f(tensorType);
-    EXPECT_EQUAL(expClusterSize, f.store.getClusterSize());
+    EXPECT_EQUAL(expArraySize, f.store.getArraySize());
 }
 
-TEST("require that cluster size is calculated correctly")
+TEST("require that array size is calculated correctly")
 {
-    TEST_DO(assertClusterSize("tensor(x[1])", 32));
-    TEST_DO(assertClusterSize("tensor(x[10])", 96));
-    TEST_DO(assertClusterSize("tensor(x[3])", 32));
-    TEST_DO(assertClusterSize("tensor(x[3],y[])", 32));
-    TEST_DO(assertClusterSize("tensor(x[3],y[],z[])", 32));
-    TEST_DO(assertClusterSize("tensor(x[3],y[],z[],z2[])", 64));
-    TEST_DO(assertClusterSize("tensor(x[10],y[10])", 800));
-    TEST_DO(assertClusterSize("tensor(x[])", 32));
-    TEST_DO(assertClusterSize("tensor(x[],x2[],x3[],x4[],x5[],x6[])", 32));
-    TEST_DO(assertClusterSize("tensor(x[],x2[],x3[],x4[],x5[],x6[],x7[])", 64));
+    TEST_DO(assertArraySize("tensor(x[1])", 32));
+    TEST_DO(assertArraySize("tensor(x[10])", 96));
+    TEST_DO(assertArraySize("tensor(x[3])", 32));
+    TEST_DO(assertArraySize("tensor(x[3],y[])", 32));
+    TEST_DO(assertArraySize("tensor(x[3],y[],z[])", 32));
+    TEST_DO(assertArraySize("tensor(x[3],y[],z[],z2[])", 64));
+    TEST_DO(assertArraySize("tensor(x[10],y[10])", 800));
+    TEST_DO(assertArraySize("tensor(x[])", 32));
+    TEST_DO(assertArraySize("tensor(x[],x2[],x3[],x4[],x5[],x6[])", 32));
+    TEST_DO(assertArraySize("tensor(x[],x2[],x3[],x4[],x5[],x6[],x7[])", 64));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

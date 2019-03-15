@@ -29,7 +29,7 @@ BufferState::BufferState()
       _prevHasFree(NULL),
       _typeHandler(NULL),
       _typeId(0),
-      _clusterSize(0),
+      _arraySize(0),
       _compacting(false),
       _buffer(Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE))
 {
@@ -77,10 +77,10 @@ calcAllocation(uint32_t bufferId,
                size_t elementsNeeded,
                bool resizing)
 {
-    size_t allocClusters = typeHandler.calcClustersToAlloc(bufferId, elementsNeeded, resizing);
-    size_t allocElements = allocClusters * typeHandler.getClusterSize();
+    size_t allocArrays = typeHandler.calcArraysToAlloc(bufferId, elementsNeeded, resizing);
+    size_t allocElements = allocArrays * typeHandler.getArraySize();
     size_t allocBytes = roundUpToMatchAllocator(allocElements * typeHandler.elementSize());
-    size_t maxAllocBytes = typeHandler.getMaxClusters() * typeHandler.getClusterSize() * typeHandler.elementSize();
+    size_t maxAllocBytes = typeHandler.getMaxArrays() * typeHandler.getArraySize() * typeHandler.elementSize();
     if (allocBytes > maxAllocBytes) {
         // Ensure that allocated bytes does not exceed the maximum handled by this type.
         allocBytes = maxAllocBytes;
@@ -123,7 +123,7 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     _state = ACTIVE;
     _typeHandler = typeHandler;
     _typeId = typeId;
-    _clusterSize = _typeHandler->getClusterSize();
+    _arraySize = _typeHandler->getArraySize();
     typeHandler->onActive(bufferId, &_usedElems, _deadElems, buffer);
 }
 
@@ -170,7 +170,7 @@ BufferState::onFree(void *&buffer)
     _extraHoldBytes = 0;
     _state = FREE;
     _typeHandler = NULL;
-    _clusterSize = 0;
+    _arraySize = 0;
     assert(_freeList.empty());
     assert(_nextHasFree == NULL);
     assert(_prevHasFree == NULL);

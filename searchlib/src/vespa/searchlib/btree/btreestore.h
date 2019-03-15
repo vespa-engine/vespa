@@ -391,7 +391,7 @@ public:
     foreach_frozen(EntryRef ref, FunctionType func) const;
 
 private:
-    static constexpr size_t MIN_CLUSTERS = 128u;
+    static constexpr size_t MIN_BUFFER_ARRAYS = 128u;
     template <typename FunctionType, bool Frozen>
     void
     foreach_key(EntryRef ref, FunctionType func) const;

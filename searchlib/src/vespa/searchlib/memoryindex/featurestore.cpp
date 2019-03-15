@@ -6,7 +6,7 @@
 
 namespace search::memoryindex {
 
-constexpr size_t MIN_CLUSTERS = 1024u;
+constexpr size_t MIN_BUFFER_ARRAYS = 1024u;
 
 using index::SchemaUtil;
 
@@ -78,7 +78,7 @@ FeatureStore::FeatureStore(const Schema &schema)
       _d(NULL),
       _fieldsParams(),
       _schema(schema),
-      _type(RefType::align(1u), MIN_CLUSTERS,
+      _type(RefType::align(1u), MIN_BUFFER_ARRAYS,
             RefType::offsetSize() / RefType::align(1u)),
       _typeId(0)
 {

@@ -12,6 +12,13 @@ namespace search::datastore {
 
 /**
  * Represents a memory allocated buffer (used in a data store) with its state.
+ *
+ * This class has no direct knowledge of what kind of data is stored in the buffer.
+ * It uses a type handler (BufferTypeBase) to calculate how much memory to allocate,
+ * and how to destruct elements in a buffer.
+ *
+ * It also supports use of free lists, where previously allocated elements can be re-used.
+ * First the element is put on hold, then on the free list (counted as dead).
  */
 class BufferState
 {
@@ -57,7 +64,7 @@ private:
 
     BufferTypeBase *_typeHandler;
     uint32_t        _typeId;
-    uint32_t        _clusterSize;
+    uint32_t        _arraySize;
     bool            _compacting;
     Alloc           _buffer;
 
@@ -128,7 +135,7 @@ public:
         if (_freeList.empty()) {
             removeFromFreeListList();
         }
-        _deadElems -= _clusterSize;
+        _deadElems -= _arraySize;
         return ret;
     }
 
@@ -144,7 +151,7 @@ public:
     }
     void dropBuffer(void *&buffer);
     uint32_t getTypeId() const { return _typeId; }
-    uint32_t getClusterSize() const { return _clusterSize; }
+    uint32_t getArraySize() const { return _arraySize; }
     uint64_t getDeadElems() const { return _deadElems; }
     uint64_t getHoldElems() const { return _holdElems; }
     size_t getExtraUsedBytes() const { return _extraUsedBytes; }

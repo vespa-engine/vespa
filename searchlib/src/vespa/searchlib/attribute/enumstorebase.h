@@ -219,7 +219,7 @@ protected:
     public:
         EnumBufferType();
 
-        size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const override;
+        size_t calcArraysToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const override;
 
         void setSizeNeededAndDead(uint64_t sizeNeeded, uint64_t deadElems) {
             _minSizeNeeded = sizeNeeded;

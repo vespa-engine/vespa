@@ -11,6 +11,11 @@
 
 namespace search::datastore {
 
+/**
+ * Abstract class used to store data of potential different types in underlying memory buffers.
+ *
+ * Reference to stored data is via a 32-bit handle (EntryRef).
+ */
 class DataStoreBase
 {
 public:
@@ -73,7 +78,7 @@ protected:
         BufferTypeBase    *_typeHandler;
         uint32_t           _typeId;
 
-        FallbackHold(size_t size, BufferState::Alloc &&buffer, size_t usedElems,
+        FallbackHold(size_t bytesSize, BufferState::Alloc &&buffer, size_t usedElems,
                      BufferTypeBase *typeHandler, uint32_t typeId);
 
         ~FallbackHold() override;
@@ -142,11 +147,11 @@ protected:
     ElemHold2List _elemHold2List;
 
     const uint32_t _numBuffers;
-    const size_t   _maxClusters;
+    const size_t   _maxArrays;
 
     vespalib::GenerationHolder _genHolder;
 
-    DataStoreBase(uint32_t numBuffers, size_t maxClusters);
+    DataStoreBase(uint32_t numBuffers, size_t maxArrays);
     DataStoreBase(const DataStoreBase &) = delete;
     DataStoreBase &operator=(const DataStoreBase &) = delete;
 
@@ -194,14 +199,14 @@ public:
      * Ensure that active buffer has a given number of elements free at end.
      * Switch to new buffer if current buffer is too full.
      *
-     * @param typeId        registered data type for buffer.
-     * @param sizeNeeded    Number of elements needed to be free
+     * @param typeId      registered data type for buffer.
+     * @param elemsNeeded Number of elements needed to be free
      */
-    void ensureBufferCapacity(uint32_t typeId, size_t sizeNeeded) {
-        if (__builtin_expect(sizeNeeded >
+    void ensureBufferCapacity(uint32_t typeId, size_t elemsNeeded) {
+        if (__builtin_expect(elemsNeeded >
                              _states[_activeBufferIds[typeId]].remaining(),
                              false)) {
-            switchOrGrowActiveBuffer(typeId, sizeNeeded);
+            switchOrGrowActiveBuffer(typeId, elemsNeeded);
         }
     }
 
@@ -216,12 +221,12 @@ public:
      * Switch to new active buffer, typically in preparation for compaction
      * or when current active buffer no longer has free space.
      *
-     * @param typeId        registered data type for buffer.
-     * @param sizeNeeded    Number of elements needed to be free
+     * @param typeId      registered data type for buffer.
+     * @param elemsNeeded Number of elements needed to be free
      */
-    void switchActiveBuffer(uint32_t typeId, size_t sizeNeeded);
+    void switchActiveBuffer(uint32_t typeId, size_t elemsNeeded);
 
-    void switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded);
+    void switchOrGrowActiveBuffer(uint32_t typeId, size_t elemsNeeded);
 
     MemoryUsage getMemoryUsage() const;
 
@@ -273,9 +278,9 @@ public:
     void dropBuffers();
 
 
-    void incDead(uint32_t bufferId, uint64_t dead) {
+    void incDead(uint32_t bufferId, uint64_t deadElems) {
         BufferState &state = _states[bufferId];
-        state.incDeadElems(dead);
+        state.incDeadElems(deadElems);
     }
 
     /**
@@ -318,11 +323,12 @@ private:
     /**
      * Switch buffer state to active.
      *
-     * @param bufferId      Id of buffer to be active.
-     * @param typeId        registered data type for buffer.
-     * @param sizeNeeded    Number of elements needed to be free
+     * @param bufferId    Id of buffer to be active.
+     * @param typeId      registered data type for buffer.
+     * @param elemsNeeded Number of elements needed to be free
      */
-    void onActive(uint32_t bufferId, uint32_t typeId, size_t sizeNeeded);
+    void onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded);
+
 public:
     uint32_t getTypeId(uint32_t bufferId) const {
         return _buffers[bufferId].getTypeId();
@@ -331,7 +337,7 @@ public:
     std::vector<uint32_t> startCompact(uint32_t typeId);
 
     void finishCompact(const std::vector<uint32_t> &toHold);
-    void fallbackResize(uint32_t bufferId, uint64_t sizeNeeded);
+    void fallbackResize(uint32_t bufferId, uint64_t elementsNeeded);
 
     vespalib::GenerationHolder &getGenerationHolder() {
         return _genHolder;

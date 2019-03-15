@@ -19,15 +19,15 @@ BufferTypeBase::CleanContext::extraBytesCleaned(uint64_t value)
     _extraBytes -= value;
 }
 
-BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
-                               uint32_t minClusters,
-                               uint32_t maxClusters,
-                               uint32_t numClustersForNewBuffer,
+BufferTypeBase::BufferTypeBase(uint32_t arraySize,
+                               uint32_t minArrays,
+                               uint32_t maxArrays,
+                               uint32_t numArraysForNewBuffer,
                                float allocGrowFactor)
-    : _clusterSize(clusterSize),
-      _minClusters(std::min(minClusters, maxClusters)),
-      _maxClusters(maxClusters),
-      _numClustersForNewBuffer(std::min(numClustersForNewBuffer, maxClusters)),
+    : _arraySize(arraySize),
+      _minArrays(std::min(minArrays, maxArrays)),
+      _maxArrays(maxArrays),
+      _numArraysForNewBuffer(std::min(numArraysForNewBuffer, maxArrays)),
       _allocGrowFactor(allocGrowFactor),
       _activeBuffers(0),
       _holdBuffers(0),
@@ -37,10 +37,10 @@ BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
 {
 }
 
-BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
-                               uint32_t minClusters,
-                               uint32_t maxClusters)
-    : BufferTypeBase(clusterSize, minClusters, maxClusters, 0u, DEFAULT_ALLOC_GROW_FACTOR)
+BufferTypeBase::BufferTypeBase(uint32_t arraySize,
+                               uint32_t minArrays,
+                               uint32_t maxArrays)
+    : BufferTypeBase(arraySize, minArrays, maxArrays, 0u, DEFAULT_ALLOC_GROW_FACTOR)
 {
 }
 
@@ -56,7 +56,7 @@ BufferTypeBase::~BufferTypeBase()
 size_t
 BufferTypeBase::getReservedElements(uint32_t bufferId) const
 {
-    return bufferId == 0 ? _clusterSize : 0u;
+    return bufferId == 0 ? _arraySize : 0u;
 }
 
 void
@@ -74,11 +74,11 @@ BufferTypeBase::onActive(uint32_t bufferId, size_t *usedElems, size_t &deadElems
     flushLastUsed();
     ++_activeBuffers;
     _lastUsedElems = usedElems;
-    size_t reservedElements = getReservedElements(bufferId);
-    if (reservedElements != 0u) {
-        initializeReservedElements(buffer, reservedElements);
-        *usedElems = reservedElements;
-        deadElems = reservedElements;
+    size_t reservedElems = getReservedElements(bufferId);
+    if (reservedElems != 0u) {
+        initializeReservedElements(buffer, reservedElems);
+        *usedElems = reservedElems;
+        deadElems = reservedElems;
     }
 }
 
@@ -104,35 +104,35 @@ BufferTypeBase::onFree(size_t usedElems)
 }
 
 void
-BufferTypeBase::clampMaxClusters(uint32_t maxClusters)
+BufferTypeBase::clampMaxArrays(uint32_t maxArrays)
 {
-    _maxClusters = std::min(_maxClusters, maxClusters);
-    _minClusters = std::min(_minClusters, _maxClusters);
-    _numClustersForNewBuffer = std::min(_numClustersForNewBuffer, _maxClusters);
+    _maxArrays = std::min(_maxArrays, maxArrays);
+    _minArrays = std::min(_minArrays, _maxArrays);
+    _numArraysForNewBuffer = std::min(_numArraysForNewBuffer, _maxArrays);
 }
 
 size_t
-BufferTypeBase::calcClustersToAlloc(uint32_t bufferId, size_t elementsNeeded, bool resizing) const
+BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, size_t elemsNeeded, bool resizing) const
 {
-    size_t reservedElements = getReservedElements(bufferId);
+    size_t reservedElems = getReservedElements(bufferId);
     size_t usedElems = (resizing ? 0 : _activeUsedElems);
     if (_lastUsedElems != nullptr) {
         usedElems += *_lastUsedElems;
     }
-    assert((usedElems % _clusterSize) == 0);
-    size_t usedClusters = usedElems / _clusterSize;
-    size_t needClusters = (elementsNeeded + (resizing ? usedElems : reservedElements) + _clusterSize - 1) / _clusterSize;
-    size_t growClusters = (usedClusters * _allocGrowFactor);
-    size_t wantClusters = std::max((resizing ? usedClusters : 0u) + growClusters,
-                                   static_cast<size_t>(_minClusters));
-    size_t result = wantClusters;
-    if (result < needClusters) {
-        result = needClusters;
+    assert((usedElems % _arraySize) == 0);
+    size_t usedArrays = usedElems / _arraySize;
+    size_t neededArrays = (elemsNeeded + (resizing ? usedElems : reservedElems) + _arraySize - 1) / _arraySize;
+    size_t growArrays = (usedArrays * _allocGrowFactor);
+    size_t wantedArrays = std::max((resizing ? usedArrays : 0u) + growArrays,
+                                   static_cast<size_t>(_minArrays));
+    size_t result = wantedArrays;
+    if (result < neededArrays) {
+        result = neededArrays;
     }
-    if (result > _maxClusters) {
-        result = _maxClusters;
+    if (result > _maxArrays) {
+        result = _maxArrays;
     }
-    assert(result >= needClusters);
+    assert(result >= neededArrays);
     return result;
 }
 
