@@ -18,21 +18,19 @@ DataStoreT<RefT>::DataStoreT()
 {
 }
 
-
 template <typename RefT>
 DataStoreT<RefT>::~DataStoreT()
 {
 }
 
-
 template <typename RefT>
 void
-DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t len)
+DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t numElems)
 {
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
     if (state.isActive()) {
-        if (state.freeListList() != NULL && len == state.getArraySize()) {
+        if (state.freeListList() != NULL && numElems == state.getArraySize()) {
             if (state.freeList().empty()) {
                 state.addToFreeListList();
             }
@@ -41,19 +39,18 @@ DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t len)
     } else {
         assert(state.isOnHold());
     }
-    state.incDeadElems(len);
+    state.incDeadElems(numElems);
     state.cleanHold(getBuffer(intRef.bufferId()),
                     (intRef.offset() / RefType::align(1)) *
-                    state.getArraySize(), len);
+                    state.getArraySize(), numElems);
 }
-
 
 template <typename RefT>
 void
-DataStoreT<RefT>::holdElem(EntryRef ref, uint64_t len, size_t extraBytes)
+DataStoreT<RefT>::holdElem(EntryRef ref, uint64_t numElems, size_t extraBytes)
 {
     RefType intRef(ref);
-    uint64_t alignedLen = RefType::align(len);
+    uint64_t alignedLen = RefType::align(numElems);
     BufferState &state = getBufferState(intRef.bufferId());
     assert(state.isActive());
     if (state.hasDisabledElemHoldList()) {
@@ -64,7 +61,6 @@ DataStoreT<RefT>::holdElem(EntryRef ref, uint64_t len, size_t extraBytes)
     state.incHoldElems(alignedLen);
     state.incExtraHoldBytes(extraBytes);
 }
-
 
 template <typename RefT>
 void
@@ -88,7 +84,6 @@ DataStoreT<RefT>::trimElemHoldList(generation_t usedGen)
         elemHold2List.erase(elemHold2List.begin(), it);
     }
 }
-
 
 template <typename RefT>
 void

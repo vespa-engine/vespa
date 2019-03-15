@@ -21,6 +21,9 @@ struct DefaultReclaimer {
 
 namespace search::datastore {
 
+/**
+ * Concrete data store using the given EntryRef type to reference stored data.
+ */
 template <typename RefT = EntryRefT<22> >
 class DataStoreT : public DataStoreBase
 {
@@ -39,20 +42,20 @@ public:
      * @param ref       Reference to dead stored features
      * @param dead      Number of newly dead elements
      */
-    void incDead(EntryRef ref, uint64_t dead) {
+    void incDead(EntryRef ref, uint64_t deadElems) {
         RefType intRef(ref);
-        DataStoreBase::incDead(intRef.bufferId(), dead);
+        DataStoreBase::incDead(intRef.bufferId(), deadElems);
     }
 
     /**
-     * Free element.
+     * Free element(s).
      */
-    void freeElem(EntryRef ref, uint64_t len);
+    void freeElem(EntryRef ref, uint64_t numElems);
 
     /**
-     * Hold element.
+     * Hold element(s).
      */
-    void holdElem(EntryRef ref, uint64_t len, size_t extraBytes = 0);
+    void holdElem(EntryRef ref, uint64_t numElems, size_t extraBytes = 0);
 
     /**
      * Trim elem hold list, freeing elements that no longer needs to be held.
@@ -81,7 +84,9 @@ public:
 
 };
 
-
+/**
+ * Concrete data store storing elements of type EntryType, using the given EntryRef type to reference stored data.
+ */
 template <typename EntryType, typename RefT = EntryRefT<22> >
 class DataStore : public DataStoreT<RefT>
 {

@@ -44,8 +44,8 @@ public:
     BufferTypeBase(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays,
                    uint32_t numArraysForNewBuffer, float allocGrowFactor);
     virtual ~BufferTypeBase();
-    virtual void destroyElements(void *buffer, size_t numElements) = 0;
-    virtual void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) = 0;
+    virtual void destroyElements(void *buffer, size_t numElems) = 0;
+    virtual void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElems) = 0;
     // Return number of reserved elements at start of buffer, to avoid
     // invalid reference and handle data at negative offset (alignment
     // hacks) as used by dense tensor store.
@@ -53,7 +53,7 @@ public:
     // Initialize reserved elements at start of buffer.
     virtual void initializeReservedElements(void *buffer, size_t reservedElements) = 0;
     virtual size_t elementSize() const = 0;
-    virtual void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) = 0;
+    virtual void cleanHold(void *buffer, uint64_t offset, uint64_t numElems, CleanContext cleanCtx) = 0;
     size_t getArraySize() const { return _arraySize; }
     void flushLastUsed();
     virtual void onActive(uint32_t bufferId, size_t *usedElems, size_t &deadElems, void *buffer);
@@ -88,10 +88,10 @@ public:
     BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays,
                uint32_t numArraysForNewBuffer, float allocGrowFactor);
     ~BufferType();
-    void destroyElements(void *buffer, size_t numElements) override;
-    void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) override;
+    void destroyElements(void *buffer, size_t numElems) override;
+    void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElems) override;
     void initializeReservedElements(void *buffer, size_t reservedElements) override;
-    void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCxt) override;
+    void cleanHold(void *buffer, uint64_t offset, uint64_t numElems, CleanContext cleanCxt) override;
     size_t elementSize() const override { return sizeof(EntryType); }
 };
 
@@ -113,10 +113,10 @@ BufferType<EntryType>::~BufferType() { }
 
 template <typename EntryType>
 void
-BufferType<EntryType>::destroyElements(void *buffer, size_t numElements)
+BufferType<EntryType>::destroyElements(void *buffer, size_t numElems)
 {
     EntryType *e = static_cast<EntryType *>(buffer);
-    for (size_t j = numElements; j != 0; --j) {
+    for (size_t j = numElems; j != 0; --j) {
         e->~EntryType();
         ++e;
     }
@@ -126,11 +126,11 @@ template <typename EntryType>
 void
 BufferType<EntryType>::fallbackCopy(void *newBuffer,
                                     const void *oldBuffer,
-                                    size_t numElements)
+                                    size_t numElems)
 {
     EntryType *d = static_cast<EntryType *>(newBuffer);
     const EntryType *s = static_cast<const EntryType *>(oldBuffer);
-    for (size_t j = numElements; j != 0; --j) {
+    for (size_t j = numElems; j != 0; --j) {
         new (static_cast<void *>(d)) EntryType(*s);
         ++s;
         ++d;
@@ -150,10 +150,10 @@ BufferType<EntryType>::initializeReservedElements(void *buffer, size_t reservedE
 
 template <typename EntryType>
 void
-BufferType<EntryType>::cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext)
+BufferType<EntryType>::cleanHold(void *buffer, uint64_t offset, uint64_t numElems, CleanContext)
 {
     EntryType *e = static_cast<EntryType *>(buffer) + offset;
-    for (size_t j = len; j != 0; --j) {
+    for (size_t j = numElems; j != 0; --j) {
         *e = _emptyEntry;
         ++e;
     }

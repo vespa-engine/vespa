@@ -74,11 +74,11 @@ BufferTypeBase::onActive(uint32_t bufferId, size_t *usedElems, size_t &deadElems
     flushLastUsed();
     ++_activeBuffers;
     _lastUsedElems = usedElems;
-    size_t reservedElements = getReservedElements(bufferId);
-    if (reservedElements != 0u) {
-        initializeReservedElements(buffer, reservedElements);
-        *usedElems = reservedElements;
-        deadElems = reservedElements;
+    size_t reservedElems = getReservedElements(bufferId);
+    if (reservedElems != 0u) {
+        initializeReservedElements(buffer, reservedElems);
+        *usedElems = reservedElems;
+        deadElems = reservedElems;
     }
 }
 
@@ -112,16 +112,16 @@ BufferTypeBase::clampMaxArrays(uint32_t maxArrays)
 }
 
 size_t
-BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, size_t elementsNeeded, bool resizing) const
+BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, size_t elemsNeeded, bool resizing) const
 {
-    size_t reservedElements = getReservedElements(bufferId);
+    size_t reservedElems = getReservedElements(bufferId);
     size_t usedElems = (resizing ? 0 : _activeUsedElems);
     if (_lastUsedElems != nullptr) {
         usedElems += *_lastUsedElems;
     }
     assert((usedElems % _arraySize) == 0);
     size_t usedArrays = usedElems / _arraySize;
-    size_t neededArrays = (elementsNeeded + (resizing ? usedElems : reservedElements) + _arraySize - 1) / _arraySize;
+    size_t neededArrays = (elemsNeeded + (resizing ? usedElems : reservedElems) + _arraySize - 1) / _arraySize;
     size_t growArrays = (usedArrays * _allocGrowFactor);
     size_t wantedArrays = std::max((resizing ? usedArrays : 0u) + growArrays,
                                    static_cast<size_t>(_minArrays));
