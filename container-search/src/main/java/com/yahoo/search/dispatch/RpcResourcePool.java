@@ -1,13 +1,16 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch.rpc;
+package com.yahoo.search.dispatch;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.compress.Compressor;
+import com.yahoo.prelude.fastsearch.DocumentDatabase;
+import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.dispatch.FillInvoker;
+import com.yahoo.search.Query;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * RpcResourcePool constructs {@link FillInvoker} objects that communicate with content nodes over RPC. It also contains
@@ -18,6 +21,9 @@ import java.util.Map;
 public class RpcResourcePool {
     /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
     public final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
+
+    /** Unless turned off this will fill summaries by dispatching directly to search nodes over RPC when possible */
+    private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
 
     private final Compressor compressor = new Compressor();
     private final Client client;
@@ -39,6 +45,22 @@ public class RpcResourcePool {
             nodeConnectionsBuilder.put(node.key(), client.createConnection(node.host(), node.port()));
         }
         this.nodeConnections = nodeConnectionsBuilder.build();
+    }
+
+    public Optional<FillInvoker> getFillInvoker(Query query, VespaBackEndSearcher searcher, DocumentDatabase documentDb) {
+        if (query.properties().getBoolean(dispatchSummaries, true)
+            && ! searcher.summaryNeedsQuery(query)
+            && query.getRanking().getLocation() == null)
+        {
+            return Optional.of(new RpcFillInvoker(this, documentDb));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    // for testing
+    public FillInvoker getFillInvoker(DocumentDatabase documentDb) {
+        return new RpcFillInvoker(this, documentDb);
     }
 
     public Compressor compressor() {

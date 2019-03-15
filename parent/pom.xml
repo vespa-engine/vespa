@@ -263,27 +263,6 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>com.github.os72</groupId>
-                    <artifactId>protoc-jar-maven-plugin</artifactId>
-			        <version>3.6.0.2</version>
-			        <executions>
-						<execution>
-							<phase>generate-sources</phase>
-							<goals>
-								<goal>run</goal>
-							</goals>
-							<configuration>
-								<addSources>main</addSources>
-								<outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
-								<inputDirectories>
-									<include>src/main/protobuf</include>
-									<include>src/protobuf</include>
-								</inputDirectories>
-							</configuration>
-						</execution>
-			        </executions>
-                </plugin>
-                <plugin>
                     <groupId>com.yahoo.vespa</groupId>
                     <artifactId>abi-check-plugin</artifactId>
                     <version>${project.version}</version>
@@ -431,6 +410,11 @@
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
                 <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>com.goldmansachs</groupId>

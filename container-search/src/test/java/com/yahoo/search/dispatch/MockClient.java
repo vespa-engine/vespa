@@ -1,15 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch.rpc;
+package com.yahoo.search.dispatch;
 
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.document.GlobalId;
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.prelude.fastsearch.FastHit;
-import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.rpc.Client;
-import com.yahoo.search.dispatch.rpc.RpcFillInvoker;
-import com.yahoo.search.dispatch.rpc.RpcSearchInvoker;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
@@ -29,7 +25,6 @@ public class MockClient implements Client {
     private final Map<DocsumKey, Map<String, Object>> docsums = new HashMap<>();
     private final Compressor compressor = new Compressor();
     private boolean malfunctioning = false;
-    private Result searchResult;
 
     /** Set to true to cause this to produce an error instead of a regular response */
     public void setMalfunctioning(boolean malfunctioning) { this.malfunctioning = malfunctioning; }
@@ -75,24 +70,6 @@ public class MockClient implements Client {
         GetDocsumsResponse response = new GetDocsumsResponse(compressionResult.type().getCode(), slimeBytes.length,
                                                              compressionResult.data(), hitsContext);
         responseReceiver.receive(GetDocsumsResponseOrError.fromResponse(response));
-    }
-
-    @Override
-    public void search(NodeConnection node, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
-            RpcSearchInvoker responseReceiver, double timeoutSeconds) {
-        if (malfunctioning) {
-            responseReceiver.receive(SearchResponseOrError.fromError("Malfunctioning"));
-            return;
-        }
-
-        if(searchResult == null) {
-            responseReceiver.receive(SearchResponseOrError.fromError("No result defined"));
-            return;
-        }
-        var payload = ProtobufSerialization.serializeResult(searchResult);
-        var compressionResult = compressor.compress(compression, payload);
-        var response = new SearchResponse(compressionResult.type().getCode(), payload.length, compressionResult.data());
-        responseReceiver.receive(SearchResponseOrError.fromResponse(response));
     }
 
     public void setDocsumReponse(String nodeId, int docId, String docsumClass, Map<String, Object> docsumValues) {

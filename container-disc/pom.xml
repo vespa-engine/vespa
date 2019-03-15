@@ -136,11 +136,6 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <scope>provided</scope>
-    </dependency>
     <!-- end WARNING -->
   </dependencies>
   <build>
@@ -185,7 +180,6 @@
                 <!-- Misc 3rd party bundles -->
                 bcpkix-jdk15on-${bouncycastle.version}.jar,
                 bcprov-jdk15on-${bouncycastle.version}.jar,
-                protobuf-java-${protobuf.version}.jar,
                 <!-- Jersey 2 + Jackson 2 -->
                 aopalliance-repackaged-${hk2.version}.jar,
                 hk2-api-${hk2.version}.jar,

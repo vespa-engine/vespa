@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch.rpc;
+package com.yahoo.search.dispatch;
 
 import com.yahoo.collections.ListMap;
 import com.yahoo.compress.CompressionType;
@@ -12,7 +12,6 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.query.SessionId;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
