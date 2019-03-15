@@ -45,9 +45,9 @@ Node::UP
 inject(Node::UP query, Node::UP to_inject) {
     if (dynamic_cast<search::query::And *>(query.get())) {
         dynamic_cast<search::query::And &>(*query).append(std::move(to_inject));
-    } else  if (dynamic_cast<search::query::Rank *>(query.get())) {
-        search::query::Rank & rank = dynamic_cast<search::query::Rank &>(*query);
-        rank.prepend(inject(rank.stealFirst(), std::move(to_inject)));
+    } else  if (dynamic_cast<search::query::Rank *>(query.get()) || dynamic_cast<search::query::AndNot *>(query.get())) {
+        search::query::Intermediate & root = dynamic_cast<search::query::Intermediate &>(*query);
+        root.prepend(inject(root.stealFirst(), std::move(to_inject)));
     } else {
         auto new_root = std::make_unique<ProtonAnd>();
         new_root->append(std::move(query));
