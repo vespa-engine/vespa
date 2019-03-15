@@ -208,6 +208,7 @@ void FNetListener::RPC_setDistributionStates(FRT_RPCRequest* req) {
         req->SetError(RPCRequestWrapper::ERR_BAD_REQUEST, e.what());
         return;
     }
+    LOG(info, "Got state bundle %s", state_bundle->toString().c_str()); // TODO
 
     // TODO add constructor taking in shared_ptr directly instead?
     auto cmd = std::make_shared<api::SetSystemStateCommand>(*state_bundle);

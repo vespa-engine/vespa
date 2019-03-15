@@ -121,7 +121,6 @@ void
 BucketDBUpdater::removeSuperfluousBuckets(
         const lib::ClusterStateBundle& newState)
 {
-    // TODO too many indirections to get at config.
     const bool move_to_read_only_db = _distributorComponent.getDistributor().getConfig()
             .allowStaleReadsDuringClusterStateTransitions();
     for (auto &elem : _distributorComponent.getBucketSpaceRepo()) {
@@ -140,15 +139,18 @@ BucketDBUpdater::removeSuperfluousBuckets(
                 _distributorComponent.getDistributor().getStorageNodeUpStates());
         bucketDb.forEach(proc);
 
-        // TODO vec of Entry instead to avoid lookup and remove? Uses more transient memory...
         for (const auto & bucket : proc.getBucketsToRemove()) {
+            bucketDb.remove(bucket);
+        }
+        // TODO vec of Entry instead to avoid lookup and remove? Uses more transient memory...
+        for (const auto& bucket : proc.getNonOwnedBuckets()) {
             if (move_to_read_only_db) {
-                // TODO explicit transfer function?
                 auto db_entry = bucketDb.get(bucket);
                 readOnlyDb.update(db_entry); // TODO Entry move support
             }
             bucketDb.remove(bucket);
         }
+
     }
 }
 
@@ -546,11 +548,17 @@ void
 BucketDBUpdater::processCompletedPendingClusterState()
 {
     if (_pendingClusterState->isDeferred()) {
+        LOG(debug, "Deferring completion of pending cluster state version %u until explicitly activated",
+                   _pendingClusterState->clusterStateVersion());
         assert(_pendingClusterState->hasCommand()); // Deferred transitions should only ever be created by state commands.
         // Sending down SetSystemState command will reach the state manager and a reply
         // will be auto-sent back to the cluster controller in charge. Once this happens,
         // it will send an explicit activation command once all distributors have reported
         // that their pending cluster states have completed.
+        // A booting distributor will treat itself as "system Up" before the state has actually
+        // taken effect via activation. External operation handler will keep operations from
+        // actually being scheduled until state has been activated. The external operation handler
+        // needs to be explicitly aware of the case where no state has yet to be activated.
         _distributorComponent.getDistributor().getMessageSender().sendDown(
                 _pendingClusterState->getCommand());
         _pendingClusterState->clearCommand();
@@ -567,6 +575,7 @@ BucketDBUpdater::activatePendingClusterState()
     _pendingClusterState->mergeIntoBucketDatabases();
 
     if (_pendingClusterState->isVersionedTransition()) {
+        LOG(debug, "Activating pending cluster state version %u", _pendingClusterState->clusterStateVersion());
         enableCurrentClusterStateBundleInDistributor();
         if (_pendingClusterState->hasCommand()) {
             _distributorComponent.getDistributor().getMessageSender().sendDown(
@@ -574,6 +583,7 @@ BucketDBUpdater::activatePendingClusterState()
         }
         addCurrentStateToClusterStateHistory();
     } else {
+        LOG(debug, "Activating pending distribution config");
         // TODO distribution changes cannot currently be deferred as they are not
         // initiated by the cluster controller!
         _distributorComponent.getDistributor().notifyDistributionChangeEnabled();
@@ -583,13 +593,16 @@ BucketDBUpdater::activatePendingClusterState()
     _outdatedNodesMap.clear();
     sendAllQueuedBucketRechecks();
     completeTransitionTimer();
+    for (auto& space : _distributorComponent.getReadOnlyBucketSpaceRepo()) {
+        space.second->getBucketDatabase().clear();
+    }
 }
 
 void
 BucketDBUpdater::enableCurrentClusterStateBundleInDistributor()
 {
     const lib::ClusterStateBundle& state(
-            _pendingClusterState->getCommand()->getClusterStateBundle());
+            _pendingClusterState->getNewClusterStateBundle());
 
     LOG(debug,
         "BucketDBUpdater finished processing state %s",
@@ -771,7 +784,7 @@ BucketDBUpdater::NodeRemover::process(BucketDatabase::Entry& e)
         return true;
     }
     if (!distributorOwnsBucket(bucketId)) {
-        _removedBuckets.push_back(bucketId);
+        _nonOwnedBuckets.push_back(bucketId);
         return true;
     }
 

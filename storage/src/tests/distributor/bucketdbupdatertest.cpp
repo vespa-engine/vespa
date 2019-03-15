@@ -114,18 +114,11 @@ class BucketDBUpdaterTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted);
     CPPUNIT_TEST(global_distribution_hash_falls_back_to_legacy_format_upon_request_rejection);
     CPPUNIT_TEST(non_owned_buckets_moved_to_read_only_db_on_ownership_change);
+    CPPUNIT_TEST(buckets_no_longer_available_are_not_moved_to_read_only_database);
     CPPUNIT_TEST(non_owned_buckets_purged_when_read_only_support_is_config_disabled);
+    CPPUNIT_TEST(deferred_activated_state_does_not_enable_state_until_activation_received);
+    CPPUNIT_TEST(read_only_db_cleared_once_pending_state_is_activated);
     CPPUNIT_TEST_SUITE_END();
-
-    /*
-     * TODO tests
-     *  - buckets moved to read only db on ownership change
-     *    - even when self is down in pending state
-     *  - buckets NOT moved to read only db on content node down/maintenance
-     *  - read only db cleared when cluster state activated
-     *  - explicit cluster state activation path
-     *  - legacy implicit cluster state activation support
-     */
 
 public:
     BucketDBUpdaterTest();
@@ -188,7 +181,10 @@ protected:
     void batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted();
     void global_distribution_hash_falls_back_to_legacy_format_upon_request_rejection();
     void non_owned_buckets_moved_to_read_only_db_on_ownership_change();
+    void buckets_no_longer_available_are_not_moved_to_read_only_database();
     void non_owned_buckets_purged_when_read_only_support_is_config_disabled();
+    void deferred_activated_state_does_not_enable_state_until_activation_received();
+    void read_only_db_cleared_once_pending_state_is_activated();
 
     auto &defaultDistributorBucketSpace() { return getBucketSpaceRepo().get(makeBucketSpace()); }
 
@@ -215,6 +211,19 @@ protected:
     // cluster state component (just not by operations), so it would not have the expected semantics.
     DistributorBucketSpaceRepo& read_only_repo() noexcept { return getReadOnlyBucketSpaceRepo(); }
 
+    BucketDatabase& mutable_default_db() noexcept {
+        return mutable_repo().get(FixedBucketSpaces::default_space()).getBucketDatabase();
+    }
+    BucketDatabase& mutable_global_db() noexcept {
+        return mutable_repo().get(FixedBucketSpaces::global_space()).getBucketDatabase();
+    }
+    BucketDatabase& read_only_default_db() noexcept {
+        return read_only_repo().get(FixedBucketSpaces::default_space()).getBucketDatabase();
+    }
+    BucketDatabase& read_only_global_db() noexcept {
+        return read_only_repo().get(FixedBucketSpaces::global_space()).getBucketDatabase();
+    }
+
     static std::string getNodeList(std::vector<uint16_t> nodes, size_t count);
 
     std::string getNodeList(std::vector<uint16_t> nodes);
@@ -227,6 +236,10 @@ protected:
     size_t messageCount(size_t messagesPerBucketSpace) const {
         return messagesPerBucketSpace * _bucketSpaces.size();
     }
+
+    void trigger_completed_but_not_yet_activated_transition(
+            vespalib::stringref initial_state, uint32_t initial_buckets, uint32_t initial_expected_msgs,
+            vespalib::stringref pending_state, uint32_t pending_buckets, uint32_t pending_expected_msgs);
 
 public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
@@ -391,14 +404,25 @@ public:
     void setSystemState(const lib::ClusterState& state) {
         const size_t sizeBeforeState = _sender.commands.size();
         getBucketDBUpdater().onSetSystemState(
-                std::shared_ptr<api::SetSystemStateCommand>(
-                        new api::SetSystemStateCommand(state)));
+                std::make_shared<api::SetSystemStateCommand>(state));
         // A lot of test logic has the assumption that all messages sent as a
         // result of cluster state changes will be in increasing index order
         // (for simplicity, not because this is required for correctness).
         // Only sort the messages that arrived as a result of the state, don't
         // jumble the sorting with any existing messages.
         sortSentMessagesByIndex(_sender, sizeBeforeState);
+    }
+
+    void setClusterStateBundle(const lib::ClusterStateBundle& state) {
+        const size_t sizeBeforeState = _sender.commands.size();
+        getBucketDBUpdater().onSetSystemState(
+                std::make_shared<api::SetSystemStateCommand>(state));
+        sortSentMessagesByIndex(_sender, sizeBeforeState);
+    }
+
+    void activateClusterStateVersion(uint32_t version) {
+        getBucketDBUpdater().onActivateClusterStateVersion(
+                std::make_shared<api::ActivateClusterStateVersionCommand>(version));
     }
 
     void completeBucketInfoGathering(const lib::ClusterState& state,
@@ -2640,7 +2664,7 @@ void BucketDBUpdaterTest::non_owned_buckets_moved_to_read_only_db_on_ownership_c
     getConfig().setAllowStaleReadsDuringClusterStateTransitions(true);
 
     lib::ClusterState initial_state("distributor:1 storage:4"); // All buckets owned by us by definition
-    setSystemState(initial_state);
+    setClusterStateBundle(lib::ClusterStateBundle(initial_state, {}, false)); // Skip activation step for simplicity
 
     CPPUNIT_ASSERT_EQUAL(messageCount(4), _sender.commands.size());
     constexpr uint32_t n_buckets = 10;
@@ -2665,9 +2689,9 @@ void BucketDBUpdaterTest::non_owned_buckets_moved_to_read_only_db_on_ownership_c
     });
     CPPUNIT_ASSERT(!buckets_not_owned_in_pending_state.empty());
 
-    setSystemState(pending_state);
+    setClusterStateBundle(lib::ClusterStateBundle(pending_state, {}, true)); // Now requires activation
 
-    CPPUNIT_ASSERT_EQUAL(size_t(n_buckets - buckets_not_owned_in_pending_state.size()), default_db.size());
+    CPPUNIT_ASSERT_EQUAL(n_buckets - buckets_not_owned_in_pending_state.size(), default_db.size());
     CPPUNIT_ASSERT_EQUAL(buckets_not_owned_in_pending_state.size(), read_only_db.size());
 
     // TODO replace with gmock unordered set equality matcher
@@ -2679,6 +2703,26 @@ void BucketDBUpdaterTest::non_owned_buckets_moved_to_read_only_db_on_ownership_c
     // TODO check global space too!
 }
 
+// TODO dedupe setup stuff
+void BucketDBUpdaterTest::buckets_no_longer_available_are_not_moved_to_read_only_database() {
+    getConfig().setAllowStaleReadsDuringClusterStateTransitions(true);
+    lib::ClusterState initial_state("distributor:1 storage:4"); // All buckets owned by us by definition
+    setClusterStateBundle(lib::ClusterStateBundle(initial_state, {}, false)); // Skip activation step for simplicity
+
+    CPPUNIT_ASSERT_EQUAL(messageCount(4), _sender.commands.size());
+    constexpr uint32_t n_buckets = 10;
+    completeBucketInfoGathering(initial_state, messageCount(4), n_buckets);
+    _sender.clear();
+
+    // No ownership change, just node down. Test redundancy is 2, so removing 2 nodes will
+    // cause some buckets to be entirely unavailable.
+    lib::ClusterState pending_state("distributor:1 storage:4 .0.s:d .1.s:m");
+    setClusterStateBundle(lib::ClusterStateBundle(pending_state, {}, true));
+
+    CPPUNIT_ASSERT_EQUAL(size_t(0), read_only_default_db().size());
+}
+
+// TODO must ensure this works correctly with cluster controller!
 void BucketDBUpdaterTest::non_owned_buckets_purged_when_read_only_support_is_config_disabled() {
     getConfig().setAllowStaleReadsDuringClusterStateTransitions(false);
 
@@ -2690,13 +2734,79 @@ void BucketDBUpdaterTest::non_owned_buckets_purged_when_read_only_support_is_con
     completeBucketInfoGathering(initial_state, messageCount(4), n_buckets);
     _sender.clear();
 
-    auto& read_only_db = read_only_repo().get(makeBucketSpace()).getBucketDatabase();
-    CPPUNIT_ASSERT_EQUAL(size_t(0), read_only_db.size());
+    CPPUNIT_ASSERT_EQUAL(size_t(0), read_only_default_db().size());
 
     lib::ClusterState pending_state("distributor:2 storage:4");
     setSystemState(pending_state);
     // No buckets should be moved into read only db
-    CPPUNIT_ASSERT_EQUAL(size_t(0), read_only_db.size());
+    CPPUNIT_ASSERT_EQUAL(size_t(0), read_only_default_db().size());
 }
+
+void BucketDBUpdaterTest::trigger_completed_but_not_yet_activated_transition(
+        vespalib::stringref initial_state_str,
+        uint32_t initial_buckets,
+        uint32_t initial_expected_msgs,
+        vespalib::stringref pending_state_str,
+        uint32_t pending_buckets,
+        uint32_t pending_expected_msgs)
+{
+    getConfig().setAllowStaleReadsDuringClusterStateTransitions(true);
+    lib::ClusterState initial_state(initial_state_str);
+    setSystemState(initial_state);
+    // TODO decouple expected message count
+    CPPUNIT_ASSERT_EQUAL(messageCount(initial_expected_msgs), _sender.commands.size());
+    completeBucketInfoGathering(initial_state, messageCount(initial_expected_msgs), initial_buckets);
+    _sender.clear();
+
+    lib::ClusterState pending_state(pending_state_str); // Ownership change
+    setClusterStateBundle(lib::ClusterStateBundle(pending_state, {}, true));
+    CPPUNIT_ASSERT_EQUAL(messageCount(pending_expected_msgs), _sender.commands.size());
+    completeBucketInfoGathering(pending_state, messageCount(pending_expected_msgs), pending_buckets);
+    _sender.clear();
+}
+
+void BucketDBUpdaterTest::deferred_activated_state_does_not_enable_state_until_activation_received() {
+    constexpr uint32_t n_buckets = 10;
+    trigger_completed_but_not_yet_activated_transition("version:1 distributor:2 storage:4", 0, 4,
+                                                       "version:2 distributor:1 storage:4", n_buckets, 4);
+
+    // Version should not be switched over yet
+    CPPUNIT_ASSERT_EQUAL(uint32_t(1), getDistributor().getClusterStateBundle().getVersion());
+
+    CPPUNIT_ASSERT_EQUAL(uint64_t(0), mutable_default_db().size());
+    CPPUNIT_ASSERT_EQUAL(uint64_t(0), mutable_global_db().size());
+
+    activateClusterStateVersion(2);
+
+    CPPUNIT_ASSERT_EQUAL(uint32_t(2), getDistributor().getClusterStateBundle().getVersion());
+    CPPUNIT_ASSERT_EQUAL(uint64_t(n_buckets), mutable_default_db().size());
+    CPPUNIT_ASSERT_EQUAL(uint64_t(n_buckets), mutable_global_db().size());
+}
+
+void BucketDBUpdaterTest::read_only_db_cleared_once_pending_state_is_activated() {
+    constexpr uint32_t n_buckets = 10;
+    trigger_completed_but_not_yet_activated_transition("version:1 distributor:1 storage:4", n_buckets, 4,
+                                                       "version:2 distributor:2 storage:4", n_buckets, 0);
+    activateClusterStateVersion(2);
+
+    CPPUNIT_ASSERT_EQUAL(uint64_t(0), read_only_default_db().size());
+    CPPUNIT_ASSERT_EQUAL(uint64_t(0), read_only_global_db().size());
+}
+
+/*
+ * TODO tests
+ *  - [X] buckets moved to read only db on ownership change
+ *    - even when self is down in pending state
+ *  - [X] buckets NOT moved to read only db on content node down/maintenance
+ *  - [X] read only db cleared when cluster state activated
+ *  - explicit cluster state activation path
+ *  - legacy implicit cluster state activation support
+ *  - return activation ACK if already activated
+ * - buckets merged on explicit activation
+ * - version check for activation msg
+ * - deferred bundle with non-deferred config?
+ */
+
+// TODO reconcile default deferred activation state of bundle between Java and C++!
 
 }

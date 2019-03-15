@@ -23,7 +23,9 @@ class ExternalOperationHandlerTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(testBucketSplitMask);
     CPPUNIT_TEST(mutating_operation_wdr_bounced_on_wrong_current_distribution);
     CPPUNIT_TEST(mutating_operation_busy_bounced_on_wrong_pending_distribution);
+    CPPUNIT_TEST(mutating_operation_busy_bounced_if_no_cluster_state_received_yet);
     CPPUNIT_TEST(read_only_operation_wdr_bounced_on_wrong_current_distribution);
+    CPPUNIT_TEST(read_only_operation_busy_bounced_if_no_cluster_state_received_yet);
     CPPUNIT_TEST(reject_put_if_not_past_safe_time_point);
     CPPUNIT_TEST(reject_remove_if_not_past_safe_time_point);
     CPPUNIT_TEST(reject_update_if_not_past_safe_time_point);
@@ -59,6 +61,8 @@ class ExternalOperationHandlerTest : public CppUnit::TestFixture,
                                                     const vespalib::string& id) const;
     std::shared_ptr<api::RemoveCommand> makeRemoveCommand(const vespalib::string& id) const;
 
+    void verify_busy_bounced_due_to_no_active_state(std::shared_ptr<api::StorageCommand> cmd);
+
     Operation::SP start_operation_verify_not_rejected(std::shared_ptr<api::StorageCommand> cmd);
     void start_operation_verify_rejected(std::shared_ptr<api::StorageCommand> cmd);
 
@@ -92,8 +96,10 @@ class ExternalOperationHandlerTest : public CppUnit::TestFixture,
 protected:
     void testBucketSplitMask();
     void mutating_operation_wdr_bounced_on_wrong_current_distribution();
-    void read_only_operation_wdr_bounced_on_wrong_current_distribution();
     void mutating_operation_busy_bounced_on_wrong_pending_distribution();
+    void mutating_operation_busy_bounced_if_no_cluster_state_received_yet();
+    void read_only_operation_wdr_bounced_on_wrong_current_distribution();
+    void read_only_operation_busy_bounced_if_no_cluster_state_received_yet();
     void reject_put_if_not_past_safe_time_point();
     void reject_remove_if_not_past_safe_time_point();
     void reject_update_if_not_past_safe_time_point();
@@ -254,7 +260,7 @@ void
 ExternalOperationHandlerTest::mutating_operation_wdr_bounced_on_wrong_current_distribution()
 {
     createLinks();
-    std::string state("distributor:2 storage:2");
+    std::string state("version:1 distributor:2 storage:2");
     setupDistributor(1, 2, state);
 
     document::BucketId bucket(findNonOwnedUserBucketInState(state));
@@ -266,7 +272,7 @@ ExternalOperationHandlerTest::mutating_operation_wdr_bounced_on_wrong_current_di
     CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
     CPPUNIT_ASSERT_EQUAL(
             std::string("ReturnCode(WRONG_DISTRIBUTION, "
-                        "distributor:2 storage:2)"),
+                        "version:1 distributor:2 storage:2)"),
             _sender.replies[0]->getResult().toString());
 }
 
@@ -274,7 +280,7 @@ void
 ExternalOperationHandlerTest::read_only_operation_wdr_bounced_on_wrong_current_distribution()
 {
     createLinks();
-    std::string state("distributor:2 storage:2");
+    std::string state("version:1 distributor:2 storage:2");
     setupDistributor(1, 2, state);
 
     document::BucketId bucket(findNonOwnedUserBucketInState(state));
@@ -286,7 +292,7 @@ ExternalOperationHandlerTest::read_only_operation_wdr_bounced_on_wrong_current_d
     CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
     CPPUNIT_ASSERT_EQUAL(
             std::string("ReturnCode(WRONG_DISTRIBUTION, "
-                        "distributor:2 storage:2)"),
+                        "version:1 distributor:2 storage:2)"),
             _sender.replies[0]->getResult().toString());
 }
 
@@ -315,6 +321,34 @@ ExternalOperationHandlerTest::mutating_operation_busy_bounced_on_wrong_pending_d
             _sender.replies[0]->getResult().toString());
 }
 
+void
+ExternalOperationHandlerTest::verify_busy_bounced_due_to_no_active_state(std::shared_ptr<api::StorageCommand> cmd)
+{
+    createLinks();
+    std::string state{}; // No version --> not yet received
+    setupDistributor(1, 2, state);
+
+    Operation::SP genOp;
+    CPPUNIT_ASSERT(getExternalOperationHandler().handleMessage(cmd, genOp));
+    CPPUNIT_ASSERT(!genOp.get());
+    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("ReturnCode(BUSY, No cluster state activated yet)"),
+            _sender.replies[0]->getResult().toString());
+}
+
+void
+ExternalOperationHandlerTest::mutating_operation_busy_bounced_if_no_cluster_state_received_yet()
+{
+    verify_busy_bounced_due_to_no_active_state(makeUpdateCommandForUser(12345));
+}
+
+void
+ExternalOperationHandlerTest::read_only_operation_busy_bounced_if_no_cluster_state_received_yet()
+{
+    verify_busy_bounced_due_to_no_active_state(makeGetCommandForUser(12345));
+}
+
 using TimePoint = ExternalOperationHandler::TimePoint;
 using namespace std::literals::chrono_literals;
 
@@ -322,7 +356,7 @@ void ExternalOperationHandlerTest::assert_rejection_due_to_unsafe_time(
         std::shared_ptr<api::StorageCommand> cmd)
 {
     createLinks();
-    setupDistributor(1, 2, "distributor:1 storage:1");
+    setupDistributor(1, 2, "version:1 distributor:1 storage:1");
     getClock().setAbsoluteTimeInSeconds(9);
     getExternalOperationHandler().rejectFeedBeforeTimeReached(TimePoint(10s));
 
@@ -357,7 +391,7 @@ void ExternalOperationHandlerTest::reject_update_if_not_past_safe_time_point() {
 
 void ExternalOperationHandlerTest::get_not_rejected_by_unsafe_time_point() {
     createLinks();
-    setupDistributor(1, 2, "distributor:1 storage:1");
+    setupDistributor(1, 2, "version:1 distributor:1 storage:1");
     getClock().setAbsoluteTimeInSeconds(9);
     getExternalOperationHandler().rejectFeedBeforeTimeReached(TimePoint(10s));
 
@@ -372,7 +406,7 @@ void ExternalOperationHandlerTest::get_not_rejected_by_unsafe_time_point() {
 
 void ExternalOperationHandlerTest::mutation_not_rejected_when_safe_point_reached() {
     createLinks();
-    setupDistributor(1, 2, "distributor:1 storage:1");
+    setupDistributor(1, 2, "version:1 distributor:1 storage:1");
     getClock().setAbsoluteTimeInSeconds(10);
     getExternalOperationHandler().rejectFeedBeforeTimeReached(TimePoint(10s));
 
@@ -390,7 +424,7 @@ void ExternalOperationHandlerTest::mutation_not_rejected_when_safe_point_reached
 
 void ExternalOperationHandlerTest::set_up_distributor_for_sequencing_test() {
     createLinks();
-    setupDistributor(1, 2, "distributor:1 storage:1");
+    setupDistributor(1, 2, "version:1 distributor:1 storage:1");
 }
 
 Operation::SP ExternalOperationHandlerTest::start_operation_verify_not_rejected(
@@ -518,7 +552,7 @@ void ExternalOperationHandlerTest::sequencing_can_be_explicitly_config_disabled(
 
 void ExternalOperationHandlerTest::gets_are_started_with_mutable_db_outside_transition_period() {
     createLinks();
-    std::string current = "distributor:1 storage:3";
+    std::string current = "version:1 distributor:1 storage:3";
     setupDistributor(1, 3, current);
     getConfig().setAllowStaleReadsDuringClusterStateTransitions(true);
 

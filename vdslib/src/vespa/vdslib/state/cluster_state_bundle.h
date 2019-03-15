@@ -5,6 +5,7 @@
 #include <vespa/document/bucket/bucketspace.h>
 #include <unordered_map>
 #include <iosfwd>
+#include <string>
 
 namespace storage::lib {
 
@@ -40,6 +41,7 @@ public:
     }
     uint32_t getVersion() const;
     bool deferredActivation() const noexcept { return _deferredActivation; }
+    std::string toString() const;
     bool operator==(const ClusterStateBundle &rhs) const;
     bool operator!=(const ClusterStateBundle &rhs) const { return !operator==(rhs); }
 };

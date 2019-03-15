@@ -518,11 +518,12 @@ bool
 StateManager::onActivateClusterStateVersion(
         const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
 {
-    // TODO we probably don't want to invoke listeners here? but just bounce with
-    // currently activated bundle version?
-    // Must ensure that layer above (i.e. distributor) maintains strict operation
-    // ordering.
-    sendUp(std::make_shared<api::ActivateClusterStateVersionReply>(*cmd));
+    auto reply = std::make_shared<api::ActivateClusterStateVersionReply>(*cmd);
+    {
+        vespalib::LockGuard lock(_stateLock);
+        reply->setActualVersion(_systemState ? _systemState->getVersion() : 0);
+    }
+    sendUp(reply);
     return true;
 }
 

@@ -4,6 +4,7 @@
 #include "cluster_state_bundle.h"
 #include "clusterstate.h"
 #include <iostream>
+#include <sstream>
 
 namespace storage::lib {
 
@@ -76,6 +77,14 @@ ClusterStateBundle::operator==(const ClusterStateBundle &rhs) const
         }
     }
     return true;
+}
+
+std::string
+ClusterStateBundle::toString() const
+{
+    std::ostringstream os;
+    os << *this;
+    return os.str();
 }
 
 std::ostream& operator<<(std::ostream& os, const ClusterStateBundle& bundle) {

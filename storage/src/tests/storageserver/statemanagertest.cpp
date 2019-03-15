@@ -37,6 +37,7 @@ struct StateManagerTest : public CppUnit::TestFixture {
     void can_explicitly_send_get_node_state_reply();
     void explicit_node_state_replying_without_pending_request_immediately_replies_on_next_request();
     void immediate_node_state_replying_is_tracked_per_controller();
+    void activation_command_is_bounced_with_current_cluster_state_version();
 
     CPPUNIT_TEST_SUITE(StateManagerTest);
     CPPUNIT_TEST(testSystemState);
@@ -45,8 +46,10 @@ struct StateManagerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(can_explicitly_send_get_node_state_reply);
     CPPUNIT_TEST(explicit_node_state_replying_without_pending_request_immediately_replies_on_next_request);
     CPPUNIT_TEST(immediate_node_state_replying_is_tracked_per_controller);
+    CPPUNIT_TEST(activation_command_is_bounced_with_current_cluster_state_version);
     CPPUNIT_TEST_SUITE_END();
 
+    void force_current_cluster_state_version(uint32_t version);
     void mark_reported_node_state_up();
     void send_down_get_node_state_request(uint16_t controller_index);
     void assert_ok_get_node_state_reply_sent_and_clear();
@@ -99,6 +102,12 @@ StateManagerTest::tearDown() {
     _upper.reset(0);
     _node.reset(0);
     _metricManager.reset();
+}
+
+void StateManagerTest::force_current_cluster_state_version(uint32_t version) {
+    ClusterState state(*_manager->getClusterStateBundle()->getBaselineClusterState());
+    state.setVersion(version);
+    _manager->setClusterStateBundle(lib::ClusterStateBundle(state));
 }
 
 #define GET_ONLY_OK_REPLY(varname) \
@@ -236,9 +245,7 @@ StateManagerTest::testReportedNodeState()
 }
 
 void StateManagerTest::current_cluster_state_version_is_included_in_host_info_json() {
-    ClusterState state(*_manager->getClusterStateBundle()->getBaselineClusterState());
-    state.setVersion(123);
-    _manager->setClusterStateBundle(lib::ClusterStateBundle(state));
+    force_current_cluster_state_version(123);
 
     std::string nodeInfoString(_manager->getNodeInfo());
     vespalib::Memory goldenMemory(nodeInfoString);
@@ -341,6 +348,23 @@ void StateManagerTest::immediate_node_state_replying_is_tracked_per_controller()
     send_down_get_node_state_request(1);
     send_down_get_node_state_request(2);
     CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumReplies());
+}
+
+void StateManagerTest::activation_command_is_bounced_with_current_cluster_state_version() {
+    force_current_cluster_state_version(12345);
+
+    auto cmd = std::make_shared<api::ActivateClusterStateVersionCommand>(12340);
+    cmd->setTimeout(10000000);
+    cmd->setSourceIndex(0);
+    _upper->sendDown(cmd);
+
+    CPPUNIT_ASSERT_EQUAL(size_t(1), _upper->getNumReplies());
+    std::shared_ptr<api::StorageReply> reply;
+    GET_ONLY_OK_REPLY(reply); // Implicitly clears messages from _upper
+    CPPUNIT_ASSERT_EQUAL(api::MessageType::ACTIVATE_CLUSTER_STATE_VERSION_REPLY, reply->getType());
+    auto& activate_reply = dynamic_cast<api::ActivateClusterStateVersionReply&>(*reply);
+    CPPUNIT_ASSERT_EQUAL(uint32_t(12340), activate_reply.activateVersion());
+    CPPUNIT_ASSERT_EQUAL(uint32_t(12345), activate_reply.actualVersion());
 }
 
 } // storage

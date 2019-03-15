@@ -66,6 +66,7 @@ private:
     void bounce_with_busy_during_state_transition(api::StorageCommand& cmd,
                                                   const lib::ClusterState& current_state,
                                                   const lib::ClusterState& pending_state);
+    void bounce_with_result(api::StorageCommand& cmd, const api::ReturnCode& result);
 
     bool checkSafeTimeReached(api::StorageCommand& cmd);
     api::ReturnCode makeSafeTimeRejectionResult(TimePoint unsafeTime);

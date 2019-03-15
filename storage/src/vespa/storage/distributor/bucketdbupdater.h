@@ -203,6 +203,8 @@ private:
                     const char* upStates)
             : _oldState(oldState),
               _state(s),
+              _nonOwnedBuckets(),
+              _removedBuckets(),
               _localIndex(localIndex),
               _distribution(distribution),
               _upStates(upStates) {}
@@ -212,8 +214,11 @@ private:
         void logRemove(const document::BucketId& bucketId, const char* msg) const;
         bool distributorOwnsBucket(const document::BucketId&) const;
 
-        const std::vector<document::BucketId>& getBucketsToRemove() const {
+        const std::vector<document::BucketId>& getBucketsToRemove() const noexcept {
             return _removedBuckets;
+        }
+        const std::vector<document::BucketId>& getNonOwnedBuckets() const noexcept {
+            return _nonOwnedBuckets;
         }
     private:
         void setCopiesInEntry(BucketDatabase::Entry& e, const std::vector<BucketCopy>& copies) const;
@@ -221,6 +226,7 @@ private:
 
         const lib::ClusterState _oldState;
         const lib::ClusterState _state;
+        std::vector<document::BucketId> _nonOwnedBuckets;
         std::vector<document::BucketId> _removedBuckets;
 
         uint16_t _localIndex;

@@ -72,19 +72,27 @@ ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
     return true;
 }
 
+void ExternalOperationHandler::bounce_with_result(api::StorageCommand& cmd, const api::ReturnCode& result) {
+    api::StorageReply::UP reply(cmd.makeReply());
+    reply->setResult(result);
+    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+}
+
 void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd) {
     // Distributor ownership is equal across cluster states, so always send back default state.
     // This also helps client avoid getting confused by possibly observing different actual
-    // states for global/non-global document types for the same state version.
-    auto cluster_state_str = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space())
-            .getClusterState().toString();
-    LOG(debug, "Got message with wrong distribution, sending back state '%s'",
-        cluster_state_str.c_str());
-
-    api::StorageReply::UP reply(cmd.makeReply());
-    api::ReturnCode ret(api::ReturnCode::WRONG_DISTRIBUTION, cluster_state_str);
-    reply->setResult(ret);
-    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+    // (derived) state strings for global/non-global document types for the same state version.
+    // Similarly, if we've yet to activate any version at all we send back BUSY instead
+    // of a suspiciously empty WrongDistributionReply.
+    const auto& cluster_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
+    if (cluster_state.getVersion() != 0) {
+        auto cluster_state_str = cluster_state.toString();
+        LOG(debug, "Got message with wrong distribution, sending back state '%s'", cluster_state_str.c_str());
+        bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::WRONG_DISTRIBUTION, cluster_state_str));
+    } else { // Only valid for empty startup state
+        LOG(debug, "Got message with wrong distribution, but no cluster state activated yet. Sending back BUSY");
+        bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::BUSY, "No cluster state activated yet"));
+    }
 }
 
 void ExternalOperationHandler::bounce_with_busy_during_state_transition(
