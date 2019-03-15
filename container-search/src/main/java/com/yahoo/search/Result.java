@@ -5,12 +5,7 @@ import com.yahoo.collections.ListMap;
 import com.yahoo.net.URI;
 import com.yahoo.protect.Validator;
 import com.yahoo.search.query.context.QueryContext;
-import com.yahoo.search.result.Coverage;
-import com.yahoo.search.result.ErrorMessage;
-import com.yahoo.search.result.Hit;
-import com.yahoo.search.result.HitGroup;
-import com.yahoo.search.result.HitOrderer;
-import com.yahoo.search.result.HitSortOrderer;
+import com.yahoo.search.result.*;
 import com.yahoo.search.statistics.ElapsedTime;
 
 import java.util.Iterator;
@@ -330,4 +325,5 @@ public final class Result extends com.yahoo.processing.Response implements Clone
             headers = new ListMap<>();
         return headers;
     }
+
 }

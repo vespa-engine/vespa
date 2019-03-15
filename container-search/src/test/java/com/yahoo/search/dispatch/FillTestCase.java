@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch.rpc;
+package com.yahoo.search.dispatch;
 
 import com.yahoo.prelude.fastsearch.DocsumDefinition;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
@@ -8,9 +8,6 @@ import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.rpc.Client;
-import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
-import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -39,7 +36,6 @@ public class FillTestCase {
         nodes.put(1, client.createConnection("host1", 123));
         nodes.put(2, client.createConnection("host2", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -55,7 +51,7 @@ public class FillTestCase {
         client.setDocsumReponse("host2", 3, "summaryClass1", map("field1", "s.2.3", "field2", 3));
         client.setDocsumReponse("host0", 4, "summaryClass1", map("field1", "s.0.4", "field2", 4));
 
-        factory.createFillInvoker(db()).fill(result, "summaryClass1");
+        rpcResourcePool.getFillInvoker(db()).fill(result, "summaryClass1");
 
         assertEquals("s.0.0", result.hits().get("hit:0").getField("field1").toString());
         assertEquals("s.2.1", result.hits().get("hit:1").getField("field1").toString());
@@ -76,7 +72,6 @@ public class FillTestCase {
         nodes.put(1, client.createConnection("host1", 123));
         nodes.put(2, client.createConnection("host2", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -92,7 +87,7 @@ public class FillTestCase {
         client.setDocsumReponse("host2", 3, "summaryClass1", map("field1", "s.2.3", "field2", 3));
         client.setDocsumReponse("host0", 4, "summaryClass1",new HashMap<>());
 
-        factory.createFillInvoker(db()).fill(result, "summaryClass1");
+        rpcResourcePool.getFillInvoker(db()).fill(result, "summaryClass1");
 
         assertEquals("s.0.0", result.hits().get("hit:0").getField("field1").toString());
         assertEquals("s.2.1", result.hits().get("hit:1").getField("field1").toString());
@@ -116,13 +111,12 @@ public class FillTestCase {
         Map<Integer, Client.NodeConnection> nodes = new HashMap<>();
         nodes.put(0, client.createConnection("host0", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
 
         Query query = new Query();
         Result result = new Result(query);
         result.hits().add(createHit(0, 0));
 
-        factory.createFillInvoker(db()).fill(result, "summaryClass1");
+        rpcResourcePool.getFillInvoker(db()).fill(result, "summaryClass1");
 
         assertEquals("Malfunctioning", result.hits().getError().getDetailedMessage());
     }
@@ -134,7 +128,6 @@ public class FillTestCase {
         Map<Integer, Client.NodeConnection> nodes = new HashMap<>();
         nodes.put(0, client.createConnection("host0", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -142,7 +135,7 @@ public class FillTestCase {
         result.hits().add(createHit(1, 1));
 
 
-        factory.createFillInvoker(db()).fill(result, "summaryClass1");
+        rpcResourcePool.getFillInvoker(db()).fill(result, "summaryClass1");
 
         assertEquals("Could not fill hits from unknown node 1", result.hits().getError().getDetailedMessage());
     }

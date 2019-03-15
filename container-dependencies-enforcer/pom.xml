@@ -84,7 +84,6 @@
                                                 <include>com.google.code.findbugs:annotations:[${findbugs.version}]:jar:provided</include>
                                                 <include>com.google.code.findbugs:jsr305:[${findbugs.version}]:jar:provided</include>
                                                 <include>com.google.guava:guava:[${guava.version}]:jar:provided</include>
-                                                <include>com.google.protobuf:protobuf-java:[${protobuf.version}]:jar:provided</include>
                                                 <include>com.google.inject.extensions:guice-assistedinject:[${guice.version}]:jar:provided</include>
                                                 <include>com.google.inject.extensions:guice-multibindings:[${guice.version}]:jar:provided</include>
                                                 <include>com.google.inject:guice:[${guice.version}]:jar:provided:no_aop</include>

@@ -122,7 +122,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     public String getServerId() { return serverId; }
 
-    public DocumentDatabase getDocumentDatabase(Query query) {
+    protected DocumentDatabase getDocumentDatabase(Query query) {
         if (query.getModel().getRestrict().size() == 1) {
             String docTypeName = (String)query.getModel().getRestrict().toArray()[0];
             DocumentDatabase db = documentDbs.get(docTypeName);

@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Node {
 
     private final int key;
-    private int pathIndex;
     private final String hostname;
     private final int fs4port;
     final int group;
@@ -31,12 +30,6 @@ public class Node {
 
     /** Returns the unique and stable distribution key of this node */
     public int key() { return key; }
-
-    public int pathIndex() { return pathIndex; }
-
-    void setPathIndex(int index) {
-        pathIndex = index;
-    }
 
     public String hostname() { return hostname; }
 

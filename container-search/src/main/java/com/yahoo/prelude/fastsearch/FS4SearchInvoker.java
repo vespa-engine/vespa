@@ -12,11 +12,13 @@ import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.ResponseMonitor;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -25,7 +27,6 @@ import java.util.logging.Logger;
  * @author ollivir
  */
 public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<FS4Channel> {
-    private static final Logger log = Logger.getLogger(FS4SearchInvoker.class.getName());
 
     private final VespaBackEndSearcher searcher;
     private FS4Channel channel;
@@ -45,7 +46,8 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
 
     @Override
     protected void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException {
-        log.finest("sending query packet");
+        if (isLoggingFine())
+            getLogger().finest("sending query packet");
 
         if (queryPacket == null) {
             // query changed for subchannel
@@ -75,28 +77,30 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
     @Override
     protected Result getSearchResult(Execution execution) throws IOException {
         if (pendingSearchError != null) {
-            return errorResult(query, pendingSearchError);
+            return errorResult(pendingSearchError);
         }
         BasicPacket[] basicPackets;
 
         try {
             basicPackets = channel.receivePackets(query.getTimeLeft(), 1);
         } catch (ChannelTimeoutException e) {
-            return errorResult(query, ErrorMessage.createTimeout("Timeout while waiting for " + getName()));
+            return errorResult(ErrorMessage.createTimeout("Timeout while waiting for " + getName()));
         } catch (InvalidChannelException e) {
-            return errorResult(query, ErrorMessage.createBackendCommunicationError("Invalid channel for " + getName()));
+            return errorResult(ErrorMessage.createBackendCommunicationError("Invalid channel for " + getName()));
         }
 
         if (basicPackets.length == 0) {
-            return errorResult(query, ErrorMessage.createBackendCommunicationError(getName() + " got no packets back"));
+            return errorResult(ErrorMessage.createBackendCommunicationError(getName() + " got no packets back"));
         }
 
-        log.finest(() -> "got packets " + basicPackets.length + " packets");
+        if (isLoggingFine())
+            getLogger().finest("got packets " + basicPackets.length + " packets");
 
         basicPackets[0].ensureInstanceOf(QueryResultPacket.class, getName());
         QueryResultPacket resultPacket = (QueryResultPacket) basicPackets[0];
 
-        log.finest(() -> "got query packet. " + "docsumClass=" + query.getPresentation().getSummary());
+        if (isLoggingFine())
+            getLogger().finest("got query packet. " + "docsumClass=" + query.getPresentation().getSummary());
 
         if (query.getPresentation().getSummary() == null)
             query.getPresentation().setSummary(searcher.getDefaultDocsumClass());
@@ -110,6 +114,14 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
         return result;
     }
 
+    private Result errorResult(ErrorMessage errorMessage) {
+        Result error = new Result(query, errorMessage);
+        Coverage errorCoverage = new Coverage(0, 0, 0);
+        errorCoverage.setNodesTried(1);
+        error.setCoverage(errorCoverage);
+        return error;
+    }
+
     @Override
     public void release() {
         if (channel != null) {
@@ -120,6 +132,14 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
 
     private String getName() {
         return searcher.getName();
+    }
+
+    private Logger getLogger() {
+        return searcher.getLogger();
+    }
+
+    private boolean isLoggingFine() {
+        return getLogger().isLoggable(Level.FINE);
     }
 
     @Override

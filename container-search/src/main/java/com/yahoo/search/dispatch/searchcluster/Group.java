@@ -25,12 +25,6 @@ public class Group {
     public Group(int id, List<Node> nodes) {
         this.id = id;
         this.nodes = ImmutableList.copyOf(nodes);
-
-        int idx = 0;
-        for(var node: nodes) {
-            node.setPathIndex(idx);
-            idx++;
-        }
     }
 
     /** Returns the unique identity of this group */

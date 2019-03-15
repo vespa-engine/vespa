@@ -5,8 +5,6 @@ import com.yahoo.fs4.QueryPacket;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import com.yahoo.search.result.Coverage;
-import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 
 import java.io.IOException;
@@ -55,13 +53,4 @@ public abstract class SearchInvoker extends CloseableInvoker {
     protected Optional<Integer> distributionKey() {
         return node.map(Node::key);
     }
-
-    protected Result errorResult(Query query, ErrorMessage errorMessage) {
-        Result error = new Result(query, errorMessage);
-        Coverage errorCoverage = new Coverage(0, 0, 0);
-        errorCoverage.setNodesTried(1);
-        error.setCoverage(errorCoverage);
-        return error;
-    }
-
 }

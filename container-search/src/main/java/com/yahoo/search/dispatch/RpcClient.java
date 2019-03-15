@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch.rpc;
+package com.yahoo.search.dispatch;
 
 import com.yahoo.compress.CompressionType;
 import com.yahoo.jrt.DataValue;
@@ -40,19 +40,7 @@ class RpcClient implements Client {
 
         request.setContext(hits);
         RpcNodeConnection rpcNode = ((RpcNodeConnection) node);
-        rpcNode.invokeAsync(request, timeoutSeconds, new RpcDocsumResponseWaiter(rpcNode, responseReceiver));
-    }
-
-    @Override
-    public void search(NodeConnection node, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
-            RpcSearchInvoker responseReceiver, double timeoutSeconds) {
-        Request request = new Request("vespa.searchprotocol.search");
-        request.parameters().add(new Int8Value(compression.getCode()));
-        request.parameters().add(new Int32Value(uncompressedLength));
-        request.parameters().add(new DataValue(compressedPayload));
-
-        RpcNodeConnection rpcNode = ((RpcNodeConnection) node);
-        rpcNode.invokeAsync(request, timeoutSeconds, new RpcSearchResponseWaiter(rpcNode, responseReceiver));
+        rpcNode.invokeAsync(request, timeoutSeconds, new RpcResponseWaiter(rpcNode, responseReceiver));
     }
 
     private static class RpcNodeConnection implements NodeConnection {
@@ -95,7 +83,7 @@ class RpcClient implements Client {
 
     }
 
-    private static class RpcDocsumResponseWaiter implements RequestWaiter {
+    private static class RpcResponseWaiter implements RequestWaiter {
 
         /** The node to which we made the request we are waiting for - for error messages only */
         private final RpcNodeConnection node;
@@ -103,7 +91,7 @@ class RpcClient implements Client {
         /** The handler to which the response is forwarded */
         private final RpcFillInvoker.GetDocsumsResponseReceiver handler;
 
-        public RpcDocsumResponseWaiter(RpcNodeConnection node, RpcFillInvoker.GetDocsumsResponseReceiver handler) {
+        public RpcResponseWaiter(RpcNodeConnection node, RpcFillInvoker.GetDocsumsResponseReceiver handler) {
             this.node = node;
             this.handler = handler;
         }
@@ -132,41 +120,6 @@ class RpcClient implements Client {
                                                                                           uncompressedSize,
                                                                                           compressedSlimeBytes,
                                                                                           hits)));
-        }
-
-    }
-
-    private static class RpcSearchResponseWaiter implements RequestWaiter {
-
-        /** The node to which we made the request we are waiting for - for error messages only */
-        private final RpcNodeConnection node;
-
-        /** The handler to which the response is forwarded */
-        private final RpcSearchInvoker handler;
-
-        public RpcSearchResponseWaiter(RpcNodeConnection node, RpcSearchInvoker handler) {
-            this.node = node;
-            this.handler = handler;
-        }
-
-        @Override
-        public void handleRequestDone(Request requestWithResponse) {
-            if (requestWithResponse.isError()) {
-                handler.receive(SearchResponseOrError.fromError("Error response from " + node + ": " + requestWithResponse.errorMessage()));
-                return;
-            }
-
-            Values returnValues = requestWithResponse.returnValues();
-            if (returnValues.size() < 3) {
-                handler.receive(SearchResponseOrError.fromError(
-                        "Invalid getDocsums response from " + node + ": Expected 3 return arguments, got " + returnValues.size()));
-                return;
-            }
-
-            byte compression = returnValues.get(0).asInt8();
-            int uncompressedSize = returnValues.get(1).asInt32();
-            byte[] compressedPayload = returnValues.get(2).asData();
-            handler.receive(SearchResponseOrError.fromResponse(new SearchResponse(compression, uncompressedSize, compressedPayload)));
         }
 
     }

@@ -57,11 +57,6 @@
       </exclusions>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -86,10 +81,6 @@
         <artifactId>ph-javacc-maven-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>com.github.os72</groupId>
-        <artifactId>protoc-jar-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-install-plugin</artifactId>
         <configuration>
@@ -109,22 +100,6 @@
             <goals>
               <goal>config-gen</goal>
             </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-dependencies</id>
-            <phase>package</phase>
-            <goals>
-              <goal>copy-dependencies</goal>
-            </goals>
-            <configuration>
-              <includeArtifactIds>protobuf-java</includeArtifactIds>
-            </configuration>
           </execution>
         </executions>
       </plugin>

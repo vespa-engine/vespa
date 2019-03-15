@@ -232,7 +232,6 @@ vespa_define_module(
 
 install_java_artifact(searchlib)
 install_fat_java_artifact(searchlib)
-install_java_artifact_dependencies(searchlib)
 
 vespa_install_script(src/main/sh/vespa-gbdt-converter bin)
 vespa_install_script(src/main/sh/vespa-treenet-converter bin)
