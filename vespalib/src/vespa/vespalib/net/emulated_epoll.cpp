@@ -2,7 +2,6 @@
 
 #include "emulated_epoll.h"
 #include <chrono>
-#include <cstring>
 #include <vector>
 
 namespace vespalib {
@@ -14,7 +13,7 @@ uint32_t maybe(uint32_t value, bool yes) { return yes ? value : 0; }
 }
 
 Epoll::Epoll()
-    : _monitorlock(),
+    : _monitored_lock(),
       _wakeup(),
       _monitored()
 {
@@ -28,7 +27,7 @@ Epoll::add(int fd, void *ctx, bool read, bool write)
     epoll_event evt;
     evt.events = maybe(EPOLLIN, read) | maybe(EPOLLOUT, write);
     evt.data.ptr = ctx;
-    std::lock_guard guard(_monitorlock);
+    std::lock_guard guard(_monitored_lock);
     _monitored[fd] = evt;
     _wakeup.write_token();
 }
@@ -39,7 +38,7 @@ Epoll::update(int fd, void *ctx, bool read, bool write)
     epoll_event evt;
     evt.events = maybe(EPOLLIN, read) | maybe(EPOLLOUT, write);
     evt.data.ptr = ctx;
-    std::lock_guard guard(_monitorlock);
+    std::lock_guard guard(_monitored_lock);
     _monitored[fd] = evt;
     _wakeup.write_token();
 }
@@ -47,9 +46,7 @@ Epoll::update(int fd, void *ctx, bool read, bool write)
 void
 Epoll::remove(int fd)
 {
-    epoll_event evt;
-    memset(&evt, 0, sizeof(evt));
-    std::lock_guard guard(_monitorlock);
+    std::lock_guard guard(_monitored_lock);
     _monitored.erase(fd);
     _wakeup.write_token();
 }
@@ -59,13 +56,11 @@ Epoll::wait(epoll_event *events, size_t max_events, int timeout_ms)
 {
     size_t evidx = 0;
     std::vector<pollfd> fds;
-    bool allowRetry = true;
     auto entryTime = std::chrono::steady_clock::now();
-    int timeout_ms_initial = timeout_ms;
-    (void) timeout_ms_initial;
-    for (;evidx == 0 && allowRetry;) {
+    int timeout_ms_remaining = timeout_ms;
+    while (evidx == 0) {
         {
-            std::lock_guard guard(_monitorlock);
+            std::lock_guard guard(_monitored_lock);
             fds.resize(_monitored.size() + 1);
             fds[0].fd = _wakeup.get_read_fd();
             fds[0].events = POLLIN;
@@ -78,19 +73,9 @@ Epoll::wait(epoll_event *events, size_t max_events, int timeout_ms)
                 ++fdidx;
             }
         }
-        allowRetry = false;
-        int res = poll(&fds[0], fds.size(), timeout_ms);
+        int res = poll(&fds[0], fds.size(), timeout_ms_remaining);
         if (res > 0) {
-            std::lock_guard guard(_monitorlock);
-            if (fds[0].revents != 0) { // Internal epoll emulation wakeup
-                _wakeup.read_tokens();
-                auto retryTime = std::chrono::steady_clock::now();
-                auto delay = std::chrono::duration<double, std::milli>(retryTime - entryTime).count();
-                if (delay < timeout_ms_initial) {
-                    timeout_ms = timeout_ms_initial - 1 - delay;
-                    allowRetry = true; // woken up by internal wakeup
-                }
-            }
+            std::lock_guard guard(_monitored_lock);
             for (size_t fdidx = 1; fdidx < fds.size() && evidx < max_events; ++fdidx) {
                 if (fds[fdidx].revents != 0) {
                     int fd = fds[fdidx].fd;
@@ -100,6 +85,15 @@ Epoll::wait(epoll_event *events, size_t max_events, int timeout_ms)
                         events[evidx].data.ptr = monitr->second.data.ptr;
                         ++evidx;
                     }
+                }
+            }
+            if (fds[0].revents != 0) { // Internal epoll emulation wakeup
+                _wakeup.read_tokens();
+                auto retryTime = std::chrono::steady_clock::now();
+                auto delay = std::chrono::duration_cast<std::chrono::milliseconds>(retryTime - entryTime).count();
+                timeout_ms_remaining = timeout_ms - delay;
+                if (timeout_ms_remaining <= 0) {
+                    return evidx; // return current events, or timeout
                 }
             }
         } else {

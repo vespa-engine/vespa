@@ -30,7 +30,7 @@ struct epoll_event
 class Epoll
 {
 private:
-    std::mutex _monitorlock;
+    std::mutex _monitored_lock;
     WakeupPipe _wakeup;
     std::map<int, epoll_event> _monitored;
 public:
