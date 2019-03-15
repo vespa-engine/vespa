@@ -142,13 +142,6 @@ public class CommandLineOptionsTest {
     }
 
     @Test
-    public void testHeadersOnly() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Headers only option has been removed.");
-        getParsedOptions("--headersonly");
-    }
-
-    @Test
     public void testCluster() {
         ClientParameters params = getParsedOptions("--cluster", "dummycluster");
         assertEquals("dummycluster", params.cluster);
