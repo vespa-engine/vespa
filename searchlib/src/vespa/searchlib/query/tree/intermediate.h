@@ -20,7 +20,9 @@ class Intermediate : public Node
 
     const std::vector<Node *> &getChildren() const { return _children; }
     Intermediate &reserve(size_t sz) { _children.reserve(sz); return *this; }
+    Intermediate &prepend(Node::UP child);
     Intermediate &append(Node::UP child);
+    Node::UP stealFirst();
 };
 
 }

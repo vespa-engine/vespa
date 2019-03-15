@@ -208,7 +208,7 @@ AndBlueprint::inheritStrict(size_t i) const
 
 SearchIterator::UP
 AndBlueprint::createIntermediateSearch(const MultiSearch::Children &subSearches,
-                                         bool strict, search::fef::MatchData & md) const
+                                       bool strict, search::fef::MatchData & md) const
 {
     UnpackInfo unpackInfo(calculateUnpackInfo(md));
     AndSearch * search = 0;
