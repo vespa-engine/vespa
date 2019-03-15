@@ -133,7 +133,8 @@ class HttpRequestDispatch {
                     parent.metricReporter.prematurelyClosed();
                 } else if (!(error instanceof CompletionException && error.getCause() instanceof OverloadException
                         || error instanceof OverloadException
-                        || error instanceof BindingNotFoundException)) {
+                        || error instanceof BindingNotFoundException
+                        || error instanceof RequestException)) {
                     log.log(Level.WARNING, "Request failed: " + parent.jettyRequest.getRequestURI(), error);
                 }
                 reportedError = true;
