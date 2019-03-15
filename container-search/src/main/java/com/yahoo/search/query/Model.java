@@ -34,7 +34,6 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * @author bratseth
  */
 public class Model implements Cloneable {
-
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
     private static final CompoundName argumentTypeName;
@@ -101,9 +100,9 @@ public class Model implements Cloneable {
 
     /**
      * Gets the language to use for parsing. If this is explicitly set in the model, that language is returned.
-     * Otherwise, if a query tree is already produced and any node in it specifies a language the first such 
-     * node encountered in a depth first 
-     * left to right search is returned. Otherwise the language is guessed from the query string. 
+     * Otherwise, if a query tree is already produced and any node in it specifies a language the first such
+     * node encountered in a depth first
+     * left to right search is returned. Otherwise the language is guessed from the query string.
      * If this does not yield an actual language, English is returned as the default.
      *
      * @return the language determined, never null
@@ -121,7 +120,7 @@ public class Model implements Cloneable {
         if (queryTree != null)
             language = languageBelow(queryTree);
         if (language != Language.UNKNOWN) return language;
-        
+
         Linguistics linguistics = execution.context().getLinguistics();
         if (linguistics != null)
             language = linguistics.getDetector().detect(languageDetectionText, null).getLanguage(); // TODO: Set language if detected
@@ -129,7 +128,7 @@ public class Model implements Cloneable {
 
         return Language.ENGLISH;
     }
-    
+
     private Language languageBelow(Item item) {
         if (item.getLanguage() != Language.UNKNOWN) return item.getLanguage();
         if (item instanceof CompositeItem) {

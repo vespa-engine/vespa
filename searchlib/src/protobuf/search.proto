@@ -1,0 +1,62 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+syntax = "proto3";
+
+package searchlib.searchprotocol.protobuf;
+
+option java_package = "ai.vespa.searchlib.searchprotocol.protobuf";
+
+message Request {
+    int32 offset = 1;
+    int32 hits = 2;
+    int32 timeout = 3; // milliseconds
+    int32 trace_level = 4;
+    repeated SortField sorting = 5;
+    string session_key = 6;
+    string document_type = 7;
+    bool cache_grouping = 8;
+    bool cache_query = 9;
+    string rank_profile = 10;
+    repeated StringProperty feature_overrides = 11;
+    repeated TensorProperty tensor_feature_overrides = 12;
+    repeated StringProperty rank_properties = 13;
+    repeated TensorProperty tensor_rank_properties = 14;
+    repeated StringProperty highlight_terms = 15;
+    bytes grouping_blob = 16;   // serialized opaquely like now, to be changed later
+    string geo_location = 17; // to be moved into query_tree
+    bytes query_tree_blob = 18; // serialized opaquely like now, to be changed later
+}
+
+message TensorProperty {
+    string name = 1;
+    bytes value = 2;
+}
+
+message StringProperty {
+    string name = 1;
+    repeated string values = 2;
+}
+
+message SortField {
+    bool ascending = 1;
+    string field = 2;
+}
+
+message Reply {
+    int64 total_hit_count = 1;
+    int64 coverage_docs = 2;
+    int64 active_docs = 3;
+    int64 soon_active_docs = 4;
+    bool degraded_by_match_phase = 5;
+    bool degraded_by_soft_timeout = 6;
+
+    repeated Hit hits = 7;
+
+    bytes grouping_blob = 8; // serialized opaquely like now, to be changed later
+}
+
+message Hit {
+    bytes global_id = 1;
+    double relevance = 2;
+    bytes sort_data = 3;
+}

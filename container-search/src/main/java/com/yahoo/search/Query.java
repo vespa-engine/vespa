@@ -46,7 +46,7 @@ import com.yahoo.search.yql.NullItemException;
 import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.yolean.Exceptions;
-import edu.umd.cs.findbugs.annotations.Nullable;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;

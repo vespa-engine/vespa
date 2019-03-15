@@ -18,7 +18,6 @@ import com.yahoo.fs4.PacketListener;
 import com.yahoo.io.Connection;
 import com.yahoo.io.Listener;
 import com.yahoo.log.LogLevel;
-import com.yahoo.search.Query;
 
 /**
  *
