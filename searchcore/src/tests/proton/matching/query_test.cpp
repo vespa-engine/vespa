@@ -119,7 +119,7 @@ class Test : public vespalib::TestApp {
     void requireThatSameElementIteratorsCanBeBuilt();
 
 public:
-    ~Test();
+    ~Test() override;
     int Main() override;
 };
 
@@ -129,13 +129,13 @@ public:
     TEST_DO(tearDown())
 
 void Test::setUp() {
-    _match_data.reset(0);
-    _blueprint.reset(0);
+    _match_data.reset();
+    _blueprint.reset();
 }
 
 void Test::tearDown() {
-    _match_data.reset(0);
-    _blueprint.reset(0);
+    _match_data.reset();
+    _blueprint.reset();
 }
 
 const string field = "field";
@@ -817,8 +817,8 @@ void Test::requireThatWeakAndBlueprintsAreCreatedCorrectly() {
     wand.accept(reserve_visitor);
 
     Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, wand, context);
-    WeakAndBlueprint *wbp = dynamic_cast<WeakAndBlueprint*>(blueprint.get());
-    ASSERT_TRUE(wbp != 0);
+    auto *wbp = dynamic_cast<WeakAndBlueprint*>(blueprint.get());
+    ASSERT_TRUE(wbp != nullptr);
     ASSERT_EQUAL(2u, wbp->getWeights().size());
     ASSERT_EQUAL(2u, wbp->childCnt());
     EXPECT_EQUAL(123u, wbp->getN());
@@ -851,7 +851,7 @@ void Test::requireThatParallelWandBlueprintsAreCreatedCorrectly() {
     wand.accept(reserve_visitor);
 
     Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, wand, context);
-    ParallelWeakAndBlueprint *wbp = dynamic_cast<ParallelWeakAndBlueprint*>(blueprint.get());
+    auto *wbp = dynamic_cast<ParallelWeakAndBlueprint*>(blueprint.get());
     ASSERT_TRUE(wbp != nullptr);
     EXPECT_EQUAL(9000, wbp->getScoreThreshold());
     EXPECT_EQUAL(1.25, wbp->getThresholdBoostFactor());
@@ -913,7 +913,7 @@ void verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing(QueryBuilder<Pr
     const IntermediateBlueprint * second = dynamic_cast<const T2 *>(&root->getChild(0));
     ASSERT_TRUE(second != nullptr);
     EXPECT_EQUAL(2u, second->childCnt());
-    const AndBlueprint * first = dynamic_cast<const AndBlueprint *>(&second->getChild(0));
+    auto first = dynamic_cast<const AndBlueprint *>(&second->getChild(0));
     ASSERT_TRUE(first != nullptr);
     EXPECT_EQUAL(2u, first->childCnt());
     EXPECT_TRUE(dynamic_cast<const SourceBlenderBlueprint *>(&first->getChild(0)));
@@ -956,7 +956,7 @@ void
 Test::requireThatSameElementTermsAreProperlyPrefixed()
 {
     search::query::Node::UP query = make_same_element_stack_dump("", "");
-    search::query::SameElement * root = dynamic_cast<search::query::SameElement *>(query.get());
+    auto * root = dynamic_cast<search::query::SameElement *>(query.get());
     EXPECT_EQUAL(root->getView(), "");
     EXPECT_EQUAL(root->getChildren().size(), 2u);
     EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[0])->getView(), "f1");

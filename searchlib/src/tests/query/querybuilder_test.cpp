@@ -522,13 +522,13 @@ TEST("require that Using Position Data Can Be Turned Off") {
     Node::UP node = builder.build();
     ASSERT_TRUE(!builder.hasError());
     Intermediate * andNode = dynamic_cast<Intermediate *>(node.get());
-    ASSERT_TRUE(andNode != NULL);
+    ASSERT_TRUE(andNode != nullptr);
     ASSERT_TRUE(andNode->getChildren().size() == 2);
     Term * term = dynamic_cast<Term *>(andNode->getChildren()[0]);
-    ASSERT_TRUE(term != NULL);
+    ASSERT_TRUE(term != nullptr);
     EXPECT_TRUE(!term->usePositionData());
     Phrase * phrase = dynamic_cast<Phrase *>(andNode->getChildren()[1]);
-    ASSERT_TRUE(phrase != NULL);
+    ASSERT_TRUE(phrase != nullptr);
     EXPECT_TRUE(!phrase->usePositionData());
 }
 
@@ -536,13 +536,11 @@ TEST("require that Weight Override Works Across Multiple Levels") {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addPhrase(2, view[0], id[0], weight[0]);
 
-    SimpleStringTerm &string_term_1 =
-        builder.addStringTerm(str[1], view[1], id[1], weight[1]);
+    SimpleStringTerm &string_term_1 = builder.addStringTerm(str[1], view[1], id[1], weight[1]);
     EXPECT_EQUAL(weight[0].percent(), string_term_1.getWeight().percent());
 
     builder.addAnd(2);
-    SimpleStringTerm &string_term_2 =
-        builder.addStringTerm(str[2], view[2], id[2], weight[2]);
+    SimpleStringTerm &string_term_2 = builder.addStringTerm(str[2], view[2], id[2], weight[2]);
     EXPECT_EQUAL(weight[0].percent(), string_term_2.getWeight().percent());
 }
 
@@ -579,14 +577,12 @@ TEST("require that All Range Syntaxes Work") {
     string stackDump = StackDumpCreator::create(*node);
     SimpleQueryStackDumpIterator iterator(stackDump);
 
-    Node::UP new_node =
-        QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
+    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
     And *and_node = dynamic_cast<And *>(new_node.get());
     ASSERT_TRUE(and_node);
     EXPECT_EQUAL(3u, and_node->getChildren().size());
 
-    RangeTerm *range_term =
-        dynamic_cast<RangeTerm *>(and_node->getChildren()[0]);
+    auto range_term = dynamic_cast<RangeTerm *>(and_node->getChildren()[0]);
     ASSERT_TRUE(range_term);
     EXPECT_TRUE(range0 == range_term->getTerm());
 
@@ -608,8 +604,7 @@ TEST("require that empty intermediate node can be added") {
     string stackDump = StackDumpCreator::create(*node);
     SimpleQueryStackDumpIterator iterator(stackDump);
 
-    Node::UP new_node =
-        QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
+    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
     And *and_node = dynamic_cast<And *>(new_node.get());
     ASSERT_TRUE(and_node);
     EXPECT_EQUAL(0u, and_node->getChildren().size());
