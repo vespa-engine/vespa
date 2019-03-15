@@ -139,16 +139,6 @@ public class RealNodeRepositoryTest {
                         .withDockerImage(DockerImage.fromString("image-1:6.2.3")));
     }
 
-    @Test(expected = RuntimeException.class)
-    public void testUpdateNodeAttributesWithBadValue() {
-        String hostname = "host4.yahoo.com";
-        nodeRepositoryApi.updateNodeAttributes(
-                hostname,
-                new NodeAttributes()
-                        .withRestartGeneration(1)
-                        .withDockerImage(DockerImage.fromString("image-1")));
-    }
-
     @Test
     public void testMarkAsReady() {
         nodeRepositoryApi.setNodeState("host5.yahoo.com", NodeState.dirty);

@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.vespa.hosted.provision.provisioning.DockerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
 import com.yahoo.vespa.hosted.provision.provisioning.OsVersions;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NotFoundException;
@@ -83,9 +84,9 @@ public class NodeRepository extends AbstractComponent {
     private final Zone zone;
     private final NodeFlavors flavors;
     private final NameResolver nameResolver;
-    private final DockerImage dockerImage;
     private final OsVersions osVersions;
     private final FirmwareChecks firmwareChecks;
+    private final DockerImages dockerImages;
     private final Flags flags;
 
     /**
@@ -108,9 +109,9 @@ public class NodeRepository extends AbstractComponent {
         this.clock = clock;
         this.flavors = flavors;
         this.nameResolver = nameResolver;
-        this.dockerImage = dockerImage;
         this.osVersions = new OsVersions(this.db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
+        this.dockerImages = new DockerImages(db, dockerImage);
         this.flags = new Flags(this.db);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
@@ -122,7 +123,7 @@ public class NodeRepository extends AbstractComponent {
     public CuratorDatabaseClient database() { return db; }
 
     /** Returns the Docker image to use for nodes in this */
-    public DockerImage dockerImage() { return dockerImage; }
+    public DockerImage dockerImage(NodeType nodeType) { return dockerImages.dockerImageFor(nodeType); }
 
     /** @return The name resolver used to resolve hostname and ip addresses */
     public NameResolver nameResolver() { return nameResolver; }
@@ -132,6 +133,9 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns the status of firmware checks for hosts managed by this. */
     public FirmwareChecks firmwareChecks() { return firmwareChecks; }
+
+    /** Returns the docker images to use for nodes in this. */
+    public DockerImages dockerImages() { return dockerImages; }
 
     /** Returns feature flags of this node repository */
     public Flags flags() {
