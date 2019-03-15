@@ -23,7 +23,7 @@ class MockDispatcher extends Dispatcher {
 
     public MockDispatcher(String clusterId, List<Node> nodes, FS4ResourcePool fs4ResourcePool,
                           int containerClusterSize, VipStatus vipStatus) {
-        super(clusterId, toDispatchConfig(nodes), fs4ResourcePool, containerClusterSize, vipStatus);
+        super(clusterId, toDispatchConfig(nodes), fs4ResourcePool, containerClusterSize, vipStatus, new MockMetric());
     }
 
     private static DispatchConfig toDispatchConfig(List<Node> nodes) {
@@ -43,5 +43,4 @@ class MockDispatcher extends Dispatcher {
 
     public void fill(Result result, String summaryClass) {
     }
-
 }

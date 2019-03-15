@@ -11,14 +11,14 @@ import com.yahoo.concurrent.Receiver.MessageState;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.fs4.mplex.Backend;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.net.HostName;
-import com.yahoo.search.dispatch.Dispatcher;
-import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
+import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastSearcher;
 import com.yahoo.prelude.fastsearch.SummaryParameters;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
@@ -26,6 +26,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
+import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
@@ -33,6 +34,7 @@ import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Value;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher;
+import org.apache.commons.lang.StringUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -48,10 +50,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.commons.lang.StringUtils;
 
 import static com.yahoo.container.QrSearchersConfig.Searchcluster.Indexingmode.STREAMING;
 
@@ -101,12 +100,13 @@ public class ClusterSearcher extends Searcher {
                            DispatchConfig dispatchConfig,
                            ClusterInfoConfig clusterInfoConfig,
                            Statistics manager,
+                           Metric metric,
                            FS4ResourcePool fs4ResourcePool,
                            VipStatus vipStatus) {
         super(id);
         this.fs4ResourcePool = fs4ResourcePool;
 
-        Dispatcher dispatcher = new Dispatcher(id.stringValue(), dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus);
+        Dispatcher dispatcher = new Dispatcher(id.stringValue(), dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus, metric);
 
         monitor = (dispatcher.searchCluster().directDispatchTarget().isPresent()) // dispatcher should decide vip status instead
                 ? new ClusterMonitor(this, monitorConfig, Optional.empty())

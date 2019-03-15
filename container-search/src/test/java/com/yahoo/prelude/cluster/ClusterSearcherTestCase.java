@@ -5,6 +5,8 @@ import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.container.handler.VipStatus;
+import com.yahoo.container.protect.Error;
 import com.yahoo.container.search.Fs4Config;
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.IndexFacts;
@@ -14,12 +16,11 @@ import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
+import com.yahoo.prelude.fastsearch.test.MockMetric;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.container.handler.VipStatus;
-import com.yahoo.container.protect.Error;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import org.junit.Test;
@@ -542,6 +543,7 @@ public class ClusterSearcherTestCase {
                                    new DispatchConfig.Builder().build(),
                                    createClusterInfoConfig(),
                                    Statistics.nullImplementation,
+                                   new MockMetric(),
                                    new FS4ResourcePool(new Fs4Config.Builder().build(), new QrConfig.Builder().build()),
                                    new VipStatus());
     }

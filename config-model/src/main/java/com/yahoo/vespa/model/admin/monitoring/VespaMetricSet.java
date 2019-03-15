@@ -213,6 +213,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("hits_per_query.average"));
         metrics.add(new Metric("documents_covered.count"));
         metrics.add(new Metric("documents_total.count"));
+        metrics.add(new Metric("dispatch_internal.rate"));
+        metrics.add(new Metric("dispatch_fdispatch.rate"));
 
         metrics.add(new Metric("totalhits_per_query.average"));
         metrics.add(new Metric("empty_results.rate"));

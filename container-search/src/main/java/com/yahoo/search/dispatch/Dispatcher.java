@@ -3,6 +3,7 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.prelude.fastsearch.FS4InvokerFactory;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
@@ -38,6 +39,9 @@ import java.util.Set;
  * @author ollvir
  */
 public class Dispatcher extends AbstractComponent {
+    private static final String FDISPATCH_METRIC = "dispatch_fdispatch";
+    private static final String INTERNAL_METRIC = "dispatch_internal";
+
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
 
     /** If enabled, this internal dispatcher will be preferred over fdispatch whenever possible */
@@ -56,17 +60,23 @@ public class Dispatcher extends AbstractComponent {
     private final FS4InvokerFactory fs4InvokerFactory;
     private final RpcInvokerFactory rpcInvokerFactory;
 
-    public Dispatcher(String clusterId, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
+    private final Metric metric;
+    private final Metric.Context metricContext;
+
+    public Dispatcher(String clusterId, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize,
+            VipStatus vipStatus, Metric metric) {
         this(new SearchCluster(clusterId, dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus), dispatchConfig,
-                fs4ResourcePool, new RpcResourcePool(dispatchConfig));
+                fs4ResourcePool, new RpcResourcePool(dispatchConfig), metric);
     }
 
-    public Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, RpcResourcePool rpcResourcePool) {
+    public Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool,
+            RpcResourcePool rpcResourcePool, Metric metric) {
         this(searchCluster, dispatchConfig, new FS4InvokerFactory(fs4ResourcePool, searchCluster),
-                new RpcInvokerFactory(rpcResourcePool, searchCluster));
+                new RpcInvokerFactory(rpcResourcePool, searchCluster), metric);
     }
 
-    public Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4InvokerFactory fs4InvokerFactory, RpcInvokerFactory rpcInvokerFactory) {
+    public Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4InvokerFactory fs4InvokerFactory,
+            RpcInvokerFactory rpcInvokerFactory, Metric metric) {
         this.searchCluster = searchCluster;
         this.loadBalancer = new LoadBalancer(searchCluster,
                 dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
@@ -75,6 +85,9 @@ public class Dispatcher extends AbstractComponent {
 
         this.fs4InvokerFactory = fs4InvokerFactory;
         this.rpcInvokerFactory = rpcInvokerFactory;
+
+        this.metric = metric;
+        this.metricContext = metric.createContext(null);
     }
 
     /** Returns the search cluster this dispatches to */
@@ -102,7 +115,8 @@ public class Dispatcher extends AbstractComponent {
     }
 
     public Optional<SearchInvoker> getSearchInvoker(Query query, VespaBackEndSearcher searcher) {
-        if (multilevelDispatch || ! query.properties().getBoolean(dispatchInternal, internalDispatchByDefault)) {
+        if (multilevelDispatch || !query.properties().getBoolean(dispatchInternal, internalDispatchByDefault)) {
+            emitDispatchMetric(Optional.empty());
             return Optional.empty();
         }
 
@@ -117,6 +131,7 @@ public class Dispatcher extends AbstractComponent {
             query.setHits(0);
             query.setOffset(0);
         }
+        emitDispatchMetric(invoker);
         return invoker;
     }
 
@@ -127,7 +142,7 @@ public class Dispatcher extends AbstractComponent {
     // build invoker based on searchpath
     private Optional<SearchInvoker> getSearchPathInvoker(Query query, InvokerFactory invokerFactory, VespaBackEndSearcher searcher) {
         String searchPath = query.getModel().getSearchPath();
-        if(searchPath == null) {
+        if (searchPath == null) {
             return Optional.empty();
         }
         try {
@@ -180,5 +195,13 @@ public class Dispatcher extends AbstractComponent {
         }
 
         return Optional.empty();
+    }
+
+    private void emitDispatchMetric(Optional<SearchInvoker> invoker) {
+        if (invoker.isEmpty()) {
+            metric.add(FDISPATCH_METRIC, 1, metricContext);
+        } else {
+            metric.add(INTERNAL_METRIC, 1, metricContext);
+        }
     }
 }
