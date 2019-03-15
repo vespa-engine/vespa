@@ -8,6 +8,8 @@
 
 namespace vespalib {
 
+namespace {
+
 uint32_t maybe(uint32_t value, bool yes) { return yes ? value : 0; }
 
 void check(int res) {
@@ -16,6 +18,8 @@ void check(int res) {
 	    LOG_ABORT("out of memory");
         }
     }
+}
+
 }
 
 Epoll::Epoll()

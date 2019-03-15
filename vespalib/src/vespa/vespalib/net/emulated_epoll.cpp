@@ -7,6 +7,12 @@
 
 namespace vespalib {
 
+namespace {
+
+uint32_t maybe(uint32_t value, bool yes) { return yes ? value : 0; }
+
+}
+
 Epoll::Epoll()
     : _monitorlock(),
       _wakeup(),
@@ -15,8 +21,6 @@ Epoll::Epoll()
 }
 
 Epoll::~Epoll() = default;
-
-uint32_t maybe(uint32_t value, bool yes) { return yes ? value : 0; }
 
 void
 Epoll::add(int fd, void *ctx, bool read, bool write)
