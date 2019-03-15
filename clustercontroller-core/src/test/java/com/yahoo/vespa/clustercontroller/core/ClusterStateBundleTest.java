@@ -90,12 +90,42 @@ public class ClusterStateBundleTest {
     public void toString_without_bucket_space_states_prints_only_baseline_state() {
         ClusterStateBundle bundle = ClusterStateBundle.ofBaselineOnly(
                 annotatedStateOf("distributor:2 storage:2"));
-        assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2')"));
+        assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2' (deferred activation))"));
     }
 
     @Test
     public void toString_includes_all_bucket_space_states() {
         ClusterStateBundle bundle = createTestBundle();
+        assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2', " +
+                "default 'distributor:2 storage:2 .0.s:d', " +
+                "global 'distributor:2 storage:2', " +
+                "narnia 'distributor:2 .0.s:d storage:2' (deferred activation))"));
+    }
+
+    @Test
+    public void toString_without_derived_states_specifies_deferred_activation_iff_set() {
+        var bundle = ClusterStateBundle.ofBaselineOnly(annotatedStateOf("distributor:2 storage:2"), true);
+        assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2' (deferred activation))"));
+    }
+
+    @Test
+    public void toString_without_derived_states_does_not_specify_deferred_activation_iff_not_set() {
+        var bundle = ClusterStateBundle.ofBaselineOnly(annotatedStateOf("distributor:2 storage:2"), false);
+        assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2')"));
+    }
+
+    @Test
+    public void toString_with_derived_states_specifies_deferred_activation_iff_set() {
+        var bundle = createTestBundleBuilder(true).deferredActivation(true).deriveAndBuild();
+        assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2', " +
+                "default 'distributor:2 storage:2 .0.s:d', " +
+                "global 'distributor:2 storage:2', " +
+                "narnia 'distributor:2 .0.s:d storage:2' (deferred activation))"));
+    }
+
+    @Test
+    public void toString_with_derived_states_does_not_specify_deferred_activation_iff_not_set() {
+        var bundle = createTestBundleBuilder(true).deferredActivation(false).deriveAndBuild();
         assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2', " +
                 "default 'distributor:2 storage:2 .0.s:d', " +
                 "global 'distributor:2 storage:2', " +

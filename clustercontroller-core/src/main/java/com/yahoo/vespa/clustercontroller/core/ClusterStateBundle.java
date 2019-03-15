@@ -175,12 +175,14 @@ public class ClusterStateBundle {
     @Override
     public String toString() {
         if (derivedBucketSpaceStates.isEmpty()) {
-            return String.format("ClusterStateBundle('%s')", baselineState);
+            return String.format("ClusterStateBundle('%s'%s)", baselineState,
+                    deferredActivation ? " (deferred activation)" : "");
         }
         Map<String, AnnotatedClusterState> orderedStates = new TreeMap<>(derivedBucketSpaceStates);
-        return String.format("ClusterStateBundle('%s', %s)", baselineState, orderedStates.entrySet().stream()
+        return String.format("ClusterStateBundle('%s', %s%s)", baselineState, orderedStates.entrySet().stream()
                 .map(e -> String.format("%s '%s'", e.getKey(), e.getValue()))
-                .collect(Collectors.joining(", ")));
+                .collect(Collectors.joining(", ")),
+                deferredActivation ? " (deferred activation)" : "");
     }
 
     @Override
