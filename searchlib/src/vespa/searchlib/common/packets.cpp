@@ -1312,7 +1312,7 @@ uint32_t FS4Packet::readUInt32(FNET_DataBuffer & buf, uint32_t & len, const char
 void
 FS4Packet_GETDOCSUMSX::setTimeout(const fastos::TimeStamp & timeout)
 {
-    _timeout = std::max(0l, timeout.ms());
+    _timeout = std::max(INT64_C(0), timeout.ms());
 }
 
 fastos::TimeStamp
@@ -1324,7 +1324,7 @@ FS4Packet_GETDOCSUMSX::getTimeout() const
 void
 FS4Packet_QUERYX::setTimeout(const fastos::TimeStamp & timeout)
 {
-    _timeout = std::max(0l, timeout.ms());
+    _timeout = std::max(INT64_C(0), timeout.ms());
 }
 
 fastos::TimeStamp
