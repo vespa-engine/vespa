@@ -59,6 +59,12 @@ public:
     appendAddr(void *addr) noexcept;
 
     StateBuf &
+    operator<<(unsigned long long val) noexcept;
+
+    StateBuf &
+    operator<<(long long val) noexcept;
+
+    StateBuf &
     operator<<(unsigned long val) noexcept;
 
     StateBuf &
