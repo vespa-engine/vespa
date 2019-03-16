@@ -150,10 +150,10 @@ JsonStream::operator<<(float value)
 }
 
 JsonStream&
-JsonStream::operator<<(int64_t value)
+JsonStream::operator<<(long long value)
 {
     if (_state.empty()) {
-        fail("Stream already finalized. Can't add an int64_t value.");
+        fail("Stream already finalized. Can't add a long long value.");
     }
     switch (top().state) {
         case State::OBJECT_EXPECTING_KEY: {
@@ -180,10 +180,10 @@ JsonStream::operator<<(int64_t value)
 }
 
 JsonStream&
-JsonStream::operator<<(uint64_t value)
+JsonStream::operator<<(unsigned long long value)
 {
     if (_state.empty()) {
-        fail("Stream already finalized. Can't add a uint64_t value.");
+        fail("Stream already finalized. Can't add an unsigned long long value.");
     }
     switch (top().state) {
         case State::OBJECT_EXPECTING_KEY: {

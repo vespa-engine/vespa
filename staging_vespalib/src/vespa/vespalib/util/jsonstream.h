@@ -69,18 +69,22 @@ public:
     JsonStream& operator<<(bool);
     JsonStream& operator<<(double);
     JsonStream& operator<<(float); // Less precision that double
-    JsonStream& operator<<(int64_t);
-    JsonStream& operator<<(uint64_t);
+    JsonStream& operator<<(long long);
+    JsonStream& operator<<(unsigned long long);
     JsonStream& operator<<(const Object&);
     JsonStream& operator<<(const Array&);
     JsonStream& operator<<(const End&);
 
         // Additional functions provided to let compiler work out correct
         // function without requiring user to cast their value
-    JsonStream& operator<<(uint32_t v)
-        { return operator<<(static_cast<int64_t>(v)); }
-    JsonStream& operator<<(int32_t v)
-        { return operator<<(static_cast<int64_t>(v)); }
+    JsonStream& operator<<(unsigned long v)
+        { return operator<<(static_cast<unsigned long long>(v)); }
+    JsonStream& operator<<(unsigned int v)
+        { return operator<<(static_cast<unsigned long long>(v)); }
+    JsonStream& operator<<(long v)
+        { return operator<<(static_cast<long long>(v)); }
+    JsonStream& operator<<(int v)
+        { return operator<<(static_cast<long long>(v)); }
     JsonStream& operator<<(const char* c)
         { return operator<<(stringref(c)); }
 
