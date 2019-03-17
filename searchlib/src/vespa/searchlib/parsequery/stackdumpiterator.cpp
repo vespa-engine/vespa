@@ -77,7 +77,7 @@ SimpleQueryStackDumpIterator::next()
 
     uint64_t tmp(0);
     if (ParseItem::GetFeature_Weight(typefield)) {
-        long tmpLong;
+        int64_t tmpLong;
         if (p >= _bufEnd) return false;
         p += vespalib::compress::Integer::decompress(tmpLong, p);
         _currWeight.setPercent(tmpLong);

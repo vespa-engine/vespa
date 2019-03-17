@@ -385,9 +385,9 @@ MMappedBitVector::read(Index numberOfElements, FastOS_FileInterface &file,
 nbostream &
 operator<<(nbostream &out, const BitVector &bv)
 {
-    size_t size = bv.size();
-    size_t cachedHits = bv.countTrueBits();
-    size_t fileBytes = bv.getFileBytes();
+    uint64_t size = bv.size();
+    uint64_t cachedHits = bv.countTrueBits();
+    uint64_t fileBytes = bv.getFileBytes();
     assert(size <= std::numeric_limits<BitVector::Index>::max());
     assert(cachedHits <= size || ! bv.isValidCount(cachedHits));
     assert(bv.testBit(size));
@@ -400,9 +400,9 @@ operator<<(nbostream &out, const BitVector &bv)
 nbostream &
 operator>>(nbostream &in, BitVector &bv)
 {
-    size_t size;
-    size_t cachedHits;
-    size_t fileBytes;
+    uint64_t size;
+    uint64_t cachedHits;
+    uint64_t fileBytes;
     in >> size >> cachedHits >> fileBytes;
     assert(size <= std::numeric_limits<BitVector::Index>::max());
     assert(cachedHits <= size || ! bv.isValidCount(cachedHits));
