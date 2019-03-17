@@ -6,7 +6,7 @@
 #include <vespa/fastos/timestamp.h>
 
 namespace vespalib { class Slime; }
-namespace vespalib::slime { class Cursor; }
+namespace vespalib::slime { struct Cursor; }
 
 namespace search::engine {
 

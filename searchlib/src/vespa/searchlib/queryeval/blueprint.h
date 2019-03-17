@@ -11,8 +11,8 @@
 
 namespace vespalib { class ObjectVisitor; }
 namespace vespalib::slime {
-    class Cursor;
-    class Inserter;
+    struct Cursor;
+    struct Inserter;
 }
 
 namespace search::queryeval {
