@@ -7,7 +7,7 @@
 
 namespace vespalib {
 
-namespace slime { class Cursor; }
+namespace slime { struct Cursor; }
 
 /**
  * This is a concrete object visitor that will build up a structured
