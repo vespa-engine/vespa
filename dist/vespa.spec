@@ -57,8 +57,14 @@ BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %if 0%{?fc30}
-BuildRequires: llvm-devel >= 7.0.0
-BuildRequires: boost-devel >= 1.66
+BuildRequires: llvm-devel >= 8.0.0
+BuildRequires: boost-devel >= 1.69
+BuildRequires: gtest-devel
+BuildRequires: gmock-devel
+%endif
+%if 0%{?fc31}
+BuildRequires: llvm-devel >= 8.0.0
+BuildRequires: boost-devel >= 1.69
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
@@ -129,8 +135,12 @@ Requires: llvm-libs >= 7.0.0
 %define _vespa_llvm_version 7
 %endif
 %if 0%{?fc30}
-Requires: llvm-libs >= 7.0.0
-%define _vespa_llvm_version 7
+Requires: llvm-libs >= 8.0.0
+%define _vespa_llvm_version 8
+%endif
+%if 0%{?fc31}
+Requires: llvm-libs >= 8.0.0
+%define _vespa_llvm_version 8
 %endif
 %define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}%{?_vespa_gtest_link_directory:;%{_vespa_gtest_link_directory}}
 %define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}%{?_vespa_gtest_include_directory:;%{_vespa_gtest_include_directory}}
