@@ -276,22 +276,22 @@ namespace {
     struct Builder : public vespalib::JsonStreamTypes {
         void build(JsonStream& s) {
             s << Object() << "k1" << Object()
-                << "k1.1" << 1l
+                << "k1.1" << 1
                 << "k1.2" << Array()
-                    << 2l << 3l << End()
+                    << 2l << 3ll << End()
                 << End()
               << "k2" << Object()
                 << "k2.1" << Object()
-                    << "k2.1.1" << 4l
+                    << "k2.1.1" << 4u
                     << "k2.1.2" << Array()
-                        << 5l << 6l << End()
+                        << 5ul << 6ull << End()
                     << End()
                 << End()
               << "k3" << Array()
                 << Object()
-                    << "k3.1" << 7l
+                    << "k3.1" << -7
                     << "k3.2" << Array()
-                        << 8l << 9l << End()
+                        << -8l << -9ll << End()
                     << End()
                 << Object()
                     << "k3.1" << 10l
@@ -312,7 +312,7 @@ JSONTest::testJsonStream()
     Builder b;
     b.build(stream);
     stream.finalize();
-    EXPECT_EQUAL(as.str(), "{\"k1\":{\"k1.1\":1,\"k1.2\":[2,3]},\"k2\":{\"k2.1\":{\"k2.1.1\":4,\"k2.1.2\":[5,6]}},\"k3\":[{\"k3.1\":7,\"k3.2\":[8,9]},{\"k3.1\":10,\"k3.2\":[11,12]}]}");
+    EXPECT_EQUAL(as.str(), "{\"k1\":{\"k1.1\":1,\"k1.2\":[2,3]},\"k2\":{\"k2.1\":{\"k2.1.1\":4,\"k2.1.2\":[5,6]}},\"k3\":[{\"k3.1\":-7,\"k3.2\":[-8,-9]},{\"k3.1\":10,\"k3.2\":[11,12]}]}");
 }
 
 void
@@ -397,14 +397,14 @@ JSONTest::testJsonStreamErrors()
         vespalib::JsonStream stream(as);
         stream << Object() << End() << 13;
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQUAL("Invalid state on call: Stream already finalized. Can't add an int64_t value. (Finalized)", e.getReason());
+        EXPECT_EQUAL("Invalid state on call: Stream already finalized. Can't add a long long value. (Finalized)", e.getReason());
     }
     try{
         vespalib::asciistream as;
         vespalib::JsonStream stream(as);
-        stream << Object() << End() << uint64_t(13);
+        stream << Object() << End() << 13u;
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQUAL("Invalid state on call: Stream already finalized. Can't add a uint64_t value. (Finalized)", e.getReason());
+        EXPECT_EQUAL("Invalid state on call: Stream already finalized. Can't add an unsigned long long value. (Finalized)", e.getReason());
     }
     try{
         vespalib::asciistream as;
