@@ -156,9 +156,9 @@ FieldSearchSpecMap::~FieldSearchSpecMap() {}
 namespace {
     const std::string _G_empty("");
     const std::string _G_value(".value");
-    const std::basic_regex _G_map1("\\{[a-zA-Z0-9]+\\}");
-    const std::basic_regex _G_map2("\\{\".*\"\\}");
-    const std::basic_regex _G_array("\\[[0-9]+\\]");
+    const std::basic_regex<char> _G_map1("\\{[a-zA-Z0-9]+\\}");
+    const std::basic_regex<char> _G_map2("\\{\".*\"\\}");
+    const std::basic_regex<char> _G_array("\\[[0-9]+\\]");
 }
 
 vespalib::string FieldSearchSpecMap::stripNonFields(const vespalib::string & rawIndex)
