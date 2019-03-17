@@ -98,7 +98,7 @@ TestHook::runAll()
     FastOSTestThreadFactory threadFactory;
     TestThreadFactory::factory = &threadFactory;
     std::string name = TestMaster::master.getName();
-    std::basic_regex pattern(lookup_subset_pattern(name), std::regex::extended);
+    std::basic_regex<char> pattern(lookup_subset_pattern(name), std::regex::extended);
     size_t testsPassed = 0;
     size_t testsFailed = 0;
     size_t testsIgnored = 0;
