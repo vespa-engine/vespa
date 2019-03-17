@@ -52,10 +52,16 @@ TEST_F("keys can be appended to stream", Fixture)
 }
 
 
-TEST_F("integers can be appended to stream", Fixture)
+TEST_F("positive integers can be appended to stream", Fixture)
 {
-    f << (UINT64_C(1) << 63) << " " << -42l << " " << 0l;
-    EXPECT_EQUAL("9223372036854775808 -42 0", f.str());
+    f << (1ull << 63) << " " << 42l << " " << 21 << " " << 0;
+    EXPECT_EQUAL("9223372036854775808 42 21 0", f.str());
+}
+
+TEST_F("negative integers can be appended to stream", Fixture)
+{
+    f << (1ll << 63) << " " << -42l << " " << -21;
+    EXPECT_EQUAL("-9223372036854775808 -42 -21", f.str());
 }
 
 TEST_F("struct timespec can be appended to stream", Fixture)

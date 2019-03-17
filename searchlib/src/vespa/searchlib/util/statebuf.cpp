@@ -72,7 +72,7 @@ StateBuf::appendKey(const char *s) noexcept
 
 
 StateBuf &
-StateBuf::operator<<(unsigned long val) noexcept
+StateBuf::operator<<(unsigned long long val) noexcept
 {
     char buf[22];
     char *p = buf;
@@ -92,13 +92,29 @@ StateBuf::operator<<(unsigned long val) noexcept
 
 
 StateBuf &
-StateBuf::operator<<(long val) noexcept
+StateBuf::operator<<(long long val) noexcept
 {
     if (val < 0) {
-        *this << '-' << static_cast<unsigned long>(- val);
+        *this << '-' << static_cast<unsigned long long>(- val);
     } else {
-        *this << static_cast<unsigned long>(val);
+        *this << static_cast<unsigned long long>(val);
     }
+    return *this;
+}
+
+
+StateBuf &
+StateBuf::operator<<(unsigned long val) noexcept
+{
+    *this << static_cast<unsigned long long>(val);
+    return *this;
+}
+
+
+StateBuf &
+StateBuf::operator<<(long val) noexcept
+{
+    *this << static_cast<long long>(val);
     return *this;
 }
 
@@ -106,7 +122,7 @@ StateBuf::operator<<(long val) noexcept
 StateBuf &
 StateBuf::operator<<(unsigned int val) noexcept
 {
-    *this << static_cast<unsigned long>(val);
+    *this << static_cast<unsigned long long>(val);
     return *this;
 }
 
@@ -114,7 +130,7 @@ StateBuf::operator<<(unsigned int val) noexcept
 StateBuf &
 StateBuf::operator<<(int val) noexcept
 {
-    *this << static_cast<long>(val);
+    *this << static_cast<long long>(val);
     return *this;
 }
 
