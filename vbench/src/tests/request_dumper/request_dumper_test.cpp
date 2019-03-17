@@ -4,8 +4,8 @@
 
 using namespace vbench;
 
-TEST_FF("dump request", RequestSink(), RequestDumper(f1)) {
-    f2.handle(Request::UP(new Request()));
+TEST_F("dump request", RequestDumper()) {
+    f1.handle(Request::UP(new Request()));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

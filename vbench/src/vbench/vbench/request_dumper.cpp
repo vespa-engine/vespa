@@ -5,8 +5,7 @@
 
 namespace vbench {
 
-RequestDumper::RequestDumper(Handler<Request> &next)
-    : _next(next)
+RequestDumper::RequestDumper()
 {
 }
 

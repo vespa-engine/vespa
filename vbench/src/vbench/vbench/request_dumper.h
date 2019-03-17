@@ -12,11 +12,8 @@ namespace vbench {
  **/
 class RequestDumper : public Analyzer
 {
-private:
-    Handler<Request> &_next;
-
 public:
-    RequestDumper(Handler<Request> &_next);
+    RequestDumper();
     void handle(Request::UP request) override;
     void report() override;
 };

@@ -50,7 +50,7 @@ NativeFactory::createAnalyzer(const vespalib::slime::Inspector &spec,
         return Analyzer::UP(new QpsAnalyzer(next));
     }
     if (type == "RequestDumper") {
-        return Analyzer::UP(new RequestDumper(next));
+        return Analyzer::UP(new RequestDumper());
     }
     if (type == "IgnoreBefore") {
         return Analyzer::UP(new IgnoreBefore(spec["time"].asDouble(), next));
