@@ -50,8 +50,8 @@ inject(Node::UP query, Node::UP to_inject) {
         root.prepend(inject(root.stealFirst(), std::move(to_inject)));
     } else {
         auto new_root = std::make_unique<ProtonAnd>();
-        new_root->append(std::move(query));
         new_root->append(std::move(to_inject));
+        new_root->append(std::move(query));
         query = std::move(new_root);
     }
     return query;

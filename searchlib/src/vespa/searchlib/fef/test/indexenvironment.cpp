@@ -4,9 +4,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 using vespalib::eval::ValueType;
 using vespalib::eval::ErrorValue;
@@ -18,21 +16,14 @@ IndexEnvironment::Constant notFoundError(ValueType::error_type(),
 
 }
 
-IndexEnvironment::IndexEnvironment() :
-    _properties(),
-    _fields(),
-    _attrMap(),
-    _tableMan(),
-    _constants()
-{
-}
+IndexEnvironment::IndexEnvironment() = default;
 
-IndexEnvironment::~IndexEnvironment() {}
+IndexEnvironment::~IndexEnvironment() = default;
 
 const FieldInfo *
 IndexEnvironment::getField(uint32_t id) const
 {
-    return id < _fields.size() ? &_fields[id] : NULL;
+    return id < _fields.size() ? &_fields[id] : nullptr;
 }
 
 const FieldInfo *
@@ -44,7 +35,7 @@ IndexEnvironment::getFieldByName(const string &name) const
             return &(*it);
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 
@@ -71,6 +62,4 @@ IndexEnvironment::addConstantValue(const vespalib::string &name,
     (void) insertRes;
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}
