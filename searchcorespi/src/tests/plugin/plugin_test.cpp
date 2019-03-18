@@ -15,9 +15,15 @@ TEST("require that plugins can be loaded.") {
 
 TEST("require that non-existent plugin causes failure") {
     FactoryLoader fl;
+#ifdef __APPLE__
+    EXPECT_EXCEPTION(fl.create("no-such-plugin"),
+                     vespalib::IllegalArgumentException,
+                     "image not found");
+#else
     EXPECT_EXCEPTION(fl.create("no-such-plugin"),
                      vespalib::IllegalArgumentException,
                      "cannot open shared object file");
+#endif
 }
 
 TEST("require that missing factory function causes failure") {
