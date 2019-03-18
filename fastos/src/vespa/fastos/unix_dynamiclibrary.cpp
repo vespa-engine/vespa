@@ -6,13 +6,24 @@
 
 namespace {
 const std::string FASTOS_DYNLIB_PREFIX("lib");
+#ifdef __APPLE__
+const std::string FASTOS_DYNLIB_SUFFIX(".dylib");
+#else
 const std::string FASTOS_DYNLIB_SUFFIX(".so");
 const std::string FASTOS_DYNLIB_SUFPREFIX(".so.");
+#endif
 
 bool hasValidSuffix(const std::string & s)
 {
-    return (s.rfind(FASTOS_DYNLIB_SUFFIX) == (s.size() - FASTOS_DYNLIB_SUFFIX.size()))
-           || (s.rfind(FASTOS_DYNLIB_SUFPREFIX) != std::string::npos);
+    if (s.rfind(FASTOS_DYNLIB_SUFFIX) == (s.size() - FASTOS_DYNLIB_SUFFIX.size())) {
+        return true;
+    }
+#ifndef __APPLE__
+    if (s.rfind(FASTOS_DYNLIB_SUFPREFIX) != std::string::npos) {
+        return true;
+    }
+#endif
+    return false;
 }
 
 }
