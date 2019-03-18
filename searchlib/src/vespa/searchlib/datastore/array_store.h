@@ -39,7 +39,7 @@ private:
         using CleanContext = typename ParentType::CleanContext;
     public:
         LargeArrayType(const AllocSpec &spec);
-        virtual void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) override;
+        virtual void cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext cleanCtx) override;
     };
 
 

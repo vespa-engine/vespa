@@ -13,7 +13,7 @@ constexpr float DEFAULT_ALLOC_GROW_FACTOR = 0.2;
 }
 
 void
-BufferTypeBase::CleanContext::extraBytesCleaned(uint64_t value)
+BufferTypeBase::CleanContext::extraBytesCleaned(size_t value)
 {
     assert(_extraBytes >= value);
     _extraBytes -= value;

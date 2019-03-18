@@ -212,16 +212,16 @@ protected:
 
     class EnumBufferType : public datastore::BufferType<char> {
     private:
-        uint64_t _minSizeNeeded; // lower cap for sizeNeeded
-        uint64_t _deadElems;     // dead elements in active buffer
-        bool     _pendingCompact;
-        bool     _wantCompact;
+        size_t _minSizeNeeded; // lower cap for sizeNeeded
+        size_t _deadElems;     // dead elements in active buffer
+        bool   _pendingCompact;
+        bool   _wantCompact;
     public:
         EnumBufferType();
 
         size_t calcArraysToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const override;
 
-        void setSizeNeededAndDead(uint64_t sizeNeeded, uint64_t deadElems) {
+        void setSizeNeededAndDead(size_t sizeNeeded, size_t deadElems) {
             _minSizeNeeded = sizeNeeded;
             _deadElems = deadElems;
         }

@@ -381,7 +381,7 @@ DataStoreBase::finishCompact(const std::vector<uint32_t> &toHold)
 }
 
 void
-DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t elemsNeeded)
+DataStoreBase::fallbackResize(uint32_t bufferId, size_t elemsNeeded)
 {
     BufferState &state = getBufferState(bufferId);
     BufferState::Alloc toHoldBuffer;

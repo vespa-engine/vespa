@@ -42,7 +42,7 @@ public:
      * @param ref       Reference to dead stored features
      * @param dead      Number of newly dead elements
      */
-    void incDead(EntryRef ref, uint64_t deadElems) {
+    void incDead(EntryRef ref, size_t deadElems) {
         RefType intRef(ref);
         DataStoreBase::incDead(intRef.bufferId(), deadElems);
     }
@@ -50,12 +50,12 @@ public:
     /**
      * Free element(s).
      */
-    void freeElem(EntryRef ref, uint64_t numElems);
+    void freeElem(EntryRef ref, size_t numElems);
 
     /**
      * Hold element(s).
      */
-    void holdElem(EntryRef ref, uint64_t numElems, size_t extraBytes = 0);
+    void holdElem(EntryRef ref, size_t numElems, size_t extraBytes = 0);
 
     /**
      * Trim elem hold list, freeing elements that no longer needs to be held.

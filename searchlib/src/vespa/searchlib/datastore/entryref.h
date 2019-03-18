@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace search::datastore {
@@ -27,15 +28,15 @@ template <uint32_t OffsetBits, uint32_t BufferBits = 32u - OffsetBits>
 class EntryRefT : public EntryRef {
 public:
     EntryRefT() : EntryRef() {}
-    EntryRefT(uint64_t offset_, uint32_t bufferId_);
+    EntryRefT(size_t offset_, uint32_t bufferId_);
     EntryRefT(const EntryRef & ref_) : EntryRef(ref_.ref()) {}
     uint32_t hash() const { return offset() + (bufferId() << OffsetBits); }
-    uint64_t offset() const { return _ref >> BufferBits; }
+    size_t offset() const { return _ref >> BufferBits; }
     uint32_t bufferId() const { return _ref & (numBuffers() - 1); }
-    static uint64_t offsetSize() { return 1ul << OffsetBits; }
+    static size_t offsetSize() { return 1ul << OffsetBits; }
     static uint32_t numBuffers() { return 1 << BufferBits; } 
-    static uint64_t align(uint64_t val) { return val; }
-    static uint64_t pad(uint64_t val) { (void) val; return 0ul; }
+    static size_t align(size_t val) { return val; }
+    static size_t pad(size_t val) { (void) val; return 0ul; }
     static constexpr bool isAlignedType = false;
 };
 
@@ -50,13 +51,13 @@ private:
     static const uint32_t PadConstant = ((1 << OffsetAlign) - 1);
 public:
     AlignedEntryRefT() : ParentType() {}
-    AlignedEntryRefT(uint64_t offset_, uint32_t bufferId_) :
+    AlignedEntryRefT(size_t offset_, uint32_t bufferId_) :
         ParentType(align(offset_) >> OffsetAlign, bufferId_) {}
     AlignedEntryRefT(const EntryRef & ref_) : ParentType(ref_) {}
-    uint64_t offset() const { return ParentType::offset() << OffsetAlign; }
-    static uint64_t offsetSize() { return ParentType::offsetSize() << OffsetAlign; }
-    static uint64_t align(uint64_t val) { return val + pad(val); }
-    static uint64_t pad(uint64_t val) { return (-val & PadConstant); }
+    size_t offset() const { return ParentType::offset() << OffsetAlign; }
+    static size_t offsetSize() { return ParentType::offsetSize() << OffsetAlign; }
+    static size_t align(size_t val) { return val + pad(val); }
+    static size_t pad(size_t val) { return (-val & PadConstant); }
     static constexpr bool isAlignedType = true;
 };
 

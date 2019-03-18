@@ -17,10 +17,10 @@ ArrayStore<EntryT, RefT>::LargeArrayType::LargeArrayType(const AllocSpec &spec)
 
 template <typename EntryT, typename RefT>
 void
-ArrayStore<EntryT, RefT>::LargeArrayType::cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx)
+ArrayStore<EntryT, RefT>::LargeArrayType::cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext cleanCtx)
 {
     LargeArray *elem = static_cast<LargeArray *>(buffer) + offset;
-    for (size_t i = 0; i < len; ++i) {
+    for (size_t i = 0; i < numElems; ++i) {
         cleanCtx.extraBytesCleaned(sizeof(EntryT) * elem->size());
         *elem = _emptyEntry;
         ++elem;

@@ -8,7 +8,7 @@
 namespace search::datastore {
 
 template <uint32_t OffsetBits, uint32_t BufferBits>
-EntryRefT<OffsetBits, BufferBits>::EntryRefT(uint64_t offset_, uint32_t bufferId_) :
+EntryRefT<OffsetBits, BufferBits>::EntryRefT(size_t offset_, uint32_t bufferId_) :
     EntryRef((offset_ << BufferBits) + bufferId_)
 {
     ASSERT_ONCE_OR_LOG(offset_ < offsetSize(), "EntryRefT.offset_overflow", 10000);

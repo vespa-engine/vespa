@@ -25,7 +25,7 @@ DataStoreT<RefT>::~DataStoreT()
 
 template <typename RefT>
 void
-DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t numElems)
+DataStoreT<RefT>::freeElem(EntryRef ref, size_t numElems)
 {
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
@@ -47,10 +47,10 @@ DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t numElems)
 
 template <typename RefT>
 void
-DataStoreT<RefT>::holdElem(EntryRef ref, uint64_t numElems, size_t extraBytes)
+DataStoreT<RefT>::holdElem(EntryRef ref, size_t numElems, size_t extraBytes)
 {
     RefType intRef(ref);
-    uint64_t alignedLen = RefType::align(numElems);
+    size_t alignedLen = RefType::align(numElems);
     BufferState &state = getBufferState(intRef.bufferId());
     assert(state.isActive());
     if (state.hasDisabledElemHoldList()) {
