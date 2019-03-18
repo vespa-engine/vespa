@@ -142,7 +142,7 @@ public class ContainerControllerTester {
         AthenzDomain athensDomain = new AthenzDomain(domainName);
         AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
-        domain.admin(AthenzIdentities.from(new AthenzDomain("user"), userName));
+        domain.admin(new AthenzUser(userName));
         mock.getSetup().addDomain(domain);
         return athensDomain;
     }
