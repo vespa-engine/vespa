@@ -22,10 +22,10 @@ BTreeNodeBufferType<EntryType>::initializeReservedElements(void *buffer, size_t 
 
 template <typename EntryType>
 void
-BTreeNodeBufferType<EntryType>::cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext)
+BTreeNodeBufferType<EntryType>::cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext)
 {
     EntryType *e = static_cast<EntryType *>(buffer) + offset;
-    for (size_t j = len; j != 0; --j) {
+    for (size_t j = numElems; j != 0; --j) {
         e->cleanFrozen();
         ++e;
     }
