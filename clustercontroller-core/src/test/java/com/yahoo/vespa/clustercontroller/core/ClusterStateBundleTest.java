@@ -90,7 +90,7 @@ public class ClusterStateBundleTest {
     public void toString_without_bucket_space_states_prints_only_baseline_state() {
         ClusterStateBundle bundle = ClusterStateBundle.ofBaselineOnly(
                 annotatedStateOf("distributor:2 storage:2"));
-        assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2' (deferred activation))"));
+        assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2')"));
     }
 
     @Test
@@ -99,7 +99,7 @@ public class ClusterStateBundleTest {
         assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2', " +
                 "default 'distributor:2 storage:2 .0.s:d', " +
                 "global 'distributor:2 storage:2', " +
-                "narnia 'distributor:2 .0.s:d storage:2' (deferred activation))"));
+                "narnia 'distributor:2 .0.s:d storage:2')"));
     }
 
     @Test
@@ -133,9 +133,9 @@ public class ClusterStateBundleTest {
     }
 
     @Test
-    public void deferred_activation_is_enabled_by_default() {
+    public void deferred_activation_is_disabled_by_default() {
         ClusterStateBundle bundle = createTestBundle();
-        assertTrue(bundle.deferredActivation());
+        assertFalse(bundle.deferredActivation());
     }
 
     @Test

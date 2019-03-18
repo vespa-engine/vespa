@@ -35,7 +35,7 @@ public class ClusterStateBundle {
         private Map<String, AnnotatedClusterState> explicitDerivedStates;
         private ClusterStateDeriver stateDeriver;
         private Set<String> bucketSpaces;
-        private boolean deferredActivation = true;
+        private boolean deferredActivation = false;
 
         public Builder(AnnotatedClusterState baselineState) {
             this.baselineState = baselineState;
@@ -91,7 +91,7 @@ public class ClusterStateBundle {
     }
 
     private ClusterStateBundle(AnnotatedClusterState baselineState, Map<String, AnnotatedClusterState> derivedBucketSpaceStates) {
-        this(baselineState, derivedBucketSpaceStates, true);
+        this(baselineState, derivedBucketSpaceStates, false);
     }
 
     private ClusterStateBundle(AnnotatedClusterState baselineState, Map<String,

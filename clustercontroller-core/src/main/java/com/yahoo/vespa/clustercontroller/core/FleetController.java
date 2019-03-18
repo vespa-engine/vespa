@@ -440,10 +440,11 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     /** Called when all distributors have acked newest cluster state version. */
     public void handleAllDistributorsInSync(DatabaseHandler database, DatabaseHandler.Context context) throws InterruptedException {
         Set<ConfiguredNode> nodes = new HashSet<>(cluster.clusterInfo().getConfiguredNodes().values());
-        ClusterState currentState = stateVersionTracker.getVersionedClusterState();
-        log.fine(() -> String.format("All distributors have ACKed cluster state version %d", currentState.getVersion()));
-        stateChangeHandler.handleAllDistributorsInSync(currentState, nodes, database, context);
-        convergedStates.add(stateVersionTracker.getVersionedClusterStateBundle()); // FIXME ugh, going via version tracker?
+        // TODO wouldn't it be better to always get bundle information from the state broadcaster?
+        var currentBundle = stateVersionTracker.getVersionedClusterStateBundle();
+        log.fine(() -> String.format("All distributors have ACKed cluster state version %d", currentBundle.getVersion()));
+        stateChangeHandler.handleAllDistributorsInSync(currentBundle.getBaselineClusterState(), nodes, database, context);
+        convergedStates.add(currentBundle);
     }
 
     private boolean changesConfiguredNodeSet(Collection<ConfiguredNode> newNodes) {
@@ -672,7 +673,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 // Reset timer to only see warning once.
                 firstAllowedStateBroadcast = currentTime;
             }
-            // FIXME bad interaction with activation..!
             sentAny = systemStateBroadcaster.broadcastNewStateBundleIfRequired(databaseContext, communicator);
             if (sentAny) {
                 // FIXME won't this inhibit resending to unresponsive nodes?
