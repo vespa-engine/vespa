@@ -259,7 +259,6 @@ BucketDBUpdater::onSetSystemState(
 bool
 BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
 {
-    // TODO test edges!
     if (hasPendingClusterState() && _pendingClusterState->isVersionedTransition()) {
         const auto pending_version = _pendingClusterState->clusterStateVersion();
         if (pending_version == cmd->version()) {
@@ -281,7 +280,7 @@ BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::Activa
     } else {
         // Likely just a resend, but log warn for now to get a feel of how common it is.
         LOG(warning, "Received cluster state activation command for version %u, which "
-                     "has no corresponding pending state. Resent operation?", cmd->version());
+                     "has no corresponding pending state. Likely resent operation.", cmd->version());
     }
     // Fall through to next link in call chain that cares about this message.
     return false;

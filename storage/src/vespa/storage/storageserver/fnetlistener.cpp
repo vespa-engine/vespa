@@ -208,7 +208,7 @@ void FNetListener::RPC_setDistributionStates(FRT_RPCRequest* req) {
         req->SetError(RPCRequestWrapper::ERR_BAD_REQUEST, e.what());
         return;
     }
-    LOG(info, "Got state bundle %s", state_bundle->toString().c_str()); // TODO
+    LOG(debug, "Got state bundle %s", state_bundle->toString().c_str());
 
     // TODO add constructor taking in shared_ptr directly instead?
     auto cmd = std::make_shared<api::SetSystemStateCommand>(*state_bundle);
@@ -227,6 +227,8 @@ void FNetListener::RPC_activateClusterStateVersion(FRT_RPCRequest* req) {
     const int32_t activate_version = req->GetParams()->GetValue(0)._intval32;
     auto cmd = std::make_shared<api::ActivateClusterStateVersionCommand>(activate_version);
     cmd->setPriority(api::StorageMessage::VERYHIGH);
+
+    LOG(debug, "Got state activation request for version %u", activate_version);
 
     detach_and_forward_to_enqueuer(std::move(cmd), req);
 }
