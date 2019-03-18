@@ -725,6 +725,7 @@ GenTestDocsApp::getOptions()
         LONGOPT_JSON
     };
     int optIndex = 2;
+    _app.resetOptIndex(optIndex);
     while ((c = _app.GetOptLong("v",
                                 optArgument,
                                 optIndex,
