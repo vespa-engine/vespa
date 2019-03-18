@@ -8,18 +8,18 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Wraps the permit data of an Okta application modification.
+ *
+ * @author jonmv
  */
-public class CloudApplicationPermit {
+public class CloudApplicationPermit extends ApplicationPermit {
 
-    private final ApplicationId application;
     private final Principal user;
 
     public CloudApplicationPermit(ApplicationId application, Principal user) {
-        this.application = requireNonNull(application);
+        super(application);
         this.user = requireNonNull(user);
     }
 
-    public ApplicationId application() { return application; }
     public Principal user() { return user; }
 
 }

@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.tenant;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 
 import java.util.Optional;
 

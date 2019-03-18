@@ -35,6 +35,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
@@ -345,6 +346,7 @@ public final class ControllerTester {
                                                new ChefMock(),
                                                clock,
                                                new AthenzClientFactoryMock(athensDb),
+                                               new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
                                                artifactRepository,
                                                applicationStore,
                                                new MockTesterCloud(),

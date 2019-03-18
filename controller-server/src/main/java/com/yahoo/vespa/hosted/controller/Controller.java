@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
+import com.yahoo.vespa.hosted.controller.permits.PermitStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
@@ -92,13 +93,13 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub, EntityService entityService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
                       NameService nameService, RoutingGenerator routingGenerator, Chef chef,
-                      AthenzClientFactory athenzClientFactory,
+                      AthenzClientFactory athenzClientFactory, PermitStore permitStore,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer) {
         this(curator, rotationsConfig,
              gitHub, entityService, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
-             Clock.systemUTC(), athenzClientFactory, artifactRepository, applicationStore, testerCloud,
+             Clock.systemUTC(), athenzClientFactory, permitStore, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer);
     }
 
@@ -107,8 +108,8 @@ public class Controller extends AbstractComponent {
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
-                      AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
-                      ApplicationStore applicationStore, TesterCloud testerCloud,
+                      AthenzClientFactory athenzClientFactory, PermitStore permitStore,
+                      ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
                       Mailer mailer) {
 
@@ -125,7 +126,7 @@ public class Controller extends AbstractComponent {
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
-        applicationController = new ApplicationController(this, curator, zmsClient,
+        applicationController = new ApplicationController(this, curator, permitStore,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
                                                           Objects.requireNonNull(nameService, "NameService cannot be null"),
                                                           configServer,
@@ -134,7 +135,7 @@ public class Controller extends AbstractComponent {
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);
-        tenantController = new TenantController(this, curator, zmsClient);
+        tenantController = new TenantController(this, curator, permitStore);
         auditLogger = new AuditLogger(curator, clock);
 
         // Record the version of this controller

@@ -21,6 +21,8 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Extracts permits for Athenz or user tenants from HTTP requests.
+ *
+ * @author jonmv
  */
 public class AthenzPermitExtractor implements PermitExtractor {
 
