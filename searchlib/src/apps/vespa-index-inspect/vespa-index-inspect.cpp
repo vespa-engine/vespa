@@ -281,6 +281,7 @@ ShowPostingListSubApp::getOptions()
         LONGOPT_MINDOCID
     };
     int optIndex = 2;
+    _app.resetOptIndex(optIndex);
     while ((c = _app.GetOptLong("di:mv",
                                 optArgument,
                                 optIndex,
@@ -743,6 +744,7 @@ DumpWordsSubApp::getOptions()
         LONGOPT_WORDNUM
     };
     int optIndex = 2;
+    _app.resetOptIndex(optIndex);
     while ((c = _app.GetOptLong("i:",
                                 optArgument,
                                 optIndex,
