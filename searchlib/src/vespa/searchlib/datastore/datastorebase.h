@@ -24,9 +24,9 @@ public:
     {
     public:
         EntryRef _ref;
-        uint64_t _len;  // Aligned length
+        size_t _len;  // Aligned length
 
-        ElemHold1ListElem(EntryRef ref, uint64_t len)
+        ElemHold1ListElem(EntryRef ref, size_t len)
                 : _ref(ref),
                   _len(len)
         { }
@@ -90,14 +90,14 @@ public:
     class MemStats
     {
     public:
-        uint64_t _allocElems;
-        uint64_t _usedElems;
-        uint64_t _deadElems;
-        uint64_t _holdElems;
-        uint64_t _allocBytes;
-        uint64_t _usedBytes;
-        uint64_t _deadBytes;
-        uint64_t _holdBytes;
+        size_t _allocElems;
+        size_t _usedElems;
+        size_t _deadElems;
+        size_t _holdElems;
+        size_t _allocBytes;
+        size_t _usedBytes;
+        size_t _deadBytes;
+        size_t _holdBytes;
         uint32_t _freeBuffers;
         uint32_t _activeBuffers;
         uint32_t _holdBuffers;
@@ -266,19 +266,19 @@ public:
     void clearHoldLists();
 
     template <typename EntryType>
-    EntryType *getBufferEntry(uint32_t bufferId, uint64_t offset) {
+    EntryType *getBufferEntry(uint32_t bufferId, size_t offset) {
         return static_cast<EntryType *>(_buffers[bufferId].getBuffer()) + offset;
     }
 
     template <typename EntryType>
-    const EntryType *getBufferEntry(uint32_t bufferId, uint64_t offset) const {
+    const EntryType *getBufferEntry(uint32_t bufferId, size_t offset) const {
         return static_cast<const EntryType *>(_buffers[bufferId].getBuffer()) + offset;
     }
 
     void dropBuffers();
 
 
-    void incDead(uint32_t bufferId, uint64_t deadElems) {
+    void incDead(uint32_t bufferId, size_t deadElems) {
         BufferState &state = _states[bufferId];
         state.incDeadElems(deadElems);
     }
@@ -337,7 +337,7 @@ public:
     std::vector<uint32_t> startCompact(uint32_t typeId);
 
     void finishCompact(const std::vector<uint32_t> &toHold);
-    void fallbackResize(uint32_t bufferId, uint64_t elementsNeeded);
+    void fallbackResize(uint32_t bufferId, size_t elementsNeeded);
 
     vespalib::GenerationHolder &getGenerationHolder() {
         return _genHolder;

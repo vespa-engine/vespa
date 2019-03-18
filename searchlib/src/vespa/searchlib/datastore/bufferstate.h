@@ -45,10 +45,10 @@ public:
 private:
     size_t        _usedElems;
     size_t        _allocElems;
-    uint64_t      _deadElems;
+    size_t        _deadElems;
     State         _state;
     bool          _disableElemHoldList;
-    uint64_t      _holdElems;
+    size_t        _holdElems;
     // Number of bytes that are heap allocated by elements that are stored in this buffer.
     // For simple types this is 0.
     size_t        _extraUsedBytes;
@@ -142,23 +142,23 @@ public:
     size_t size() const { return _usedElems; }
     size_t capacity() const { return _allocElems; }
     size_t remaining() const { return _allocElems - _usedElems; }
-    void pushed_back(uint64_t numElems, size_t extraBytes = 0) {
+    void pushed_back(size_t numElems, size_t extraBytes = 0) {
         _usedElems += numElems;
         _extraUsedBytes += extraBytes;
     }
-    void cleanHold(void *buffer, uint64_t offset, uint64_t len) {
-        _typeHandler->cleanHold(buffer, offset, len, BufferTypeBase::CleanContext(_extraHoldBytes));
+    void cleanHold(void *buffer, size_t offset, size_t numElems) {
+        _typeHandler->cleanHold(buffer, offset, numElems, BufferTypeBase::CleanContext(_extraHoldBytes));
     }
     void dropBuffer(void *&buffer);
     uint32_t getTypeId() const { return _typeId; }
     uint32_t getArraySize() const { return _arraySize; }
-    uint64_t getDeadElems() const { return _deadElems; }
-    uint64_t getHoldElems() const { return _holdElems; }
+    size_t getDeadElems() const { return _deadElems; }
+    size_t getHoldElems() const { return _holdElems; }
     size_t getExtraUsedBytes() const { return _extraUsedBytes; }
     size_t getExtraHoldBytes() const { return _extraHoldBytes; }
     bool getCompacting() const { return _compacting; }
     void setCompacting() { _compacting = true; }
-    void fallbackResize(uint32_t bufferId, uint64_t elementsNeeded, void *&buffer, Alloc &holdBuffer);
+    void fallbackResize(uint32_t bufferId, size_t elementsNeeded, void *&buffer, Alloc &holdBuffer);
 
     bool isActive(uint32_t typeId) const {
         return ((_state == ACTIVE) && (_typeId == typeId));
@@ -170,9 +170,9 @@ public:
     const BufferTypeBase *getTypeHandler() const { return _typeHandler; }
     BufferTypeBase *getTypeHandler() { return _typeHandler; }
 
-    void incDeadElems(uint64_t value) { _deadElems += value; }
-    void incHoldElems(uint64_t value) { _holdElems += value; }
-    void decHoldElems(uint64_t value) {
+    void incDeadElems(size_t value) { _deadElems += value; }
+    void incHoldElems(size_t value) { _holdElems += value; }
+    void decHoldElems(size_t value) {
         assert(_holdElems >= value);
         _holdElems -= value;
     }

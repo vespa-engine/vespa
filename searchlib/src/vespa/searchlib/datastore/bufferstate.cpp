@@ -271,7 +271,7 @@ BufferState::disableElemHoldList()
 
 void
 BufferState::fallbackResize(uint32_t bufferId,
-                            uint64_t elementsNeeded,
+                            size_t elementsNeeded,
                             void *&buffer,
                             Alloc &holdBuffer)
 {
