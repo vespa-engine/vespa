@@ -11,7 +11,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -19,8 +18,6 @@ import java.util.zip.ZipInputStream;
  * @author bratseth
  */
 public class ZipStreamReader {
-
-    private static final Logger log = Logger.getLogger(ZipStreamReader.class.getSimpleName());
 
     private final ImmutableList<ZipEntryWithContent> entries;
     private final int maxEntrySizeInBytes;
@@ -62,10 +59,15 @@ public class ZipStreamReader {
     public List<ZipEntryWithContent> entries() { return entries; }
 
     private static String requireName(String name) {
-        if (Arrays.asList(name.split("/")).contains(".."))
-            log.info("Illegal reverse path in '" + name + "'.");
-        if (!name.equals(Path.of(name).normalize().toString()))
-            log.info("Illegal non-normaliSed path '" + name + "'.");
+        if (Arrays.asList(name.split("/")).contains("..") ||
+            !trimTrailingSlash(name).equals(Path.of(name).normalize().toString())) {
+            throw new IllegalArgumentException("Unexpected non-normalized path found in zip content: '" + name + "'");
+        }
+        return name;
+    }
+
+    private static String trimTrailingSlash(String name) {
+        if (name.endsWith("/")) return name.substring(0, name.length() - 1);
         return name;
     }
 
