@@ -1013,8 +1013,8 @@ TEST_F("requireThatInversionIsWorking", DictionaryFixture<Fixture>)
     f._pushThreads.sync();
     DataStoreBase::MemStats beforeStats = getFeatureStoreMemStats(f._d);
     LOG(info,
-        "Before feature compaction: allocElems=%" PRIu64 ", usedElems=%" PRIu64
-        ", deadElems=%" PRIu64 ", holdElems=%" PRIu64
+        "Before feature compaction: allocElems=%zu, usedElems=%zu"
+        ", deadElems=%zu, holdElems=%zu"
         ", freeBuffers=%u, activeBuffers=%u"
         ", holdBuffers=%u",
         beforeStats._allocElems,
@@ -1033,8 +1033,8 @@ TEST_F("requireThatInversionIsWorking", DictionaryFixture<Fixture>)
     myCommit(f._d, f._pushThreads);
     DataStoreBase::MemStats duringStats = getFeatureStoreMemStats(f._d);
     LOG(info,
-        "During feature compaction: allocElems=%" PRIu64 ", usedElems=%" PRIu64
-        ", deadElems=%" PRIu64 ", holdElems=%" PRIu64
+        "During feature compaction: allocElems=%zu, usedElems=%zu"
+        ", deadElems=%zu, holdElems=%zu"
         ", freeBuffers=%u, activeBuffers=%u"
         ", holdBuffers=%u",
         duringStats._allocElems,
@@ -1048,8 +1048,8 @@ TEST_F("requireThatInversionIsWorking", DictionaryFixture<Fixture>)
     myCommit(f._d, f._pushThreads);
     DataStoreBase::MemStats afterStats = getFeatureStoreMemStats(f._d);
     LOG(info,
-        "After feature compaction: allocElems=%" PRIu64 ", usedElems=%" PRIu64
-        ", deadElems=%" PRIu64 ", holdElems=%" PRIu64
+        "After feature compaction: allocElems=%zu, usedElems=%zu"
+        ", deadElems=%zu, holdElems=%zu"
         ", freeBuffers=%u, activeBuffers=%u"
         ", holdBuffers=%u",
         afterStats._allocElems,

@@ -54,11 +54,11 @@ DenseTensorStore::BufferType::BufferType(const TensorSizeCalc &tensorSizeCalc)
 DenseTensorStore::BufferType::~BufferType() = default;
 
 void
-DenseTensorStore::BufferType::cleanHold(void *buffer, uint64_t offset,
-                                        uint64_t len, CleanContext)
+DenseTensorStore::BufferType::cleanHold(void *buffer, size_t offset,
+                                        size_t numElems, CleanContext)
 {
     // Clear both tensor dimension size information and cells.
-    memset(static_cast<char *>(buffer) + offset - _unboundDimSizesSize, 0, len);
+    memset(static_cast<char *>(buffer) + offset - _unboundDimSizesSize, 0, numElems);
 }
 
 size_t

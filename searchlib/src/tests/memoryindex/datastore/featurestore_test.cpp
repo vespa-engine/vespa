@@ -102,7 +102,7 @@ Test::requireThatFeaturesCanBeAddedAndRetrieved()
                      FeatureStore::RefType(r1).offset());
         EXPECT_EQUAL(0u, FeatureStore::RefType(r1).bufferId());
         LOG(info,
-            "bits(%" PRIu64 "), ref.offset(%" PRIu64 "), ref.bufferId(%u)",
+            "bits(%" PRIu64 "), ref.offset(%zu), ref.bufferId(%u)",
             r.second,
             FeatureStore::RefType(r1).offset(),
             FeatureStore::RefType(r1).bufferId());
@@ -119,7 +119,7 @@ Test::requireThatFeaturesCanBeAddedAndRetrieved()
                     FeatureStore::RefType(r1).offset());
         EXPECT_EQUAL(0u, FeatureStore::RefType(r1).bufferId());
         LOG(info,
-            "bits(%" PRIu64 "), ref.offset(%" PRIu64 "), ref.bufferId(%u)",
+            "bits(%" PRIu64 "), ref.offset(%zu), ref.bufferId(%u)",
             r.second,
             FeatureStore::RefType(r2).offset(),
             FeatureStore::RefType(r2).bufferId());
@@ -146,7 +146,7 @@ Test::requireThatNextWordsAreWorking()
                      FeatureStore::RefType(r1).offset());
         EXPECT_EQUAL(0u, FeatureStore::RefType(r1).bufferId());
         LOG(info,
-            "bits(%" PRIu64 "), ref.offset(%" PRIu64 "), ref.bufferId(%u)",
+            "bits(%" PRIu64 "), ref.offset(%zu), ref.bufferId(%u)",
             r.second,
             FeatureStore::RefType(r1).offset(),
             FeatureStore::RefType(r1).bufferId());
@@ -163,7 +163,7 @@ Test::requireThatNextWordsAreWorking()
                     FeatureStore::RefType(r1).offset());
         EXPECT_EQUAL(0u, FeatureStore::RefType(r1).bufferId());
         LOG(info,
-            "bits(%" PRIu64 "), ref.offset(%" PRIu64 "), ref.bufferId(%u)",
+            "bits(%" PRIu64 "), ref.offset(%zu), ref.bufferId(%u)",
             r.second,
             FeatureStore::RefType(r2).offset(),
             FeatureStore::RefType(r2).bufferId());

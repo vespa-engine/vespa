@@ -47,7 +47,7 @@ public:
     public:
         BufferType(const TensorSizeCalc &tensorSizeCalc);
         ~BufferType() override;
-        void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) override;
+        void cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext cleanCtx) override;
         uint32_t unboundDimSizesSize() const { return _unboundDimSizesSize; }
         size_t getReservedElements(uint32_t bufferId) const override;
         static size_t align(size_t size, size_t alignment) {
