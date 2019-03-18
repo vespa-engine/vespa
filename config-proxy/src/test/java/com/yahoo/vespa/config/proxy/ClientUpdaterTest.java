@@ -36,13 +36,13 @@ public class ClientUpdaterTest {
 
     @Test
     public void basic() {
-        final RawConfig fooConfig = ProxyServerTest.fooConfig;
+        RawConfig fooConfig = ProxyServerTest.fooConfig;
         configUpdatedSendResponse(fooConfig);
         // Nobody asked for the config, so no response sent
         assertSentResponses(0);
 
         simulateClientRequestingConfig(fooConfig);
-        configUpdatedSendResponse(fooConfig);
+        configUpdatedSendResponse(createConfigWithNextConfigGeneration(fooConfig));
         assertSentResponses(1);
 
         // Nobody asked for 'bar' config
@@ -69,7 +69,7 @@ public class ClientUpdaterTest {
         assertSentResponses(0);
 
         simulateClientRequestingConfig(fooConfig);
-        configUpdatedSendResponse(fooConfig);
+        configUpdatedSendResponse(createConfigWithNextConfigGeneration(fooConfig));
         assertSentResponses(1);
 
         simulateClientRequestingConfig(fooConfig);
@@ -82,10 +82,8 @@ public class ClientUpdaterTest {
     public void it_does_send_config_with_generation_0_in_response() {
         RawConfig fooConfigOldGeneration = ProxyServerTest.fooConfig;
 
-        RawConfig fooConfig = createConfigWithNextConfigGeneration(fooConfigOldGeneration, 1);
-
-        simulateClientRequestingConfig(fooConfig);
-        configUpdatedSendResponse(fooConfig);
+        simulateClientRequestingConfig(fooConfigOldGeneration);
+        configUpdatedSendResponse(createConfigWithNextConfigGeneration(fooConfigOldGeneration));
         assertSentResponses(1);
 
         RawConfig fooConfig2 = createConfigWithNextConfigGeneration(fooConfigOldGeneration, 0);

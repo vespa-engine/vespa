@@ -50,7 +50,7 @@ class ClientUpdater {
             JRTServerConfigRequest request = response.getRequest();
             if (request.getConfigKey().equals(config.getKey())
                     // Generation 0 is special, used when returning empty sentinel config
-                    && (config.getGeneration() >= request.getRequestGeneration() || config.getGeneration() == 0)) {
+                    && (config.hasNewerGeneration(request) || config.getGeneration() == 0)) {
                 if (delayedResponses.remove(response)) {
                     found = true;
                     log.log(LogLevel.DEBUG, () -> "Call returnOkResponse for " + config.getKey() + "," + config.getGeneration());
