@@ -276,7 +276,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (Tenant tenant : tenants)
             tenantInTenantsListToSlime(tenant, request.getUri(), tenantsArray.addObject());
         response.setBool("tenantExists", tenants.stream().anyMatch(tenant -> tenant instanceof UserTenant && // TODO jvenstad: No.
-                                                                         ((UserTenant) tenant).is(user.getName())));
+                                                                         ((UserTenant) tenant).is(user.getIdentity().getName())));
         return new SlimeJsonResponse(slime);
     }
 
