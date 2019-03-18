@@ -147,7 +147,6 @@ Requires: llvm-libs >= 8.0.0
 %endif
 Requires: java-11-openjdk
 Requires: openssl
-Requires: vespa-cppunit >= 1.12.1-6
 Requires(pre): shadow-utils
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
