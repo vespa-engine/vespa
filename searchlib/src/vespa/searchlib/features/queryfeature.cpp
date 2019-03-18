@@ -4,22 +4,24 @@
 #include "utils.h"
 #include "valuefeature.h"
 
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/searchlib/features/constant_tensor_executor.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/eval/tensor/default_tensor.h>
-#include <vespa/eval/tensor/tensor_mapper.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/locale/c.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".features.queryfeature");
+
 using namespace search::fef;
 using namespace search::fef::indexproperties;
-using vespalib::tensor::DefaultTensor;
-using vespalib::tensor::TensorBuilder;
+using document::TensorDataType;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
 
@@ -121,11 +123,11 @@ createTensorExecutor(const search::fef::IQueryEnvironment &env,
     if (prop.found() && !prop.get().empty()) {
         const vespalib::string &value = prop.get();
         vespalib::nbostream stream(value.data(), value.size());
-        vespalib::tensor::Tensor::UP tensor = vespalib::tensor::TypedBinaryFormat::deserialize(stream);
-        if (tensor->type() != valueType) {
-            vespalib::tensor::TensorMapper mapper(valueType);
-            vespalib::tensor::Tensor::UP mappedTensor = mapper.map(*tensor);
-            tensor = std::move(mappedTensor);
+        auto tensor = vespalib::tensor::TypedBinaryFormat::deserialize(stream);
+        if (!TensorDataType::isAssignableType(valueType, tensor->type())) {
+            LOG(warning, "Query feature type is '%s' but other tensor type is '%s'",
+                valueType.to_spec().c_str(), tensor->type().to_spec().c_str());
+            return ConstantTensorExecutor::createEmpty(valueType, stash);
         }
         return ConstantTensorExecutor::create(std::move(tensor), stash);
     }
