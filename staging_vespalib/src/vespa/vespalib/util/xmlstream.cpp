@@ -451,12 +451,14 @@ template XmlAttribute::XmlAttribute(const std::string &, vespalib::string, unsig
 template XmlAttribute::XmlAttribute(const std::string &, vespalib::stringref, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, CharP, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, bool, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, int16_t, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, int32_t, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, int64_t, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, uint16_t, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, uint32_t, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, uint64_t, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, short, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, int, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, long, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, long long, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, unsigned short, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, unsigned int, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, unsigned long, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, unsigned long long, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, double, unsigned int);
 
 }
