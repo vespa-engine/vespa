@@ -18,7 +18,6 @@ import java.util.List;
 public class InstanceInformation {
     public List<URI> serviceUrls;
     public URI nodes;
-    public URI elkUrl;
     public URI yamasUrl;
     public RevisionId revision;
     public Long deployTimeEpochMs;
