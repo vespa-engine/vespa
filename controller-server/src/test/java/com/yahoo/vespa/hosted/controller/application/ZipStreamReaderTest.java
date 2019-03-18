@@ -31,7 +31,7 @@ public class ZipStreamReaderTest {
         } catch (IllegalArgumentException ignored) {}
 
         entries = Map.of("foo.xml", "foobar",
-                         "foo.zip", "0".repeat(100) // File not extracted and thus not subject to size limit
+                         "foo.jar", "0".repeat(100) // File not extracted and thus not subject to size limit
         );
         ZipStreamReader reader = new ZipStreamReader(new ByteArrayInputStream(zip(entries)), "foo.xml"::equals,10);
         byte[] extracted = reader.entries().get(0).content();
@@ -45,6 +45,7 @@ public class ZipStreamReaderTest {
                 "/../.././services.xml", true,
                 "./application/././services.xml", true,
                 "application//services.xml", true,
+                "artifacts/", false, // empty dir
                 "services..xml", false,
                 "application/services.xml", false,
                 "components/foo-bar-deploy.jar", false,

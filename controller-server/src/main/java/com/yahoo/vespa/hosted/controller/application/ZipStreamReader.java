@@ -59,9 +59,15 @@ public class ZipStreamReader {
     public List<ZipEntryWithContent> entries() { return entries; }
 
     private static String requireName(String name) {
-        IllegalArgumentException e = new IllegalArgumentException("Unexpected non-normalized path found in zip content");
-        if (Arrays.asList(name.split("/")).contains("..")) throw e;
-        if (!name.equals(Path.of(name).normalize().toString())) throw e;
+        if (Arrays.asList(name.split("/")).contains("..") ||
+            !trimTrailingSlash(name).equals(Path.of(name).normalize().toString())) {
+            throw new IllegalArgumentException("Unexpected non-normalized path found in zip content: '" + name + "'");
+        }
+        return name;
+    }
+
+    private static String trimTrailingSlash(String name) {
+        if (name.endsWith("/")) return name.substring(0, name.length() - 1);
         return name;
     }
 
