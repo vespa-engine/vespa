@@ -41,8 +41,6 @@ FastOS_UNIX_Application::GetOpt (const char *optionsString,
             const char* &optionArgument,
             int &optionIndex)
 {
-    optind = optionIndex;
-
     int rc = getopt(_argc, _argv, optionsString);
     optionArgument = optarg;
     optionIndex = optind;
@@ -56,8 +54,6 @@ FastOS_UNIX_Application::GetOptLong(const char *optionsString,
                const struct option *longopts,
                int *longindex)
 {
-    optind = optionIndex;
-
     int rc = getopt_long(_argc, _argv, optionsString,
                          longopts,
                          longindex);
@@ -65,6 +61,12 @@ FastOS_UNIX_Application::GetOptLong(const char *optionsString,
     optionArgument = optarg;
     optionIndex = optind;
     return rc;
+}
+
+void
+FastOS_UNIX_Application::resetOptIndex(int optionIndex)
+{
+    optind = optionIndex;
 }
 
 bool FastOS_UNIX_Application::
