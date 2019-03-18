@@ -2,33 +2,31 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
+import com.yahoo.vespa.hosted.controller.permits.PermitStore;
+import com.yahoo.vespa.hosted.controller.permits.TenantPermit;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
+import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.hosted.controller.tenant.Tenant.Type.cloud;
 
 /**
  * A singleton owned by the Controller which contains the methods and state for controlling tenants.
@@ -42,36 +40,19 @@ public class TenantController {
 
     private final Controller controller;
     private final CuratorDb curator;
-    private final ZmsClientFacade zmsClient;
-    private final ZtsClient ztsClient;
-    private final AthenzService controllerIdentity;
+    private final PermitStore permits;
 
-    public TenantController(Controller controller, CuratorDb curator, AthenzClientFactory athenzClientFactory) {
+    public TenantController(Controller controller, CuratorDb curator, PermitStore permits) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.curator = Objects.requireNonNull(curator, "curator must be non-null");
-        this.controllerIdentity = athenzClientFactory.getControllerIdentity();
-        this.zmsClient = new ZmsClientFacade(athenzClientFactory.createZmsClient(), controllerIdentity);
-        this.ztsClient = athenzClientFactory.createZtsClient();
+        this.permits = permits;
 
         // Update serialization format of all tenants
         Once.after(Duration.ofMinutes(1), () -> {
             Instant start = controller.clock().instant();
             int count = 0;
             for (TenantName name : curator.readTenantNames()) {
-                try (Lock lock = lock(name)) {
-                    // Get while holding lock so that we know we're operating on a current version
-                    Optional<Tenant> optionalTenant = get(name);
-                    if (!optionalTenant.isPresent()) continue; // Deleted while updating, skip
-
-                    Tenant tenant = optionalTenant.get();
-                    if (tenant instanceof AthenzTenant) {
-                        curator.writeTenant((AthenzTenant) tenant);
-                    } else if (tenant instanceof UserTenant) {
-                        curator.writeTenant((UserTenant) tenant);
-                    } else {
-                        throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
-                    }
-                }
+                lockIfPresent(name, LockedTenant.class, this::store);
                 count++;
             }
             log.log(Level.INFO, String.format("Wrote %d tenants in %s", count,
@@ -86,14 +67,9 @@ public class TenantController {
                       .collect(Collectors.toList());
     }
 
-    /** Returns a list of all tenants accessible by the given user */
-    public List<Tenant> asList(UserId user) {
-        AthenzUser athenzUser = AthenzUser.fromUserId(user.id());
-            Set<AthenzDomain> userDomains = new HashSet<>(ztsClient.getTenantDomains(controllerIdentity, athenzUser, "admin"));
-            return asList().stream()
-                           .filter(tenant -> isUser(tenant, user) ||
-                                             userDomains.stream().anyMatch(domain -> inDomain(tenant, domain)))
-                           .collect(Collectors.toList());
+    /** Returns the lsit of tenants accessible to the given user. */
+    public List<Tenant> asList(Principal user) {
+        return permits.accessibleTenants(asList(), user);
     }
 
     /** Locks a tenant for modification and applies the given action. */
@@ -123,36 +99,19 @@ public class TenantController {
     }
 
     /** Create an user tenant with given username */
-    public void create(UserTenant tenant) {
+    public void createUser(UserTenant tenant) {
         try (Lock lock = lock(tenant.name())) {
             requireNonExistent(tenant.name());
             curator.writeTenant(tenant);
         }
     }
 
-    /** Create an Athenz tenant */
-    public void create(AthenzTenant tenant, OktaAccessToken token) {
-        try (Lock lock = lock(tenant.name())) {
-            requireNonExistent(tenant.name());
-            AthenzDomain domain = tenant.domain();
-            Optional<Tenant> existingTenantWithDomain = tenantIn(domain);
-            if (existingTenantWithDomain.isPresent()) {
-                throw new IllegalArgumentException("Could not create tenant '" + tenant.name().value() +
-                                                   "': The Athens domain '" +
-                                                   domain.getName() + "' is already connected to tenant '" +
-                                                   existingTenantWithDomain.get().name().value() +
-                                                   "'");
-            }
-            zmsClient.createTenant(domain, token);
-            curator.writeTenant(tenant);
+    /** Create a tenant, provided the given permit is valid. */
+    public void create(TenantPermit permit) {
+        try (Lock lock = lock(permit.tenant())) {
+            requireNonExistent(permit.tenant());
+            curator.writeTenant(permits.createTenant(permit, asList(), Collections.emptyList()));
         }
-    }
-
-    /** Returns the tenant in the given Athenz domain, or empty if none */
-    private Optional<Tenant> tenantIn(AthenzDomain domain) {
-        return asList().stream()
-                       .filter(tenant -> inDomain(tenant, domain))
-                       .findFirst();
     }
 
     /** Find tenant by name */
@@ -177,47 +136,37 @@ public class TenantController {
         return athenzTenant(name).orElseThrow(() -> new IllegalArgumentException("Tenant '" + name + "' not found"));
     }
 
-    /** Update Athenz domain for tenant. Returns the updated tenant which must be explicitly stored */
-    public LockedTenant.Athenz withDomain(LockedTenant.Athenz tenant, AthenzDomain newDomain, OktaAccessToken token) {
-        AthenzTenant athenzTenant = tenant.get();
-        AthenzDomain existingDomain = athenzTenant.domain();
-        if (existingDomain.equals(newDomain)) return tenant;
-        Optional<Tenant> existingTenantWithNewDomain = tenantIn(newDomain);
-        if (existingTenantWithNewDomain.isPresent())
-            throw new IllegalArgumentException("Could not set domain of " + tenant + " to '" + newDomain +
-                                               "':" + existingTenantWithNewDomain.get() + " already has this domain");
+    /** Updates the tenant contained in the given permit with new data. */
+    public void update(TenantPermit permit) {
+        try (Lock lock = lock(permit.tenant())) {
+            Tenant tenant = require(permit.tenant());
+            List<Tenant> otherTenants = new ArrayList<>(asList());
+            otherTenants.remove(tenant);
 
-        zmsClient.createTenant(newDomain, token);
-        List<Application> applications = controller.applications().asList(tenant.get().name());
-        applications.forEach(a -> zmsClient.addApplication(newDomain, new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(a.id().application().value()), token));
-        applications.forEach(a -> zmsClient.deleteApplication(existingDomain, new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(a.id().application().value()), token));
-        zmsClient.deleteTenant(existingDomain, token);
-        log.info("Set Athenz domain for '" + tenant + "' from '" + existingDomain + "' to '" + newDomain + "'");
-
-        return tenant.with(newDomain);
+            List<Application> applications = controller.applications().asList(permit.tenant());
+            permits.deleteTenant(permit, tenant, applications);
+            curator.writeTenant(permits.createTenant(permit, otherTenants, applications));
+        }
     }
 
-    /** Delete an user tenant */
-    public void deleteTenant(UserTenant tenant) {
+    /** Deletes the tenant in the given permit. */
+    public void delete(TenantPermit permit) {
+        try (Lock lock = lock(permit.tenant())) {
+            Tenant tenant = require(permit.tenant());
+            if ( ! controller.applications().asList(tenant.name()).isEmpty())
+                throw new IllegalArgumentException("Could not delete tenant '" + tenant.name().value()
+                                                   + "': This tenant has active applications");
+
+            curator.removeTenant(tenant.name());
+            permits.deleteTenant(permit, tenant, controller.applications().asList(permit.tenant()));
+        }
+    }
+
+    /** Deletes the given user tenant. */
+    public void deleteUser(UserTenant tenant) {
         try (Lock lock = lock(tenant.name())) {
-            deleteTenant(tenant.name());
+            curator.removeTenant(tenant.name());
         }
-    }
-
-    /** Delete an Athenz tenant */
-    public void deleteTenant(AthenzTenant tenant, OktaAccessToken token) {
-        try (Lock lock = lock(tenant.name())) {
-            deleteTenant(tenant.name());
-            zmsClient.deleteTenant(tenant.domain(), token);
-        }
-    }
-
-    private void deleteTenant(TenantName name) {
-        if (!controller.applications().asList(name).isEmpty()) {
-            throw new IllegalArgumentException("Could not delete tenant '" + name.value()
-                                               + "': This tenant has active applications");
-        }
-        curator.removeTenant(name);
     }
 
     private void requireNonExistent(TenantName name) {
@@ -236,14 +185,6 @@ public class TenantController {
      */
     private Lock lock(TenantName tenant) {
         return curator.lock(tenant);
-    }
-
-    private static boolean inDomain(Tenant tenant, AthenzDomain domain) {
-        return tenant instanceof AthenzTenant && ((AthenzTenant) tenant).in(domain);
-    }
-
-    private static boolean isUser(Tenant tenant, UserId userId) {
-        return tenant instanceof UserTenant && ((UserTenant) tenant).is(userId.id());
     }
 
     private static String dashToUnderscore(String s) {

@@ -6,6 +6,8 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -27,9 +29,10 @@ import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
+import com.yahoo.vespa.hosted.controller.permits.AthenzApplicationPermit;
+import com.yahoo.vespa.hosted.controller.permits.AthenzTenantPermit;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 
 import java.io.File;
 import java.time.Duration;
@@ -73,13 +76,20 @@ public class ContainerControllerTester {
     }
 
     public Application createApplication(String athensDomain, String tenant, String application) {
-        AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "mytenant");
-        controller().tenants().create(AthenzTenant.create(TenantName.from(tenant), domain1,
-                                                          new Property("property1"),
-                                                          Optional.of(new PropertyId("1234"))),
-                                      new OktaAccessToken("okta-token"));
+        AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "user");
+        AthenzTenantPermit tenantPermit = new AthenzTenantPermit(TenantName.from(tenant),
+                                                                 new AthenzPrincipal(new AthenzUser("user")),
+                                                                 Optional.of(domain1),
+                                                                 Optional.of(new Property("property1")),
+                                                                 Optional.of(new PropertyId("1234")),
+                                                                 new OktaAccessToken("okta-token"));
+        controller().tenants().create(tenantPermit);
+
         ApplicationId app = ApplicationId.from(tenant, application, "default");
-        return controller().applications().createApplication(app, Optional.of(new OktaAccessToken("okta-token")));
+        AthenzApplicationPermit applicationPermit = new AthenzApplicationPermit(app,
+                                                                                domain1,
+                                                                                new OktaAccessToken("okta-token"));
+        return controller().applications().createApplication(app, Optional.of(applicationPermit));
     }
 
     public Application deploy(Application application, ApplicationPackage applicationPackage, ZoneId zone) {
@@ -132,7 +142,7 @@ public class ContainerControllerTester {
         AthenzDomain athensDomain = new AthenzDomain(domainName);
         AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
-        domain.admin(AthenzIdentities.from(new AthenzDomain("domain"), userName));
+        domain.admin(new AthenzUser(userName));
         mock.getSetup().addDomain(domain);
         return athensDomain;
     }

@@ -212,7 +212,7 @@ public class JobRunnerTest {
 
         // Thread is still trying to deploy tester -- delete application, and see all data is garbage collected.
         assertEquals(Collections.singletonList(runId), jobs.active().stream().map(run -> run.id()).collect(Collectors.toList()));
-        tester.controller().applications().deleteApplication(id, Optional.of(new OktaAccessToken("okta-token")));
+        tester.controllerTester().deleteApplication(id);
         assertEquals(Collections.emptyList(), jobs.active());
         assertEquals(runId, jobs.last(id, systemTest).get().id());
 

@@ -8,6 +8,8 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.Slime;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -33,6 +35,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
@@ -41,6 +44,9 @@ import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
 import com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
+import com.yahoo.vespa.hosted.controller.permits.ApplicationPermit;
+import com.yahoo.vespa.hosted.controller.permits.AthenzApplicationPermit;
+import com.yahoo.vespa.hosted.controller.permits.AthenzTenantPermit;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -241,21 +247,33 @@ public final class ControllerTester {
         }
     }
 
-    public AthenzDomain createDomain(String domainName) {
+    public AthenzDomain createDomainWithAdmin(String domainName, AthenzUser user) {
         AthenzDomain domain = new AthenzDomain(domainName);
         athenzDb.addDomain(new AthenzDbMock.Domain(domain));
+        athenzDb.domains.get(domain).admin(user);
         return domain;
+    }
+
+    public Optional<AthenzDomain> domainOf(ApplicationId id) {
+        Tenant tenant = controller().tenants().require(id.tenant());
+        return tenant.type() == Tenant.Type.athenz ? Optional.of(((AthenzTenant) tenant).domain()) : Optional.empty();
     }
 
     public TenantName createTenant(String tenantName, String domainName, Long propertyId, Optional<Contact> contact) {
         TenantName name = TenantName.from(tenantName);
         Optional<Tenant> existing = controller().tenants().get(name);
         if (existing.isPresent()) return name;
-        AthenzTenant tenant = AthenzTenant.create(name, createDomain(domainName), new Property("Property"+propertyId),
-                                                  Optional.ofNullable(propertyId)
-                                                          .map(Object::toString)
-                                                          .map(PropertyId::new), contact);
-        controller().tenants().create(tenant, new OktaAccessToken("okta-token"));
+        AthenzUser user = new AthenzUser("user");
+        AthenzTenantPermit permit = new AthenzTenantPermit(name,
+                                                           new AthenzPrincipal(user),
+                                                           Optional.of(createDomainWithAdmin(domainName, user)),
+                                                           Optional.of(new Property("Property" + propertyId)),
+                                                           Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new),
+                                                           new OktaAccessToken("okta-token"));
+        controller().tenants().create(permit);
+        if (contact.isPresent())
+            controller().tenants().lockOrThrow(name, LockedTenant.Athenz.class, tenant ->
+                    controller().tenants().store(tenant.with(contact.get())));
         assertNotNull(controller().tenants().get(name));
         return name;
     }
@@ -264,12 +282,20 @@ public final class ControllerTester {
         return createTenant(tenantName, domainName, propertyId, Optional.empty());
     }
 
+    public Optional<ApplicationPermit> permitFor(ApplicationId id) {
+        return domainOf(id).map(domain -> new AthenzApplicationPermit(id, domain, new OktaAccessToken("okta-token")));
+    }
+
     public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
-        controller().applications().createApplication(applicationId, Optional.of(new OktaAccessToken("okta-token")));
+        controller().applications().createApplication(applicationId, permitFor(applicationId));
         controller().applications().lockOrThrow(applicationId, lockedApplication ->
                 controller().applications().store(lockedApplication.withProjectId(OptionalLong.of(projectId))));
         return controller().applications().require(applicationId);
+    }
+
+    public void deleteApplication(ApplicationId id) {
+        controller().applications().deleteApplication(id, permitFor(id));
     }
 
     public void deploy(Application application, ZoneId zone) {
@@ -320,6 +346,7 @@ public final class ControllerTester {
                                                new ChefMock(),
                                                clock,
                                                new AthenzClientFactoryMock(athensDb),
+                                               new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
                                                artifactRepository,
                                                applicationStore,
                                                new MockTesterCloud(),

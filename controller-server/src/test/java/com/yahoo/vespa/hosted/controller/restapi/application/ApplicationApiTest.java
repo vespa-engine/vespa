@@ -56,6 +56,8 @@ import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
+import com.yahoo.vespa.hosted.controller.permits.AthenzTenantPermit;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -473,7 +475,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("service.json"));
 
         // DELETE application with active deployments fails
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE).userIdentity(USER_ID),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
+                                      .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT),
                               new File("delete-with-active-deployments.json"), 400);
 
         // DELETE (deactivate) a deployment - dev
@@ -806,6 +810,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // PUT (update) non-existing tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", PUT)
                                       .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"Tenant 'tenant1' does not exist\"}",
                               404);
@@ -875,6 +880,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Create the same application again
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
+                                      .oktaAccessToken(OKTA_AT)
                                       .userIdentity(USER_ID),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create 'tenant1.application1': Application already exists\"}",
                               400);
@@ -924,6 +930,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "");
         // DELETE application again - should produce 404
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
+                                      .oktaAccessToken(OKTA_AT)
                                       .userIdentity(USER_ID),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not delete application 'tenant1.application1': Application not found\"}",
                               404);
@@ -945,9 +952,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               500);
 
         // Create legancy tenant name containing underscores
-        tester.controller().tenants().create(new AthenzTenant(TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,
-                                                              new Property("property1"), Optional.empty(), Optional.empty()),
-                                             OKTA_AT);
+        tester.controller().curator().writeTenant(new AthenzTenant(TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,
+                                                                   new Property("property1"), Optional.empty(), Optional.empty()));
         // POST (add) a Athenz tenant with dashes duplicates existing one with underscores
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
                                       .userIdentity(USER_ID)
@@ -980,6 +986,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Creating a tenant for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
+                                      .oktaAccessToken(OKTA_AT)
                                       .userIdentity(unauthorizedUser),
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"The user 'user.othertenant' is not admin in Athenz domain 'domain1'\"}",
                               403);

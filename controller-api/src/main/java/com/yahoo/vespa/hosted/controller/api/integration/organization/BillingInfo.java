@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.tenant;
+package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import java.util.Objects;
 import java.util.StringJoiner;

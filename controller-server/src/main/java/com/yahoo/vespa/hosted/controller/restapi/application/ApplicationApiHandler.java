@@ -21,7 +21,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
@@ -30,7 +29,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.ApplicationResource;
@@ -47,7 +45,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
@@ -70,9 +67,10 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
-import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
+import com.yahoo.vespa.hosted.controller.permits.ApplicationPermit;
+import com.yahoo.vespa.hosted.controller.permits.PermitExtractor;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
@@ -117,15 +115,15 @@ import static java.util.stream.Collectors.joining;
 public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
-    private final ZmsClientFacade zmsClient;
+    private final PermitExtractor permits;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
                                  Controller controller,
-                                 AthenzClientFactory athenzClientFactory) {
+                                 PermitExtractor permits) {
         super(parentCtx);
         this.controller = controller;
-        this.zmsClient = new ZmsClientFacade(athenzClientFactory.createZmsClient(), athenzClientFactory.getControllerIdentity());
+        this.permits = permits;
     }
 
     @Override
@@ -254,7 +252,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor tenantArray = slime.setArray();
         for (Tenant tenant : controller.tenants().asList())
-            toSlime(tenantArray.addObject(), tenant, request, true);
+            toSlime(tenantArray.addObject(), tenant, request);
         return new SlimeJsonResponse(slime);
     }
 
@@ -265,23 +263,20 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse authenticatedUser(HttpRequest request) {
-        String userIdString = request.getProperty("userOverride");
-        if (userIdString == null)
-            userIdString = getUserId(request)
-                    .map(UserId::id)
-                    .orElseThrow(() -> new ForbiddenException("You must be authenticated or specify userOverride"));
-        UserId userId = new UserId(userIdString);
+        AthenzPrincipal user = getUserPrincipal(request);
+        if (user == null)
+            throw new NotAuthorizedException("You must be authenticated.");
 
-        List<Tenant> tenants = controller.tenants().asList(userId);
+        List<Tenant> tenants = controller.tenants().asList(user);
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
-        response.setString("user", userId.id());
+        response.setString("user", user.getIdentity().getName());
         Cursor tenantsArray = response.setArray("tenants");
         for (Tenant tenant : tenants)
             tenantInTenantsListToSlime(tenant, request.getUri(), tenantsArray.addObject());
-        response.setBool("tenantExists", tenants.stream().anyMatch(tenant -> tenant instanceof UserTenant &&
-                                                                         ((UserTenant) tenant).is(userId.id())));
+        response.setBool("tenantExists", tenants.stream().anyMatch(tenant -> tenant instanceof UserTenant && // TODO jvenstad: No.
+                                                                         ((UserTenant) tenant).is(user.getName())));
         return new SlimeJsonResponse(slime);
     }
 
@@ -335,13 +330,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse tenant(String tenantName, HttpRequest request) {
         return controller.tenants().get(TenantName.from(tenantName))
-                         .map(tenant -> tenant(tenant, request, true))
+                         .map(tenant -> tenant(tenant, request))
                          .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
     }
 
-    private HttpResponse tenant(Tenant tenant, HttpRequest request, boolean listApplications) {
+    private HttpResponse tenant(Tenant tenant, HttpRequest request) {
         Slime slime = new Slime();
-        toSlime(slime.setObject(), tenant, request, listApplications);
+        toSlime(slime.setObject(), tenant, request);
         return new SlimeJsonResponse(slime);
     }
 
@@ -738,11 +733,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse createUser(HttpRequest request) {
         Optional<UserId> user = getUserId(request);
-        if ( ! user.isPresent() ) throw new ForbiddenException("Not authenticated or not an user.");
+        if ( ! user.isPresent()) throw new ForbiddenException("Not authenticated or not a user.");
 
         String username = UserTenant.normalizeUser(user.get().id());
+        UserTenant tenant = UserTenant.create(username);
         try {
-            controller.tenants().create(UserTenant.create(username));
+            controller.tenants().createUser(tenant);
             return new MessageResponse("Created user '" + username + "'");
         } catch (AlreadyExistsException e) {
             // Ok
@@ -751,45 +747,26 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse updateTenant(String tenantName, HttpRequest request) {
-        Optional<AthenzTenant> tenant = controller.tenants().athenzTenant(TenantName.from(tenantName));
-        if ( ! tenant.isPresent()) return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
-
-        Inspector requestData = toSlime(request.getData()).get();
-        OktaAccessToken token = requireOktaAccessToken(request, "Could not update " + tenantName);
-
-        controller.tenants().lockOrThrow(tenant.get().name(), LockedTenant.Athenz.class, lockedTenant -> {
-            lockedTenant = lockedTenant.with(new Property(mandatory("property", requestData).asString()));
-            lockedTenant = controller.tenants().withDomain(
-                    lockedTenant,
-                    new AthenzDomain(mandatory("athensDomain", requestData).asString()),
-                    token
-            );
-            Optional<PropertyId> propertyId = optional("propertyId", requestData).map(PropertyId::new);
-            if (propertyId.isPresent()) {
-                lockedTenant = lockedTenant.with(propertyId.get());
-            }
-            controller.tenants().store(lockedTenant);
-        });
-
-        return tenant(controller.tenants().requireAthenzTenant(tenant.get().name()), request, true);
+        getTenantOrThrow(tenantName);
+        controller.tenants().update(permits.getTenantPermit(TenantName.from(tenantName), request));
+        return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
     private HttpResponse createTenant(String tenantName, HttpRequest request) {
-        Inspector requestData = toSlime(request.getData()).get();
-
-        AthenzTenant tenant = AthenzTenant.create(TenantName.from(tenantName),
-                                                  new AthenzDomain(mandatory("athensDomain", requestData).asString()),
-                                                  new Property(mandatory("property", requestData).asString()),
-                                                  optional("propertyId", requestData).map(PropertyId::new));
-        throwIfNotAthenzDomainAdmin(tenant.domain(), request);
-        controller.tenants().create(tenant, requireOktaAccessToken(request, "Could not create " + tenantName));
-        return tenant(tenant, request, true);
+        controller.tenants().create(permits.getTenantPermit(TenantName.from(tenantName), request));
+        return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
     private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
-        Application application;
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         try {
-            application = controller.applications().createApplication(ApplicationId.from(tenantName, applicationName, "default"), getOktaAccessToken(request));
+            Optional<ApplicationPermit> permit = controller.tenants().require(id.tenant()).type() != Tenant.Type.user
+                    ? Optional.of(permits.getApplicationPermit(id, request)) : Optional.empty();
+            Application application = controller.applications().createApplication(id, permit);
+
+            Slime slime = new Slime();
+            toSlime(application, slime.setObject(), request);
+            return new SlimeJsonResponse(slime);
         }
         catch (ZmsClientException e) { // TODO: Push conversion down
             if (e.getErrorCode() == com.yahoo.jdisc.Response.Status.FORBIDDEN)
@@ -797,10 +774,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             else
                 throw e;
         }
-
-        Slime slime = new Slime();
-        toSlime(application, slime.setObject(), request);
-        return new SlimeJsonResponse(slime);
     }
 
     /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
@@ -897,7 +870,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
          * this might be handy later to handle emergency downgrades.
          */
         boolean isZoneApplication = SystemApplication.zone.id().equals(applicationId);
-        if (isZoneApplication) {
+        if (isZoneApplication) { // TODO jvenstad: Separate out.
             // Make it explicit that version is not yet supported here
             String versionStr = deployOptions.field("vespaVersion").asString();
             boolean versionPresent = !versionStr.isEmpty() && !versionStr.equals("null");
@@ -972,7 +945,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
                                                                  deployOptions.field("deployCurrentVersion").asBool());
 
-
         ActivateResult result = controller.applications().deploy(applicationId,
                                                                  zone,
                                                                  applicationPackage,
@@ -985,26 +957,23 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {
         Optional<Tenant> tenant = controller.tenants().get(tenantName);
-        if ( ! tenant.isPresent()) return ErrorResponse.notFoundError("Could not delete tenant '" + tenantName + "': Tenant not found"); // NOTE: The Jersey implementation would silently ignore this
+        if ( ! tenant.isPresent())
+            return ErrorResponse.notFoundError("Could not delete tenant '" + tenantName + "': Tenant not found");
 
-
-        if (tenant.get() instanceof AthenzTenant) {
-            controller.tenants().deleteTenant((AthenzTenant) tenant.get(),
-                                              requireOktaAccessToken(request, "Could not delete " + tenantName));
-        } else if (tenant.get() instanceof UserTenant) {
-            controller.tenants().deleteTenant((UserTenant) tenant.get());
-        } else {
-            throw new IllegalArgumentException("Unknown tenant type:" + tenant.get().getClass().getSimpleName() +
-                                               ", for " + tenant.get());
-        }
+        if (tenant.get().type() == Tenant.Type.user)
+            controller.tenants().deleteUser((UserTenant) tenant.get());
+        else
+            controller.tenants().delete(permits.getTenantPermit(tenant.get().name(), request));
 
         // TODO: Change to a message response saying the tenant was deleted
-        return tenant(tenant.get(), request, false);
+        return tenant(tenant.get(), request);
     }
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        controller.applications().deleteApplication(id, getOktaAccessToken(request));
+        Optional<ApplicationPermit> permit = controller.tenants().require(id.tenant()).type() != Tenant.Type.user
+                ? Optional.of(permits.getApplicationPermit(id, request)) : Optional.empty();
+        controller.applications().deleteApplication(id, permit);
         return new EmptyJsonResponse(); // TODO: Replicates current behavior but should return a message response instead
     }
 
@@ -1104,7 +1073,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                          .orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
     }
 
-    private void toSlime(Cursor object, Tenant tenant, HttpRequest request, boolean listApplications) {
+    private void toSlime(Cursor object, Tenant tenant, HttpRequest request) {
         object.setString("tenant", tenant.name().value());
         object.setString("type", tentantType(tenant));
         if (tenant instanceof AthenzTenant) {
@@ -1114,14 +1083,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             athenzTenant.propertyId().ifPresent(id -> object.setString("propertyId", id.toString()));
         }
         Cursor applicationArray = object.setArray("applications");
-        if (listApplications) { // This cludge is needed because we call this after deleting the tenant. As this call makes another tenant lookup it will fail. TODO is to support lookup on tenant
-            for (Application application : controller.applications().asList(tenant.name())) {
-                if (application.id().instance().isDefault()) {// TODO: Skip non-default applications until supported properly
-                    if (recurseOverApplications(request))
-                        toSlime(applicationArray.addObject(), application, request);
-                    else
-                        toSlime(application, applicationArray.addObject(), request);
-                }
+        for (Application application : controller.applications().asList(tenant.name())) {
+            if (application.id().instance().isDefault()) {// TODO: Skip non-default applications until supported properly
+                if (recurseOverApplications(request))
+                    toSlime(applicationArray.addObject(), application, request);
+                else
+                    toSlime(application, applicationArray.addObject(), request);
             }
         }
         if (tenant instanceof AthenzTenant) {
@@ -1190,15 +1157,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private void throwIfNotAthenzDomainAdmin(AthenzDomain tenantDomain, HttpRequest request) {
-        AthenzIdentity identity = getUserPrincipal(request).getIdentity();
-        boolean isDomainAdmin = zmsClient.isDomainAdmin(identity, tenantDomain);
-        if ( ! isDomainAdmin) {
-            throw new ForbiddenException(
-                    String.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), tenantDomain.getName()));
-        }
-    }
-
     private static Optional<UserId> getUserId(HttpRequest request) {
         return Optional.of(getUserPrincipal(request))
                 .map(AthenzPrincipal::getIdentity)
@@ -1208,7 +1166,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .map(UserId::new);
     }
 
-    private static AthenzPrincipal getUserPrincipal(HttpRequest request) {
+    private static AthenzPrincipal getUserPrincipal(HttpRequest request) { // TODO jvenstad: Not necessarily Athenz ...
         Principal principal = request.getJDiscRequest().getUserPrincipal();
         if (principal == null) throw new InternalServerErrorException("Expected a user principal");
         if (!(principal instanceof AthenzPrincipal))
@@ -1374,16 +1332,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return "USER";
         }
         throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
-    }
-
-    private static OktaAccessToken requireOktaAccessToken(HttpRequest request, String message) {
-        return getOktaAccessToken(request)
-                .orElseThrow(() -> new IllegalArgumentException(message + ": No Okta Access Token provided"));
-    }
-
-    private static Optional<OktaAccessToken> getOktaAccessToken(HttpRequest request) {
-        return Optional.ofNullable(request.getJDiscRequest().context().get("okta.access-token"))
-                .map(attribute -> new OktaAccessToken((String) attribute));
     }
 
     private static ApplicationId appIdFromPath(Path path) {
