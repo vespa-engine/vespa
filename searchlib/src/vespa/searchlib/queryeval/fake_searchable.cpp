@@ -17,8 +17,7 @@ using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 FakeSearchable::FakeSearchable()
     : _tag("<undef>"),
@@ -74,7 +73,7 @@ LookupVisitor<Map>::LookupVisitor(Searchable &searchable, const IRequestContext 
 {}
 
 template <class Map>
-LookupVisitor<Map>::~LookupVisitor() { }
+LookupVisitor<Map>::~LookupVisitor() = default;
 
 template <class Map>
 template <class TermNode>
@@ -83,15 +82,13 @@ LookupVisitor<Map>::visitTerm(TermNode &n) {
     const vespalib::string term_string = termAsString(n);
 
     FakeResult result;
-    typename Map::const_iterator pos =
-            _map.find(typename Map::key_type(getField().getName(), term_string));
+    auto pos = _map.find(typename Map::key_type(getField().getName(), term_string));
     if (pos != _map.end()) {
         result = pos->second;
     }
-    FakeBlueprint *fake = new FakeBlueprint(getField(), result);
-    Blueprint::UP b(fake);
+   auto fake = std::make_unique<FakeBlueprint>(getField(), result);
     fake->tag(_tag).term(term_string);
-    setResult(std::move(b));
+    setResult(std::move(fake));
 }
 
 } // namespace search::queryeval::<unnamed>
@@ -106,9 +103,6 @@ FakeSearchable::createBlueprint(const IRequestContext & requestContext,
     return visitor.getResult();
 }
 
-FakeSearchable::~FakeSearchable()
-{
-}
+FakeSearchable::~FakeSearchable() = default;
 
-} // namespace search::queryeval
-} // namespace search
+}

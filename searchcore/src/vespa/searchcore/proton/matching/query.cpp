@@ -40,7 +40,25 @@ using std::vector;
 namespace proton::matching {
 
 namespace {
-void AddLocationNode(const string &location_str, Node::UP &query_tree, Location &fef_location) {
+
+Node::UP
+inject(Node::UP query, Node::UP to_inject) {
+    if (auto * my_and = dynamic_cast<search::query::And *>(query.get())) {
+        my_and->append(std::move(to_inject));
+    } else  if (dynamic_cast<search::query::Rank *>(query.get()) || dynamic_cast<search::query::AndNot *>(query.get())) {
+        search::query::Intermediate & root = static_cast<search::query::Intermediate &>(*query);
+        root.prepend(inject(root.stealFirst(), std::move(to_inject)));
+    } else {
+        auto new_root = std::make_unique<ProtonAnd>();
+        new_root->append(std::move(query));
+        new_root->append(std::move(to_inject));
+        query = std::move(new_root);
+    }
+    return query;
+}
+
+void
+addLocationNode(const string &location_str, Node::UP &query_tree, Location &fef_location) {
     if (location_str.empty()) {
         return;
     }
@@ -61,20 +79,16 @@ void AddLocationNode(const string &location_str, Node::UP &query_tree, Location 
     int32_t id = -1;
     Weight weight(100);
 
-    auto new_base = std::make_unique<ProtonAnd>();
-    new_base->append(std::move(query_tree));
-
     if (locationSpec.getRankOnDistance()) {
-        new_base->append(std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
+        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
         fef_location.setAttribute(view);
         fef_location.setXPosition(locationSpec.getX());
         fef_location.setYPosition(locationSpec.getY());
         fef_location.setXAspect(locationSpec.getXAspect());
         fef_location.setValid(true);
     } else if (locationSpec.getPruneOnDistance()) {
-        new_base->append(std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
+        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
     }
-    query_tree = std::move(new_base);
 }
 
 IntermediateBlueprint *
@@ -111,7 +125,7 @@ Query::buildTree(vespalib::stringref stack, const string &location,
     if (_query_tree) {
         SameElementModifier prefixSameElementSubIndexes;
         _query_tree->accept(prefixSameElementSubIndexes);
-        AddLocationNode(location, _query_tree, _location);
+        addLocationNode(location, _query_tree, _location);
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
         _query_tree->accept(resolve_visitor);
         return true;

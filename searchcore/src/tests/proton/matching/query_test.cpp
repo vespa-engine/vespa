@@ -56,6 +56,7 @@ using search::queryeval::Blueprint;
 using search::queryeval::FakeResult;
 using search::queryeval::FakeSearchable;
 using search::queryeval::FakeRequestContext;
+using search::queryeval::FakeBlueprint;
 using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecList;
 using search::queryeval::Searchable;
@@ -105,6 +106,7 @@ class Test : public vespalib::TestApp {
     void requireThatUnknownFieldActsEmpty();
     void requireThatIllegalFieldsAreIgnored();
     void requireThatQueryGluesEverythingTogether();
+    void requireThatLocationIsAddedTheCorrectPlace();
     void requireThatQueryAddsLocation();
     void requireThatQueryAddsLocationCutoff();
     void requireThatFakeFieldSearchDumpsDiffer();
@@ -119,7 +121,7 @@ class Test : public vespalib::TestApp {
     void requireThatSameElementIteratorsCanBeBuilt();
 
 public:
-    ~Test();
+    ~Test() override;
     int Main() override;
 };
 
@@ -129,16 +131,17 @@ public:
     TEST_DO(tearDown())
 
 void Test::setUp() {
-    _match_data.reset(0);
-    _blueprint.reset(0);
+    _match_data.reset();
+    _blueprint.reset();
 }
 
 void Test::tearDown() {
-    _match_data.reset(0);
-    _blueprint.reset(0);
+    _match_data.reset();
+    _blueprint.reset();
 }
 
 const string field = "field";
+const string loc_field = "location";
 const string resolved_field1 = "resolved1";
 const string resolved_field2 = "resolved2";
 const string unknown_field = "unknown_field";
@@ -173,6 +176,10 @@ void setupIndexEnvironments()
 
     FieldInfo attr_info(FieldType::ATTRIBUTE, CollectionType::SINGLE, field, 0);
     attribute_index_env.getFields().push_back(attr_info);
+    FieldInfo loc_field_info = FieldInfo(FieldType::ATTRIBUTE, CollectionType::SINGLE,
+                                     PositionDataType::getZCurveFieldName(loc_field), field_id + 1);
+    plain_index_env.getFields().push_back(loc_field_info);
+    attribute_index_env.getFields().push_back(loc_field_info);
 }
 
 Node::UP buildQueryTree(const ViewResolver &resolver,
@@ -689,8 +696,6 @@ void Test::requireThatQueryGluesEverythingTogether() {
 }
 
 void checkQueryAddsLocation(Test &test, const string &loc_string) {
-    const string loc_field = "location";
-
     fef_test::IndexEnvironment index_environment;
     FieldInfo field_info(FieldType::INDEX, CollectionType::SINGLE, field, 0);
     index_environment.getFields().push_back(field_info);
@@ -723,6 +728,60 @@ void checkQueryAddsLocation(Test &test, const string &loc_string) {
     test.ASSERT_TRUE(search.get());
     if (!test.EXPECT_NOT_EQUAL(string::npos, search->asString().find(loc_string))) {
         fprintf(stderr, "search (missing loc_string): %s", search->asString().c_str());
+    }
+}
+
+template<typename T1, typename T2>
+void verifyThatRankBlueprintAndAndNotStaysOnTopAfterLocation(QueryBuilder<ProtonNodeTypes> & builder) {
+    const string loc_string = "(2,10,10,3,0,1,0,0)";
+    builder.addStringTerm("foo", field, field_id, string_weight);
+    builder.addStringTerm("bar", field, field_id, string_weight);
+    builder.addStringTerm("baz", field, field_id, string_weight);
+    std::string stackDump = StackDumpCreator::create(*builder.build());
+
+    Query query;
+    query.buildTree(stackDump, loc_field + ":" + loc_string, ViewResolver(), attribute_index_env);
+    FakeSearchContext context(42);
+    context.addIdx(0).idx(0).getFake()
+            .addResult(field, "foo", FakeResult().doc(1));
+    context.setLimit(42);
+
+    query.setWhiteListBlueprint(std::make_unique<SimpleBlueprint>(SimpleResult()));
+
+    FakeRequestContext requestContext;
+    MatchDataLayout mdl;
+    query.reserveHandles(requestContext, context, mdl);
+    const IntermediateBlueprint * root = dynamic_cast<const T1 *>(query.peekRoot());
+    ASSERT_TRUE(root != nullptr);
+    EXPECT_EQUAL(2u, root->childCnt());
+    const IntermediateBlueprint * second = dynamic_cast<const T2 *>(&root->getChild(0));
+    ASSERT_TRUE(second != nullptr);
+    EXPECT_EQUAL(2u, second->childCnt());
+    auto first = dynamic_cast<const AndBlueprint *>(&second->getChild(0));
+    ASSERT_TRUE(first != nullptr);
+    EXPECT_EQUAL(2u, first->childCnt());
+    EXPECT_TRUE(dynamic_cast<const AndBlueprint *>(&first->getChild(0)));
+    auto bottom = dynamic_cast<const AndBlueprint *>(&first->getChild(0));
+    EXPECT_EQUAL(2u, bottom->childCnt());
+    EXPECT_TRUE(dynamic_cast<const FakeBlueprint *>(&bottom->getChild(0)));
+    EXPECT_TRUE(dynamic_cast<const FakeBlueprint *>(&bottom->getChild(1)));
+    EXPECT_TRUE(dynamic_cast<const SimpleBlueprint *>(&first->getChild(1)));
+    EXPECT_TRUE(dynamic_cast<const FakeBlueprint *>(&second->getChild(1)));
+    EXPECT_TRUE(dynamic_cast<const FakeBlueprint *>(&root->getChild(1)));
+}
+
+void Test::requireThatLocationIsAddedTheCorrectPlace() {
+    {
+        QueryBuilder<ProtonNodeTypes> builder;
+        builder.addRank(2);
+        builder.addAndNot(2);
+        verifyThatRankBlueprintAndAndNotStaysOnTopAfterLocation<RankBlueprint, AndNotBlueprint>(builder);
+    }
+    {
+        QueryBuilder<ProtonNodeTypes> builder;
+        builder.addAndNot(2);
+        builder.addRank(2);
+        verifyThatRankBlueprintAndAndNotStaysOnTopAfterLocation<AndNotBlueprint, RankBlueprint>(builder);
     }
 }
 
@@ -817,8 +876,8 @@ void Test::requireThatWeakAndBlueprintsAreCreatedCorrectly() {
     wand.accept(reserve_visitor);
 
     Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, wand, context);
-    WeakAndBlueprint *wbp = dynamic_cast<WeakAndBlueprint*>(blueprint.get());
-    ASSERT_TRUE(wbp != 0);
+    auto *wbp = dynamic_cast<WeakAndBlueprint*>(blueprint.get());
+    ASSERT_TRUE(wbp != nullptr);
     ASSERT_EQUAL(2u, wbp->getWeights().size());
     ASSERT_EQUAL(2u, wbp->childCnt());
     EXPECT_EQUAL(123u, wbp->getN());
@@ -851,7 +910,7 @@ void Test::requireThatParallelWandBlueprintsAreCreatedCorrectly() {
     wand.accept(reserve_visitor);
 
     Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, wand, context);
-    ParallelWeakAndBlueprint *wbp = dynamic_cast<ParallelWeakAndBlueprint*>(blueprint.get());
+    auto *wbp = dynamic_cast<ParallelWeakAndBlueprint*>(blueprint.get());
     ASSERT_TRUE(wbp != nullptr);
     EXPECT_EQUAL(9000, wbp->getScoreThreshold());
     EXPECT_EQUAL(1.25, wbp->getThresholdBoostFactor());
@@ -913,7 +972,7 @@ void verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing(QueryBuilder<Pr
     const IntermediateBlueprint * second = dynamic_cast<const T2 *>(&root->getChild(0));
     ASSERT_TRUE(second != nullptr);
     EXPECT_EQUAL(2u, second->childCnt());
-    const AndBlueprint * first = dynamic_cast<const AndBlueprint *>(&second->getChild(0));
+    auto first = dynamic_cast<const AndBlueprint *>(&second->getChild(0));
     ASSERT_TRUE(first != nullptr);
     EXPECT_EQUAL(2u, first->childCnt());
     EXPECT_TRUE(dynamic_cast<const SourceBlenderBlueprint *>(&first->getChild(0)));
@@ -956,7 +1015,7 @@ void
 Test::requireThatSameElementTermsAreProperlyPrefixed()
 {
     search::query::Node::UP query = make_same_element_stack_dump("", "");
-    search::query::SameElement * root = dynamic_cast<search::query::SameElement *>(query.get());
+    auto * root = dynamic_cast<search::query::SameElement *>(query.get());
     EXPECT_EQUAL(root->getView(), "");
     EXPECT_EQUAL(root->getChildren().size(), 2u);
     EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[0])->getView(), "f1");
@@ -1035,6 +1094,7 @@ Test::Main()
     TEST_CALL(requireThatUnknownFieldActsEmpty);
     TEST_CALL(requireThatIllegalFieldsAreIgnored);
     TEST_CALL(requireThatQueryGluesEverythingTogether);
+    TEST_CALL(requireThatLocationIsAddedTheCorrectPlace);
     TEST_CALL(requireThatQueryAddsLocation);
     TEST_CALL(requireThatQueryAddsLocationCutoff);
     TEST_CALL(requireThatFakeFieldSearchDumpsDiffer);
