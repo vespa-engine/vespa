@@ -43,15 +43,15 @@ namespace {
 
 Node::UP
 inject(Node::UP query, Node::UP to_inject) {
-    if (dynamic_cast<search::query::And *>(query.get())) {
-        dynamic_cast<search::query::And &>(*query).append(std::move(to_inject));
+    if (auto * my_and = dynamic_cast<search::query::And *>(query.get())) {
+        my_and->append(std::move(to_inject));
     } else  if (dynamic_cast<search::query::Rank *>(query.get()) || dynamic_cast<search::query::AndNot *>(query.get())) {
-        search::query::Intermediate & root = dynamic_cast<search::query::Intermediate &>(*query);
+        search::query::Intermediate & root = static_cast<search::query::Intermediate &>(*query);
         root.prepend(inject(root.stealFirst(), std::move(to_inject)));
     } else {
         auto new_root = std::make_unique<ProtonAnd>();
-        new_root->append(std::move(to_inject));
         new_root->append(std::move(query));
+        new_root->append(std::move(to_inject));
         query = std::move(new_root);
     }
     return query;
