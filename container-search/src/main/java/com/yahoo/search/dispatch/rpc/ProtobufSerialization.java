@@ -15,7 +15,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.Model;
-import com.yahoo.search.query.Presentation;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.Sorting.Order;
@@ -73,7 +72,6 @@ public class ProtobufSerialization {
             builder.setGroupingBlob(ByteString.copyFrom(gbuf.getBuf().getByteBuffer()));
         }
 
-        mergeToRequestFromPresentation(query.getPresentation(), builder, includeQueryData);
         if (query.getGroupingSessionCache()) {
             builder.setCacheGrouping(true);
         }
@@ -97,13 +95,6 @@ public class ProtobufSerialization {
             } catch (java.nio.BufferOverflowException e) {
                 bufferSize *= 2;
             }
-        }
-    }
-
-    private static void mergeToRequestFromPresentation(Presentation presentation, SearchProtocol.SearchRequest.Builder builder,
-            boolean includeQueryData) {
-        if (includeQueryData && presentation.getHighlight() != null) {
-            MapConverter.convertStringMultiMap(presentation.getHighlight().getHighlightTerms(), builder::addHighlightTerms);
         }
     }
 
