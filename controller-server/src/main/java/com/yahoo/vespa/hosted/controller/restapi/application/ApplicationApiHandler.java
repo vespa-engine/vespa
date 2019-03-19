@@ -172,7 +172,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant-pipeline")) return tenantPipelines();
-        if (path.matches("/application/v4/athensDomain")) return athenzDomains(request);
         if (path.matches("/application/v4/property")) return properties();
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
@@ -304,16 +303,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             pipelineObject.setString("instance", application.id().instance().value());
         }
         response.setArray("brokenTenantPipelines"); // not used but may need to be present
-        return new SlimeJsonResponse(slime);
-    }
-
-    private HttpResponse athenzDomains(HttpRequest request) {
-        Slime slime = new Slime();
-        Cursor response = slime.setObject();
-        Cursor array = response.setArray("data");
-        for (AthenzDomain athenzDomain : controller.getDomainList(request.getProperty("prefix"))) {
-            array.addString(athenzDomain.getName());
-        }
         return new SlimeJsonResponse(slime);
     }
 

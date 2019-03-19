@@ -98,6 +98,9 @@ public class ControllerContainerTest {
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
             "    <binding>http://*/application/v4/*</binding>\n" +
             "  </handler>\n" +
+            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.AthenzApiHandler'>\n" +
+            "    <binding>http://*/athenz/v1/*</binding>\n" +
+            "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
             "    <binding>http://*/deployment/v1/*</binding>\n" +
             "  </handler>\n" +
