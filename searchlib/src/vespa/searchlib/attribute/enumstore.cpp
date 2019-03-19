@@ -93,8 +93,7 @@ EnumStoreT<StringEntryType>::writeValues(BufferWriter &writer,
 {
     for (uint32_t i = 0; i < count; ++i) {
         Index idx = idxs[i];
-        const char *src(_store.getBufferEntry<char>(idx.bufferId(),
-                                                    idx.offset()) +
+        const char *src(_store.getEntry<char>(idx) +
                         EntryBase::size());
         size_t sz = strlen(src) + 1;
         writer.write(src, sz);
@@ -135,7 +134,8 @@ EnumStoreT<StringEntryType>::deserialize(const void *src,
         LOG_ABORT("Out of enumstore bufferspace");
     }
     uint64_t offset = buffer.size();
-    char *dst(_store.getBufferEntry<char>(activeBufferId, offset));
+    Index newIdx(offset, activeBufferId);
+    char *dst(_store.getEntry<char>(newIdx));
     memcpy(dst, &_nextEnum, sizeof(uint32_t));
     uint32_t pos = sizeof(uint32_t);
     uint32_t refCount(0);
@@ -149,7 +149,7 @@ EnumStoreT<StringEntryType>::deserialize(const void *src,
         assert(ComparatorType::compare(getValue(idx),
                                        Entry(dst).getValue()) < 0);
     }
-    idx = Index(offset, activeBufferId);
+    idx = newIdx;
     return sz;
 }
 

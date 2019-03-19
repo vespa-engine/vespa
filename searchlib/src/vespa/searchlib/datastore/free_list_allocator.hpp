@@ -59,7 +59,7 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::alloc(Args && ... args)
     BufferState &state = *freeListList._head;
     assert(state.isActive());
     RefT ref = state.popFreeList();
-    EntryT *entry = _store.template getBufferEntry<EntryT>(ref.bufferId(), ref.offset());
+    EntryT *entry = _store.template getEntry<EntryT>(ref);
     ReclaimerT::reclaim(entry);
     allocator::Assigner<EntryT, Args...>::assign(*entry, std::forward<Args>(args)...);
     return HandleType(ref, entry);
@@ -77,7 +77,7 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(ConstArrayRef array)
     assert(state.isActive());
     assert(state.getArraySize() == array.size());
     RefT ref(state.popFreeList());
-    EntryT *buf = _store.template getBufferEntry<EntryT>(ref.bufferId(), ref.offset() * array.size());
+    EntryT *buf = _store.template getEntryArray<EntryT>(ref, array.size());
     for (size_t i = 0; i < array.size(); ++i) {
         *(buf + i) = array[i];
     }
@@ -96,7 +96,7 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(size_t size)
     assert(state.isActive());
     assert(state.getArraySize() == size);
     RefT ref(state.popFreeList());
-    EntryT *buf = _store.template getBufferEntry<EntryT>(ref.bufferId(), ref.offset() * size);
+    EntryT *buf = _store.template getEntryArray<EntryT>(ref, size);
     return HandleType(ref, buf);
 }
 

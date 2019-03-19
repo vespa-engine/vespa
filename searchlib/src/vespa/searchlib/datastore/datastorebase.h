@@ -265,14 +265,24 @@ public:
 
     void clearHoldLists();
 
-    template <typename EntryType>
-    EntryType *getBufferEntry(uint32_t bufferId, size_t offset) {
-        return static_cast<EntryType *>(_buffers[bufferId].getBuffer()) + offset;
+    template <typename EntryType, typename RefType>
+    EntryType *getEntry(RefType ref) {
+        return static_cast<EntryType *>(_buffers[ref.bufferId()].getBuffer()) + ref.offset();
     }
 
-    template <typename EntryType>
-    const EntryType *getBufferEntry(uint32_t bufferId, size_t offset) const {
-        return static_cast<const EntryType *>(_buffers[bufferId].getBuffer()) + offset;
+    template <typename EntryType, typename RefType>
+    const EntryType *getEntry(RefType ref) const {
+        return static_cast<const EntryType *>(_buffers[ref.bufferId()].getBuffer()) + ref.offset();
+    }
+
+    template <typename EntryType, typename RefType>
+    EntryType *getEntryArray(RefType ref, size_t arraySize) {
+        return static_cast<EntryType *>(_buffers[ref.bufferId()].getBuffer()) + (ref.offset() * arraySize);
+    }
+
+    template <typename EntryType, typename RefType>
+    const EntryType *getEntryArray(RefType ref, size_t arraySize) const {
+        return static_cast<const EntryType *>(_buffers[ref.bufferId()].getBuffer()) + (ref.offset() * arraySize);
     }
 
     void dropBuffers();

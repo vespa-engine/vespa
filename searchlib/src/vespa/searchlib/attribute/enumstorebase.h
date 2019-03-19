@@ -252,7 +252,7 @@ protected:
     virtual ~EnumStoreBase();
 
     EntryBase getEntryBase(Index idx) const {
-        return EntryBase(const_cast<DataStoreType &>(_store).getBufferEntry<char>(idx.bufferId(), idx.offset()));
+        return EntryBase(const_cast<DataStoreType &>(_store).getEntry<char>(idx));
     }
     datastore::BufferState & getBuffer(uint32_t bufferIdx) {
         return _store.getBufferState(bufferIdx);

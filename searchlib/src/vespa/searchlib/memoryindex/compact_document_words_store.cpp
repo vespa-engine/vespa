@@ -123,8 +123,7 @@ CompactDocumentWordsStore::Iterator
 CompactDocumentWordsStore::Store::get(datastore::EntryRef ref) const
 {
     RefType internalRef(ref);
-    const uint32_t *buf = _store.getBufferEntry<uint32_t>(internalRef.bufferId(),
-                                                          internalRef.offset());
+    const uint32_t *buf = _store.getEntry<uint32_t>(internalRef);
     return Iterator(buf);
 }
 

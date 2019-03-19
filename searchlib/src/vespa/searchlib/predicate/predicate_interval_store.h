@@ -30,7 +30,7 @@ class PredicateIntervalStore {
         DataStoreAdapter(const DataStoreType &store) : _store(store) {}
         const uint32_t *getBuffer(uint32_t ref) const {
             RefType entry_ref = datastore::EntryRef(ref);
-            return _store.getBufferEntry<uint32_t>(entry_ref.bufferId(), entry_ref.offset());
+            return _store.getEntry<uint32_t>(entry_ref);
         }
     };
     DataStoreAdapter _store_adapter;
@@ -101,7 +101,7 @@ public:
             size_out = 1;
             return single_buf;
         }
-        const uint32_t *buf = _store.getBufferEntry<uint32_t>(data_ref.bufferId(), data_ref.offset());
+        const uint32_t *buf = _store.getEntry<uint32_t>(data_ref);
         if (size == RefCacheType::MAX_SIZE) {
             size = *buf++;
         }

@@ -48,7 +48,7 @@ public:
         inline const EntryType &get(EntryRef ref) const {
             if (ref.valid()) {
                 RefType iRef(ref);
-                return *_store.template getBufferEntry<EntryType>(iRef.bufferId(), iRef.offset());
+                return *_store.template getEntry<EntryType>(iRef);
             } else {
                 return _value;
             }
@@ -94,7 +94,7 @@ public:
     const EntryType &get(EntryRef ref) const
     {
         RefType iRef(ref);
-        return *_store.template getBufferEntry<EntryType>(iRef.bufferId(), iRef.offset());
+        return *_store.template getEntry<EntryType>(iRef);
     }
     void remove(EntryRef ref);
     ICompactionContext::UP compactWorst();

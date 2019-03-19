@@ -144,7 +144,7 @@ public:
         uint32_t bufferId = RefType(ref).bufferId();
         const datastore::BufferState &state = _store.getBufferState(bufferId);
         decoder.setEnd(
-                ((_store.getBufferEntry<uint8_t>(bufferId, state.size()) -
+                ((_store.getEntry<uint8_t>(RefType(state.size(), bufferId)) -
                   bits) + 7) / 8,
                 false);
     }
@@ -181,7 +181,7 @@ public:
      */
     const uint8_t *getBits(datastore::EntryRef ref) const {
         RefType iRef(ref);
-        return _store.getBufferEntry<uint8_t>(iRef.bufferId(), iRef.offset());
+        return _store.getEntry<uint8_t>(iRef);
     }
 
     /**

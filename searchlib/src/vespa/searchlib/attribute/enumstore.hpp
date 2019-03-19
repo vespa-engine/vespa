@@ -115,7 +115,7 @@ EnumStoreT<EntryType>::writeValues(BufferWriter &writer, const Index *idxs, size
     size_t sz(EntryType::fixedSize());
     for (uint32_t i = 0; i < count; ++i) {
         Index idx = idxs[i];
-        const char *src(_store.getBufferEntry<char>(idx.bufferId(), idx.offset()) + EntryBase::size());
+        const char *src(_store.getEntry<char>(idx) + EntryBase::size());
         writer.write(src, sz);
     }
 }
@@ -148,7 +148,8 @@ EnumStoreT<EntryType>::deserialize(const void *src, size_t available, Index &idx
         HDR_ABORT("not enough space");
     }
     uint64_t offset = buffer.size();
-    char *dst(_store.getBufferEntry<char>(activeBufferId, offset));
+    Index newIdx(offset, activeBufferId);
+    char *dst(_store.getEntry<char>(newIdx));
     memcpy(dst, &_nextEnum, sizeof(uint32_t));
     uint32_t pos = sizeof(uint32_t);
     uint32_t refCount(0);
@@ -161,7 +162,7 @@ EnumStoreT<EntryType>::deserialize(const void *src, size_t available, Index &idx
     if (idx.valid()) {
         assert(ComparatorType::compare(getValue(idx), Entry(dst).getValue()) < 0);
     }
-    idx = Index(offset, activeBufferId);
+    idx = newIdx;
     return sz;
 }
 
@@ -267,11 +268,11 @@ EnumStoreT<EntryType>::addEnum(Type value, Index &newIdx, Dictionary &dict)
     }
 
     uint64_t offset = buffer.size();
-    char * dst = _store.template getBufferEntry<char>(activeBufferId, offset);
+    newIdx = Index(offset, activeBufferId);
+    char * dst = _store.template getEntry<char>(newIdx);
     this->insertEntry(dst, this->_nextEnum++, 0, value);
     buffer.pushed_back(entrySize);
     assert(Index::pad(offset) == 0);
-    newIdx = Index(offset, activeBufferId);
 
     // update tree with new index
     dict.insert(it, newIdx, typename Dictionary::DataType());
@@ -357,7 +358,7 @@ EnumStoreT<EntryType>::reset(Builder &builder, Dictionary &dict)
     {
         uint64_t offset = state.size();
         Index idx(offset, activeBufferId);
-        char * dst = _store.template getBufferEntry<char>(activeBufferId, offset);
+        char * dst = _store.template getEntry<char>(idx);
         this->insertEntry(dst, this->_nextEnum++, iter->_refCount, iter->_value);
         state.pushed_back(iter->_sz);
 
@@ -413,7 +414,8 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict, EnumIndexMap & old2Ne
         }
 
         uint64_t offset = freeBuf.size();
-        char * dst = _store.template getBufferEntry<char>(freeBufferIdx, offset);
+        Index newIdx = Index(offset, freeBufferIdx);
+        char * dst = _store.template getEntry<char>(newIdx);
         // insert entry into free buffer
         this->insertEntry(dst, newEnum, refCount, value);
 #ifdef LOG_ENUM_STORE
@@ -424,7 +426,6 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict, EnumIndexMap & old2Ne
         }
         freeBuf.pushed_back(entrySize);
         assert(Index::pad(offset) == 0);
-        Index newIdx = Index(offset, freeBufferIdx);
 #ifdef LOG_ENUM_STORE
         LOG(info,
             "performCompaction(): new index: offset = %" PRIu64

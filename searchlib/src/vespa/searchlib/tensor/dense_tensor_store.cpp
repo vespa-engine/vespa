@@ -93,8 +93,7 @@ DenseTensorStore::~DenseTensorStore()
 const void *
 DenseTensorStore::getRawBuffer(RefType ref) const
 {
-    return _store.getBufferEntry<char>(ref.bufferId(),
-                                       ref.offset() * _bufferType.getArraySize());
+    return _store.getEntryArray<char>(ref, _bufferType.getArraySize());
 }
 
 
