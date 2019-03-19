@@ -198,7 +198,7 @@ public class GUIHandler extends LoggingRequestHandler {
             List<String> levelZeroParameters = Arrays.asList(MinimalQueryInserter.YQL.toString(), Query.HITS.toString(), Query.OFFSET.toString(),
                                 "queryProfile", Query.NO_CACHE.toString(), Query.GROUPING_SESSION_CACHE.toString(),
                                 Query.SEARCH_CHAIN.toString(), Query.TIMEOUT.toString(), "trace", "tracelevel",
-                                Query.TRACE_LEVEL.toString(), Model.MODEL, Ranking.RANKING, "collapse", "collapsesize","collapsefield",
+                                Query.TRACE_LEVEL.toString(), Query.EXPLAIN_LEVEL.toString(), "explainlevel", Model.MODEL, Ranking.RANKING, "collapse", "collapsesize","collapsefield",
                                 Presentation.PRESENTATION, "pos", "streaming", "rules", RecallSearcher.recallName.toString(), "user",
                                 "metrics", "");
             json.put("levelZeroParameters", levelZeroParameters);

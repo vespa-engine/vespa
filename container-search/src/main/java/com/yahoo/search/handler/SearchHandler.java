@@ -81,6 +81,8 @@ public class SearchHandler extends LoggingRequestHandler {
     private final int maxThreads;
 
     private static final CompoundName DETAILED_TIMING_LOGGING = new CompoundName("trace.timingDetails");
+    private static final CompoundName FORCE_TIMESTAMPS = new CompoundName("trace.timestamps");
+
 
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = "search_connections";
@@ -101,7 +103,6 @@ public class SearchHandler extends LoggingRequestHandler {
 
     public static final String defaultSearchChainName = "default";
     private static final String fallbackSearchChain = "vespa";
-    private static final CompoundName FORCE_TIMESTAMPS = new CompoundName("trace.timestamps");;
 
     private final Linguistics linguistics;
 
