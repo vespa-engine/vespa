@@ -78,6 +78,7 @@ import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant.Type;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -275,7 +276,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor tenantsArray = response.setArray("tenants");
         for (Tenant tenant : tenants)
             tenantInTenantsListToSlime(tenant, request.getUri(), tenantsArray.addObject());
-        response.setBool("tenantExists", tenants.stream().anyMatch(tenant -> tenant instanceof UserTenant && // TODO jvenstad: No.
+        response.setBool("tenantExists", tenants.stream().anyMatch(tenant -> tenant.type() == Type.user &&
                                                                          ((UserTenant) tenant).is(user.getIdentity().getName())));
         return new SlimeJsonResponse(slime);
     }
