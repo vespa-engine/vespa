@@ -9,6 +9,7 @@ vespa_add_library(persistence
 vespa_add_library(persistence_persistence_conformancetest
     SOURCES
     $<TARGET_OBJECTS:persistence_conformancetest_lib>
+    INSTALL lib64
     DEPENDS
     persistence
     vdstestlib
