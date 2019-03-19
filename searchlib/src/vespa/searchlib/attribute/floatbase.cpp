@@ -15,6 +15,8 @@ FloatingPointAttribute::FloatingPointAttribute(const vespalib::string & name, co
 {
 }
 
+FloatingPointAttribute::~FloatingPointAttribute() = default;
+
 uint32_t FloatingPointAttribute::clearDoc(DocId doc)
 {
     uint32_t removed(0);

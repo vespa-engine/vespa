@@ -57,6 +57,7 @@ private:
 
 public:
     QueryWrapper(search::Query & query);
+    ~QueryWrapper();
     TermList & getTermList() { return _termList; }
     const TermList & getTermList() const { return _termList; }
 };

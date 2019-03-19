@@ -43,6 +43,7 @@ QueryWrapper::QueryWrapper(Query & query) :
     }
 }
 
+QueryWrapper::~QueryWrapper() = default;
 
 } // namespace storage
 

@@ -6,7 +6,15 @@
 namespace search {
 namespace queryeval {
 
-FakeResult::~FakeResult() { }
+FakeResult::FakeResult()
+    : _documents(),
+      _minMaxPostingInfo()
+{
+}
+
+FakeResult::FakeResult(const FakeResult &) = default;
+
+FakeResult::~FakeResult() = default;
 
 std::ostream &operator << (std::ostream &out, const FakeResult &result) {
     const std::vector<FakeResult::Document> &doc = result.inspect();
