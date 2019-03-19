@@ -10,7 +10,6 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
@@ -21,7 +20,7 @@ import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.permits.ApplicationPermit;
 import com.yahoo.vespa.hosted.controller.permits.AthenzApplicationPermit;
 import com.yahoo.vespa.hosted.controller.permits.AthenzTenantPermit;
-import com.yahoo.vespa.hosted.controller.permits.PermitStore;
+import com.yahoo.vespa.hosted.controller.permits.AccessControlManager;
 import com.yahoo.vespa.hosted.controller.permits.TenantPermit;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -39,7 +38,7 @@ import java.util.stream.Collectors;
 /**
  * @author bjorncs
  */
-public class AthenzFacade implements PermitStore {
+public class AthenzFacade implements AccessControlManager {
 
     private static final Logger log = Logger.getLogger(AthenzFacade.class.getName());
     private final ZmsClient zmsClient;

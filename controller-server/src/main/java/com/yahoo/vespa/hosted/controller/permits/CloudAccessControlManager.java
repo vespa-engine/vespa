@@ -14,12 +14,12 @@ import java.util.List;
  * @author jonmv
  * @author tokle
  */
-public class CloudPermitStore implements PermitStore {
+public class CloudAccessControlManager implements AccessControlManager {
 
     private final Marketplace marketplace;
 
     @Inject
-    public CloudPermitStore(Marketplace marketplace) {
+    public CloudAccessControlManager(Marketplace marketplace) {
         this.marketplace = marketplace;
     }
 

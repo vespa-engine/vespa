@@ -16,7 +16,7 @@ import java.util.Optional;
  *
  * @author jonmv
  */
-public interface PermitStore {
+public interface AccessControlManager {
 
     /**
      * Sets up permissions for a tenant, based on the given permit, or throws.

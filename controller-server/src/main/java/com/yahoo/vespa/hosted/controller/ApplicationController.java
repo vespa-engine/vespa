@@ -51,7 +51,7 @@ import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.permits.ApplicationPermit;
-import com.yahoo.vespa.hosted.controller.permits.PermitStore;
+import com.yahoo.vespa.hosted.controller.permits.AccessControlManager;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -104,7 +104,7 @@ public class ApplicationController {
     private final ArtifactRepository artifactRepository;
     private final ApplicationStore applicationStore;
     private final RotationRepository rotationRepository;
-    private final PermitStore permits;
+    private final AccessControlManager permits;
     private final NameService nameService;
     private final ConfigServer configServer;
     private final RoutingGenerator routingGenerator;
@@ -113,7 +113,7 @@ public class ApplicationController {
     private final DeploymentTrigger deploymentTrigger;
 
     ApplicationController(Controller controller, CuratorDb curator,
-                          PermitStore permits, RotationsConfig rotationsConfig,
+                          AccessControlManager permits, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServer configServer,
                           ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
