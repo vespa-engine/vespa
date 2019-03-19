@@ -14,8 +14,6 @@ import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -37,12 +35,12 @@ public class TenantController {
 
     private final Controller controller;
     private final CuratorDb curator;
-    private final AccessControlManager permits;
+    private final AccessControlManager accessControl;
 
-    public TenantController(Controller controller, CuratorDb curator, AccessControlManager permits) {
+    public TenantController(Controller controller, CuratorDb curator, AccessControlManager accessControl) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.curator = Objects.requireNonNull(curator, "curator must be non-null");
-        this.permits = permits;
+        this.accessControl = accessControl;
 
         // Update serialization format of all tenants
         Once.after(Duration.ofMinutes(1), () -> {
@@ -66,7 +64,7 @@ public class TenantController {
 
     /** Returns the lsit of tenants accessible to the given user. */
     public List<Tenant> asList(Principal user) {
-        return permits.accessibleTenants(asList(), user);
+        return accessControl.accessibleTenants(asList(), user);
     }
 
     /** Locks a tenant for modification and applies the given action. */
@@ -107,7 +105,7 @@ public class TenantController {
     public void create(TenantPermit permit) {
         try (Lock lock = lock(permit.tenant())) {
             requireNonExistent(permit.tenant());
-            curator.writeTenant(permits.createTenant(permit, asList()));
+            curator.writeTenant(accessControl.createTenant(permit, asList()));
         }
     }
 
@@ -136,7 +134,7 @@ public class TenantController {
     /** Updates the tenant contained in the given permit with new data. */
     public void update(TenantPermit permit) {
         try (Lock lock = lock(permit.tenant())) {
-            curator.writeTenant(permits.updateTenant(permit, asList(), controller.applications().asList(permit.tenant())));
+            curator.writeTenant(accessControl.updateTenant(permit, asList(), controller.applications().asList(permit.tenant())));
         }
     }
 
@@ -149,7 +147,7 @@ public class TenantController {
                                                    + "': This tenant has active applications");
 
             curator.removeTenant(tenant.name());
-            permits.deleteTenant(permit, tenant);
+            accessControl.deleteTenant(permit, tenant);
         }
     }
 
