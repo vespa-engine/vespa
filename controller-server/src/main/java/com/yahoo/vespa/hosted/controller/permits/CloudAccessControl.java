@@ -15,12 +15,12 @@ import java.util.List;
  * @author jonmv
  * @author tokle
  */
-public class CloudAccessControlManager implements AccessControlManager {
+public class CloudAccessControl implements AccessControl {
 
     private final Marketplace marketplace;
 
     @Inject
-    public CloudAccessControlManager(Marketplace marketplace) {
+    public CloudAccessControl(Marketplace marketplace) {
         this.marketplace = marketplace;
     }
 

@@ -5,7 +5,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 
 /**
- * Extracts {@link TenantPermit}s and {@link ApplicationPermit}s from HTTP requests, to be stored in a {@link AccessControlManager}.
+ * Extracts {@link TenantPermit}s and {@link ApplicationPermit}s from HTTP requests, to be stored in a {@link AccessControl}.
  *
  * @author jonmv
  */

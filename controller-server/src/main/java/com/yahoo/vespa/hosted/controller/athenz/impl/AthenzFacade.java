@@ -20,7 +20,7 @@ import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.permits.ApplicationPermit;
 import com.yahoo.vespa.hosted.controller.permits.AthenzApplicationPermit;
 import com.yahoo.vespa.hosted.controller.permits.AthenzTenantPermit;
-import com.yahoo.vespa.hosted.controller.permits.AccessControlManager;
+import com.yahoo.vespa.hosted.controller.permits.AccessControl;
 import com.yahoo.vespa.hosted.controller.permits.TenantPermit;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * @author bjorncs
  * @author jonmv
  */
-public class AthenzFacade implements AccessControlManager {
+public class AthenzFacade implements AccessControl {
 
     private static final Logger log = Logger.getLogger(AthenzFacade.class.getName());
     private final ZmsClient zmsClient;

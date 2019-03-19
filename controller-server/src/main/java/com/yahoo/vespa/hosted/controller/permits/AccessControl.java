@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Keeps permits for tenant and application resources.
+ * Stores permissions for tenant and application resources.
  *
  * @author jonmv
  */
-public interface AccessControlManager {
+public interface AccessControl {
 
     /**
      * Sets up permissions for a tenant, based on the given permit, or throws.

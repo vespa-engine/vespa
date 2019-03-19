@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
-import com.yahoo.vespa.hosted.controller.permits.AccessControlManager;
+import com.yahoo.vespa.hosted.controller.permits.AccessControl;
 import com.yahoo.vespa.hosted.controller.permits.TenantPermit;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -35,9 +35,9 @@ public class TenantController {
 
     private final Controller controller;
     private final CuratorDb curator;
-    private final AccessControlManager accessControl;
+    private final AccessControl accessControl;
 
-    public TenantController(Controller controller, CuratorDb curator, AccessControlManager accessControl) {
+    public TenantController(Controller controller, CuratorDb curator, AccessControl accessControl) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.curator = Objects.requireNonNull(curator, "curator must be non-null");
         this.accessControl = accessControl;

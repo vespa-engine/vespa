@@ -31,7 +31,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
-import com.yahoo.vespa.hosted.controller.permits.AccessControlManager;
+import com.yahoo.vespa.hosted.controller.permits.AccessControl;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
@@ -92,13 +92,13 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub, EntityService entityService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
                       NameService nameService, RoutingGenerator routingGenerator, Chef chef,
-                      AthenzClientFactory athenzClientFactory, AccessControlManager accessControlManager,
+                      AthenzClientFactory athenzClientFactory, AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer) {
         this(curator, rotationsConfig,
              gitHub, entityService, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
-             Clock.systemUTC(), athenzClientFactory, accessControlManager, artifactRepository, applicationStore, testerCloud,
+             Clock.systemUTC(), athenzClientFactory, accessControl, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer);
     }
 
@@ -107,7 +107,7 @@ public class Controller extends AbstractComponent {
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
-                      AthenzClientFactory athenzClientFactory, AccessControlManager accessControlManager,
+                      AthenzClientFactory athenzClientFactory, AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
                       Mailer mailer) {
@@ -124,7 +124,7 @@ public class Controller extends AbstractComponent {
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
-        applicationController = new ApplicationController(this, curator, accessControlManager,
+        applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
                                                           Objects.requireNonNull(nameService, "NameService cannot be null"),
                                                           configServer,
@@ -133,7 +133,7 @@ public class Controller extends AbstractComponent {
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);
-        tenantController = new TenantController(this, curator, accessControlManager);
+        tenantController = new TenantController(this, curator, accessControl);
         auditLogger = new AuditLogger(curator, clock);
 
         // Record the version of this controller
