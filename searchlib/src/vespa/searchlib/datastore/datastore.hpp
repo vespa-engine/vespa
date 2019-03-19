@@ -169,9 +169,7 @@ const EntryType &
 DataStore<EntryType, RefT>::getEntry(EntryRef ref) const
 {
     RefType intRef(ref);
-    const EntryType *be =
-        this->template
-        getBufferEntry<EntryType>(intRef.bufferId(), intRef.offset());
+    const EntryType *be = this->template getEntry<EntryType>(intRef);
     return *be;
 }
 

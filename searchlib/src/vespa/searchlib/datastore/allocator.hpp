@@ -24,10 +24,11 @@ Allocator<EntryT, RefT>::alloc(Args && ... args)
     BufferState &state = _store.getBufferState(activeBufferId);
     assert(state.isActive());
     size_t oldBufferSize = state.size();
-    EntryT *entry = _store.getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
+    RefT ref(oldBufferSize, activeBufferId);
+    EntryT *entry = _store.getEntry<EntryT>(ref);
     new (static_cast<void *>(entry)) EntryT(std::forward<Args>(args)...);
     state.pushed_back(1);
-    return HandleType(RefT(oldBufferSize, activeBufferId), entry);
+    return HandleType(ref, entry);
 }
 
 template <typename EntryT, typename RefT>
@@ -40,13 +41,14 @@ Allocator<EntryT, RefT>::allocArray(ConstArrayRef array)
     assert(state.isActive());
     assert(state.getArraySize() == array.size());
     size_t oldBufferSize = state.size();
-    EntryT *buf = _store.template getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
+    assert((oldBufferSize % array.size()) == 0);
+    RefT ref((oldBufferSize / array.size()), activeBufferId);
+    EntryT *buf = _store.template getEntryArray<EntryT>(ref, array.size());
     for (size_t i = 0; i < array.size(); ++i) {
         new (static_cast<void *>(buf + i)) EntryT(array[i]);
     }
     state.pushed_back(array.size());
-    assert((oldBufferSize % array.size()) == 0);
-    return HandleType(RefT((oldBufferSize / array.size()), activeBufferId), buf);
+    return HandleType(ref, buf);
 }
 
 template <typename EntryT, typename RefT>
@@ -59,13 +61,14 @@ Allocator<EntryT, RefT>::allocArray(size_t size)
     assert(state.isActive());
     assert(state.getArraySize() == size);
     size_t oldBufferSize = state.size();
-    EntryT *buf = _store.template getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
+    assert((oldBufferSize % size) == 0);
+    RefT ref((oldBufferSize / size), activeBufferId);
+    EntryT *buf = _store.template getEntryArray<EntryT>(ref, size);
     for (size_t i = 0; i < size; ++i) {
         new (static_cast<void *>(buf + i)) EntryT();
     }
     state.pushed_back(size);
-    assert((oldBufferSize % size) == 0);
-    return HandleType(RefT((oldBufferSize / size), activeBufferId), buf);
+    return HandleType(ref, buf);
 }
 
 }

@@ -106,7 +106,7 @@ protected:
     using EnumStoreBase::TYPE_ID;
 
     Entry getEntry(Index idx) const {
-        return Entry(const_cast<DataStoreType &>(_store).getBufferEntry<char>(idx.bufferId(), idx.offset()));
+        return Entry(const_cast<DataStoreType &>(_store).getEntry<char>(idx));
     }
     void printEntry(vespalib::asciistream & os, const Entry & e) const;
 

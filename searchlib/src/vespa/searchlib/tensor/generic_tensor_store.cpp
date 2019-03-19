@@ -43,8 +43,7 @@ GenericTensorStore::getRawBuffer(RefType ref) const
     if (!ref.valid()) {
         return std::make_pair(nullptr, 0u);
     }
-    const char *buf = _store.getBufferEntry<char>(ref.bufferId(),
-                                                  ref.offset());
+    const char *buf = _store.getEntry<char>(ref);
     uint32_t len = *reinterpret_cast<const uint32_t *>(buf);
     return std::make_pair(buf + sizeof(uint32_t), len);
 }
@@ -74,8 +73,7 @@ GenericTensorStore::holdTensor(EntryRef ref)
         return;
     }
     RefType iRef(ref);
-    const char *buf = _store.getBufferEntry<char>(iRef.bufferId(),
-                                                  iRef.offset());
+    const char *buf = _store.getEntry<char>(iRef);
     uint32_t len = *reinterpret_cast<const uint32_t *>(buf);
     _concreteStore.holdElem(ref, len + sizeof(uint32_t));
 }

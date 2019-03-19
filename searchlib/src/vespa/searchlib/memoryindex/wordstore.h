@@ -26,8 +26,7 @@ public:
     const char * getWord(datastore::EntryRef ref) const
     {
         RefType internalRef(ref);
-        return _store.getBufferEntry<char>(internalRef.bufferId(),
-                                           internalRef.offset());
+        return _store.getEntry<char>(internalRef);
     }
 
     MemoryUsage getMemoryUsage() const {

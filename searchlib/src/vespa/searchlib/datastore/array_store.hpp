@@ -93,10 +93,11 @@ ArrayStore<EntryT, RefT>::addLargeArray(const ConstArrayRef &array)
     BufferState &state = _store.getBufferState(activeBufferId);
     assert(state.isActive());
     size_t oldBufferSize = state.size();
-    LargeArray *buf = _store.template getBufferEntry<LargeArray>(activeBufferId, oldBufferSize);
+    RefT ref(oldBufferSize, activeBufferId);
+    LargeArray *buf = _store.template getEntry<LargeArray>(ref);
     new (static_cast<void *>(buf)) LargeArray(array.cbegin(), array.cend());
     state.pushed_back(1, sizeof(EntryT) * array.size());
-    return RefT(oldBufferSize, activeBufferId);
+    return ref;
 }
 
 template <typename EntryT, typename RefT>

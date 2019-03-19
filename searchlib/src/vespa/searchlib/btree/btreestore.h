@@ -91,7 +91,7 @@ protected:
     Builder _builder;
 
     BTreeType * getWTreeEntry(RefType ref) {
-        return _store.getBufferEntry<BTreeType>(ref.bufferId(), ref.offset());
+        return _store.getEntry<BTreeType>(ref);
     }
 
 public:
@@ -322,11 +322,11 @@ public:
     }
 
     const BTreeType * getTreeEntry(RefType ref) const {
-        return _store.getBufferEntry<BTreeType>(ref.bufferId(), ref.offset());
+        return _store.getEntry<BTreeType>(ref);
     }
 
-    const KeyDataType * getKeyDataEntry(RefType ref, uint32_t clusterSize) const {
-        return _store.getBufferEntry<KeyDataType>(ref.bufferId(), ref.offset() * clusterSize);
+    const KeyDataType * getKeyDataEntry(RefType ref, uint32_t arraySize) const {
+        return _store.getEntryArray<KeyDataType>(ref, arraySize);
     }
 
     void freeze() {

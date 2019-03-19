@@ -84,34 +84,34 @@ public:
 
     const InternalNodeType *mapInternalRef(EntryRef ref) const {
         RefType iRef(ref);
-        return _store.getBufferEntry<InternalNodeType>(iRef.bufferId(), iRef.offset());
+        return _store.getEntry<InternalNodeType>(iRef);
     }
 
     InternalNodeType *mapInternalRef(EntryRef ref) {
         RefType iRef(ref);
-        return _store.getBufferEntry<InternalNodeType>(iRef.bufferId(), iRef.offset());
+        return _store.getEntry<InternalNodeType>(iRef);
     }
 
     const LeafNodeType *mapLeafRef(EntryRef ref) const {
         RefType iRef(ref);
-        return _store.getBufferEntry<LeafNodeType>(iRef.bufferId(), iRef.offset());
+        return _store.getEntry<LeafNodeType>(iRef);
     }
 
     LeafNodeType *mapLeafRef(EntryRef ref) {
         RefType iRef(ref);
-        return _store.getBufferEntry<LeafNodeType>(iRef.bufferId(), iRef.offset());
+        return _store.getEntry<LeafNodeType>(iRef);
     }
 
     template <typename NodeType>
     const NodeType *mapRef(EntryRef ref) const {
         RefType iRef(ref);
-        return _store.getBufferEntry<NodeType>(iRef.bufferId(), iRef.offset());
+        return _store.getEntry<NodeType>(iRef);
     }
 
     template <typename NodeType>
     NodeType *mapRef(EntryRef ref) {
         RefType iRef(ref);
-        return _store.getBufferEntry<NodeType>(iRef.bufferId(), iRef.offset());
+        return _store.getEntry<NodeType>(iRef);
     }
 
     LeafNodeTypeRefPair allocNewLeafNode() {

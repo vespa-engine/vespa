@@ -57,12 +57,11 @@ private:
     EntryRef addSmallArray(const ConstArrayRef &array);
     EntryRef addLargeArray(const ConstArrayRef &array);
     ConstArrayRef getSmallArray(RefT ref, size_t arraySize) const {
-        size_t bufferOffset = ref.offset() * arraySize;
-        const EntryT *buf = _store.template getBufferEntry<EntryT>(ref.bufferId(), bufferOffset);
+        const EntryT *buf = _store.template getEntryArray<EntryT>(ref, arraySize);
         return ConstArrayRef(buf, arraySize);
     }
     ConstArrayRef getLargeArray(RefT ref) const {
-        const LargeArray *buf = _store.template getBufferEntry<LargeArray>(ref.bufferId(), ref.offset());
+        const LargeArray *buf = _store.template getEntry<LargeArray>(ref);
         return ConstArrayRef(&(*buf)[0], buf->size());
     }
 

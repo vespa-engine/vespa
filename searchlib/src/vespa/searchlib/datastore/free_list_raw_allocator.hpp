@@ -25,8 +25,9 @@ FreeListRawAllocator<EntryT, RefT>::alloc(size_t numElems)
     assert(state.getArraySize() == numElems);
     RefT ref = state.popFreeList();
     // If entry ref is not aligned we must scale the offset according to array size as it was divided when the entry ref was created.
-    size_t offset = !RefT::isAlignedType ? ref.offset() * state.getArraySize() : ref.offset();
-    EntryT *entry = _store.template getBufferEntry<EntryT>(ref.bufferId(), offset);
+    EntryT *entry = !RefT::isAlignedType ?
+                    _store.template getEntryArray<EntryT>(ref, state.getArraySize()) :
+                    _store.template getEntry<EntryT>(ref);
     return HandleType(ref, entry);
 }
 

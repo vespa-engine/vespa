@@ -167,13 +167,11 @@ public:
     AggregatedType getAggregated(const EntryRef ref) const;
 
     const BitVectorEntry *getBitVectorEntry(RefType ref) const {
-        return _store.template getBufferEntry<BitVectorEntry>(ref.bufferId(),
-                                                              ref.offset());
+        return _store.template getEntry<BitVectorEntry>(ref);
     }
 
     BitVectorEntry *getWBitVectorEntry(RefType ref) {
-        return _store.template getBufferEntry<BitVectorEntry>(ref.bufferId(),
-                                                              ref.offset());
+        return _store.template getEntry<BitVectorEntry>(ref);
     }
 
     static inline DataT bitVectorWeight();

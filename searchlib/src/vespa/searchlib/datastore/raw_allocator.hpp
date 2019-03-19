@@ -23,16 +23,20 @@ RawAllocator<EntryT, RefT>::alloc(size_t numElems, size_t extraElems)
     BufferState &state = _store.getBufferState(activeBufferId);
     assert(state.isActive());
     size_t oldBufferSize = state.size();
-    EntryT *buffer = _store.getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
-    state.pushed_back(numElems);
     if (RefT::isAlignedType) {
         // AlignedEntryRef constructor scales down offset by alignment
-        return HandleType(RefT(oldBufferSize, activeBufferId), buffer);
+        RefT ref(oldBufferSize, activeBufferId);
+        EntryT *buffer = _store.getEntry<EntryT>(ref);
+        state.pushed_back(numElems);
+        return HandleType(ref, buffer);
     } else {
         // Must perform scaling ourselves, according to array size
         size_t arraySize = state.getArraySize();
         assert((numElems % arraySize) == 0u);
-        return HandleType(RefT(oldBufferSize / arraySize, activeBufferId), buffer);
+        RefT ref((oldBufferSize / arraySize), activeBufferId);
+        EntryT *buffer = _store.getEntryArray<EntryT>(ref, arraySize);
+        state.pushed_back(numElems);
+        return HandleType(ref, buffer);
     }
 }
 

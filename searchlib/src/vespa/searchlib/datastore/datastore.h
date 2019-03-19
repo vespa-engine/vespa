@@ -95,7 +95,7 @@ protected:
     using ParentType::ensureBufferCapacity;
     using ParentType::_activeBufferIds;
     using ParentType::_freeListLists;
-    using ParentType::getBufferEntry;
+    using ParentType::getEntry;
     using ParentType::dropBuffers;
     using ParentType::initActiveBuffers;
     using ParentType::addType;
