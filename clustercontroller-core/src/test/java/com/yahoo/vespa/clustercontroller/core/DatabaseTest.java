@@ -49,7 +49,7 @@ public class DatabaseTest extends FleetControllerTest {
     @Test
     public void testWantedStatesInZooKeeper() throws Exception {
         startingTest("DatabaseTest::testWantedStatesInZooKeeper");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.zooKeeperServerAddress = "127.0.0.1";
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
@@ -105,7 +105,7 @@ public class DatabaseTest extends FleetControllerTest {
     @Test
     public void testWantedStateOfUnknownNode() throws Exception {
         startingTest("DatabaseTest::testWantedStatesOfUnknownNode");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.minRatioOfDistributorNodesUp = 0;
         options.minRatioOfStorageNodesUp = 0;
         options.zooKeeperServerAddress = "localhost";

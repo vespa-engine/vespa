@@ -298,6 +298,4 @@ public class SystemStateBroadcasterTest {
         });
     }
 
-    // TODO FleetControllerOptions change default 2phase option to false and override tests...? Sounds safer!
-
 }

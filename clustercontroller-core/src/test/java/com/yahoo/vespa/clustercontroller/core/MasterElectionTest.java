@@ -119,7 +119,7 @@ public class MasterElectionTest extends FleetControllerTest {
     public void testMasterElection() throws Exception {
         startingTest("MasterElectionTest::testMasterElection");
         log.log(LogLevel.INFO, "STARTING TEST: MasterElectionTest::testMasterElection()");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
         setUpFleetController(5, true, options);
         waitForMaster(0);
@@ -223,7 +223,7 @@ public class MasterElectionTest extends FleetControllerTest {
     @Test
     public void testClusterStateVersionIncreasesAcrossMasterElections() throws Exception {
         startingTest("MasterElectionTest::testClusterStateVersionIncreasesAcrossMasterElections");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
         setUpFleetController(5, true, options);
         // Currently need to have content nodes present for the cluster controller to even bother
@@ -248,7 +248,7 @@ public class MasterElectionTest extends FleetControllerTest {
     @Test
     public void testVotingCorrectnessInFaceOfZKDisconnect() throws Exception {
         startingTest("MasterElectionTest::testVotingCorrectnessInFaceOfZKDisconnect");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         // "Magic" port value is in range allocated to module for testing.
         zooKeeperServer = ZooKeeperTestServer.createWithFixedPort(18342);
         options.zooKeeperSessionTimeout = 100;
@@ -272,7 +272,7 @@ public class MasterElectionTest extends FleetControllerTest {
     @Test
     public void testZooKeeperUnavailable() throws Exception {
         startingTest("MasterElectionTest::testZooKeeperUnavailable");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.zooKeeperSessionTimeout = 100;
         options.masterZooKeeperCooldownPeriod = 100;
         options.zooKeeperServerAddress = "localhost";
@@ -308,7 +308,7 @@ public class MasterElectionTest extends FleetControllerTest {
     @Ignore
     public void testMasterZooKeeperCooldown() throws Exception {
         startingTest("MasterElectionTest::testMasterZooKeeperCooldown");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 3600 * 1000; // An hour
         setUpFleetController(3, true, options);
         waitForMaster(0);
@@ -349,7 +349,7 @@ public class MasterElectionTest extends FleetControllerTest {
     @Ignore
     public void testGetMaster() throws Exception {
         startingTest("MasterElectionTest::testGetMaster");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 3600 * 1000; // An hour
         setUpFleetController(3, true, options);
         waitForMaster(0);
@@ -429,7 +429,7 @@ public class MasterElectionTest extends FleetControllerTest {
     @Test
     public void testReconfigure() throws Exception {
         startingTest("MasterElectionTest::testReconfigure");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
         setUpFleetController(3, true, options);
         waitForMaster(0);
@@ -454,7 +454,7 @@ public class MasterElectionTest extends FleetControllerTest {
     @Test
     public void cluster_state_version_written_to_zookeeper_even_with_empty_send_set() throws Exception {
         startingTest("MasterElectionTest::cluster_state_version_written_to_zookeeper_even_with_empty_send_set");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
         options.minRatioOfDistributorNodesUp = 0;
         options.minRatioOfStorageNodesUp = 0;
@@ -500,7 +500,7 @@ public class MasterElectionTest extends FleetControllerTest {
     @Test
     public void previously_published_state_is_taken_into_account_for_default_space_when_controller_bootstraps() throws Exception {
         startingTest("MasterElectionTest::previously_published_state_is_taken_into_account_for_default_space_when_controller_bootstraps");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.clusterHasGlobalDocumentTypes = true;
         options.masterZooKeeperCooldownPeriod = 1;
         options.minTimeBeforeFirstSystemStateBroadcast = 100000;
@@ -543,7 +543,7 @@ public class MasterElectionTest extends FleetControllerTest {
     @Test
     public void default_space_nodes_not_marked_as_maintenance_when_cluster_has_no_global_document_types() throws Exception {
         startingTest("MasterElectionTest::default_space_nodes_not_marked_as_maintenance_when_cluster_has_no_global_document_types");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.clusterHasGlobalDocumentTypes = false;
         options.masterZooKeeperCooldownPeriod = 1;
         options.minTimeBeforeFirstSystemStateBroadcast = 100000;

@@ -121,7 +121,7 @@ public class FleetControllerOptions implements Cloneable {
 
     public boolean clusterHasGlobalDocumentTypes = false;
 
-    public boolean enableTwoPhaseClusterStateActivation = true;
+    public boolean enableTwoPhaseClusterStateActivation = false;
 
     // TODO: Choose a default value
     public double minMergeCompletionRatio = 1.0;

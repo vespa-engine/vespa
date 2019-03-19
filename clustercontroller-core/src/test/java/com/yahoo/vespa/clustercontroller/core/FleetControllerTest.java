@@ -119,6 +119,18 @@ public abstract class FleetControllerTest implements Waiter {
         testName = name;
     }
 
+    static protected FleetControllerOptions defaultOptions(String clusterName) {
+        var opts = new FleetControllerOptions(clusterName);
+        opts.enableTwoPhaseClusterStateActivation = true; // Enable by default, tests can explicitly disable.
+        return opts;
+    }
+
+    static protected FleetControllerOptions defaultOptions(String clusterName, Collection<ConfiguredNode> nodes) {
+        var opts = new FleetControllerOptions(clusterName, nodes);
+        opts.enableTwoPhaseClusterStateActivation = true; // Enable by default, tests can explicitly disable.
+        return opts;
+    }
+
     protected void setUpSystem(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
         log.log(LogLevel.DEBUG, "Setting up system");
         slobrok = new Slobrok();

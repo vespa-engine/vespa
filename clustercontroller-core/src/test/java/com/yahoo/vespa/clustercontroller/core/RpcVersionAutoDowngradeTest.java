@@ -17,7 +17,7 @@ public class RpcVersionAutoDowngradeTest extends FleetControllerTest {
         for (int i = 0 ; i < 10; i++) {
             configuredNodes.add(new ConfiguredNode(i, false));
         }
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
+        FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
         setUpFleetController(false, options);
         DummyVdsNodeOptions nodeOptions = new DummyVdsNodeOptions();
         nodeOptions.stateCommunicationVersion = nodeRpcVersion;
