@@ -12,6 +12,8 @@ private:
     void testMsbIdx();
     template<typename T>
     void testLsbIdx();
+    template<typename T>
+    void testPopCount();
 public:
     int Main() override;
 };
@@ -47,24 +49,31 @@ void Test::testLsbIdx()
     }
 }
 
+template<typename T>
+void Test::testPopCount()
+{
+    EXPECT_EQUAL(0, Optimized::popCount(T(0)));
+    EXPECT_EQUAL(1, Optimized::popCount(T(1)));
+    EXPECT_EQUAL(int(8 * sizeof(T)), Optimized::popCount(T(-1)));
+}
+
 int Test::Main()
 {
     TEST_INIT("optimized_test");
 
-    testMsbIdx<uint32_t>();
-    testMsbIdx<uint64_t>();
+    testMsbIdx<unsigned int>();
+    testMsbIdx<unsigned long>();
+    testMsbIdx<unsigned long long>();
 
     TEST_FLUSH();
-    testLsbIdx<uint32_t>();
-    testLsbIdx<uint64_t>();
+    testLsbIdx<unsigned int>();
+    testLsbIdx<unsigned long>();
+    testLsbIdx<unsigned long long>();
 
     TEST_FLUSH();
-    EXPECT_EQUAL(Optimized::popCount(0u), 0);
-    EXPECT_EQUAL(Optimized::popCount(1u), 1);
-    EXPECT_EQUAL(Optimized::popCount(uint32_t(-1)), 32);
-    EXPECT_EQUAL(Optimized::popCount(0ul), 0);
-    EXPECT_EQUAL(Optimized::popCount(1ul), 1);
-    EXPECT_EQUAL(Optimized::popCount(uint64_t(-1l)), 64);
+    testPopCount<unsigned int>();
+    testPopCount<unsigned long>();
+    testPopCount<unsigned long long>();
 
     TEST_FLUSH();
     TEST_DONE();
