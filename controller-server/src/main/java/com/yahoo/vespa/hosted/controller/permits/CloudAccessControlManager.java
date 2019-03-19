@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Marketplac
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
+import javax.ws.rs.NotSupportedException;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
@@ -24,7 +25,7 @@ public class CloudAccessControlManager implements AccessControlManager {
     }
 
     @Override
-    public CloudTenant createTenant(TenantPermit permit, List<Tenant> existing, List<Application> applications) {
+    public CloudTenant createTenant(TenantPermit permit, List<Tenant> existing) {
         CloudTenantPermit cloudPermit = (CloudTenantPermit) permit;
 
         // Do things ...
@@ -33,7 +34,12 @@ public class CloudAccessControlManager implements AccessControlManager {
     }
 
     @Override
-    public void deleteTenant(TenantPermit permit, Tenant tenant, List<Application> applications) {
+    public Tenant updateTenant(TenantPermit tenantPermit, List<Tenant> existing, List<Application> applications) {
+        throw new NotSupportedException("Update is not supported here, as it would entail changing the tenant name.");
+    }
+
+    @Override
+    public void deleteTenant(TenantPermit permit, Tenant tenant) {
 
         // Probably delete customer subscription?
 

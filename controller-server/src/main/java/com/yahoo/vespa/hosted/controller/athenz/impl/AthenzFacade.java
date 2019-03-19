@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 /**
  * @author bjorncs
+ * @author jonmv
  */
 public class AthenzFacade implements AccessControlManager {
 
@@ -57,7 +58,7 @@ public class AthenzFacade implements AccessControlManager {
     }
 
     @Override
-    public Tenant createTenant(TenantPermit permit, List<Tenant> existing, List<Application> applications) {
+    public Tenant createTenant(TenantPermit permit, List<Tenant> existing) {
         AthenzTenantPermit athenzPermit = (AthenzTenantPermit) permit;
         AthenzDomain domain = athenzPermit.domain()
                                           .orElseThrow(() -> new IllegalArgumentException("Must provide Athenz domain."));
@@ -72,37 +73,78 @@ public class AthenzFacade implements AccessControlManager {
         verifyIsDomainAdmin(((AthenzPrincipal) athenzPermit.user()).getIdentity(), domain);
 
         Optional<Tenant> existingWithSameDomain = existing.stream()
-                .filter(existingTenant ->    existingTenant instanceof AthenzTenant
-                                          && domain.equals(((AthenzTenant) existingTenant).domain()))
-                .findAny();
+                                                          .filter(existingTenant ->    existingTenant.type() == Tenant.Type.athenz
+                                                                                       && domain.equals(((AthenzTenant) existingTenant).domain()))
+                                                          .findAny();
 
-        if (existingWithSameDomain.isPresent()) { // Throw if domain taken by someone else, or do nothing if taken by this tenant.
+        if (existingWithSameDomain.isPresent()) { // Throw if domain is already taken.
             if ( ! existingWithSameDomain.get().name().equals(permit.tenant()))
                 throw new IllegalArgumentException("Could not create tenant '" + athenzPermit.tenant().value() +
                                                    "': The Athens domain '" +
                                                    domain.getName() + "' is already connected to tenant '" +
                                                    existingWithSameDomain.get().name().value() + "'");
         }
-        else { // Create tenant, and optionally application, resources in Athenz if domain is not already taken.
+        else { // Create tenant resources in Athenz if domain is not already taken.
             log("createTenancy(tenantDomain=%s, service=%s)", athenzPermit.domain(), service);
             zmsClient.createTenancy(domain, service, athenzPermit.token());
+        }
 
+        return tenant;
+    }
+    @Override
+    public Tenant updateTenant(TenantPermit permit, List<Tenant> existing, List<Application> applications) {
+        AthenzTenantPermit athenzPermit = (AthenzTenantPermit) permit;
+        AthenzDomain domain = athenzPermit.domain()
+                                          .orElseThrow(() -> new IllegalArgumentException("Must provide Athenz domain."));
+
+        Tenant tenant = AthenzTenant.create(athenzPermit.tenant(),
+                                            athenzPermit.domain()
+                                                        .orElseThrow(() -> new IllegalArgumentException("Must provide Athenz domain.")),
+                                            athenzPermit.property()
+                                                        .orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
+                                            athenzPermit.propertyId());
+
+        verifyIsDomainAdmin(((AthenzPrincipal) athenzPermit.user()).getIdentity(), domain);
+
+        AthenzTenant oldTenant = existing.stream()
+                                         .filter(existingTenant -> existingTenant.name().equals(permit.tenant()))
+                                         .findAny()
+                                         .map(AthenzTenant.class::cast)
+                                         .orElseThrow(() -> new IllegalArgumentException("Cannot update a non-existent tenant."));
+
+        Optional<Tenant> existingWithSameDomain = existing.stream()
+                                                          .filter(existingTenant ->    existingTenant.type() == Tenant.Type.athenz
+                                                                                    && domain.equals(((AthenzTenant) existingTenant).domain()))
+                                                          .findAny();
+
+        if (existingWithSameDomain.isPresent()) { // Throw if domain taken by someone else, or do nothing if taken by this tenant.
+            if ( ! existingWithSameDomain.get().equals(oldTenant))
+                throw new IllegalArgumentException("Could not create tenant '" + athenzPermit.tenant().value() +
+                                                   "': The Athens domain '" +
+                                                   domain.getName() + "' is already connected to tenant '" +
+                                                   existingWithSameDomain.get().name().value() + "'");
+
+            return tenant; // Short-circuit here if domain is still the same.
+        }
+        else { // Delete and recreate tenant, and optionally application, resources in Athenz otherwise.
+            log("createTenancy(tenantDomain=%s, service=%s)", athenzPermit.domain(), service);
+            zmsClient.createTenancy(domain, service, athenzPermit.token());
             for (Application application : applications)
                 createApplication(domain, application.id().application(), athenzPermit.token());
+
+            log("deleteTenancy(tenantDomain=%s, service=%s)", athenzPermit.domain(), service);
+            for (Application application : applications)
+                deleteApplication(oldTenant.domain(), application.id().application(), athenzPermit.token());
+            zmsClient.deleteTenancy(oldTenant.domain(), service, athenzPermit.token());
         }
 
         return tenant;
     }
 
     @Override
-    public void deleteTenant(TenantPermit permit, Tenant tenant, List<Application> applications) {
+    public void deleteTenant(TenantPermit permit, Tenant tenant) {
         AthenzTenantPermit athenzPermit = (AthenzTenantPermit) permit;
         AthenzDomain domain = ((AthenzTenant) tenant).domain();
-
-        for (Application application : applications)
-            deleteApplication(domain,
-                              application.id().application(),
-                              athenzPermit.token());
 
         log("deleteTenancy(tenantDomain=%s, service=%s)", athenzPermit.domain(), service);
         zmsClient.deleteTenancy(domain, service, athenzPermit.token());

@@ -107,7 +107,7 @@ public class TenantController {
     public void create(TenantPermit permit) {
         try (Lock lock = lock(permit.tenant())) {
             requireNonExistent(permit.tenant());
-            curator.writeTenant(permits.createTenant(permit, asList(), Collections.emptyList()));
+            curator.writeTenant(permits.createTenant(permit, asList()));
         }
     }
 
@@ -136,13 +136,7 @@ public class TenantController {
     /** Updates the tenant contained in the given permit with new data. */
     public void update(TenantPermit permit) {
         try (Lock lock = lock(permit.tenant())) {
-            Tenant tenant = require(permit.tenant());
-            List<Tenant> otherTenants = new ArrayList<>(asList());
-            otherTenants.remove(tenant);
-
-            List<Application> applications = controller.applications().asList(permit.tenant());
-            permits.deleteTenant(permit, tenant, applications);
-            curator.writeTenant(permits.createTenant(permit, otherTenants, applications));
+            curator.writeTenant(permits.updateTenant(permit, asList(), controller.applications().asList(permit.tenant())));
         }
     }
 
@@ -155,7 +149,7 @@ public class TenantController {
                                                    + "': This tenant has active applications");
 
             curator.removeTenant(tenant.name());
-            permits.deleteTenant(permit, tenant, controller.applications().asList(permit.tenant()));
+            permits.deleteTenant(permit, tenant);
         }
     }
 
