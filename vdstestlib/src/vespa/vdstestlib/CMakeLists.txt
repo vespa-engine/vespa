@@ -2,6 +2,7 @@
 vespa_add_library(vdstestlib
     SOURCES
     $<TARGET_OBJECTS:vdstestlib_vdstestlib_cppunit>
+    INSTALL lib64
     DEPENDS
     cppunit
 )
