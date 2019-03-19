@@ -64,7 +64,7 @@ public class VdsClusterHtmlRendrer {
                 final TreeMap<Integer, NodeInfo> storageNodeInfos,
                 final TreeMap<Integer, NodeInfo> distributorNodeInfos,
                 final Timer timer,
-                final ClusterState state,
+                final ClusterStateBundle state,
                 final ClusterStatsAggregator statsAggregator,
                 final double minMergeCompletionRatio,
                 final int maxPrematureCrashes,
@@ -161,7 +161,7 @@ public class VdsClusterHtmlRendrer {
                 final TreeMap<Integer, NodeInfo> nodeInfos,
                 final NodeType nodeType,
                 final Timer timer,
-                final ClusterState state,
+                final ClusterStateBundle stateBundle,
                 final ClusterStatsAggregator statsAggregator,
                 final double minMergeCompletionRatio,
                 final int maxPrematureCrashes,
@@ -169,6 +169,7 @@ public class VdsClusterHtmlRendrer {
                 final String pathPrefix,
                 final String dominantVtag,
                 final String name) {
+            final ClusterState state = stateBundle.getBaselineClusterState();
             final long currentTime = timer.getCurrentTimeInMillis();
             addTableHeader(name, nodeType);
             for (final NodeInfo nodeInfo : nodeInfos.values()) {
@@ -184,7 +185,7 @@ public class VdsClusterHtmlRendrer {
                 addFailedConnectionAttemptCount(nodeInfo, row, timeSinceContact);
                 addTimeSinceFirstFailing(nodeInfo, row, timeSinceContact);
                 addStatePendingTime(currentTime, nodeInfo, row);
-                addSystemStateVersion(state, nodeInfo, row);
+                addClusterStateVersion(stateBundle, nodeInfo, row);
                 addPrematureCrashes(maxPrematureCrashes, nodeInfo, row);
                 addEventsLastWeek(eventLog, currentTime, nodeInfo, row);
                 addBucketSpacesStats(nodeType, statsAggregator, minMergeCompletionRatio, nodeInfo, row);
@@ -250,8 +251,12 @@ public class VdsClusterHtmlRendrer {
             }
         }
 
-        private void addSystemStateVersion(ClusterState state, NodeInfo nodeInfo, HtmlTable.Row row) {
-            row.addCell(new HtmlTable.Cell("" + nodeInfo.getClusterStateVersionBundleAcknowledged()));
+        private void addClusterStateVersion(ClusterStateBundle state, NodeInfo nodeInfo, HtmlTable.Row row) {
+            String cellContent = (nodeInfo.getClusterStateVersionActivationAcked() == state.getVersion() || !state.deferredActivation())
+                    ? String.format("%d", nodeInfo.getClusterStateVersionBundleAcknowledged())
+                    : String.format("%d (%d)", nodeInfo.getClusterStateVersionBundleAcknowledged(),
+                                               nodeInfo.getClusterStateVersionActivationAcked());
+            row.addCell(new HtmlTable.Cell(cellContent));
             if (nodeInfo.getClusterStateVersionBundleAcknowledged() < state.getVersion() - 2) {
                 row.getLastCell().addProperties(ERROR_PROPERTY);
             } else if (nodeInfo.getClusterStateVersionBundleAcknowledged() < state.getVersion()) {
@@ -385,7 +390,7 @@ public class VdsClusterHtmlRendrer {
                     .append("3) SPT - State pending time - Time the current getNodeState request has been " +
                             "pending.<br>\n")
                     .append("4) SSV - System state version - The latest system state version the node has " +
-                            "acknowledged.<br>\n")
+                            "acknowledged (last <em>activated</em> state version in parentheses if this is not equal to SSV).<br>\n")
                     .append("5) PC - Premature crashes - Number of times node has crashed since last time it had " +
                             "been stable in up or down state for more than "
                             + RealTimer.printDuration(stableStateTimePeriode) + ".<br>\n")

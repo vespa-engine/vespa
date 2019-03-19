@@ -45,7 +45,7 @@ public class ContentCluster {
             final VdsClusterHtmlRendrer vdsClusterHtmlRendrer,
             final StringBuilder sb,
             final Timer timer,
-            final ClusterState state,
+            final ClusterStateBundle state,
             final ClusterStatsAggregator statsAggregator,
             final Distribution distribution,
             final FleetControllerOptions options,
