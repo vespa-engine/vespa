@@ -12,6 +12,7 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
@@ -75,6 +76,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static java.nio.file.Files.readAttributes;
 
 /**
@@ -704,7 +707,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HostInfo for LogServer"));
 
         ServiceInfo containerServiceInfo = logServerHostInfo.getServices().stream()
-                .filter(service -> service.getServiceType().equals("container"))
+                .filter(service -> List.of(LOGSERVER_CONTAINER.serviceName, CONTAINER.serviceName).contains(service.getServiceType()))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
 
         int port = containerServiceInfo.getPorts().stream()
