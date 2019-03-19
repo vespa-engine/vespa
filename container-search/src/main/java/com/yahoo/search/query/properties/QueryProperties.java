@@ -126,6 +126,7 @@ public class QueryProperties extends Properties {
             if (key.equals(Query.HITS)) return query.getHits();
             if (key.equals(Query.OFFSET)) return query.getOffset();
             if (key.equals(Query.TRACE_LEVEL)) return query.getTraceLevel();
+            if (key.equals(Query.EXPLAIN_LEVEL)) return query.getExplainLevel();
             if (key.equals(Query.TIMEOUT)) return query.getTimeout();
             if (key.equals(Query.NO_CACHE)) return query.getNoCache();
             if (key.equals(Query.GROUPING_SESSION_CACHE)) return query.getGroupingSessionCache();
@@ -266,6 +267,8 @@ public class QueryProperties extends Properties {
                     query.setOffset(asInteger(value,0));
                 else if (key.equals(Query.TRACE_LEVEL))
                     query.setTraceLevel(asInteger(value,0));
+                else if (key.equals(Query.EXPLAIN_LEVEL))
+                    query.setExplainLevel(asInteger(value,0));
                 else if (key.equals(Query.TIMEOUT))
                     query.setTimeout(value.toString());
                 else if (key.equals(Query.NO_CACHE))

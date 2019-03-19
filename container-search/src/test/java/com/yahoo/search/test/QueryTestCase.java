@@ -491,6 +491,13 @@ public class QueryTestCase {
     }
 
     @Test
+    public void testExplain() {
+        Query q = new Query("?query=foo&explainLevel=2");
+        assertEquals(2, q.getExplainLevel());
+        assertEquals(0, q.getTraceLevel());
+    }
+
+    @Test
     public void testQueryPropertyResolveTracing() {
         QueryProfile testProfile = new QueryProfile("test");
         testProfile.setOverridable("u", false, null);

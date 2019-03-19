@@ -137,6 +137,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** The query context level, 0 means no tracing */
     private int traceLevel = 0;
 
+    /** The query explain level, 0 means no explaining */
+    private int explainLevel = 0;
+
     // The timeout to be used when dumping rank features
     private static final long dumpTimeout = (6 * 60 * 1000); // 6 minutes
     private static final long defaultTimeout = 500;
@@ -190,6 +193,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public static final CompoundName QUERY_PROFILE = new CompoundName("queryProfile");
     public static final CompoundName SEARCH_CHAIN = new CompoundName("searchChain");
     public static final CompoundName TRACE_LEVEL = new CompoundName("traceLevel");
+    public static final CompoundName EXPLAIN_LEVEL = new CompoundName("explainLevel");
     public static final CompoundName NO_CACHE = new CompoundName("noCache");
     public static final CompoundName GROUPING_SESSION_CACHE = new CompoundName("groupingSessionCache");
     public static final CompoundName TIMEOUT = new CompoundName("timeout");
@@ -205,6 +209,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(QUERY_PROFILE.toString(), "string"));
         argumentType.addField(new FieldDescription(SEARCH_CHAIN.toString(), "string"));
         argumentType.addField(new FieldDescription(TRACE_LEVEL.toString(), "integer", "tracelevel"));
+        argumentType.addField(new FieldDescription(EXPLAIN_LEVEL.toString(), "integer", "explainlevel"));
         argumentType.addField(new FieldDescription(NO_CACHE.toString(), "boolean", "nocache"));
         argumentType.addField(new FieldDescription(GROUPING_SESSION_CACHE.toString(), "boolean", "groupingSessionCache"));
         argumentType.addField(new FieldDescription(TIMEOUT.toString(), "string", "timeout"));
@@ -565,12 +570,23 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * Higher numbers means increasingly more tracing
      */
     public void setTraceLevel(int traceLevel) { this.traceLevel = traceLevel; }
+    /**
+     * Sets the explain level of this query, 0 means no tracing
+     * Higher numbers means increasingly more explaining
+     */
+    public void setExplainLevel(int explainLevel) { this.explainLevel = explainLevel; }
 
     /**
      * Returns the context level of this query, 0 means no tracing
      * Higher numbers means increasingly more tracing
      */
     public int getTraceLevel() { return traceLevel; }
+
+    /**
+     * Returns the explain level of this query, 0 means no tracing
+     * Higher numbers means increasingly more explaining
+     */
+    public int getExplainLevel() { return explainLevel; }
 
     /**
      * Returns the context level of this query, 0 means no tracing
@@ -747,6 +763,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      */
     public void attachContext(Query query) throws IllegalStateException {
         query.setTraceLevel(getTraceLevel());
+        query.setExplainLevel(getExplainLevel());
         if (context == null) {
             // Nothing to attach to. This is about the same as
             // getTraceLevel() == 0,
@@ -962,6 +979,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         assert (clone.properties().getParentQuery() == clone);
 
         clone.setTraceLevel(getTraceLevel());
+        clone.setExplainLevel(getExplainLevel());
         clone.setHits(getHits());
         clone.setOffset(getOffset());
         clone.setNoCache(getNoCache());
@@ -1066,10 +1084,24 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         return Collections.<String,Boolean>emptyMap();
     }
 
+    private int computeTraceLevelForBackend() {
+        int traceLevel = getTraceLevel();
+        if (model.getExecution().trace().getForceTimestamps()) {
+            traceLevel = Math.max(traceLevel, 5); // Backend produces timing information on level 4 and 5
+        }
+        if (getExplainLevel() > 0) {
+            traceLevel = Math.max(traceLevel, getExplainLevel() + 5);
+        }
+        return traceLevel;
+    }
+
     private Map<String, String> createModelMap() {
         Map<String, String> m = new HashMap<>();
         if (model.getSearchPath() != null) m.put("searchpath", model.getSearchPath());
-        if (getTraceLevel() > 0) m.put("tracelevel", String.valueOf(getTraceLevel()));
+
+        int traceLevel = computeTraceLevelForBackend();
+        if (traceLevel > 0) m.put("tracelevel", String.valueOf(traceLevel));
+
         return m;
     }
 
