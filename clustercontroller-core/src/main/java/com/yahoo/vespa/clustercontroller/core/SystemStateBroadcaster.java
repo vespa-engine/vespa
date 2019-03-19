@@ -274,9 +274,8 @@ public class SystemStateBroadcaster {
             return false;
         }
 
-        if ((lastStateVersionBundleAcked != clusterStateBundle.getVersion())
-                || !dbContext.getFleetController().getOptions().enableTwoPhaseClusterStateActivation) {
-            return false; // Not yet received bundle ACK from all nodes; wait.
+        if (!clusterStateBundle.deferredActivation() || !allDistributorsHaveAckedSentClusterStateBundle()) {
+            return false;
         }
 
         var recipients = resolveStateActivationSendSet(dbContext);
@@ -287,6 +286,10 @@ public class SystemStateBroadcaster {
         }
 
         return !recipients.isEmpty();
+    }
+
+    private boolean allDistributorsHaveAckedSentClusterStateBundle() {
+        return (lastStateVersionBundleAcked == clusterStateBundle.getVersion());
     }
 
     public int lastClusterStateVersionInSync() { return lastClusterStateVersionConverged; }
