@@ -121,17 +121,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>searchlib</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>config</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>configdefinitions</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>

@@ -8,12 +8,10 @@ import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InterleavedFillInvoker;
 import com.yahoo.search.dispatch.InterleavedSearchInvoker;
-import com.yahoo.search.dispatch.SearchErrorInvoker;
+import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
-import com.yahoo.search.result.Coverage;
-import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 
 import java.util.ArrayList;
@@ -33,15 +31,13 @@ import java.util.Set;
  *
  * @author ollivir
  */
-public class FS4InvokerFactory {
+public class FS4InvokerFactory extends InvokerFactory {
     private final FS4ResourcePool fs4ResourcePool;
-    private final VespaBackEndSearcher searcher;
     private final SearchCluster searchCluster;
     private final ImmutableMap<Integer, Node> nodesByKey;
 
-    public FS4InvokerFactory(FS4ResourcePool fs4ResourcePool, SearchCluster searchCluster, VespaBackEndSearcher searcher) {
+    public FS4InvokerFactory(FS4ResourcePool fs4ResourcePool, SearchCluster searchCluster) {
         this.fs4ResourcePool = fs4ResourcePool;
-        this.searcher = searcher;
         this.searchCluster = searchCluster;
 
         ImmutableMap.Builder<Integer, Node> builder = ImmutableMap.builder();
@@ -49,7 +45,7 @@ public class FS4InvokerFactory {
         this.nodesByKey = builder.build();
     }
 
-    public SearchInvoker getSearchInvoker(Query query, Node node) {
+    public SearchInvoker createSearchInvoker(VespaBackEndSearcher searcher, Query query, Node node) {
         Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
         return new FS4SearchInvoker(searcher, query, backend.openChannel(), Optional.of(node));
     }
@@ -57,6 +53,8 @@ public class FS4InvokerFactory {
     /**
      * Create a {@link SearchInvoker} for a list of content nodes.
      *
+     * @param searcher
+     *            the searcher processing the query
      * @param query
      *            the search query being processed
      * @param groupId
@@ -70,7 +68,9 @@ public class FS4InvokerFactory {
      * @return Optional containing the SearchInvoker or <i>empty</i> if some node in the
      *         list is invalid and the remaining coverage is not sufficient
      */
-    public Optional<SearchInvoker> getSearchInvoker(Query query, OptionalInt groupId, List<Node> nodes, boolean acceptIncompleteCoverage) {
+    @Override
+    public Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher, Query query, OptionalInt groupId, List<Node> nodes,
+            boolean acceptIncompleteCoverage) {
         List<SearchInvoker> invokers = new ArrayList<>(nodes.size());
         Set<Integer> failed = null;
         for (Node node : nodes) {
@@ -114,44 +114,27 @@ public class FS4InvokerFactory {
         }
     }
 
-    private SearchInvoker createCoverageErrorInvoker(List<Node> nodes, Set<Integer> failed) {
-        StringBuilder down = new StringBuilder("Connection failure on nodes with distribution-keys: ");
-        int count = 0;
-        for (Node node : nodes) {
-            if (failed.contains(node.key())) {
-                if (count > 0) {
-                    down.append(", ");
-                }
-                count++;
-                down.append(node.key());
-            }
-        }
-        Coverage coverage = new Coverage(0, 0, 0);
-        coverage.setNodesTried(count);
-        return new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError(down.toString()), coverage);
-    }
-
-    public FillInvoker getFillInvoker(Query query, Node node) {
-        return new FS4FillInvoker(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port());
+    public FillInvoker createFillInvoker(VespaBackEndSearcher searcher, Result result, Node node) {
+        return new FS4FillInvoker(searcher, result.getQuery(), fs4ResourcePool, node.hostname(), node.fs4port());
     }
 
     /**
      * Create a {@link FillInvoker} for a the hits in a {@link Result}.
      *
+     * @param searcher the searcher processing the query
      * @param result the Result containing hits that need to be filled
      * @return Optional containing the FillInvoker or <i>empty</i> if some hit is from an unknown content node
      */
-    public Optional<FillInvoker> getFillInvoker(Result result) {
+    public Optional<FillInvoker> createFillInvoker(VespaBackEndSearcher searcher, Result result) {
         Collection<Integer> requiredNodes = requiredFillNodes(result);
 
-        Query query = result.getQuery();
         Map<Integer, FillInvoker> invokers = new HashMap<>();
         for (Integer distKey : requiredNodes) {
             Node node = nodesByKey.get(distKey);
             if (node == null) {
                 return Optional.empty();
             }
-            invokers.put(distKey, getFillInvoker(query, node));
+            invokers.put(distKey, createFillInvoker(searcher, result, node));
         }
 
         if (invokers.size() == 1) {
@@ -172,4 +155,5 @@ public class FS4InvokerFactory {
         }
         return requiredNodes;
     }
+
 }
