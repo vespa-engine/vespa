@@ -54,7 +54,6 @@ public abstract class Container extends AbstractService implements
 
     protected final AbstractConfigProducer parent;
     private final String name;
-    private final boolean isHostedVespa;
     private boolean requireSpecificPorts = true;
 
     private String clusterName = null;
@@ -72,16 +71,15 @@ public abstract class Container extends AbstractService implements
 
     private final int numHttpServerPorts;
     private static final int numRpcServerPorts = 2;
-    private static final String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
 
-    public Container(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa) {
-        this(parent, name, false, index, isHostedVespa);
+    protected Container(AbstractConfigProducer parent, String name, int index) {
+        this(parent, name, false, index);
     }
-    public Container(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa) {
+
+    protected Container(AbstractConfigProducer parent, String name, boolean retired, int index) {
         super(parent, name);
         this.name = name;
         this.parent = parent;
-        this.isHostedVespa = isHostedVespa;
         this.retired = retired;
         this.index = index;
 
@@ -185,10 +183,6 @@ public abstract class Container extends AbstractService implements
 
     private void initDefaultJettyConnector() {
         defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", getSearchPort()));
-    }
-
-    private boolean hasDocproc() {
-        return (parent instanceof ContainerCluster) && (((ContainerCluster)parent).getDocproc() != null);
     }
 
     private ContainerServiceType myServiceType = null;
@@ -319,15 +313,6 @@ public abstract class Container extends AbstractService implements
         } else {
             builder.discriminator(name);
         }
-    }
-
-    /** Returns the jvm arguments this should start with */
-    @Override
-    public String getJvmOptions() {
-        String jvmArgs = super.getJvmOptions();
-        return isHostedVespa && hasDocproc()
-                ? ("".equals(jvmArgs) ? defaultHostedJVMArgs : defaultHostedJVMArgs + " " + jvmArgs)
-                : jvmArgs;
     }
 
     /** Returns the jvm args set explicitly for this node */

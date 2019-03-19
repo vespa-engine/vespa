@@ -16,7 +16,7 @@ public class LogserverContainer extends Container {
     private final boolean useSeparateServiceTypeForLogserverContainer;
 
     public LogserverContainer(AbstractConfigProducer parent, boolean useSeparateServiceTypeForLogserverContainer) {
-        super(parent, "" + 0, 0, true);
+        super(parent, "" + 0, 0);
         this.useSeparateServiceTypeForLogserverContainer = useSeparateServiceTypeForLogserverContainer;
     }
 

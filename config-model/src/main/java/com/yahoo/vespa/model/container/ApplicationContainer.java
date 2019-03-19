@@ -11,12 +11,18 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
  */
 public final class ApplicationContainer extends Container {
 
+    private static final String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
+
+    private final boolean isHostedVespa;
+
+
     public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa) {
-        super(parent, name, index, isHostedVespa);
+        this(parent, name, false, index, isHostedVespa);
     }
 
     public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa) {
-        super(parent, name, retired, index, isHostedVespa);
+        super(parent, name, retired, index);
+        this.isHostedVespa = isHostedVespa;
     }
 
     @Override
@@ -29,6 +35,19 @@ public final class ApplicationContainer extends Container {
             }
         }
         return ContainerServiceType.CONTAINER;
+    }
+
+    /** Returns the jvm arguments this should start with */
+    @Override
+    public String getJvmOptions() {
+        String jvmArgs = super.getJvmOptions();
+        return isHostedVespa && hasDocproc()
+                ? ("".equals(jvmArgs) ? defaultHostedJVMArgs : defaultHostedJVMArgs + " " + jvmArgs)
+                : jvmArgs;
+    }
+
+    private boolean hasDocproc() {
+        return (parent instanceof ContainerCluster) && (((ContainerCluster)parent).getDocproc() != null);
     }
 
 }
