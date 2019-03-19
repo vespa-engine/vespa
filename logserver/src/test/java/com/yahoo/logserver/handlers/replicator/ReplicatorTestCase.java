@@ -72,8 +72,6 @@ public class ReplicatorTestCase {
         assertFalse(conn.isLoggable(msg));
         assertEquals("system.mute", conn.getLogFilterName());
         replicator.doHandle(msg);
-        conn.read();
-        assertEquals(2, conn.getNumHandled());
         conn.onFormatter("system.textformatter");
         assertEquals(conn.formatter, LogFormatterManager.getLogFormatter("system.textformatter"));
         conn.onCommand("formatter system.nullformatter");
