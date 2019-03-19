@@ -1,28 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver.net;
 
-import com.yahoo.log.LogLevel;
-import com.yahoo.logserver.LogDispatcher;
-import com.yahoo.log.LogMessage;
-import com.yahoo.log.InvalidLogFormatException;
-
 import com.yahoo.io.Connection;
 import com.yahoo.io.Listener;
 import com.yahoo.io.ReadLine;
-
-import com.yahoo.logserver.net.control.Levels;
+import com.yahoo.log.InvalidLogFormatException;
+import com.yahoo.log.LogLevel;
+import com.yahoo.log.LogMessage;
+import com.yahoo.logserver.LogDispatcher;
 
 import java.io.IOException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.HashSet;
-
-import java.nio.charset.Charset;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.SelectionKey;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * TODO
@@ -38,8 +33,6 @@ public class LogConnection implements Connection {
     private static final Logger log = Logger.getLogger(LogConnection.class.getName());
 
     public static final int READBUFFER_SIZE = (32 * 1024);
-
-    static private final Charset charset = Charset.forName("utf-8");
 
     // the set of active connections
     private static final Set<LogConnection> activeConnections = new HashSet<>();
@@ -57,44 +50,15 @@ public class LogConnection implements Connection {
     private long totalBytesRead = 0;
     private long totalBytesWritten = 0;
 
-    // default log levels for logd
-    final Levels defaultLevels;
-
-    public LogConnection (SocketChannel socket,
-                          Listener listener,
-                          LogDispatcher dispatcher,
-                          Levels defaultLevels) {
+    public LogConnection(SocketChannel socket,
+                         Listener listener,
+                         LogDispatcher dispatcher) {
         this.socket = socket;
         this.listener = listener;
         this.dispatcher = dispatcher;
-        this.defaultLevels = defaultLevels;
 
         addToActiveSet(this);
 
-        // send the "setdefaultstate" command to logd. no better
-        // place to put it for now.
-        sendDefaultState();
-    }
-
-    /**
-     * Send the default state to the
-     */
-    public void sendDefaultState () {
-        if (defaultLevels == null) {
-            return;
-        }
-
-        try {
-            enqueue(charset.encode("setdefaultstate "
-                                   + defaultLevels.toString()
-                                   + "\n"));
-            enqueue(charset.encode("setallstates "
-                    + defaultLevels.toString()
-                    + "\n"));
-        }
-        catch (IOException e) {
-            log.log(LogLevel.WARNING, "Unable to send default state", e);
-        }
     }
 
     /**
@@ -146,19 +110,6 @@ public class LogConnection implements Connection {
         synchronized(activeConnections) {
             activeConnections.remove(connection);
         }
-    }
-
-    /**
-     *
-     */
-    public synchronized void enqueue (ByteBuffer buffer) throws IOException {
-        if (writeBuffer == null) {
-            writeBuffer = buffer;
-        } else {
-            writeBufferList.addLast(buffer);
-            listener.modifyInterestOps(this, SelectionKey.OP_WRITE, true);
-        }
-        write();
     }
 
     public void connect () throws IOException {

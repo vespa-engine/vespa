@@ -9,7 +9,6 @@ import com.yahoo.log.event.Event;
 import com.yahoo.logserver.handlers.HandlerThread;
 import com.yahoo.logserver.handlers.LogHandler;
 import com.yahoo.logserver.net.LogConnectionFactory;
-import com.yahoo.logserver.net.control.Levels;
 import com.yahoo.yolean.system.CatchSignals;
 
 import java.io.IOException;
@@ -179,7 +178,6 @@ public class Server implements Runnable {
         System.out.println("System properties:");
         System.out.println(" - " + APPNAME + ".listenport (" + LISTEN_PORT + ")");
         System.out.println(" - " + APPNAME + ".queue.size (" + HandlerThread.DEFAULT_QUEUESIZE + ")");
-        System.out.println(" - logserver.default.loglevels (" + (new Levels()).toString() + ")");
         System.out.println();
     }
 
