@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/net/socket_handle.h>
+#include <vespa/vespalib/net/socket_utils.h>
 #include <vespa/vespalib/portal/reactor.h>
 #include <vespa/vespalib/util/gate.h>
 
@@ -20,7 +21,7 @@ struct SocketPair {
     SocketHandle other;
     SocketPair() : main(), other() {
         int sockets[2];
-        ASSERT_EQUAL(0, socketpair(AF_UNIX, SOCK_STREAM | O_NONBLOCK, 0, sockets));
+        socketutils::nonblocking_socketpair(AF_UNIX, SOCK_STREAM, 0, sockets);
         main.reset(sockets[0]);
         other.reset(sockets[1]);
         // make main socket both readable and writable
