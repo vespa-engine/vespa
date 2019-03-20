@@ -3,7 +3,7 @@
 #include "config_subscriber.h"
 #include "errhandle.h"
 #include "forwarder.h"
-#include "watch.h"
+#include "watcher.h"
 #include <vespa/vespalib/util/sig_catch.h>
 #include <fcntl.h>
 #include <glob.h>

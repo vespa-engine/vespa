@@ -5,7 +5,7 @@
 #include <logd/forwarder.h>
 #include <logd/metrics.h>
 #include <logd/state_reporter.h>
-#include <logd/watch.h>
+#include <logd/watcher.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/sig_catch.h>
 #include <csignal>

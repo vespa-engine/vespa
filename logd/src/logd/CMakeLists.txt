@@ -6,7 +6,7 @@ vespa_add_library(logd STATIC
     forwarder.cpp
     metrics.cpp
     state_reporter.cpp
-    watch.cpp
+    watcher.cpp
 
     DEPENDS
 )

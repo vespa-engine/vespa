@@ -8,6 +8,9 @@ namespace logdemon {
 class Forwarder;
 class ConfigSubscriber;
 
+/**
+ * Class used to watch a log file and forward new log lines to the logserver.
+ */
 class Watcher
 {
 private:
