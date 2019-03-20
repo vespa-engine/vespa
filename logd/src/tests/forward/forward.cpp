@@ -69,12 +69,4 @@ TEST_FF("require that forwarder does not forward if not set", Forwarder(m), Forw
     f2.verifyForward(false);
 }
 
-TEST("test that non-dotted logctlname is correctly parsed") {
-    EXPECT_EQUAL("", Component("a.b.c", "x").getLogCtlName());
-}
-
-TEST("test that dotted logctlname is correctly parsed") {
-    EXPECT_EQUAL(".y", Component("a.b.c", "x.y").getLogCtlName());
-}
-
 TEST_MAIN() { TEST_RUN_ALL(); }
