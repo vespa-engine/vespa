@@ -104,7 +104,7 @@ public class ApplicationController {
     private final ArtifactRepository artifactRepository;
     private final ApplicationStore applicationStore;
     private final RotationRepository rotationRepository;
-    private final AccessControl permits;
+    private final AccessControl accessControl;
     private final NameService nameService;
     private final ConfigServer configServer;
     private final RoutingGenerator routingGenerator;
@@ -113,13 +113,13 @@ public class ApplicationController {
     private final DeploymentTrigger deploymentTrigger;
 
     ApplicationController(Controller controller, CuratorDb curator,
-                          AccessControl permits, RotationsConfig rotationsConfig,
+                          AccessControl accessControl, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServer configServer,
                           ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
-        this.permits = permits;
+        this.accessControl = accessControl;
         this.nameService = nameService;
         this.configServer = configServer;
         this.routingGenerator = routingGenerator;
@@ -239,7 +239,7 @@ public class ApplicationController {
                     throw new IllegalArgumentException("Could not create '" + id + "': No permit provided");
 
                 if (id.instance().isDefault()) // Only store the application permits for non-user applications.
-                    permits.createApplication(permit.get());
+                    accessControl.createApplication(permit.get());
             }
             LockedApplication application = new LockedApplication(new Application(id, clock.instant()), lock);
             store(application);
@@ -570,7 +570,7 @@ public class ApplicationController {
 
         // Only delete permits once.
         if (tenant.type() != Tenant.Type.user)
-            permits.deleteApplication(permit.get());
+            accessControl.deleteApplication(permit.get());
     }
 
     /**
@@ -731,7 +731,7 @@ public class ApplicationController {
             Tenant tenant = controller.tenants().require(tenantName);
             deployer.filter(AthenzUser.class::isInstance)
                     .ifPresentOrElse(user -> {
-                                         if ( ! ((AthenzFacade) permits).hasTenantAdminAccess(user, new AthenzDomain(identityDomain.value())))
+                                         if ( ! ((AthenzFacade) accessControl).hasTenantAdminAccess(user, new AthenzDomain(identityDomain.value())))
                                              throw new IllegalArgumentException("User " + user.getFullName() + " is not allowed to launch " +
                                                                                 "services in Athenz domain " + identityDomain.value() + ". " +
                                                                                 "Please reach out to the domain admin.");
