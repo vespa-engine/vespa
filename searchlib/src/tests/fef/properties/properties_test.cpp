@@ -470,6 +470,27 @@ TEST("test stuff") {
             p.add("vespa.execute.onsummary.operation", "++");
             EXPECT_EQUAL(execute::onsummary::Operation::lookup(p), "++");
         }
+        {
+            EXPECT_EQUAL(softtimeout::Enabled::NAME, vespalib::string("vespa.softtimeout.enable"));
+            EXPECT_TRUE(softtimeout::Enabled::DEFAULT_VALUE);
+            Properties p;
+            p.add(softtimeout::Enabled::NAME, "false");
+            EXPECT_FALSE(softtimeout::Enabled::lookup(p));
+        }
+        {
+            EXPECT_EQUAL(softtimeout::Factor::NAME, vespalib::string("vespa.softtimeout.factor"));
+            EXPECT_EQUAL(0.5, softtimeout::Factor::DEFAULT_VALUE);
+            Properties p;
+            p.add(softtimeout::Factor::NAME, "0.33");
+            EXPECT_EQUAL(0.33, softtimeout::Factor::lookup(p));
+        }
+        {
+            EXPECT_EQUAL(softtimeout::TailCost::NAME, vespalib::string("vespa.softtimeout.tailcost"));
+            EXPECT_EQUAL(0.1, softtimeout::TailCost::DEFAULT_VALUE);
+            Properties p;
+            p.add(softtimeout::TailCost::NAME, "0.17");
+            EXPECT_EQUAL(0.17, softtimeout::TailCost::lookup(p));
+        }
     }
 }
 
