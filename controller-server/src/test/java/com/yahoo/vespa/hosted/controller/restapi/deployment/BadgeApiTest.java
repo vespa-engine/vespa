@@ -18,8 +18,6 @@ import org.junit.Test;
 public class BadgeApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/deployment/responses/";
-    private static final ScrewdriverId SCREWDRIVER_ID = new ScrewdriverId("12345");
-    private static final UserId USER_ID = new UserId("myuser");
 
     @Test
     public void testBadgeApi() {

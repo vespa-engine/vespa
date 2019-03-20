@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tenant-cd</artifactId>
-    <name>Hosted Vespa tenant CD.</name>
+    <name>Hosted Vespa tenant CD</name>
     <description>Test library for hosted Vespa applications.</description>
     <url>https://github.com/vespa-engine</url>
     <packaging>jar</packaging>

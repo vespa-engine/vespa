@@ -345,7 +345,6 @@ public final class ControllerTester {
                                                routingGenerator,
                                                new ChefMock(),
                                                clock,
-                                               new AthenzClientFactoryMock(athensDb),
                                                new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
                                                artifactRepository,
                                                applicationStore,

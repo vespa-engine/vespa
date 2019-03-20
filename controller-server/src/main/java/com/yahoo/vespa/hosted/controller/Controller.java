@@ -80,7 +80,6 @@ public class Controller extends AbstractComponent {
     private final ConfigServer configServer;
     private final MetricsService metricsService;
     private final Chef chef;
-    private final AthenzFacade zmsClient;
     private final Mailer mailer;
     private final AuditLogger auditLogger;
 
@@ -92,14 +91,13 @@ public class Controller extends AbstractComponent {
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub, EntityService entityService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
-                      NameService nameService, RoutingGenerator routingGenerator, Chef chef,
-                      AthenzClientFactory athenzClientFactory, PermitStore permitStore,
+                      NameService nameService, RoutingGenerator routingGenerator, Chef chef, PermitStore permitStore,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer) {
         this(curator, rotationsConfig,
              gitHub, entityService, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
-             Clock.systemUTC(), athenzClientFactory, permitStore, artifactRepository, applicationStore, testerCloud,
+             Clock.systemUTC(), permitStore, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer);
     }
 
@@ -107,8 +105,7 @@ public class Controller extends AbstractComponent {
                       GitHub gitHub, EntityService entityService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
-                      RoutingGenerator routingGenerator, Chef chef, Clock clock,
-                      AthenzClientFactory athenzClientFactory, PermitStore permitStore,
+                      RoutingGenerator routingGenerator, Chef chef, Clock clock, PermitStore permitStore,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
                       Mailer mailer) {
@@ -122,7 +119,6 @@ public class Controller extends AbstractComponent {
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
         this.chef = Objects.requireNonNull(chef, "Chef cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
-        this.zmsClient = new AthenzFacade(athenzClientFactory);
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
@@ -152,10 +148,6 @@ public class Controller extends AbstractComponent {
 
     /** Returns the instance controlling deployment jobs. */
     public JobController jobController() { return jobController; }
-
-    public List<AthenzDomain> getDomainList(String prefix) {
-        return zmsClient.getDomainList(prefix);
-    }
 
     public Mailer mailer() {
         return mailer;
