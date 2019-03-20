@@ -267,7 +267,7 @@ MinHitsPerThread::lookup(const Properties &props, uint32_t defaultValue)
 namespace softtimeout {
 
 const vespalib::string Enabled::NAME("vespa.softtimeout.enable");
-const bool Enabled::DEFAULT_VALUE(false);
+const bool Enabled::DEFAULT_VALUE(true);
 
 bool Enabled::lookup(const Properties &props) {
     return lookupBool(props, NAME, DEFAULT_VALUE);
