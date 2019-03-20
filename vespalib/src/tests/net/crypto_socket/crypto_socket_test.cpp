@@ -9,6 +9,7 @@
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/socket_spec.h>
+#include <vespa/vespalib/net/socket_utils.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
 #include <sys/types.h>
@@ -22,7 +23,7 @@ struct SocketPair {
     SocketHandle server;
     SocketPair() : client(), server() {
         int sockets[2];
-        ASSERT_EQUAL(0, socketpair(AF_UNIX, SOCK_STREAM | O_NONBLOCK, 0, sockets));
+        socketutils::nonblocking_socketpair(AF_UNIX, SOCK_STREAM, 0, sockets);
         client.reset(sockets[0]);
         server.reset(sockets[1]);
     }
