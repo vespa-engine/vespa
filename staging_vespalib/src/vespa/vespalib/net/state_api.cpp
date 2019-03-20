@@ -166,4 +166,6 @@ StateApi::StateApi(const HealthProducer &hp,
 {
 }
 
+StateApi::~StateApi() = default;
+
 } // namespace vespalib
