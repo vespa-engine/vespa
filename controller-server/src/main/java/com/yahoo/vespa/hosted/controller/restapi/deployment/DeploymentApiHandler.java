@@ -136,7 +136,8 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
-        object.setString("url", new Uri(request.getUri()).withPath("/application/v4/tenant/" +
+        String prefix = request.getUri().getPath().startsWith("/api") ? "/api" : "";
+        object.setString("url", new Uri(request.getUri()).withPath(prefix + "/application/v4/tenant/" +
                                                                    application.id().tenant().value() +
                                                                    "/application/" +
                                                                    application.id().application().value()).toString());
