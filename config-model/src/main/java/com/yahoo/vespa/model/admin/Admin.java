@@ -17,6 +17,7 @@ import com.yahoo.vespa.model.ConfigSentinel;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Logd;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
+import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
@@ -70,6 +71,9 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
      // Cluster of logserver containers. If enabled, exactly one container is running on each logserver host.
     private Optional<LogserverContainerCluster> logServerContainerCluster = Optional.empty();
+
+    // Cluster of metricsproxy containers. Exactly one container is set up on all hosts.
+    private MetricsProxyContainerCluster metricsProxyContainerCluster;
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
     private FileDistributionConfigProducer fileDistribution;
@@ -190,12 +194,23 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     public void addPerHostServices(List<HostResource> hosts, DeployState deployState) {
         if (slobroks.isEmpty()) // TODO: Move to caller
             slobroks.addAll(createDefaultSlobrokSetup(deployState.getDeployLogger()));
+        addMetricsProxyCluster(hosts, deployState);
         for (HostResource host : hosts) {
             if (!host.getHost().runsConfigServer()) {
                 addCommonServices(host, deployState);
             }
         }
     }
+
+    private void addMetricsProxyCluster(List<HostResource> hosts, DeployState deployState) {
+        var metricsProxyCluster = new MetricsProxyContainerCluster(this, "metrics-proxies", deployState);
+        hosts.forEach(host -> {
+            var container = new MetricsProxyContainer(metricsProxyCluster);
+            addAndInitializeService(deployState.getDeployLogger(), host, container);
+            metricsProxyCluster.addContainer(container);
+        });
+    }
+
     private void addCommonServices(HostResource host, DeployState deployState) {
         addConfigSentinel(deployState.getDeployLogger(), host, deployState.getProperties().applicationId(), deployState.zone());
         addLogd(deployState.getDeployLogger(), host);
