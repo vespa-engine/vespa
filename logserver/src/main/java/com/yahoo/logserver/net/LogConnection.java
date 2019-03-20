@@ -2,7 +2,6 @@
 package com.yahoo.logserver.net;
 
 import com.yahoo.io.Connection;
-import com.yahoo.io.Listener;
 import com.yahoo.io.ReadLine;
 import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogLevel;
@@ -14,7 +13,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,23 +36,15 @@ public class LogConnection implements Connection {
     private static final Set<LogConnection> activeConnections = new HashSet<>();
 
     private final SocketChannel socket;
-    private final Listener listener;
     private final LogDispatcher dispatcher;
 
     private final ByteBuffer readBuffer = ByteBuffer.allocateDirect(READBUFFER_SIZE);
 
-    private final LinkedList<ByteBuffer> writeBufferList = new LinkedList<>();
-    private ByteBuffer writeBuffer;
-
     // counters
     private long totalBytesRead = 0;
-    private long totalBytesWritten = 0;
 
-    public LogConnection(SocketChannel socket,
-                         Listener listener,
-                         LogDispatcher dispatcher) {
+    public LogConnection(SocketChannel socket, LogDispatcher dispatcher) {
         this.socket = socket;
-        this.listener = listener;
         this.dispatcher = dispatcher;
 
         addToActiveSet(this);
@@ -69,13 +59,6 @@ public class LogConnection implements Connection {
         synchronized(activeConnections) {
         	return new HashSet<>(activeConnections);
         }
-    }
-
-    /**
-     * @return Return total number of bytes written to connection
-     */
-    public long getTotalBytesWritten () {
-        return totalBytesWritten;
     }
 
     /**
@@ -116,34 +99,8 @@ public class LogConnection implements Connection {
         throw new RuntimeException("connect() is not supposed to be called");
     }
 
-    public synchronized void write () throws IOException {
-        int bytesWritten;
-        do {
-            // if writeBufferList is not set we need to fetch the next buffer
-            if (writeBuffer == null) {
-
-                // if the list is empty, signal the selector we do not need
-                // to do any writing for a while yet and bail
-                if (writeBufferList.isEmpty()) {
-                    listener.modifyInterestOpsBatch(this,
-                                                    SelectionKey.OP_WRITE,
-                                                    false);
-                    return;
-                }
-                writeBuffer = writeBufferList.removeFirst();
-            }
-
-            // invariants: we have a writeBuffer
-
-            bytesWritten = socket.write(writeBuffer);
-            totalBytesWritten += bytesWritten;
-
-            // buffer drained so we forget it and see what happens when we
-            // go around.  if indeed we go around
-            if ((writeBuffer != null) && (!writeBuffer.hasRemaining())) {
-                writeBuffer = null;
-            }
-        } while (bytesWritten > 0);
+    public void write () {
+        throw new UnsupportedOperationException();
     }
 
     public void read() throws IOException {

@@ -27,7 +27,6 @@ public class LogConnectionFactory implements ConnectionFactory {
             log.fine("New connection: " + socket);
         }
         return new LogConnection(socket,
-                                 listener,
                                  dispatcher);
     }
 }
