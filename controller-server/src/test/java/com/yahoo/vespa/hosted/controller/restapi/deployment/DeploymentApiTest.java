@@ -78,7 +78,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
         tester.assertResponse(authenticatedRequest("http://localhost:8080/deployment/v1/"), new File("root.json"));
 
         // Test deployment response using alternative prefix
-        tester.assertResponse(authenticatedRequest("http://localhost:8080/api/deployment/v1/"), new File("root.json"));
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/api/deployment/v1/"), new File("root_withprefix.json"));
     }
 
     private VersionStatus censorConfigServers(VersionStatus versionStatus, Controller controller) {
