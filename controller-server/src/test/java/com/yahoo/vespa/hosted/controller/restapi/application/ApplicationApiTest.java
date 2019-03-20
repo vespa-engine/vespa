@@ -143,6 +143,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET API root
         tester.assertResponse(request("/application/v4/", GET).userIdentity(USER_ID),
                               new File("root.json"));
+
+        // GET API root using alternative prefix
+        tester.assertResponse(request("/api/application/v4/", GET).userIdentity(USER_ID),
+                new File("root.json"));
+
         // GET OpsDB properties
         tester.assertResponse(request("/application/v4/property/", GET).userIdentity(USER_ID),
                               new File("property-list.json"));
