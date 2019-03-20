@@ -133,9 +133,10 @@ public class AthenzFacade implements PermitStore {
 
     @Override
     public List<Tenant> accessibleTenants(List<Tenant> tenants, Principal principal) {
-        List<AthenzDomain> userDomains = ztsClient.getTenantDomains(service, ((AthenzPrincipal) principal).getIdentity(), "admin");
+        AthenzIdentity identity = ((AthenzPrincipal) principal).getIdentity();
+        List<AthenzDomain> userDomains = ztsClient.getTenantDomains(service, identity, "admin");
         return tenants.stream()
-                      .filter(tenant ->    tenant instanceof UserTenant && ((UserTenant) tenant).is(principal.getName())
+                      .filter(tenant ->    tenant instanceof UserTenant && ((UserTenant) tenant).is(identity.getName())
                                         || tenant instanceof AthenzTenant && userDomains.contains(((AthenzTenant) tenant).domain()))
                       .collect(Collectors.toUnmodifiableList());
     }
