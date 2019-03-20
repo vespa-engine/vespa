@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "conf.h"
-#include "forward.h"
+#include "config_subscriber.h"
 #include "conn.h"
+#include "forward.h"
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -15,7 +15,7 @@ using ns_log::Logger;
 namespace logdemon {
 
 void
-ConfSub::configure(std::unique_ptr<LogdConfig> cfg)
+ConfigSubscriber::configure(std::unique_ptr<LogdConfig> cfg)
 {
     const LogdConfig &newconf(*cfg);
     if (newconf.logserver.host != _logServer) {
@@ -66,7 +66,7 @@ ConfSub::configure(std::unique_ptr<LogdConfig> cfg)
 }
 
 bool
-ConfSub::checkAvailable()
+ConfigSubscriber::checkAvailable()
 {
     if (_subscriber.nextGeneration(0)) {
         _hasAvailable = true;
@@ -75,7 +75,7 @@ ConfSub::checkAvailable()
 }
 
 void
-ConfSub::latch()
+ConfigSubscriber::latch()
 {
     if (checkAvailable()) {
         configure(_handle->getConfig());
@@ -91,7 +91,7 @@ ConfSub::latch()
 }
 
 void
-ConfSub::connectToLogserver()
+ConfigSubscriber::connectToLogserver()
 {
     int newfd = makeconn(_logServer.c_str(), _logPort);
     if (newfd >= 0) {
@@ -103,7 +103,7 @@ ConfSub::connectToLogserver()
 }
 
 void
-ConfSub::connectToDevNull()
+ConfigSubscriber::connectToDevNull()
 {
     int newfd = open("/dev/null", O_RDWR);
     if (newfd >= 0) {
@@ -115,7 +115,7 @@ ConfSub::connectToDevNull()
 }
 
 void
-ConfSub::resetFileDescriptor(int newfd)
+ConfigSubscriber::resetFileDescriptor(int newfd)
 {
     if (_logserverfd >= 0) {
         close(_logserverfd);
@@ -126,14 +126,14 @@ ConfSub::resetFileDescriptor(int newfd)
 }
 
 void
-ConfSub::closeConn()
+ConfigSubscriber::closeConn()
 {
     close(_logserverfd);
     _logserverfd = -1;
     _needToConnect = true;
 }
 
-ConfSub::ConfSub(Forwarder &fw, const config::ConfigUri & configUri)
+ConfigSubscriber::ConfigSubscriber(Forwarder &fw, const config::ConfigUri & configUri)
     : _logServer(),
       _logPort(0),
       _logserverfd(-1),
@@ -157,10 +157,10 @@ ConfSub::ConfSub(Forwarder &fw, const config::ConfigUri & configUri)
     LOG(debug, "got handle %p", _handle.get());
 }
 
-ConfSub::~ConfSub()
+ConfigSubscriber::~ConfigSubscriber()
 {
     LOG(debug, "forget logServer %s", _logServer.c_str());
     LOG(debug, "done ~ConfSub()");
 }
 
-} // namespace
+}

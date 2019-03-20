@@ -6,13 +6,13 @@
 namespace logdemon {
 
 class Forwarder;
-class ConfSub;
+class ConfigSubscriber;
 
 class Watcher
 {
 private:
     std::vector<char>  _buffer;
-    ConfSub          & _confsubscriber;
+    ConfigSubscriber & _confsubscriber;
     Forwarder        & _forwarder;
     int                _wfd;
     char * getBuf() { return &_buffer[0]; }
@@ -20,7 +20,7 @@ private:
 public:
     Watcher(const Watcher& other) = delete;
     Watcher& operator=(const Watcher& other) = delete;
-    Watcher(ConfSub &cfs, Forwarder &fw);
+    Watcher(ConfigSubscriber &cfs, Forwarder &fw);
     ~Watcher();
 
     void watchfile();

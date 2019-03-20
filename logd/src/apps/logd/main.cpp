@@ -1,15 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <logd/config_subscriber.h>
 #include <logd/errhandle.h>
 #include <logd/forward.h>
-#include <logd/conf.h>
-#include <logd/watch.h>
-#include <logd/state.h>
 #include <logd/metrics.h>
+#include <logd/state.h>
+#include <logd/watch.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/util/sig_catch.h>
 #include <csignal>
 #include <unistd.h>
-#include <vespa/vespalib/util/sig_catch.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("logdemon");
@@ -30,7 +30,7 @@ int main(int, char**)
     const char *cfid = getenv("VESPA_CONFIG_ID");
 
     try {
-        ConfSub subscriber(fwd, config::ConfigUri(cfid));
+        ConfigSubscriber subscriber(fwd, config::ConfigUri(cfid));
 
         int sleepcount = 0;
         while (true) {

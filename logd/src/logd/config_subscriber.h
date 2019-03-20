@@ -8,7 +8,10 @@ namespace logdemon {
 
 class Forwarder;
 
-class ConfSub {
+/**
+ * Class used to subscribe for logd config.
+ */
+class ConfigSubscriber {
 private:
     std::string _logServer;
     int _logPort;
@@ -32,10 +35,10 @@ public:
     bool checkAvailable();
     void latch();
     void closeConn();
-    ConfSub(const ConfSub& other) = delete;
-    ConfSub& operator=(const ConfSub& other) = delete;
-    ConfSub(Forwarder &fw, const config::ConfigUri & configUri);
-    ~ConfSub();
+    ConfigSubscriber(const ConfigSubscriber& other) = delete;
+    ConfigSubscriber& operator=(const ConfigSubscriber& other) = delete;
+    ConfigSubscriber(Forwarder &fw, const config::ConfigUri & configUri);
+    ~ConfigSubscriber();
 
     int getStatePort() const { return _statePort; }
     int getservfd() const { return _logserverfd; }
@@ -49,5 +52,5 @@ public:
     size_t generation() const { return _subscriber.getGeneration(); }
 };
 
-} // namespace
+}
 
