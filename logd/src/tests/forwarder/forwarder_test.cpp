@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/metrics/dummy_metrics_manager.h>
-#include <vespa/fastos/time.h>
-#include <logd/forward.h>
+#include <logd/forwarder.h>
 #include <logd/metrics.h>
-#include <sstream>
+#include <vespa/fastos/time.h>
+#include <vespa/log/log.h>
+#include <vespa/vespalib/metrics/dummy_metrics_manager.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <fcntl.h>
+#include <sstream>
 #include <unistd.h>
 
 using ns_log::Logger;

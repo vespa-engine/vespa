@@ -1,15 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "watch.h"
-#include "errhandle.h"
-#include "forward.h"
-#include "conf.h"
-#include <glob.h>
-#include <unistd.h>
+#include "config_subscriber.h"
+#include "exceptions.h"
+#include "forwarder.h"
+#include "watcher.h"
+#include <vespa/vespalib/util/sig_catch.h>
 #include <fcntl.h>
+#include <glob.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <vespa/vespalib/util/sig_catch.h>
+#include <unistd.h>
 
 LOG_SETUP("");
 
@@ -59,7 +59,7 @@ constexpr size_t G_BUFSIZE = 1024*1024;
 } // namespace logdemon::<unnamed>
 
 
-Watcher::Watcher(ConfSub &cfs, Forwarder &fw)
+Watcher::Watcher(ConfigSubscriber &cfs, Forwarder &fw)
     : _buffer(G_BUFSIZE),
       _confsubscriber(cfs),
       _forwarder(fw),

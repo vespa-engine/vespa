@@ -10,6 +10,9 @@
 
 namespace logdemon {
 
+/**
+ * Class used to serve /state/v1 REST API over HTTP for vespa-logd process.
+ */
 class StateReporter {
     int _port;
     std::unique_ptr<vespalib::StateServer> _server;
