@@ -43,6 +43,7 @@ struct BouncerTest : public CppUnit::TestFixture {
     void outOfBoundsConfigValuesThrowException();
     void abort_request_when_derived_bucket_space_node_state_is_marked_down();
     void client_operations_are_allowed_through_on_cluster_state_down_distributor();
+    void cluster_state_activation_commands_are_not_bounced();
 
     CPPUNIT_TEST_SUITE(BouncerTest);
     CPPUNIT_TEST(testFutureTimestamp);
@@ -57,6 +58,7 @@ struct BouncerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(outOfBoundsConfigValuesThrowException);
     CPPUNIT_TEST(abort_request_when_derived_bucket_space_node_state_is_marked_down);
     CPPUNIT_TEST(client_operations_are_allowed_through_on_cluster_state_down_distributor);
+    CPPUNIT_TEST(cluster_state_activation_commands_are_not_bounced);
     CPPUNIT_TEST_SUITE_END();
 
     using Priority = api::StorageMessage::Priority;
@@ -366,6 +368,18 @@ void BouncerTest::client_operations_are_allowed_through_on_cluster_state_down_di
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space()));
     assertMessageNotBounced();
     CPPUNIT_ASSERT_EQUAL(uint64_t(0), _manager->metrics().unavailable_node_aborts.getValue());
+}
+
+void BouncerTest::cluster_state_activation_commands_are_not_bounced() {
+    tearDown();
+    setUpAsNode(lib::NodeType::DISTRIBUTOR);
+
+    auto state = makeClusterStateBundle("version:10 distributor:3 .2.s:d storage:3", {}); // Our index (2) is down
+    _node->getNodeStateUpdater().setClusterStateBundle(state);
+
+    auto activate_cmd = std::make_shared<api::ActivateClusterStateVersionCommand>(11);
+    _upper->sendDown(activate_cmd);
+    assertMessageNotBounced();
 }
 
 } // storage
