@@ -230,6 +230,7 @@
                             <excludedGroups />
                             <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
+			    <trimStackTrace>false</trimStackTrace>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -257,6 +258,7 @@
                             <excludedGroups />
                             <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
+			    <trimStackTrace>false</trimStackTrace>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -284,6 +286,7 @@
                             <excludedGroups />
                             <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
+			    <trimStackTrace>false</trimStackTrace>
                         </configuration>
                     </plugin>
                     <plugin>
