@@ -3,7 +3,6 @@ install_fat_java_artifact(config-model)
 
 vespa_install_script(src/main/perl/vespa-deploy bin)
 vespa_install_script(src/main/perl/vespa-expand-config.pl bin)
-vespa_install_script(src/main/perl/vespa-replicate-log-stream bin)
 vespa_install_script(src/main/sh/vespa-validate-application bin)
 
 install(DIRECTORY src/main/resources/schema DESTINATION share/vespa PATTERN ".gitignore" EXCLUDE)
