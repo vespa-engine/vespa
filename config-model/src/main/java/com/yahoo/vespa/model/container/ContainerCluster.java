@@ -323,9 +323,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public void addContainers(Collection<CONTAINER> containers) {
-        for (var container : containers) {
-            addContainer(container);
-        }
+        containers.forEach(this::addContainer);
     }
 
     public void setProcessingChains(ProcessingChains processingChains, String... serverBindings) {

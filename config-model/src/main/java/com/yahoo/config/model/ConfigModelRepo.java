@@ -107,7 +107,6 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
      * @param root The Root to set as parent for all plugins
      * @param servicesRoot XML root node of the services file
      */
-    @SuppressWarnings("deprecation")
     private void readConfigModels(ApplicationConfigProducerRoot root,
                                   Element servicesRoot,
                                   DeployState deployState,

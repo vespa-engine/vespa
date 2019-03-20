@@ -17,6 +17,7 @@ import com.yahoo.vespa.model.ConfigSentinel;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Logd;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
+import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
@@ -67,9 +68,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
      */
     private ClusterControllerContainerCluster clusterControllers;
 
-    /**
-     * Cluster for container that might be running on logserver hosts
-     */
+     // Cluster of logserver containers. If enabled, exactly one container is running on each logserver host.
     private Optional<LogserverContainerCluster> logServerContainerCluster = Optional.empty();
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
