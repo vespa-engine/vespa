@@ -22,6 +22,9 @@ public:
     LevelParser() : _seenLevelMap() {}
 };
 
+/**
+ * Class used to forward log lines to the logserver via a one-way text protocol.
+ */
 class Forwarder
 {
 private:

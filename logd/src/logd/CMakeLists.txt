@@ -3,7 +3,7 @@ vespa_add_library(logd STATIC
     SOURCES
     config_subscriber.cpp
     conn.cpp
-    forward.cpp
+    forwarder.cpp
     metrics.cpp
     state.cpp
     watch.cpp

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "forward.h"
 #include "errhandle.h"
+#include "forwarder.h"
 #include "metrics.h"
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/locale/c.h>

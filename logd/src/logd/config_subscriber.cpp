@@ -2,7 +2,7 @@
 
 #include "config_subscriber.h"
 #include "conn.h"
-#include "forward.h"
+#include "forwarder.h"
 #include <fcntl.h>
 #include <unistd.h>
 

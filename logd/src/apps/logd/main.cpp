@@ -2,7 +2,7 @@
 
 #include <logd/config_subscriber.h>
 #include <logd/errhandle.h>
-#include <logd/forward.h>
+#include <logd/forwarder.h>
 #include <logd/metrics.h>
 #include <logd/state.h>
 #include <logd/watch.h>
