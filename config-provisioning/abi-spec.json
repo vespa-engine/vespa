@@ -713,7 +713,6 @@
       "public static final enum com.yahoo.config.provision.SystemName dev",
       "public static final enum com.yahoo.config.provision.SystemName cd",
       "public static final enum com.yahoo.config.provision.SystemName main",
-      "public static final enum com.yahoo.config.provision.SystemName Public",
       "public static final enum com.yahoo.config.provision.SystemName vaas"
     ]
   },
