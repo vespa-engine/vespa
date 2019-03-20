@@ -2,11 +2,8 @@
 
 #include "watch.h"
 #include "errhandle.h"
-#include "service.h"
 #include "forward.h"
 #include "conf.h"
-#include "perform.h"
-#include "cmdbuf.h"
 #include <glob.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -90,15 +87,13 @@ class StateSaver {
 public:
     StateSaver();
     ~StateSaver();
-    void saveState(const donecache&, Services&);
-    bool loadState(donecache&, Forwarder&);
-    void doFullsave() { _cachecounter = 300; }
+    void saveState(const donecache&);
+    bool loadState(donecache&);
 private:
     int _savefd;
-    int _cachecounter;
 };
 
-void StateSaver::saveState(const donecache& already, Services& currentserv)
+void StateSaver::saveState(const donecache& already)
 {
     if (_savefd < 0) {
         // cannot save state
@@ -110,41 +105,22 @@ void StateSaver::saveState(const donecache& already, Services& currentserv)
         LOG(error, "error writing to donecachefile: %s", strerror(errno));
         close(_savefd);
         _savefd = -1;
-    } else if (++_cachecounter > 300) {
-        currentserv.dumpState(_savefd);
-        off_t here = lseek(_savefd, (off_t)0, SEEK_CUR);
-        LOG(debug, "cached already %d/%d %d, trunc at %d",
-            (int)already.st_dev, (int)already.st_ino,
-            (int)already.offset, (int)here);
-        if (here == (off_t)-1) {
-            LOG(error, "lseek failed: %s", strerror(errno));
-        } else if (ftruncate(_savefd, here) < 0) {
-            LOG(error, "ftruncate %d=%d failed: %s", _savefd, (int)here, strerror(errno));
-        }
-        _cachecounter = 0;
     }
 }
 
 bool
-StateSaver::loadState(donecache& already, Forwarder& fwd)
+StateSaver::loadState(donecache& already)
 {
     if (_savefd >= 0 &&
         read(_savefd, &already, sizeof(already)) == sizeof(already))
     {
-        InternalPerformer iperf(fwd.knownServices);
-        CmdBuf filebuf;
-        while (filebuf.readFile(_savefd)) {
-            while (filebuf.hasCmd()) {
-                filebuf.doCmd(iperf);
-            }
-        }
         return true;
     } else {
         return false;
     }
 }
 
-StateSaver::StateSaver() : _savefd(-1), _cachecounter(300)
+StateSaver::StateSaver() : _savefd(-1)
 {
     _savefd = open("var/db/vespa/logd.donestate", O_RDWR|O_CREAT, 0664);
     if (_savefd < 0) {
@@ -177,11 +153,8 @@ Watcher::watchfile()
         throw SomethingBad("too long filename in watchfile");
     }
 
-    ExternalPerformer performer(_forwarder, _forwarder.knownServices);
-    CmdBuf cmdbuf;
-
     StateSaver dcf;
-    if (dcf.loadState(already, _forwarder)) {
+    if (dcf.loadState(already)) {
         already.valid = true;
     }
 
@@ -312,20 +285,11 @@ Watcher::watchfile()
             }
         }
 
-        dcf.saveState(already, _forwarder.knownServices);
+        dcf.saveState(already);
 
         if (_confsubscriber.checkAvailable()) {
             LOG(debug, "new config available, doing reconfigure");
             return;
-        }
-
-        if (_confsubscriber.useLogserver()) {
-            cmdbuf.maybeRead(_forwarder.getLogserverFD());
-            while (cmdbuf.hasCmd()) {
-                cmdbuf.doCmd(performer);
-                // in case forwarding changes
-                dcf.doFullsave();
-            }
         }
 
         if (catcher.receivedStopSignal()) {

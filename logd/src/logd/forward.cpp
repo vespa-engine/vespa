@@ -10,6 +10,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("");
 
+using LogLevel = ns_log::Logger::LogLevel;
+
 namespace logdemon {
 
 Forwarder::Forwarder(Metrics &metrics)
@@ -17,7 +19,6 @@ Forwarder::Forwarder(Metrics &metrics)
       _metrics(metrics),
       _forwardMap(),
       _levelparser(),
-      knownServices(),
       _badLines(0)
 {}
 Forwarder::~Forwarder() = default;
@@ -117,8 +118,6 @@ Forwarder::parseline(const char *linestart, const char *lineend)
         LOG(spam, "bad logline no 3. tab: %.*s", llength, linestart);
         return false;
     }
-    int pid = strtol(fieldstart, &eod, 10);
-    // not checked - pid may not be a number after all
 
     // service
     fieldstart = tab + 1;
@@ -168,12 +167,7 @@ Forwarder::parseline(const char *linestart, const char *lineend)
     if (found != _forwardMap.end()) {
         return found->second;
     }
-
-    Service *svcp = knownServices.getService(service);
-    Component *cp = svcp->getComponent(component);
-    cp->remember(logtime, pid);
-    bool retval = cp->shouldForward(l);
-    return retval;
+    return false; // Unknown log level
 }
 
 LogLevel

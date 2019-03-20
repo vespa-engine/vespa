@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "service.h"
+#include <vespa/log/log.h>
 #include <map>
 #include <unordered_set>
 
@@ -38,7 +38,6 @@ private:
     }
     bool parseline(const char *linestart, const char *lineend);
 public:
-    Services knownServices;
     int _badLines;
     Forwarder(Metrics &metrics);
     ~Forwarder();
