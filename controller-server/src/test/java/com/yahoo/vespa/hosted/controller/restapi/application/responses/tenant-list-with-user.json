@@ -1,0 +1,18 @@
+[
+  {
+    "tenant": "by-myuser",
+    "metaData": {
+      "type": "USER"
+    },
+    "url": "http://localhost:8080/application/v4/tenant/by-myuser"
+  },
+  {
+    "tenant": "tenant1",
+    "metaData": {
+      "type": "ATHENS",
+      "athensDomain": "domain1",
+      "property": "property1"
+    },
+    "url": "http://localhost:8080/application/v4/tenant/tenant1"
+  }
+]
