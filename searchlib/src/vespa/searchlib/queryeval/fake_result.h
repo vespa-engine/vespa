@@ -45,7 +45,8 @@ private:
     MinMaxPostingInfo::SP _minMaxPostingInfo;
 
 public:
-    FakeResult() : _documents(), _minMaxPostingInfo() {}
+    FakeResult();
+    FakeResult(const FakeResult &);
     ~FakeResult();
 
     FakeResult &doc(uint32_t docId) {

@@ -138,12 +138,14 @@ public:
           _ids()
     {
     }
+    ~FieldOptions();
 
     void addField(const vespalib::string &field) { _fields.push_back(field); }
     bool empty() const { return _ids.empty(); }
     void validateFields(const Schema &schema);
 };
 
+FieldOptions::~FieldOptions() = default;
 
 void
 FieldOptions::validateFields(const Schema &schema)
