@@ -105,7 +105,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     // Creates a container cluster 'logs' with a container on the logserver host
     // that has a handler for getting logs
     private void createContainerOnLogserverHost(DeployState deployState, Admin admin, HostResource hostResource) {
-        LogserverContainerCluster logServerCluster = new LogserverContainerCluster(admin, "logs", "logs", deployState);
+        LogserverContainerCluster logServerCluster = new LogserverContainerCluster(admin, "logs", deployState);
         ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
         logserverClusterModel.setCluster(logServerCluster);
 

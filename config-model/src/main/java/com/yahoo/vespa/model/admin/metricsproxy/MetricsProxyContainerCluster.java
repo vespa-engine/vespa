@@ -11,8 +11,8 @@ import com.yahoo.vespa.model.container.ContainerCluster;
  */
 public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyContainer> {
 
-    public MetricsProxyContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
-        super(parent, subId, name, deployState);
+    public MetricsProxyContainerCluster(AbstractConfigProducer<?> parent, String name, DeployState deployState) {
+        super(parent, name, name, deployState);
         addDefaultHandlersExceptStatus();
     }
 
