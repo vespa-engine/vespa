@@ -71,6 +71,8 @@ public class ControllerAuthorizationFilterTest {
 
         testApiAccess(PUT, "/zone/v2/hello-proxy-path",
                       allowed, forbidden, filter);
+        testApiAccess(POST, "/screwdriver/v1/trigger/tenant/mytenant/application/myapp/",
+                      allowed, forbidden, filter);
         testApiAccess(DELETE, "/provision/v2/provision/enqueue",
                       allowed, forbidden, filter);
     }
