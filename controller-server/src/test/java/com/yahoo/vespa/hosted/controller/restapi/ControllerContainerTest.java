@@ -113,9 +113,6 @@ public class ControllerContainerTest {
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.cost.CostApiHandler'>\n" +
             "    <binding>http://*/cost/v1/*</binding>\n" +
             "  </handler>\n" +
-            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.screwdriver.ScrewdriverApiHandler'>\n" +
-            "    <binding>http://*/screwdriver/v1/*</binding>\n" +
-            "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
             "    <binding>http://*/zone/v1</binding>\n" +
             "    <binding>http://*/zone/v1/*</binding>\n" +
