@@ -17,7 +17,7 @@ FastS_NodeManager::configure(std::unique_ptr<PartitionsConfig> cfg)
 {
     LOG(config, "configuring datasetcollection from '%s'",
         _configUri.getConfigId().c_str());
-    SetPartMap(*cfg, 20000);
+    SetPartMap(*cfg, _waitUpMS);
     _componentConfig.addConfig(
             vespalib::ComponentConfigProducer::Config("fdispatch.nodemanager",
                                                       _fetcher->getGeneration(),
@@ -98,7 +98,8 @@ FastS_NodeManager::FastS_NodeManager(vespalib::SimpleComponentConfigProducer &co
       _failed(false),
       _hasDsc(false),
       _checkTempFailScheduled(false),
-      _shutdown(false)
+      _shutdown(false),
+      _waitUpMS(20000)
 {
     _datasetCollection = new FastS_DataSetCollection(_appCtx);
     FastS_assert(_datasetCollection != NULL);
@@ -148,9 +149,12 @@ FastS_NodeManager::SubscribePartMap(const config::ConfigUri & configUri)
     LOG(debug, "loading new datasetcollection from %s", configId.c_str());
     try {
         _configUri = configUri;
+        uint32_t oldWaitTime = _waitUpMS;
+        _waitUpMS = 100;
         _fetcher.reset(new config::ConfigFetcher(_configUri.getContext()));
         _fetcher->subscribe<PartitionsConfig>(configId, this);
         _fetcher->start();
+        _waitUpMS = oldWaitTime;
         if (_gencnt == 0) {
             throw new config::InvalidConfigException("failure during initial configuration: bad partition map");
         }
@@ -235,7 +239,7 @@ FastS_NodeManager::SetCollDesc(FastS_DataSetCollDesc *configDesc,
             rwait = (unsigned int) last.MilliSecsToNow();
             if (rwait >= waitms || allup)
                 break;
-            FastOS_Thread::Sleep(100);
+            FastOS_Thread::Sleep(10);
         };
         if (allup) {
             LOG(debug, "All new engines up after %d ms", rwait);
@@ -339,26 +343,6 @@ FastS_NodeManager::ShutdownConfig()
         dsc->subRef();
     }
 }
-
-
-uint32_t
-FastS_NodeManager::GetTotalPartitions()
-{
-    uint32_t ret;
-
-    ret = 0;
-    std::lock_guard<std::mutex> managerGuard(_managerLock);
-    FastS_DataSetCollection *dsc = PeekDataSetCollection();
-    for (unsigned int i = 0; i < dsc->GetMaxNumDataSets(); i++) {
-        FastS_DataSetBase *ds;
-        FastS_PlainDataSet *ds_plain;
-        if ((ds = dsc->PeekDataSet(i)) != NULL &&
-            (ds_plain = ds->GetPlainDataSet()) != NULL)
-            ret += ds_plain->GetPartitions();
-    }
-    return ret;
-}
-
 
 ChildInfo
 FastS_NodeManager::getChildInfo()

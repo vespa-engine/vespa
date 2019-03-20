@@ -48,9 +48,9 @@ private:
 
     volatile bool     _checkTempFailScheduled;
     volatile bool     _shutdown;
+    volatile uint32_t _waitUpMS;
 
 protected:
-    void SetFailed() { _failed = true; }
 
     void configure(std::unique_ptr<PartitionsConfig> cfg) override;
 
@@ -64,7 +64,6 @@ public:
 
     uint32_t GetMldPartition() const { return _mldPartit; }
     uint32_t GetMldDocstamp();
-    uint32_t GetGenCnt() const { return _gencnt; }
 
     bool Failed() const { return _failed; }
     bool GetTempFail() const { return _tempFail; }
@@ -74,7 +73,6 @@ public:
         _checkTempFailScheduled = true;
     }
 
-    FastS_AppContext *GetAppContext() { return _appCtx; }
     FastS_DataSetCollection *PeekDataSetCollection()
     { return _datasetCollection; }
 
@@ -83,7 +81,6 @@ public:
     uint32_t SetCollDesc(FastS_DataSetCollDesc *configDesc, unsigned int waitms);
     uint32_t SetDataSetCollection(FastS_DataSetCollection *dsc);
     FastS_DataSetCollection *GetDataSetCollection();
-    uint32_t GetTotalPartitions();
     ChildInfo getChildInfo();
     void ShutdownConfig();
 
