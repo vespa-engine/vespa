@@ -164,6 +164,15 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET the authenticated user (with associated tenants)
         tester.assertResponse(request("/application/v4/user", GET).userIdentity(USER_ID),
                               new File("user.json"));
+        // PUT a user tenant
+        tester.assertResponse(request("/application/v4/user", PUT).userIdentity(USER_ID),
+                              "{\"message\":\"Created user 'by-myuser'\"}");
+        // GET the authenticated user which now exists (with associated tenants)
+        tester.assertResponse(request("/application/v4/user", GET).userIdentity(USER_ID),
+                              new File("user-which-exists.json"));
+        // DELETE the user
+        tester.assertResponse(request("/application/v4/tenant/by-myuser", DELETE).userIdentity(USER_ID),
+                              "{\"tenant\":\"by-myuser\",\"type\":\"USER\",\"applications\":[]}");
         // GET all tenants
         tester.assertResponse(request("/application/v4/tenant/", GET).userIdentity(USER_ID),
                               new File("tenant-list.json"));
