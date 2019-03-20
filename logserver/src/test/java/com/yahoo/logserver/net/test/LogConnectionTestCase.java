@@ -150,7 +150,7 @@ public class LogConnectionTestCase {
         assertTrue(mock.getName().endsWith("MockHandler"));
         dispatcher.registerLogHandler(mock);
         LogConnection logConnection =
-                new LogConnection(sock, null, dispatcher);
+                new LogConnection(sock, dispatcher);
 
         try {
             for (int i = 0; i < 100; i++) {

@@ -39,10 +39,6 @@ public class Logserver extends AbstractService {
         StringBuilder sb = new StringBuilder();
         sb.append("-Dlogserver.listenport=").append(getRelativePort(1));
         sb.append(" ");
-        sb.append("-Dlogserver.last-errors-holder.port=").append(getRelativePort(2));
-        sb.append(" ");
-        sb.append("-Dlogserver.replicator.port=").append(getRelativePort(3));
-        sb.append(" ");
         sb.append("-Dlogserver.logarchive.dir=" + logArchiveDir);
         return sb.toString();
     }

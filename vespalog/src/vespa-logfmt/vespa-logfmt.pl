@@ -59,7 +59,6 @@ my @optshow;
 my $optlevels;
 my $optfollow;
 my $optnldequote;
-my $optreplication;
 my $opthelp = '';
 
 my $bad = 0;
@@ -72,18 +71,14 @@ GetOptions ('level|l=s' => \@optlevels,
             'message|m=s'  => \$msgtxre,
             'help|h' => \$opthelp,
             'follow|f' => \$optfollow,
-            'livestream|L' => \$optreplication,
             'nldequote|N' => \$optnldequote,
             'host|H=s' => \$onlyhst,
             'truncateservice|ts' => \$shortsvc,
             'truncatecomponent|tc|t' => \$shortcmp,
 ) or $bad=1;
 
-if ( $optreplication ) {
-        open(STDIN, "vespa-replicate-log-stream |");
-        $showflags{'host'} = 1;
-} elsif ( @ARGV == 0 and ! -p STDIN) {
-        push(@ARGV, "$VESPA_HOME/logs/vespa/vespa.log");
+if ( @ARGV == 0 and ! -p STDIN) {
+    push(@ARGV, "$VESPA_HOME/logs/vespa/vespa.log");
 }
 
 if ( $optfollow ) {
