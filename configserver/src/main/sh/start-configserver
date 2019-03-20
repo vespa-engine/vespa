@@ -98,14 +98,6 @@ fixddir ${VESPA_HOME}/var/zookeeper
 fixfile ${VESPA_HOME}/var/zookeeper/myid
 fixddir ${VESPA_HOME}/var/zookeeper/version-2
 
-# TODO: Remove after migrating config servers to docker containers
-CONTAINER_ENVIRONMENT_PATH=/home/y/conf/container-environment
-if [ -f "${CONTAINER_ENVIRONMENT_PATH}" ]
-then
-    echo "Sourcing ${CONTAINER_ENVIRONMENT_PATH}"
-    source "${CONTAINER_ENVIRONMENT_PATH}"
-fi
-
 not_a_configserver () {
     for hn in $(vespa-print-default configservers); do
         if [ "$hn" = localhost ] || [ "$hn" = "${VESPA_HOSTNAME}" ]; then
