@@ -23,7 +23,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
@@ -69,8 +68,8 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
-import com.yahoo.vespa.hosted.controller.permits.ApplicationPermit;
-import com.yahoo.vespa.hosted.controller.permits.PermitExtractor;
+import com.yahoo.vespa.hosted.controller.permits.ApplicationClaim;
+import com.yahoo.vespa.hosted.controller.permits.Claims;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
@@ -116,12 +115,12 @@ import static java.util.stream.Collectors.joining;
 public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
-    private final PermitExtractor permits;
+    private final Claims permits;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
                                  Controller controller,
-                                 PermitExtractor permits) {
+                                 Claims permits) {
         super(parentCtx);
         this.controller = controller;
         this.permits = permits;
@@ -738,21 +737,21 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse updateTenant(String tenantName, HttpRequest request) {
         getTenantOrThrow(tenantName);
-        controller.tenants().update(permits.getTenantPermit(TenantName.from(tenantName), request));
+        controller.tenants().update(permits.getTenantClaim(TenantName.from(tenantName), request));
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
     private HttpResponse createTenant(String tenantName, HttpRequest request) {
-        controller.tenants().create(permits.getTenantPermit(TenantName.from(tenantName), request));
+        controller.tenants().create(permits.getTenantClaim(TenantName.from(tenantName), request));
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
     private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         try {
-            Optional<ApplicationPermit> permit = controller.tenants().require(id.tenant()).type() != Tenant.Type.user
-                    ? Optional.of(permits.getApplicationPermit(id, request)) : Optional.empty();
-            Application application = controller.applications().createApplication(id, permit);
+            Optional<ApplicationClaim> claim = controller.tenants().require(id.tenant()).type() != Tenant.Type.user
+                    ? Optional.of(permits.getApplicationClaim(id, request)) : Optional.empty();
+            Application application = controller.applications().createApplication(id, claim);
 
             Slime slime = new Slime();
             toSlime(application, slime.setObject(), request);
@@ -953,7 +952,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (tenant.get().type() == Tenant.Type.user)
             controller.tenants().deleteUser((UserTenant) tenant.get());
         else
-            controller.tenants().delete(permits.getTenantPermit(tenant.get().name(), request));
+            controller.tenants().delete(permits.getTenantClaim(tenant.get().name(), request));
 
         // TODO: Change to a message response saying the tenant was deleted
         return tenant(tenant.get(), request);
@@ -961,9 +960,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        Optional<ApplicationPermit> permit = controller.tenants().require(id.tenant()).type() != Tenant.Type.user
-                ? Optional.of(permits.getApplicationPermit(id, request)) : Optional.empty();
-        controller.applications().deleteApplication(id, permit);
+        Optional<ApplicationClaim> claim = controller.tenants().require(id.tenant()).type() != Tenant.Type.user
+                ? Optional.of(permits.getApplicationClaim(id, request)) : Optional.empty();
+        controller.applications().deleteApplication(id, claim);
         return new EmptyJsonResponse(); // TODO: Replicates current behavior but should return a message response instead
     }
 

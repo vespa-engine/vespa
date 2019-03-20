@@ -12,19 +12,19 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Wraps the permit data for creating an Athenz tenant.
+ * Wraps the claim data for creating an Athenz tenant.
  *
  * @author jonmv
  */
-public class AthenzTenantPermit extends TenantPermit {
+public class AthenzTenantClaim extends TenantClaim {
 
     private final Optional<Property> property;
     private final Optional<PropertyId> propertyId;
     private final Optional<AthenzDomain> domain;
     private final OktaAccessToken token;
 
-    public AthenzTenantPermit(TenantName tenant, Principal user, Optional<AthenzDomain> domain,
-                              Optional<Property> property, Optional<PropertyId> propertyId, OktaAccessToken token) {
+    public AthenzTenantClaim(TenantName tenant, Principal user, Optional<AthenzDomain> domain,
+                             Optional<Property> property, Optional<PropertyId> propertyId, OktaAccessToken token) {
         super(tenant, user);
         this.domain = requireNonNull(domain);
         this.token = requireNonNull(token);
@@ -43,4 +43,5 @@ public class AthenzTenantPermit extends TenantPermit {
 
     /** The Okta issued token proving the user's access to Athenz. */
     public OktaAccessToken token() { return token; }
+
 }

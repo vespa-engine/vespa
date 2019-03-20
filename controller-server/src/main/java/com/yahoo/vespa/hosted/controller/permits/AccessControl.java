@@ -1,15 +1,10 @@
 package com.yahoo.vespa.hosted.controller.permits;
 
-import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Stores permissions for tenant and application resources.
@@ -19,45 +14,45 @@ import java.util.Optional;
 public interface AccessControl {
 
     /**
-     * Sets up permissions for a tenant, based on the given permit, or throws.
+     * Sets up permissions for a tenant, based on the given claim, or throws.
      *
-     * @param tenantPermit permit for the tenant to create
+     * @param tenantClaim claim for the tenant to create
      * @param existing list of existing tenants, to check for conflicts
      * @return the created tenant, for keeping
      */
-    Tenant createTenant(TenantPermit tenantPermit, List<Tenant> existing);
+    Tenant createTenant(TenantClaim tenantClaim, List<Tenant> existing);
 
     /**
-     * Modifies up permissions for a tenant, based on the given permit, or throws.
+     * Modifies up permissions for a tenant, based on the given claim, or throws.
      *
-     * @param tenantPermit permit for the tenant to update
+     * @param tenantClaim claim for the tenant to update
      * @param existing list of existing tenants, to check for conflicts
      * @param applications list of applications this tenant already owns
      * @return the updated tenant, for keeping
      */
-    Tenant updateTenant(TenantPermit tenantPermit, List<Tenant> existing, List<Application> applications);
+    Tenant updateTenant(TenantClaim tenantClaim, List<Tenant> existing, List<Application> applications);
 
     /**
-     * Removes all permissions for tenant in the given permit, and for any applications it owns, or throws.
+     * Removes all permissions for tenant in the given claim, and for any applications it owns, or throws.
      *
-     * @param tenantPermit permit for the tenant to delete
+     * @param tenantClaim claim for the tenant to delete
      * @param tenant the tenant to delete
      */
-    void deleteTenant(TenantPermit tenantPermit, Tenant tenant);
+    void deleteTenant(TenantClaim tenantClaim, Tenant tenant);
 
     /**
-     * Sets up permissions for an application, based on the given permit, or throws.
+     * Sets up permissions for an application, based on the given claim, or throws.
      *
-     * @param applicationPermit permit for the application to create
+     * @param applicationClaim claim for the application to create
      */
-    void createApplication(ApplicationPermit applicationPermit);
+    void createApplication(ApplicationClaim applicationClaim);
 
     /**
-     * Removes permissions for the application in the given permit, or throws.
+     * Removes permissions for the application in the given claim, or throws.
      *
-     * @param applicationPermit permit for the application to delete
+     * @param applicationClaim claim for the application to delete
      */
-    void deleteApplication(ApplicationPermit applicationPermit);
+    void deleteApplication(ApplicationClaim applicationClaim);
 
     /**
      * Returns the list of tenants to which this principal has access.

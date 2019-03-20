@@ -24,31 +24,31 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  *
  * @author jonmv
  */
-public class AthenzPermitExtractor implements PermitExtractor {
+public class AthenzClaims implements Claims {
 
     private final Controller controller;
 
     @Inject
-    public AthenzPermitExtractor(Controller controller) {
+    public AthenzClaims(Controller controller) {
         this.controller = Objects.requireNonNull(controller);
     }
 
     @Override
-    public TenantPermit getTenantPermit(TenantName tenant, HttpRequest request) {
+    public TenantClaim getTenantClaim(TenantName tenant, HttpRequest request) {
         Inspector root = jsonToSlime(uncheck(() -> readBytes(request.getData(), 1 << 20))).get();
-        return new AthenzTenantPermit(tenant,
-                                      request.getJDiscRequest().getUserPrincipal(),
-                                      optional("athensDomain", root).map(AthenzDomain::new),
-                                      optional("property", root).map(Property::new),
-                                      optional("propertyId", root).map(PropertyId::new),
-                                      requireOktaAccessToken(request));
+        return new AthenzTenantClaim(tenant,
+                                     request.getJDiscRequest().getUserPrincipal(),
+                                     optional("athensDomain", root).map(AthenzDomain::new),
+                                     optional("property", root).map(Property::new),
+                                     optional("propertyId", root).map(PropertyId::new),
+                                     requireOktaAccessToken(request));
     }
 
     @Override
-    public ApplicationPermit getApplicationPermit(ApplicationId application, HttpRequest request) {
-        return new AthenzApplicationPermit(application,
-                                           ((AthenzTenant) controller.tenants().require(application.tenant())).domain(),
-                                           requireOktaAccessToken(request));
+    public ApplicationClaim getApplicationClaim(ApplicationId application, HttpRequest request) {
+        return new AthenzApplicationClaim(application,
+                                          ((AthenzTenant) controller.tenants().require(application.tenant())).domain(),
+                                          requireOktaAccessToken(request));
     }
 
     private static OktaAccessToken requireOktaAccessToken(HttpRequest request) {

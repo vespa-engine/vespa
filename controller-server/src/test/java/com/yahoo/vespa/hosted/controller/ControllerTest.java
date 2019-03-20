@@ -12,8 +12,6 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -30,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.permits.AthenzApplicationPermit;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import org.junit.Test;
@@ -350,7 +347,7 @@ public class ControllerTest {
             tester.deployAndNotify(app1, applicationPackage, true, systemTest);
             tester.applications().deactivate(app1.id(), ZoneId.from(Environment.test, RegionName.from("us-east-1")));
             tester.applications().deactivate(app1.id(), ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
-            tester.applications().deleteApplication(app1.id(), tester.controllerTester().permitFor(app1.id()));
+            tester.applications().deleteApplication(app1.id(), tester.controllerTester().claimFor(app1.id()));
             try (RotationLock lock = tester.applications().rotationRepository().lock()) {
                 assertTrue("Rotation is unassigned",
                            tester.applications().rotationRepository().availableRotations(lock)

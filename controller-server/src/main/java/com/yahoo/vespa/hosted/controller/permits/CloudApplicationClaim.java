@@ -7,15 +7,15 @@ import java.security.Principal;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Wraps the permit data of an Okta application modification.
+ * Wraps the claim data of an Okta application modification.
  *
  * @author jonmv
  */
-public class CloudApplicationPermit extends ApplicationPermit {
+public class CloudApplicationClaim extends ApplicationClaim {
 
     private final Principal user;
 
-    public CloudApplicationPermit(ApplicationId application, Principal user) {
+    public CloudApplicationClaim(ApplicationId application, Principal user) {
         super(application);
         this.user = requireNonNull(user);
     }

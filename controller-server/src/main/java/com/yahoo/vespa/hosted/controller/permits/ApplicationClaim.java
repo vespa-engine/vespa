@@ -5,15 +5,15 @@ import com.yahoo.config.provision.ApplicationId;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Data that relates identities to permissions to an application.
+ * A claim for ownership of some application by some identity.
  *
  * @author jonmv
  */
-public abstract class ApplicationPermit {
+public abstract class ApplicationClaim {
 
     private final ApplicationId application;
 
-    protected ApplicationPermit(ApplicationId application) {
+    protected ApplicationClaim(ApplicationId application) {
         this.application = requireNonNull(application);
     }
 
@@ -21,4 +21,3 @@ public abstract class ApplicationPermit {
     public ApplicationId application() { return application; }
 
 }
-

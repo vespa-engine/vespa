@@ -7,24 +7,24 @@ import java.security.Principal;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Data that relates identities to permissions to a tenant.
+ * A claim for ownership of some tenant by some identity.
  *
  * @author jonmv
  */
-public abstract class TenantPermit {
+public abstract class TenantClaim {
 
     private final TenantName tenant;
     private final Principal user;
 
-    protected TenantPermit(TenantName tenant, Principal user) {
+    protected TenantClaim(TenantName tenant, Principal user) {
         this.user = requireNonNull(user);
         this.tenant = requireNonNull(tenant);
     }
 
-    /** The tenant this permit concerns. */
+    /** The tenant this claim concerns. */
     public TenantName tenant() { return tenant; }
 
-    /** The user handling this permit. */
+    /** The user making this claim. */
     public Principal user() { return user; }
 
 }

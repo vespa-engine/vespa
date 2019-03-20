@@ -7,16 +7,16 @@ import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Wraps the permit data of an Athenz application modification.
+ * Wraps the claim data of an Athenz application modification.
  *
  * @author jonmv
  */
-public class AthenzApplicationPermit extends ApplicationPermit {
+public class AthenzApplicationClaim extends ApplicationClaim {
 
     private final AthenzDomain domain;
     private final OktaAccessToken token;
 
-    public AthenzApplicationPermit(ApplicationId application, AthenzDomain domain, OktaAccessToken token) {
+    public AthenzApplicationClaim(ApplicationId application, AthenzDomain domain, OktaAccessToken token) {
         super(application);
         this.domain = requireNonNull(domain);
         this.token = requireNonNull(token);

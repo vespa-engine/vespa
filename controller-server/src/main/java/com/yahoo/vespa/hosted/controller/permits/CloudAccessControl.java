@@ -24,8 +24,8 @@ public class CloudAccessControl implements AccessControl {
     }
 
     @Override
-    public CloudTenant createTenant(TenantPermit permit, List<Tenant> existing) {
-        CloudTenantPermit cloudPermit = (CloudTenantPermit) permit;
+    public CloudTenant createTenant(TenantClaim claim, List<Tenant> existing) {
+        CloudTenantClaim cloudPermit = (CloudTenantClaim) claim;
 
         // Do things ...
 
@@ -33,26 +33,26 @@ public class CloudAccessControl implements AccessControl {
     }
 
     @Override
-    public Tenant updateTenant(TenantPermit tenantPermit, List<Tenant> existing, List<Application> applications) {
+    public Tenant updateTenant(TenantClaim tenantClaim, List<Tenant> existing, List<Application> applications) {
         throw new UnsupportedOperationException("Update is not supported here, as it would entail changing the tenant name.");
     }
 
     @Override
-    public void deleteTenant(TenantPermit permit, Tenant tenant) {
+    public void deleteTenant(TenantClaim claim, Tenant tenant) {
 
         // Probably delete customer subscription?
 
     }
 
     @Override
-    public void createApplication(ApplicationPermit permit) {
+    public void createApplication(ApplicationClaim claim) {
 
         // No-op?
 
     }
 
     @Override
-    public void deleteApplication(ApplicationPermit permit) {
+    public void deleteApplication(ApplicationClaim claim) {
 
         // No-op?
 
@@ -60,6 +60,7 @@ public class CloudAccessControl implements AccessControl {
 
     @Override
     public List<Tenant> accessibleTenants(List<Tenant> tenants, Principal user) {
+        // Should be more than a Principal, or one castable to a type with more data.
         return Collections.emptyList();
     }
 
