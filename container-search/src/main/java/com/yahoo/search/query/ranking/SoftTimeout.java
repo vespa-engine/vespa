@@ -69,9 +69,8 @@ public class SoftTimeout implements Cloneable {
 
     /** Internal operation - DO NOT USE */
     public void prepare(RankProperties rankProperties) {
-        if ( !enabled) return;
-
-        rankProperties.put("vespa.softtimeout.enable", "true");
+        if ( !enabled)
+            rankProperties.put("vespa.softtimeout.enable", "false");
         if (factor != null)
             rankProperties.put("vespa.softtimeout.factor", String.valueOf(factor));
         if (tailcost != null)
