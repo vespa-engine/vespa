@@ -10,6 +10,9 @@ using vespalib::metrics::Counter;
 using vespalib::metrics::MetricsManager;
 using vespalib::metrics::Point;
 
+/**
+ * Tracks metrics for number of processed log lines.
+ */
 struct Metrics {
     std::shared_ptr<MetricsManager> metrics;
     const Dimension loglevel;
