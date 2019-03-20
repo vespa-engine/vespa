@@ -29,9 +29,10 @@ public:
     StateApi(const HealthProducer &hp,
              MetricsProducer &mp,
              ComponentConfigProducer &ccp);
-    virtual vespalib::string get(const vespalib::string &host,
-                                 const vespalib::string &path,
-                                 const std::map<vespalib::string,vespalib::string> &params) const override;
+    ~StateApi() override;
+    vespalib::string get(const vespalib::string &host,
+                         const vespalib::string &path,
+                         const std::map<vespalib::string,vespalib::string> &params) const override;
     JsonHandlerRepo &repo() { return _handler_repo; }
 };
 
