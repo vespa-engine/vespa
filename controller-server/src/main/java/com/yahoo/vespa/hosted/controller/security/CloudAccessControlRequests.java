@@ -13,13 +13,13 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 public class CloudAccessControlRequests implements AccessControlRequests {
 
     @Override
-    public CloudTenantClaim getTenantClaim(TenantName tenant, Inspector requestObject) {
+    public CloudTenantSpec specification(TenantName tenant, Inspector requestObject) {
         // TODO extract marketplace token.
-        return new CloudTenantClaim(tenant, "token");
+        return new CloudTenantSpec(tenant, "token");
     }
 
     @Override
-    public Credentials getCredentials(TenantName tenant, Inspector requestObject, HttpRequest request) {
+    public Credentials credentials(TenantName tenant, Inspector requestObject, HttpRequest request) {
         // TODO Pick out JWT data and return a specialised credentials thing.
         return new Credentials(request.getUserPrincipal());
     }

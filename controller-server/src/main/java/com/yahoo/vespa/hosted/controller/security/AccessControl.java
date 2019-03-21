@@ -5,40 +5,41 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
-import java.security.Principal;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Stores permissions for tenant and application resources.
+ *
+ * The signatures use vague types, and the exact types is a contract between this and the
+ * {@link AccessControlRequests} generating data consumed by this.
  *
  * @author jonmv
  */
 public interface AccessControl {
 
     /**
-     * Sets up permissions for a tenant, based on the given claim, or throws.
+     * Sets up access control based on the given credentials, and returns a tenant, based on the given specification.
      *
-     * @param tenantClaim claim for the tenant to create
+     * @param tenantSpec specification for the tenant to create
      * @param credentials the credentials for the entity requesting the creation
      * @param existing list of existing tenants, to check for conflicts
      * @return the created tenant, for keeping
      */
-    Tenant createTenant(TenantClaim tenantClaim, Credentials credentials, List<Tenant> existing);
+    Tenant createTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing);
 
     /**
-     * Modifies up permissions for a tenant, based on the given claim, or throws.
+     * Modifies access control based on the given credentials, and returns a modified tenant, based on the given specification.
      *
-     * @param tenantClaim claim for the tenant to update
+     * @param tenantSpec specification for the tenant to update
      * @param credentials the credentials for the entity requesting the update
      * @param existing list of existing tenants, to check for conflicts
      * @param applications list of applications this tenant already owns
      * @return the updated tenant, for keeping
      */
-    Tenant updateTenant(TenantClaim tenantClaim, Credentials credentials, List<Tenant> existing, List<Application> applications);
+    Tenant updateTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing, List<Application> applications);
 
     /**
-     * Removes all permissions for tenant in the given claim, and for any applications it owns, or throws.
+     * Deletes access control for the given tenant.
      *
      * @param tenant the tenant to delete
      * @param credentials the credentials for the entity requesting the deletion
@@ -46,7 +47,7 @@ public interface AccessControl {
     void deleteTenant(TenantName tenant, Credentials credentials);
 
     /**
-     * Sets up permissions for an application, based on the given claim, or throws.
+     * Sets up access control for the given application, based on the given credentials.
      *
      * @param application the ID of the application to create
      * @param credentials the credentials for the entity requesting the creation
@@ -54,7 +55,7 @@ public interface AccessControl {
     void createApplication(ApplicationId application, Credentials credentials);
 
     /**
-     * Removes access control for the given application.
+     * Deletes access control for the given tenant.
      *
      * @param id the ID of the application to delete
      * @param credentials the credentials for the entity requesting the deletion

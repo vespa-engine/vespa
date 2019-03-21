@@ -20,16 +20,15 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
-import com.yahoo.vespa.hosted.controller.security.AthenzTenantClaim;
+import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
-import com.yahoo.vespa.hosted.controller.security.TenantClaim;
+import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import javax.ws.rs.ForbiddenException;
-import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -60,8 +59,8 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public Tenant createTenant(TenantClaim claim, Credentials credentials, List<Tenant> existing) {
-        AthenzTenantClaim athenzClaim = (AthenzTenantClaim) claim;
+    public Tenant createTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing) {
+        AthenzTenantSpec spec = (AthenzTenantSpec) tenantSpec;
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         AthenzDomain domain = athenzCredentials.domain();
 
@@ -72,13 +71,13 @@ public class AthenzFacade implements AccessControl {
                                                                             && domain.equals(((AthenzTenant) tenant).domain()))
                                                           .findAny();
 
-        AthenzTenant tenant = AthenzTenant.create(athenzClaim.tenant(),
+        AthenzTenant tenant = AthenzTenant.create(spec.tenant(),
                                                   domain,
-                                                  athenzClaim.property().orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
-                                                  athenzClaim.propertyId());
+                                                  spec.property().orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
+                                                  spec.propertyId());
 
         if (existingWithSameDomain.isPresent()) { // Throw if domain is already taken.
-            throw new IllegalArgumentException("Could not create tenant '" + athenzClaim.tenant().value() +
+            throw new IllegalArgumentException("Could not create tenant '" + spec.tenant().value() +
                                                "': The Athens domain '" +
                                                domain.getName() + "' is already connected to tenant '" +
                                                existingWithSameDomain.get().name().value() + "'");
@@ -92,8 +91,8 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public Tenant updateTenant(TenantClaim claim, Credentials credentials, List<Tenant> existing, List<Application> applications) {
-        AthenzTenantClaim athenzClaim = (AthenzTenantClaim) claim;
+    public Tenant updateTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing, List<Application> applications) {
+        AthenzTenantSpec spec = (AthenzTenantSpec) tenantSpec;
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         AthenzDomain domain = athenzCredentials.domain();
 
@@ -104,11 +103,10 @@ public class AthenzFacade implements AccessControl {
                                                                             && domain.equals(((AthenzTenant) tenant).domain()))
                                                           .findAny();
 
-        Tenant tenant = AthenzTenant.create(athenzClaim.tenant(),
+        Tenant tenant = AthenzTenant.create(spec.tenant(),
                                             domain,
-                                            athenzClaim.property()
-                                                       .orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
-                                            athenzClaim.propertyId());
+                                            spec.property().orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
+                                            spec.propertyId());
 
         int index = existing.indexOf(tenant);
         if (index == -1) throw new IllegalArgumentException("Cannot update a non-existent tenant.");
@@ -116,7 +114,7 @@ public class AthenzFacade implements AccessControl {
 
         if (existingWithSameDomain.isPresent()) { // Throw if domain taken by someone else, or do nothing if taken by this tenant.
             if ( ! existingWithSameDomain.get().equals(oldTenant))
-                throw new IllegalArgumentException("Could not create tenant '" + athenzClaim.tenant().value() +
+                throw new IllegalArgumentException("Could not create tenant '" + spec.tenant().value() +
                                                    "': The Athens domain '" +
                                                    domain.getName() + "' is already connected to tenant '" +
                                                    existingWithSameDomain.get().name().value() + "'");

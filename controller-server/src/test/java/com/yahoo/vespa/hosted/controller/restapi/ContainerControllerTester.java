@@ -29,7 +29,7 @@ import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
-import com.yahoo.vespa.hosted.controller.security.AthenzTenantClaim;
+import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 
@@ -78,11 +78,11 @@ public class ContainerControllerTester {
         AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "user");
         AthenzPrincipal user = new AthenzPrincipal(new AthenzUser("user"));
         AthenzCredentials credentials = new AthenzCredentials(user, domain1, new OktaAccessToken("okta-token"));
-        AthenzTenantClaim tenantClaim = new AthenzTenantClaim(TenantName.from(tenant),
-                                                              Optional.of(domain1),
-                                                              Optional.of(new Property("property1")),
-                                                              Optional.of(new PropertyId("1234")));
-        controller().tenants().create(tenantClaim, credentials);
+        AthenzTenantSpec tenantSpec = new AthenzTenantSpec(TenantName.from(tenant),
+                                                           Optional.of(domain1),
+                                                           Optional.of(new Property("property1")),
+                                                           Optional.of(new PropertyId("1234")));
+        controller().tenants().create(tenantSpec, credentials);
 
         ApplicationId app = ApplicationId.from(tenant, application, "default");
         return controller().applications().createApplication(app, Optional.of(credentials));

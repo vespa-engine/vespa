@@ -6,7 +6,6 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.Inspector;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
@@ -36,15 +35,15 @@ public class AthenzAccessControlRequests implements AccessControlRequests {
     }
 
     @Override
-    public TenantClaim getTenantClaim(TenantName tenant, Inspector requestObject) {
-        return new AthenzTenantClaim(tenant,
-                                     optional("athensDomain", requestObject).map(AthenzDomain::new),
-                                     optional("property", requestObject).map(Property::new),
-                                     optional("propertyId", requestObject).map(PropertyId::new));
+    public TenantSpec specification(TenantName tenant, Inspector requestObject) {
+        return new AthenzTenantSpec(tenant,
+                                    optional("athensDomain", requestObject).map(AthenzDomain::new),
+                                    optional("property", requestObject).map(Property::new),
+                                    optional("propertyId", requestObject).map(PropertyId::new));
     }
 
     @Override
-    public Credentials getCredentials(TenantName tenant, Inspector requestObject, HttpRequest request) {
+    public Credentials credentials(TenantName tenant, Inspector requestObject, HttpRequest request) {
         // Get domain from request if present, which it should be for create and update requests.
         Optional<AthenzDomain> requestDomain = optional("athensDomain", requestObject).map(AthenzDomain::new);
         // Otherwise the tenant should already exist, and we use the domain stored under the tenant.

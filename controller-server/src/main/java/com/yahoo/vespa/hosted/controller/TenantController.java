@@ -6,13 +6,12 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
-import com.yahoo.vespa.hosted.controller.security.TenantClaim;
+import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
-import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
@@ -102,11 +101,11 @@ public class TenantController {
         }
     }
 
-    /** Create a tenant, provided the given permit is valid. */
-    public void create(TenantClaim claim, Credentials credentials) {
-        try (Lock lock = lock(claim.tenant())) {
-            requireNonExistent(claim.tenant());
-            curator.writeTenant(accessControl.createTenant(claim, credentials, asList()));
+    /** Create a tenant, provided the given credentials are valid. */
+    public void create(TenantSpec tenantSpec, Credentials credentials) {
+        try (Lock lock = lock(tenantSpec.tenant())) {
+            requireNonExistent(tenantSpec.tenant());
+            curator.writeTenant(accessControl.createTenant(tenantSpec, credentials, asList()));
         }
     }
 
@@ -132,14 +131,14 @@ public class TenantController {
         return athenzTenant(name).orElseThrow(() -> new IllegalArgumentException("Tenant '" + name + "' not found"));
     }
 
-    /** Updates the tenant contained in the given claim with new data. */
-    public void update(TenantClaim claim, Credentials credentials) {
-        try (Lock lock = lock(claim.tenant())) {
-            curator.writeTenant(accessControl.updateTenant(claim, credentials, asList(), controller.applications().asList(claim.tenant())));
+    /** Updates the tenant contained in the given tenant spec with new data. */
+    public void update(TenantSpec tenantSpec, Credentials credentials) {
+        try (Lock lock = lock(tenantSpec.tenant())) {
+            curator.writeTenant(accessControl.updateTenant(tenantSpec, credentials, asList(), controller.applications().asList(tenantSpec.tenant())));
         }
     }
 
-    /** Deletes the tenant in the given claim. */
+    /** Deletes the given tenant. */
     public void delete(TenantName tenant, Credentials credentials) {
         try (Lock lock = lock(tenant)) {
             require(tenant);

@@ -45,7 +45,7 @@ import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
 import com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
-import com.yahoo.vespa.hosted.controller.security.AthenzTenantClaim;
+import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -55,7 +55,6 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
-import java.security.Principal;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -266,12 +265,12 @@ public final class ControllerTester {
         if (existing.isPresent()) return name;
         AthenzUser user = new AthenzUser("user");
         AthenzDomain domain = createDomainWithAdmin(domainName, user);
-        AthenzTenantClaim claim = new AthenzTenantClaim(name,
-                                                        Optional.of(domain),
-                                                        Optional.of(new Property("Property" + propertyId)),
-                                                        Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new));
+        AthenzTenantSpec tenantSpec = new AthenzTenantSpec(name,
+                                                           Optional.of(domain),
+                                                           Optional.of(new Property("Property" + propertyId)),
+                                                           Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new));
         AthenzCredentials credentials = new AthenzCredentials(new AthenzPrincipal(user), domain, new OktaAccessToken("okta-token"));
-        controller().tenants().create(claim, credentials);
+        controller().tenants().create(tenantSpec, credentials);
         if (contact.isPresent())
             controller().tenants().lockOrThrow(name, LockedTenant.Athenz.class, tenant ->
                     controller().tenants().store(tenant.with(contact.get())));

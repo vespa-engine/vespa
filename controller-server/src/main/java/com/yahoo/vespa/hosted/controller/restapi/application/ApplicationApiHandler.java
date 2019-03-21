@@ -740,16 +740,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         getTenantOrThrow(tenantName);
         TenantName tenant = TenantName.from(tenantName);
         Inspector requestObject = toSlime(request.getData()).get();
-        controller.tenants().update(accessControlRequests.getTenantClaim(tenant, requestObject),
-                                    accessControlRequests.getCredentials(tenant, requestObject, request.getJDiscRequest()));
+        controller.tenants().update(accessControlRequests.specification(tenant, requestObject),
+                                    accessControlRequests.credentials(tenant, requestObject, request.getJDiscRequest()));
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
     private HttpResponse createTenant(String tenantName, HttpRequest request) {
         TenantName tenant = TenantName.from(tenantName);
         Inspector requestObject = toSlime(request.getData()).get();
-        controller.tenants().create(accessControlRequests.getTenantClaim(tenant, requestObject),
-                                    accessControlRequests.getCredentials(tenant, requestObject, request.getJDiscRequest()));
+        controller.tenants().create(accessControlRequests.specification(tenant, requestObject),
+                                    accessControlRequests.credentials(tenant, requestObject, request.getJDiscRequest()));
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
@@ -759,7 +759,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         try {
             Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                     ? Optional.empty()
-                    : Optional.of(accessControlRequests.getCredentials(id.tenant(), requestObject, request.getJDiscRequest()));
+                    : Optional.of(accessControlRequests.credentials(id.tenant(), requestObject, request.getJDiscRequest()));
             Application application = controller.applications().createApplication(id, credentials);
 
             Slime slime = new Slime();
@@ -962,9 +962,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             controller.tenants().deleteUser((UserTenant) tenant.get());
         else
             controller.tenants().delete(tenant.get().name(),
-                                        accessControlRequests.getCredentials(tenant.get().name(),
-                                                                             toSlime(request.getData()).get(),
-                                                                             request.getJDiscRequest()));
+                                        accessControlRequests.credentials(tenant.get().name(),
+                                                                          toSlime(request.getData()).get(),
+                                                                          request.getJDiscRequest()));
 
         // TODO: Change to a message response saying the tenant was deleted
         return tenant(tenant.get(), request);
@@ -974,7 +974,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                 ? Optional.empty()
-                : Optional.of(accessControlRequests.getCredentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
+                : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
         controller.applications().deleteApplication(id, credentials);
         return new EmptyJsonResponse(); // TODO: Replicates current behavior but should return a message response instead
     }
