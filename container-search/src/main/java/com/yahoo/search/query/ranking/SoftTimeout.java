@@ -37,7 +37,7 @@ public class SoftTimeout implements Cloneable {
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
 
-    private boolean enabled = true;
+    private Boolean enabled = null;
     private Double factor = null;
     private Double tailcost = null;
 
@@ -69,8 +69,8 @@ public class SoftTimeout implements Cloneable {
 
     /** Internal operation - DO NOT USE */
     public void prepare(RankProperties rankProperties) {
-        if ( !enabled)
-            rankProperties.put("vespa.softtimeout.enable", "false");
+        if (enabled != null)
+            rankProperties.put("vespa.softtimeout.enable", String.valueOf(enabled));
         if (factor != null)
             rankProperties.put("vespa.softtimeout.factor", String.valueOf(factor));
         if (tailcost != null)
@@ -90,7 +90,7 @@ public class SoftTimeout implements Cloneable {
     @Override
     public int hashCode() {
         int hash = 0;
-        if (enabled) hash += 11;
+        if (enabled != null) hash += 11;
         if (factor != null) hash += 13 * factor.hashCode();
         if (tailcost != null) hash += 17 * tailcost.hashCode();
         return hash;

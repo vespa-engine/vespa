@@ -13,7 +13,7 @@ public class SoftTimeoutTestCase {
     @Test
     public void testDefaultsInQuery() {
         Query query=new Query("?query=test");
-        assertTrue(query.getRanking().getSoftTimeout().getEnable());
+        assertNull(query.getRanking().getSoftTimeout().getEnable());
         assertNull(query.getRanking().getSoftTimeout().getFactor());
         assertNull(query.getRanking().getSoftTimeout().getTailcost());
     }
@@ -21,7 +21,7 @@ public class SoftTimeoutTestCase {
     @Test
     public void testQueryOverride() {
         Query query=new Query("?query=test&ranking.softtimeout.factor=0.7&ranking.softtimeout.tailcost=0.3");
-        assertTrue(query.getRanking().getSoftTimeout().getEnable());
+        assertNull(query.getRanking().getSoftTimeout().getEnable());
         assertEquals(Double.valueOf(0.7), query.getRanking().getSoftTimeout().getFactor());
         assertEquals(Double.valueOf(0.3), query.getRanking().getSoftTimeout().getTailcost());
         query.prepare();
@@ -36,6 +36,14 @@ public class SoftTimeoutTestCase {
         assertFalse(query.getRanking().getSoftTimeout().getEnable());
         query.prepare();
         assertEquals("false", query.getRanking().getProperties().get("vespa.softtimeout.enable").get(0));
+    }
+
+    @Test
+    public void testEnable() {
+        Query query=new Query("?query=test&ranking.softtimeout.enable=true");
+        assertTrue(query.getRanking().getSoftTimeout().getEnable());
+        query.prepare();
+        assertEquals("true", query.getRanking().getProperties().get("vespa.softtimeout.enable").get(0));
     }
 
     private void verifyException(String key, String value) {
