@@ -170,7 +170,7 @@ public abstract class Container extends AbstractService implements
     }
 
     private void reserveHttpPortsPrepended() {
-        if (getHttp().getHttpServer() != null) {
+        if (getHttp() != null && getHttp().getHttpServer() != null) {
             for (ConnectorFactory connectorFactory : getHttp().getHttpServer().getConnectorFactories()) {
                 reservePortPrepended(getPort(connectorFactory), "http/" + connectorFactory.getName());
             }
