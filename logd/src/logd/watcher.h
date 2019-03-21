@@ -5,7 +5,7 @@
 
 namespace logdemon {
 
-class Forwarder;
+class LegacyForwarder;
 class ConfigSubscriber;
 
 /**
@@ -16,14 +16,14 @@ class Watcher
 private:
     std::vector<char>  _buffer;
     ConfigSubscriber & _confsubscriber;
-    Forwarder        & _forwarder;
+    LegacyForwarder  & _forwarder;
     int                _wfd;
     char * getBuf() { return &_buffer[0]; }
     long getBufSize() const { return _buffer.size(); }
 public:
     Watcher(const Watcher& other) = delete;
     Watcher& operator=(const Watcher& other) = delete;
-    Watcher(ConfigSubscriber &cfs, Forwarder &fw);
+    Watcher(ConfigSubscriber &cfs, LegacyForwarder &fw);
     ~Watcher();
 
     void watchfile();

@@ -2,7 +2,7 @@
 
 #include "config_subscriber.h"
 #include "exceptions.h"
-#include "forwarder.h"
+#include "legacy_forwarder.h"
 #include "watcher.h"
 #include <vespa/vespalib/util/sig_catch.h>
 #include <fcntl.h>
@@ -59,7 +59,7 @@ constexpr size_t G_BUFSIZE = 1024*1024;
 } // namespace logdemon::<unnamed>
 
 
-Watcher::Watcher(ConfigSubscriber &cfs, Forwarder &fw)
+Watcher::Watcher(ConfigSubscriber &cfs, LegacyForwarder &fw)
     : _buffer(G_BUFSIZE),
       _confsubscriber(cfs),
       _forwarder(fw),

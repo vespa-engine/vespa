@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "exceptions.h"
-#include "forwarder.h"
+#include "legacy_forwarder.h"
 #include "metrics.h"
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/locale/c.h>
@@ -14,17 +14,17 @@ using LogLevel = ns_log::Logger::LogLevel;
 
 namespace logdemon {
 
-Forwarder::Forwarder(Metrics &metrics)
+LegacyForwarder::LegacyForwarder(Metrics &metrics)
     : _logserverfd(-1),
       _metrics(metrics),
       _forwardMap(),
       _levelparser(),
       _badLines(0)
 {}
-Forwarder::~Forwarder() = default;
+LegacyForwarder::~LegacyForwarder() = default;
 
 void
-Forwarder::forwardText(const char *text, int len)
+LegacyForwarder::forwardText(const char *text, int len)
 {
     int wsize = write(_logserverfd, text, len);
 
@@ -40,7 +40,7 @@ Forwarder::forwardText(const char *text, int len)
 }
 
 void
-Forwarder::sendMode()
+LegacyForwarder::sendMode()
 {
     char buf[1024];
     snprintf(buf, 1024, "mode logd %s\n", vespalib::VersionTag);
@@ -53,7 +53,7 @@ Forwarder::sendMode()
 }
 
 void
-Forwarder::forwardLine(const char *line, const char *eol)
+LegacyForwarder::forwardLine(const char *line, const char *eol)
 {
     int linelen = eol - line;
 
@@ -68,7 +68,7 @@ Forwarder::forwardLine(const char *line, const char *eol)
 }
 
 bool
-Forwarder::parseline(const char *linestart, const char *lineend)
+LegacyForwarder::parseline(const char *linestart, const char *lineend)
 {
     int llength = lineend - linestart;
 

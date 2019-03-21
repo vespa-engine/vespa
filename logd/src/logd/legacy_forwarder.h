@@ -25,7 +25,7 @@ public:
 /**
  * Class used to forward log lines to the logserver via a one-way text protocol.
  */
-class Forwarder
+class LegacyForwarder
 {
 private:
     int _logserverfd;
@@ -42,8 +42,8 @@ private:
     }
     bool parseline(const char *linestart, const char *lineend);
 public:
-    Forwarder(Metrics &metrics);
-    ~Forwarder();
+    LegacyForwarder(Metrics &metrics);
+    ~LegacyForwarder();
     void forwardText(const char *text, int len);
     void forwardLine(const char *line, const char *eol);
     void setForwardMap(const ForwardMap & forwardMap) { _forwardMap = forwardMap; }

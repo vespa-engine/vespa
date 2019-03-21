@@ -2,7 +2,7 @@
 
 #include <logd/config_subscriber.h>
 #include <logd/exceptions.h>
-#include <logd/forwarder.h>
+#include <logd/legacy_forwarder.h>
 #include <logd/metrics.h>
 #include <logd/state_reporter.h>
 #include <logd/watcher.h>
@@ -21,7 +21,7 @@ int main(int, char**)
 {
     StateReporter stateReporter;
     Metrics metrics(stateReporter.metrics());
-    Forwarder fwd(metrics);
+    LegacyForwarder fwd(metrics);
 
     EV_STARTED("logdemon");
 

@@ -14,7 +14,7 @@ vespa_define_module(
     src/logd
 
     TESTS
-    src/tests/forwarder
+    src/tests/legacy_forwarder
     src/tests/rotate
 )
 
