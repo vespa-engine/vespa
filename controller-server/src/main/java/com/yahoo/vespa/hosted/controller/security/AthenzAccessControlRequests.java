@@ -34,8 +34,7 @@ public class AthenzAccessControlRequests implements AccessControlRequests {
     @Override
     public TenantSpec specification(TenantName tenant, Inspector requestObject) {
         return new AthenzTenantSpec(tenant,
-                                    optional("athensDomain", requestObject).map(AthenzDomain::new),
-                                    optional("property", requestObject).map(Property::new),
+                                    new Property(required("property", requestObject)),
                                     optional("propertyId", requestObject).map(PropertyId::new));
     }
 

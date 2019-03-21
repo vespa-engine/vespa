@@ -73,7 +73,7 @@ public class AthenzFacade implements AccessControl {
 
         AthenzTenant tenant = AthenzTenant.create(spec.tenant(),
                                                   domain,
-                                                  spec.property().orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
+                                                  spec.property(),
                                                   spec.propertyId());
 
         if (existingWithSameDomain.isPresent()) { // Throw if domain is already taken.
@@ -105,7 +105,7 @@ public class AthenzFacade implements AccessControl {
 
         Tenant tenant = AthenzTenant.create(spec.tenant(),
                                             domain,
-                                            spec.property().orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
+                                            spec.property(),
                                             spec.propertyId());
 
         int index = existing.indexOf(tenant);

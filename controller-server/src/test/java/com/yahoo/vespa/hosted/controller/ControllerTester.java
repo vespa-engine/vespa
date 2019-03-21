@@ -264,8 +264,7 @@ public final class ControllerTester {
         AthenzUser user = new AthenzUser("user");
         AthenzDomain domain = createDomainWithAdmin(domainName, user);
         AthenzTenantSpec tenantSpec = new AthenzTenantSpec(name,
-                                                           Optional.of(domain),
-                                                           Optional.of(new Property("Property" + propertyId)),
+                                                           new Property("Property" + propertyId),
                                                            Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new));
         AthenzCredentials credentials = new AthenzCredentials(new AthenzPrincipal(user), domain, new OktaAccessToken("okta-token"));
         controller().tenants().create(tenantSpec, credentials);
