@@ -22,16 +22,16 @@ import static com.yahoo.vespa.config.SlimeUtils.jsonToSlime;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
- * Extracts permits for Athenz or user tenants from HTTP requests.
+ * Extracts access control data for Athenz or user tenants from HTTP requests.
  *
  * @author jonmv
  */
-public class AthenzClaims implements Claims {
+public class AthenzAccessControlRequests implements AccessControlRequests {
 
     private final TenantController tenants;
 
     @Inject
-    public AthenzClaims(Controller controller) {
+    public AthenzAccessControlRequests(Controller controller) {
         this.tenants = controller.tenants();
     }
 

@@ -12,7 +12,7 @@ import java.security.Principal;
  *
  * @author jonmv
  */
-public interface Claims {
+public interface AccessControlRequests {
 
     /** Extracts claim data for a tenant, from the given request. */
     TenantClaim getTenantClaim(TenantName tenant, Inspector requestObject);

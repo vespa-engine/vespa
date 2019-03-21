@@ -1,20 +1,16 @@
 package com.yahoo.vespa.hosted.controller.security;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.Inspector;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
-import java.security.Principal;
-import java.util.Objects;
-
 /**
- * Extracts permits for {@link CloudTenant}s from HTTP requests.
+ * Extracts access control data for {@link CloudTenant}s from HTTP requests.
  *
  * @author jonmv
  */
-public class CloudClaims implements Claims {
+public class CloudAccessControlRequests implements AccessControlRequests {
 
     @Override
     public CloudTenantClaim getTenantClaim(TenantName tenant, Inspector requestObject) {
