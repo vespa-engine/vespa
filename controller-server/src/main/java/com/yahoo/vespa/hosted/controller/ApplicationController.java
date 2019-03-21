@@ -10,7 +10,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
@@ -762,9 +761,4 @@ public class ApplicationController {
                          .max(naturalOrder());
     }
 
-    private boolean isUserDeployment(Optional<AthenzIdentity> identity) {
-        return identity
-                .filter(id -> id instanceof AthenzUser)
-                .isPresent();
-    }
 }
