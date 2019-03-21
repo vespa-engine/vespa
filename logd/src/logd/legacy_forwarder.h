@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "forwarder.h"
 #include <vespa/log/log.h>
 #include <map>
 #include <unordered_set>
@@ -25,8 +26,7 @@ public:
 /**
  * Class used to forward log lines to the logserver via a one-way text protocol.
  */
-class LegacyForwarder
-{
+class LegacyForwarder : public Forwarder {
 private:
     int _logserverfd;
     Metrics &_metrics;
@@ -45,13 +45,13 @@ public:
     LegacyForwarder(Metrics &metrics);
     ~LegacyForwarder();
     void forwardText(const char *text, int len);
-    void forwardLine(const char *line, const char *eol);
+    void forwardLine(const char *line, const char *eol) override;
     void setForwardMap(const ForwardMap & forwardMap) { _forwardMap = forwardMap; }
     void setLogserverFD(int fd) { _logserverfd = fd; }
     int  getLogserverFD() { return _logserverfd; }
-    void sendMode();
-    int badLines() const { return _badLines; }
-    void resetBadLines() { _badLines = 0; }
+    void sendMode() override;
+    int badLines() const override { return _badLines; }
+    void resetBadLines() override { _badLines = 0; }
 };
 
 }
