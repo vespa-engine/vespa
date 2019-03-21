@@ -25,7 +25,7 @@ public class ContainerServiceTypeTest {
         assertEquals("qrserver", QRSERVER.serviceName);
         assertEquals("container-clustercontroller", CLUSTERCONTROLLER_CONTAINER.serviceName);
         assertEquals("logserver-container", LOGSERVER_CONTAINER.serviceName);
-        assertEquals("metrics-proxy-container", METRICS_PROXY_CONTAINER.serviceName);
+        assertEquals("metricsproxy-container", METRICS_PROXY_CONTAINER.serviceName);
     }
 
 }
