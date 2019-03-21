@@ -17,9 +17,6 @@ import java.security.Principal;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.yahoo.vespa.config.SlimeUtils.jsonToSlime;
-import static com.yahoo.yolean.Exceptions.uncheck;
-
 /**
  * Extracts access control data for Athenz or user tenants from HTTP requests.
  *

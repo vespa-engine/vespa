@@ -90,7 +90,6 @@ public final class ControllerTester {
     private final MetricsServiceMock metricsService;
     private final RoutingGeneratorMock routingGenerator;
     private final MockContactRetriever contactRetriever;
-    private final MockIssueHandler issueHandler;
 
     private Controller controller;
 
@@ -142,7 +141,6 @@ public final class ControllerTester {
         this.metricsService = metricsService;
         this.routingGenerator = routingGenerator;
         this.contactRetriever = contactRetriever;
-        this.issueHandler = issueHandler;
         this.controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
                                            athenzDb, nameService, artifactRepository, appStoreMock, entityService, buildService,
                                            metricsService, routingGenerator);
