@@ -11,6 +11,7 @@ Travis-CI build status: [![Build Status](https://travis-ci.org/vespa-engine/vesp
 
 ## Table of contents
 
+
 - [Background](#background)
 - [Install](#install)
 - [Usage](#usage)
