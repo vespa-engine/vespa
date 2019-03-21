@@ -32,6 +32,7 @@ private:
     Metrics &_metrics;
     ForwardMap _forwardMap;
     LevelParser _levelparser;
+    int _badLines;
     const char *copystr(const char *b, const char *e) {
         int len = e - b;
         char *ret = new char[len+1];
@@ -41,7 +42,6 @@ private:
     }
     bool parseline(const char *linestart, const char *lineend);
 public:
-    int _badLines;
     Forwarder(Metrics &metrics);
     ~Forwarder();
     void forwardText(const char *text, int len);
@@ -50,6 +50,8 @@ public:
     void setLogserverFD(int fd) { _logserverfd = fd; }
     int  getLogserverFD() { return _logserverfd; }
     void sendMode();
+    int badLines() const { return _badLines; }
+    void resetBadLines() { _badLines = 0; }
 };
 
 }

@@ -300,9 +300,9 @@ Watcher::watchfile()
             throw SigTermException("caught signal");
         }
         if (++sleepcount > 99) {
-            if (_forwarder._badLines) {
-                LOG(info, "seen %d bad loglines in %d iterations", _forwarder._badLines, sleepcount);
-                _forwarder._badLines = 0;
+            if (_forwarder.badLines()) {
+                LOG(info, "seen %d bad loglines in %d iterations", _forwarder.badLines(), sleepcount);
+                _forwarder.resetBadLines();
                 sleepcount=0;
             }
         }
