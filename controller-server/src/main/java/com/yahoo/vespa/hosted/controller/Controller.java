@@ -92,13 +92,13 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub, EntityService entityService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
                       NameService nameService, RoutingGenerator routingGenerator, Chef chef,
-                      AthenzClientFactory athenzClientFactory, AccessControl accessControl,
+                      AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer) {
         this(curator, rotationsConfig,
              gitHub, entityService, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
-             Clock.systemUTC(), athenzClientFactory, accessControl, artifactRepository, applicationStore, testerCloud,
+             Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer);
     }
 
@@ -107,7 +107,7 @@ public class Controller extends AbstractComponent {
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
-                      AthenzClientFactory athenzClientFactory, AccessControl accessControl,
+                      AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
                       Mailer mailer) {

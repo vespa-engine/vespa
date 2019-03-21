@@ -40,7 +40,7 @@ public class ContactInformationMaintainerTest {
     public void updates_contact_information() {
         long propertyId = 1;
         TenantName name = tester.createTenant("tenant1", "domain1", propertyId);
-        Supplier<AthenzTenant> tenant = () -> tester.controller().tenants().requireAthenzTenant(name);
+        Supplier<AthenzTenant> tenant = () -> (AthenzTenant) tester.controller().tenants().require(name);
         assertFalse("No contact information initially", tenant.get().contact().isPresent());
 
         Contact contact = testContact();

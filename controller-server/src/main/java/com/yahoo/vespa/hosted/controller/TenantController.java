@@ -119,18 +119,6 @@ public class TenantController {
         return get(TenantName.from(name));
     }
 
-    /** Find Athenz tenant by name */
-    public Optional<AthenzTenant> athenzTenant(TenantName name) {
-        return curator.readTenant(name)
-                      .filter(AthenzTenant.class::isInstance)
-                      .map(AthenzTenant.class::cast);
-    }
-
-    /** Returns Athenz tenant with name or throws if no such tenant exists */
-    public AthenzTenant requireAthenzTenant(TenantName name) {
-        return athenzTenant(name).orElseThrow(() -> new IllegalArgumentException("Tenant '" + name + "' not found"));
-    }
-
     /** Updates the tenant contained in the given tenant spec with new data. */
     public void update(TenantSpec tenantSpec, Credentials credentials) {
         try (Lock lock = lock(tenantSpec.tenant())) {
