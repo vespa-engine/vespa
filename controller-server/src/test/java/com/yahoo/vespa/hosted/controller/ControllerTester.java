@@ -44,8 +44,6 @@ import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
 import com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import com.yahoo.vespa.hosted.controller.security.ApplicationClaim;
-import com.yahoo.vespa.hosted.controller.security.AthenzApplicationClaim;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantClaim;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;

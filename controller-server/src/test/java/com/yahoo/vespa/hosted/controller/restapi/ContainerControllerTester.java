@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
-import com.yahoo.vespa.hosted.controller.security.AthenzApplicationClaim;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantClaim;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;

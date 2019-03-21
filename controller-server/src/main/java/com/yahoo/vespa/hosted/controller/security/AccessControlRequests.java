@@ -8,7 +8,7 @@ import com.yahoo.slime.Inspector;
 import java.security.Principal;
 
 /**
- * Extracts {@link TenantClaim}s and {@link ApplicationClaim}s from HTTP requests, to be stored in an {@link AccessControl}.
+ * Extracts {@link TenantClaim}s and {@link Credentials}s from HTTP requests, to be stored in an {@link AccessControl}.
  *
  * @author jonmv
  */
