@@ -26,8 +26,7 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     @Override
     public ConfigServer[] allConfigServers() {
         return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVERS"))
-                .map(Optional::of) // TODO Rewrite Optional.or() with Java 9
-                .orElseGet(() -> getRawInstallVariable("services.addr_configserver"))
+                .or(() -> getRawInstallVariable("services.addr_configserver"))
                 .map(CloudConfigInstallVariables::toConfigServers)
                 .orElseGet(() -> new ConfigServer[0]);
     }
@@ -80,17 +79,20 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
 
     @Override
     public Optional<String> environment() {
-        return getInstallVariable("environment");
+        return Optional.ofNullable(System.getenv("VESPA_ENVIRONMENT"))
+                .or(() -> getInstallVariable("environment"));
     }
 
     @Override
     public Optional<String> region() {
-        return getInstallVariable("region");
+        return Optional.ofNullable(System.getenv("VESPA_REGION"))
+                .or(() -> getInstallVariable("region"));
     }
 
     @Override
     public Optional<String> system() {
-        return getInstallVariable("system");
+        return Optional.ofNullable(System.getenv("VESPA_SYSTEM"))
+                .or(() -> getInstallVariable("system"));
     }
 
     @Override
