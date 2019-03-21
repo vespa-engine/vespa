@@ -1325,12 +1325,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private static String tentantType(Tenant tenant) {
-        if (tenant instanceof AthenzTenant) {
-            return "ATHENS";
-        } else if (tenant instanceof UserTenant) {
-            return "USER";
+        switch (tenant.type()) {
+            case user: return "USER";
+            case athenz: return "ATHENZ";
+            case cloud: return "CLOUD";
+            default: throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
         }
-        throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
     }
 
     private static ApplicationId appIdFromPath(Path path) {
