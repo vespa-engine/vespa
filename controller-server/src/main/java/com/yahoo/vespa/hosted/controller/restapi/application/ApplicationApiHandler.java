@@ -1081,11 +1081,26 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request) {
         object.setString("tenant", tenant.name().value());
         object.setString("type", tentantType(tenant));
-        if (tenant instanceof AthenzTenant) {
-            AthenzTenant athenzTenant = (AthenzTenant) tenant;
-            object.setString("athensDomain", athenzTenant.domain().getName());
-            object.setString("property", athenzTenant.property().id());
-            athenzTenant.propertyId().ifPresent(id -> object.setString("propertyId", id.toString()));
+        switch (tenant.type()) {
+            case athenz:
+                AthenzTenant athenzTenant = (AthenzTenant) tenant;
+                object.setString("athensDomain", athenzTenant.domain().getName());
+                object.setString("property", athenzTenant.property().id());
+                athenzTenant.propertyId().ifPresent(id -> object.setString("propertyId", id.toString()));
+                athenzTenant.contact().ifPresent(c -> {
+                    object.setString("propertyUrl", c.propertyUrl().toString());
+                    object.setString("contactsUrl", c.url().toString());
+                    object.setString("issueCreationUrl", c.issueTrackerUrl().toString());
+                    Cursor contactsArray = object.setArray("contacts");
+                    c.persons().forEach(persons -> {
+                        Cursor personArray = contactsArray.addArray();
+                        persons.forEach(personArray::addString);
+                    });
+                });
+                break;
+            case user: break;
+            case cloud: break;
+            default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         Cursor applicationArray = object.setArray("applications");
         for (Application application : controller.applications().asList(tenant.name())) {
@@ -1096,19 +1111,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     toSlime(application, applicationArray.addObject(), request);
             }
         }
-        if (tenant instanceof AthenzTenant) {
-            AthenzTenant athenzTenant = (AthenzTenant) tenant;
-            athenzTenant.contact().ifPresent(c -> {
-                object.setString("propertyUrl", c.propertyUrl().toString());
-                object.setString("contactsUrl", c.url().toString());
-                object.setString("issueCreationUrl", c.issueTrackerUrl().toString());
-                Cursor contactsArray = object.setArray("contacts");
-                c.persons().forEach(persons -> {
-                    Cursor personArray = contactsArray.addArray();
-                    persons.forEach(personArray::addString);
-                });
-            });
-        }
     }
 
     // A tenant has different content when in a list ... antipattern, but not solvable before application/v5
@@ -1116,10 +1118,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("tenant", tenant.name().value());
         Cursor metaData = object.setObject("metaData");
         metaData.setString("type", tentantType(tenant));
-        if (tenant instanceof AthenzTenant) {
-            AthenzTenant athenzTenant = (AthenzTenant) tenant;
-            metaData.setString("athensDomain", athenzTenant.domain().getName());
-            metaData.setString("property", athenzTenant.property().id());
+        switch (tenant.type()) {
+            case athenz:
+                AthenzTenant athenzTenant = (AthenzTenant) tenant;
+                metaData.setString("athensDomain", athenzTenant.domain().getName());
+                metaData.setString("property", athenzTenant.property().id());
+                break;
+            case user: break;
+            case cloud: break;
+            default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         object.setString("url", withPath("/application/v4/tenant/" + tenant.name().value(), requestURI).toString());
     }
