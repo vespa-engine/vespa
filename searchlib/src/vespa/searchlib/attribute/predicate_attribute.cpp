@@ -240,6 +240,7 @@ PredicateAttribute::addDoc(DocId &doc_id)
 uint32_t
 PredicateAttribute::clearDoc(DocId doc_id)
 {
+    updateUncommittedDocIdLimit(doc_id);
     _index->removeDocument(doc_id);
     _min_feature[doc_id] = MIN_FEATURE_FILL;
     _interval_range_vector[doc_id] = 0;

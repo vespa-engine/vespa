@@ -8,6 +8,7 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
+#include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
@@ -221,6 +222,9 @@ private:
     template <typename VectorType, typename BufferType>
     void
     testCompactLidSpace(const Config &config);
+
+    void
+    testCompactLidSpaceForPredicateAttribute(const Config &config);
 
     void
     testCompactLidSpace(const Config &config);
@@ -2005,6 +2009,18 @@ AttributeTest::testCompactLidSpace(const Config &config)
 }
 
 void
+AttributeTest::testCompactLidSpaceForPredicateAttribute(const Config &config)
+{
+    vespalib::string name = clsDir + "/predicate-single";
+    LOG(info, "testCompactLidSpace(%s)", name.c_str());
+    AttributePtr attr = AttributeFactory::createAttribute(name, config);
+    attr->addDocs(10);
+    attr->compactLidSpace(10);
+    attr->clearDoc(10);
+    attr->compactLidSpace(11);
+}
+
+void
 AttributeTest::testCompactLidSpace(const Config &config)
 {
     switch (config.basicType().type()) {
@@ -2035,6 +2051,9 @@ AttributeTest::testCompactLidSpace(const Config &config)
         } else {
             testCompactLidSpace<StringAttribute, string>(config);
         }
+        break;
+    case BasicType::PREDICATE:
+        testCompactLidSpaceForPredicateAttribute(config);
         break;
     default:
         LOG_ABORT("should not be reached");
@@ -2068,6 +2087,7 @@ AttributeTest::testCompactLidSpace()
     TEST_DO(testCompactLidSpace(Config(BasicType::STRING, CollectionType::SINGLE)));
     TEST_DO(testCompactLidSpace(Config(BasicType::STRING, CollectionType::ARRAY)));
     TEST_DO(testCompactLidSpace(Config(BasicType::STRING, CollectionType::WSET)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::PREDICATE, CollectionType::SINGLE)));
 }
 
 template <typename AttributeType>
