@@ -14,17 +14,12 @@ import static java.util.Objects.requireNonNull;
 public abstract class TenantClaim {
 
     private final TenantName tenant;
-    private final Principal user;
 
-    protected TenantClaim(TenantName tenant, Principal user) {
-        this.user = requireNonNull(user);
+    protected TenantClaim(TenantName tenant) {
         this.tenant = requireNonNull(tenant);
     }
 
     /** The tenant this claim concerns. */
     public TenantName tenant() { return tenant; }
-
-    /** The user making this claim. */
-    public Principal user() { return user; }
 
 }

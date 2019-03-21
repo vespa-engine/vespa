@@ -38,11 +38,9 @@ public class AthenzAccessControlRequests implements AccessControlRequests {
     @Override
     public TenantClaim getTenantClaim(TenantName tenant, Inspector requestObject) {
         return new AthenzTenantClaim(tenant,
-                                     new AthenzPrincipal(new AthenzUser("dummy")),
                                      optional("athensDomain", requestObject).map(AthenzDomain::new),
                                      optional("property", requestObject).map(Property::new),
-                                     optional("propertyId", requestObject).map(PropertyId::new),
-                                     new OktaAccessToken("token"));
+                                     optional("propertyId", requestObject).map(PropertyId::new));
     }
 
     @Override

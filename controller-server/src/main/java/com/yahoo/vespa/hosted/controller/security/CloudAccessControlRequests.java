@@ -14,12 +14,13 @@ public class CloudAccessControlRequests implements AccessControlRequests {
 
     @Override
     public CloudTenantClaim getTenantClaim(TenantName tenant, Inspector requestObject) {
-        return new CloudTenantClaim(tenant, null, null);
+        // TODO extract marketplace token.
+        return new CloudTenantClaim(tenant, "token");
     }
 
     @Override
     public Credentials getCredentials(TenantName tenant, Inspector requestObject, HttpRequest request) {
-        // TODO Pick out token data and return a specialised credential thing?
+        // TODO Pick out JWT data and return a specialised credentials thing.
         return new Credentials(request.getUserPrincipal());
     }
 

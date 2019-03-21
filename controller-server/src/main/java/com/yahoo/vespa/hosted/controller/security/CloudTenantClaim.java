@@ -15,8 +15,8 @@ public class CloudTenantClaim extends TenantClaim {
 
     private final String registrationToken;
 
-    public CloudTenantClaim(TenantName tenant, Principal user, String registrationToken) {
-        super(tenant, user);
+    public CloudTenantClaim(TenantName tenant, String registrationToken) {
+        super(tenant);
         this.registrationToken = requireNonNull(registrationToken);
     }
 

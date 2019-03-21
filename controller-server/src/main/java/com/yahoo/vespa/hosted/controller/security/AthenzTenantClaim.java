@@ -20,14 +20,10 @@ public class AthenzTenantClaim extends TenantClaim {
 
     private final Optional<Property> property;
     private final Optional<PropertyId> propertyId;
-    private final Optional<AthenzDomain> domain;
-    private final OktaAccessToken token;
 
-    public AthenzTenantClaim(TenantName tenant, Principal user, Optional<AthenzDomain> domain,
-                             Optional<Property> property, Optional<PropertyId> propertyId, OktaAccessToken token) {
-        super(tenant, user);
-        this.domain = requireNonNull(domain);
-        this.token = requireNonNull(token);
+    public AthenzTenantClaim(TenantName tenant, Optional<AthenzDomain> domain,
+                             Optional<Property> property, Optional<PropertyId> propertyId) {
+        super(tenant);
         this.property = requireNonNull(property);
         this.propertyId = requireNonNull(propertyId);
     }
@@ -37,11 +33,5 @@ public class AthenzTenantClaim extends TenantClaim {
 
     /** The ID of the property of the tenant to create. */
     public Optional<PropertyId> propertyId() { return propertyId; }
-
-    /** The Athens domain of the concerned tenant. */
-    public Optional<AthenzDomain> domain() { return domain; }
-
-    /** The Okta issued token proving the user's access to Athenz. */
-    public OktaAccessToken token() { return token; }
 
 }

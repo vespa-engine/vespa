@@ -267,11 +267,9 @@ public final class ControllerTester {
         AthenzUser user = new AthenzUser("user");
         AthenzDomain domain = createDomainWithAdmin(domainName, user);
         AthenzTenantClaim claim = new AthenzTenantClaim(name,
-                                                        new AthenzPrincipal(user),
                                                         Optional.of(domain),
                                                         Optional.of(new Property("Property" + propertyId)),
-                                                        Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new),
-                                                        new OktaAccessToken("okta-token"));
+                                                        Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new));
         AthenzCredentials credentials = new AthenzCredentials(new AthenzPrincipal(user), domain, new OktaAccessToken("okta-token"));
         controller().tenants().create(claim, credentials);
         if (contact.isPresent())
