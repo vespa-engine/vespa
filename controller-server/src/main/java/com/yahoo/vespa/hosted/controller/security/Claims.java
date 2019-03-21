@@ -18,6 +18,6 @@ public interface Claims {
     TenantClaim getTenantClaim(TenantName tenant, Inspector requestObject);
 
     /** Extracts credentials required for an access control modification for the given tenant, from the given request. */
-    Credentials<? extends Principal> getCredentials(TenantName tenant, Inspector requestObject, HttpRequest jDiscRequest);
+    Credentials getCredentials(TenantName tenant, Inspector requestObject, HttpRequest jDiscRequest);
 
 }

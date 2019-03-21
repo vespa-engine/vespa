@@ -27,7 +27,7 @@ public class CloudAccessControl implements AccessControl {
     }
 
     @Override
-    public CloudTenant createTenant(TenantClaim claim, Credentials<? extends Principal> credentials, List<Tenant> existing) {
+    public CloudTenant createTenant(TenantClaim claim, Credentials credentials, List<Tenant> existing) {
         CloudTenantClaim cloudPermit = (CloudTenantClaim) claim;
 
         // Do things ...
@@ -38,12 +38,12 @@ public class CloudAccessControl implements AccessControl {
     }
 
     @Override
-    public Tenant updateTenant(TenantClaim tenantClaim, Credentials<? extends Principal> credentials, List<Tenant> existing, List<Application> applications) {
+    public Tenant updateTenant(TenantClaim tenantClaim, Credentials credentials, List<Tenant> existing, List<Application> applications) {
         throw new UnsupportedOperationException("Update is not supported here, as it would entail changing the tenant name.");
     }
 
     @Override
-    public void deleteTenant(TenantName tenant, Credentials<? extends Principal> credentials) {
+    public void deleteTenant(TenantName tenant, Credentials credentials) {
 
         // Probably terminate customer subscription?
 
@@ -52,21 +52,21 @@ public class CloudAccessControl implements AccessControl {
     }
 
     @Override
-    public void createApplication(ApplicationId application, Credentials<? extends Principal> credentials) {
+    public void createApplication(ApplicationId application, Credentials credentials) {
 
         // Create application group?
 
     }
 
     @Override
-    public void deleteApplication(ApplicationId id, Credentials<? extends Principal> credentials) {
+    public void deleteApplication(ApplicationId id, Credentials credentials) {
 
         // Delete application group?
 
     }
 
     @Override
-    public List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials<? extends Principal> credentials) {
+    public List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials credentials) {
         // Get credential things (token with roles or something) and check what it's good for.
         return Collections.emptyList();
     }

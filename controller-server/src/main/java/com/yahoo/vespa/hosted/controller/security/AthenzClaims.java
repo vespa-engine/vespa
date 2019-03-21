@@ -46,7 +46,7 @@ public class AthenzClaims implements Claims {
     }
 
     @Override
-    public Credentials<? extends Principal> getCredentials(TenantName tenant, Inspector requestObject, HttpRequest request) {
+    public Credentials getCredentials(TenantName tenant, Inspector requestObject, HttpRequest request) {
         // Get domain from request if present, which it should be for create and update requests.
         Optional<AthenzDomain> requestDomain = optional("athensDomain", requestObject).map(AthenzDomain::new);
         // Otherwise the tenant should already exist, and we use the domain stored under the tenant.

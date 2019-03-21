@@ -9,15 +9,15 @@ import static java.util.Objects.requireNonNull;
  *
  * @author jonmv
  */
-public class Credentials<PrincipalType extends Principal> {
+public class Credentials {
 
-    private final PrincipalType user;
+    private final Principal user;
 
-    public Credentials(PrincipalType user) {
+    public Credentials(Principal user) {
         this.user = requireNonNull(user);
     }
 
     /** Returns the user which owns these credentials. */
-    public PrincipalType user() { return user; }
+    public Principal user() { return user; }
 
 }

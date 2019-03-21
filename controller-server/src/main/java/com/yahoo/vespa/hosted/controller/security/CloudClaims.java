@@ -22,9 +22,9 @@ public class CloudClaims implements Claims {
     }
 
     @Override
-    public Credentials<? extends Principal> getCredentials(TenantName tenant, Inspector requestObject, HttpRequest request) {
+    public Credentials getCredentials(TenantName tenant, Inspector requestObject, HttpRequest request) {
         // TODO Pick out token data and return a specialised credential thing?
-        return new Credentials<>(request.getUserPrincipal());
+        return new Credentials(request.getUserPrincipal());
     }
 
 }

@@ -219,7 +219,7 @@ public class ApplicationController {
      *
      * @throws IllegalArgumentException if the application already exists
      */
-    public Application createApplication(ApplicationId id, Optional<Credentials<? extends Principal>> credentials) {
+    public Application createApplication(ApplicationId id, Optional<Credentials> credentials) {
         if ( ! (id.instance().isDefault())) // TODO: Support instances properly
             throw new IllegalArgumentException("Only the instance name 'default' is supported at the moment");
         if (id.instance().isTester())
@@ -544,7 +544,7 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
      * @throws NotExistsException if no instances of the application exist
      */
-    public void deleteApplication(ApplicationId applicationId, Optional<Credentials<? extends Principal>> credentials) {
+    public void deleteApplication(ApplicationId applicationId, Optional<Credentials> credentials) {
         Tenant tenant = controller.tenants().require(applicationId.tenant());
         if (tenant.type() != Tenant.Type.user && ! credentials.isPresent())
                 throw new IllegalArgumentException("Could not delete application '" + applicationId + "': No credentials provided");

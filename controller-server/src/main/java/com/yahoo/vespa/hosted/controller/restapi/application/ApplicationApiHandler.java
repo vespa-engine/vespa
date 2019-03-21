@@ -269,7 +269,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             throw new NotAuthorizedException("You must be authenticated.");
 
         TenantName tenantName = TenantName.from(UserTenant.normalizeUser(user.getIdentity().getName()));
-        List<Tenant> tenants = controller.tenants().asList(new Credentials<>(user));
+        List<Tenant> tenants = controller.tenants().asList(new Credentials(user));
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
@@ -758,7 +758,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Inspector requestObject = toSlime(request.getData()).get();
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         try {
-            Optional<Credentials<? extends Principal>> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
+            Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                     ? Optional.empty()
                     : Optional.of(permits.getCredentials(id.tenant(), requestObject, request.getJDiscRequest()));
             Application application = controller.applications().createApplication(id, credentials);
@@ -973,7 +973,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        Optional<Credentials<? extends Principal>> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
+        Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                 ? Optional.empty()
                 : Optional.of(permits.getCredentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
         controller.applications().deleteApplication(id, credentials);

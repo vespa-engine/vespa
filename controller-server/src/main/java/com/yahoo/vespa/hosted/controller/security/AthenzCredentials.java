@@ -7,9 +7,12 @@ import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A domain and a token which proves access to some action under that domain.
+ * Like {@link Credentials}, but additionally a domain and a token which proves the user's
+ * access to some actions under that domain.
+ *
+ * @author jonmv
  */
-public class AthenzCredentials extends Credentials<AthenzPrincipal> {
+public class AthenzCredentials extends Credentials {
 
     private final AthenzDomain domain;
     private final OktaAccessToken token;
@@ -19,6 +22,9 @@ public class AthenzCredentials extends Credentials<AthenzPrincipal> {
         this.domain = requireNonNull(domain);
         this.token = requireNonNull(token);
     }
+
+    @Override
+    public AthenzPrincipal user() { return (AthenzPrincipal) super.user(); }
 
     /** Returns the Athenz domain these credentials refer to. */
     public AthenzDomain domain() { return domain; }

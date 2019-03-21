@@ -62,7 +62,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public Tenant createTenant(TenantClaim claim, Credentials<? extends Principal> credentials, List<Tenant> existing) {
+    public Tenant createTenant(TenantClaim claim, Credentials credentials, List<Tenant> existing) {
         AthenzTenantClaim athenzClaim = (AthenzTenantClaim) claim;
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         AthenzDomain domain = athenzCredentials.domain();
@@ -94,7 +94,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public Tenant updateTenant(TenantClaim claim, Credentials<? extends Principal> credentials, List<Tenant> existing, List<Application> applications) {
+    public Tenant updateTenant(TenantClaim claim, Credentials credentials, List<Tenant> existing, List<Application> applications) {
         AthenzTenantClaim athenzClaim = (AthenzTenantClaim) claim;
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         AthenzDomain domain = athenzCredentials.domain();
@@ -141,7 +141,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public void deleteTenant(TenantName tenant, Credentials<? extends Principal> credentials) {
+    public void deleteTenant(TenantName tenant, Credentials credentials) {
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
 
         log("deleteTenancy(tenantDomain=%s, service=%s)", athenzCredentials.domain(), service);
@@ -149,7 +149,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public void createApplication(ApplicationId application, Credentials<? extends Principal> credentials) {
+    public void createApplication(ApplicationId application, Credentials credentials) {
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         createApplication(athenzCredentials.domain(), application.application(), athenzCredentials.token());
     }
@@ -163,7 +163,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public void deleteApplication(ApplicationId id, Credentials<? extends Principal> credentials) {
+    public void deleteApplication(ApplicationId id, Credentials credentials) {
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         log("deleteProviderResourceGroup(tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s)",
             athenzCredentials.domain(), service.getDomain().getName(), service.getName(), id.application());
@@ -171,7 +171,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials<? extends Principal> credentials) {
+    public List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials credentials) {
         AthenzIdentity identity =  ((AthenzPrincipal) credentials.user()).getIdentity();
         List<AthenzDomain> userDomains = ztsClient.getTenantDomains(service, identity, "admin");
         return tenants.stream()

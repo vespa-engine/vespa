@@ -64,7 +64,7 @@ public class TenantController {
     }
 
     /** Returns the lsit of tenants accessible to the given user. */
-    public List<Tenant> asList(Credentials<? extends Principal> credentials) {
+    public List<Tenant> asList(Credentials credentials) {
         return accessControl.accessibleTenants(asList(), credentials);
     }
 
@@ -103,7 +103,7 @@ public class TenantController {
     }
 
     /** Create a tenant, provided the given permit is valid. */
-    public void create(TenantClaim claim, Credentials<? extends Principal> credentials) {
+    public void create(TenantClaim claim, Credentials credentials) {
         try (Lock lock = lock(claim.tenant())) {
             requireNonExistent(claim.tenant());
             curator.writeTenant(accessControl.createTenant(claim, credentials, asList()));
@@ -133,14 +133,14 @@ public class TenantController {
     }
 
     /** Updates the tenant contained in the given claim with new data. */
-    public void update(TenantClaim claim, Credentials<? extends Principal> credentials) {
+    public void update(TenantClaim claim, Credentials credentials) {
         try (Lock lock = lock(claim.tenant())) {
             curator.writeTenant(accessControl.updateTenant(claim, credentials, asList(), controller.applications().asList(claim.tenant())));
         }
     }
 
     /** Deletes the tenant in the given claim. */
-    public void delete(TenantName tenant, Credentials<? extends Principal> credentials) {
+    public void delete(TenantName tenant, Credentials credentials) {
         try (Lock lock = lock(tenant)) {
             require(tenant);
             if ( ! controller.applications().asList(tenant).isEmpty())

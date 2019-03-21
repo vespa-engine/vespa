@@ -287,7 +287,7 @@ public final class ControllerTester {
         return createTenant(tenantName, domainName, propertyId, Optional.empty());
     }
 
-    public Optional<Credentials<? extends Principal>> credentialsFor(ApplicationId id) {
+    public Optional<Credentials> credentialsFor(ApplicationId id) {
         return domainOf(id).map(domain -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")), domain, new OktaAccessToken("okta-token")));
     }
 
