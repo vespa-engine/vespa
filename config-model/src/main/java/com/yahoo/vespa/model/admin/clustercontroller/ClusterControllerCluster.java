@@ -37,7 +37,7 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
         for (ClusterControllerContainer container : containerCluster.getContainers()) {
             ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
             serverBuilder.hostname(container.getHostName());
-            serverBuilder.id(container.getIndex());
+            serverBuilder.id(container.index());
             builder.server(serverBuilder);
         }
     }
