@@ -1,7 +1,10 @@
-package com.yahoo.vespa.hosted.controller.permits;
+package com.yahoo.vespa.hosted.controller.security;
 
 import com.google.inject.Inject;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Marketplace;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -24,43 +27,47 @@ public class CloudAccessControl implements AccessControl {
     }
 
     @Override
-    public CloudTenant createTenant(TenantClaim claim, List<Tenant> existing) {
+    public CloudTenant createTenant(TenantClaim claim, Credentials<? extends Principal> credentials, List<Tenant> existing) {
         CloudTenantClaim cloudPermit = (CloudTenantClaim) claim;
 
         // Do things ...
 
-        return new CloudTenant(cloudPermit.tenant(), marketplace.resolveCustomer(cloudPermit.getRegistrationToken()));
+        // return new CloudTenant(cloudPermit.tenant(), marketplace.resolveCustomer(cloudPermit.getRegistrationToken()));
+        // TODO Enable the above when things work.
+        return new CloudTenant(cloudPermit.tenant(), new BillingInfo("customer", "Vespa"));
     }
 
     @Override
-    public Tenant updateTenant(TenantClaim tenantClaim, List<Tenant> existing, List<Application> applications) {
+    public Tenant updateTenant(TenantClaim tenantClaim, Credentials<? extends Principal> credentials, List<Tenant> existing, List<Application> applications) {
         throw new UnsupportedOperationException("Update is not supported here, as it would entail changing the tenant name.");
     }
 
     @Override
-    public void deleteTenant(TenantClaim claim, Tenant tenant) {
+    public void deleteTenant(TenantName tenant, Credentials<? extends Principal> credentials) {
 
-        // Probably delete customer subscription?
+        // Probably terminate customer subscription?
 
-    }
-
-    @Override
-    public void createApplication(ApplicationClaim claim) {
-
-        // No-op?
+        // Delete tenant group
 
     }
 
     @Override
-    public void deleteApplication(ApplicationClaim claim) {
+    public void createApplication(ApplicationId application, Credentials<? extends Principal> credentials) {
 
-        // No-op?
+        // Create application group?
 
     }
 
     @Override
-    public List<Tenant> accessibleTenants(List<Tenant> tenants, Principal user) {
-        // Should be more than a Principal, or one castable to a type with more data.
+    public void deleteApplication(ApplicationId id, Credentials<? extends Principal> credentials) {
+
+        // Delete application group?
+
+    }
+
+    @Override
+    public List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials<? extends Principal> credentials) {
+        // Get credential things (token with roles or something) and check what it's good for.
         return Collections.emptyList();
     }
 

@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.permits;
+package com.yahoo.vespa.hosted.controller.security;
 
 import com.yahoo.config.provision.ApplicationId;
 
@@ -9,11 +9,11 @@ import static java.util.Objects.requireNonNull;
  *
  * @author jonmv
  */
-public abstract class ApplicationClaim {
+public class ApplicationClaim {
 
     private final ApplicationId application;
 
-    protected ApplicationClaim(ApplicationId application) {
+    public ApplicationClaim(ApplicationId application) {
         this.application = requireNonNull(application);
     }
 

@@ -1,10 +1,13 @@
-package com.yahoo.vespa.hosted.controller.permits;
+package com.yahoo.vespa.hosted.controller.security;
 
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Stores permissions for tenant and application resources.
@@ -17,49 +20,53 @@ public interface AccessControl {
      * Sets up permissions for a tenant, based on the given claim, or throws.
      *
      * @param tenantClaim claim for the tenant to create
+     * @param credentials the credentials required to complete this action
      * @param existing list of existing tenants, to check for conflicts
      * @return the created tenant, for keeping
      */
-    Tenant createTenant(TenantClaim tenantClaim, List<Tenant> existing);
+    Tenant createTenant(TenantClaim tenantClaim, Credentials<? extends Principal> credentials, List<Tenant> existing);
 
     /**
      * Modifies up permissions for a tenant, based on the given claim, or throws.
      *
      * @param tenantClaim claim for the tenant to update
+     * @param credentials the credentials required to complete this action
      * @param existing list of existing tenants, to check for conflicts
      * @param applications list of applications this tenant already owns
      * @return the updated tenant, for keeping
      */
-    Tenant updateTenant(TenantClaim tenantClaim, List<Tenant> existing, List<Application> applications);
+    Tenant updateTenant(TenantClaim tenantClaim, Credentials<? extends Principal> credentials, List<Tenant> existing, List<Application> applications);
 
     /**
      * Removes all permissions for tenant in the given claim, and for any applications it owns, or throws.
      *
-     * @param tenantClaim claim for the tenant to delete
      * @param tenant the tenant to delete
+     * @param credentials the credentials required to complete this action
      */
-    void deleteTenant(TenantClaim tenantClaim, Tenant tenant);
+    void deleteTenant(TenantName tenant, Credentials<? extends Principal> credentials);
 
     /**
      * Sets up permissions for an application, based on the given claim, or throws.
      *
-     * @param applicationClaim claim for the application to create
+     * @param application the ID of the application to create
+     * @param credentials the credentials required to complete this action
      */
-    void createApplication(ApplicationClaim applicationClaim);
+    void createApplication(ApplicationId application, Credentials<? extends Principal> credentials);
 
     /**
-     * Removes permissions for the application in the given claim, or throws.
+     * Removes access control for the given application.
      *
-     * @param applicationClaim claim for the application to delete
+     * @param id the ID of the application to delete
+     * @param credentials the credentials required to complete this action
      */
-    void deleteApplication(ApplicationClaim applicationClaim);
+    void deleteApplication(ApplicationId id, Credentials<? extends Principal> credentials);
 
     /**
-     * Returns the list of tenants to which this principal has access.
+     * Returns the list of tenants to which a principal has access.
      * @param tenants the list of all known tenants
-     * @param principal the user whose tenants to return
+     * @param credentials the credentials of the principal
      * @return the list of tenants the given user has access to
      */
-    List<Tenant> accessibleTenants(List<Tenant> tenants, Principal principal);
+    List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials<? extends Principal> credentials);
 
 }

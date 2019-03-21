@@ -1,31 +1,29 @@
 package com.yahoo.vespa.hosted.controller.security;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Wraps the claim data of an Athenz application modification.
- *
- * @author jonmv
+ * A domain and a token which proves access to some action under that domain.
  */
-public class AthenzApplicationClaim extends ApplicationClaim {
+public class AthenzCredentials extends Credentials<AthenzPrincipal> {
 
     private final AthenzDomain domain;
     private final OktaAccessToken token;
 
-    public AthenzApplicationClaim(ApplicationId application, AthenzDomain domain, OktaAccessToken token) {
-        super(application);
+    public AthenzCredentials(AthenzPrincipal user, AthenzDomain domain, OktaAccessToken token) {
+        super(user);
         this.domain = requireNonNull(domain);
         this.token = requireNonNull(token);
     }
 
-    /** The athenz domain to create this application under. */
+    /** Returns the Athenz domain these credentials refer to. */
     public AthenzDomain domain() { return domain; }
 
-     /** The Okta issued token proving the user's access to Athenz. */
+    /** Returns the token proving access to the requested action under this domain. */
     public OktaAccessToken token() { return token; }
 
 }

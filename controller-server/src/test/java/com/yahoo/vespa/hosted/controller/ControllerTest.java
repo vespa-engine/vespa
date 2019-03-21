@@ -347,7 +347,7 @@ public class ControllerTest {
             tester.deployAndNotify(app1, applicationPackage, true, systemTest);
             tester.applications().deactivate(app1.id(), ZoneId.from(Environment.test, RegionName.from("us-east-1")));
             tester.applications().deactivate(app1.id(), ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
-            tester.applications().deleteApplication(app1.id(), tester.controllerTester().claimFor(app1.id()));
+            tester.applications().deleteApplication(app1.id(), tester.controllerTester().credentialsFor(app1.id()));
             try (RotationLock lock = tester.applications().rotationRepository().lock()) {
                 assertTrue("Rotation is unassigned",
                            tester.applications().rotationRepository().availableRotations(lock)

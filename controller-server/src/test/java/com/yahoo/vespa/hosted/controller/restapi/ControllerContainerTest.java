@@ -93,7 +93,7 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.permits.AthenzPermitExtractor'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.security.AthenzClaims'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade'/>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
             "    <binding>http://*/application/v4/*</binding>\n" +

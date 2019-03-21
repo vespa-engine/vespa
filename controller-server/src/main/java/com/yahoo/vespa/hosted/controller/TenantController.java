@@ -4,8 +4,9 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
-import com.yahoo.vespa.hosted.controller.permits.AccessControl;
-import com.yahoo.vespa.hosted.controller.permits.TenantClaim;
+import com.yahoo.vespa.hosted.controller.security.AccessControl;
+import com.yahoo.vespa.hosted.controller.security.Credentials;
+import com.yahoo.vespa.hosted.controller.security.TenantClaim;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -63,8 +64,8 @@ public class TenantController {
     }
 
     /** Returns the lsit of tenants accessible to the given user. */
-    public List<Tenant> asList(Principal user) {
-        return accessControl.accessibleTenants(asList(), user);
+    public List<Tenant> asList(Credentials<? extends Principal> credentials) {
+        return accessControl.accessibleTenants(asList(), credentials);
     }
 
     /** Locks a tenant for modification and applies the given action. */
@@ -102,10 +103,10 @@ public class TenantController {
     }
 
     /** Create a tenant, provided the given permit is valid. */
-    public void create(TenantClaim claim) {
+    public void create(TenantClaim claim, Credentials<? extends Principal> credentials) {
         try (Lock lock = lock(claim.tenant())) {
             requireNonExistent(claim.tenant());
-            curator.writeTenant(accessControl.createTenant(claim, asList()));
+            curator.writeTenant(accessControl.createTenant(claim, credentials, asList()));
         }
     }
 
@@ -132,22 +133,22 @@ public class TenantController {
     }
 
     /** Updates the tenant contained in the given claim with new data. */
-    public void update(TenantClaim claim) {
+    public void update(TenantClaim claim, Credentials<? extends Principal> credentials) {
         try (Lock lock = lock(claim.tenant())) {
-            curator.writeTenant(accessControl.updateTenant(claim, asList(), controller.applications().asList(claim.tenant())));
+            curator.writeTenant(accessControl.updateTenant(claim, credentials, asList(), controller.applications().asList(claim.tenant())));
         }
     }
 
     /** Deletes the tenant in the given claim. */
-    public void delete(TenantClaim claim) {
-        try (Lock lock = lock(claim.tenant())) {
-            Tenant tenant = require(claim.tenant());
-            if ( ! controller.applications().asList(tenant.name()).isEmpty())
-                throw new IllegalArgumentException("Could not delete tenant '" + tenant.name().value()
+    public void delete(TenantName tenant, Credentials<? extends Principal> credentials) {
+        try (Lock lock = lock(tenant)) {
+            require(tenant);
+            if ( ! controller.applications().asList(tenant).isEmpty())
+                throw new IllegalArgumentException("Could not delete tenant '" + tenant.value()
                                                    + "': This tenant has active applications");
 
-            curator.removeTenant(tenant.name());
-            accessControl.deleteTenant(claim, tenant);
+            curator.removeTenant(tenant);
+            accessControl.deleteTenant(tenant, credentials);
         }
     }
 

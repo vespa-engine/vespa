@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.permits;
+package com.yahoo.vespa.hosted.controller.security;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;

@@ -68,13 +68,14 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
-import com.yahoo.vespa.hosted.controller.permits.ApplicationClaim;
-import com.yahoo.vespa.hosted.controller.permits.Claims;
+import com.yahoo.vespa.hosted.controller.security.ApplicationClaim;
+import com.yahoo.vespa.hosted.controller.security.Claims;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
+import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant.Type;
@@ -102,6 +103,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.logging.Level;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -266,7 +268,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (user == null)
             throw new NotAuthorizedException("You must be authenticated.");
 
-        List<Tenant> tenants = controller.tenants().asList(user);
+        TenantName tenantName = TenantName.from(UserTenant.normalizeUser(user.getIdentity().getName()));
+        List<Tenant> tenants = controller.tenants().asList(new Credentials<>(user));
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
@@ -274,8 +277,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor tenantsArray = response.setArray("tenants");
         for (Tenant tenant : tenants)
             tenantInTenantsListToSlime(tenant, request.getUri(), tenantsArray.addObject());
-        response.setBool("tenantExists", tenants.stream().anyMatch(tenant -> tenant.type() == Type.user &&
-                                                                         ((UserTenant) tenant).is(user.getIdentity().getName())));
+        response.setBool("tenantExists", tenants.stream().anyMatch(tenant -> tenant.name().equals(tenantName)));
         return new SlimeJsonResponse(slime);
     }
 
@@ -737,21 +739,29 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse updateTenant(String tenantName, HttpRequest request) {
         getTenantOrThrow(tenantName);
-        controller.tenants().update(permits.getTenantClaim(TenantName.from(tenantName), request));
+        TenantName tenant = TenantName.from(tenantName);
+        Inspector requestObject = toSlime(request.getData()).get();
+        controller.tenants().update(permits.getTenantClaim(tenant, requestObject),
+                                    permits.getCredentials(tenant, requestObject, request.getJDiscRequest()));
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
     private HttpResponse createTenant(String tenantName, HttpRequest request) {
-        controller.tenants().create(permits.getTenantClaim(TenantName.from(tenantName), request));
+        TenantName tenant = TenantName.from(tenantName);
+        Inspector requestObject = toSlime(request.getData()).get();
+        controller.tenants().create(permits.getTenantClaim(tenant, requestObject),
+                                    permits.getCredentials(tenant, requestObject, request.getJDiscRequest()));
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
     private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
+        Inspector requestObject = toSlime(request.getData()).get();
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         try {
-            Optional<ApplicationClaim> claim = controller.tenants().require(id.tenant()).type() != Tenant.Type.user
-                    ? Optional.of(permits.getApplicationClaim(id, request)) : Optional.empty();
-            Application application = controller.applications().createApplication(id, claim);
+            Optional<Credentials<? extends Principal>> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
+                    ? Optional.empty()
+                    : Optional.of(permits.getCredentials(id.tenant(), requestObject, request.getJDiscRequest()));
+            Application application = controller.applications().createApplication(id, credentials);
 
             Slime slime = new Slime();
             toSlime(application, slime.setObject(), request);
@@ -952,7 +962,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (tenant.get().type() == Tenant.Type.user)
             controller.tenants().deleteUser((UserTenant) tenant.get());
         else
-            controller.tenants().delete(permits.getTenantClaim(tenant.get().name(), request));
+            controller.tenants().delete(tenant.get().name(),
+                                        permits.getCredentials(tenant.get().name(),
+                                                               toSlime(request.getData()).get(),
+                                                               request.getJDiscRequest()));
 
         // TODO: Change to a message response saying the tenant was deleted
         return tenant(tenant.get(), request);
@@ -960,9 +973,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        Optional<ApplicationClaim> claim = controller.tenants().require(id.tenant()).type() != Tenant.Type.user
-                ? Optional.of(permits.getApplicationClaim(id, request)) : Optional.empty();
-        controller.applications().deleteApplication(id, claim);
+        Optional<Credentials<? extends Principal>> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
+                ? Optional.empty()
+                : Optional.of(permits.getCredentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
+        controller.applications().deleteApplication(id, credentials);
         return new EmptyJsonResponse(); // TODO: Replicates current behavior but should return a message response instead
     }
 

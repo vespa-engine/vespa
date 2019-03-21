@@ -50,12 +50,13 @@ import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
-import com.yahoo.vespa.hosted.controller.permits.ApplicationClaim;
-import com.yahoo.vespa.hosted.controller.permits.AccessControl;
+import com.yahoo.vespa.hosted.controller.security.ApplicationClaim;
+import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
+import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -65,6 +66,7 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.security.Principal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -217,7 +219,7 @@ public class ApplicationController {
      *
      * @throws IllegalArgumentException if the application already exists
      */
-    public Application createApplication(ApplicationId id, Optional<ApplicationClaim> claim) {
+    public Application createApplication(ApplicationId id, Optional<Credentials<? extends Principal>> credentials) {
         if ( ! (id.instance().isDefault())) // TODO: Support instances properly
             throw new IllegalArgumentException("Only the instance name 'default' is supported at the moment");
         if (id.instance().isTester())
@@ -235,11 +237,11 @@ public class ApplicationController {
             if (get(dashToUnderscore(id)).isPresent()) // VESPA-1945
                 throw new IllegalArgumentException("Could not create '" + id + "': Application " + dashToUnderscore(id) + " already exists");
             if (tenant.get().type() != Tenant.Type.user) {
-                if ( ! claim.isPresent())
-                    throw new IllegalArgumentException("Could not create '" + id + "': No permit provided");
+                if ( ! credentials.isPresent())
+                    throw new IllegalArgumentException("Could not create '" + id + "': No credentials provided");
 
                 if (id.instance().isDefault()) // Only store the application permits for non-user applications.
-                    accessControl.createApplication(claim.get());
+                    accessControl.createApplication(id, credentials.get());
             }
             LockedApplication application = new LockedApplication(new Application(id, clock.instant()), lock);
             store(application);
@@ -542,10 +544,10 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
      * @throws NotExistsException if no instances of the application exist
      */
-    public void deleteApplication(ApplicationId applicationId, Optional<ApplicationClaim> claim) {
+    public void deleteApplication(ApplicationId applicationId, Optional<Credentials<? extends Principal>> credentials) {
         Tenant tenant = controller.tenants().require(applicationId.tenant());
-        if (tenant.type() != Tenant.Type.user && ! claim.isPresent())
-                throw new IllegalArgumentException("Could not delete application '" + applicationId + "': No permit provided");
+        if (tenant.type() != Tenant.Type.user && ! credentials.isPresent())
+                throw new IllegalArgumentException("Could not delete application '" + applicationId + "': No credentials provided");
 
         // Find all instances of the application
         List<ApplicationId> instances = asList(applicationId.tenant()).stream()
@@ -570,7 +572,7 @@ public class ApplicationController {
 
         // Only delete permits once.
         if (tenant.type() != Tenant.Type.user)
-            accessControl.deleteApplication(claim.get());
+            accessControl.deleteApplication(applicationId, credentials.get());
     }
 
     /**

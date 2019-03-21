@@ -28,8 +28,9 @@ import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
-import com.yahoo.vespa.hosted.controller.permits.AthenzApplicationClaim;
-import com.yahoo.vespa.hosted.controller.permits.AthenzTenantClaim;
+import com.yahoo.vespa.hosted.controller.security.AthenzApplicationClaim;
+import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
+import com.yahoo.vespa.hosted.controller.security.AthenzTenantClaim;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 
@@ -76,19 +77,18 @@ public class ContainerControllerTester {
 
     public Application createApplication(String athensDomain, String tenant, String application) {
         AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "user");
+        AthenzPrincipal user = new AthenzPrincipal(new AthenzUser("user"));
+        AthenzCredentials credentials = new AthenzCredentials(user, domain1, new OktaAccessToken("okta-token"));
         AthenzTenantClaim tenantClaim = new AthenzTenantClaim(TenantName.from(tenant),
-                                                              new AthenzPrincipal(new AthenzUser("user")),
+                                                              user,
                                                               Optional.of(domain1),
                                                               Optional.of(new Property("property1")),
                                                               Optional.of(new PropertyId("1234")),
                                                               new OktaAccessToken("okta-token"));
-        controller().tenants().create(tenantClaim);
+        controller().tenants().create(tenantClaim, credentials);
 
         ApplicationId app = ApplicationId.from(tenant, application, "default");
-        AthenzApplicationClaim applicationClaim = new AthenzApplicationClaim(app,
-                                                                             domain1,
-                                                                             new OktaAccessToken("okta-token"));
-        return controller().applications().createApplication(app, Optional.of(applicationClaim));
+        return controller().applications().createApplication(app, Optional.of(credentials));
     }
 
     public Application deploy(Application application, ApplicationPackage applicationPackage, ZoneId zone) {

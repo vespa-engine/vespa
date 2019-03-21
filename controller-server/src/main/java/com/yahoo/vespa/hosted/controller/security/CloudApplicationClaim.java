@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.permits;
+package com.yahoo.vespa.hosted.controller.security;
 
 import com.yahoo.config.provision.ApplicationId;
 

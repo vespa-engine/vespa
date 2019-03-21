@@ -1,8 +1,11 @@
-package com.yahoo.vespa.hosted.controller.permits;
+package com.yahoo.vespa.hosted.controller.security;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.slime.Inspector;
+
+import java.security.Principal;
 
 /**
  * Extracts {@link TenantClaim}s and {@link ApplicationClaim}s from HTTP requests, to be stored in an {@link AccessControl}.
@@ -12,9 +15,9 @@ import com.yahoo.container.jdisc.HttpRequest;
 public interface Claims {
 
     /** Extracts claim data for a tenant, from the given request. */
-    TenantClaim getTenantClaim(TenantName tenant, HttpRequest request);
+    TenantClaim getTenantClaim(TenantName tenant, Inspector requestObject);
 
-    /** Extracts claim data for an application, from the given request. */
-    ApplicationClaim getApplicationClaim(ApplicationId application, HttpRequest request);
+    /** Extracts credentials required for an access control modification for the given tenant, from the given request. */
+    Credentials<? extends Principal> getCredentials(TenantName tenant, Inspector requestObject, HttpRequest jDiscRequest);
 
 }
