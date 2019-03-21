@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
@@ -262,7 +263,7 @@ public class ApplicationController {
                                  Optional<ApplicationPackage> applicationPackageFromDeployer,
                                  Optional<ApplicationVersion> applicationVersionFromDeployer,
                                  DeployOptions options,
-                                 Optional<AthenzIdentity> deployingIdentity) {
+                                 Optional<Principal> deployingIdentity) {
         if (applicationId.instance().isTester())
             throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
 
@@ -727,10 +728,13 @@ public class ApplicationController {
      * @param applicationPackage Application package
      * @param deployer Principal initiating the deployment, possibly empty
      */
-    public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage, Optional<AthenzIdentity> deployer) {
+    public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage, Optional<Principal> deployer) {
         applicationPackage.deploymentSpec().athenzDomain().ifPresent(identityDomain -> {
             Tenant tenant = controller.tenants().require(tenantName);
-            deployer.filter(AthenzUser.class::isInstance)
+            deployer.filter(AthenzPrincipal.class::isInstance)
+                    .map(AthenzPrincipal.class::cast)
+                    .map(AthenzPrincipal::getIdentity)
+                    .filter(AthenzUser.class::isInstance)
                     .ifPresentOrElse(user -> {
                                          if ( ! ((AthenzFacade) accessControl).hasTenantAdminAccess(user, new AthenzDomain(identityDomain.value())))
                                              throw new IllegalArgumentException("User " + user.getFullName() + " is not allowed to launch " +

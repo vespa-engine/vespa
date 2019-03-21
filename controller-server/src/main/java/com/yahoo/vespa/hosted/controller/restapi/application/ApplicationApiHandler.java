@@ -20,6 +20,7 @@ import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
@@ -42,7 +43,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
@@ -260,16 +260,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse authenticatedUser(HttpRequest request) {
-        AthenzPrincipal user = getUserPrincipal(request);
+        Principal user = requireUserPrincipal(request);
         if (user == null)
             throw new NotAuthorizedException("You must be authenticated.");
 
-        TenantName tenantName = TenantName.from(UserTenant.normalizeUser(user.getIdentity().getName()));
+        String userName = user instanceof AthenzPrincipal ? ((AthenzPrincipal) user).getIdentity().getName() : user.getName();
+        TenantName tenantName = TenantName.from(UserTenant.normalizeUser(userName));
         List<Tenant> tenants = controller.tenants().asList(new Credentials(user));
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
-        response.setString("user", user.getIdentity().getName());
+        response.setString("user", userName);
         Cursor tenantsArray = response.setArray("tenants");
         for (Tenant tenant : tenants)
             tenantInTenantsListToSlime(tenant, request.getUri(), tenantsArray.addObject());
@@ -624,7 +625,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Inspector requestData = toSlime(request.getData()).get();
         String reason = mandatory("reason", requestData).asString();
-        String agent = getUserPrincipal(request).getIdentity().getFullName();
+        String agent = requireUserPrincipal(request).getName();
         long timestamp = controller.clock().instant().getEpochSecond();
         EndpointStatus.Status status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
         EndpointStatus endpointStatus = new EndpointStatus(status, reason, agent, timestamp);
@@ -719,17 +720,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse createUser(HttpRequest request) {
-        Optional<UserId> user = getUserId(request);
-        if ( ! user.isPresent()) throw new ForbiddenException("Not authenticated or not a user.");
+        String user = Optional.of(requireUserPrincipal(request))
+                              .filter(AthenzPrincipal.class::isInstance)
+                              .map(AthenzPrincipal.class::cast)
+                              .map(AthenzPrincipal::getIdentity)
+                              .filter(AthenzUser.class::isInstance)
+                              .map(AthenzIdentity::getName)
+                              .map(UserTenant::normalizeUser)
+                              .orElseThrow(() -> new ForbiddenException("Not authenticated or not a user."));
 
-        String username = UserTenant.normalizeUser(user.get().id());
-        UserTenant tenant = UserTenant.create(username);
+        UserTenant tenant = UserTenant.create(user);
         try {
             controller.tenants().createUser(tenant);
-            return new MessageResponse("Created user '" + username + "'");
+            return new MessageResponse("Created user '" + user + "'");
         } catch (AlreadyExistsException e) {
             // Ok
-            return new MessageResponse("User '" + username + "' already exists");
+            return new MessageResponse("User '" + user + "' already exists");
         }
     }
 
@@ -945,7 +951,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  applicationPackage,
                                                                  applicationVersion,
                                                                  deployOptionsJsonClass,
-                                                                 Optional.of(getUserPrincipal(request).getIdentity()));
+                                                                 Optional.of(requireUserPrincipal(request)));
 
         return new SlimeJsonResponse(toSlime(result));
     }
@@ -1156,23 +1162,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private static Optional<UserId> getUserId(HttpRequest request) {
-        return Optional.of(getUserPrincipal(request))
-                .map(AthenzPrincipal::getIdentity)
-                .filter(AthenzUser.class::isInstance)
-                .map(AthenzUser.class::cast)
-                .map(AthenzUser::getName)
-                .map(UserId::new);
-    }
-
-    private static AthenzPrincipal getUserPrincipal(HttpRequest request) { // TODO jvenstad: Not necessarily Athenz ...
+    private static Principal requireUserPrincipal(HttpRequest request) {
         Principal principal = request.getJDiscRequest().getUserPrincipal();
         if (principal == null) throw new InternalServerErrorException("Expected a user principal");
-        if (!(principal instanceof AthenzPrincipal))
-            throw new InternalServerErrorException(
-                    String.format("Expected principal of type %s, got %s",
-                                  AthenzPrincipal.class.getSimpleName(), principal.getClass().getName()));
-        return (AthenzPrincipal) principal;
+        return principal;
     }
 
     private Inspector mandatory(String key, Inspector object) {
@@ -1327,7 +1320,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private static String tentantType(Tenant tenant) {
         switch (tenant.type()) {
             case user: return "USER";
-            case athenz: return "ATHENZ";
+            case athenz: return "ATHENS";
             case cloud: return "CLOUD";
             default: throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
         }
@@ -1356,7 +1349,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
                                                                          applicationPackage,
-                                                                         Optional.of(getUserPrincipal(request).getIdentity()));
+                                                                         Optional.of(requireUserPrincipal(request)));
 
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
                                                             tenant,
