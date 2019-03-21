@@ -82,7 +82,7 @@ public class QueryTestCase {
                                 "&ranking.features.query(foo)=30.3&ranking.features.query(bar)=0" +
                                 "&ranking.properties.property.p1=v1&ranking.properties.property.p2=v2" +
                                 "&pos.ll=S22.4532;W123.9887&pos.radius=3&pos.attribute=place&ranking.freshness=37" +
-                                "&model.searchPath=7/3&ranking.softtimeout.enable=false");
+                                "&model.searchPath=7/3");
         query.getRanking().setFreshness(new Freshness("123456"));
         query.getRanking().setSorting("+field1 -field2");
         query.getRanking().setProfile("two");
@@ -108,7 +108,7 @@ public class QueryTestCase {
                                 "&ranking.features.query(foo)=30.3&ranking.features.query(bar)=0" +
                                 "&ranking.properties.property.p1=v1&ranking.properties.property.p2=v2" +
                                 "&pos.ll=S22.4532;W123.9887&pos.radius=3&pos.attribute=place&ranking.freshness=37" +
-                                "&model.searchPath=7/3&ranking.softtimeout.enable=false");
+                                "&model.searchPath=7/3");
         query.getRanking().setFreshness("123456");
         query.getRanking().setSorting("+field1 -field2");
         query.getRanking().setProfile("two");
@@ -130,7 +130,6 @@ public class QueryTestCase {
     @Test
     public void testEncodeQueryPacketWithLabelsConnectivityAndSignificance() {
         Query query = new Query();
-        query.properties().set(SoftTimeout.enableProperty, false);
         AndItem and = new AndItem();
         WeightedSetItem taggable1 = new WeightedSetItem("field1");
         taggable1.setLabel("foo");
