@@ -13,6 +13,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     public MetricsProxyContainerCluster(AbstractConfigProducer<?> parent, String name, DeployState deployState) {
         super(parent, name, name, deployState);
+        setRpcServerEnabled(false);
         addDefaultHandlersExceptStatus();
     }
 

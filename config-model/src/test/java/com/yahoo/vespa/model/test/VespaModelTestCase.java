@@ -266,7 +266,7 @@ public class VespaModelTestCase {
         assertThat(hosts.size(), is(1));
         //logd, config proxy, sentinel, config server, slobrok, log server
         HostInfo host = hosts.iterator().next();
-        assertThat(host.getServices().size(), is(6));
+        assertThat(host.getServices().size(), is(7));
         new LogdConfig((LogdConfig.Builder) model.getConfig(new LogdConfig.Builder(), "admin/model"));
 
     }

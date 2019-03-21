@@ -203,12 +203,13 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     }
 
     private void addMetricsProxyCluster(List<HostResource> hosts, DeployState deployState) {
-        var metricsProxyCluster = new MetricsProxyContainerCluster(this, "metrics-proxies", deployState);
-        hosts.forEach(host -> {
-            var container = new MetricsProxyContainer(metricsProxyCluster);
+        var metricsProxyCluster = new MetricsProxyContainerCluster(this, "metrics", deployState);
+        int index = 0;
+        for (var host : hosts) {
+            var container = new MetricsProxyContainer(metricsProxyCluster, index++);
             addAndInitializeService(deployState.getDeployLogger(), host, container);
             metricsProxyCluster.addContainer(container);
-        });
+        }
     }
 
     private void addCommonServices(HostResource host, DeployState deployState) {

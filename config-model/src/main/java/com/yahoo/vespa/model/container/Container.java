@@ -69,7 +69,7 @@ public abstract class Container extends AbstractService implements
 
     private final JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
 
-    private final int numHttpServerPorts;
+    protected final int numHttpServerPorts;
     private static final int numRpcServerPorts = 2;
 
     protected Container(AbstractConfigProducer parent, String name, int index) {
@@ -155,7 +155,7 @@ public abstract class Container extends AbstractService implements
         tagServers();
     }
 
-    private void tagServers() {
+    protected void tagServers() {
         if (numHttpServerPorts > 0) {
             portsMeta.on(0).tag("http").tag("query").tag("external").tag("state");
         }

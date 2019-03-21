@@ -674,7 +674,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     boolean messageBusEnabled() { return messageBusEnabled; }
 
-    public void setRpcServerEnabled(boolean rpcServerEnabled) { this.rpcServerEnabled = rpcServerEnabled; }
+    public final void setRpcServerEnabled(boolean rpcServerEnabled) { this.rpcServerEnabled = rpcServerEnabled; }
 
     boolean rpcServerEnabled() { return rpcServerEnabled; }
 
