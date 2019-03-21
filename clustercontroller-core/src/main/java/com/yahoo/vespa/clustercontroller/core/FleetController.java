@@ -688,7 +688,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if ( ! newStates.isEmpty()) {
             synchronized (systemStateListeners) {
                 for (ClusterStateBundle stateBundle : newStates) {
-                    for(SystemStateListener listener : systemStateListeners) {
+                    for (SystemStateListener listener : systemStateListeners) {
                         listener.handleNewPublishedState(stateBundle);
                     }
                 }
@@ -698,7 +698,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if ( ! convergedStates.isEmpty()) {
             synchronized (systemStateListeners) {
                 for (ClusterStateBundle stateBundle : convergedStates) {
-                    for(SystemStateListener listener : systemStateListeners) {
+                    for (SystemStateListener listener : systemStateListeners) {
                         listener.handleStateConvergedInCluster(stateBundle);
                     }
                 }

@@ -154,9 +154,9 @@ public class ClusterStateBundleTest {
     public void simple_bundle_without_derived_states_propagates_deferred_activation_flag() {
         var bundle = ClusterStateBundle
                 .builder(annotatedStateOf("distributor:2 storage:2"))
-                .deferredActivation(false) // defaults to true
+                .deferredActivation(true) // defaults to false
                 .deriveAndBuild();
-        assertFalse(bundle.deferredActivation());
+        assertTrue(bundle.deferredActivation());
     }
 
     @Test

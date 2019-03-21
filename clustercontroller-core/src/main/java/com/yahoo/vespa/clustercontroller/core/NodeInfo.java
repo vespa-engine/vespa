@@ -77,9 +77,9 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
      */
     private int version;
 
-    // Mapping of cluster state version -> cluster state instance
-    private TreeMap<Integer, ClusterState> clusterStateVersionBundleSent = new TreeMap<>();
-    private ClusterState clusterStateVersionBundleAcknowledged;
+    // Mapping of cluster state version -> cluster state bundle instance
+    private TreeMap<Integer, ClusterStateBundle> clusterStateVersionBundleSent = new TreeMap<>();
+    private ClusterStateBundle clusterStateVersionBundleAcknowledged;
 
     private int clusterStateVersionActivationSent = -1;
     private int clusterStateVersionActivationAcked = -1;
@@ -420,7 +420,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         if (clusterStateVersionBundleSent.isEmpty()) {
             return null;
         }
-        return clusterStateVersionBundleSent.lastEntry().getValue();
+        return clusterStateVersionBundleSent.lastEntry().getValue().getBaselineClusterState();
     }
     public int getNewestSystemStateVersionSent() {
         ClusterState last = getNewestSystemStateSent();
@@ -430,14 +430,14 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     public int getClusterStateVersionBundleAcknowledged() {
         return (clusterStateVersionBundleAcknowledged == null ? -1 : clusterStateVersionBundleAcknowledged.getVersion());
     }
-    public void setClusterStateVersionBundleSent(ClusterState state) {
-        if (state == null) {
+    public void setClusterStateVersionBundleSent(ClusterStateBundle stateBundle) {
+        if (stateBundle == null) {
             throw new Error("Should not clear info for last version sent");
         }
-        if (clusterStateVersionBundleSent.containsKey(state.getVersion())) {
-            throw new IllegalStateException("We have already sent cluster state version " + state.getVersion() + " to " + node);
+        if (clusterStateVersionBundleSent.containsKey(stateBundle.getVersion())) {
+            throw new IllegalStateException("We have already sent cluster state version " + stateBundle.getVersion() + " to " + node);
         }
-        clusterStateVersionBundleSent.put(state.getVersion(), state);
+        clusterStateVersionBundleSent.put(stateBundle.getVersion(), stateBundle);
     }
     public void setClusterStateBundleVersionAcknowledged(Integer version, boolean success) {
         if (version == null) {
@@ -446,14 +446,15 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         if (!clusterStateVersionBundleSent.containsKey(version)) {
             throw new IllegalStateException("Got response for cluster state " + version + " which is not tracked as pending for node " + node);
         }
-        ClusterState state = clusterStateVersionBundleSent.remove(version);
-        if (success && (clusterStateVersionBundleAcknowledged == null || clusterStateVersionBundleAcknowledged.getVersion() < state.getVersion())) {
-            clusterStateVersionBundleAcknowledged = state;
+        var stateBundle = clusterStateVersionBundleSent.remove(version);
+        if (success && (clusterStateVersionBundleAcknowledged == null || clusterStateVersionBundleAcknowledged.getVersion() < stateBundle.getVersion())) {
+            clusterStateVersionBundleAcknowledged = stateBundle;
             if (wentDownWithStartTime != 0
-                && (wentDownAtClusterState == null || wentDownAtClusterState.getVersion() < state.getVersion())
-                && !state.getNodeState(node).getState().oneOf("dsm"))
+                && (wentDownAtClusterState == null || wentDownAtClusterState.getVersion() < stateBundle.getVersion())
+                && !stateBundle.getBaselineClusterState().getNodeState(node).getState().oneOf("dsm"))
             {
-                log.log(LogLevel.DEBUG, "Clearing going down timestamp of node " + node + " after receiving ack of cluster state " + state);
+                log.log(LogLevel.DEBUG, () -> String.format("Clearing going down timestamp of node %s after " +
+                        "receiving ack of cluster state bundle %s", node, stateBundle));
                 wentDownWithStartTime = 0;
             }
         }

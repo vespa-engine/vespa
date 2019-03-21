@@ -5,6 +5,9 @@ import com.yahoo.jrt.Request;
 import com.yahoo.vespa.clustercontroller.core.ActivateClusterStateVersionRequest;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 
+/**
+ * FRT RPC state implementation of a single cluster state activation request.
+ */
 public class RPCActivateClusterStateVersionRequest extends ActivateClusterStateVersionRequest {
 
     Request request;

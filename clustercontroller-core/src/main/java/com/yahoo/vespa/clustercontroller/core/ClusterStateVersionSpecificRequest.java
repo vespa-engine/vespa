@@ -1,6 +1,10 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+/**
+ * Base class for distributor/content node node RPC requests that are bound
+ * to a particular cluster state version.
+ */
 public abstract class ClusterStateVersionSpecificRequest {
 
     private final NodeInfo nodeInfo;
@@ -24,6 +28,7 @@ public abstract class ClusterStateVersionSpecificRequest {
 
         final int returnCode;
         final String returnMessage;
+        final int actualVersion;
 
         public Reply() {
             this(0, null);
@@ -32,6 +37,17 @@ public abstract class ClusterStateVersionSpecificRequest {
         public Reply(int returnCode, String returnMessage) {
             this.returnCode = returnCode;
             this.returnMessage = returnMessage;
+            this.actualVersion = -1;
+        }
+
+        private Reply(int actualVersion) {
+            this.returnCode = 0;
+            this.returnMessage = null;
+            this.actualVersion = actualVersion;
+        }
+
+        public static Reply withActualVersion(int version) {
+            return new Reply(version);
         }
 
         /** Returns whether this is an error response */
@@ -42,6 +58,9 @@ public abstract class ClusterStateVersionSpecificRequest {
 
         /** Returns the message returned, or null if none */
         public String getReturnMessage() { return returnMessage; }
+
+        /** Returns actual cluster state version active on node, or -1 if reply does not contain this information  */
+        public int getActualVersion() { return actualVersion; }
 
     }
 

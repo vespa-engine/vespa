@@ -580,11 +580,12 @@ public class DummyVdsNode {
             synchronized(timer) {
                 int actualVersion = getLatestSystemStateVersion().orElse(0);
                 req.returnValues().add(new Int32Value(actualVersion));
-                if (activateVersion != actualVersion) {
-                    req.setError(ErrorCode.METHOD_FAILED, "State version mismatch");
-                } else {
+                if (activateVersion == actualVersion) {
                     activatedClusterStateVersion = activateVersion;
                     timer.notifyAll();
+                } else {
+                    log.log(LogLevel.DEBUG, () -> String.format("Dummy node %s: got a mismatching activation (request version %d, " +
+                            "actual %d), not marking version as active", this, activateVersion, actualVersion));
                 }
             }
             log.log(LogLevel.DEBUG, "Dummy node " + this + ": Activating cluster state version " + activateVersion);

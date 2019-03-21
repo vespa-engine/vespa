@@ -24,7 +24,7 @@ public class DummyCommunicator implements Communicator, NodeLookup {
         this.shouldDeferDistributorClusterStateAcks = shouldDeferDistributorClusterStateAcks;
     }
 
-    public class DummyGetNodeStateRequest extends GetNodeStateRequest {
+    class DummyGetNodeStateRequest extends GetNodeStateRequest {
         Waiter<GetNodeStateRequest> waiter;
 
         public DummyGetNodeStateRequest(NodeInfo nodeInfo, Waiter<GetNodeStateRequest> waiter) {
@@ -97,7 +97,7 @@ public class DummyCommunicator implements Communicator, NodeLookup {
     public void setSystemState(ClusterStateBundle stateBundle, NodeInfo node, Waiter<SetClusterStateRequest> waiter) {
         ClusterState baselineState = stateBundle.getBaselineClusterState();
         DummySetClusterStateRequest req = new DummySetClusterStateRequest(node, baselineState);
-        node.setClusterStateVersionBundleSent(baselineState);
+        node.setClusterStateVersionBundleSent(stateBundle);
         req.setReply(new SetClusterStateRequest.Reply());
         if (node.isStorage() || !shouldDeferDistributorClusterStateAcks) {
             waiter.done(req);
@@ -109,7 +109,7 @@ public class DummyCommunicator implements Communicator, NodeLookup {
     @Override
     public void activateClusterStateVersion(int clusterStateVersion, NodeInfo node, Waiter<ActivateClusterStateVersionRequest> waiter) {
         var req = new DummyActivateClusterStateVersionRequest(node, clusterStateVersion);
-        req.setReply(new ActivateClusterStateVersionRequest.Reply());
+        req.setReply(ActivateClusterStateVersionRequest.Reply.withActualVersion(clusterStateVersion));
         waiter.done(req);
     }
 

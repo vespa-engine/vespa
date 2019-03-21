@@ -162,7 +162,7 @@ public class RPCCommunicator implements Communicator {
         waiter.setRequest(stateRequest);
 
         connection.invokeAsync(req, 60, waiter);
-        node.setClusterStateVersionBundleSent(baselineState);
+        node.setClusterStateVersionBundleSent(stateBundle);
     }
 
     @Override

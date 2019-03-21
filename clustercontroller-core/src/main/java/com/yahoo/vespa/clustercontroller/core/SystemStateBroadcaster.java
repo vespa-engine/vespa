@@ -87,17 +87,25 @@ public class SystemStateBroadcaster {
             NodeInfo info = req.getNodeInfo();
             int version = req.getClusterStateVersion();
             boolean success = true;
-            if (req.getReply().isError()) {
+            var reply = req.getReply();
+            if (reply.isError()) {
                 // NO_SUCH_METHOD implies node is on a version that does not understand explicit activations
                 // and it has already merrily started using the state version. Treat as if it had been ACKed.
-                if (req.getReply().getReturnCode() != ErrorCode.NO_SUCH_METHOD) {
+                if (reply.getReturnCode() != ErrorCode.NO_SUCH_METHOD) {
                     log.log(LogLevel.DEBUG, () -> String.format("Activation NACK for node %s with version %d, message %s",
-                            info, version, req.getReply().getReturnMessage()));
+                            info, version, reply.getReturnMessage()));
                     success = false;
                 } else {
                     log.log(LogLevel.DEBUG, () -> String.format("Node %s did not understand state activation RPC; " +
                             "implicitly treating state %d as activated on node", info, version));
                 }
+            } else if (reply.getActualVersion() != version) {
+                log.log(LogLevel.DEBUG, () -> String.format("Activation of version %d did not take effect, node %s " +
+                        "reports it has an actual pending version of %d", version, info, reply.getActualVersion()));
+                success = false;
+            } else {
+                log.log(LogLevel.DEBUG, () -> String.format("Node %s reports successful activation of state " +
+                        "version %d", info, version));
             }
             info.setSystemStateVersionActivationAcked(version, success);
             // TODO we currently don't invoke reportNodeError here.. We assume that node errors will be reported
