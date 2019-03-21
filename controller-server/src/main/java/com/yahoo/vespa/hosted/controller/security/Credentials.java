@@ -5,7 +5,7 @@ import java.security.Principal;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Credentials proving an entity's access to some resource.
+ * Credentials representing an entity for which to modify access control rules.
  *
  * @author jonmv
  */
@@ -17,7 +17,7 @@ public class Credentials {
         this.user = requireNonNull(user);
     }
 
-    /** Returns the user which owns these credentials. */
+    /** Returns the user which makes the request. */
     public Principal user() { return user; }
 
 }

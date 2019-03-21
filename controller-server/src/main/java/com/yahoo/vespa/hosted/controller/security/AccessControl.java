@@ -20,7 +20,7 @@ public interface AccessControl {
      * Sets up permissions for a tenant, based on the given claim, or throws.
      *
      * @param tenantClaim claim for the tenant to create
-     * @param credentials the credentials required to complete this action
+     * @param credentials the credentials for the entity requesting the creation
      * @param existing list of existing tenants, to check for conflicts
      * @return the created tenant, for keeping
      */
@@ -30,7 +30,7 @@ public interface AccessControl {
      * Modifies up permissions for a tenant, based on the given claim, or throws.
      *
      * @param tenantClaim claim for the tenant to update
-     * @param credentials the credentials required to complete this action
+     * @param credentials the credentials for the entity requesting the update
      * @param existing list of existing tenants, to check for conflicts
      * @param applications list of applications this tenant already owns
      * @return the updated tenant, for keeping
@@ -41,7 +41,7 @@ public interface AccessControl {
      * Removes all permissions for tenant in the given claim, and for any applications it owns, or throws.
      *
      * @param tenant the tenant to delete
-     * @param credentials the credentials required to complete this action
+     * @param credentials the credentials for the entity requesting the deletion
      */
     void deleteTenant(TenantName tenant, Credentials credentials);
 
@@ -49,7 +49,7 @@ public interface AccessControl {
      * Sets up permissions for an application, based on the given claim, or throws.
      *
      * @param application the ID of the application to create
-     * @param credentials the credentials required to complete this action
+     * @param credentials the credentials for the entity requesting the creation
      */
     void createApplication(ApplicationId application, Credentials credentials);
 
@@ -57,14 +57,14 @@ public interface AccessControl {
      * Removes access control for the given application.
      *
      * @param id the ID of the application to delete
-     * @param credentials the credentials required to complete this action
+     * @param credentials the credentials for the entity requesting the deletion
      */
     void deleteApplication(ApplicationId id, Credentials credentials);
 
     /**
-     * Returns the list of tenants to which a principal has access.
+     * Returns the list of tenants to which a user has access.
      * @param tenants the list of all known tenants
-     * @param credentials the credentials of the principal
+     * @param credentials the credentials of user whose tenants to list
      * @return the list of tenants the given user has access to
      */
     List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials credentials);

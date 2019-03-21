@@ -7,8 +7,9 @@ import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Like {@link Credentials}, but additionally a domain and a token which proves the user's
- * access to some actions under that domain.
+ * Like {@link Credentials}, but the entity is rather an Athenz domain, and thus contains also a
+ * token which can be used to validate the user's role memberships under this domain.
+ * <em>This validation is done by Athenz, not by us.</em>
  *
  * @author jonmv
  */
@@ -26,7 +27,7 @@ public class AthenzCredentials extends Credentials {
     @Override
     public AthenzPrincipal user() { return (AthenzPrincipal) super.user(); }
 
-    /** Returns the Athenz domain these credentials refer to. */
+    /** Returns the Athenz domain on whose behalf this request is made. */
     public AthenzDomain domain() { return domain; }
 
     /** Returns the token proving access to the requested action under this domain. */
