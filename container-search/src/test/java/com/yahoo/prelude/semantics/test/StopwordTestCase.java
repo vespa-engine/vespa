@@ -22,6 +22,12 @@ public class StopwordTestCase extends RuleBaseAbstractTestCase {
                         new Query(QueryTestCase.httpEncode("?query=i don't know if you've heard, but it's a beautiful world&default-index=mlr&tracelevel.rules=0")));
     }
 
+    /** If the query contains nothing but stopwords, we won't remove them */
+    @Test
+    public void testOnlyStopwords() {
+        assertSemantics("mlr:the", new Query(QueryTestCase.httpEncode("?query=the the&default-index=mlr&tracelevel.rules=0")));
+    }
+
     @Test
     public void testStopwordsInPhrase() {
         assertSemantics("AND mlr:\"ve heard\" mlr:beautiful mlr:world",

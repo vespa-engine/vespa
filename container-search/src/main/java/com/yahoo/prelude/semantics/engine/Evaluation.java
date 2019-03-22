@@ -59,7 +59,7 @@ public class Evaluation {
      * @param query the query this evaluation is for
      * @param traceLevel the amount of tracing to do
      */
-    public Evaluation(Query query,int traceLevel) {
+    public Evaluation(Query query, int traceLevel) {
         this.query=query;
         this.traceLevel=traceLevel;
         reset();
@@ -118,7 +118,6 @@ public class Evaluation {
     public void previous() {//PGA
         currentIndex--;
     }
-
 
     /** Returns the current item, or null if there is no more elements */
     public FlattenedItem currentItem() {

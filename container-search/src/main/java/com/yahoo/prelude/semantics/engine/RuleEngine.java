@@ -31,70 +31,66 @@ public class RuleEngine {
      * @return the error caused by analyzing the query, or null if there was no error
      *         If there is an error, this query is destroyed (unusable)
      */
-    public String evaluate(Query query,int traceLevel) {
+    public String evaluate(Query query, int traceLevel) {
         // TODO: This is O(query size*rule base size). We'll eventually need to create indices
         //       on rules to look up rule candidates per term to make it O(query size) instead
         //       Probably create indices on the first term like Prolog implementations use to
 
-        boolean matchedAnything=false;
-        Evaluation evaluation=new Evaluation(query,traceLevel);
+        boolean matchedAnything = false;
+        Evaluation evaluation = new Evaluation(query, traceLevel);
         evaluation.setStemming(rules.getStemming());
-        evaluation.trace(2,"Evaluating query '" + evaluation.getQuery().getModel().getQueryTree().getRoot() + "':");
-        for (ListIterator<ProductionRule> i=rules.ruleIterator(); i.hasNext(); ) {
+        if (traceLevel >= 2)
+            evaluation.trace(2,"Evaluating query '" + evaluation.getQuery().getModel().getQueryTree().getRoot() + "':");
+        for (ListIterator<ProductionRule> i = rules.ruleIterator(); i.hasNext(); ) {
             evaluation.reset();
-            ProductionRule rule=i.next();
-            boolean matched=matchRuleAtAllStartPoints(evaluation,rule);
-            matchedAnything|=matched;
+            ProductionRule rule = i.next();
+            boolean matched = matchRuleAtAllStartPoints(evaluation,rule);
+            matchedAnything |= matched;
         }
 
-        if (!matchedAnything) return null;
+        if ( ! matchedAnything) return null;
 
-        String error=QueryCanonicalizer.canonicalize(query);
-
-        if (query.getTraceLevel()>=1)
-            query.trace("SemanticSearcher: Rewrote query",true,1);
-
+        String error = QueryCanonicalizer.canonicalize(query);
+        query.trace("SemanticSearcher: Rewrote query",true,1);
         return error;
     }
 
     /** Match a rule at any starting point in the query */
     private boolean matchRuleAtAllStartPoints(Evaluation evaluation, ProductionRule rule) {
-        boolean matchedAtLeastOnce=false;
-        int iterationCount=0;
+        boolean matchedAtLeastOnce = false;
+        int iterationCount = 0;
 
-        /**
-         * Test if it is a removal rule, if so iterate backwards so that precalculated
-         * replacement positions does not become invalid as the query shrink
-         */
+         // Test if it is a removal rule, if so iterate backwards so that precalculated
+         // replacement positions do not become invalid as the query shrink
         boolean removalRule = false;
         if ( (rule instanceof com.yahoo.prelude.semantics.rule.ReplacingProductionRule) &&
              (rule.getProduction().toString().length() == 0) ) { // empty replacement
-                removalRule = true;
-                evaluation.setToLast();
+            removalRule = true;
+            evaluation.setToLast();
         }
 
-        int loopLimit=Math.max(15,evaluation.getQuerySize()*3);
+        int loopLimit = Math.max(15, evaluation.getQuerySize() * 3);
 
         while (evaluation.currentItem() != null) {
-                boolean matched=matchRule(evaluation,rule);
+            boolean matched = matchRule(evaluation,rule);
             if (matched) {
                 if (removalRule)
-                        evaluation.resetToLast();
+                    evaluation.resetToLast();
                 else
-                        evaluation.reset();
+                    evaluation.reset();
                 matchedAtLeastOnce = true;
                 if (rule.isLoop()) break;
             }
             else {
                 if (removalRule)
-                        evaluation.previous();
+                    evaluation.previous();
                 else
-                        evaluation.next();
+                    evaluation.next();
             }
 
             if (matched && iterationCount++ > loopLimit) {
                 throw new RuleBaseException("Rule '" + rule + "' has matched '" +
-                        evaluation.getQuery().getModel().getQueryTree().getRoot() +
+                                            evaluation.getQuery().getModel().getQueryTree().getRoot() +
                                             "' " + loopLimit + " times, aborting");
             }
         }
@@ -113,7 +109,7 @@ public class RuleEngine {
         RuleEvaluation ruleEvaluation=evaluation.freshRuleEvaluation();
 
         ruleEvaluation.indentTrace();
-        if (ruleEvaluation.getTraceLevel()>=3) {
+        if (ruleEvaluation.getTraceLevel() >= 3) {
             ruleEvaluation.trace(3,"Evaluating rule '" + rule +
                                    "' on '" + ruleEvaluation.getEvaluation().getQuery().getModel().getQueryTree().getRoot() +
                                    "' at '" + ruleEvaluation.currentItem() + "':");
@@ -121,27 +117,27 @@ public class RuleEngine {
 
         ruleEvaluation.indentTrace();
 
-        boolean matches=rule.matches(ruleEvaluation);
+        boolean matches = rule.matches(ruleEvaluation);
 
-        boolean matchedBefore=false;
-        int currentMatchDigest=ruleEvaluation.calculateMatchDigest(rule);
+        boolean matchedBefore = false;
+        int currentMatchDigest = ruleEvaluation.calculateMatchDigest(rule);
         if (evaluation.hasMatchDigest(currentMatchDigest))
-            matchedBefore=true;
+            matchedBefore = true;
 
-        boolean queryGotShorter=false;
-        if (evaluation.getPreviousQuerySize()>evaluation.getQuerySize())
-            queryGotShorter=true;
+        boolean queryGotShorter = false;
+        if (evaluation.getPreviousQuerySize() > evaluation.getQuerySize())
+            queryGotShorter = true;
 
-        boolean doProduction=!matchedBefore || queryGotShorter;
+        boolean doProduction =! matchedBefore || queryGotShorter;
 
         ruleEvaluation.unindentTrace();
 
-        if (ruleEvaluation.getTraceLevel()>=2) {
+        if (ruleEvaluation.getTraceLevel() >= 2) {
             if (matches && doProduction)
                 ruleEvaluation.trace(2,"Matched rule '" + rule + "' at " + ruleEvaluation.previousItem());
-            else if (!matches)
+            else if ( ! matches)
                 ruleEvaluation.trace(2,"Did not match rule '" + rule + "' at " + ruleEvaluation.currentItem());
-            else if (!doProduction)
+            else
                 ruleEvaluation.trace(2,"Ignoring repeated match of '" + rule + "'");
         }
 
@@ -152,12 +148,12 @@ public class RuleEngine {
         // Do production barrier
 
         evaluation.addMatchDigest(currentMatchDigest);
-        String preQuery=null;
+        String preQuery = null;
         if (evaluation.getTraceLevel()>=1) {
-            preQuery= evaluation.getQuery().getModel().getQueryTree().getRoot().toString();
+            preQuery = evaluation.getQuery().getModel().getQueryTree().getRoot().toString();
         }
         rule.produce(ruleEvaluation);
-        if (evaluation.getTraceLevel()>=1) {
+        if (evaluation.getTraceLevel() >= 1) {
             evaluation.trace(1,"Transforming '" + preQuery + "' to '" +
                                evaluation.getQuery().getModel().getQueryTree().getRoot().toString()
                                + "' since '" + rule + "' matched");
