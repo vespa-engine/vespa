@@ -4,6 +4,7 @@
 #include "exceptions.h"
 #include "forwarder.h"
 #include "watcher.h"
+#include <vespa/log/log.h>
 #include <vespa/vespalib/util/sig_catch.h>
 #include <fcntl.h>
 #include <glob.h>
@@ -300,9 +301,9 @@ Watcher::watchfile()
             throw SigTermException("caught signal");
         }
         if (++sleepcount > 99) {
-            if (_forwarder._badLines) {
-                LOG(info, "seen %d bad loglines in %d iterations", _forwarder._badLines, sleepcount);
-                _forwarder._badLines = 0;
+            if (_forwarder.badLines()) {
+                LOG(info, "seen %d bad loglines in %d iterations", _forwarder.badLines(), sleepcount);
+                _forwarder.resetBadLines();
                 sleepcount=0;
             }
         }

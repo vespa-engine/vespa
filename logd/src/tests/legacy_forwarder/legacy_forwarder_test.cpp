@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <logd/forwarder.h>
+#include <logd/legacy_forwarder.h>
 #include <logd/metrics.h>
 #include <vespa/fastos/time.h>
 #include <vespa/log/log.h>
@@ -13,11 +13,11 @@ using ns_log::Logger;
 using namespace logdemon;
 
 struct ForwardFixture {
-    Forwarder & forwarder;
+    LegacyForwarder &forwarder;
     int fd;
     const std::string fname;
     const std::string logLine;
-    ForwardFixture(Forwarder & fw, const std::string & fileName)
+    ForwardFixture(LegacyForwarder &fw, const std::string &fileName)
         : forwarder(fw),
           fd(-1),
           fname(fileName),
@@ -55,14 +55,14 @@ struct ForwardFixture {
 std::shared_ptr<vespalib::metrics::MetricsManager> dummy = vespalib::metrics::DummyMetricsManager::create();
 Metrics m(dummy);
 
-TEST_FF("require that forwarder forwards if set", Forwarder(m), ForwardFixture(f1, "forward.txt")) {
+TEST_FF("require that forwarder forwards if set", LegacyForwarder(m), ForwardFixture(f1, "forward.txt")) {
     ForwardMap forwardMap;
     forwardMap[Logger::event] = true;
     f1.setForwardMap(forwardMap);
     f2.verifyForward(true);
 }
 
-TEST_FF("require that forwarder does not forward if not set", Forwarder(m), ForwardFixture(f1, "forward.txt")) {
+TEST_FF("require that forwarder does not forward if not set", LegacyForwarder(m), ForwardFixture(f1, "forward.txt")) {
     ForwardMap forwardMap;
     forwardMap[Logger::event] = false;
     f1.setForwardMap(forwardMap);

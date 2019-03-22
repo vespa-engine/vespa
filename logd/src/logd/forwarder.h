@@ -1,55 +1,19 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#pragma once
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-#include <map>
-#include <unordered_set>
+#pragma once
 
 namespace logdemon {
 
-using SeenMap = std::unordered_set<std::string>;
-// Mapping saying if a level should be forwarded or not
-using ForwardMap = std::map<ns_log::Logger::LogLevel, bool>;
-
-struct Metrics;
-
-class LevelParser
-{
-private:
-    SeenMap _seenLevelMap;
-public:
-    ns_log::Logger::LogLevel parseLevel(const char *level);
-    LevelParser() : _seenLevelMap() {}
-};
-
 /**
- * Class used to forward log lines to the logserver via a one-way text protocol.
+ * Interface used to forward log lines to something.
  */
-class Forwarder
-{
-private:
-    int _logserverfd;
-    Metrics &_metrics;
-    ForwardMap _forwardMap;
-    LevelParser _levelparser;
-    const char *copystr(const char *b, const char *e) {
-        int len = e - b;
-        char *ret = new char[len+1];
-        strncpy(ret, b, len);
-        ret[len] = '\0';
-        return ret;
-    }
-    bool parseline(const char *linestart, const char *lineend);
+class Forwarder {
 public:
-    int _badLines;
-    Forwarder(Metrics &metrics);
-    ~Forwarder();
-    void forwardText(const char *text, int len);
-    void forwardLine(const char *line, const char *eol);
-    void setForwardMap(const ForwardMap & forwardMap) { _forwardMap = forwardMap; }
-    void setLogserverFD(int fd) { _logserverfd = fd; }
-    int  getLogserverFD() { return _logserverfd; }
-    void sendMode();
+    virtual ~Forwarder() {}
+    virtual void sendMode() = 0;
+    virtual void forwardLine(const char *line, const char *eol) = 0;
+    virtual int badLines() const = 0;
+    virtual void resetBadLines() = 0;
 };
 
 }

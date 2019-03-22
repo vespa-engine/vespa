@@ -6,7 +6,7 @@
 
 namespace logdemon {
 
-class Forwarder;
+class LegacyForwarder;
 
 /**
  * Class used to subscribe for logd config.
@@ -22,7 +22,7 @@ private:
     int _remove_meg;
     int _remove_age;
     bool _use_logserver;
-    Forwarder& _fw;
+    LegacyForwarder& _fw;
     config::ConfigSubscriber _subscriber;
     config::ConfigHandle<cloud::config::log::LogdConfig>::UP _handle;
     bool _hasAvailable;
@@ -37,7 +37,7 @@ public:
     void closeConn();
     ConfigSubscriber(const ConfigSubscriber& other) = delete;
     ConfigSubscriber& operator=(const ConfigSubscriber& other) = delete;
-    ConfigSubscriber(Forwarder &fw, const config::ConfigUri & configUri);
+    ConfigSubscriber(LegacyForwarder &fw, const config::ConfigUri &configUri);
     ~ConfigSubscriber();
 
     int getStatePort() const { return _statePort; }

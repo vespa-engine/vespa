@@ -2,7 +2,7 @@
 
 #include "config_subscriber.h"
 #include "conn.h"
-#include "forwarder.h"
+#include "legacy_forwarder.h"
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -133,7 +133,7 @@ ConfigSubscriber::closeConn()
     _needToConnect = true;
 }
 
-ConfigSubscriber::ConfigSubscriber(Forwarder &fw, const config::ConfigUri & configUri)
+ConfigSubscriber::ConfigSubscriber(LegacyForwarder &fw, const config::ConfigUri &configUri)
     : _logServer(),
       _logPort(0),
       _logserverfd(-1),
