@@ -3,7 +3,6 @@ package com.yahoo.vespa.http.client.core.communication;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.component.Vtag;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.FeedParams;
@@ -412,8 +411,8 @@ class ApacheGatewayConnection implements GatewayConnection {
                 clientBuilder.setConnectionManager(connMgr);
 
             }
-            clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion.toFullString()));
-            clientBuilder.setDefaultHeaders(List.of(new BasicHeader(Headers.CLIENT_VERSION, Vtag.currentVersion.toFullString())));
+            clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion));
+            clientBuilder.setDefaultHeaders(List.of(new BasicHeader(Headers.CLIENT_VERSION, Vtag.currentVersion)));
             clientBuilder.setMaxConnPerRoute(1);
             clientBuilder.setMaxConnTotal(1);
             clientBuilder.disableContentCompression();
