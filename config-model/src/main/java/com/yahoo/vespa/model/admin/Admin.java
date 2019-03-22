@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
@@ -194,7 +195,11 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     public void addPerHostServices(List<HostResource> hosts, DeployState deployState) {
         if (slobroks.isEmpty()) // TODO: Move to caller
             slobroks.addAll(createDefaultSlobrokSetup(deployState.getDeployLogger()));
-        addMetricsProxyCluster(hosts, deployState);
+
+        // TODO: enable for all zones
+        if (deployState.zone().system() == SystemName.cd)
+            addMetricsProxyCluster(hosts, deployState);
+
         for (HostResource host : hosts) {
             if (!host.getHost().runsConfigServer()) {
                 addCommonServices(host, deployState);
