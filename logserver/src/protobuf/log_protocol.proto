@@ -1,0 +1,42 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+syntax = "proto3";
+
+package logserver.protocol.protobuf;
+
+option java_package = "ai.vespa.logserver.protocol.protobuf";
+
+message LogRequest {
+    repeated LogMessage log_messages = 1;
+}
+
+message LogResponse {
+}
+
+/**
+ * Represents a log message that contains the same data as domain classes in LogMessage.java and log_message.h.
+ *
+ * Next tag id to use: 9
+ */
+message LogMessage {
+    int64 time_nanos = 1;
+    string hostname = 2;
+    int32 process_id = 3;
+    int32 thread_id = 4;
+    string service = 5;
+    string component = 6;
+    enum Level {
+        FATAL = 0,
+        ERROR = 1,
+        WARNING = 2,
+        CONFIG = 3,
+        INFO = 4,
+        EVENT = 5,
+        DEBUG = 6,
+        SPAM = 7,
+        UNKNOWN = 8
+    }
+    Level level = 7;
+    string payload = 8;
+}
+
