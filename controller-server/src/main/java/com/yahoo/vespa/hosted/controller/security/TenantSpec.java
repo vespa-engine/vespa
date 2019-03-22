@@ -2,8 +2,6 @@ package com.yahoo.vespa.hosted.controller.security;
 
 import com.yahoo.config.provision.TenantName;
 
-import java.security.Principal;
-
 import static java.util.Objects.requireNonNull;
 
 /**

@@ -62,7 +62,7 @@ public class AthenzFacade implements AccessControl {
     public Tenant createTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing) {
         AthenzTenantSpec spec = (AthenzTenantSpec) tenantSpec;
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
-        AthenzDomain domain = athenzCredentials.domain();
+        AthenzDomain domain = spec.domain();
 
         verifyIsDomainAdmin(athenzCredentials.user().getIdentity(), domain);
 
@@ -73,7 +73,7 @@ public class AthenzFacade implements AccessControl {
 
         AthenzTenant tenant = AthenzTenant.create(spec.tenant(),
                                                   domain,
-                                                  spec.property().orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
+                                                  spec.property(),
                                                   spec.propertyId());
 
         if (existingWithSameDomain.isPresent()) { // Throw if domain is already taken.
@@ -94,43 +94,40 @@ public class AthenzFacade implements AccessControl {
     public Tenant updateTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing, List<Application> applications) {
         AthenzTenantSpec spec = (AthenzTenantSpec) tenantSpec;
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
-        AthenzDomain domain = athenzCredentials.domain();
+        AthenzDomain newDomain = spec.domain();
+        AthenzDomain oldDomain = athenzCredentials.domain();
 
-        verifyIsDomainAdmin(athenzCredentials.user().getIdentity(), domain);
+        verifyIsDomainAdmin(athenzCredentials.user().getIdentity(), newDomain);
 
         Optional<Tenant> existingWithSameDomain = existing.stream()
                                                           .filter(tenant ->    tenant.type() == Tenant.Type.athenz
-                                                                            && domain.equals(((AthenzTenant) tenant).domain()))
+                                                                            && newDomain.equals(((AthenzTenant) tenant).domain()))
                                                           .findAny();
 
         Tenant tenant = AthenzTenant.create(spec.tenant(),
-                                            domain,
-                                            spec.property().orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
+                                            newDomain,
+                                            spec.property(),
                                             spec.propertyId());
 
-        int index = existing.indexOf(tenant);
-        if (index == -1) throw new IllegalArgumentException("Cannot update a non-existent tenant.");
-        AthenzTenant oldTenant = (AthenzTenant) existing.get(index);
-
         if (existingWithSameDomain.isPresent()) { // Throw if domain taken by someone else, or do nothing if taken by this tenant.
-            if ( ! existingWithSameDomain.get().equals(oldTenant))
+            if ( ! existingWithSameDomain.get().equals(tenant)) // Equality by name.
                 throw new IllegalArgumentException("Could not create tenant '" + spec.tenant().value() +
                                                    "': The Athens domain '" +
-                                                   domain.getName() + "' is already connected to tenant '" +
+                                                   newDomain.getName() + "' is already connected to tenant '" +
                                                    existingWithSameDomain.get().name().value() + "'");
 
             return tenant; // Short-circuit here if domain is still the same.
         }
         else { // Delete and recreate tenant, and optionally application, resources in Athenz otherwise.
-            log("createTenancy(tenantDomain=%s, service=%s)", domain, service);
-            zmsClient.createTenancy(domain, service, athenzCredentials.token());
+            log("createTenancy(tenantDomain=%s, service=%s)", newDomain, service);
+            zmsClient.createTenancy(newDomain, service, athenzCredentials.token());
             for (Application application : applications)
-                createApplication(domain, application.id().application(), athenzCredentials.token());
+                createApplication(newDomain, application.id().application(), athenzCredentials.token());
 
-            log("deleteTenancy(tenantDomain=%s, service=%s)", oldTenant.domain(), service);
+            log("deleteTenancy(tenantDomain=%s, service=%s)", oldDomain, service);
             for (Application application : applications)
-                deleteApplication(oldTenant.domain(), application.id().application(), athenzCredentials.token());
-            zmsClient.deleteTenancy(oldTenant.domain(), service, athenzCredentials.token());
+                deleteApplication(oldDomain, application.id().application(), athenzCredentials.token());
+            zmsClient.deleteTenancy(oldDomain, service, athenzCredentials.token());
         }
 
         return tenant;

@@ -4,11 +4,10 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.security.TenantSpec;
-import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
@@ -122,7 +121,8 @@ public class TenantController {
     /** Updates the tenant contained in the given tenant spec with new data. */
     public void update(TenantSpec tenantSpec, Credentials credentials) {
         try (Lock lock = lock(tenantSpec.tenant())) {
-            curator.writeTenant(accessControl.updateTenant(tenantSpec, credentials, asList(), controller.applications().asList(tenantSpec.tenant())));
+            curator.writeTenant(accessControl.updateTenant(tenantSpec, credentials, asList(),
+                                                           controller.applications().asList(tenantSpec.tenant())));
         }
     }
 
@@ -148,9 +148,9 @@ public class TenantController {
 
     private void requireNonExistent(TenantName name) {
         if (get(name).isPresent() ||
-            // Underscores are allowed in existing Athenz tenant names, but tenants with - and _ cannot co-exist. E.g.
+            // Underscores are allowed in existing tenant names, but tenants with - and _ cannot co-exist. E.g.
             // my-tenant cannot be created if my_tenant exists.
-            get(dashToUnderscore(name.value())).isPresent()) {
+            get(name.value().replace('-', '_')).isPresent()) {
             throw new IllegalArgumentException("Tenant '" + name + "' already exists");
         }
     }
@@ -162,10 +162,6 @@ public class TenantController {
      */
     private Lock lock(TenantName tenant) {
         return curator.lock(tenant);
-    }
-
-    private static String dashToUnderscore(String s) {
-        return s.replace('-', '_');
     }
 
 }

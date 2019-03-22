@@ -16,18 +16,22 @@ import static java.util.Objects.requireNonNull;
  */
 public class AthenzTenantSpec extends TenantSpec {
 
-    private final Optional<Property> property;
+    private final AthenzDomain domain;
+    private final Property property;
     private final Optional<PropertyId> propertyId;
 
-    public AthenzTenantSpec(TenantName tenant, Optional<AthenzDomain> domain,
-                            Optional<Property> property, Optional<PropertyId> propertyId) {
+    public AthenzTenantSpec(TenantName tenant, AthenzDomain domain, Property property, Optional<PropertyId> propertyId) {
         super(tenant);
+        this.domain = domain;
         this.property = requireNonNull(property);
         this.propertyId = requireNonNull(propertyId);
     }
 
+    /** The domain to create this tenant under. */
+    public AthenzDomain domain() { return domain; }
+
     /** The property name of the tenant. */
-    public Optional<Property> property() { return property; }
+    public Property property() { return property; }
 
     /** The ID of the property of the tenant. */
     public Optional<PropertyId> propertyId() { return propertyId; }

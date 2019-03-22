@@ -90,7 +90,6 @@ public final class ControllerTester {
     private final MetricsServiceMock metricsService;
     private final RoutingGeneratorMock routingGenerator;
     private final MockContactRetriever contactRetriever;
-    private final MockIssueHandler issueHandler;
 
     private Controller controller;
 
@@ -142,7 +141,6 @@ public final class ControllerTester {
         this.metricsService = metricsService;
         this.routingGenerator = routingGenerator;
         this.contactRetriever = contactRetriever;
-        this.issueHandler = issueHandler;
         this.controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
                                            athenzDb, nameService, artifactRepository, appStoreMock, entityService, buildService,
                                            metricsService, routingGenerator);
@@ -266,8 +264,8 @@ public final class ControllerTester {
         AthenzUser user = new AthenzUser("user");
         AthenzDomain domain = createDomainWithAdmin(domainName, user);
         AthenzTenantSpec tenantSpec = new AthenzTenantSpec(name,
-                                                           Optional.of(domain),
-                                                           Optional.of(new Property("Property" + propertyId)),
+                                                           domain,
+                                                           new Property("Property" + propertyId),
                                                            Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new));
         AthenzCredentials credentials = new AthenzCredentials(new AthenzPrincipal(user), domain, new OktaAccessToken("okta-token"));
         controller().tenants().create(tenantSpec, credentials);
@@ -283,7 +281,9 @@ public final class ControllerTester {
     }
 
     public Optional<Credentials> credentialsFor(ApplicationId id) {
-        return domainOf(id).map(domain -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")), domain, new OktaAccessToken("okta-token")));
+        return domainOf(id).map(domain -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
+                                                                domain,
+                                                                new OktaAccessToken("okta-token")));
     }
 
     public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {

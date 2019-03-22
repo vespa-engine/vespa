@@ -79,8 +79,8 @@ public class ContainerControllerTester {
         AthenzPrincipal user = new AthenzPrincipal(new AthenzUser("user"));
         AthenzCredentials credentials = new AthenzCredentials(user, domain1, new OktaAccessToken("okta-token"));
         AthenzTenantSpec tenantSpec = new AthenzTenantSpec(TenantName.from(tenant),
-                                                           Optional.of(domain1),
-                                                           Optional.of(new Property("property1")),
+                                                           domain1,
+                                                           new Property("property1"),
                                                            Optional.of(new PropertyId("1234")));
         controller().tenants().create(tenantSpec, credentials);
 

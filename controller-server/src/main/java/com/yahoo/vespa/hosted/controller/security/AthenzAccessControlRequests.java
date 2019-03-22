@@ -14,11 +14,9 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 
 import java.security.Principal;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-
-import static com.yahoo.vespa.config.SlimeUtils.jsonToSlime;
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Extracts access control data for Athenz or user tenants from HTTP requests.
@@ -37,21 +35,16 @@ public class AthenzAccessControlRequests implements AccessControlRequests {
     @Override
     public TenantSpec specification(TenantName tenant, Inspector requestObject) {
         return new AthenzTenantSpec(tenant,
-                                    optional("athensDomain", requestObject).map(AthenzDomain::new),
-                                    optional("property", requestObject).map(Property::new),
+                                    new AthenzDomain(required("athensDomain", requestObject)),
+                                    new Property(required("property", requestObject)),
                                     optional("propertyId", requestObject).map(PropertyId::new));
     }
 
     @Override
     public Credentials credentials(TenantName tenant, Inspector requestObject, HttpRequest request) {
-        // Get domain from request if present, which it should be for create and update requests.
-        Optional<AthenzDomain> requestDomain = optional("athensDomain", requestObject).map(AthenzDomain::new);
-        // Otherwise the tenant should already exist, and we use the domain stored under the tenant.
-        Optional<AthenzDomain> tenantDomain = tenants.get(tenant).map(AthenzTenant.class::cast).map(AthenzTenant::domain);
-
         return new AthenzCredentials(requireAthenzPrincipal(request),
-                                     requestDomain.orElseGet(() -> tenantDomain
-                                             .orElseThrow(() -> new IllegalArgumentException("Must specify 'athensDomain'."))),
+                                     tenants.get(tenant).map(AthenzTenant.class::cast).map(AthenzTenant::domain)
+                                            .orElseGet(() -> new AthenzDomain(required("athensDomain", requestObject))),
                                      requireOktaAccessToken(request));
     }
 
