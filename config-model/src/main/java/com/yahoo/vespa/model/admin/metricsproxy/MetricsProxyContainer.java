@@ -15,6 +15,8 @@ public class MetricsProxyContainer extends Container {
 
     public MetricsProxyContainer(AbstractConfigProducer parent, int index) {
         super(parent, "" + index, index);
+        setProp("clustertype", "admin");
+        setProp("index", String.valueOf(index));
     }
 
     @Override
