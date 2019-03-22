@@ -118,6 +118,12 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENABLE_METRICS_PROXY_CONTAINER = defineFeatureFlag(
+            "enable-metrics-proxy-container", false,
+            "Start a container for metrics-proxy on every vespa node",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

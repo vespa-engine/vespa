@@ -56,6 +56,7 @@ public interface ModelContext {
         boolean useFdispatchByDefault();
         boolean useAdaptiveDispatch();
         boolean useSeparateServiceTypeForLogserverContainer();
+        boolean enableMetricsProxyContainer();
     }
 
 }

@@ -37,6 +37,8 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useFdispatchByDefault = true;
     private boolean useAdaptiveDispatch = false;
     private boolean useSeparateServiceTypeForLogserverContainer = false;
+    private boolean enableMetricsProxyContainer = false;
+
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -53,6 +55,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
     @Override public boolean useSeparateServiceTypeForLogserverContainer() { return useSeparateServiceTypeForLogserverContainer; }
+    @Override public boolean enableMetricsProxyContainer() { return enableMetricsProxyContainer; }
 
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
@@ -86,6 +89,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setUseSeparateServiceTypeForLogserverContainer(boolean useSeparateServiceTypeForLogserverContainer) {
         this.useSeparateServiceTypeForLogserverContainer = useSeparateServiceTypeForLogserverContainer;
+        return this;
+    }
+
+    public TestProperties setEnableMetricsProxyContainer(boolean enableMetricsProxyContainer) {
+        this.enableMetricsProxyContainer = enableMetricsProxyContainer;
         return this;
     }
 
