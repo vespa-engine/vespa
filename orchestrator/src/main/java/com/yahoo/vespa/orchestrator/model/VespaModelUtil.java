@@ -43,6 +43,7 @@ public class VespaModelUtil {
     public static final ServiceType DISTRIBUTOR_SERVICE_TYPE = new ServiceType("distributor");
     public static final ServiceType SEARCHNODE_SERVICE_TYPE = new ServiceType("searchnode");
     public static final ServiceType STORAGENODE_SERVICE_TYPE = new ServiceType("storagenode");
+    public static final ServiceType METRICS_PROXY_SERVICE_TYPE = new ServiceType("metricsproxy-container");
 
     private static final Comparator<ServiceInstance> CLUSTER_CONTROLLER_INDEX_COMPARATOR =
             Comparator.comparing(serviceInstance -> VespaModelUtil.getClusterControllerIndex(serviceInstance.configId()));
@@ -235,5 +236,4 @@ public class VespaModelUtil {
 
         return Integer.valueOf(matcher.group(1));
     }
-
 }

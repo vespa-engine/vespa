@@ -68,6 +68,10 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
             return ConcurrentSuspensionLimitForCluster.ONE_NODE;
         }
 
+        if (VespaModelUtil.METRICS_PROXY_SERVICE_TYPE.equals(clusterApi.serviceType())) {
+            return ConcurrentSuspensionLimitForCluster.ALL_NODES;
+        }
+
         if (VespaModelUtil.ADMIN_CLUSTER_ID.equals(clusterApi.clusterId())) {
             if (VespaModelUtil.SLOBROK_SERVICE_TYPE.equals(clusterApi.serviceType())) {
                 return ConcurrentSuspensionLimitForCluster.ONE_NODE;
