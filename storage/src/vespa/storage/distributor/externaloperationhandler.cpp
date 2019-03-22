@@ -79,11 +79,12 @@ void ExternalOperationHandler::bounce_with_result(api::StorageCommand& cmd, cons
 }
 
 void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd) {
-    // Distributor ownership is equal across cluster states, so always send back default state.
+    // Distributor ownership is equal across bucket spaces, so always send back default space state.
     // This also helps client avoid getting confused by possibly observing different actual
     // (derived) state strings for global/non-global document types for the same state version.
     // Similarly, if we've yet to activate any version at all we send back BUSY instead
     // of a suspiciously empty WrongDistributionReply.
+    // TOOD consider NOT_READY instead of BUSY once we're sure this won't cause any other issues.
     const auto& cluster_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
     if (cluster_state.getVersion() != 0) {
         auto cluster_state_str = cluster_state.toString();

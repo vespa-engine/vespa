@@ -121,8 +121,7 @@ void
 BucketDBUpdater::removeSuperfluousBuckets(
         const lib::ClusterStateBundle& newState)
 {
-    const bool move_to_read_only_db = _distributorComponent.getDistributor().getConfig()
-            .allowStaleReadsDuringClusterStateTransitions();
+    const bool move_to_read_only_db = shouldDeferStateEnabling();
     for (auto &elem : _distributorComponent.getBucketSpaceRepo()) {
         const auto &newDistribution(elem.second->getDistribution());
         const auto &oldClusterState(elem.second->getClusterState());

@@ -101,7 +101,6 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(ActivateClusterStateVersionCommand, onActivateClusterStateVersion);
-
 };
 
 class ActivateClusterStateVersionReply : public StorageReply {

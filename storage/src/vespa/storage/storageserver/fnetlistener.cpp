@@ -224,7 +224,7 @@ void FNetListener::RPC_activateClusterStateVersion(FRT_RPCRequest* req) {
         return;
     }
 
-    const int32_t activate_version = req->GetParams()->GetValue(0)._intval32;
+    const uint32_t activate_version = req->GetParams()->GetValue(0)._intval32;
     auto cmd = std::make_shared<api::ActivateClusterStateVersionCommand>(activate_version);
     cmd->setPriority(api::StorageMessage::VERYHIGH);
 

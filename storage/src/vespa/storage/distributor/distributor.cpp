@@ -576,10 +576,10 @@ void
 Distributor::propagateDefaultDistribution(
         std::shared_ptr<const lib::Distribution> distribution)
 {
+    auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
     for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
         repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
-        auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
-        repo->get(document::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
+        repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
     }
 }
 

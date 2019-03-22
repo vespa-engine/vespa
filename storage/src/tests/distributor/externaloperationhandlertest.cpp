@@ -337,6 +337,8 @@ ExternalOperationHandlerTest::verify_busy_bounced_due_to_no_active_state(std::sh
             _sender.replies[0]->getResult().toString());
 }
 
+// TODO NOT_READY is a more appropriate return code for this case, but must ensure it's
+// handled gracefully and silently through the stack. BUSY is a safe bet until then.
 void
 ExternalOperationHandlerTest::mutating_operation_busy_bounced_if_no_cluster_state_received_yet()
 {

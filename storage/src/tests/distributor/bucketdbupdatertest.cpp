@@ -2674,7 +2674,6 @@ void for_each_bucket(const BucketDatabase& db, const document::BucketSpace& spac
 template <typename Func>
 void for_each_bucket(const DistributorBucketSpaceRepo& repo, Func&& f) {
     for (const auto& space : repo) {
-        // TODO needs to propagate space
         for_each_bucket(space.second->getBucketDatabase(), space.first, f);
     }
 }
