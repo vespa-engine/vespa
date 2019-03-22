@@ -35,11 +35,6 @@
      <version>3.4</version>
     </dependency>
     <dependency>
-      <groupId>uk.co.datumedge</groupId>
-      <artifactId>hamcrest-json</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
     </dependency>
@@ -66,6 +61,11 @@
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>uk.co.datumedge</groupId>
+      <artifactId>hamcrest-json</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
