@@ -15,8 +15,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
@@ -25,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -64,7 +66,9 @@ public class InterleavedSearchInvokerTest {
         Result result = invoker.search(query, null, null);
 
         assertTrue("All test scenario events processed", expectedEvents.isEmpty());
-        assertNotNull("Result is marked as an error", result.hits().getErrorHit());
+        assertNull("Result is not marked as an error", result.hits().getErrorHit());
+        var message = findTrace(result, "Backend communication timeout");
+        assertThat("Timeout should be reported in a trace message", message.isPresent());
         assertTrue("Degradation reason is a normal timeout", result.getCoverage(false).isDegradedByTimeout());
     }
 
@@ -81,7 +85,9 @@ public class InterleavedSearchInvokerTest {
         Result result = invoker.search(query, null, null);
 
         assertTrue("All test scenario events processed", expectedEvents.isEmpty());
-        assertNotNull("Result is marked as an error", result.hits().getErrorHit());
+        assertNull("Result is not marked as an error", result.hits().getErrorHit());
+        var message = findTrace(result, "Backend communication timeout");
+        assertThat("Timeout should be reported in a trace message", message.isPresent());
         assertTrue("Degradataion reason is an adaptive timeout", result.getCoverage(false).isDegradedByAdapativeTimeout());
     }
 
@@ -203,7 +209,7 @@ public class InterleavedSearchInvokerTest {
             invokers.add(new MockInvoker(i));
         }
 
-        return new InterleavedSearchInvoker(invokers, null, searchCluster) {
+        return new InterleavedSearchInvoker(invokers, null, searchCluster, null) {
             @Override
             protected long currentTime() {
                 return clock.millis();
@@ -233,6 +239,11 @@ public class InterleavedSearchInvokerTest {
         coverage.setNodesTried(nodesTried);
         coverage.setDegradedReason(degradedReason);
         return coverage;
+    }
+
+    private static Optional<String> findTrace(Result result, String prefix) {
+        var strings = result.getQuery().getContext(false).getTrace().traceNode().descendants(String.class).spliterator();
+        return StreamSupport.stream(strings, false).filter(s -> s.startsWith(prefix)).findFirst();
     }
 
     private class Event {
@@ -270,6 +281,7 @@ public class InterleavedSearchInvokerTest {
         public TestQuery() {
             super();
             setTimeout(5000);
+            setTraceLevel(5);
         }
 
         @Override

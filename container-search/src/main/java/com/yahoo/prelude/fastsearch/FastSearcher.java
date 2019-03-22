@@ -213,7 +213,7 @@ public class FastSearcher extends VespaBackEndSearcher {
 
         Optional<Node> direct = getDirectNode(query);
         if(direct.isPresent()) {
-            return dispatcher.getFS4InvokerFactory().createSearchInvoker(this, query, direct.get());
+            return dispatcher.getFS4InvokerFactory().createDirectSearchInvoker(this, query, direct.get());
         }
         return new FS4SearchInvoker(this, query, dispatchBackend.openChannel(), Optional.empty());
     }
