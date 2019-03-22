@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.yahoo.test.json.JsonTestHelper.inputJson;
+import static com.yahoo.vespa.http.client.JsonTestHelper.inputJson;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 

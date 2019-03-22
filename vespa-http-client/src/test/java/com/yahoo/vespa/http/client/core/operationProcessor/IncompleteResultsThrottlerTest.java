@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.operationProcessor;
 
-import com.yahoo.collections.Tuple2;
 import com.yahoo.vespa.http.client.core.ThrottlePolicy;
-import com.yahoo.vespa.http.client.core.operationProcessor.IncompleteResultsThrottler;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -32,57 +30,6 @@ public class IncompleteResultsThrottlerTest {
         assertThat(incompleteResultsThrottler.waitingThreads(), is(1));
         incompleteResultsThrottler.resultReady(true);
         assertThat(incompleteResultsThrottler.waitingThreads(), is(0));
-    }
-
-    /**
-     * A mock 'gateway' this is slower with more requests in-flight. It starts to become really much slower at
-     * 'breakPoint' number of parallel requests.
-     */
-    class MockServer {
-        final LinkedList<Tuple2<Long, IncompleteResultsThrottler> > messageDoneByTime = new LinkedList<>();
-        final int breakPoint;
-        final Random random = new Random();
-        long time = 0;
-
-        MockServer(int breakPoint) {
-            this.breakPoint = breakPoint;
-        }
-
-        /**
-         * Figures out when next processed data will be ready.
-         * @return time in ms for next request to be finished.
-         */
-        long nextRequestFinished() {
-            if (messageDoneByTime.isEmpty()) {
-                return Integer.MAX_VALUE;
-            }
-            return messageDoneByTime.peek().first;
-        }
-
-        /**
-         * Advance simulation time and call finished on any requests.
-         * @param time to move to
-         */
-        void moveTime(long time) {
-            this.time = time;
-            while (!messageDoneByTime.isEmpty() && messageDoneByTime.peek().first <= time) {
-                messageDoneByTime.pop().second.resultReady(true);
-            }
-        }
-
-        /**
-         * New request.
-         * @param blocker do callback on blocker when request is done.
-         */
-        void newRequest(IncompleteResultsThrottler blocker) {
-            long nextTime = (long)(20 + 0.1 * messageDoneByTime.size());
-
-            if (messageDoneByTime.size() > breakPoint) {
-                nextTime += (long) (40 + (random.nextDouble()) * 0.01 *  messageDoneByTime.size()* messageDoneByTime.size());
-            }
-            nextTime += time + random.nextInt()%4;
-            messageDoneByTime.push(new Tuple2<>(nextTime, blocker));
-        }
     }
 
     /**
@@ -267,4 +214,79 @@ public class IncompleteResultsThrottlerTest {
         int distance = Math.abs(sweetSpot - size);
         return 1 + 20 * distance;
     }
+
+    /**
+     * A mock 'gateway' this is slower with more requests in-flight. It starts to become really much slower at
+     * 'breakPoint' number of parallel requests.
+     */
+    class MockServer {
+        final LinkedList<Tuple2<Long, IncompleteResultsThrottler> > messageDoneByTime = new LinkedList<>();
+        final int breakPoint;
+        final Random random = new Random();
+        long time = 0;
+
+        MockServer(int breakPoint) {
+            this.breakPoint = breakPoint;
+        }
+
+        /**
+         * Figures out when next processed data will be ready.
+         * @return time in ms for next request to be finished.
+         */
+        long nextRequestFinished() {
+            if (messageDoneByTime.isEmpty()) {
+                return Integer.MAX_VALUE;
+            }
+            return messageDoneByTime.peek().first;
+        }
+
+        /**
+         * Advance simulation time and call finished on any requests.
+         * @param time to move to
+         */
+        void moveTime(long time) {
+            this.time = time;
+            while (!messageDoneByTime.isEmpty() && messageDoneByTime.peek().first <= time) {
+                messageDoneByTime.pop().second.resultReady(true);
+            }
+        }
+
+        /**
+         * New request.
+         * @param blocker do callback on blocker when request is done.
+         */
+        void newRequest(IncompleteResultsThrottler blocker) {
+            long nextTime = (long)(20 + 0.1 * messageDoneByTime.size());
+
+            if (messageDoneByTime.size() > breakPoint) {
+                nextTime += (long) (40 + (random.nextDouble()) * 0.01 *  messageDoneByTime.size()* messageDoneByTime.size());
+            }
+            nextTime += time + random.nextInt()%4;
+            messageDoneByTime.push(new Tuple2<>(nextTime, blocker));
+        }
+    }
+
+    private static class Tuple2<T1, T2> {
+
+        public final T1 first;
+        public final T2 second;
+
+        public Tuple2(final T1 first, final T2 second) {
+            this.first = first;
+            this.second = second;
+        }
+
+        @Override
+        public int hashCode() { throw new UnsupportedOperationException(); }
+
+        @Override
+        public boolean equals(final Object obj) { throw new UnsupportedOperationException(); }
+
+        @Override
+        public String toString() {
+            return "Tuple2(" + first + ", " + second + ")";
+        }
+
+    }
+
 }

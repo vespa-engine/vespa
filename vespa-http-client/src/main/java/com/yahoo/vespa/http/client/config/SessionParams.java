@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.config;
 
-import net.jcip.annotations.Immutable;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,7 +16,6 @@ import java.util.List;
  * @see com.yahoo.vespa.http.client.SessionFactory
  * @see Builder
  */
-@Immutable
 public final class SessionParams {
 
     /**
