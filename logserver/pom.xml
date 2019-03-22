@@ -14,11 +14,7 @@
   <name>logserver</name>
   <description>Log server.</description>
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
+    <!-- compile scope -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
@@ -33,6 +29,13 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespalog</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+    <!-- test scope -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>
