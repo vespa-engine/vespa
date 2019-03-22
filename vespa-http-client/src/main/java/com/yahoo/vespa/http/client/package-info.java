@@ -5,10 +5,8 @@
  * is the central interface which is used to interact with a cluster.
  * Use {@link com.yahoo.vespa.http.client.SessionFactory} to
  * instantiate a {@link com.yahoo.vespa.http.client.Session}.
- **/
-@ExportPackage
-@PublicApi
+ *
+ * NOTE: This is a PUBLIC API, but not annotated as such because this is not a bundle and
+ *       we don't want to introduce Vespa dependencies.
+ */
 package com.yahoo.vespa.http.client;
-
-import com.yahoo.api.annotations.PublicApi;
-import com.yahoo.osgi.annotation.ExportPackage;
