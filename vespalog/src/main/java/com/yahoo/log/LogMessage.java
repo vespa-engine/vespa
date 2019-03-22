@@ -61,6 +61,12 @@ public class LogMessage
         this.payload = payload;
     }
 
+    public static LogMessage of(
+            Instant time, String host, long processId, long threadId,
+            String service, String component, Level level, String payload) {
+        return new LogMessage(time, host, processId, threadId, service, component, level, payload);
+    }
+
     public Instant  getTimestamp()       {return time;}
     /**
      * @deprecated Use {@link #getTimestamp()}
