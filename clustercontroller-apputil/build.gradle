@@ -6,7 +6,7 @@ dependencies {
     compile 'org.apache.httpcomponents:httpclient:4.4.1'
     compile 'commons-io:commons-io:2.4'
     testCompile 'junit:junit:4.12'
-    compileOnly 'com.yahoo.vespa:annotations:7-SNAPSHOT'
+    compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     providedCompile project(':container-dependency-versions:parent:container-dev')
     providedCompile project(':container-dependency-versions:parent:clustercontroller-utils')
 }

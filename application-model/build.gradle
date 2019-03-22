@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile 'com.yahoo.vespa:annotations:7-SNAPSHOT'
+    compile 'com.yahoo.vespa:annotations:7.28.21'
     compileOnly 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
 }
 

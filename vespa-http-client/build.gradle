@@ -7,7 +7,7 @@ dependencies {
     compile 'com.google.guava:guava:20.0'
     compile 'org.apache.httpcomponents:httpclient:4.4.1'
     compile 'org.apache.commons:commons-lang3:3.4'
-    compile 'com.yahoo.vespa:annotations:7-SNAPSHOT'
+    compile 'com.yahoo.vespa:annotations:7.28.21'
     compile project(':container-dependency-versions:parent:vespajlib')
     compile project(':container-dependency-versions:parent:component')
     compile 'com.fasterxml.jackson.core:jackson-core:2.8.11'

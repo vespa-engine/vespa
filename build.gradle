@@ -4,7 +4,7 @@
 
 allprojects {
     group = 'com.yahoo.vespa'
-    version = '7-SNAPSHOT'
+    version = '7.28.21'
 }
 
 subprojects {

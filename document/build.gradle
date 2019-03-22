@@ -9,7 +9,7 @@ dependencies {
     compile project(':container-dependency-versions:parent:config')
     compile project(':container-dependency-versions:parent:predicate-search-core')
     compile project(':container-dependency-versions:parent:vespajlib')
-    compile 'com.yahoo.vespa:annotations:7-SNAPSHOT'
+    compile 'com.yahoo.vespa:annotations:7.28.21'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile project(':container-dependency-versions:parent:testutil')

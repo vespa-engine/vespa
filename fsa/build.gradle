@@ -5,5 +5,5 @@
 dependencies {
     compile project(':container-dependency-versions:parent:vespajlib')
     testCompile 'junit:junit:4.12'
-    compileOnly 'com.yahoo.vespa:annotations:7-SNAPSHOT'
+    compileOnly 'com.yahoo.vespa:annotations:7.28.21'
 }

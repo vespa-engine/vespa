@@ -6,7 +6,7 @@ dependencies {
     compile 'org.json:json:20090211'
     compile project(':container-dependency-versions:parent:container-accesslogging')
     compile project(':container-dependency-versions:parent:processing')
-    compile 'com.yahoo.vespa:annotations:7-SNAPSHOT'
+    compile 'com.yahoo.vespa:annotations:7.28.21'
     compile project(':container-dependency-versions:parent:linguistics')
     compile project(':container-dependency-versions:parent:messagebus')
     compile project(':container-dependency-versions:parent:document')

@@ -51,7 +51,7 @@ dependencies {
     providedCompile project(':container-dependency-versions:parent:container-dev')
     providedCompile project(':container-dependency-versions:parent:jdisc_http_service')
     compileOnly 'com.google.guava:guava:20.0'
-    compileOnly 'com.yahoo.vespa:configgen:7-SNAPSHOT'
+    compileOnly 'com.yahoo.vespa:configgen:7.28.21'
 }
 
 task testsJar(type: Jar) {

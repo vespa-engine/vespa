@@ -10,7 +10,7 @@ dependencies {
     compile project(':container-dependency-versions:parent:config')
     compile project(':container-dependency-versions:parent:document')
     compile project(':container-dependency-versions:parent:configdefinitions')
-    compile 'com.yahoo.vespa:annotations:7-SNAPSHOT'
+    compile 'com.yahoo.vespa:annotations:7.28.21'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.9.5'
     compileOnly 'com.google.guava:guava:20.0'

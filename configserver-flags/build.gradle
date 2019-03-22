@@ -12,7 +12,7 @@ dependencies {
     providedCompile project(':container-dependency-versions:parent:flags')
     providedCompile project(':container-dependency-versions:parent:vespajlib')
     providedCompile project(':container-dependency-versions:parent:yolean')
-    compileOnly 'com.yahoo.vespa:annotations:7-SNAPSHOT'
+    compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     compileOnly 'com.google.inject:guice:3.0'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
 }

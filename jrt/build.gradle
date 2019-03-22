@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile 'com.yahoo.vespa:annotations:7-SNAPSHOT'
+    compile 'com.yahoo.vespa:annotations:7.28.21'
     compile project(':container-dependency-versions:parent:security-utils')
     testCompile 'junit:junit:4.12'
     testCompile 'org.bouncycastle:bcpkix-jdk15on:1.58'

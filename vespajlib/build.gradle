@@ -13,6 +13,6 @@ dependencies {
     testCompile project(':container-dependency-versions:parent:testutil')
     testCompile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     compileOnly 'com.google.guava:guava:20.0'
-    compileOnly 'com.yahoo.vespa:annotations:7-SNAPSHOT'
+    compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     providedCompile project(':container-dependency-versions:parent:yolean')
 }
