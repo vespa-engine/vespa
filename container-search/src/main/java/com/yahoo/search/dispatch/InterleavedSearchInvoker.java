@@ -148,7 +148,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                 result.hits().addError(ErrorMessage
                         .createTimeout("Backend communication timeout on all nodes in group (distribution-keys: " + keys + ")"));
             } else {
-                query.trace("Backend communication timeout on nodes with distribution-keys: " + keys, 5);
+                query.trace("Backend communication timeout on nodes with distribution-keys: " + keys, 2);
             }
             timedOut = true;
         }
@@ -158,7 +158,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             if (asErrors) {
                 result.hits().addError(ErrorMessage.createBackendCommunicationError(message));
             } else {
-                query.trace(message, 5);
+                query.trace(message, 2);
             }
             int failed = alreadyFailedNodes.size();
             askedNodes += failed;
