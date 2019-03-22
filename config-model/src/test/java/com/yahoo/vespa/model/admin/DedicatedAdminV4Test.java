@@ -74,13 +74,10 @@ public class DedicatedAdminV4Test {
         VespaModel model = createModel(hosts, services);
         assertEquals(3, model.getHosts().size());
 
-        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName);
-        assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName);
+        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd");
+        assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd");
         // Note: A container is always added on logserver host
-        assertHostContainsServices(model, "hosts/myhost2", "logserver", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
+        assertHostContainsServices(model, "hosts/myhost2", "logserver", "logd", CONTAINER.serviceName);
 
         Monitoring monitoring = model.getAdmin().getMonitoring();
         assertEquals("vespa.routing", monitoring.getClustername());
@@ -133,13 +130,13 @@ public class DedicatedAdminV4Test {
 
         // 4 slobroks, 2 per cluster where possible
         assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver",
-                                   METRICS_PROXY_CONTAINER.serviceName, QRSERVER.serviceName);
+                                   QRSERVER.serviceName);
         assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName, QRSERVER.serviceName);
+                                   QRSERVER.serviceName);
         assertHostContainsServices(model, "hosts/myhost2", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName, QRSERVER.serviceName);
+                                   QRSERVER.serviceName);
         assertHostContainsServices(model, "hosts/myhost3", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName, QRSERVER.serviceName);
+                                   QRSERVER.serviceName);
     }
 
     @Test
@@ -157,13 +154,10 @@ public class DedicatedAdminV4Test {
         VespaModel model = createModel(hosts, services);
         assertEquals(3, model.getHosts().size());
 
-        assertHostContainsServices(model, "hosts/myhost0", "logd", "logforwarder", "slobrok",
-                                   METRICS_PROXY_CONTAINER.serviceName);
-        assertHostContainsServices(model, "hosts/myhost1", "logd", "logforwarder", "slobrok",
-                                   METRICS_PROXY_CONTAINER.serviceName);
+        assertHostContainsServices(model, "hosts/myhost0", "logd", "logforwarder", "slobrok");
+        assertHostContainsServices(model, "hosts/myhost1", "logd", "logforwarder", "slobrok");
         // Note: A container is always added on logserver host
-        assertHostContainsServices(model, "hosts/myhost2", "logd", "logforwarder", "logserver",
-                                   METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
+        assertHostContainsServices(model, "hosts/myhost2", "logd", "logforwarder", "logserver", CONTAINER.serviceName);
 
         Set<String> configIds = model.getConfigIds();
         // 1 logforwarder on each host
@@ -206,8 +200,7 @@ public class DedicatedAdminV4Test {
                 .properties(new TestProperties().setHostedVespa(true)));
         assertEquals(1, model.getHosts().size());
         // Should create a container on the same node as logserver
-        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver",
-                                   METRICS_PROXY_CONTAINER.serviceName , CONTAINER.serviceName);
+        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver", CONTAINER.serviceName);
     }
 
     private Set<String> serviceNames(VespaModel model, String hostname) {

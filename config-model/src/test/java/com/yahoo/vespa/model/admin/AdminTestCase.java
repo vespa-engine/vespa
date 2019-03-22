@@ -98,12 +98,12 @@ public class AdminTestCase {
         SentinelConfig.Builder b = new SentinelConfig.Builder();
         vespaModel.getConfig(b, localhostConfigId);
         SentinelConfig sentinelConfig = new SentinelConfig(b);
-        assertThat(sentinelConfig.service().size(), is(5));
+        assertThat(sentinelConfig.service().size(), is(4));
         assertThat(sentinelConfig.service(0).name(), is("logserver"));
         assertThat(sentinelConfig.service(1).name(), is("slobrok"));
         assertThat(sentinelConfig.service(2).name(), is("slobrok2"));
-        assertThat(sentinelConfig.service(3).name(), is(METRICS_PROXY_CONTAINER.serviceName));
-        assertThat(sentinelConfig.service(4).name(), is("logd"));
+        //assertThat(sentinelConfig.service(3).name(), is(METRICS_PROXY_CONTAINER.serviceName));
+        assertThat(sentinelConfig.service(3).name(), is("logd"));
     }
 
     /**
@@ -134,11 +134,11 @@ public class AdminTestCase {
         SentinelConfig.Builder b = new SentinelConfig.Builder();
         vespaModel.getConfig(b, localhostConfigId);
         SentinelConfig sentinelConfig = new SentinelConfig(b);
-        assertThat(sentinelConfig.service().size(), is(4));
+        assertThat(sentinelConfig.service().size(), is(3));
         assertThat(sentinelConfig.service(0).name(), is("logserver"));
         assertThat(sentinelConfig.service(1).name(), is("slobrok"));
-        assertThat(sentinelConfig.service(2).name(), is(METRICS_PROXY_CONTAINER.serviceName));
-        assertThat(sentinelConfig.service(3).name(), is("logd"));
+        //assertThat(sentinelConfig.service(2).name(), is(METRICS_PROXY_CONTAINER.serviceName));
+        assertThat(sentinelConfig.service(2).name(), is("logd"));
         assertThat(sentinelConfig.service(0).affinity().cpuSocket(), is(-1));
         assertTrue(sentinelConfig.service(0).preShutdownCommand().isEmpty());
 
@@ -289,11 +289,11 @@ public class AdminTestCase {
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();
         SentinelConfig sentinelConfig = root.getConfig(SentinelConfig.class, "hosts/" + localhost);
-        assertThat(sentinelConfig.service().size(), is(4));
+        assertThat(sentinelConfig.service().size(), is(3));
         assertThat(sentinelConfig.service(0).name(), is("logserver"));
         assertThat(sentinelConfig.service(1).name(), is("slobrok"));
-        assertThat(sentinelConfig.service(2).name(), is(METRICS_PROXY_CONTAINER.serviceName));
-        assertThat(sentinelConfig.service(3).name(), is("logd"));
+        //assertThat(sentinelConfig.service(2).name(), is(METRICS_PROXY_CONTAINER.serviceName));
+        assertThat(sentinelConfig.service(2).name(), is("logd"));
     }
 
 }
