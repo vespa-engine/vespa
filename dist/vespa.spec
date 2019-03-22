@@ -5,6 +5,7 @@
 
 # Force special prefix for Vespa
 %define _prefix /opt/vespa
+%define _vespa_deps_prefix /opt/vespa-deps
 
 Name:           vespa
 Version:        _VESPA_VERSION_
@@ -35,10 +36,12 @@ BuildRequires: cmake3
 BuildRequires: llvm5.0-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
 BuildRequires: vespa-gtest >= 1.8.1-1
+BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 %endif
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
+BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 %if 0%{?fc27}
 BuildRequires: llvm-devel >= 5.0.2
 BuildRequires: boost-devel >= 1.64
@@ -115,11 +118,13 @@ Requires: gdb
 Requires: net-tools
 %if 0%{?centos}
 Requires: llvm5.0
+Requires: vespa-protobuf >= 3.7.0-4
 %define _vespa_llvm_version 5.0
-%define _extra_link_directory /usr/lib64/llvm5.0/lib;/opt/vespa-gtest/lib64;/opt/vespa-cppunit/lib
-%define _extra_include_directory /usr/include/llvm5.0;/opt/vespa-boost/include;/opt/vespa-gtest/include;/opt/vespa-cppunit/include
+%define _extra_link_directory /usr/lib64/llvm5.0/lib;/opt/vespa-gtest/lib64;/opt/vespa-cppunit/lib;%{_vespa_deps_prefix}/lib64
+%define _extra_include_directory /usr/include/llvm5.0;/opt/vespa-boost/include;/opt/vespa-gtest/include;/opt/vespa-cppunit/include;%{_vespa_deps_prefix}/include
 %endif
 %if 0%{?fedora}
+Requires: vespa-protobuf >= 3.7.0-4
 %if 0%{?fc27}
 Requires: llvm-libs >= 5.0.2
 %define _vespa_llvm_version 5.0
@@ -142,8 +147,8 @@ Requires: llvm-libs >= 8.0.0
 Requires: llvm-libs >= 8.0.0
 %define _vespa_llvm_version 8
 %endif
-%define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}%{?_vespa_gtest_link_directory:;%{_vespa_gtest_link_directory}}
-%define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}%{?_vespa_gtest_include_directory:;%{_vespa_gtest_include_directory}}
+%define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}%{?_vespa_gtest_link_directory:;%{_vespa_gtest_link_directory}};%{_vespa_deps_prefix}/lib64
+%define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}%{?_vespa_gtest_include_directory:;%{_vespa_gtest_include_directory}};%{_vespa_deps_prefix}/include
 %endif
 Requires: java-11-openjdk
 Requires: openssl
@@ -176,6 +181,7 @@ sh bootstrap.sh java
 mvn --batch-mode -nsu -T 1C  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-11-openjdk \
+       -DCMAKE_PREFIX_PATH=%{_vespa_deps_prefix} \
        -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \
        -DEXTRA_INCLUDE_DIRECTORY="%{_extra_include_directory}" \
        -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}};/usr/lib/jvm/jre-11-openjdk/lib" \
